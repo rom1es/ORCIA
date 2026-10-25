@@ -27,11 +27,15 @@ playwright-report/
 .env
 .env.*
 !.env.example
+.secrets.baseline
+IA_REVIEW.md
 
-# BMad render cache & GitNexus local cache
-_bmad/render/
+# BMad framework & GitNexus local cache
+_bmad/
+_bmad-output/
 .gitnexus/
 
 # OS / IDE
 .DS_Store
 *.swp
+.vscode/

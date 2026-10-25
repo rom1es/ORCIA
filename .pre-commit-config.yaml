@@ -1,0 +1,54 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: check-added-large-files
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: detect-private-key
+
+-   repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+    -   id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+
+-   repo: local
+    hooks:
+    -   id: ruff-check
+        name: Ruff Linter (.venv)
+        entry: .venv/bin/ruff check
+        language: system
+        types: [python]
+        stages: [pre-commit]
+
+    -   id: mypy-strict
+        name: Mypy Strict (.venv)
+        entry: .venv/bin/mypy --strict packages/orcia-core apps/api apps/worker
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+    -   id: lint-spine
+        name: Architecture Spine Linter
+        entry: .venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+    -   id: check-implementation-docs
+        name: Check Tech Lead Implementation Docs
+        entry: .venv/bin/python scripts/check_implementation_docs.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+    -   id: ai-review
+        name: IA Code Review (GPU / Gemini)
+        entry: .venv/bin/python scripts/ai_lint.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        always_run: true
+        verbose: true
