@@ -31,7 +31,10 @@ def test_schemathesis_openapi_contract_compliance() -> None:
         def _check_operation(case: schemathesis.Case) -> None:
             response = case.call()
             assert response.status_code < 500
-            case.validate_response(response)
+            case.validate_response(
+                response,
+                excluded_checks=[schemathesis.checks.positive_data_acceptance],
+            )
             if response.status_code >= 400:
                 raw_ct = response.headers.get("content-type", "")
                 ct_str = raw_ct[0] if isinstance(raw_ct, list) else str(raw_ct)

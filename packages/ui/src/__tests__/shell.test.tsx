@@ -3,6 +3,8 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
   AppShell,
+  CatalogExplorerPanel,
+  FederatedUriBadge,
   HumanLedAnchorCard,
   type UiHumanProfileBadge,
   type UiScopeNode,
@@ -108,26 +110,21 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     expect(dock.getAttribute("data-collapsed")).toBe("false");
     expect(appShell.getAttribute("data-active-mobile-tab")).toBe("inbox");
 
-    // Verify all 7 modules render and clicking a module invokes onSelectModule
     for (const mod of MOCK_MODULES) {
       expect(screen.getByTestId(`sidebar-nav-item-${mod.key}`)).toBeDefined();
     }
     fireEvent.click(screen.getByTestId("sidebar-nav-item-inbox"));
     expect(onSelectModule).toHaveBeenCalledWith("inbox", "/inbox");
 
-    // Press '[' to collapse sidebar (235px -> 68px)
     fireEvent.keyDown(window, { key: "[" });
     expect(sidebar.getAttribute("data-collapsed")).toBe("true");
 
-    // Press ']' to collapse Concierge Dock
     fireEvent.keyDown(window, { key: "]" });
     expect(dock.getAttribute("data-collapsed")).toBe("true");
 
-    // Uncollapse dock via button so input is visible
     fireEvent.click(screen.getByTestId("concierge-dock-toggle"));
     expect(dock.getAttribute("data-collapsed")).toBe("false");
 
-    // When focus is inside an input field, '[' and ']' must be ignored
     const promptInput = screen.getByTestId("concierge-prompt-input") as HTMLInputElement;
     promptInput.focus();
     fireEvent.keyDown(promptInput, { key: "[" });
@@ -135,24 +132,20 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     expect(sidebar.getAttribute("data-collapsed")).toBe("true");
     expect(dock.getAttribute("data-collapsed")).toBe("false");
 
-    // Submitting a prompt in ConciergeDock invokes onSubmitConciergePrompt with trimmed text and clears input
     fireEvent.change(promptInput, { target: { value: "  Diagnostiquer refus 403  " } });
     fireEvent.click(screen.getByTestId("concierge-prompt-submit"));
     expect(onSubmitConciergePrompt).toHaveBeenCalledWith("Diagnostiquer refus 403");
     expect(promptInput.value).toBe("");
 
-    // Press Ctrl+W / Meta+W (⌘W) to open Hierarchical Scope Switcher, then Escape to close it
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     expect(screen.getByTestId("scope-switcher-dialog")).toBeDefined();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByTestId("scope-switcher-dialog")).toBeNull();
 
-    // Reopen Scope Switcher and select a scope
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     fireEvent.click(screen.getByTestId("scope-option-scope-global"));
     expect(onSelectScope).toHaveBeenCalledWith("scope-global");
 
-    // Clicking a mobile tab updates active mobile tab state
     const chatMobileTab = screen.getByTestId("mobile-tab-chat");
     fireEvent.click(chatMobileTab);
     expect(chatMobileTab.getAttribute("data-active")).toBe("true");
@@ -184,12 +177,9 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
   });
 
   it("hides disabled modules (enabled: false) in GlobalSidebar and displays role/orgUnitName in footer", () => {
-    const filteredModules = MOCK_MODULES.map((m) =>
-      m.key === "admin" ? { ...m, enabled: false } : m,
-    );
     render(
       <AppShell
-        modules={filteredModules}
+        modules={MOCK_MODULES.map((m) => (m.key === "admin" ? { ...m, enabled: false } : m))}
         activeModuleKey="cockpit"
         scopes={MOCK_SCOPES}
         activeScopeId="scope-ws-orcia"
@@ -211,5 +201,122 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     expect(screen.getByTestId("sidebar-human-profile-org").textContent).toContain(
       "CONTRIBUTOR · Sous-Équipe Checkout",
     );
+  });
+
+  it("renders FederatedUriBadge (UX-DR8) and CatalogExplorerPanel with CAS resolution, promotion, and BMAD import", () => {
+    render(
+      <div>
+        <FederatedUriBadge
+          uri="git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0"
+          scheme="git"
+          sha256Short="8a91c4e2f01b"
+          grantedPermissions={["DISCOVER", "EXECUTE"]}
+          sourceMasked={true}
+          maskedSourceLabel="🔒 Source masquée"
+          openSourceLabel="📖 Source ouverte"
+        />
+        <CatalogExplorerPanel
+          activePersona="marc"
+          items={[
+            {
+              resourceId: "res-jira-secops-playbook",
+              uri: "jira://PAYSEC/PAYSEC-101",
+              scheme: "jira",
+              title: "Playbook SecOps",
+              description: "Playbook brouillon",
+              resourceType: "workflow",
+              sourceFormat: "ORCIA",
+              version: "v0.1.0",
+              sha256Short: "1d83f5a0e72c",
+              casKey: "cas/1d83f5a0e72c",
+              visibilityScope: "DRAFT",
+              grantedPermissions: ["DISCOVER", "EXECUTE", "READ_SOURCE", "EDIT", "ADMIN"],
+              sourceMasked: false,
+            },
+            {
+              resourceId: "res-blackbox-security-agent",
+              uri: "git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0",
+              scheme: "git",
+              title: "Agent Boîte Noire",
+              description: "Agent masqué",
+              resourceType: "agent",
+              sourceFormat: "ORCIA",
+              version: "v2.1.0",
+              sha256Short: "8a91c4e2f01b",
+              casKey: "cas/8a91c4e2f01b",
+              visibilityScope: "SHARED_TEAM",
+              grantedPermissions: ["DISCOVER", "EXECUTE"],
+              sourceMasked: true,
+            },
+          ]}
+          runLockTriplets={[
+            {
+              alias: "workflow-definition",
+              scheme: "db",
+              uri: "db://orcia/catalog/payment-delivery-workflow@v1.2.0",
+              resolvedVersion: "v1.2.0",
+              sha256Short: "3c18b7e9d04a",
+            },
+          ]}
+          labels={{
+            panelTitle: "Catalogue Fédéré",
+            panelSubtitle: "Sous-titre",
+            filterAllSchemesLabel: "Tous",
+            maskedSourceBadgeLabel: "🔒 Source masquée",
+            openSourceBadgeLabel: "📖 Source ouverte",
+            resolveCasButtonLabel: "Résoudre CAS",
+            casResolvedBannerPrefix: "HTTP 200 OK",
+            promoteScopeButtonLabel: "Promouvoir",
+            promotedBannerPrefix: "Promu",
+            promoteDeniedObserverBanner: "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY",
+            overrideSectionTitle: "Surcharges 4 Niveaux",
+            overrideSectionSubtitle: "Base -> Team -> Workspace -> User",
+            overrideLayers: {
+              base: "1. Base",
+              teamParent: "2a. Parent",
+              teamSub: "2b. Sub",
+              workspace: "3. Workspace",
+              user: "4. User",
+            },
+            runLockTitle: "run-lock.json",
+            bmadAdapterTitle: "BMAD Adapter",
+            bmadImportButtonLabel: "Importer BMAD",
+            bmadImportedBanner: "BMAD_PACK importé",
+          }}
+        />
+      </div>,
+    );
+
+    const badge = screen.getByTestId("uri-badge");
+    expect(badge.getAttribute("data-uri-scheme")).toBe("git");
+    expect(badge.getAttribute("data-source-masked")).toBe("true");
+    expect(screen.getByTestId("catalog-scheme-filter-orcia")).toBeDefined();
+
+    // Verify promote button is disabled on item without EDIT/ADMIN for non-admin persona
+    const maskedPromoteBtn = screen.getByTestId(
+      "promote-btn-res-blackbox-security-agent",
+    ) as HTMLButtonElement;
+    expect(maskedPromoteBtn.disabled).toBe(true);
+
+    // Filter by scheme jira -> hides git item; filter ALL -> shows both
+    fireEvent.click(screen.getByTestId("catalog-scheme-filter-jira"));
+    expect(screen.getByTestId("catalog-item-card-res-jira-secops-playbook")).toBeDefined();
+    expect(screen.queryByTestId("catalog-item-card-res-blackbox-security-agent")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("catalog-scheme-filter-ALL"));
+    expect(screen.getByTestId("catalog-item-card-res-blackbox-security-agent")).toBeDefined();
+
+    fireEvent.click(screen.getByTestId("resolve-cas-btn-res-jira-secops-playbook"));
+    expect(
+      screen.getByTestId("resolve-cas-result-res-jira-secops-playbook").textContent,
+    ).toContain("cas/1d83f5a0e72c");
+
+    fireEvent.click(screen.getByTestId("promote-btn-res-jira-secops-playbook"));
+    expect(screen.getByTestId("promote-result-res-jira-secops-playbook").textContent).toContain(
+      "DRAFT -> SHARED_WORKSPACE",
+    );
+
+    fireEvent.click(screen.getByTestId("bmad-import-trigger-btn"));
+    expect(screen.getByTestId("bmad-import-result").textContent).toContain("BMAD_PACK");
   });
 });

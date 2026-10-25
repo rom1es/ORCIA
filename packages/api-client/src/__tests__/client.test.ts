@@ -74,7 +74,7 @@ describe("createOrciaApiClient", () => {
         modules: [],
         human_profile: {
           archetype_key: "TECH_LEAD",
-          display_name: "Tech Lead",
+          displayName: "Tech Lead",
           access_mode: "CONTRIBUTOR_ACTION_REQUIRED",
         },
         trace_id: "0192c4e0000070008000000000000003",
@@ -130,7 +130,7 @@ describe("createOrciaApiClient", () => {
     }
   });
 
-  it("supports Story 1.2 auth, workspaces, mutation guard, and catalog permission endpoints", async () => {
+  it("supports Story 1.2 & Story 1.3 auth, workspaces, federated catalog, CAS, 4-layer merge, and BMAD endpoints", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ status: "ok" }),
@@ -159,7 +159,37 @@ describe("createOrciaApiClient", () => {
       },
       "marc",
     );
+    await client.listCatalogItems("marc");
+    await client.promoteCatalogItem(
+      "res-jira-secops-playbook",
+      { target_scope: "SHARED_WORKSPACE" },
+      "marc",
+    );
+    await client.resolveFederatedUri(
+      { uri: "git://gitlab.entreprise.io/payments/checkout-web" },
+      "marc",
+    );
+    await client.getCasObject(
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "marc",
+    );
+    await client.resolveEffectiveWorkflow(
+      {
+        workflow_uri: "db://orcia/catalog/payment-delivery-workflow@v1.2.0",
+        workspace_id: "ws-solution-paiement",
+      },
+      "marc",
+    );
+    await client.importBmadSkillPack(
+      {
+        uri: "git://gitlab.entreprise.io/payments/checkout-web/skills/bmad-pack@v1.0.0",
+        skill_markdown: "---\nname: checkout-pack\ndescription: Pack Checkout\n---\n# Body",
+        customize_toml: "",
+        steps: [{ filename: "step-01.md", content_markdown: "# Step 1" }],
+      },
+      "marc",
+    );
 
-    expect(mockFetch).toHaveBeenCalledTimes(10);
+    expect(mockFetch).toHaveBeenCalledTimes(16);
   });
 });

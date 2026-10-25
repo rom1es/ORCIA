@@ -1,5 +1,6 @@
 import type {
   HumanLedAnchorCardLabels,
+  UiCatalogExplorerLabels,
   UiModuleKey,
   UiShellLabels,
   UiWorkspaceTopologyLabels,
@@ -22,5 +23,6 @@ export interface TranslationDictionary {
     defaultValue: string;
   };
   workspaceTopology: UiWorkspaceTopologyLabels;
+  catalogExplorer: UiCatalogExplorerLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

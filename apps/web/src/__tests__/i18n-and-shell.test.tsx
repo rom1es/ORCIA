@@ -80,7 +80,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(resolveModuleFromPathname("/admin")).toBe("admin");
   });
 
-  it("renders French by default, switches dynamically to English (including untouched HumanLedAnchorCard), navigates modules, and updates scope access mode", () => {
+  it("renders French by default, switches dynamically to English, navigates modules, and validates Story 1.2 & Story 1.3 Catalog Explorer", () => {
     mockPush.mockClear();
     render(
       <I18nProvider initialLocale="fr">
@@ -106,6 +106,21 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     );
     expect(anchorTextarea.value).toBe(enDictionary.humanAnchor.defaultValue);
 
+    // Story 1.3: Verify CatalogExplorerPanel, FederatedUriBadge (UX-DR8), CAS resolve, 4-layer overrides & BMAD import
+    expect(screen.getByTestId("catalog-explorer-panel")).toBeDefined();
+    expect(screen.getByTestId("uri-badge-res-blackbox-security-agent").getAttribute("data-uri-scheme")).toBe("git");
+    expect(screen.getByTestId("uri-badge-res-nexus-bmad-architecture-pack").getAttribute("data-uri-scheme")).toBe("nexus");
+    expect(screen.getByTestId("uri-badge-res-payment-delivery-workflow").getAttribute("data-uri-scheme")).toBe("db");
+    expect(screen.getByTestId("run-lock-manifest-preview")).toBeDefined();
+
+    fireEvent.click(screen.getByTestId("resolve-cas-btn-res-open-checkout-skill"));
+    expect(
+      screen.getByTestId("resolve-cas-result-res-open-checkout-skill").textContent,
+    ).toContain("cas/4b72d9a1c30e");
+
+    fireEvent.click(screen.getByTestId("bmad-import-trigger-btn"));
+    expect(screen.getByTestId("bmad-import-result").textContent).toContain("BMAD_PACK");
+
     // Click module 4 (ontology) -> calls router.push and updates active module heading
     fireEvent.click(screen.getByTestId("sidebar-nav-item-ontology"));
     expect(mockPush).toHaveBeenCalledWith("/ontology");
@@ -130,6 +145,12 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(screen.getByTestId("mutation-guard-result-ws-solution-paiement").textContent).toContain(
       "ERR_OBSERVER_MODE_READ_ONLY",
     );
+
+    // Claire in Observer mode rejected when promoting DRAFT -> SHARED_WORKSPACE
+    fireEvent.click(screen.getByTestId("promote-btn-res-jira-secops-playbook"));
+    expect(
+      screen.getByTestId("promote-result-res-jira-secops-playbook").textContent,
+    ).toContain("ERR_OBSERVER_MODE_READ_ONLY");
 
     // Inspect black-box catalog resource -> shows ERR_READ_SOURCE_DENIED
     fireEvent.click(screen.getByTestId("inspect-source-btn-res-blackbox-security-agent"));

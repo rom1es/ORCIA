@@ -1,8 +1,21 @@
 export type {
   AuthTokenResponse,
+  BmadSkillPackImportRequest,
+  BmadSkillPackImportResponse,
+  BmadSkillStepInputItem,
+  CasObjectResponse,
+  CatalogItemResponse,
+  CatalogItemsListResponse,
+  CatalogPromoteRequest,
+  CatalogPromoteResponse,
   CatalogResourceInspectionResponse,
   CatalogResourceSourceResponse,
+  CatalogUriResolveRequest,
+  CatalogUriResolveResponse,
   components,
+  EffectiveWorkflowResolveRequest,
+  EffectiveWorkflowResolveResponse,
+  EvaluationLensItem,
   HealthResponse,
   HumanProfileBadge,
   LocalLoginRequest,
@@ -13,11 +26,15 @@ export type {
   PassthroughSecretStoreRequest,
   paths,
   ProblemDetails,
+  RunLockManifestItem,
+  RunLockSourceTripletItem,
   ScopeMutationCheckResponse,
   ScopeNode,
   ShellModuleItem,
   ShellNavigationResponse,
   UserMeResponse,
+  WorkflowDefinitionResponseItem,
+  WorkflowStepItem,
   WorkspaceDatasourceItem,
   WorkspacesListResponse,
   WorkspaceSummaryItem,
@@ -25,8 +42,18 @@ export type {
 
 import type {
   AuthTokenResponse,
+  BmadSkillPackImportRequest,
+  BmadSkillPackImportResponse,
+  CasObjectResponse,
+  CatalogItemsListResponse,
+  CatalogPromoteRequest,
+  CatalogPromoteResponse,
   CatalogResourceInspectionResponse,
   CatalogResourceSourceResponse,
+  CatalogUriResolveRequest,
+  CatalogUriResolveResponse,
+  EffectiveWorkflowResolveRequest,
+  EffectiveWorkflowResolveResponse,
   HealthResponse,
   LocalLoginRequest,
   LogoutResponse,
@@ -174,6 +201,61 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
       const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<PassthroughSecretMetadataResponse>(
         `/api/v1/auth/passthrough-credentials${query}`,
+        "POST",
+        payload,
+      );
+    },
+    listCatalogItems(personaKey?: string): Promise<CatalogItemsListResponse> {
+      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<CatalogItemsListResponse>(`/api/v1/catalog/items${query}`);
+    },
+    promoteCatalogItem(
+      resourceId: string,
+      payload: CatalogPromoteRequest,
+      personaKey?: string,
+    ): Promise<CatalogPromoteResponse> {
+      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<CatalogPromoteResponse>(
+        `/api/v1/catalog/items/${encodeURIComponent(resourceId)}/promote${query}`,
+        "POST",
+        payload,
+      );
+    },
+    resolveFederatedUri(
+      payload: CatalogUriResolveRequest,
+      personaKey?: string,
+    ): Promise<CatalogUriResolveResponse> {
+      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<CatalogUriResolveResponse>(
+        `/api/v1/catalog/resolve${query}`,
+        "POST",
+        payload,
+      );
+    },
+    getCasObject(sha256: string, personaKey?: string): Promise<CasObjectResponse> {
+      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<CasObjectResponse>(
+        `/api/v1/cas/${encodeURIComponent(sha256)}${query}`,
+      );
+    },
+    resolveEffectiveWorkflow(
+      payload: EffectiveWorkflowResolveRequest,
+      personaKey?: string,
+    ): Promise<EffectiveWorkflowResolveResponse> {
+      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<EffectiveWorkflowResolveResponse>(
+        `/api/v1/catalog/workflows/resolve-effective${query}`,
+        "POST",
+        payload,
+      );
+    },
+    importBmadSkillPack(
+      payload: BmadSkillPackImportRequest,
+      personaKey?: string,
+    ): Promise<BmadSkillPackImportResponse> {
+      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<BmadSkillPackImportResponse>(
+        `/api/v1/catalog/bmad-packs/import${query}`,
         "POST",
         payload,
       );

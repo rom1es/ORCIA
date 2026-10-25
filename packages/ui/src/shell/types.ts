@@ -17,6 +17,16 @@ export type UiPersonaKey = "karim" | "claire" | "marc" | "nadia" | "partenaire";
 
 export type UiDatasourceScheme = "git" | "jira" | "confluence" | "db" | "nexus";
 
+export type UiFederatedScheme = "git" | "nexus" | "db" | "confluence" | "jira" | "orcia";
+
+export type UiCatalogVisibilityScope =
+  | "DRAFT"
+  | "SHARED_WORKSPACE"
+  | "SHARED_TEAM"
+  | "SHARED_BU"
+  | "PENDING_APPROVAL"
+  | "PUBLISHED_ORG";
+
 export type UiCatalogPermissionKey =
   | "DISCOVER"
   | "EXECUTE"
@@ -77,6 +87,56 @@ export interface UiCatalogResourcePermissionView {
   visibilityScope: string;
   grantedPermissions: UiCatalogPermissionKey[];
   sourceMasked: boolean;
+}
+
+export interface UiCatalogExplorerItemView {
+  resourceId: string;
+  uri: string;
+  scheme: UiFederatedScheme;
+  title: string;
+  description: string;
+  resourceType: "workflow" | "agent" | "skill" | "template" | "datasource";
+  sourceFormat: "ORCIA" | "BMAD_PACK";
+  version: string;
+  sha256Short: string;
+  casKey: string;
+  visibilityScope: UiCatalogVisibilityScope;
+  grantedPermissions: UiCatalogPermissionKey[];
+  sourceMasked: boolean;
+}
+
+export interface UiRunLockTripletView {
+  alias: string;
+  scheme: UiFederatedScheme;
+  uri: string;
+  resolvedVersion: string;
+  sha256Short: string;
+}
+
+export interface UiCatalogExplorerLabels {
+  panelTitle: string;
+  panelSubtitle: string;
+  filterAllSchemesLabel: string;
+  maskedSourceBadgeLabel: string;
+  openSourceBadgeLabel: string;
+  resolveCasButtonLabel: string;
+  casResolvedBannerPrefix: string;
+  promoteScopeButtonLabel: string;
+  promotedBannerPrefix: string;
+  promoteDeniedObserverBanner: string;
+  overrideSectionTitle: string;
+  overrideSectionSubtitle: string;
+  overrideLayers: {
+    base: string;
+    teamParent: string;
+    teamSub: string;
+    workspace: string;
+    user: string;
+  };
+  runLockTitle: string;
+  bmadAdapterTitle: string;
+  bmadImportButtonLabel: string;
+  bmadImportedBanner: string;
 }
 
 export interface UiWorkspaceTopologyLabels {

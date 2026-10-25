@@ -57,6 +57,17 @@ class MatrixPermissionEvaluator:
         """Return all registered workspaces."""
         return tuple(self._workspaces_by_id.values())
 
+    def get_primary_catalog_acl(self, resource_id: str) -> CatalogAclEntry | None:
+        """Return the primary `CatalogAclEntry` for `resource_id`, or `None` if absent."""
+        return next((e for e in self._catalog_acls if e.resource_id == resource_id), None)
+
+    def upsert_catalog_acl(self, entry: CatalogAclEntry) -> None:
+        """Insert or replace a `CatalogAclEntry` by `id` (or primary `resource_id`)."""
+        filtered = [
+            e for e in self._catalog_acls if e.id != entry.id and e.resource_id != entry.resource_id
+        ]
+        self._catalog_acls = (*filtered, entry)
+
     def has_org_unit(self, org_unit_id: str) -> bool:
         """Return True if `org_unit_id` exists in the organizational tree."""
         return org_unit_id in self._org_units_by_id
@@ -177,13 +188,17 @@ class MatrixPermissionEvaluator:
         user_ancestors: set[str],
         workspace_id: str | None,
     ) -> bool:
+        if user.platform_role == "PLATFORM_ADMIN":
+            return True
         if (
             entry.grantee_transverse_group
             and entry.grantee_transverse_group in user.transverse_groups
         ):
             return True
-        ws_scoped = (
-            entry.owner_workspace_id is not None or entry.visibility_scope == "SHARED_WORKSPACE"
+        if entry.visibility_scope == "PENDING_APPROVAL" and user.platform_role == "BU_DIRECTOR":
+            return True
+        ws_scoped = entry.visibility_scope == "SHARED_WORKSPACE" or (
+            entry.visibility_scope == "DRAFT" and entry.owner_workspace_id is not None
         )
         ws_matches = (
             (workspace_id == entry.owner_workspace_id and workspace_id is not None)
@@ -198,7 +213,7 @@ class MatrixPermissionEvaluator:
             return True
         if entry.visibility_scope in ("SHARED_TEAM", "SHARED_BU", "PUBLISHED_ORG") and (
             entry.visibility_scope == "PUBLISHED_ORG"
-            or entry.owner_org_unit_id in user_ancestors
+            or entry.owner_org_unit_id in {user.primary_org_unit_id, *user_ancestors}
             or (
                 entry.grantee_org_unit_id is not None
                 and entry.grantee_org_unit_id in {user.primary_org_unit_id, *user_ancestors}
@@ -263,7 +278,6 @@ class MatrixPermissionEvaluator:
     @staticmethod
     def evaluate_module_permissions(user: UserIdentity) -> dict[str, bool]:
         """Return the 7 Global Sidebar module enablement flags for `user.platform_role`."""
-        can_access_admin = user.platform_role in ADMIN_MODULE_ALLOWED_ROLES
         return {
             "cockpit": True,
             "inbox": True,
@@ -271,7 +285,7 @@ class MatrixPermissionEvaluator:
             "ontology": True,
             "gates": True,
             "finops": True,
-            "admin": can_access_admin,
+            "admin": user.platform_role in ADMIN_MODULE_ALLOWED_ROLES,
         }
 
     @classmethod

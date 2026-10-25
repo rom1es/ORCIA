@@ -75,6 +75,373 @@
         "title": "AuthTokenResponse",
         "type": "object"
       },
+      "BmadSkillPackImportRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/catalog/bmad-packs/import` (`AR-5`, `AD-14`).",
+        "properties": {
+          "customize_toml": {
+            "default": "",
+            "maxLength": 16384,
+            "pattern": "^(\\[scalars\\](\\n[a-z0-9_]+ = (\\\"[^\\n\\r\\\"]*\\\"|[0-9]+|true|false))*\\n?)?$",
+            "title": "Customize Toml",
+            "type": "string"
+          },
+          "skill_markdown": {
+            "maxLength": 32768,
+            "minLength": 25,
+            "pattern": "^---\\nname: [A-Za-z0-9._-]+\\ndescription: [^\\n\\r]+(\\n[a-z_]+: [^\\n\\r]+)*\\n---\\n[\\s\\S]+$",
+            "title": "Skill Markdown",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/BmadSkillStepInputItem"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          },
+          "uri": {
+            "maxLength": 512,
+            "minLength": 8,
+            "pattern": "^(git|nexus|db|confluence|jira|orcia)://[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+(@[A-Za-z0-9.:_-]+)?$",
+            "title": "Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "uri",
+          "skill_markdown",
+          "steps"
+        ],
+        "title": "BmadSkillPackImportRequest",
+        "type": "object"
+      },
+      "BmadSkillPackImportResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/catalog/bmad-packs/import`.",
+        "properties": {
+          "catalog_item": {
+            "$ref": "#/components/schemas/CatalogItemResponse"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflow_definition": {
+            "$ref": "#/components/schemas/WorkflowDefinitionResponseItem"
+          }
+        },
+        "required": [
+          "catalog_item",
+          "workflow_definition",
+          "trace_id"
+        ],
+        "title": "BmadSkillPackImportResponse",
+        "type": "object"
+      },
+      "BmadSkillStepInputItem": {
+        "additionalProperties": false,
+        "description": "Single Markdown step file input for BMAD skill pack import (`AR-5`).",
+        "properties": {
+          "content_markdown": {
+            "maxLength": 16384,
+            "minLength": 4,
+            "pattern": "^# [^\\n\\r]+(\\n[\\s\\S]+)?$",
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 128,
+            "minLength": 4,
+            "pattern": "^[A-Za-z0-9._-]+\\.md$",
+            "title": "Filename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "content_markdown"
+        ],
+        "title": "BmadSkillStepInputItem",
+        "type": "object"
+      },
+      "CasObjectResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `GET /api/v1/cas/{sha256}`.",
+        "properties": {
+          "cas_key": {
+            "title": "Cas Key",
+            "type": "string"
+          },
+          "content_text": {
+            "title": "Content Text",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sha256",
+          "cas_key",
+          "content_type",
+          "content_text",
+          "trace_id"
+        ],
+        "title": "CasObjectResponse",
+        "type": "object"
+      },
+      "CatalogItemResponse": {
+        "additionalProperties": false,
+        "description": "Serialized Federated Catalog item with URI scheme, short SHA-256, and 5 RBAC permissions.",
+        "properties": {
+          "cas_key": {
+            "title": "Cas Key",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "granted_permissions": {
+            "items": {
+              "enum": [
+                "DISCOVER",
+                "EXECUTE",
+                "READ_SOURCE",
+                "EDIT",
+                "ADMIN"
+              ],
+              "type": "string"
+            },
+            "title": "Granted Permissions",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_type": {
+            "enum": [
+              "workflow",
+              "agent",
+              "skill",
+              "template",
+              "datasource"
+            ],
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "scheme": {
+            "enum": [
+              "git",
+              "nexus",
+              "db",
+              "confluence",
+              "jira",
+              "orcia"
+            ],
+            "title": "Scheme",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "sha256_short": {
+            "maxLength": 16,
+            "minLength": 6,
+            "title": "Sha256 Short",
+            "type": "string"
+          },
+          "source_format": {
+            "enum": [
+              "ORCIA",
+              "BMAD_PACK"
+            ],
+            "title": "Source Format",
+            "type": "string"
+          },
+          "source_masked": {
+            "title": "Source Masked",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "visibility_scope": {
+            "enum": [
+              "DRAFT",
+              "SHARED_WORKSPACE",
+              "SHARED_TEAM",
+              "SHARED_BU",
+              "PUBLISHED_ORG",
+              "PENDING_APPROVAL"
+            ],
+            "title": "Visibility Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "resource_id",
+          "uri",
+          "scheme",
+          "title",
+          "description",
+          "resource_type",
+          "source_format",
+          "version",
+          "sha256",
+          "sha256_short",
+          "cas_key",
+          "visibility_scope",
+          "granted_permissions",
+          "source_masked"
+        ],
+        "title": "CatalogItemResponse",
+        "type": "object"
+      },
+      "CatalogItemsListResponse": {
+        "additionalProperties": false,
+        "description": "Response envelope for `GET /api/v1/catalog/items`.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "trace_id"
+        ],
+        "title": "CatalogItemsListResponse",
+        "type": "object"
+      },
+      "CatalogPromoteRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/catalog/items/{resource_id}/promote` (`FR-21`).",
+        "properties": {
+          "target_scope": {
+            "enum": [
+              "DRAFT",
+              "SHARED_WORKSPACE",
+              "SHARED_TEAM",
+              "SHARED_BU",
+              "PUBLISHED_ORG",
+              "PENDING_APPROVAL"
+            ],
+            "title": "Target Scope",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "target_scope"
+        ],
+        "title": "CatalogPromoteRequest",
+        "type": "object"
+      },
+      "CatalogPromoteResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after promoting a catalog item along the publication lifecycle.",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/CatalogItemResponse"
+          },
+          "previous_scope": {
+            "enum": [
+              "DRAFT",
+              "SHARED_WORKSPACE",
+              "SHARED_TEAM",
+              "SHARED_BU",
+              "PUBLISHED_ORG",
+              "PENDING_APPROVAL"
+            ],
+            "title": "Previous Scope",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item",
+          "previous_scope",
+          "trace_id"
+        ],
+        "title": "CatalogPromoteResponse",
+        "type": "object"
+      },
       "CatalogResourceInspectionResponse": {
         "additionalProperties": false,
         "description": "Evaluated 5 permissions for a catalog resource (`/inspect`).",
@@ -170,6 +537,192 @@
           "trace_id"
         ],
         "title": "CatalogResourceSourceResponse",
+        "type": "object"
+      },
+      "CatalogUriResolveRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/catalog/resolve` (`AD-5`, `NFR-PERF-3`).",
+        "properties": {
+          "expected_sha256": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 6,
+                "pattern": "^[0-9a-fA-F]{6,64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Sha256"
+          },
+          "uri": {
+            "maxLength": 512,
+            "minLength": 8,
+            "pattern": "^(git|nexus|db|confluence|jira|orcia)://[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+(@[A-Za-z0-9.:_-]+)?$",
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri"
+        ],
+        "title": "CatalogUriResolveRequest",
+        "type": "object"
+      },
+      "CatalogUriResolveResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/catalog/resolve` (`< 50 ms` on hot cache).",
+        "properties": {
+          "cache_hit": {
+            "title": "Cache Hit",
+            "type": "boolean"
+          },
+          "cas_key": {
+            "title": "Cas Key",
+            "type": "string"
+          },
+          "content_text": {
+            "title": "Content Text",
+            "type": "string"
+          },
+          "resolution_ms": {
+            "minimum": 0.0,
+            "title": "Resolution Ms",
+            "type": "number"
+          },
+          "resolved_version": {
+            "title": "Resolved Version",
+            "type": "string"
+          },
+          "scheme": {
+            "enum": [
+              "git",
+              "nexus",
+              "db",
+              "confluence",
+              "jira",
+              "orcia"
+            ],
+            "title": "Scheme",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri",
+          "scheme",
+          "resolved_version",
+          "sha256",
+          "cas_key",
+          "cache_hit",
+          "resolution_ms",
+          "content_text",
+          "trace_id"
+        ],
+        "title": "CatalogUriResolveResponse",
+        "type": "object"
+      },
+      "EffectiveWorkflowResolveRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/catalog/workflows/resolve-effective`.",
+        "properties": {
+          "workflow_uri": {
+            "maxLength": 512,
+            "minLength": 5,
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_uri",
+          "workspace_id"
+        ],
+        "title": "EffectiveWorkflowResolveRequest",
+        "type": "object"
+      },
+      "EffectiveWorkflowResolveResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for 4-layer merged workflow and `run-lock.json`.",
+        "properties": {
+          "applied_override_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Applied Override Keys",
+            "type": "array"
+          },
+          "base_workflow": {
+            "$ref": "#/components/schemas/WorkflowDefinitionResponseItem"
+          },
+          "effective_workflow": {
+            "$ref": "#/components/schemas/WorkflowDefinitionResponseItem"
+          },
+          "run_lock": {
+            "$ref": "#/components/schemas/RunLockManifestItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_workflow",
+          "effective_workflow",
+          "applied_override_keys",
+          "run_lock",
+          "trace_id"
+        ],
+        "title": "EffectiveWorkflowResolveResponse",
+        "type": "object"
+      },
+      "EvaluationLensItem": {
+        "additionalProperties": false,
+        "description": "Evaluation lens item in a workflow definition.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code",
+          "weight",
+          "threshold"
+        ],
+        "title": "EvaluationLensItem",
         "type": "object"
       },
       "HealthResponse": {
@@ -547,6 +1100,118 @@
         "title": "ProblemDetails",
         "type": "object"
       },
+      "RunLockManifestItem": {
+        "additionalProperties": false,
+        "description": "Serialized `run-lock.json` provenance manifest (`AD-5`, `AD-14`).",
+        "properties": {
+          "applied_override_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Applied Override Keys",
+            "type": "array"
+          },
+          "effective_workflow_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Effective Workflow Sha256",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RunLockSourceTripletItem"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "workflow_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Workflow Sha256",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workflow_version": {
+            "title": "Workflow Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workflow_uri",
+          "workflow_version",
+          "workflow_sha256",
+          "effective_workflow_sha256",
+          "applied_override_keys",
+          "sources",
+          "manifest_sha256"
+        ],
+        "title": "RunLockManifestItem",
+        "type": "object"
+      },
+      "RunLockSourceTripletItem": {
+        "additionalProperties": false,
+        "description": "Pinned `(alias, uri, resolved_version, sha256)` source entry in `run-lock.json`.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "cas_key": {
+            "title": "Cas Key",
+            "type": "string"
+          },
+          "resolved_version": {
+            "title": "Resolved Version",
+            "type": "string"
+          },
+          "scheme": {
+            "enum": [
+              "git",
+              "nexus",
+              "db",
+              "confluence",
+              "jira",
+              "orcia"
+            ],
+            "title": "Scheme",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alias",
+          "scheme",
+          "uri",
+          "resolved_version",
+          "sha256",
+          "cas_key"
+        ],
+        "title": "RunLockSourceTripletItem",
+        "type": "object"
+      },
       "ScopeMutationCheckResponse": {
         "additionalProperties": false,
         "description": "Response for `POST /api/v1/workspaces/{workspace_id}/mutations/check`.",
@@ -855,6 +1520,169 @@
           "trace_id"
         ],
         "title": "UserMeResponse",
+        "type": "object"
+      },
+      "WorkflowDefinitionResponseItem": {
+        "additionalProperties": false,
+        "description": "Serialized workflow definition (`ORCIA` native or `BMAD_PACK`).",
+        "properties": {
+          "adaptive_gate_policy": {
+            "enum": [
+              "STRICT",
+              "STANDARD",
+              "FAST_TRACK"
+            ],
+            "title": "Adaptive Gate Policy",
+            "type": "string"
+          },
+          "datasources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Datasources",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "facts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lenses": {
+            "items": {
+              "$ref": "#/components/schemas/EvaluationLensItem"
+            },
+            "title": "Lenses",
+            "type": "array"
+          },
+          "rules": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "scalars": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Scalars",
+            "type": "object"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "source_format": {
+            "enum": [
+              "ORCIA",
+              "BMAD_PACK"
+            ],
+            "title": "Source Format",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStepItem"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "id",
+          "uri",
+          "title",
+          "description",
+          "version",
+          "source_format",
+          "adaptive_gate_policy",
+          "scalars",
+          "datasources",
+          "rules",
+          "facts",
+          "lenses",
+          "steps",
+          "sha256"
+        ],
+        "title": "WorkflowDefinitionResponseItem",
+        "type": "object"
+      },
+      "WorkflowStepItem": {
+        "additionalProperties": false,
+        "description": "Workflow step item in a workflow definition.",
+        "properties": {
+          "human_authored_required": {
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_key",
+          "title",
+          "instructions",
+          "human_authored_required"
+        ],
+        "title": "WorkflowStepItem",
         "type": "object"
       },
       "WorkspaceDatasourceItem": {
@@ -1518,6 +2346,555 @@
         ]
       }
     },
+    "/api/v1/cas/{sha256}": {
+      "get": {
+        "description": "Retrieve an immutable object from `cas/<sha256>` verifying SHA-256 integrity.",
+        "operationId": "get_cas_object_api_v1_cas__sha256__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sha256",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 64,
+              "pattern": "^[0-9a-fA-F]{64}$",
+              "title": "Sha256",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CasObjectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Fetch an immutable Content-Addressable Storage object by `cas/<sha256>` digest",
+        "tags": [
+          "federated-catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/bmad-packs/import": {
+      "post": {
+        "description": "Convert a BMAD skill pack via `BmadSkillPackAdapter` and pin it in `cas/<sha256>`.",
+        "operationId": "import_bmad_skill_pack_api_v1_catalog_bmad_packs_import_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BmadSkillPackImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BmadSkillPackImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Losslessly import a BMAD Skill Pack (SKILL.md + customize.toml) into ORCIA",
+        "tags": [
+          "federated-catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/items": {
+      "get": {
+        "description": "Return discoverable Federated Catalog resources with `uri-badge` metadata.",
+        "operationId": "list_catalog_items_api_v1_catalog_items_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scheme",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "git",
+                    "nexus",
+                    "db",
+                    "confluence",
+                    "jira",
+                    "orcia"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scheme"
+            }
+          },
+          {
+            "in": "query",
+            "name": "visibility_scope",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "DRAFT",
+                    "SHARED_WORKSPACE",
+                    "SHARED_TEAM",
+                    "SHARED_BU",
+                    "PUBLISHED_ORG",
+                    "PENDING_APPROVAL"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Visibility Scope"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Federated Catalog items filtered by RBAC, URI scheme, and publication scope",
+        "tags": [
+          "federated-catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/items/{resource_id}/promote": {
+      "post": {
+        "description": "Promote `resource_id` visibility scope (`ScopeAccessGuard` enforced).",
+        "operationId": "promote_catalog_item_api_v1_catalog_items__resource_id__promote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogPromoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogPromoteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Promote a Catalog resource along the hierarchical publication lifecycle",
+        "tags": [
+          "federated-catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/resolve": {
+      "post": {
+        "description": "Resolve `payload.uri` on the fly into immutable `cas/<sha256>` storage.",
+        "operationId": "resolve_federated_uri_api_v1_catalog_resolve_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogUriResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogUriResolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Resolve a federated URI into immutable `cas/<sha256>` cache (< 50 ms)",
+        "tags": [
+          "federated-catalog"
+        ]
+      }
+    },
     "/api/v1/catalog/resources/{resource_id}/inspect": {
       "get": {
         "description": "Evaluate `DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN` for a catalog resource.",
@@ -1745,6 +3122,102 @@
         "summary": "Read internal prompt/code of a Catalog resource (requires READ_SOURCE)",
         "tags": [
           "workspaces-and-catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/workflows/resolve-effective": {
+      "post": {
+        "description": "Execute deterministic 4-layer merge without mutating base workflow.",
+        "operationId": "resolve_effective_workflow_api_v1_catalog_workflows_resolve_effective_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EffectiveWorkflowResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EffectiveWorkflowResolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Merge 4 override layers (Base -> Team -> Workspace -> User) and generate run-lock",
+        "tags": [
+          "federated-catalog"
         ]
       }
     },

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX-DR2)", () => {
-  test("renders 3 columns, 7 Global Sidebar modules, keyboard shortcuts ([ ] ⌘W) and fr/en switch", async ({
+test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX-DR2, UX-DR8)", () => {
+  test("renders 3 columns, 7 Global Sidebar modules, keyboard shortcuts ([ ] ⌘W), fr/en switch, and Federated Catalog (UX-DR8)", async ({
     page,
   }) => {
     await page.goto("/cockpit");
@@ -38,6 +38,29 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
     // Switch locale to English
     await page.getByTestId("locale-switcher-button").click();
     await expect(page.getByTestId("locale-switcher-button")).toContainText("(EN)");
+
+    // Story 1.3: Verify CatalogExplorerPanel, FederatedUriBadge (UX-DR8), CAS resolution, 4-layer overrides & BMAD import
+    await expect(page.getByTestId("catalog-explorer-panel")).toBeVisible();
+    await expect(page.getByTestId("uri-badge-res-blackbox-security-agent")).toHaveAttribute(
+      "data-uri-scheme",
+      "git",
+    );
+    await expect(page.getByTestId("uri-badge-res-nexus-bmad-architecture-pack")).toHaveAttribute(
+      "data-uri-scheme",
+      "nexus",
+    );
+    await expect(page.getByTestId("uri-badge-res-payment-delivery-workflow")).toHaveAttribute(
+      "data-uri-scheme",
+      "db",
+    );
+
+    await page.getByTestId("resolve-cas-btn-res-open-checkout-skill").click();
+    await expect(page.getByTestId("resolve-cas-result-res-open-checkout-skill")).toContainText(
+      "cas/4b72d9a1c30e",
+    );
+
+    await page.getByTestId("bmad-import-trigger-btn").click();
+    await expect(page.getByTestId("bmad-import-result")).toContainText("BMAD_PACK");
 
     // Story 1.2: Verify WorkspaceTopologyPanel, RBAC persona switch hiding module 7, and black-box source masking
     await expect(page.getByTestId("workspace-topology-panel")).toBeVisible();

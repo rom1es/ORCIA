@@ -82,6 +82,35 @@ export const enDictionary: TranslationDictionary = {
     mutationDeniedObserverBanner:
       "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Mutation rejected in Observer mode",
   },
+  catalogExplorer: {
+    panelTitle: "Multi-Source Federated Catalog, SHA-256 CAS Cache & 4-Layer Overrides",
+    panelSubtitle:
+      "On-the-fly resolution (< 50 ms on hot cas/<sha256> cache), governed publication lifecycle, and BMAD Adapter.",
+    filterAllSchemesLabel: "All schemes",
+    maskedSourceBadgeLabel: "🔒 Masked source",
+    openSourceBadgeLabel: "📖 Open source",
+    resolveCasButtonLabel: "Resolve CAS (< 50 ms)",
+    casResolvedBannerPrefix: "HTTP 200 OK — Immutable object resolved",
+    promoteScopeButtonLabel: "Promote scope",
+    promotedBannerPrefix: "HTTP 200 OK — Scope promoted",
+    promoteDeniedObserverBanner:
+      "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Promotion rejected in Observer mode",
+    overrideSectionTitle: "4-Layer Declarative Merge (Base -> Team -> Workspace -> User)",
+    overrideSectionSubtitle:
+      "Pure non-mutating hierarchy with deterministic cryptographic run-lock.json generation.",
+    overrideLayers: {
+      base: "1. Base (db://workflow)",
+      teamParent: "2a. Parent Team (Architecture)",
+      teamSub: "2b. Sub-Team (Checkout)",
+      workspace: "3. Workspace (3 git + 2 jira + 2 confluence)",
+      user: "4. User (Marc Tech Lead)",
+    },
+    runLockTitle: "run-lock.json Manifest (SHA-256 pinned sources)",
+    bmadAdapterTitle: "Lossless BMAD Adapter (SKILL.md + customize.toml + steps/*.md)",
+    bmadImportButtonLabel: "Import BMAD Pack",
+    bmadImportedBanner:
+      "HTTP 200 OK — BMAD Pack converted to WorkflowDefinitionEntity (source_format=BMAD_PACK) and pinned in cas/<sha256>",
+  },
   modulePages: {
     cockpit: {
       subtitle: "Human-Led, Agent-Accelerated Co-Design Space",

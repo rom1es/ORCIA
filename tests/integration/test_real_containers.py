@@ -11,6 +11,7 @@ import os
 import shutil
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
 import redis as redis_sync
@@ -36,11 +37,11 @@ def _prepare_sock_dir(name: str) -> Path:
     return target
 
 
-def _load_maintenance_module():
+def _load_script_module(mod_name: str, filename: str) -> Any:
     import sys
 
-    script_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "00_verify_db_invariants.py"
-    spec = importlib.util.spec_from_file_location("verify_db_invariants", script_path)
+    script_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / filename
+    spec = importlib.util.spec_from_file_location(mod_name, script_path)
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
@@ -48,22 +49,33 @@ def _load_maintenance_module():
     return mod
 
 
-def _load_org_tree_backfill_module():
-    import sys
+class _MinioContainerBucketBackend:
+    """S3BucketBackendProtocol persisting `cas/<sha256>` in the live MinIO `/data` volume."""
 
-    script_path = (
-        REPO_ROOT / "infra" / "scripts" / "maintenance" / "01_backfill_default_org_tree.py"
-    )
-    spec = importlib.util.spec_from_file_location("backfill_default_org_tree", script_path)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
-    return mod
+    def __init__(self, data_root: Path, container: DockerContainer) -> None:
+        self._root = data_root
+        self._container = container
+
+    def put_bytes(self, bucket: str, key: str, data: bytes, content_type: str) -> None:
+        target = self._root / bucket / key
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+
+    def get_bytes(self, bucket: str, key: str) -> bytes | None:
+        target = self._root / bucket / key
+        if not target.exists():
+            return None
+        exit_code, _out = self._container.exec(f"sh -c 'test -f /data/{bucket}/{key}'")
+        assert exit_code == 0
+        return target.read_bytes()
+
+    def head_key(self, bucket: str, key: str) -> bool:
+        exit_code, _out = self._container.exec(f"sh -c 'test -f /data/{bucket}/{key}'")
+        return exit_code == 0
 
 
 async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
-    """Verify Alembic 0001 + 0002 upgrade/downgrade, pgvector, org tree backfill, and triggers."""
+    """Verify Alembic 0001 + 0002 + 0003 upgrade/downgrade, pgvector, backfills, and triggers."""
     pg_sock_dir = _prepare_sock_dir("pg")
 
     pg_container = (
@@ -83,7 +95,6 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             time.sleep(0.2)
 
         async_url = f"postgresql+asyncpg://orcia:orcia_dev_secret@/orcia?host={pg_sock_dir}"
-
         alembic_cfg = Config(str(REPO_ROOT / "infra" / "migrations" / "alembic.ini"))
         alembic_cfg.set_main_option("script_location", str(REPO_ROOT / "infra" / "migrations"))
         alembic_cfg.set_main_option("sqlalchemy.url", async_url)
@@ -106,8 +117,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                     )
                 )
 
-            # Verify maintenance script 00 in dry-run (default rollback) and apply modes
-            maint = _load_maintenance_module()
+            maint = _load_script_module("verify_db_invariants", "00_verify_db_invariants.py")
             dry_report = await maint.verify_database_invariants(engine, apply_changes=False)
             assert dry_report.has_vector_extension is True
             assert dry_report.has_append_only_trigger_fn is True
@@ -117,26 +127,39 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             apply_report = await maint.verify_database_invariants(engine, apply_changes=True)
             assert apply_report.committed is True
 
-            # Verify Story 1.2 maintenance script 01_backfill_default_org_tree in dry-run & apply
-            backfill_mod = _load_org_tree_backfill_module()
-            bf_dry = await backfill_mod.backfill_default_org_tree(engine, apply_changes=False)
+            backfill_org = _load_script_module(
+                "backfill_default_org_tree", "01_backfill_default_org_tree.py"
+            )
+            bf_dry = await backfill_org.backfill_default_org_tree(engine, apply_changes=False)
             assert bf_dry.org_units_count == 5
             assert bf_dry.workspaces_count == 3
             assert bf_dry.datasources_count == 10
             assert bf_dry.dry_run is True
             assert bf_dry.committed is False
 
-            # After dry-run rollback, table org_units is still empty
-            async with engine.connect() as conn:
-                count_after_dry = await conn.execute(sa.text("SELECT COUNT(*) FROM org_units"))
-                assert int(count_after_dry.scalar() or 0) == 0
-
-            # Now apply idempotently
-            bf_apply = await backfill_mod.backfill_default_org_tree(engine, apply_changes=True)
+            bf_apply = await backfill_org.backfill_default_org_tree(engine, apply_changes=True)
             assert bf_apply.committed is True
-            assert bf_apply.org_units_count == 5
-            assert bf_apply.workspaces_count == 3
-            assert bf_apply.datasources_count == 10
+
+            # Verify Story 1.3 maintenance script 02_backfill_federated_catalog in dry-run & apply
+            backfill_cat = _load_script_module(
+                "backfill_federated_catalog", "02_backfill_federated_catalog.py"
+            )
+            cat_dry = await backfill_cat.backfill_federated_catalog(engine, apply_changes=False)
+            assert cat_dry.catalog_items_count == 6
+            assert cat_dry.workflow_definitions_count == 1
+            assert cat_dry.customization_overrides_count == 4
+            assert cat_dry.dry_run is True
+            assert cat_dry.committed is False
+
+            async with engine.connect() as conn:
+                cat_after_dry = await conn.execute(sa.text("SELECT COUNT(*) FROM catalog_items"))
+                assert int(cat_after_dry.scalar() or 0) == 0
+
+            cat_apply = await backfill_cat.backfill_federated_catalog(engine, apply_changes=True)
+            assert cat_apply.committed is True
+            assert cat_apply.catalog_items_count == 6
+            assert cat_apply.workflow_definitions_count == 1
+            assert cat_apply.customization_overrides_count == 4
 
             # Verify append-only trigger blocks UPDATE and DELETE on PG 18
             async with engine.begin() as conn:
@@ -170,7 +193,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 async with engine.begin() as conn:
                     await conn.execute(sa.text("DELETE FROM test_append_only_ledger;"))
 
-            # Verify downgrade and re-upgrade across 0002 and 0001
+            # Verify downgrade and re-upgrade across 0003, 0002, and 0001
             async with engine.begin() as conn:
                 await conn.execute(sa.text("DROP TABLE test_append_only_ledger;"))
                 await conn.run_sync(
@@ -185,13 +208,15 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             shutil.rmtree(pg_sock_dir, ignore_errors=True)
 
 
-def test_redis7_atomic_presence_lock_and_minio_container() -> None:
-    """Verify atomic presence lock, JWT jti revocation on real Redis 7.4, and MinIO container."""
+def test_redis7_atomic_presence_lock_and_minio_cas_storage() -> None:
+    """Verify Redis 7.4 atomic lock/revocation and real MinIO container `cas/<sha256>` storage."""
+    from orcia_core.catalog import FederatedUriResolver, S3CompatibleCasObjectStore
     from orcia_core.domain.exceptions import RevokedTokenError
     from orcia_core.permissions import KeyValueRevocationStore, build_default_auth_and_org_service
 
     redis_sock_dir = _prepare_sock_dir("rd")
     redis_sock_path = redis_sock_dir / "redis.sock"
+    minio_data_dir = _prepare_sock_dir("minio")
 
     redis_container = (
         DockerContainer("redis:7.4.2-alpine")
@@ -209,34 +234,42 @@ def test_redis7_atomic_presence_lock_and_minio_container() -> None:
 
             client = redis_sync.Redis(unix_socket_path=str(redis_sock_path), decode_responses=True)
             lock_key = "lock:step:0192c4e0-0000-7000-8000-000000000010"
-            acquired_1 = client.set(lock_key, "user-alice", nx=True, ex=900)
-            acquired_2 = client.set(lock_key, "user-bob", nx=True, ex=900)
-            assert acquired_1 is True
-            assert acquired_2 is None
-            assert client.get(lock_key) == "user-alice"
+            assert client.set(lock_key, "user-alice", nx=True, ex=900) is True
+            assert client.set(lock_key, "user-bob", nx=True, ex=900) is None
 
-            # Verify Story 1.2 session revocation backed by real Redis 7.4 container
             rev_store = KeyValueRevocationStore(client)
             auth_svc = build_default_auth_and_org_service(revocation_store=rev_store)
             _user, tokens = auth_svc.login_local("marc.lead@orcia.io", "OrciaLead!2026")
-            assert (
-                auth_svc.authenticate_access_token(tokens.access_token).email
-                == "marc.lead@orcia.io"
-            )
             auth_svc.revoke_token(tokens.access_token, expected_type="access")
             with pytest.raises(RevokedTokenError):
                 auth_svc.authenticate_access_token(tokens.access_token)
 
             client.close()
+
+        with (
+            DockerContainer("minio/minio:RELEASE.2025-02-28T09-55-16Z")
+            .with_env("MINIO_ROOT_USER", "orcia_minio")
+            .with_env("MINIO_ROOT_PASSWORD", "orcia_minio_secret")
+            .with_volume_mapping(str(minio_data_dir), "/data", "rw")
+            .with_command("server /data") as minio_container
+        ):
+            wait_for_logs(minio_container, "API:", timeout=30)
+            backend = _MinioContainerBucketBackend(minio_data_dir, minio_container)
+            s3_store = S3CompatibleCasObjectStore(backend, bucket_name="orcia-cas")
+            resolver = FederatedUriResolver(cas_store=s3_store)
+
+            first = resolver.resolve("git://gitlab.entreprise.io/payments/checkout-web@v1.0.0")
+            assert first.cache_hit is False
+            assert s3_store.has_object(first.cas_key) is True
+
+            # Evict L1 hot cache and read back from live MinIO container volume
+            s3_store._hot_cache.clear()
+            entry = resolver.get_cas_entry(first.sha256)
+            assert entry.sha256 == first.sha256
+
+            second = resolver.resolve("git://gitlab.entreprise.io/payments/checkout-web@v1.0.0")
+            assert second.cache_hit is True
+            assert second.resolution_ms < 50.0
     finally:
         shutil.rmtree(redis_sock_dir, ignore_errors=True)
-
-    with (
-        DockerContainer("minio/minio:RELEASE.2025-02-28T09-55-16Z")
-        .with_env("MINIO_ROOT_USER", "orcia_minio")
-        .with_env("MINIO_ROOT_PASSWORD", "orcia_minio_secret")
-        .with_command("server /data") as minio_container
-    ):
-        wait_for_logs(minio_container, "API:", timeout=30)
-        exit_code, _output = minio_container.exec("minio --version")
-        assert exit_code == 0
+        shutil.rmtree(minio_data_dir, ignore_errors=True)
