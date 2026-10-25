@@ -7,6 +7,17 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "manage": ".venv/bin/python scripts/manage.py",
+    "start": ".venv/bin/python scripts/manage.py start",
+    "stop": ".venv/bin/python scripts/manage.py stop",
+    "restart": ".venv/bin/python scripts/manage.py restart",
+    "status": ".venv/bin/python scripts/manage.py status",
+    "dev": "pnpm --filter @orcia/web dev",
+    "dev:web": "pnpm --filter @orcia/web dev",
+    "dev:api": ".venv/bin/python scripts/run_api.py",
+    "db:up": "docker compose --env-file .env -f infra/docker/docker-compose.yml up -d --wait",
+    "db:migrate": ".venv/bin/alembic -c infra/migrations/alembic.ini upgrade head",
+    "db:seed": ".venv/bin/python infra/scripts/maintenance/00_verify_db_invariants.py --apply && .venv/bin/python infra/scripts/maintenance/01_backfill_default_org_tree.py --apply && .venv/bin/python infra/scripts/maintenance/02_backfill_federated_catalog.py --apply && .venv/bin/python infra/scripts/maintenance/03_backfill_permission_broker.py --apply && .venv/bin/python infra/scripts/maintenance/04_backfill_system_bootstrap.py --apply",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

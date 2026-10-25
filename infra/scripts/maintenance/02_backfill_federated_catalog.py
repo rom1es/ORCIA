@@ -12,13 +12,18 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from orcia_core.bootstrap.seeder import (
+_CORE_SRC = str(Path(__file__).resolve().parents[3] / "packages" / "orcia-core" / "src")
+if _CORE_SRC not in sys.path:
+    sys.path.insert(0, _CORE_SRC)
+
+from orcia_core.bootstrap.seeder import (  # noqa: E402
     CATALOG_ITEMS_UPSERT_SPEC,
     CUSTOMIZATION_OVERRIDES_UPSERT_SPEC,
     DEFAULT_CATALOG_ITEM_SEEDS,
@@ -225,12 +230,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 async def _async_main(argv: list[str] | None = None) -> int:
+    from orcia_core.config import resolve_database_url
+
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-    db_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://orcia:orcia_dev_secret@localhost:5433/orcia",
-    )
+    db_url = resolve_database_url()
     engine = create_async_engine(db_url)
     try:
         report = await backfill_federated_catalog(

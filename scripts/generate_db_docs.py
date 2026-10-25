@@ -40,13 +40,36 @@ def get_db_settings() -> dict[str, str]:
     env_path = BASE_DIR / ".env"
     cfg = dotenv_values(env_path) if env_path.exists() else {}
     return {
-        "user": str(cfg.get("ORCIA_DB_USER") or os.environ.get("ORCIA_DB_USER", "orcia")),
-        "password": str(
-            cfg.get("ORCIA_DB_PASSWORD") or os.environ.get("ORCIA_DB_PASSWORD", "orcia")
+        "user": str(
+            cfg.get("ORCIA_DB_USER")
+            or cfg.get("POSTGRES_USER")
+            or os.environ.get("ORCIA_DB_USER")
+            or os.environ.get("POSTGRES_USER", "orcia")
         ),
-        "host": str(cfg.get("ORCIA_DB_HOST") or os.environ.get("ORCIA_DB_HOST", "127.0.0.1")),
-        "port": str(cfg.get("ORCIA_DB_PORT") or os.environ.get("ORCIA_DB_PORT", "5432")),
-        "database": str(cfg.get("ORCIA_DB_NAME") or os.environ.get("ORCIA_DB_NAME", "orcia")),
+        "password": str(
+            cfg.get("ORCIA_DB_PASSWORD")
+            or cfg.get("POSTGRES_PASSWORD")
+            or os.environ.get("ORCIA_DB_PASSWORD")
+            or os.environ.get("POSTGRES_PASSWORD", "orcia_dev_secret")
+        ),
+        "host": str(
+            cfg.get("ORCIA_DB_HOST")
+            or cfg.get("POSTGRES_HOST")
+            or os.environ.get("ORCIA_DB_HOST")
+            or os.environ.get("POSTGRES_HOST", "127.0.0.1")
+        ),
+        "port": str(
+            cfg.get("ORCIA_DB_PORT")
+            or cfg.get("POSTGRES_PORT")
+            or os.environ.get("ORCIA_DB_PORT")
+            or os.environ.get("POSTGRES_PORT", "5433")
+        ),
+        "database": str(
+            cfg.get("ORCIA_DB_NAME")
+            or cfg.get("POSTGRES_DB")
+            or os.environ.get("ORCIA_DB_NAME")
+            or os.environ.get("POSTGRES_DB", "orcia")
+        ),
     }
 
 

@@ -14,7 +14,10 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 
+from orcia_core.config import get_env, load_orcia_env, resolve_redis_url
 from orcia_core.observability.logging import bind_trace_context, get_logger
+
+load_orcia_env()
 
 logger = get_logger("orcia.worker")
 
@@ -56,14 +59,14 @@ def configure_broker(redis_url: str | None = None, *, use_stub: bool = False) ->
     if use_stub:
         broker: dramatiq.Broker = StubBroker()
     else:
-        resolved_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        resolved_url = redis_url or resolve_redis_url()
         broker = RedisBroker(url=resolved_url)  # type: ignore[no-untyped-call]
     dramatiq.set_broker(broker)
     return broker
 
 
 _default_stub = "0" if os.getenv("REDIS_URL") else "1"
-configure_broker(use_stub=os.getenv("ORCIA_WORKER_STUB_BROKER", _default_stub) == "1")
+configure_broker(use_stub=get_env("ORCIA_WORKER_STUB_BROKER", _default_stub) == "1")
 
 
 def execute_system_ping(

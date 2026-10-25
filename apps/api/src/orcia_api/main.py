@@ -18,6 +18,7 @@ from orcia_api.routers.shell import router as shell_router
 from orcia_core import __version__
 from orcia_core.bootstrap import build_default_system_bootstrap_service
 from orcia_core.catalog import build_default_federated_catalog_service
+from orcia_core.config import load_orcia_env
 from orcia_core.observability.logging import configure_structlog
 from orcia_core.permissions import (
     build_default_auth_and_org_service,
@@ -27,6 +28,7 @@ from orcia_core.permissions import (
 
 def create_app() -> FastAPI:
     """Create and configure the ORCIA FastAPI application (OpenAPI 3.1.0)."""
+    load_orcia_env()
     configure_structlog()
     application = FastAPI(
         title="ORCIA Platform API",

@@ -327,3 +327,60 @@ def test_worker_idempotent_system_ping_actor() -> None:
 
     nav = build_default_shell_navigation(trace_id)
     assert len(nav.modules) == 7
+
+
+def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify centralized `.env` loader (`orcia_core.config`) for DB, Redis, API, and Web."""
+    from orcia_core.config import (
+        get_env,
+        get_env_int,
+        load_orcia_env,
+        resolve_api_host_and_port,
+        resolve_database_url,
+        resolve_redis_url,
+        resolve_web_host_and_port,
+    )
+
+    custom_env = tmp_path / ".env.custom"
+    custom_env.write_text(
+        "ORCIA_WEB_HOST=127.0.0.1\n"
+        "ORCIA_WEB_PORT=3150\n"
+        "ORCIA_API_HOST=127.0.0.1\n"
+        "ORCIA_API_PORT=8150\n"
+        "POSTGRES_HOST=127.0.0.1\n"
+        "POSTGRES_PORT=5439\n"
+        "POSTGRES_USER=orcia_custom\n"
+        "POSTGRES_PASSWORD=secret_pw\n"
+        "POSTGRES_DB=orcia_custom_db\n"
+        "REDIS_HOST=127.0.0.1\n"
+        "REDIS_PORT=6389\n"
+        "REDIS_DB=2\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.delenv("ORCIA_WEB_PORT", raising=False)
+    monkeypatch.delenv("ORCIA_API_PORT", raising=False)
+    monkeypatch.delenv("POSTGRES_PORT", raising=False)
+    monkeypatch.delenv("REDIS_PORT", raising=False)
+
+    loaded_path = load_orcia_env(env_file=custom_env, override=True)
+    assert loaded_path == custom_env
+    assert get_env("ORCIA_WEB_PORT") == "3150"
+    assert get_env_int("ORCIA_WEB_PORT", 3100) == 3150
+    assert resolve_web_host_and_port() == ("127.0.0.1", 3150)
+    assert resolve_api_host_and_port() == ("127.0.0.1", 8150)
+    expected_db = (
+        "postgresql+asyncpg://orcia_custom:secret_pw@"  # pragma: allowlist secret
+        "127.0.0.1:5439/orcia_custom_db"
+    )
+    assert resolve_database_url() == expected_db
+    assert resolve_redis_url() == "redis://127.0.0.1:6389/2"
+
+    monkeypatch.setenv("ORCIA_WEB_PORT", "not-an-int")
+    assert get_env_int("ORCIA_WEB_PORT", 3100) == 3100
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://explicit/db")
+    monkeypatch.setenv("REDIS_URL", "redis://explicit:6379/0")
+    assert resolve_database_url() == "postgresql+asyncpg://explicit/db"
+    assert resolve_redis_url() == "redis://explicit:6379/0"

@@ -11,11 +11,18 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+_CORE_SRC = str(Path(__file__).resolve().parents[3] / "packages" / "orcia-core" / "src")
+if _CORE_SRC not in sys.path:
+    sys.path.insert(0, _CORE_SRC)
+
+from orcia_core.config import resolve_database_url  # noqa: E402
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,10 +112,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 async def _async_main(argv: list[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-    db_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://orcia:orcia_dev_secret@localhost:5433/orcia",
-    )
+    db_url = resolve_database_url()
     engine = create_async_engine(db_url)
     try:
         report = await verify_database_invariants(

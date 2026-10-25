@@ -5,11 +5,11 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
-import os
 import threading
 import time
 from typing import Literal, Protocol
 
+from orcia_core.config import get_env
 from orcia_core.domain.exceptions import (
     InvalidCredentialsError,
     InvalidMfaCodeError,
@@ -112,12 +112,12 @@ class AuthAndOrganizationService:
         self.evaluator = evaluator
         self.hasher = hasher or Argon2idPasswordHasher()
         self.jwt_manager = jwt_manager or JwtSessionManager(
-            signing_secret=os.environ.get(
+            signing_secret=get_env(
                 "ORCIA_JWT_SIGNING_SECRET", "orcia-story-1-2-jwt-signing-secret-key-2026"
             )
         )
         self.vault_cipher = vault_cipher or PassthroughVaultCipher(
-            master_key=os.environ.get(
+            master_key=get_env(
                 "ORCIA_PASSTHROUGH_MASTER_KEY", "orcia-story-1-2-aes256gcm-master-key-2026"
             )
         )

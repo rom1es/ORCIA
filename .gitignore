@@ -12,6 +12,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+.orcia-run/
 
 # Node / TypeScript / Turborepo / Next.js
 node_modules/

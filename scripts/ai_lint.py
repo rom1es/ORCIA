@@ -15,10 +15,17 @@ import sys
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env", override=False)
 
 AI_MODE = os.environ.get("AI_MODE", "OFF").upper()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma-security")
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "127.0.0.1")
+OLLAMA_PORT = os.environ.get("OLLAMA_PORT", "11434")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", f"http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate")
 
 
 def get_git_diff() -> str:
@@ -38,7 +45,7 @@ def estimate_tokens(text: str) -> int:
 
 def ask_ollama(diff: str, prompt: str) -> str:
     """Query local Ollama instance."""
-    url = "http://localhost:11434/api/generate"
+    url = OLLAMA_URL
     payload = {
         "model": OLLAMA_MODEL,
         "prompt": f"{prompt}\n\nDIFF TO ANALYZE:\n{diff}",
