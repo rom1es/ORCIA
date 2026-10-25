@@ -262,7 +262,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 async def _async_main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
     db_url = os.getenv(
-        "DATABASE_URL", "postgresql+asyncpg://orcia:orcia_dev_secret@localhost:5432/orcia"
+        "DATABASE_URL", "postgresql+asyncpg://orcia:orcia_dev_secret@localhost:5433/orcia"
     )
     engine = create_async_engine(db_url)
     try:
