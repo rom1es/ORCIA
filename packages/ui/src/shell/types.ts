@@ -5,7 +5,8 @@ export type UiModuleKey =
   | "ontology"
   | "gates"
   | "finops"
-  | "admin";
+  | "admin"
+  | "bootstrap";
 
 export type UiScopeLevel = "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
 

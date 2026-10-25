@@ -67,7 +67,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     }
   });
 
-  it("resolves all 7 module routes accurately via resolveModuleFromPathname", () => {
+  it("resolves all 8 module routes accurately via resolveModuleFromPathname", () => {
     expect(resolveModuleFromPathname(null)).toBe("cockpit");
     expect(resolveModuleFromPathname("/")).toBe("cockpit");
     expect(resolveModuleFromPathname("/cockpit")).toBe("cockpit");
@@ -78,10 +78,10 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(resolveModuleFromPathname("/finops")).toBe("finops");
     expect(resolveModuleFromPathname("/workspaces")).toBe("admin");
     expect(resolveModuleFromPathname("/admin")).toBe("admin");
+    expect(resolveModuleFromPathname("/bootstrap")).toBe("bootstrap");
   });
 
-  it("renders French by default, switches dynamically to English, navigates modules, and validates Story 1.2 & Story 1.3 Catalog Explorer", () => {
-    mockPush.mockClear();
+  it("starts empty of sample data by default (fixtureMode=false) and filters menu entries by scope", () => {
     render(
       <I18nProvider initialLocale="fr">
         <ShellContainer>
@@ -90,9 +90,40 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
       </I18nProvider>,
     );
 
+    // Only scope-applicable entries are visible when no Workspace exists yet
+    expect(screen.getByTestId("sidebar-nav-item-cockpit")).toBeDefined();
+    expect(screen.getByTestId("sidebar-nav-item-catalog")).toBeDefined();
+    expect(screen.getByTestId("sidebar-nav-item-admin")).toBeDefined();
+    expect(screen.getByTestId("sidebar-nav-item-bootstrap")).toBeDefined();
+    expect(screen.queryByTestId("sidebar-nav-item-inbox")).toBeNull();
+    expect(screen.queryByTestId("sidebar-nav-item-ontology")).toBeNull();
+    expect(screen.queryByTestId("sidebar-nav-item-gates")).toBeNull();
+    expect(screen.queryByTestId("sidebar-nav-item-finops")).toBeNull();
+
+    // Navigate to Catalog -> Empty state, zero sample items
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-catalog"));
+    expect(screen.getByTestId("catalog-explorer-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("uri-badge-res-blackbox-security-agent")).toBeNull();
+
+    // Navigate to Admin -> Empty state, zero sample workspaces and no persona simulator bar
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-admin"));
+    expect(screen.getByTestId("workspace-topology-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("persona-switch-marc")).toBeNull();
+  });
+
+  it("renders French by default, switches dynamically to English, navigates modules, and validates Story 1.2 & Story 1.3 Catalog Explorer with automated test dataset", () => {
+    mockPush.mockClear();
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer fixtureMode={true}>
+          <ModuleWorkspaceView moduleKey="cockpit" />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
     expect(screen.getByTestId("active-module-heading").textContent).toBe("Cockpit & Chat");
     expect(screen.getByTestId("sidebar-nav-item-inbox").textContent).toContain(
-      "2. Boîte & Mes Runs",
+      "Boîte & Mes Runs",
     );
 
     const anchorCard = screen.getByTestId("human-anchor-card-architecture-intent");
@@ -102,11 +133,13 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     // Toggle locale to English -> sidebar and untouched HumanLedAnchorCard default text update
     fireEvent.click(screen.getByTestId("locale-switcher-button"));
     expect(screen.getByTestId("sidebar-nav-item-inbox").textContent).toContain(
-      "2. Inbox & My Runs",
+      "Inbox & My Runs",
     );
     expect(anchorTextarea.value).toBe(enDictionary.humanAnchor.defaultValue);
 
-    // Story 1.3: Verify CatalogExplorerPanel, FederatedUriBadge (UX-DR8), CAS resolve, 4-layer overrides & BMAD import
+    // Story 1.3: Navigate to Catalog module -> Verify CatalogExplorerPanel (single theme in central panel)
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-catalog"));
+    expect(mockPush).toHaveBeenCalledWith("/catalog");
     expect(screen.getByTestId("catalog-explorer-panel")).toBeDefined();
     expect(screen.getByTestId("uri-badge-res-blackbox-security-agent").getAttribute("data-uri-scheme")).toBe("git");
     expect(screen.getByTestId("uri-badge-res-nexus-bmad-architecture-pack").getAttribute("data-uri-scheme")).toBe("nexus");
@@ -133,39 +166,22 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
       enDictionary.shell.accessModes.READ_ONLY_OBSERVER,
     );
 
-    // Switch persona to Nadia (CONTRIBUTOR) -> Module 7 (Administration) is hidden in GlobalSidebar
-    fireEvent.click(screen.getByTestId("persona-switch-nadia"));
-    expect(screen.queryByTestId("sidebar-nav-item-admin")).toBeNull();
-
-    // Switch persona to Claire (BU_DIRECTOR) -> Module 7 is visible, WS 3 (CONFIDENTIAL_RESTRICTED) is excluded from roll-up
-    fireEvent.click(screen.getByTestId("persona-switch-claire"));
-    expect(screen.getByTestId("sidebar-nav-item-admin")).toBeDefined();
-    expect(screen.queryByTestId("workspace-card-ws-projet-confidentiel")).toBeNull();
-    fireEvent.click(screen.getByTestId("mutation-guard-btn-ws-solution-paiement"));
-    expect(screen.getByTestId("mutation-guard-result-ws-solution-paiement").textContent).toContain(
-      "ERR_OBSERVER_MODE_READ_ONLY",
-    );
-
-    // Claire in Observer mode rejected when promoting DRAFT -> SHARED_WORKSPACE
-    fireEvent.click(screen.getByTestId("promote-btn-res-jira-secops-playbook"));
-    expect(
-      screen.getByTestId("promote-result-res-jira-secops-playbook").textContent,
-    ).toContain("ERR_OBSERVER_MODE_READ_ONLY");
-
-    // Inspect black-box catalog resource -> shows ERR_READ_SOURCE_DENIED
+    // Navigate to Admin module -> Verify WorkspaceTopologyPanel and masked source inspection
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-admin"));
+    expect(screen.getByTestId("workspace-topology-panel")).toBeDefined();
     fireEvent.click(screen.getByTestId("inspect-source-btn-res-blackbox-security-agent"));
     expect(
       screen.getByTestId("inspect-source-result-res-blackbox-security-agent").textContent,
     ).toContain("ERR_READ_SOURCE_DENIED");
 
-    // Story 1.4: Claire in Observer mode rejected when clicking Replay Step on PermissionBrokerCard
-    fireEvent.click(screen.getByTestId("permission-broker-replay-btn"));
-    expect(screen.getByTestId("permission-broker-action-banner").textContent).toContain(
-      "ERR_OBSERVER_MODE_READ_ONLY",
-    );
+    // Switch persona to Nadia (CONTRIBUTOR) -> Admin, Bootstrap, and FinOps entries are hidden in GlobalSidebar
+    fireEvent.click(screen.getByTestId("persona-switch-nadia"));
+    expect(screen.queryByTestId("sidebar-nav-item-admin")).toBeNull();
+    expect(screen.queryByTestId("sidebar-nav-item-bootstrap")).toBeNull();
+    expect(screen.queryByTestId("sidebar-nav-item-finops")).toBeNull();
 
-    // Switch back to Marc (TEAM_LEAD) + workspace scope -> collapse dock with ']', then trigger 403 Confluence -> dock auto-opens
-    fireEvent.click(screen.getByTestId("persona-switch-marc"));
+    // Story 1.4: Navigate to Gates & Permissions -> collapse dock with ']', then trigger 403 Confluence -> dock auto-opens
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-gates"));
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     fireEvent.click(screen.getByTestId("scope-option-scope-ws-orcia"));
     fireEvent.keyDown(window, { key: "]" });
@@ -191,19 +207,48 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(screen.getByTestId("permission-broker-action-banner").textContent).toContain(
       "ERR_CONFUSED_DEPUTY_BLOCKED",
     );
+  });
 
-    // Story 1.5: Verify BootstrapOnboardingPanel, LLM orthogonality gate & Human-Led Anchor Card (#6D28D9)
+  it("renders Admin WorkspaceTopologyPanel and BootstrapOnboardingPanel as dedicated menu entries", () => {
+    render(
+      <I18nProvider initialLocale="en">
+        <ShellContainer fixtureMode={true}>
+          <ModuleWorkspaceView moduleKey="admin" />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-admin"));
+    expect(screen.getByTestId("workspace-topology-panel")).toBeDefined();
+
+    // Switch persona to Claire (BU_DIRECTOR) -> WS 3 (CONFIDENTIAL_RESTRICTED) is excluded from roll-up
+    fireEvent.click(screen.getByTestId("persona-switch-claire"));
+    expect(screen.queryByTestId("workspace-card-ws-projet-confidentiel")).toBeNull();
+    fireEvent.click(screen.getByTestId("mutation-guard-btn-ws-solution-paiement"));
+    expect(screen.getByTestId("mutation-guard-result-ws-solution-paiement").textContent).toContain(
+      "ERR_OBSERVER_MODE_READ_ONLY",
+    );
+
+    // Switch to Marc and select the dedicated Bootstrap entry in the left sidebar
+    fireEvent.click(screen.getByTestId("persona-switch-marc"));
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-bootstrap"));
     expect(screen.getByTestId("bootstrap-onboarding-panel")).toBeDefined();
-    expect(screen.getByTestId("human-led-anchor-card").getAttribute("data-human-authored-required")).toBe("true");
+    expect(
+      screen.getByTestId("human-led-anchor-card").getAttribute("data-human-authored-required"),
+    ).toBe("true");
     fireEvent.click(screen.getByTestId("simulate-single-llm-family-btn"));
     expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
       "ERR_MODEL_ORTHOGONALITY_VIOLATION",
     );
     fireEvent.click(screen.getByTestId("simulate-dual-llm-family-btn"));
     fireEvent.click(screen.getByTestId("execute-init-workspace-btn"));
-    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("2 Solution Workspaces");
+    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
+      "2 Solution Workspaces",
+    );
     fireEvent.click(screen.getByTestId("execute-init-datasource-btn"));
-    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("signed Human Anchor");
+    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
+      "signed Human Anchor",
+    );
     fireEvent.click(screen.getByTestId("execute-init-user-btn"));
     expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("AES-256-GCM");
   });

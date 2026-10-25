@@ -21,6 +21,17 @@ sources:
 - **Système UI** : **shadcn/ui (Radix Primitives + Tailwind CSS)**. `DESIGN.md` définit les tokens identitaires (`{colors.sidebar-bg}`, `{colors.primary}`, `{colors.human-led}`, `{colors.arbitration-amber}`, `{colors.gate-pass}`, `{colors.ontology-cyan}`, `{colors.stale-danger}`) et les 7 composants métiers d'ORCIA.
 - **Paradigme d'interaction** : **"Chat-First + Canvas avec Menu Global Explicite (Direction C)"**. L'utilisateur entre par défaut dans le Cockpit conversationnel, mais dispose en permanence à gauche du **Menu Global à 7 Modules** (filtré selon ses droits RBAC) et conserve à droite dans tous les modules (2 à 7) le **Dock Persistant de l'Agent Assistant & Permission Broker**.
 
+### 1.1 Les Règles Fondamentales de l'UX (Expérience Utilisateur — 6 Piliers Invariants)
+
+L'UX désigne le parcours, la fluidité et la logique de navigation du portail ORCIA. Toute conception ou évolution d'écran doit respecter ces **6 règles fondamentales** :
+
+1. **Centrer sur l'utilisateur** : Concevoir exclusivement pour les besoins réels des utilisateurs cibles (selon leur **Profil Humain** : Direction/BU, PM/Métier, Architecte/Tech Lead/Dev, SecOps/Auditeur), jamais pour le goût personnel des équipes internes ni en exposant de la plomberie technique hors contexte.
+2. **Viser la simplicité (Loi de Hick / Minimalisme)** : Éliminer les éléments superflus pour éviter de surcharger cognitivement l'utilisateur. Un module = une intention principale claire ; ne jamais empiler simultanément sur un même écran des panneaux appartenant à d'autres modules (divulgation progressive, onglets ou tiroirs à la demande).
+3. **Respecter les standards du web** : Utiliser des schémas de navigation familiers et prévisibles (identité/logo en haut à gauche ramenant à l'accueil/Cockpit, barre d'en-tête claire avec fil d'Ariane/périmètre actif, navigation principale structurée et états actifs explicites).
+4. **Assurer un bon feedback immédiat** : Chaque action de l'utilisateur (clic, validation, changement de périmètre, erreur, *Claim*, pause ou *Replay*) doit entraîner une réponse visuelle et/ou textuelle immédiate (états `loading`, `disabled`, toast/bannière contextualisée, mise à jour optimiste `< 500ms`).
+5. **Offrir des sorties de secours** : L'utilisateur doit toujours pouvoir annuler une action, fermer une modale/tiroir (`Escape` ou bouton explicite), replier un panneau latéral (`[` / `]`) ou revenir en arrière facilement sans perte de contexte ni blocage dans une impasse.
+6. **Optimiser la performance et le Mobile-First** : Privilégier la rapidité de chargement et de rendu (`< 1,5s` premier token, bascule `< 1s` entre runs) et concevoir d'abord la clarté structurelle sur petits écrans (Mobile Companion épuré sans débordement horizontal) avant d'enrichir la disposition multi-colonnes Desktop.
+
 ---
 
 ## 2. Information Architecture (Sélecteur de Périmètre Hiérarchique `⌘W` & Menu Global à 7 Modules)

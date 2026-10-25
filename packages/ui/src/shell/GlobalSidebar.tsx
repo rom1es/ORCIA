@@ -25,13 +25,14 @@ export interface GlobalSidebarProps {
 }
 
 const MODULE_ICONS: Record<UiModuleKey, string> = {
-  cockpit: "💬",
+  cockpit: "🏠",
   inbox: "🔔",
   catalog: "📦",
   ontology: "🧬",
   gates: "🛡️",
   finops: "📊",
   admin: "⚙️",
+  bootstrap: "🚀",
 };
 
 export function GlobalSidebar({
@@ -71,31 +72,61 @@ export function GlobalSidebar({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "12px",
+        padding: collapsed ? "16px 10px" : "20px 16px",
         boxSizing: "border-box",
+        transition: "width 0.18s ease",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {/* Brand Header (Clickable Logo -> Home/Cockpit, no subtitle, no '[' character) */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: collapsed ? "center" : "space-between",
             gap: "8px",
           }}
         >
           {!collapsed && (
-            <div>
-              <div style={{ fontWeight: 700, letterSpacing: "0.04em" }}>{labels.brandTitle}</div>
-              <div
+            <button
+              type="button"
+              data-testid="sidebar-brand-home-btn"
+              onClick={() => onSelectModule("cockpit", "/cockpit")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                textAlign: "left",
+                color: "var(--color-sidebar-foreground)",
+                fontFamily: "var(--font-sans)",
+              }}
+            >
+              <span
+                aria-hidden="true"
                 style={{
-                  fontSize: "var(--font-size-mono)",
-                  color: "var(--color-sidebar-muted)",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "var(--radius-md)",
+                  backgroundColor: "var(--color-primary-cobalt)",
+                  color: "var(--color-primary-foreground)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  fontSize: "15px",
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
-                {labels.brandSubtitle}
-              </div>
-            </div>
+                ❖
+              </span>
+              <span style={{ fontWeight: 700, fontSize: "18px", letterSpacing: "-0.02em" }}>
+                {labels.brandTitle}
+              </span>
+            </button>
           )}
           <button
             type="button"
@@ -105,16 +136,17 @@ export function GlobalSidebar({
             }
             onClick={onToggleCollapsed}
             style={{
-              backgroundColor: "var(--color-sidebar-border)",
-              color: "var(--color-sidebar-foreground)",
+              backgroundColor: "var(--color-sidebar-search-bg)",
+              color: "var(--color-sidebar-muted)",
               border: "1px solid var(--color-sidebar-border)",
               borderRadius: "var(--radius-sm)",
               padding: "4px 8px",
               cursor: "pointer",
-              fontFamily: "var(--font-mono)",
+              fontFamily: "var(--font-sans)",
+              fontSize: "13px",
             }}
           >
-            {collapsed ? "» [" : "« ["}
+            {collapsed ? "»" : "«"}
           </button>
         </div>
 
@@ -127,6 +159,7 @@ export function GlobalSidebar({
           onSelectScope={onSelectScope}
         />
 
+        {/* Clean Navigation List without numbers */}
         <nav aria-label={labels.sidebarNavigationAriaLabel}>
           <ul
             style={{
@@ -135,7 +168,7 @@ export function GlobalSidebar({
               padding: 0,
               display: "flex",
               flexDirection: "column",
-              gap: "4px",
+              gap: "6px",
             }}
           >
             {sortedModules.map((mod) => {
@@ -154,29 +187,29 @@ export function GlobalSidebar({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: collapsed ? "center" : "space-between",
-                      gap: "8px",
-                      padding: "8px 10px",
+                      gap: "10px",
+                      padding: "10px 12px",
                       borderRadius: "var(--radius-md)",
                       border: "none",
                       backgroundColor: isActive
-                        ? "var(--color-primary-cobalt)"
+                        ? "var(--color-sidebar-active-bg)"
                         : "transparent",
                       color: isActive
-                        ? "var(--color-primary-foreground)"
-                        : "var(--color-sidebar-foreground)",
+                        ? "var(--color-sidebar-active-fg)"
+                        : "var(--color-sidebar-muted)",
+                      fontWeight: isActive ? 600 : 500,
                       cursor: "pointer",
                       textAlign: "left",
                       fontFamily: "var(--font-sans)",
                       fontSize: "var(--font-size-body)",
+                      transition: "background-color 0.15s ease, color 0.15s ease",
                     }}
                   >
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                      <span aria-hidden="true">{MODULE_ICONS[mod.key]}</span>
-                      {!collapsed && (
-                        <span>
-                          {mod.order}. {moduleLabel}
-                        </span>
-                      )}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
+                      <span aria-hidden="true" style={{ fontSize: "15px" }}>
+                        {MODULE_ICONS[mod.key]}
+                      </span>
+                      {!collapsed && <span>{moduleLabel}</span>}
                     </span>
 
                     {!collapsed && (
@@ -207,11 +240,12 @@ export function GlobalSidebar({
         </nav>
       </div>
 
+      {/* Compact Footer */}
       <footer
         data-testid="sidebar-human-profile"
         style={{
           borderTop: "1px solid var(--color-sidebar-border)",
-          paddingTop: "10px",
+          paddingTop: "12px",
           display: "flex",
           flexDirection: "column",
           gap: "6px",
@@ -221,8 +255,9 @@ export function GlobalSidebar({
           <>
             <div
               style={{
-                fontSize: "var(--font-size-mono)",
+                fontSize: "11px",
                 color: "var(--color-sidebar-muted)",
+                fontWeight: 500,
               }}
             >
               {labels.humanProfilePrefixLabel}: {humanProfile.displayName}
@@ -231,7 +266,8 @@ export function GlobalSidebar({
               <div
                 data-testid="sidebar-human-profile-org"
                 style={{
-                  fontSize: "var(--font-size-mono)",
+                  fontSize: "11px",
+                  fontFamily: "var(--font-mono)",
                   color: "var(--color-sidebar-foreground)",
                 }}
               >

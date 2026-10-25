@@ -6,13 +6,15 @@ created: 2026-10-24
 updated: 2026-10-24
 description: Plateforme d'exécution de processus d'entreprise et personnels "Human-Led, Agent-Accelerated". Basée sur shadcn/ui (Radix + Tailwind CSS) avec l'architecture visuelle Direction C (Menu Latéral Sombre Explicite + Espace Central Haut-Contraste + Dock Agent Assistant Persistant).
 colors:
-  sidebar-bg: '#0F172A'
-  sidebar-foreground: '#F8FAFC'
-  sidebar-muted: '#94A3B8'
-  sidebar-border: '#1E293B'
-  background: '#F8FAFC'
+  sidebar-bg: '#FFFFFF'
+  sidebar-foreground: '#0F172A'
+  sidebar-muted: '#64748B'
+  sidebar-border: '#E2E8F0'
+  sidebar-active-bg: '#EFF6FF'
+  sidebar-active-fg: '#2563EB'
+  background: '#EAF2FB'
   surface: '#FFFFFF'
-  dock-bg: '#F1F5F9'
+  dock-bg: '#FFFFFF'
   foreground: '#0F172A'
   muted-foreground: '#475569'
   border: '#E2E8F0'
@@ -35,7 +37,7 @@ typography:
     fontSize: 13.5px
     lineHeight: '1.5'
   display:
-    fontFamily: 'Instrument Serif, Georgia, serif'
+    fontFamily: 'Inter, Geist Sans, system-ui, sans-serif'
     fontSize: 22px
     fontWeight: '700'
     lineHeight: '1.25'
@@ -43,33 +45,33 @@ typography:
     fontFamily: 'JetBrains Mono, Geist Mono, monospace'
     fontSize: 12px
 rounded:
-  sm: 5px
-  md: 8px
-  lg: 10px
+  sm: 6px
+  md: 10px
+  lg: 14px
   full: 9999px
 spacing:
-  sidebar-expanded: 235px
-  sidebar-collapsed: 68px
+  sidebar-expanded: 240px
+  sidebar-collapsed: 72px
   dock-width: 360px
 components:
   sidebar-nav-item-active:
-    background: '{colors.primary}'
-    foreground: '{colors.primary-foreground}'
+    background: '{colors.sidebar-active-bg}'
+    foreground: '{colors.sidebar-active-fg}'
     radius: '{rounded.md}'
   human-led-anchor-card:
     background: '{colors.human-led-bg}'
     border: '1px solid {colors.human-led}'
     borderLeft: '4px solid {colors.human-led}'
-    radius: '{rounded.md}'
+    radius: '{rounded.lg}'
   arbitration-tiebreak-card:
     background: '{colors.arbitration-bg}'
     border: '1px solid {colors.arbitration-amber}'
     borderLeft: '4px solid {colors.arbitration-amber}'
-    radius: '{rounded.md}'
+    radius: '{rounded.lg}'
   review-briefing-grid:
     background: '{colors.surface}'
     border: '1px solid {colors.border}'
-    radius: '{rounded.md}'
+    radius: '{rounded.lg}'
   uri-badge:
     fontFamily: '{typography.mono.fontFamily}'
     radius: '{rounded.sm}'
@@ -77,10 +79,27 @@ components:
 
 ## Brand & Style
 
-**ORCIA** incarne la posture **"Human-Led, Agent-Accelerated"** à travers la **Direction C (Hybride Entreprise Haut-Contraste)**. Son identité visuelle combine trois sensations immédiates :
-1. **Autorité & Orientation (Sidebar Sombre `#0F172A`)** : Un repère stable à gauche qui affiche clairement les **7 Modules Globaux** d'ORCIA et leurs badges d'activité temps réel, repliable en icônes seules (`68px`) lorsque l'utilisateur souhaite maximiser sa surface de travail.
-2. **Clarté Cognitive & Lisibilité Documentaire (Espace Central Clair `#F8FAFC` / `#FFFFFF`)** : Une surface calme et lumineuse pensée pour la lecture sans fatigue des **Briefings de Revue**, la rédaction réfléchie des **Ancrages Humains Obligatoires** et la **Validation par Découpage** des **Artefacts** volumineux (avec un thème Dark Slate `#0B0F17` commutable pour les sessions de développement nocturnes ou techniques).
-3. **Co-présence Intelligente (Dock Agent Assistant `#F1F5F9` / `#FFFFFF`)** : Un espace conversationnel toujours accessible, au centre dans le module *1. Cockpit*, ou ancré à droite (`360px`) dans les modules *2 à 7*.
+**ORCIA** incarne la posture **"Human-Led, Agent-Accelerated"** à travers la **Direction C Épurée (Clarté SaaS & Grille Bento)**. Inspirée des références [`imports/reference-layout-insidebox.png`](file:///home/romain/Documents/Projects/ORCIA/docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/imports/reference-layout-insidebox.png) et [`imports/reference-dropdown-menus.png`](file:///home/romain/Documents/Projects/ORCIA/docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/imports/reference-dropdown-menus.png), son identité visuelle combine quatre piliers :
+1. **Panneau Latéral Gauche Clair & Respirant (`#FFFFFF`)** : Logo géométrique bleu + marque **ORCIA** cliquable en haut à gauche (retour à l'accueil), barre de recherche rapide intégrée (`🔍 Rechercher...`), et les **7 Modules Globaux** présentés avec une capsule active bleu tendre (`#EFF6FF` / texte `#2563EB`) et des pastilles rondes ambre (`#D97706`) pour les actions en attente.
+2. **Barre Supérieure (Top Header Bar `#FFFFFF`) avec Icônes & Menu Déroulant Profil Riche** :
+   - À gauche : navigation rapide par filtres de vue séparés par `|` (`Vue d'ensemble | Ancrage & Cockpit | Catalogue Fédéré | Workspaces & Équipes | Initialisation & Gates`).
+   - À droite : icônes d'action directe (`💬` Agent Assistant, `🗂️` Périmètre `⌘W`, `🔔` Notifications, `🌐` Langue `FR/EN`) et **Avatar Utilisateur avec pastille de présence en ligne (`🟢`)** ouvrant un **Menu Déroulant Riche (`UserProfileDropdown`)** comportant le rôle/unité, les liens de gouvernance avec chevrons `›` et badges de raccourcis clavier (`⌘W`, `]`), le sélecteur rapide de Persona, le switch `🌙 Mode Sombre`, et une **jauge de consommation FinOps** avec barre de progression.
+3. **Large Panneau Central avec Bandeau Hero & Grille Bento (`#EAF2FB` / Cartes `#FFFFFF`)** :
+   - Un bandeau d'accueil personnalisé (*« Bonjour, {Prénom} ! »*) accompagné de **grands compteurs KPIs illustrés** (`Workflows Système`, `Workspaces Actifs`, `Budget FinOps`).
+   - Une **Grille Bento 2 colonnes** sur fond doux bleuté (`#EAF2FB`) où chaque carte blanche (`#FFFFFF`, rayon `14px`, ombre légère) isole clairement un domaine métier.
+4. **Co-présence Intelligente à la Demande (Tiroir Agent Assistant `#FFFFFF`)** : Accessible à droite (`360px`) via l'icône `💬` de la Top Bar ou le raccourci `]`, et s'ouvrant automatiquement en cas d'interception `403` par le **Permission Broker**.
+
+### Les Règles Fondamentales de l'UI (Interface Utilisateur — 5 Piliers Invariants)
+
+L'UI traduit l'UX en éléments visuels tangibles, esthétiques et fonctionnels. Tous les composants `@orcia/ui` (`packages/ui`) et écrans `apps/web` respectent impérativement ces **5 règles fondamentales** :
+
+1. **Hiérarchie visuelle** : Guider l'œil en jouant sur les tailles, les contrastes, les espacements et les graisses de police (`400`, `500`, `600`, `700`) pour distinguer immédiatement l'important (titre de page, grands compteurs KPIs, action principale, alerte critique) du secondaire (métadonnées, descriptions complémentaires).
+2. **Limitation des typographies (Maximum 2)** : Se restreindre strictement à **deux familles typographiques** pour conserver une lecture harmonieuse :
+   - **Primaire (`Inter` / `Geist Sans`)** pour toute l'interface, les titres (`display`) et la lecture documentaire ;
+   - **Secondaire (`JetBrains Mono` / `Geist Mono`)** réservée aux identifiants techniques, URI fédérées, hashes `SHA-256` et extraits de code.
+3. **Cohérence graphique** : Utiliser un système de composants unifié dans `@orcia/ui` (boutons, cartes Bento `#FFFFFF`, badges, menus déroulants et modales au design strictement identique pour une même famille d'action à travers les 7 modules).
+4. **Gestion des grilles (Grids)** : Structurer chaque page et panneau à l'aide de colonnes (`Bento Grid 2x2` responsive), de gouttières (`gap` sur échelle de `8px`/`16px`/`24px`) et de marges régulières pour aligner proprement tous les éléments.
+5. **Contrastes et accessibilité (WCAG 2.2 AA)** : Garantir que toutes les combinaisons de couleurs de texte et de fond respectent les ratios de contraste normatifs (`>= 4.5:1` texte normal, `>= 3:1` grands titres et composants UI) pour être lisibles par tous, en mode clair comme en mode sombre.
 
 ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce document spécifie uniquement la couche identitaire et les composants cognitifs propres à ORCIA.
 
@@ -88,28 +107,32 @@ ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce docu
 
 Chaque couleur sémantique d'ORCIA possède une signification stricte liée à la gouvernance humano-agentique — aucune couleur d'accent n'est utilisée à titre purement décoratif :
 
-- **Sidebar Slate (`#0F172A`)** : Fond permanent du menu de navigation global à 7 modules, isolant visuellement la navigation de la surface de travail.
-- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, module actif dans la Sidebar, et indicateur de présence de l'**Agent Assistant**.
+- **Sidebar Crisp White (`#FFFFFF` / Bordure `#E2E8F0` / Capsule Active `#EFF6FF`)** : Fond clair et aéré du menu de navigation global à 7 modules, isolant visuellement la navigation de la surface de travail.
+- **Bento Canvas Soft Sky (`#EAF2FB` Light / `#0B0F17` Dark)** : Fond doux du panneau central mettant en relief les cartes blanches `#FFFFFF`.
+- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, module actif dans la Sidebar, bordure de focus du menu déroulant profil et indicateur de présence de l'**Agent Assistant**.
 - **Human-Led Violet (`#6D28D9` / Fond `#F5F3FF`)** : Réservé exclusivement aux **Ancrages Humains Obligatoires** (`human_authored_required: true`). Dès que l'utilisateur voit une bordure violette, il sait que l'IA a l'interdiction de rédiger cette zone à sa place et que sa réflexion d'expert (*Think*) est attendue.
-- **Arbitration & Challenge Amber (`#D97706` / Fond `#FFFBEB`)** : Indique une suspension du **Workflow Run** requérant une décision humaine : **Arbitrage Humain** sur options équivalentes, challenge inter-rôles (ex: Architecte $\rightarrow$ PM), ou suspicion de *Rubber-Stamping*.
-- **Gate Pass Emerald (`#059669` / Fond `#ECFDF5`)** : Indique une **Gate** (Déterministe, Agentique Cross-Model ou Humaine) franchie avec succès, un verrou de présence pris en charge (*Claimed*), ou un cache `SHA-256` vérifié.
+- **Arbitration & Challenge Amber (`#D97706` / Fond `#FFFBEB`)** : Indique une suspension du **Workflow Run** requérant une décision humaine : **Arbitrage Humain** sur options équivalentes, pastille de notification dans la Sidebar, ou suspicion de *Rubber-Stamping*.
+- **Gate Pass Emerald (`#059669` / Fond `#ECFDF5`)** : Indique une **Gate** (Déterministe, Agentique Cross-Model ou Humaine) franchie avec succès, la pastille de présence en ligne sur l'avatar (`🟢`), un verrou de présence pris en charge (*Claimed*), ou un cache `SHA-256` vérifié.
 - **Ontology Cyan (`#0284C7` / Fond `#F0F9FF`)** : Identifie les concepts de l'**Ontologie Dynamique Multi-Niveaux** (badges de niveau 1 à 4, promotions sémantiques, traductions par **Profil Humain**).
 - **Stale / Blocker Crimson (`#DC2626` / Fond `#FEF2F2`)** : Alerte d'obsolescence documentaire (`[STALE_WARNING]` sur une **Base de Connaissances**), échec de **Gate Déterministe** ou blocage d'habilitation intercepté par le **Permission Broker**.
 
 ## Typography
 
-- **Interface & Conversation (`Inter` / `Geist Sans`, `13.5px`)** : Densité calibrée pour afficher côte à côte le menu, le **Canvas** et le **Dock Agent Assistant** sans troncature sur un écran portable 14" ou un moniteur externe.
-- **Titres d'Artefacts & Livrables (`Instrument Serif` / `Georgia`, `22px`)** : Utilisé uniquement pour l'en-tête des **Artefacts** documentaires (`PRD`, `Dossier d'Architecture`) dans le **Canvas** afin de marquer visuellement la distinction entre le flux de discussion éphémère (sans-serif) et le livrable contractuel de référence (serif).
-- **Provenance, URI & Code (`JetBrains Mono` / `Geist Mono`, `12px`)** : Obligatoire pour toutes les URI du **Catalogue Fédéré** (`db://`, `git://`, `nexus://`), les empreintes `SHA-256` et les logs de **Sandbox**.
+Conformément à la règle fondamentale de **limitation à maximum deux typographies** :
+- **Typographie Primaire — Interface, Titres & Lecture (`Inter` / `Geist Sans`)** :
+  - Corps & Conversation (`13.5px`–`14px`, `line-height: 1.5`) : densité calibrée pour afficher côte à côte le menu, le **Canvas** et le **Dock Agent Assistant** sans troncature.
+  - Titres de Modules, Salutation Hero & Compteurs KPI (`display`, `22px`–`28px`, `font-weight: 700`, `line-height: 1.25`, `letter-spacing: -0.02em`) : hiérarchie visuelle assurée par l'échelle typographique, la graisse et l'espacement (sans troisième police serif).
+- **Typographie Secondaire — Provenance, URI & Code (`JetBrains Mono` / `Geist Mono`, `12px`)** : Obligatoire pour toutes les URI du **Catalogue Fédéré** (`db://`, `git://`, `nexus://`), les empreintes `SHA-256`, les pastilles de raccourcis clavier (`⌘W`, `⌘K`, `[`, `]`), les codes d'erreur RFC 9457 et les logs de **Sandbox**.
 
 ## Layout & Spacing
 
-L'architecture spatiale Desktop repose sur une grille fluide à **3 colonnes adaptatives** :
-1. **Colonne Gauche — Sidebar du Menu Global (`235px` dépliée / `68px` repliée en icônes)** : Contient les 7 entrées du menu d'ORCIA, le bouton de repli `«` et le badge de **Profil Humain** en pied de barre.
-2. **Colonne Centrale — Espace Principal / Canvas (`1fr`, min `640px`)** :
-   - Dans le module **1. Cockpit & Chat**, l'espace central est partagé en Split-View entre la **Conversation principale** et le **Canvas d'Artefact/Gate**.
-   - Dans les modules **2 à 7** (*Mes Runs, Catalogue Fédéré, Ontologie & KB, Gates & IAM, FinOps, Admin*), le module occupe tout l'espace central (`1fr`).
-3. **Colonne Droite — Dock Persistant Agent Assistant & Permission Broker (`360px`, repliable)** : Présent dans les modules 2 à 7 pour permettre de piloter, filtrer ou résoudre un problème d'habilitation en langage naturel tout en travaillant sur le module central.
+L'architecture spatiale Desktop repose sur une structure épurée inspirée d'*InsideBox* :
+1. **Colonne Gauche — Sidebar du Menu Global (`240px` dépliée / `72px` repliée en icônes, `#FFFFFF`)** : Contient en haut le logo cliquable **ORCIA**, la barre de recherche rapide (`🔍 Search`), les 7 entrées du menu d'ORCIA avec capsules actives `#EFF6FF` et pastilles ambre, ainsi qu'un pied de barre compact.
+2. **Zone Centrale Pleine Largeur (`1fr`, min `640px`)** composée de :
+   - **Barre Supérieure (`Top Header Bar`, `#FFFFFF`, `64px`)** : Liens contextuels séparés par `|` à gauche ; barre d'icônes (`💬`, `🗂️`, `🔔`, `🌐`) et **Avatar Utilisateur + Menu Déroulant Riche (`UserProfileDropdown`)** à droite.
+   - **Bandeau d'Accueil (`Hero Welcome Strip`, `#FFFFFF`)** : Message d'accueil personnalisé (*« Bonjour, Marc ! »*) à gauche et **grands compteurs KPIs** avec icônes à droite.
+   - **Grille Bento Principale (`#EAF2FB`, padding `24px`, grille 2 colonnes `gap: 20px`)** : Cartes blanches `#FFFFFF` (`border-radius: 14px`) filtrables par onglet ou affichées en vue d'ensemble 2×2.
+3. **Colonne Droite — Tiroir Agent Assistant & Permission Broker (`360px`, repliable via `💬` ou `]`)** : Permet de dialoguer avec l'Agent Assistant ou de traiter un ticket `PermissionBrokerCard` (ouverture automatique sur `PERMISSION_DENIED_STEP`).
 
 Sur **Mobile Companion (`< 768px`)**, la grille à 3 colonnes cède la place à une vue mono-colonne pilotée par une barre d'onglets inférieure à 3 entrées (`🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`).
 

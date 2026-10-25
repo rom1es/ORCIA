@@ -103,3 +103,13 @@ action_items:
       Introduire un port hexagonal `SecretProviderPort` dans `packages/orcia-core/ports/` avec
       chiffrement par enveloppe (Data Encryption Key par Workspace chiffrée par une Key Encryption Key
       dans Vault/KMS) et audit immuable des rotations de clés dans `audit_ledger`.
+  - id: UX-01
+    title: "Refonte complète UX/UI (Sally / bmad-ux) selon les 11 règles fondamentales (Loi de Hick, 2 typographies max, grilles, feedback, Mobile-First)"
+    status: done
+    epic: epic-1
+    description: >
+      Revoir l'ensemble des écrans `apps/web` et composants `@orcia/ui` (`packages/ui`) avec l'agent
+      BMAD UX Designer (`Sally` / `bmad-ux`) pour éliminer la surcharge visuelle de `ModuleWorkspaceView`
+      (séparation stricte par module selon la Loi de Hick), unifier sur 2 typographies maximum
+      (`Inter`/`Geist Sans` + `JetBrains Mono`), renforcer la hiérarchie visuelle, les grilles CSS,
+      les sorties de secours et les retours visuels immédiats.

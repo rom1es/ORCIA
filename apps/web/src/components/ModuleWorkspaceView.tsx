@@ -31,32 +31,36 @@ const DEFAULT_BOOTSTRAP_WORKFLOWS: UiBootstrapWorkflowView[] = [
 export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
   const { dictionary } = useI18n();
   const {
+    fixtureMode,
+    activeModuleKey,
     activePersona,
     setActivePersona,
     brokerActionBanner,
     triggerPermissionDeniedStep,
     triggerConfusedDeputyCheck,
   } = usePersonaContext();
-  const pageCopy = dictionary.modulePages[moduleKey];
+
+  const currentModule = activeModuleKey ?? moduleKey;
+  const pageCopy = dictionary.modulePages[currentModule];
   const [customAnchorText, setCustomAnchorText] = useState<string | null>(null);
   const anchorText = customAnchorText ?? dictionary.humanAnchor.defaultValue;
-  const { workspaces, finopsTotal } = computePersonaTopology(activePersona);
+  const topologyData = fixtureMode
+    ? computePersonaTopology(activePersona)
+    : { workspaces: [], finopsTotal: 0 };
 
   return (
     <div
-      data-testid={`module-view-${moduleKey}`}
+      data-testid={`module-view-${currentModule}`}
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
+        gap: "20px",
       }}
     >
+      {/* Single Module Theme Header Card */}
       <div
+        className="orcia-bento-card"
         style={{
-          backgroundColor: "var(--color-surface-card)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-md)",
-          padding: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "8px",
@@ -71,9 +75,9 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
             flexWrap: "wrap",
           }}
         >
-          <strong>{pageCopy.subtitle}</strong>
+          <strong style={{ fontSize: "16px" }}>{pageCopy.subtitle}</strong>
           <StatusBadge
-            testId={`module-uri-badge-${moduleKey}`}
+            testId={`module-uri-badge-${currentModule}`}
             label={pageCopy.uriBadgeExample}
             tone="cobalt"
             monospace
@@ -82,32 +86,45 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
         <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{pageCopy.description}</p>
       </div>
 
-      {moduleKey === "cockpit" && (
-        <HumanLedAnchorCard
-          sectionKey="architecture-intent"
-          sectionTitle={dictionary.humanAnchor.defaultSectionTitle}
-          authorName={dictionary.humanAnchor.defaultAuthorName}
-          value={anchorText}
-          labels={dictionary.humanAnchor}
-          onChange={setCustomAnchorText}
-        />
+      {/* Strictly ONE Feature Displayed in the Central Panel According to the Active Left Menu Entry */}
+      {currentModule === "cockpit" && (
+        <div className="orcia-bento-card">
+          <HumanLedAnchorCard
+            sectionKey="architecture-intent"
+            sectionTitle={dictionary.humanAnchor.defaultSectionTitle}
+            authorName={dictionary.humanAnchor.defaultAuthorName}
+            value={anchorText}
+            labels={dictionary.humanAnchor}
+            onChange={setCustomAnchorText}
+          />
+        </div>
       )}
 
-      {(moduleKey === "cockpit" || moduleKey === "catalog" || moduleKey === "gates") && (
+      {currentModule === "catalog" && (
+        <div className="orcia-bento-card">
+          <CatalogExplorerPanel
+            activePersona={activePersona}
+            items={fixtureMode ? DEFAULT_CATALOG_EXPLORER_ITEMS : []}
+            runLockTriplets={fixtureMode ? DEFAULT_RUN_LOCK_TRIPLETS : []}
+            labels={dictionary.catalogExplorer}
+          />
+        </div>
+      )}
+
+      {currentModule === "gates" && (
         <section
           data-testid="permission-broker-simulator-panel"
+          className="orcia-bento-card"
           style={{
-            backgroundColor: "var(--color-surface-card)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-md)",
-            padding: "16px",
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: "12px",
           }}
         >
           <div>
-            <strong>{dictionary.permissionBroker.simulatorTitle}</strong>
+            <strong style={{ fontSize: "15px" }}>
+              {dictionary.permissionBroker.simulatorTitle}
+            </strong>
             <p
               style={{
                 margin: "4px 0 0 0",
@@ -129,7 +146,7 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
                 color: "var(--color-primary-foreground)",
                 border: "none",
                 borderRadius: "var(--radius-sm)",
-                padding: "6px 10px",
+                padding: "7px 12px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -142,11 +159,11 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
               data-testid="simulate-permission-denied-confluence-btn"
               onClick={() => triggerPermissionDeniedStep("confluence")}
               style={{
-                backgroundColor: "var(--color-surface-bg)",
+                backgroundColor: "var(--color-surface-hover)",
                 color: "var(--color-foreground)",
                 border: "1px solid var(--color-border)",
                 borderRadius: "var(--radius-sm)",
-                padding: "6px 10px",
+                padding: "7px 12px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -159,11 +176,11 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
               data-testid="simulate-permission-denied-jira-btn"
               onClick={() => triggerPermissionDeniedStep("jira")}
               style={{
-                backgroundColor: "var(--color-surface-bg)",
+                backgroundColor: "var(--color-surface-hover)",
                 color: "var(--color-foreground)",
                 border: "1px solid var(--color-border)",
                 borderRadius: "var(--radius-sm)",
-                padding: "6px 10px",
+                padding: "7px 12px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -180,7 +197,7 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
                 color: "var(--color-stale-crimson)",
                 border: "1px solid var(--color-stale-crimson)",
                 borderRadius: "var(--radius-sm)",
-                padding: "6px 10px",
+                padding: "7px 12px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -208,29 +225,29 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
         </section>
       )}
 
-      {(moduleKey === "admin" || moduleKey === "cockpit") && (
-        <BootstrapOnboardingPanel
-          activePersona={activePersona}
-          workflows={DEFAULT_BOOTSTRAP_WORKFLOWS}
-          labels={dictionary.bootstrapOnboarding}
-        />
+      {currentModule === "admin" && (
+        <div className="orcia-bento-card">
+          <WorkspaceTopologyPanel
+            activePersona={activePersona}
+            workspaces={topologyData.workspaces}
+            consolidatedFinopsUsd={topologyData.finopsTotal}
+            catalogResources={fixtureMode ? DEFAULT_CATALOG_RESOURCES : []}
+            labels={dictionary.workspaceTopology}
+            showPersonaSimulator={fixtureMode}
+            onSelectPersona={setActivePersona}
+          />
+        </div>
       )}
 
-      <CatalogExplorerPanel
-        activePersona={activePersona}
-        items={DEFAULT_CATALOG_EXPLORER_ITEMS}
-        runLockTriplets={DEFAULT_RUN_LOCK_TRIPLETS}
-        labels={dictionary.catalogExplorer}
-      />
-
-      <WorkspaceTopologyPanel
-        activePersona={activePersona}
-        workspaces={workspaces}
-        consolidatedFinopsUsd={finopsTotal}
-        catalogResources={DEFAULT_CATALOG_RESOURCES}
-        labels={dictionary.workspaceTopology}
-        onSelectPersona={setActivePersona}
-      />
+      {currentModule === "bootstrap" && (
+        <div className="orcia-bento-card">
+          <BootstrapOnboardingPanel
+            activePersona={activePersona}
+            workflows={DEFAULT_BOOTSTRAP_WORKFLOWS}
+            labels={dictionary.bootstrapOnboarding}
+          />
+        </div>
+      )}
     </div>
   );
 }

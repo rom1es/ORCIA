@@ -21,6 +21,7 @@ if (fs.existsSync(rootEnvPath)) {
 const nextConfig: NextConfig = {
   transpilePackages: ["@orcia/ui", "@orcia/api-client"],
   reactStrictMode: true,
+  devIndicators: false,
 };
 
 export default nextConfig;

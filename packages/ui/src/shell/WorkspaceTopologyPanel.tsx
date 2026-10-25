@@ -13,6 +13,7 @@ export interface WorkspaceTopologyPanelProps {
   consolidatedFinopsUsd: number;
   catalogResources: UiCatalogResourcePermissionView[];
   labels: UiWorkspaceTopologyLabels;
+  showPersonaSimulator?: boolean;
   onSelectPersona: (persona: UiPersonaKey) => void;
 }
 
@@ -30,6 +31,7 @@ export function WorkspaceTopologyPanel({
   consolidatedFinopsUsd,
   catalogResources,
   labels,
+  showPersonaSimulator = true,
   onSelectPersona,
 }: WorkspaceTopologyPanelProps) {
   const [mutationBannerByWs, setMutationBannerByWs] = useState<Record<string, string>>({});
@@ -63,50 +65,54 @@ export function WorkspaceTopologyPanel({
             {labels.panelSubtitle}
           </p>
         </div>
-        <StatusBadge
-          testId="finops-rollup-badge"
-          label={`${labels.finopsRollupPrefix}: ${consolidatedFinopsUsd.toFixed(2)} USD`}
-          tone="cyan"
-          monospace
-        />
+        {showPersonaSimulator && (
+          <StatusBadge
+            testId="finops-rollup-badge"
+            label={`${labels.finopsRollupPrefix}: ${consolidatedFinopsUsd.toFixed(2)} USD`}
+            tone="cyan"
+            monospace
+          />
+        )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <span style={{ fontWeight: 600 }}>{labels.personaSelectorLabel}</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {PERSONA_ORDER.map((pKey) => {
-            const isSelected = pKey === activePersona;
-            return (
-              <button
-                key={pKey}
-                type="button"
-                data-testid={`persona-switch-${pKey}`}
-                data-active={isSelected ? "true" : "false"}
-                onClick={() => {
-                  setMutationBannerByWs({});
-                  setSourceBannerByRes({});
-                  onSelectPersona(pKey);
-                }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  backgroundColor: isSelected
-                    ? "var(--color-primary-cobalt)"
-                    : "var(--color-surface)",
-                  color: isSelected
-                    ? "var(--color-primary-foreground)"
-                    : "var(--color-foreground)",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-sans)",
-                }}
-              >
-                {labels.personas[pKey]}
-              </button>
-            );
-          })}
+      {showPersonaSimulator && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <span style={{ fontWeight: 600 }}>{labels.personaSelectorLabel}</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {PERSONA_ORDER.map((pKey) => {
+              const isSelected = pKey === activePersona;
+              return (
+                <button
+                  key={pKey}
+                  type="button"
+                  data-testid={`persona-switch-${pKey}`}
+                  data-active={isSelected ? "true" : "false"}
+                  onClick={() => {
+                    setMutationBannerByWs({});
+                    setSourceBannerByRes({});
+                    onSelectPersona(pKey);
+                  }}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--color-border)",
+                    backgroundColor: isSelected
+                      ? "var(--color-primary-cobalt)"
+                      : "var(--color-surface)",
+                    color: isSelected
+                      ? "var(--color-primary-foreground)"
+                      : "var(--color-foreground)",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans)",
+                  }}
+                >
+                  {labels.personas[pKey]}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div
         data-testid="confidential-rollup-notice"
@@ -117,6 +123,21 @@ export function WorkspaceTopologyPanel({
       >
         {labels.confidentialExcludedNotice}
       </div>
+
+      {workspaces.length === 0 && (
+        <div
+          data-testid="workspace-topology-empty-state"
+          style={{
+            padding: "16px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px dashed var(--color-border)",
+            color: "var(--color-muted-foreground)",
+            fontSize: "var(--font-size-body)",
+          }}
+        >
+          0 Workspace
+        </div>
+      )}
 
       <div
         style={{

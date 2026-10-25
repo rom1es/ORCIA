@@ -14,7 +14,7 @@ import {
 
 const MOCK_LABELS: UiShellLabels = {
   brandTitle: "ORCIA",
-  brandSubtitle: "Cockpit Obsidienne & Studio Jour",
+  brandSubtitle: "",
   sidebarNavigationAriaLabel: "Navigation Globale à 7 Modules",
   sidebarToggleExpandLabel: "Déplier le menu latéral",
   sidebarToggleCollapseLabel: "Replier le menu latéral",
@@ -39,6 +39,7 @@ const MOCK_LABELS: UiShellLabels = {
     gates: "Gates & Habilitations",
     finops: "FinOps & Audit",
     admin: "Administration & Pilotage des Workspaces",
+    bootstrap: "Initialisation & Onboarding",
   },
   staleWarningBadgeLabel: "! [STALE_WARNING]",
   humanProfilePrefixLabel: "Profil Humain",
@@ -65,6 +66,7 @@ const MOCK_MODULES: UiShellModuleItem[] = [
   { key: "gates", order: 5, route: "/gates", icon: "shield", contributorBadgeCount: 1, hasStaleWarning: false, enabled: true },
   { key: "finops", order: 6, route: "/finops", icon: "chart", contributorBadgeCount: 0, hasStaleWarning: false, enabled: true },
   { key: "admin", order: 7, route: "/workspaces", icon: "settings", contributorBadgeCount: 0, hasStaleWarning: false, enabled: true },
+  { key: "bootstrap", order: 8, route: "/bootstrap", icon: "rocket", contributorBadgeCount: 0, hasStaleWarning: false, enabled: true },
 ];
 
 const MOCK_SCOPES: UiScopeNode[] = [
@@ -109,6 +111,9 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, AssistantDock & HumanLedAnchor
     expect(sidebar.getAttribute("data-collapsed")).toBe("false");
     expect(dock.getAttribute("data-collapsed")).toBe("false");
     expect(appShell.getAttribute("data-active-mobile-tab")).toBe("inbox");
+    expect(screen.getByTestId("topbar-search-input")).toBeDefined();
+    expect(screen.getByTestId("sidebar-collapse-toggle").textContent).toBe("«");
+    expect(screen.getByTestId("assistant-dock-toggle").textContent).toBe("»");
 
     for (const mod of MOCK_MODULES) {
       expect(screen.getByTestId(`sidebar-nav-item-${mod.key}`)).toBeDefined();
@@ -118,9 +123,11 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, AssistantDock & HumanLedAnchor
 
     fireEvent.keyDown(window, { key: "[" });
     expect(sidebar.getAttribute("data-collapsed")).toBe("true");
+    expect(screen.getByTestId("sidebar-collapse-toggle").textContent).toBe("»");
 
     fireEvent.keyDown(window, { key: "]" });
     expect(dock.getAttribute("data-collapsed")).toBe("true");
+    expect(screen.getByTestId("assistant-dock-toggle").textContent).toBe("«");
 
     fireEvent.click(screen.getByTestId("assistant-dock-toggle"));
     expect(dock.getAttribute("data-collapsed")).toBe("false");
@@ -150,6 +157,18 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, AssistantDock & HumanLedAnchor
     fireEvent.click(chatMobileTab);
     expect(chatMobileTab.getAttribute("data-active")).toBe("true");
     expect(appShell.getAttribute("data-active-mobile-tab")).toBe("chat");
+
+    // Verify Top Bar User Profile Dropdown, Dark Mode switch, and Escape close
+    fireEvent.click(screen.getByTestId("user-profile-dropdown-trigger"));
+    expect(screen.getByTestId("user-profile-dropdown-menu")).toBeDefined();
+
+    fireEvent.click(screen.getByTestId("dark-mode-toggle-switch"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    fireEvent.click(screen.getByTestId("dark-mode-toggle-switch"));
+    expect(document.documentElement.getAttribute("data-theme")).toBeNull();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("user-profile-dropdown-menu")).toBeNull();
   });
 
   it("renders HumanLedAnchorCard with mandatory human authoring attributes and no AI auto-fill", () => {

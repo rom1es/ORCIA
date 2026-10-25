@@ -133,6 +133,21 @@ export function CatalogExplorerPanel({
         </div>
       </div>
 
+      {visibleItems.length === 0 && (
+        <div
+          data-testid="catalog-explorer-empty-state"
+          style={{
+            padding: "16px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px dashed var(--color-border)",
+            color: "var(--color-muted-foreground)",
+            fontSize: "var(--font-size-body)",
+          }}
+        >
+          0
+        </div>
+      )}
+
       <div style={{ display: "grid", gap: "12px" }}>
         {visibleItems.map((item) => {
           const currentScope = promotedScopes[item.resourceId] ?? item.visibilityScope;

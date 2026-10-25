@@ -267,11 +267,20 @@ class MatrixPermissionEvaluator:
         return effective, (primary.system_prompt_secret if can_read_source else None)
 
     @staticmethod
-    def evaluate_module_permissions(user: UserIdentity) -> dict[str, bool]:
+    def evaluate_module_permissions(
+        user: UserIdentity, *, scope_level: str | None = None, has_workspaces: bool = True
+    ) -> dict[str, bool]:
+        is_admin = user.platform_role in ADMIN_MODULE_ALLOWED_ROLES
         return {
-            "cockpit": True, "inbox": True, "catalog": True, "ontology": True, "gates": True,
-            "finops": True, "admin": user.platform_role in ADMIN_MODULE_ALLOWED_ROLES,
-        }  # fmt: skip
+            "cockpit": True,
+            "inbox": has_workspaces,
+            "catalog": True,
+            "ontology": has_workspaces and (scope_level in (None, "TEAM", "WORKSPACE") or is_admin),
+            "gates": has_workspaces,
+            "finops": has_workspaces,
+            "admin": is_admin,
+            "bootstrap": is_admin,
+        }
 
     @classmethod
     def enforce_module_access(

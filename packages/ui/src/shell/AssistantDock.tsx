@@ -65,12 +65,13 @@ export function AssistantDock({
             color: "var(--color-foreground)",
             border: "1px solid var(--color-border)",
             borderRadius: "var(--radius-sm)",
-            padding: "4px 6px",
+            padding: "4px 8px",
             cursor: "pointer",
-            fontFamily: "var(--font-mono)",
+            fontFamily: "var(--font-sans)",
+            fontSize: "13px",
           }}
         >
-          ] «
+          «
         </button>
       </aside>
     );
@@ -89,7 +90,7 @@ export function AssistantDock({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "14px",
+        padding: "16px",
         boxSizing: "border-box",
         gap: "12px",
       }}
@@ -126,10 +127,11 @@ export function AssistantDock({
               borderRadius: "var(--radius-sm)",
               padding: "4px 8px",
               cursor: "pointer",
-              fontFamily: "var(--font-mono)",
+              fontFamily: "var(--font-sans)",
+              fontSize: "13px",
             }}
           >
-            » ]
+            »
           </button>
         </header>
 

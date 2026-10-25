@@ -6,6 +6,7 @@ import {
   type UiModuleKey,
   type UiPermissionBrokerTicketView,
   type UiPersonaKey,
+  type UiScopeLevel,
   type UiScopeNode,
   type UiShellModuleItem,
 } from "@orcia/ui";
@@ -22,6 +23,11 @@ export const DEFAULT_SHELL_MODULES: UiShellModuleItem[] = [
   { key: "gates", order: 5, route: "/gates", icon: "shield", contributorBadgeCount: 1, hasStaleWarning: false, enabled: true },
   { key: "finops", order: 6, route: "/finops", icon: "bar-chart", contributorBadgeCount: 0, hasStaleWarning: false, enabled: true },
   { key: "admin", order: 7, route: "/workspaces", icon: "settings", contributorBadgeCount: 0, hasStaleWarning: false, enabled: true },
+  { key: "bootstrap", order: 8, route: "/bootstrap", icon: "rocket", contributorBadgeCount: 0, hasStaleWarning: false, enabled: true },
+];
+
+export const EMPTY_DEFAULT_SCOPES: UiScopeNode[] = [
+  { id: "scope-global", level: "GLOBAL", name: "Plateforme Globale ORCIA", accessMode: "CONTRIBUTOR_ACTION_REQUIRED" },
 ];
 
 export const DEFAULT_SCOPES: UiScopeNode[] = [
@@ -36,7 +42,7 @@ export const DEFAULT_HUMAN_PROFILE: UiHumanProfileBadge = {
   displayName: "Tech Lead / Architecte",
   accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
   role: "TEAM_LEAD",
-  orgUnitName: "Sous-Équipe Checkout & Core Solutions",
+  orgUnitName: "",
 };
 
 export const PERSONA_PROFILES: Record<
@@ -85,7 +91,30 @@ export const PERSONA_PROFILES: Record<
   },
 };
 
+export function evaluateScopeModuleVisibility(
+  role: string,
+  scopeLevel: UiScopeLevel,
+  hasWorkspaces: boolean,
+): Record<UiModuleKey, boolean> {
+  const isSupervisorOrAdmin =
+    role === "PLATFORM_ADMIN" || role === "BU_DIRECTOR" || role === "TEAM_LEAD";
+  return {
+    cockpit: true,
+    inbox: hasWorkspaces,
+    catalog: true,
+    ontology:
+      hasWorkspaces &&
+      (scopeLevel === "WORKSPACE" || scopeLevel === "TEAM" || isSupervisorOrAdmin),
+    gates: hasWorkspaces,
+    finops: hasWorkspaces && isSupervisorOrAdmin,
+    admin: isSupervisorOrAdmin,
+    bootstrap: isSupervisorOrAdmin,
+  };
+}
+
 export interface PersonaContextValue {
+  fixtureMode: boolean;
+  activeModuleKey: UiModuleKey;
   activePersona: UiPersonaKey;
   setActivePersona: (persona: UiPersonaKey) => void;
   activeBrokerTicket: UiPermissionBrokerTicketView | null;
@@ -97,9 +126,11 @@ export interface PersonaContextValue {
 }
 
 const PersonaContext = createContext<PersonaContextValue>({
+  fixtureMode: false,
+  activeModuleKey: "cockpit",
   activePersona: "marc",
   setActivePersona: () => undefined,
-  activeBrokerTicket: PERMISSION_BROKER_TICKET_PRESETS.git,
+  activeBrokerTicket: null,
   brokerActionBanner: null,
   triggerPermissionDeniedStep: () => undefined,
   triggerConfusedDeputyCheck: () => undefined,
@@ -120,21 +151,52 @@ export function resolveModuleFromPathname(pathname: string | null): UiModuleKey 
   if (pathname.startsWith("/ontology")) return "ontology";
   if (pathname.startsWith("/gates")) return "gates";
   if (pathname.startsWith("/finops")) return "finops";
+  if (pathname.startsWith("/bootstrap")) return "bootstrap";
   if (pathname.startsWith("/workspaces") || pathname.startsWith("/admin")) return "admin";
   return "cockpit";
 }
 
-export function ShellContainer({ children }: { children: React.ReactNode }) {
+export function ShellContainer({
+  children,
+  fixtureMode = false,
+}: {
+  children: React.ReactNode;
+  fixtureMode?: boolean;
+}) {
   const { locale, dictionary, toggleLocale } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
-  const [activeScopeId, setActiveScopeId] = useState("scope-ws-orcia");
+  const [urlFixtureFlag, setUrlFixtureFlag] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("fixture") === "test") {
+        setUrlFixtureFlag(true);
+      }
+    }
+  }, []);
+
+  const isFixtureMode = fixtureMode || urlFixtureFlag;
+  const activeScopes = isFixtureMode ? DEFAULT_SCOPES : EMPTY_DEFAULT_SCOPES;
+  const [activeScopeId, setActiveScopeId] = useState(
+    isFixtureMode ? "scope-ws-orcia" : "scope-global",
+  );
   const [activePersona, setActivePersona] = useState<UiPersonaKey>("marc");
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
   const [activeBrokerTicket, setActiveBrokerTicket] =
-    useState<UiPermissionBrokerTicketView | null>(PERMISSION_BROKER_TICKET_PRESETS.git);
+    useState<UiPermissionBrokerTicketView | null>(
+      isFixtureMode ? PERMISSION_BROKER_TICKET_PRESETS.git : null,
+    );
   const [brokerSequence, setBrokerSequence] = useState(1);
   const [brokerActionBanner, setBrokerActionBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isFixtureMode) {
+      setActiveScopeId("scope-ws-orcia");
+      setActiveBrokerTicket((prev) => prev ?? PERMISSION_BROKER_TICKET_PRESETS.git);
+    }
+  }, [isFixtureMode]);
 
   useEffect(() => {
     setSelectedModuleOverride(null);
@@ -142,25 +204,41 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
 
   const activeModuleKey = selectedModuleOverride ?? resolveModuleFromPathname(pathname);
   const selectedScope =
-    DEFAULT_SCOPES.find((s) => s.id === activeScopeId) ?? DEFAULT_SCOPES[3]!;
-  const personaMeta = PERSONA_PROFILES[activePersona];
+    activeScopes.find((s) => s.id === activeScopeId) ?? activeScopes[activeScopes.length - 1]!;
+  const personaMeta = isFixtureMode ? PERSONA_PROFILES[activePersona] : null;
 
-  const effectiveProfile: UiHumanProfileBadge = {
-    archetypeKey: personaMeta.archetypeKey,
-    displayName: personaMeta.displayName,
-    role: personaMeta.role,
-    orgUnitName: personaMeta.orgUnitName,
-    accessMode:
-      personaMeta.accessMode === "READ_ONLY_OBSERVER"
-        ? "READ_ONLY_OBSERVER"
-        : selectedScope.accessMode,
-  };
+  const effectiveProfile: UiHumanProfileBadge = personaMeta
+    ? {
+        archetypeKey: personaMeta.archetypeKey,
+        displayName: personaMeta.displayName,
+        role: personaMeta.role,
+        orgUnitName: personaMeta.orgUnitName,
+        accessMode:
+          personaMeta.accessMode === "READ_ONLY_OBSERVER"
+            ? "READ_ONLY_OBSERVER"
+            : selectedScope.accessMode,
+      }
+    : {
+        ...DEFAULT_HUMAN_PROFILE,
+        accessMode: selectedScope.accessMode,
+      };
 
-  const effectiveModules: UiShellModuleItem[] = DEFAULT_SHELL_MODULES.map((mod) =>
-    mod.key === "admin" ? { ...mod, enabled: personaMeta.adminEnabled } : mod,
+  const visibilityMap = evaluateScopeModuleVisibility(
+    effectiveProfile.role ?? "TEAM_LEAD",
+    selectedScope.level,
+    isFixtureMode,
   );
-  const safeModuleKey: UiModuleKey =
-    !personaMeta.adminEnabled && activeModuleKey === "admin" ? "cockpit" : activeModuleKey;
+
+  const effectiveModules: UiShellModuleItem[] = DEFAULT_SHELL_MODULES.map((mod) => ({
+    ...mod,
+    contributorBadgeCount: isFixtureMode ? mod.contributorBadgeCount : 0,
+    hasStaleWarning: isFixtureMode ? mod.hasStaleWarning : false,
+    enabled: visibilityMap[mod.key],
+  }));
+
+  const safeModuleKey: UiModuleKey = !visibilityMap[activeModuleKey]
+    ? "cockpit"
+    : activeModuleKey;
 
   function triggerPermissionDeniedStep(presetKey: "git" | "confluence" | "jira") {
     const preset = PERMISSION_BROKER_TICKET_PRESETS[presetKey];
@@ -206,6 +284,8 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
   return (
     <PersonaContext.Provider
       value={{
+        fixtureMode: isFixtureMode,
+        activeModuleKey: safeModuleKey,
         activePersona,
         setActivePersona,
         activeBrokerTicket,
@@ -219,8 +299,8 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
       <AppShell
         modules={effectiveModules}
         activeModuleKey={safeModuleKey}
-        scopes={DEFAULT_SCOPES}
-        activeScopeId={activeScopeId}
+        scopes={activeScopes}
+        activeScopeId={selectedScope.id}
         humanProfile={effectiveProfile}
         labels={dictionary.shell}
         currentLocale={locale}

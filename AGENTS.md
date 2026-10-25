@@ -78,6 +78,29 @@ Chaque User Story ou fonctionnalité livrée doit produire un document pérenne 
 - **Section 2 (`Plan d'Implémentation`)** : migrations Alembic (`2.1`), noyau hexagonal & workers (`2.2`), backend FastAPI & SDK OpenAPI (`2.3`), interface Next.js Direction C (`2.4`).
 - **Section 3 (`Bilan des Modifications & Résultats`)** : complétée **après** implémentation et passage des 5 couches de tests (tableau des fichiers créés/modifiés, métriques chiffrées & couverture $\ge 90\%$, validation des 5 couches `AD-17` et résultat de `gitnexus_detect_changes()`).
 
+---
+
+# Règles Fondamentales UX & UI (Invariants de Conception)
+
+Toute conception, revue ou implémentation dans `@orcia/ui` (`packages/ui`) et `apps/web` doit appliquer strictement ces **11 règles fondamentales** ([`EXPERIENCE.md`](file:///home/romain/Documents/Projects/ORCIA/docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md) et [`DESIGN.md`](file:///home/romain/Documents/Projects/ORCIA/docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md)) :
+
+## 1. Les 6 Règles Fondamentales de l'UX (Expérience Utilisateur)
+L'UX désigne le parcours, la fluidité et la logique de navigation du portail :
+1. **Centrer sur l'utilisateur** : Concevoir pour les besoins réels des utilisateurs cibles (selon leur **Profil Humain**), jamais pour le goût personnel des équipes internes.
+2. **Viser la simplicité (Loi de Hick / Minimalisme)** : Éliminer les éléments superflus pour éviter de surcharger l'utilisateur (1 module = 1 intention claire ; pas d'empilement de panneaux hors contexte).
+3. **Respecter les standards du web** : Utiliser des schémas de navigation familiers (logo/identité en haut à gauche ramenant à l'accueil, en-tête et navigation structurés).
+4. **Assurer un bon feedback** : Chaque action de l'utilisateur (clic, validation, erreur) doit entraîner une réponse visuelle ou textuelle immédiate.
+5. **Offrir des sorties de secours** : L'utilisateur doit pouvoir annuler une action, fermer une modale/tiroir (`Escape`), replier un panneau ou revenir en arrière facilement.
+6. **Optimiser la performance et le Mobile-First** : Privilégier la rapidité de chargement/rendu et penser d'abord l'affichage sur smartphone (Mobile Companion sans débordement).
+
+## 2. Les 5 Règles Fondamentales de l'UI (Interface Utilisateur)
+L'UI traduit l'UX en éléments visuels tangibles, esthétiques et fonctionnels :
+1. **Hiérarchie visuelle** : Guider l'œil en jouant sur les tailles, les contrastes, les espacements et les graisses de police pour distinguer l'important du secondaire.
+2. **Limitation des typographies (Max 2)** : Se restreindre à **maximum deux typographies** — une primaire (`Inter` / `Geist Sans` pour l'interface, les titres et la lecture) et une secondaire (`JetBrains Mono` / `Geist Mono` pour les URI, hashes et code) — afin de conserver une lecture harmonieuse.
+3. **Cohérence graphique** : Utiliser un système de composants unifié dans `@orcia/ui` (boutons, cartes, badges au design strictement identique pour une même action).
+4. **Gestion des grilles (Grids)** : Structurer la page à l'aide de colonnes, de gouttières (`gap`) et de marges régulières pour aligner proprement tous les éléments.
+5. **Contrastes et accessibilité (WCAG AA)** : S'assurer que les couleurs de texte et de fond respectent les normes de contraste pour être lisibles par tous.
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
