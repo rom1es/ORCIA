@@ -332,14 +332,19 @@ def test_worker_idempotent_system_ping_actor() -> None:
 def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify centralized `.env` loader (`orcia_core.config`) for DB, Redis, API, and Web."""
     from orcia_core.config import (
+        generate_strong_secret,
         get_env,
         get_env_int,
+        init_or_rotate_env_secrets,
         load_orcia_env,
         resolve_api_host_and_port,
         resolve_database_url,
         resolve_redis_url,
         resolve_web_host_and_port,
     )
+
+    with pytest.raises(ValueError, match="nbytes must be >= 16"):
+        generate_strong_secret(8)
 
     custom_env = tmp_path / ".env.custom"
     custom_env.write_text(
@@ -354,7 +359,8 @@ def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.Monke
         "POSTGRES_DB=orcia_custom_db\n"
         "REDIS_HOST=127.0.0.1\n"
         "REDIS_PORT=6389\n"
-        "REDIS_DB=2\n",
+        "REDIS_DB=2\n"
+        "ORCIA_JWT_SIGNING_SECRET=change-me\n",  # pragma: allowlist secret
         encoding="utf-8",
     )
     monkeypatch.delenv("DATABASE_URL", raising=False)
@@ -363,6 +369,8 @@ def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.Monke
     monkeypatch.delenv("ORCIA_API_PORT", raising=False)
     monkeypatch.delenv("POSTGRES_PORT", raising=False)
     monkeypatch.delenv("REDIS_PORT", raising=False)
+    monkeypatch.delenv("ORCIA_JWT_SIGNING_SECRET", raising=False)
+    monkeypatch.delenv("ORCIA_PASSTHROUGH_MASTER_KEY", raising=False)
 
     loaded_path = load_orcia_env(env_file=custom_env, override=True)
     assert loaded_path == custom_env
@@ -376,6 +384,30 @@ def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.Monke
     )
     assert resolve_database_url() == expected_db
     assert resolve_redis_url() == "redis://127.0.0.1:6389/2"
+
+    # Support Docker/K8s <VAR>_FILE secret mounting
+    secret_file = tmp_path / "pg_pass.secret"
+    secret_file.write_text("k8s_mounted_secret\n", encoding="utf-8")
+    monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(secret_file))
+    assert get_env("POSTGRES_PASSWORD") == "k8s_mounted_secret"
+    monkeypatch.delenv("POSTGRES_PASSWORD_FILE", raising=False)
+
+    # Rotate weak placeholder secrets in-place and append missing ones
+    rotated = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=False)
+    assert rotated["ORCIA_JWT_SIGNING_SECRET"] is True
+    assert rotated["ORCIA_PASSTHROUGH_MASTER_KEY"] is True
+    first_jwt = get_env("ORCIA_JWT_SIGNING_SECRET")
+    assert len(first_jwt) >= 32 and first_jwt != "change-me-jwt-signing-secret"
+
+    # Second run without force_rotate preserves strong secrets
+    rotated_again = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=False)
+    assert rotated_again["ORCIA_JWT_SIGNING_SECRET"] is False
+    assert get_env("ORCIA_JWT_SIGNING_SECRET") == first_jwt
+
+    # Force rotation replaces even strong secrets
+    forced = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=True)
+    assert forced["ORCIA_JWT_SIGNING_SECRET"] is True
+    assert get_env("ORCIA_JWT_SIGNING_SECRET") != first_jwt
 
     monkeypatch.setenv("ORCIA_WEB_PORT", "not-an-int")
     assert get_env_int("ORCIA_WEB_PORT", 3100) == 3100

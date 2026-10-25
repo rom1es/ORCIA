@@ -38,6 +38,7 @@ for rel_src in ("packages/orcia-core/src", "apps/api/src", "apps/worker/src"):
 from orcia_core.config import (  # noqa: E402
     get_env,
     get_env_int,
+    init_or_rotate_env_secrets,
     load_orcia_env,
     resolve_api_host_and_port,
     resolve_redis_url,
@@ -424,13 +425,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="manage",
         description=(
-            "Gestionnaire unifié ORCIA : start | stop | restart | status | logs "
+            "Gestionnaire unifié ORCIA : start | stop | restart | status | logs | init-secrets "
             "pour toute la stack (all) ou par composant."
         ),
     )
     parser.add_argument(
         "action",
-        choices=("start", "stop", "restart", "status", "logs"),
+        choices=("start", "stop", "restart", "status", "logs", "init-secrets"),
         help="Action à exécuter sur la cible.",
     )
     parser.add_argument(
@@ -447,6 +448,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=40,
         help="Nombre de lignes à afficher pour l'action 'logs' (défaut: 40).",
     )
+    parser.add_argument(
+        "--rotate",
+        action="store_true",
+        default=False,
+        help="Forcer la rotation des secrets applicatifs dans .env (pour 'init-secrets').",
+    )
     return parser
 
 
@@ -455,6 +462,16 @@ def main(argv: list[str] | None = None) -> int:
     load_orcia_env()
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+
+    if args.action == "init-secrets":
+        updated = init_or_rotate_env_secrets(force_rotate=bool(args.rotate))
+        for key, was_rotated in updated.items():
+            state = (
+                "généré / régénéré (256 bits, chmod 600)" if was_rotated else "déjà fort (conservé)"
+            )
+            print(f"🔐 {key}: {state}")
+        return 0
+
     components = resolve_targets(args.target)
 
     if args.action == "status":

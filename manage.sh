@@ -7,6 +7,7 @@
 #   ./manage.sh stop   [all|infra|postgres|redis|minio|api|worker|web]
 #   ./manage.sh restart [all|infra|postgres|redis|minio|api|worker|web]
 #   ./manage.sh logs   [all|infra|postgres|redis|minio|api|worker|web] [-n 50]
+#   ./manage.sh init-secrets [--rotate]
 # ==============================================================================
 set -euo pipefail
 

@@ -3,12 +3,15 @@
 Ensures all components (`apps/api`, `apps/worker`, `infra/migrations`,
 `infra/scripts/maintenance/*`, `scripts/*`, and `packages/orcia-core`) resolve their host, port,
 path, and credential settings from the root `.env` file while preserving explicit process
-environment overrides (`override=False`).
+environment overrides (`override=False`) and supporting `<VAR>_FILE` secret files (Docker / K8s
+`/run/secrets/*`).
 """
 
 from __future__ import annotations
 
 import os
+import re
+import secrets
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -16,6 +19,22 @@ from dotenv import load_dotenv
 
 REPO_ROOT: Path = Path(__file__).resolve().parents[4]
 DEFAULT_ENV_FILE: Path = REPO_ROOT / ".env"
+
+WEAK_PLACEHOLDER_SECRETS: frozenset[str] = frozenset(
+    {
+        "",
+        "change-me",
+        "change-me-jwt-signing-secret",
+        "change-me-aes256gcm-master-key",
+        "orcia-story-1-2-jwt-signing-secret-key-2026",
+        "orcia-story-1-2-aes256gcm-master-key-2026",
+    }
+)
+
+ROTATABLE_SECRET_KEYS: tuple[str, ...] = (
+    "ORCIA_JWT_SIGNING_SECRET",
+    "ORCIA_PASSTHROUGH_MASTER_KEY",
+)
 
 _ENV_LOADED = False
 
@@ -31,9 +50,14 @@ def load_orcia_env(*, env_file: Path | None = None, override: bool = False) -> P
 
 
 def get_env(key: str, default: str = "") -> str:
-    """Return environment variable value after ensuring `.env` has been loaded."""
+    """Return environment variable value, supporting `<KEY>_FILE` secret files first."""
     if not _ENV_LOADED:
         load_orcia_env()
+    file_var = os.environ.get(f"{key}_FILE", "").strip()
+    if file_var:
+        secret_path = Path(file_var)
+        if secret_path.is_file():
+            return secret_path.read_text(encoding="utf-8").strip()
     return os.environ.get(key, default)
 
 
@@ -82,3 +106,64 @@ def resolve_web_host_and_port() -> tuple[str, int]:
     host = get_env("ORCIA_WEB_HOST", "127.0.0.1")
     port = get_env_int("ORCIA_WEB_PORT", 3100)
     return host, port
+
+
+def generate_strong_secret(nbytes: int = 32) -> str:
+    """Generate a URL-safe cryptographic secret (`>= 256 bits` by default)."""
+    if nbytes < 16:
+        raise ValueError("nbytes must be >= 16 (128 bits minimum)")
+    return secrets.token_urlsafe(nbytes)
+
+
+def init_or_rotate_env_secrets(
+    *,
+    env_file: Path | None = None,
+    template_file: Path | None = None,
+    force_rotate: bool = False,
+) -> dict[str, bool]:
+    """Ensure `.env` exists and replace weak/placeholder application secrets with 256-bit keys.
+
+    Returns a mapping `{secret_key: was_updated}`.
+    """
+    target_env = env_file or DEFAULT_ENV_FILE
+    source_tpl = template_file or (REPO_ROOT / ".env.example")
+    if not target_env.is_file() and source_tpl.is_file():
+        target_env.write_text(source_tpl.read_text(encoding="utf-8"), encoding="utf-8")
+
+    content = target_env.read_text(encoding="utf-8") if target_env.is_file() else ""
+    updated: dict[str, bool] = {}
+
+    for key in ROTATABLE_SECRET_KEYS:
+        pattern = re.compile(rf"^(?P<prefix>{re.escape(key)}=)(?P<val>.*)$", re.MULTILINE)
+        match = pattern.search(content)
+        new_secret = generate_strong_secret(32)
+        if match is None:
+            sep = "" if (not content or content.endswith("\n")) else "\n"
+            content = f"{content}{sep}{key}={new_secret}\n"
+            updated[key] = True
+        else:
+            current_val = match.group("val").strip().strip("\"'")
+            if force_rotate or current_val in WEAK_PLACEHOLDER_SECRETS:
+                content = pattern.sub(rf"\g<prefix>{new_secret}", content, count=1)
+                updated[key] = True
+            else:
+                updated[key] = False
+
+    target_env.write_text(content, encoding="utf-8")
+    with context_suppress_chmod(target_env):
+        target_env.chmod(0o600)
+    load_orcia_env(env_file=target_env, override=True)
+    return updated
+
+
+class context_suppress_chmod:
+    """Context manager ignoring OSError when setting file permissions on restricted FS."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+
+    def __enter__(self) -> Path:
+        return self._path
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> bool:
+        return isinstance(exc, OSError)

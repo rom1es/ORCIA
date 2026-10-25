@@ -76,3 +76,30 @@ development_status:
   6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: backlog
   6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: backlog
   epic-6-retrospective: optional
+
+action_items:
+  - id: SEC-01
+    title: "Chiffrement GitOps des secrets d'équipe via Mozilla SOPS + age (.env.secrets.enc)"
+    status: open
+    epic: epic-1
+    description: >
+      Séparer la topologie non-sensible (.env.example) des secrets chiffrés (.env.secrets.enc via
+      Mozilla SOPS + clés publiques age d'équipe/CI) et permettre à `./manage.sh start` de déchiffrer
+      les secrets en mémoire (`sops exec-env`) sans fichier en clair sur disque.
+  - id: SEC-02
+    title: "Keyring multi-versions (rotation sans coupure) pour PassthroughVaultCipher (AES-256-GCM) et JwtSessionManager"
+    status: open
+    epic: epic-1
+    description: >
+      Supporter `ORCIA_PASSTHROUGH_MASTER_KEYS="v2:<key2>,v1:<key1>"` et `ORCIA_JWT_SIGNING_SECRETS`
+      dans `packages/orcia-core/src/orcia_core/permissions/crypto.py` afin de chiffrer/signer avec
+      la clé active (`v2`) tout en déchiffrant/vérifiant les jetons et credentials historiques (`v1`)
+      pendant la fenêtre de rotation, couplé à un script de maintenance `infra/scripts/maintenance/XX_rewrap_passthrough_secrets.py --dry-run|--apply`.
+  - id: SEC-03
+    title: "Adaptateur KMS / Secret Manager externe (Infisical / HashiCorp Vault / Cloud KMS) & Enveloppe DEK/KEK"
+    status: open
+    epic: epic-6
+    description: >
+      Introduire un port hexagonal `SecretProviderPort` dans `packages/orcia-core/ports/` avec
+      chiffrement par enveloppe (Data Encryption Key par Workspace chiffrée par une Key Encryption Key
+      dans Vault/KMS) et audit immuable des rotations de clés dans `audit_ledger`.
