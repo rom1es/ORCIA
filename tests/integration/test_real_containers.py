@@ -161,6 +161,27 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             assert cat_apply.workflow_definitions_count == 1
             assert cat_apply.customization_overrides_count == 4
 
+            # Verify Story 1.4 maintenance script 03_backfill_permission_broker in dry-run & apply
+            backfill_pb = _load_script_module(
+                "backfill_permission_broker", "03_backfill_permission_broker.py"
+            )
+            pb_dry = await backfill_pb.backfill_permission_broker(engine, apply_changes=False)
+            assert pb_dry.policies_count == 6
+            assert pb_dry.tickets_count == 1
+            assert pb_dry.dry_run is True
+            assert pb_dry.committed is False
+
+            async with engine.connect() as conn:
+                pol_after_dry = await conn.execute(
+                    sa.text("SELECT COUNT(*) FROM permission_broker_policies")
+                )
+                assert int(pol_after_dry.scalar() or 0) == 0
+
+            pb_apply = await backfill_pb.backfill_permission_broker(engine, apply_changes=True)
+            assert pb_apply.committed is True
+            assert pb_apply.policies_count == 6
+            assert pb_apply.tickets_count == 1
+
             # Verify append-only trigger blocks UPDATE and DELETE on PG 18
             async with engine.begin() as conn:
                 await conn.execute(

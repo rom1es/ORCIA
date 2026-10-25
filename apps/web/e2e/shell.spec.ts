@@ -76,6 +76,33 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
       page.getByTestId("inspect-source-result-res-blackbox-security-agent"),
     ).toContainText("ERR_READ_SOURCE_DENIED");
 
+    // Story 1.4: Verify Permission Broker auto-opens the collapsed right Dock on PERMISSION_DENIED_STEP (UX-DR11, FR-22)
+    await page.getByTestId("persona-switch-marc").click();
+    await page.getByTestId("simulate-permission-denied-confluence-btn").click();
+    await expect(dock).toHaveAttribute("data-collapsed", "false");
+    await expect(page.getByTestId("permission-broker-card")).toBeVisible();
+    await expect(page.getByTestId("permission-broker-required-role")).toHaveText(
+      "CONFLUENCE_PAY_ADR_READER",
+    );
+    await expect(page.getByTestId("permission-broker-card-procedure")).toContainText(
+      "CONFLUENCE_PAY_ADR_READER",
+    );
+    await expect(page.getByTestId("permission-broker-jira-link")).toHaveAttribute(
+      "href",
+      /jira\.enterprise\.internal/,
+    );
+
+    await page.getByTestId("permission-broker-replay-btn").click();
+    await expect(page.getByTestId("permission-broker-card")).toHaveAttribute(
+      "data-ticket-status",
+      "REPLAYED",
+    );
+
+    await page.getByTestId("simulate-confused-deputy-btn").click();
+    await expect(page.getByTestId("permission-broker-action-banner")).toContainText(
+      "ERR_CONFUSED_DEPUTY_BLOCKED",
+    );
+
     // Mobile Companion tab bar is rendered and interactive
     await expect(page.getByTestId("mobile-companion-tabbar")).toBeVisible();
   });

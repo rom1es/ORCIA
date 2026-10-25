@@ -111,6 +111,33 @@ export const enDictionary: TranslationDictionary = {
     bmadImportedBanner:
       "HTTP 200 OK — BMAD Pack converted to WorkflowDefinitionEntity (source_format=BMAD_PACK) and pinned in cas/<sha256>",
   },
+  permissionBroker: {
+    cardBadgeTitle: "⚠️ PERMISSION BROKER",
+    passthroughBadgeLabel: "Identity: passthrough",
+    servicePrincipalBadgeLabel: "Identity: service_principal",
+    targetUriLabel: "Blocked external source",
+    requiredRoleLabel: "Required role or group (KB)",
+    approverTeamLabel: "Approver team",
+    slaHoursPrefix: "SLA",
+    rfcHintLabel: "RFC 9457 hint (permission_broker_hint)",
+    jiraRequestButtonLabel: "Request access in Atlassian Jira",
+    pauseStepButtonLabel: "Pause step",
+    replayStepButtonLabel: "Replay step",
+    pausedStateBanner: "⏸️ Step paused pending Jira approval",
+    replayedStateBanner: "✅ Access granted — Step replayed successfully (REPLAYED)",
+    simulatorTitle:
+      "Passthrough vs Service Principal Execution & Jira-Connected AI Permission Broker",
+    simulatorSubtitle:
+      "401/403 interception, Markdown/YAML KB resolution, automatic right Dock opening, and Replay Step N.",
+    simulateGitDenialLabel: "Simulate 403 Git (passthrough)",
+    simulateConfluenceDenialLabel: "Simulate 403 Confluence (passthrough)",
+    simulateJiraDenialLabel: "Simulate 403 Jira SecOps (passthrough)",
+    simulateConfusedDeputyLabel: "Test unapproved Service Principal",
+    confusedDeputyBlockedBanner:
+      "HTTP 403 ERR_CONFUSED_DEPUTY_BLOCKED — Unapproved service_principal execution blocked",
+    observerDeniedBanner:
+      "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Permission Broker action rejected in Observer mode",
+  },
   modulePages: {
     cockpit: {
       subtitle: "Human-Led, Agent-Accelerated Co-Design Space",

@@ -1,6 +1,7 @@
 import type {
   UiCatalogExplorerItemView,
   UiCatalogResourcePermissionView,
+  UiPermissionBrokerTicketView,
   UiPersonaKey,
   UiRunLockTripletView,
   UiWorkspaceCardView,
@@ -167,42 +168,81 @@ export const DEFAULT_CATALOG_EXPLORER_ITEMS: UiCatalogExplorerItemView[] = [
 ];
 
 export const DEFAULT_RUN_LOCK_TRIPLETS: UiRunLockTripletView[] = [
-  {
-    alias: "workflow-definition",
-    scheme: "db",
-    uri: "db://orcia/catalog/payment-delivery-workflow@v1.2.0",
-    resolvedVersion: "v1.2.0",
-    sha256Short: "3c18b7e9d04a",
-  },
-  {
-    alias: "git-payment-frontend",
-    scheme: "git",
-    uri: "git://gitlab.entreprise.io/payments/checkout-web",
-    resolvedVersion: "latest",
-    sha256Short: "a10f9c28e4b1",
-  },
-  {
-    alias: "git-payment-api",
-    scheme: "git",
-    uri: "git://gitlab.entreprise.io/payments/ledger-api",
-    resolvedVersion: "latest",
-    sha256Short: "b21e8d39f5c2",
-  },
-  {
-    alias: "jira-pay-build",
-    scheme: "jira",
-    uri: "jira://jira.entreprise.io/projects/PAYBUILD",
-    resolvedVersion: "PAYBUILD",
-    sha256Short: "c32f7e40a6d3",
-  },
-  {
-    alias: "confluence-pay-adr",
-    scheme: "confluence",
-    uri: "confluence://wiki.entreprise.io/spaces/PAYADR",
-    resolvedVersion: "latest",
-    sha256Short: "d43a6f51b7e4",
-  },
+  { alias: "workflow-definition", scheme: "db", uri: "db://orcia/catalog/payment-delivery-workflow@v1.2.0", resolvedVersion: "v1.2.0", sha256Short: "3c18b7e9d04a" },
+  { alias: "git-payment-frontend", scheme: "git", uri: "git://gitlab.entreprise.io/payments/checkout-web", resolvedVersion: "latest", sha256Short: "a10f9c28e4b1" },
+  { alias: "git-payment-api", scheme: "git", uri: "git://gitlab.entreprise.io/payments/ledger-api", resolvedVersion: "latest", sha256Short: "b21e8d39f5c2" },
+  { alias: "jira-pay-build", scheme: "jira", uri: "jira://jira.entreprise.io/projects/PAYBUILD", resolvedVersion: "PAYBUILD", sha256Short: "c32f7e40a6d3" },
+  { alias: "confluence-pay-adr", scheme: "confluence", uri: "confluence://wiki.entreprise.io/spaces/PAYADR", resolvedVersion: "latest", sha256Short: "d43a6f51b7e4" },
 ];
+
+export const PERMISSION_BROKER_TICKET_PRESETS: Record<
+  "git" | "confluence" | "jira",
+  UiPermissionBrokerTicketView
+> = {
+  git: {
+    id: "0192c4e0-0000-7000-8000-000000001101",
+    ticketKey: "tkt-perm-step-02-git-checkout-core",
+    stepKey: "step-02-execution",
+    stepNumber: 2,
+    stepState: "PERMISSION_DENIED_STEP",
+    status: "WAITING_FOR_PERMISSION",
+    targetUri: "git://github.enterprise/payments/checkout-core.git",
+    connectorScheme: "git",
+    executionIdentity: "passthrough",
+    upstreamHttpStatus: 403,
+    requiredRole: "ROLE_GIT_PAYMENTS_MAINTAINER",
+    approverTeam: "SecOps & Core Payments IAM",
+    slaHours: 4,
+    jiraRequestUrl:
+      "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa?pid=10420&issuetype=10002&summary=%5BORCIA%20Permission%20Broker%5D%20ROLE_GIT_PAYMENTS_MAINTAINER%20sur%20git%3A%2F%2Fgithub.enterprise%2Fpayments%2Fcheckout-core.git",
+    permissionBrokerHint:
+      "jira://IAM/ROLE_GIT_PAYMENTS_MAINTAINER?target=git%3A%2F%2Fgithub.enterprise%2Fpayments%2Fcheckout-core.git&approver=SecOps%20%26%20Core%20Payments%20IAM&sla_hours=4",
+    procedureMarkdown:
+      "### Procédure d'habilitation Dépôts Git Paiement\n1. Ouvrir le ticket Jira IAM pré-rempli.\n2. Faire valider `ROLE_GIT_PAYMENTS_MAINTAINER` par `SecOps & Core Payments IAM`.",
+  },
+  confluence: {
+    id: "0192c4e0-0000-7000-8000-000000001102",
+    ticketKey: "tkt-perm-step-03-confluence-pci",
+    stepKey: "step-03-adr-sync",
+    stepNumber: 3,
+    stepState: "PERMISSION_DENIED_STEP",
+    status: "WAITING_FOR_PERMISSION",
+    targetUri: "confluence://PAY/Architecture-PCI@v4",
+    connectorScheme: "confluence",
+    executionIdentity: "passthrough",
+    upstreamHttpStatus: 403,
+    requiredRole: "CONFLUENCE_PAY_ADR_READER",
+    approverTeam: "Architecture Paiement & Conformité PCI",
+    slaHours: 2,
+    jiraRequestUrl:
+      "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa?pid=10421&issuetype=10002&summary=%5BORCIA%20Permission%20Broker%5D%20CONFLUENCE_PAY_ADR_READER%20sur%20confluence%3A%2F%2FPAY%2FArchitecture-PCI%40v4",
+    permissionBrokerHint:
+      "jira://IAM/CONFLUENCE_PAY_ADR_READER?target=confluence%3A%2F%2FPAY%2FArchitecture-PCI%40v4&approver=Architecture%20Paiement%20%26%20Conformit%C3%A9%20PCI&sla_hours=2",
+    procedureMarkdown:
+      "### Accès Espace Confluence Architecture PCI\nOctroi du groupe `CONFLUENCE_PAY_ADR_READER` sous 2h ouvrées.",
+  },
+  jira: {
+    id: "0192c4e0-0000-7000-8000-000000001103",
+    ticketKey: "tkt-perm-step-04-jira-secops",
+    stepKey: "step-04-jira-transition",
+    stepNumber: 4,
+    stepState: "PERMISSION_DENIED_STEP",
+    status: "WAITING_FOR_PERMISSION",
+    targetUri: "jira://SECOPS/SEC-108",
+    connectorScheme: "jira",
+    executionIdentity: "passthrough",
+    upstreamHttpStatus: 403,
+    requiredRole: "JIRA_SECOPS_TRANSITION_ACTOR",
+    approverTeam: "CSIRT & SecOps Governance",
+    slaHours: 4,
+    jiraRequestUrl:
+      "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa?pid=10422&issuetype=10002&summary=%5BORCIA%20Permission%20Broker%5D%20JIRA_SECOPS_TRANSITION_ACTOR%20sur%20jira%3A%2F%2FSECOPS%2FSEC-108",
+    permissionBrokerHint:
+      "jira://IAM/JIRA_SECOPS_TRANSITION_ACTOR?target=jira%3A%2F%2FSECOPS%2FSEC-108&approver=CSIRT%20%26%20SecOps%20Governance&sla_hours=4",
+    procedureMarkdown:
+      "### Habilitation Transitions Jira SecOps\nRequiert le rôle `JIRA_SECOPS_TRANSITION_ACTOR` validé par CSIRT.",
+  },
+};
 
 export function computePersonaTopology(persona: UiPersonaKey): {
   workspaces: UiWorkspaceCardView[];

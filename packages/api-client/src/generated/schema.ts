@@ -163,6 +163,87 @@ export interface components {
       plaintext_secret: string;
       target_host: string;
     };
+    PermissionBrokerPolicyItem: {
+      approved_by_admin_id?: string | null;
+      approver_team: string;
+      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+      freshness_ttl_days?: number;
+      human_anchor_author_id?: string | null;
+      human_anchor_signature?: string | null;
+      id: string;
+      policy_key: string;
+      procedure_markdown?: string;
+      request_url_template: string;
+      required_role: string;
+      service_principal_allowed?: boolean;
+      sla_hours: number;
+      uri_pattern: string;
+    };
+    PermissionBrokerStateResponse: {
+      policies: (components["schemas"]["PermissionBrokerPolicyItem"])[];
+      tickets: (components["schemas"]["PermissionBrokerTicketItem"])[];
+      trace_id: string;
+    };
+    PermissionBrokerTicketItem: {
+      approver_team: string;
+      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+      execution_identity: "passthrough" | "service_principal";
+      id: string;
+      jira_request_url: string;
+      permission_broker_hint: string;
+      policy_id: string;
+      procedure_markdown?: string;
+      requester_user_id: string;
+      required_role: string;
+      sla_hours: number;
+      status: "WAITING_FOR_PERMISSION" | "PAUSED" | "REPLAYED" | "GRANTED";
+      step_key: string;
+      step_number: number;
+      step_state: "PERMISSION_DENIED_STEP" | "PAUSED" | "REPLAYED" | "GRANTED";
+      target_uri: string;
+      ticket_key: string;
+      upstream_http_status: 401 | 403;
+      workspace_id?: string | null;
+    };
+    PermissionCheckRequest: {
+      execution_identity?: "passthrough" | "service_principal";
+      granted_external_roles?: (string)[];
+      raise_on_denied?: boolean;
+      resource_id?: string | null;
+      simulated_upstream_status?: 200 | 401 | 403 | null;
+      step_key?: string;
+      step_number?: number;
+      target_uri: string;
+      workspace_id?: string | null;
+    };
+    PermissionCheckResponse: {
+      allowed: boolean;
+      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+      execution_identity: "passthrough" | "service_principal";
+      permission_broker_hint?: string | null;
+      policy: components["schemas"]["PermissionBrokerPolicyItem"];
+      status: "GRANTED" | "WAITING_FOR_PERMISSION";
+      target_uri: string;
+      ticket?: components["schemas"]["PermissionBrokerTicketItem"] | null;
+      trace_id: string;
+    };
+    PermissionPolicyImportMarkdownRequest: {
+      markdown_text: string;
+      policy_key?: string | null;
+      workspace_id?: string | null;
+    };
+    PermissionPolicyImportMarkdownResponse: {
+      policy: components["schemas"]["PermissionBrokerPolicyItem"];
+      trace_id: string;
+    };
+    PermissionTicketActionRequest: {
+      action: "PAUSE" | "REPLAY";
+      workspace_id?: string | null;
+    };
+    PermissionTicketActionResponse: {
+      ticket: components["schemas"]["PermissionBrokerTicketItem"];
+      trace_id: string;
+    };
     ProblemDetails: {
       detail: string;
       error_code: string;
@@ -403,6 +484,34 @@ export interface paths {
       };
     };
   };
+  "/api/v1/permissions/broker/check-access": {
+    post: {
+      responses: {
+        200: components["schemas"]["PermissionCheckResponse"];
+      };
+    };
+  };
+  "/api/v1/permissions/broker/policies/import-markdown": {
+    post: {
+      responses: {
+        200: components["schemas"]["PermissionPolicyImportMarkdownResponse"];
+      };
+    };
+  };
+  "/api/v1/permissions/broker/state": {
+    get: {
+      responses: {
+        200: components["schemas"]["PermissionBrokerStateResponse"];
+      };
+    };
+  };
+  "/api/v1/permissions/broker/tickets/{ticket_id}/action": {
+    post: {
+      responses: {
+        200: components["schemas"]["PermissionTicketActionResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces": {
     get: {
       responses: {
@@ -443,6 +552,15 @@ export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
+export type PermissionBrokerPolicyItem = components["schemas"]["PermissionBrokerPolicyItem"];
+export type PermissionBrokerStateResponse = components["schemas"]["PermissionBrokerStateResponse"];
+export type PermissionBrokerTicketItem = components["schemas"]["PermissionBrokerTicketItem"];
+export type PermissionCheckRequest = components["schemas"]["PermissionCheckRequest"];
+export type PermissionCheckResponse = components["schemas"]["PermissionCheckResponse"];
+export type PermissionPolicyImportMarkdownRequest = components["schemas"]["PermissionPolicyImportMarkdownRequest"];
+export type PermissionPolicyImportMarkdownResponse = components["schemas"]["PermissionPolicyImportMarkdownResponse"];
+export type PermissionTicketActionRequest = components["schemas"]["PermissionTicketActionRequest"];
+export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
 export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripletItem"];

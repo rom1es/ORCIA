@@ -2,6 +2,7 @@ import type {
   HumanLedAnchorCardLabels,
   UiCatalogExplorerLabels,
   UiModuleKey,
+  UiPermissionBrokerLabels,
   UiShellLabels,
   UiWorkspaceTopologyLabels,
 } from "@orcia/ui";
@@ -24,5 +25,6 @@ export interface TranslationDictionary {
   };
   workspaceTopology: UiWorkspaceTopologyLabels;
   catalogExplorer: UiCatalogExplorerLabels;
+  permissionBroker: UiPermissionBrokerLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

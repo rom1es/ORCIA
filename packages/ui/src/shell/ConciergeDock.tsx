@@ -1,14 +1,24 @@
 import React, { useState } from "react";
 import { StatusBadge } from "../primitives/StatusBadge";
-import type { UiModuleKey, UiShellLabels } from "./types";
+import { PermissionBrokerCard } from "./PermissionBrokerCard";
+import type {
+  UiModuleKey,
+  UiPermissionBrokerLabels,
+  UiPermissionBrokerTicketView,
+  UiShellLabels,
+} from "./types";
 
 export interface ConciergeDockProps {
   activeModuleKey: UiModuleKey;
   activeScopeId: string;
   collapsed: boolean;
   labels: UiShellLabels;
+  permissionBrokerTicket?: UiPermissionBrokerTicketView | null;
+  permissionBrokerLabels?: UiPermissionBrokerLabels;
   onToggleCollapsed: () => void;
   onSubmitPrompt?: (prompt: string) => void;
+  onPausePermissionStep?: (ticketId: string) => void;
+  onReplayPermissionStep?: (ticketId: string) => void;
 }
 
 export function ConciergeDock({
@@ -16,10 +26,17 @@ export function ConciergeDock({
   activeScopeId,
   collapsed,
   labels,
+  permissionBrokerTicket,
+  permissionBrokerLabels,
   onToggleCollapsed,
   onSubmitPrompt,
+  onPausePermissionStep,
+  onReplayPermissionStep,
 }: ConciergeDockProps) {
   const [promptValue, setPromptValue] = useState("");
+  const hasWaitingDenial =
+    permissionBrokerTicket?.status === "WAITING_FOR_PERMISSION" ||
+    permissionBrokerTicket?.stepState === "PERMISSION_DENIED_STEP";
 
   if (collapsed) {
     return (
@@ -64,9 +81,9 @@ export function ConciergeDock({
       data-testid="concierge-dock"
       data-collapsed="false"
       style={{
-        width: "var(--dock-width)",
-        minWidth: "var(--dock-width)",
-        maxWidth: "var(--dock-width)",
+        width: "min(var(--dock-width), 48vw)",
+        minWidth: "min(var(--dock-width), 48vw)",
+        maxWidth: "min(var(--dock-width), 48vw)",
         backgroundColor: "var(--color-dock-bg)",
         borderLeft: "1px solid var(--color-border)",
         display: "flex",
@@ -74,6 +91,7 @@ export function ConciergeDock({
         justifyContent: "space-between",
         padding: "14px",
         boxSizing: "border-box",
+        gap: "12px",
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -119,7 +137,7 @@ export function ConciergeDock({
           <StatusBadge
             testId="concierge-permission-broker-status"
             label={labels.conciergePermissionBrokerReadyLabel}
-            tone="emerald"
+            tone={hasWaitingDenial ? "amber" : "emerald"}
           />
           <StatusBadge
             label={`${activeModuleKey} • ${activeScopeId}`}
@@ -127,6 +145,15 @@ export function ConciergeDock({
             monospace
           />
         </div>
+
+        {permissionBrokerTicket && permissionBrokerLabels && (
+          <PermissionBrokerCard
+            ticket={permissionBrokerTicket}
+            labels={permissionBrokerLabels}
+            onPauseStep={onPausePermissionStep}
+            onReplayStep={onReplayPermissionStep}
+          />
+        )}
       </div>
 
       <form

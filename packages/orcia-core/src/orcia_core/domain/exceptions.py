@@ -23,123 +23,139 @@ class LocalizedErrorCopy:
 ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
     "ERR_OBSERVER_MODE_READ_ONLY": {
         "fr": LocalizedErrorCopy(
-            title="Mode observateur en lecture seule",
-            detail="Cette action de modification est interdite en mode READ_ONLY_OBSERVER.",
+            "Mode observateur en lecture seule",
+            "Cette action de modification est interdite en mode READ_ONLY_OBSERVER.",
         ),
         "en": LocalizedErrorCopy(
-            title="Read-only observer mode",
-            detail="This mutation action is forbidden while in READ_ONLY_OBSERVER mode.",
+            "Read-only observer mode",
+            "This mutation action is forbidden while in READ_ONLY_OBSERVER mode.",
         ),
     },
     "ERR_HUMAN_ANCHOR_REQUIRED": {
         "fr": LocalizedErrorCopy(
-            title="Ancrage humain obligatoire requis",
-            detail=(
-                "La section marquée human_authored_required exige une rédaction et une "
-                "signature humaine explicites."
-            ),
+            "Ancrage humain obligatoire requis",
+            "La section marquée human_authored_required exige une rédaction et une "
+            "signature humaine explicites.",
         ),
         "en": LocalizedErrorCopy(
-            title="Mandatory human anchor required",
-            detail=(
-                "A section marked human_authored_required requires explicit human authoring "
-                "and signature."
-            ),
+            "Mandatory human anchor required",
+            "A section marked human_authored_required requires explicit human authoring "
+            "and signature.",
         ),
     },
     "ERR_READ_SOURCE_DENIED": {
         "fr": LocalizedErrorCopy(
-            title="Accès au code source masqué refusé",
-            detail=(
-                "La permission READ_SOURCE est requise pour inspecter le contenu interne "
-                "de cette ressource."
-            ),
+            "Accès au code source masqué refusé",
+            "La permission READ_SOURCE est requise pour inspecter le contenu interne "
+            "de cette ressource.",
         ),
         "en": LocalizedErrorCopy(
-            title="Read source access denied",
-            detail=(
-                "READ_SOURCE permission is required to inspect the internal source of this item."
-            ),
+            "Read source access denied",
+            "READ_SOURCE permission is required to inspect the internal source of this item.",
         ),
     },
     "ERR_MODEL_ORTHOGONALITY_VIOLATION": {
         "fr": LocalizedErrorCopy(
-            title="Violation d'orthogonalité des modèles",
-            detail="La famille du modèle évaluateur doit être distincte de celle de l'exécuteur.",
+            "Violation d'orthogonalité des modèles",
+            "La famille du modèle évaluateur doit être distincte de celle de l'exécuteur.",
         ),
         "en": LocalizedErrorCopy(
-            title="Model orthogonality violation",
-            detail="The evaluator model family must differ from the executor model family.",
+            "Model orthogonality violation",
+            "The evaluator model family must differ from the executor model family.",
         ),
     },
     "ERR_RESOURCE_NOT_FOUND": {
         "fr": LocalizedErrorCopy(
-            title="Ressource introuvable",
-            detail="La ressource ou la route demandée n'existe pas sur la plateforme ORCIA.",
+            "Ressource introuvable",
+            "La ressource ou la route demandée n'existe pas sur la plateforme ORCIA.",
         ),
         "en": LocalizedErrorCopy(
-            title="Resource not found",
-            detail="The requested resource or route does not exist on the ORCIA platform.",
+            "Resource not found",
+            "The requested resource or route does not exist on the ORCIA platform.",
         ),
     },
     "ERR_VALIDATION_FAILED": {
         "fr": LocalizedErrorCopy(
-            title="Erreur de validation de la requête",
-            detail="Les paramètres fournis ne respectent pas le contrat attendu.",
+            "Erreur de validation de la requête",
+            "Les paramètres fournis ne respectent pas le contrat attendu.",
         ),
         "en": LocalizedErrorCopy(
-            title="Request validation failed",
-            detail="The supplied parameters do not satisfy the expected schema contract.",
+            "Request validation failed",
+            "The supplied parameters do not satisfy the expected schema contract.",
         ),
     },
     "ERR_INTERNAL_SERVER_ERROR": {
         "fr": LocalizedErrorCopy(
-            title="Erreur interne de la plateforme",
-            detail="Une erreur inattendue est survenue lors du traitement de la requête.",
+            "Erreur interne de la plateforme",
+            "Une erreur inattendue est survenue lors du traitement de la requête.",
         ),
         "en": LocalizedErrorCopy(
-            title="Internal platform error",
-            detail="An unexpected error occurred while processing the request.",
+            "Internal platform error",
+            "An unexpected error occurred while processing the request.",
         ),
     },
     "ERR_AUTH_INVALID_CREDENTIALS": {
         "fr": LocalizedErrorCopy(
-            title="Identifiants d'authentification invalides",
-            detail="L'adresse e-mail, le mot de passe ou le jeton OIDC fourni est invalide.",
+            "Identifiants d'authentification invalides",
+            "L'adresse e-mail, le mot de passe ou le jeton OIDC fourni est invalide.",
         ),
         "en": LocalizedErrorCopy(
-            title="Invalid authentication credentials",
-            detail="The supplied email, password, or OIDC token is invalid.",
+            "Invalid authentication credentials",
+            "The supplied email, password, or OIDC token is invalid.",
         ),
     },
     "ERR_AUTH_MFA_INVALID": {
         "fr": LocalizedErrorCopy(
-            title="Code MFA TOTP invalide ou manquant",
-            detail="Le code d'authentification multifacteur TOTP est requis ou incorrect.",
+            "Code MFA TOTP invalide ou manquant",
+            "Le code d'authentification multifacteur TOTP est requis ou incorrect.",
         ),
         "en": LocalizedErrorCopy(
-            title="Invalid or missing TOTP MFA code",
-            detail="A valid TOTP multi-factor authentication code is required.",
+            "Invalid or missing TOTP MFA code",
+            "A valid TOTP multi-factor authentication code is required.",
         ),
     },
     "ERR_AUTH_TOKEN_REVOKED": {
         "fr": LocalizedErrorCopy(
-            title="Session expirée ou révoquée",
-            detail="Le jeton de session ou de rafraîchissement a expiré ou a été révoqué.",
+            "Session expirée ou révoquée",
+            "Le jeton de session ou de rafraîchissement a expiré ou a été révoqué.",
         ),
         "en": LocalizedErrorCopy(
-            title="Session expired or revoked",
-            detail="The session or refresh token has expired or has been revoked.",
+            "Session expired or revoked",
+            "The session or refresh token has expired or has been revoked.",
         ),
     },
     "ERR_SCOPE_ACCESS_DENIED": {
         "fr": LocalizedErrorCopy(
-            title="Accès au périmètre ou module refusé",
-            detail="Votre rôle RBAC ne vous autorise pas à accéder à ce périmètre ou module.",
+            "Accès au périmètre ou module refusé",
+            "Votre rôle RBAC ne vous autorise pas à accéder à ce périmètre ou module.",
         ),
         "en": LocalizedErrorCopy(
-            title="Scope or module access denied",
-            detail="Your RBAC role does not grant access to this scope or module.",
+            "Scope or module access denied",
+            "Your RBAC role does not grant access to this scope or module.",
+        ),
+    },
+    "ERR_PERMISSION_BROKER_INTERCEPTED": {
+        "fr": LocalizedErrorCopy(
+            "Accès externe intercepté par le Permission Broker",
+            "L'accès à la ressource externe a été refusé (401/403). Consultez la carte "
+            "Permission Broker pour demander le rôle requis dans Jira.",
+        ),
+        "en": LocalizedErrorCopy(
+            "External access intercepted by Permission Broker",
+            "External resource access was denied (401/403). Inspect the Permission Broker "
+            "card to request the required role in Jira.",
+        ),
+    },
+    "ERR_CONFUSED_DEPUTY_BLOCKED": {
+        "fr": LocalizedErrorCopy(
+            "Élévation de privilèges Service Principal bloquée",
+            "L'exécution en mode service_principal est interdite sans approbation explicite "
+            "d'un administrateur (protection anti-Confused Deputy).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Service Principal privilege escalation blocked",
+            "Execution in service_principal mode is forbidden without explicit administrator "
+            "approval (anti-Confused Deputy protection).",
         ),
     },
 }
@@ -154,9 +170,7 @@ def resolve_locale(accept_language: str | None) -> SupportedLocale:
         parts = [part.strip() for part in token.split(";") if part.strip()]
         if not parts:
             continue
-        lang_tag = parts[0].lower()
-        q = 1.0
-        valid_q = True
+        lang_tag, q, valid_q = parts[0].lower(), 1.0, True
         for param in parts[1:]:
             if param.lower().startswith("q="):
                 try:
@@ -164,24 +178,18 @@ def resolve_locale(accept_language: str | None) -> SupportedLocale:
                 except ValueError:
                     valid_q = False
                     break
-        if not valid_q or q <= 0.0 or q > 1.0:
-            continue
-        primary = lang_tag.split("-")[0]
-        candidates.append((q, index, primary))
+        if valid_q and 0.0 < q <= 1.0:
+            candidates.append((q, index, lang_tag.split("-")[0]))
 
     candidates.sort(key=lambda item: (-item[0], item[1]))
     for _q, _index, primary in candidates:
-        if primary == "en":
-            return "en"
-        if primary == "fr":
-            return "fr"
+        if primary in ("en", "fr"):
+            return "en" if primary == "en" else "fr"
     return DEFAULT_LOCALE
 
 
 def get_localized_error_text(
-    error_code: str,
-    locale: SupportedLocale = DEFAULT_LOCALE,
-    detail_override: str | None = None,
+    error_code: str, locale: SupportedLocale = DEFAULT_LOCALE, detail_override: str | None = None
 ) -> LocalizedErrorCopy:
     """Return localized `(title, detail)` for `error_code` with safe fallback."""
     catalog_entry = ERROR_CATALOG.get(error_code) or ERROR_CATALOG["ERR_INTERNAL_SERVER_ERROR"]
@@ -213,89 +221,60 @@ class OrciaDomainError(Exception):
 
     @property
     def type_uri(self) -> str:
-        """Canonical RFC 9457 problem type URI."""
         return f"https://orcia.io/problems/{self.type_slug}"
 
     def localize(self, locale: SupportedLocale = DEFAULT_LOCALE) -> LocalizedErrorCopy:
-        """Return localized title and detail for the requested locale."""
         return get_localized_error_text(self.error_code, locale, self.detail_override)
 
 
 class ObserverModeReadOnlyError(OrciaDomainError):
-    """Raised when a caller in READ_ONLY_OBSERVER mode attempts a mutation (AD-4, AD-6)."""
-
     error_code = "ERR_OBSERVER_MODE_READ_ONLY"
-    http_status = 403
-    type_slug = "observer-mode-read-only"
+    http_status, type_slug = 403, "observer-mode-read-only"
 
 
 class HumanAnchorRequiredError(OrciaDomainError):
-    """Raised when an agent attempts to write a section requiring a human signature (AD-3)."""
-
-    error_code = "ERR_HUMAN_ANCHOR_REQUIRED"
-    http_status = 422
-    type_slug = "human-anchor-required"
+    error_code, http_status, type_slug = "ERR_HUMAN_ANCHOR_REQUIRED", 422, "human-anchor-required"
 
 
 class ReadSourceDeniedError(OrciaDomainError):
-    """Raised when inspecting black-box source without READ_SOURCE permission (AD-6)."""
-
-    error_code = "ERR_READ_SOURCE_DENIED"
-    http_status = 403
-    type_slug = "read-source-denied"
+    error_code, http_status, type_slug = "ERR_READ_SOURCE_DENIED", 403, "read-source-denied"
 
 
 class ModelOrthogonalityViolationError(OrciaDomainError):
-    """Raised when evaluator and executor share the same LLM model family (AD-10)."""
-
     error_code = "ERR_MODEL_ORTHOGONALITY_VIOLATION"
-    http_status = 422
-    type_slug = "model-orthogonality-violation"
+    http_status, type_slug = 422, "model-orthogonality-violation"
 
 
 class ResourceNotFoundError(OrciaDomainError):
-    """Raised when a requested entity or route does not exist."""
-
-    error_code = "ERR_RESOURCE_NOT_FOUND"
-    http_status = 404
-    type_slug = "resource-not-found"
+    error_code, http_status, type_slug = "ERR_RESOURCE_NOT_FOUND", 404, "resource-not-found"
 
 
 class ValidationDomainError(OrciaDomainError):
-    """Raised when domain or request validation fails."""
-
-    error_code = "ERR_VALIDATION_FAILED"
-    http_status = 422
-    type_slug = "validation-failed"
+    error_code, http_status, type_slug = "ERR_VALIDATION_FAILED", 422, "validation-failed"
 
 
 class InvalidCredentialsError(OrciaDomainError):
-    """Raised when local password or OIDC token authentication fails (AD-6)."""
-
     error_code = "ERR_AUTH_INVALID_CREDENTIALS"
-    http_status = 401
-    type_slug = "auth-invalid-credentials"
+    http_status, type_slug = 401, "auth-invalid-credentials"
 
 
 class InvalidMfaCodeError(OrciaDomainError):
-    """Raised when TOTP MFA code is missing or invalid (AD-6)."""
-
-    error_code = "ERR_AUTH_MFA_INVALID"
-    http_status = 401
-    type_slug = "auth-mfa-invalid"
+    error_code, http_status, type_slug = "ERR_AUTH_MFA_INVALID", 401, "auth-mfa-invalid"
 
 
 class RevokedTokenError(OrciaDomainError):
-    """Raised when a session or refresh token is expired or revoked in Redis (AD-6)."""
-
-    error_code = "ERR_AUTH_TOKEN_REVOKED"
-    http_status = 401
-    type_slug = "auth-token-revoked"
+    error_code, http_status, type_slug = "ERR_AUTH_TOKEN_REVOKED", 401, "auth-token-revoked"
 
 
 class ScopeAccessDeniedError(OrciaDomainError):
-    """Raised when a caller attempts to access an unauthorized scope or module (AD-6)."""
+    error_code, http_status, type_slug = "ERR_SCOPE_ACCESS_DENIED", 403, "scope-access-denied"
 
-    error_code = "ERR_SCOPE_ACCESS_DENIED"
-    http_status = 403
-    type_slug = "scope-access-denied"
+
+class PermissionBrokerDeniedError(OrciaDomainError):
+    error_code = "ERR_PERMISSION_BROKER_INTERCEPTED"
+    http_status, type_slug = 403, "permission-broker-intercepted"
+
+
+class ConfusedDeputyBlockedError(OrciaDomainError):
+    error_code = "ERR_CONFUSED_DEPUTY_BLOCKED"
+    http_status, type_slug = 403, "confused-deputy-blocked"

@@ -2,10 +2,12 @@
 
 from orcia_core.domain.exceptions import (
     ERROR_CATALOG,
+    ConfusedDeputyBlockedError,
     HumanAnchorRequiredError,
     ModelOrthogonalityViolationError,
     ObserverModeReadOnlyError,
     OrciaDomainError,
+    PermissionBrokerDeniedError,
     ReadSourceDeniedError,
     ResourceNotFoundError,
     SupportedLocale,
@@ -22,10 +24,12 @@ from orcia_core.domain.identifiers import (
 
 __all__ = [
     "ERROR_CATALOG",
+    "ConfusedDeputyBlockedError",
     "HumanAnchorRequiredError",
     "ModelOrthogonalityViolationError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "PermissionBrokerDeniedError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",
     "SupportedLocale",

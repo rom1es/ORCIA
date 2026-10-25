@@ -12,11 +12,15 @@ from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.catalog import router as catalog_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
+from orcia_api.routers.permission_broker import router as permission_broker_router
 from orcia_api.routers.shell import router as shell_router
 from orcia_core import __version__
 from orcia_core.catalog import build_default_federated_catalog_service
 from orcia_core.observability.logging import configure_structlog
-from orcia_core.permissions import build_default_auth_and_org_service
+from orcia_core.permissions import (
+    build_default_auth_and_org_service,
+    build_default_permission_broker_service,
+)
 
 
 def create_app() -> FastAPI:
@@ -35,6 +39,9 @@ def create_app() -> FastAPI:
     application.state.catalog_service = build_default_federated_catalog_service(
         evaluator=auth_service.evaluator
     )
+    application.state.permission_broker_service = build_default_permission_broker_service(
+        evaluator=auth_service.evaluator
+    )
     application.add_middleware(TraceContextMiddleware)
     register_exception_handlers(application)
     application.include_router(health_router)
@@ -42,6 +49,7 @@ def create_app() -> FastAPI:
     application.include_router(auth_router)
     application.include_router(org_and_workspaces_router)
     application.include_router(catalog_router)
+    application.include_router(permission_broker_router)
     return application
 
 

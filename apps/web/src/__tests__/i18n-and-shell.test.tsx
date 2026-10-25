@@ -157,5 +157,39 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(
       screen.getByTestId("inspect-source-result-res-blackbox-security-agent").textContent,
     ).toContain("ERR_READ_SOURCE_DENIED");
+
+    // Story 1.4: Claire in Observer mode rejected when clicking Replay Step on PermissionBrokerCard
+    fireEvent.click(screen.getByTestId("permission-broker-replay-btn"));
+    expect(screen.getByTestId("permission-broker-action-banner").textContent).toContain(
+      "ERR_OBSERVER_MODE_READ_ONLY",
+    );
+
+    // Switch back to Marc (TEAM_LEAD) + workspace scope -> collapse dock with ']', then trigger 403 Confluence -> dock auto-opens
+    fireEvent.click(screen.getByTestId("persona-switch-marc"));
+    fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+    fireEvent.click(screen.getByTestId("scope-option-scope-ws-orcia"));
+    fireEvent.keyDown(window, { key: "]" });
+    expect(screen.getByTestId("concierge-dock").getAttribute("data-collapsed")).toBe("true");
+
+    fireEvent.click(screen.getByTestId("simulate-permission-denied-confluence-btn"));
+    expect(screen.getByTestId("concierge-dock").getAttribute("data-collapsed")).toBe("false");
+    expect(screen.getByTestId("permission-broker-required-role").textContent).toBe(
+      "CONFLUENCE_PAY_ADR_READER",
+    );
+
+    fireEvent.click(screen.getByTestId("permission-broker-pause-btn"));
+    expect(screen.getByTestId("permission-broker-card").getAttribute("data-ticket-status")).toBe(
+      "PAUSED",
+    );
+
+    fireEvent.click(screen.getByTestId("permission-broker-replay-btn"));
+    expect(screen.getByTestId("permission-broker-card").getAttribute("data-ticket-status")).toBe(
+      "REPLAYED",
+    );
+
+    fireEvent.click(screen.getByTestId("simulate-confused-deputy-btn"));
+    expect(screen.getByTestId("permission-broker-action-banner").textContent).toContain(
+      "ERR_CONFUSED_DEPUTY_BLOCKED",
+    );
   });
 });

@@ -189,7 +189,54 @@ describe("createOrciaApiClient", () => {
       },
       "marc",
     );
+    await client.getPermissionBrokerState("marc", "ws-solution-paiement");
+    const kbMarkdown =
+      "---\nuri_pattern: git://github.enterprise/payments/*\nrequired_role: ROLE_GIT_PAYMENTS_CORE\napprover_team: IAM-Payments-Squad\nrequest_url_template: https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa?pid=10420\nsla_hours: 4\n---\n# Guide";
+    await client.importPermissionPolicyMarkdown(
+      {
+        markdown_text: kbMarkdown,
+      },
+      "marc",
+    );
+    await client.checkConnectorAccess(
+      {
+        target_uri: "git://github.enterprise/payments/checkout-core.git",
+        execution_identity: "passthrough",
+        raise_on_denied: false,
+      },
+      "nadia",
+    );
+    await client.applyPermissionTicketAction("IAM-4821", { action: "REPLAY" }, "nadia");
 
-    expect(mockFetch).toHaveBeenCalledTimes(16);
+    expect(mockFetch).toHaveBeenCalledTimes(20);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/permissions/broker/state?persona_key=marc&workspace_id=ws-solution-paiement",
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/permissions/broker/policies/import-markdown?persona_key=marc",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ markdown_text: kbMarkdown }),
+      }),
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/permissions/broker/check-access?persona_key=nadia",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          target_uri: "git://github.enterprise/payments/checkout-core.git",
+          execution_identity: "passthrough",
+          raise_on_denied: false,
+        }),
+      }),
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/permissions/broker/tickets/IAM-4821/action?persona_key=nadia",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ action: "REPLAY" }),
+      }),
+    );
   });
 });

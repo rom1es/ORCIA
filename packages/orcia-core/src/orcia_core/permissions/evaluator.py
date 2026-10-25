@@ -61,6 +61,10 @@ class MatrixPermissionEvaluator:
         """Return the primary `CatalogAclEntry` for `resource_id`, or `None` if absent."""
         return next((e for e in self._catalog_acls if e.resource_id == resource_id), None)
 
+    def get_catalog_acl_by_uri(self, resource_uri: str) -> CatalogAclEntry | None:
+        """Return the primary `CatalogAclEntry` matching `resource_uri`, or `None` if absent."""
+        return next((e for e in self._catalog_acls if e.resource_uri == resource_uri), None)
+
     def upsert_catalog_acl(self, entry: CatalogAclEntry) -> None:
         """Insert or replace a `CatalogAclEntry` by `id` (or primary `resource_id`)."""
         filtered = [
@@ -263,16 +267,9 @@ class MatrixPermissionEvaluator:
             )
 
         effective = EffectiveResourcePermissions(
-            resource_id=primary.resource_id,
-            resource_uri=primary.resource_uri,
-            title=primary.title,
-            visibility_scope=primary.visibility_scope,
-            can_discover=can_discover,
-            can_execute=can_execute,
-            can_read_source=can_read_source,
-            can_edit=can_edit,
-            can_admin=can_admin,
-        )
+            primary.resource_id, primary.resource_uri, primary.title, primary.visibility_scope,
+            can_discover, can_execute, can_read_source, can_edit, can_admin,
+        )  # fmt: skip
         return effective, (primary.system_prompt_secret if can_read_source else None)
 
     @staticmethod

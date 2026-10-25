@@ -19,6 +19,18 @@ export type UiDatasourceScheme = "git" | "jira" | "confluence" | "db" | "nexus";
 
 export type UiFederatedScheme = "git" | "nexus" | "db" | "confluence" | "jira" | "orcia";
 
+export type UiBrokerConnectorScheme = "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+
+export type UiExecutionIdentityMode = "passthrough" | "service_principal";
+
+export type UiBrokerStepState = "PERMISSION_DENIED_STEP" | "PAUSED" | "REPLAYED" | "GRANTED";
+
+export type UiBrokerTicketStatus =
+  | "WAITING_FOR_PERMISSION"
+  | "PAUSED"
+  | "REPLAYED"
+  | "GRANTED";
+
 export type UiCatalogVisibilityScope =
   | "DRAFT"
   | "SHARED_WORKSPACE"
@@ -111,6 +123,49 @@ export interface UiRunLockTripletView {
   uri: string;
   resolvedVersion: string;
   sha256Short: string;
+}
+
+export interface UiPermissionBrokerTicketView {
+  id: string;
+  ticketKey: string;
+  stepKey: string;
+  stepNumber: number;
+  stepState: UiBrokerStepState;
+  status: UiBrokerTicketStatus;
+  targetUri: string;
+  connectorScheme: UiBrokerConnectorScheme;
+  executionIdentity: UiExecutionIdentityMode;
+  upstreamHttpStatus: 401 | 403;
+  requiredRole: string;
+  approverTeam: string;
+  slaHours: number;
+  jiraRequestUrl: string;
+  permissionBrokerHint: string;
+  procedureMarkdown?: string;
+}
+
+export interface UiPermissionBrokerLabels {
+  cardBadgeTitle: string;
+  passthroughBadgeLabel: string;
+  servicePrincipalBadgeLabel: string;
+  targetUriLabel: string;
+  requiredRoleLabel: string;
+  approverTeamLabel: string;
+  slaHoursPrefix: string;
+  rfcHintLabel: string;
+  jiraRequestButtonLabel: string;
+  pauseStepButtonLabel: string;
+  replayStepButtonLabel: string;
+  pausedStateBanner: string;
+  replayedStateBanner: string;
+  simulatorTitle: string;
+  simulatorSubtitle: string;
+  simulateGitDenialLabel: string;
+  simulateConfluenceDenialLabel: string;
+  simulateJiraDenialLabel: string;
+  simulateConfusedDeputyLabel: string;
+  confusedDeputyBlockedBanner: string;
+  observerDeniedBanner: string;
 }
 
 export interface UiCatalogExplorerLabels {

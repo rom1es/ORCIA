@@ -111,6 +111,33 @@ export const frDictionary: TranslationDictionary = {
     bmadImportedBanner:
       "HTTP 200 OK — Pack BMAD converti en WorkflowDefinitionEntity (source_format=BMAD_PACK) et épinglé dans cas/<sha256>",
   },
+  permissionBroker: {
+    cardBadgeTitle: "⚠️ PERMISSION BROKER",
+    passthroughBadgeLabel: "Identité : passthrough",
+    servicePrincipalBadgeLabel: "Identité : service_principal",
+    targetUriLabel: "Source externe bloquée",
+    requiredRoleLabel: "Rôle ou groupe requis (KB)",
+    approverTeamLabel: "Équipe approbatrice",
+    slaHoursPrefix: "SLA",
+    rfcHintLabel: "Indice RFC 9457 (permission_broker_hint)",
+    jiraRequestButtonLabel: "Demander l'accès dans Atlassian Jira",
+    pauseStepButtonLabel: "Mettre en pause",
+    replayStepButtonLabel: "Rejouer l'étape",
+    pausedStateBanner: "⏸️ Étape mise en pause en attente de validation Jira",
+    replayedStateBanner: "✅ Accès débloqué — Étape rejouée avec succès (REPLAYED)",
+    simulatorTitle:
+      "Exécution Passthrough vs Service Principal & Permission Broker IA connecté à Jira",
+    simulatorSubtitle:
+      "Interception des refus 401/403, résolution KB Markdown/YAML, ouverture automatique du Dock droit et Replay Step N.",
+    simulateGitDenialLabel: "Simuler 403 Git (passthrough)",
+    simulateConfluenceDenialLabel: "Simuler 403 Confluence (passthrough)",
+    simulateJiraDenialLabel: "Simuler 403 Jira SecOps (passthrough)",
+    simulateConfusedDeputyLabel: "Tester Service Principal non approuvé",
+    confusedDeputyBlockedBanner:
+      "HTTP 403 ERR_CONFUSED_DEPUTY_BLOCKED — Exécution service_principal bloquée sans approbation admin",
+    observerDeniedBanner:
+      "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Action Permission Broker refusée en mode Observateur",
+  },
   modulePages: {
     cockpit: {
       subtitle: "Espace de co-conception Human-Led, Agent-Accelerated",

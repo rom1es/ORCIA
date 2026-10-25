@@ -4,6 +4,7 @@ import {
   AppShell,
   type UiHumanProfileBadge,
   type UiModuleKey,
+  type UiPermissionBrokerTicketView,
   type UiPersonaKey,
   type UiScopeNode,
   type UiShellModuleItem,
@@ -11,6 +12,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useI18n } from "../i18n";
+import { PERMISSION_BROKER_TICKET_PRESETS } from "./workspaceFixtures";
 
 export const DEFAULT_SHELL_MODULES: UiShellModuleItem[] = [
   { key: "cockpit", order: 1, route: "/cockpit", icon: "message-square", contributorBadgeCount: 1, hasStaleWarning: false, enabled: true },
@@ -83,14 +85,26 @@ export const PERSONA_PROFILES: Record<
   },
 };
 
-interface PersonaContextValue {
+export interface PersonaContextValue {
   activePersona: UiPersonaKey;
   setActivePersona: (persona: UiPersonaKey) => void;
+  activeBrokerTicket: UiPermissionBrokerTicketView | null;
+  brokerActionBanner: string | null;
+  triggerPermissionDeniedStep: (presetKey: "git" | "confluence" | "jira") => void;
+  triggerConfusedDeputyCheck: () => void;
+  pauseBrokerStep: (ticketId: string) => void;
+  replayBrokerStep: (ticketId: string) => void;
 }
 
 const PersonaContext = createContext<PersonaContextValue>({
   activePersona: "marc",
   setActivePersona: () => undefined,
+  activeBrokerTicket: PERMISSION_BROKER_TICKET_PRESETS.git,
+  brokerActionBanner: null,
+  triggerPermissionDeniedStep: () => undefined,
+  triggerConfusedDeputyCheck: () => undefined,
+  pauseBrokerStep: () => undefined,
+  replayBrokerStep: () => undefined,
 });
 
 export function usePersonaContext(): PersonaContextValue {
@@ -117,6 +131,10 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
   const [activeScopeId, setActiveScopeId] = useState("scope-ws-orcia");
   const [activePersona, setActivePersona] = useState<UiPersonaKey>("marc");
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
+  const [activeBrokerTicket, setActiveBrokerTicket] =
+    useState<UiPermissionBrokerTicketView | null>(PERMISSION_BROKER_TICKET_PRESETS.git);
+  const [brokerSequence, setBrokerSequence] = useState(1);
+  const [brokerActionBanner, setBrokerActionBanner] = useState<string | null>(null);
 
   useEffect(() => {
     setSelectedModuleOverride(null);
@@ -144,8 +162,60 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
   const safeModuleKey: UiModuleKey =
     !personaMeta.adminEnabled && activeModuleKey === "admin" ? "cockpit" : activeModuleKey;
 
+  function triggerPermissionDeniedStep(presetKey: "git" | "confluence" | "jira") {
+    const preset = PERMISSION_BROKER_TICKET_PRESETS[presetKey];
+    const nextSeq = brokerSequence + 1;
+    setBrokerSequence(nextSeq);
+    setActiveBrokerTicket({
+      ...preset,
+      id: `${preset.id}-evt-${nextSeq}`,
+      stepState: "PERMISSION_DENIED_STEP",
+      status: "WAITING_FOR_PERMISSION",
+    });
+    setBrokerActionBanner(
+      `HTTP 403 ERR_PERMISSION_BROKER_INTERCEPTED — ${preset.permissionBrokerHint}`,
+    );
+  }
+
+  function triggerConfusedDeputyCheck() {
+    setBrokerActionBanner(dictionary.permissionBroker.confusedDeputyBlockedBanner);
+  }
+
+  function pauseBrokerStep(_ticketId: string) {
+    if (effectiveProfile.accessMode === "READ_ONLY_OBSERVER") {
+      setBrokerActionBanner(dictionary.permissionBroker.observerDeniedBanner);
+      return;
+    }
+    setActiveBrokerTicket((prev) =>
+      prev ? { ...prev, stepState: "PAUSED", status: "PAUSED" } : prev,
+    );
+    setBrokerActionBanner(dictionary.permissionBroker.pausedStateBanner);
+  }
+
+  function replayBrokerStep(_ticketId: string) {
+    if (effectiveProfile.accessMode === "READ_ONLY_OBSERVER") {
+      setBrokerActionBanner(dictionary.permissionBroker.observerDeniedBanner);
+      return;
+    }
+    setActiveBrokerTicket((prev) =>
+      prev ? { ...prev, stepState: "REPLAYED", status: "REPLAYED" } : prev,
+    );
+    setBrokerActionBanner(dictionary.permissionBroker.replayedStateBanner);
+  }
+
   return (
-    <PersonaContext.Provider value={{ activePersona, setActivePersona }}>
+    <PersonaContext.Provider
+      value={{
+        activePersona,
+        setActivePersona,
+        activeBrokerTicket,
+        brokerActionBanner,
+        triggerPermissionDeniedStep,
+        triggerConfusedDeputyCheck,
+        pauseBrokerStep,
+        replayBrokerStep,
+      }}
+    >
       <AppShell
         modules={effectiveModules}
         activeModuleKey={safeModuleKey}
@@ -154,12 +224,16 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
         humanProfile={effectiveProfile}
         labels={dictionary.shell}
         currentLocale={locale}
+        permissionBrokerTicket={activeBrokerTicket}
+        permissionBrokerLabels={dictionary.permissionBroker}
         onSelectModule={(moduleKey, route) => {
           setSelectedModuleOverride(moduleKey);
           router.push(route);
         }}
         onSelectScope={(nextScopeId) => setActiveScopeId(nextScopeId)}
         onToggleLocale={toggleLocale}
+        onPausePermissionStep={pauseBrokerStep}
+        onReplayPermissionStep={replayBrokerStep}
       >
         {children}
       </AppShell>

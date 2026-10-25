@@ -19,7 +19,13 @@ import {
 
 export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
   const { dictionary } = useI18n();
-  const { activePersona, setActivePersona } = usePersonaContext();
+  const {
+    activePersona,
+    setActivePersona,
+    brokerActionBanner,
+    triggerPermissionDeniedStep,
+    triggerConfusedDeputyCheck,
+  } = usePersonaContext();
   const pageCopy = dictionary.modulePages[moduleKey];
   const [customAnchorText, setCustomAnchorText] = useState<string | null>(null);
   const anchorText = customAnchorText ?? dictionary.humanAnchor.defaultValue;
@@ -74,6 +80,121 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
           labels={dictionary.humanAnchor}
           onChange={setCustomAnchorText}
         />
+      )}
+
+      {(moduleKey === "cockpit" || moduleKey === "catalog" || moduleKey === "gates") && (
+        <section
+          data-testid="permission-broker-simulator-panel"
+          style={{
+            backgroundColor: "var(--color-surface-card)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-md)",
+            padding: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          <div>
+            <strong>{dictionary.permissionBroker.simulatorTitle}</strong>
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                color: "var(--color-muted-foreground)",
+                fontSize: "var(--font-size-body)",
+              }}
+            >
+              {dictionary.permissionBroker.simulatorSubtitle}
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              data-testid="simulate-permission-denied-git-btn"
+              onClick={() => triggerPermissionDeniedStep("git")}
+              style={{
+                backgroundColor: "var(--color-arbitration-amber)",
+                color: "var(--color-primary-foreground)",
+                border: "none",
+                borderRadius: "var(--radius-sm)",
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {dictionary.permissionBroker.simulateGitDenialLabel}
+            </button>
+
+            <button
+              type="button"
+              data-testid="simulate-permission-denied-confluence-btn"
+              onClick={() => triggerPermissionDeniedStep("confluence")}
+              style={{
+                backgroundColor: "var(--color-surface-bg)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-sm)",
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {dictionary.permissionBroker.simulateConfluenceDenialLabel}
+            </button>
+
+            <button
+              type="button"
+              data-testid="simulate-permission-denied-jira-btn"
+              onClick={() => triggerPermissionDeniedStep("jira")}
+              style={{
+                backgroundColor: "var(--color-surface-bg)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-sm)",
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {dictionary.permissionBroker.simulateJiraDenialLabel}
+            </button>
+
+            <button
+              type="button"
+              data-testid="simulate-confused-deputy-btn"
+              onClick={triggerConfusedDeputyCheck}
+              style={{
+                backgroundColor: "var(--color-stale-bg)",
+                color: "var(--color-stale-crimson)",
+                border: "1px solid var(--color-stale-crimson)",
+                borderRadius: "var(--radius-sm)",
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {dictionary.permissionBroker.simulateConfusedDeputyLabel}
+            </button>
+          </div>
+
+          {brokerActionBanner && (
+            <div
+              data-testid="permission-broker-action-banner"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--font-size-mono)",
+                padding: "8px 10px",
+                borderRadius: "var(--radius-sm)",
+                backgroundColor: "var(--color-arbitration-bg)",
+                border: "1px solid var(--color-arbitration-amber)",
+                wordBreak: "break-all",
+              }}
+            >
+              {brokerActionBanner}
+            </div>
+          )}
+        </section>
       )}
 
       <CatalogExplorerPanel

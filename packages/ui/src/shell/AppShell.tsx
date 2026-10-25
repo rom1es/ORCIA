@@ -5,6 +5,8 @@ import type {
   UiHumanProfileBadge,
   UiMobileTabKey,
   UiModuleKey,
+  UiPermissionBrokerLabels,
+  UiPermissionBrokerTicketView,
   UiScopeNode,
   UiShellLabels,
   UiShellModuleItem,
@@ -20,10 +22,14 @@ export interface AppShellProps {
   currentLocale: "fr" | "en";
   defaultSidebarCollapsed?: boolean;
   defaultDockCollapsed?: boolean;
+  permissionBrokerTicket?: UiPermissionBrokerTicketView | null;
+  permissionBrokerLabels?: UiPermissionBrokerLabels;
   onSelectModule: (moduleKey: UiModuleKey, route: string) => void;
   onSelectScope: (scopeId: string) => void;
   onToggleLocale?: () => void;
   onSubmitConciergePrompt?: (prompt: string) => void;
+  onPausePermissionStep?: (ticketId: string) => void;
+  onReplayPermissionStep?: (ticketId: string) => void;
   children: React.ReactNode;
 }
 
@@ -48,16 +54,34 @@ export function AppShell({
   currentLocale,
   defaultSidebarCollapsed = false,
   defaultDockCollapsed = false,
+  permissionBrokerTicket,
+  permissionBrokerLabels,
   onSelectModule,
   onSelectScope,
   onToggleLocale,
   onSubmitConciergePrompt,
+  onPausePermissionStep,
+  onReplayPermissionStep,
   children,
 }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(defaultSidebarCollapsed);
   const [dockCollapsed, setDockCollapsed] = useState(defaultDockCollapsed);
   const [scopeSwitcherOpen, setScopeSwitcherOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<UiMobileTabKey>("inbox");
+
+  useEffect(() => {
+    if (
+      permissionBrokerTicket &&
+      (permissionBrokerTicket.stepState === "PERMISSION_DENIED_STEP" ||
+        permissionBrokerTicket.status === "WAITING_FOR_PERMISSION")
+    ) {
+      setDockCollapsed(false);
+    }
+  }, [
+    permissionBrokerTicket?.id,
+    permissionBrokerTicket?.stepState,
+    permissionBrokerTicket?.status,
+  ]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -195,8 +219,12 @@ export function AppShell({
         activeScopeId={activeScopeId}
         collapsed={dockCollapsed}
         labels={labels}
+        permissionBrokerTicket={permissionBrokerTicket}
+        permissionBrokerLabels={permissionBrokerLabels}
         onToggleCollapsed={() => setDockCollapsed((prev) => !prev)}
         onSubmitPrompt={onSubmitConciergePrompt}
+        onPausePermissionStep={onPausePermissionStep}
+        onReplayPermissionStep={onReplayPermissionStep}
       />
 
       <nav

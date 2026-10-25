@@ -35,6 +35,17 @@ from orcia_core.schemas.catalog import (
     WorkflowDefinitionResponseItem,
     WorkflowStepItem,
 )
+from orcia_core.schemas.permission_broker import (
+    PermissionBrokerPolicyItem,
+    PermissionBrokerStateResponse,
+    PermissionBrokerTicketItem,
+    PermissionCheckRequest,
+    PermissionCheckResponse,
+    PermissionPolicyImportMarkdownRequest,
+    PermissionPolicyImportMarkdownResponse,
+    PermissionTicketActionRequest,
+    PermissionTicketActionResponse,
+)
 from orcia_core.schemas.problem_details import ProblemDetails
 from orcia_core.schemas.shell import (
     AccessMode,
@@ -74,6 +85,15 @@ __all__ = [
     "OrgUnitTreeItem",
     "PassthroughSecretMetadataResponse",
     "PassthroughSecretStoreRequest",
+    "PermissionBrokerPolicyItem",
+    "PermissionBrokerStateResponse",
+    "PermissionBrokerTicketItem",
+    "PermissionCheckRequest",
+    "PermissionCheckResponse",
+    "PermissionPolicyImportMarkdownRequest",
+    "PermissionPolicyImportMarkdownResponse",
+    "PermissionTicketActionRequest",
+    "PermissionTicketActionResponse",
     "ProblemDetails",
     "RunLockManifestItem",
     "RunLockSourceTripletItem",

@@ -1026,6 +1026,627 @@
         "title": "PassthroughSecretStoreRequest",
         "type": "object"
       },
+      "PermissionBrokerPolicyItem": {
+        "additionalProperties": false,
+        "description": "Serialized Permission Broker KB policy (`permission_broker_policies`, FR-22).",
+        "properties": {
+          "approved_by_admin_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By Admin Id"
+          },
+          "approver_team": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Approver Team",
+            "type": "string"
+          },
+          "connector_scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus",
+              "mcp"
+            ],
+            "title": "Connector Scheme",
+            "type": "string"
+          },
+          "freshness_ttl_days": {
+            "default": 90,
+            "maximum": 3650.0,
+            "minimum": 1.0,
+            "title": "Freshness Ttl Days",
+            "type": "integer"
+          },
+          "human_anchor_author_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Anchor Author Id"
+          },
+          "human_anchor_signature": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Anchor Signature"
+          },
+          "id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "policy_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Policy Key",
+            "type": "string"
+          },
+          "procedure_markdown": {
+            "default": "",
+            "maxLength": 16384,
+            "title": "Procedure Markdown",
+            "type": "string"
+          },
+          "request_url_template": {
+            "maxLength": 2048,
+            "minLength": 8,
+            "title": "Request Url Template",
+            "type": "string"
+          },
+          "required_role": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Required Role",
+            "type": "string"
+          },
+          "service_principal_allowed": {
+            "default": false,
+            "title": "Service Principal Allowed",
+            "type": "boolean"
+          },
+          "sla_hours": {
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Sla Hours",
+            "type": "integer"
+          },
+          "uri_pattern": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Uri Pattern",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "policy_key",
+          "uri_pattern",
+          "connector_scheme",
+          "required_role",
+          "approver_team",
+          "request_url_template",
+          "sla_hours"
+        ],
+        "title": "PermissionBrokerPolicyItem",
+        "type": "object"
+      },
+      "PermissionBrokerStateResponse": {
+        "additionalProperties": false,
+        "description": "Consolidated Permission Broker state (KB policies + blocked step tickets).",
+        "properties": {
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionBrokerPolicyItem"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionBrokerTicketItem"
+            },
+            "title": "Tickets",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policies",
+          "tickets",
+          "trace_id"
+        ],
+        "title": "PermissionBrokerStateResponse",
+        "type": "object"
+      },
+      "PermissionBrokerTicketItem": {
+        "additionalProperties": false,
+        "description": "Serialized blocked step ticket (`permission_broker_tickets`, UX-DR11, FR-22).",
+        "properties": {
+          "approver_team": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Approver Team",
+            "type": "string"
+          },
+          "connector_scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus",
+              "mcp"
+            ],
+            "title": "Connector Scheme",
+            "type": "string"
+          },
+          "execution_identity": {
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "jira_request_url": {
+            "maxLength": 4096,
+            "minLength": 8,
+            "title": "Jira Request Url",
+            "type": "string"
+          },
+          "permission_broker_hint": {
+            "maxLength": 2048,
+            "minLength": 8,
+            "title": "Permission Broker Hint",
+            "type": "string"
+          },
+          "policy_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "procedure_markdown": {
+            "default": "",
+            "maxLength": 16384,
+            "title": "Procedure Markdown",
+            "type": "string"
+          },
+          "requester_user_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Requester User Id",
+            "type": "string"
+          },
+          "required_role": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Required Role",
+            "type": "string"
+          },
+          "sla_hours": {
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Sla Hours",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "WAITING_FOR_PERMISSION",
+              "PAUSED",
+              "REPLAYED",
+              "GRANTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "step_number": {
+            "maximum": 999.0,
+            "minimum": 1.0,
+            "title": "Step Number",
+            "type": "integer"
+          },
+          "step_state": {
+            "enum": [
+              "PERMISSION_DENIED_STEP",
+              "PAUSED",
+              "REPLAYED",
+              "GRANTED"
+            ],
+            "title": "Step State",
+            "type": "string"
+          },
+          "target_uri": {
+            "maxLength": 1024,
+            "minLength": 4,
+            "title": "Target Uri",
+            "type": "string"
+          },
+          "ticket_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Ticket Key",
+            "type": "string"
+          },
+          "upstream_http_status": {
+            "enum": [
+              401,
+              403
+            ],
+            "title": "Upstream Http Status",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "id",
+          "ticket_key",
+          "requester_user_id",
+          "policy_id",
+          "step_key",
+          "step_number",
+          "step_state",
+          "status",
+          "target_uri",
+          "connector_scheme",
+          "execution_identity",
+          "upstream_http_status",
+          "required_role",
+          "approver_team",
+          "sla_hours",
+          "jira_request_url",
+          "permission_broker_hint"
+        ],
+        "title": "PermissionBrokerTicketItem",
+        "type": "object"
+      },
+      "PermissionCheckRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for checking or intercepting external connector access (`AD-6`, `FR-22`).",
+        "properties": {
+          "execution_identity": {
+            "default": "passthrough",
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "granted_external_roles": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32,
+            "title": "Granted External Roles",
+            "type": "array"
+          },
+          "raise_on_denied": {
+            "default": true,
+            "title": "Raise On Denied",
+            "type": "boolean"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "simulated_upstream_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  200,
+                  401,
+                  403
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Upstream Status"
+          },
+          "step_key": {
+            "default": "step-02-execution",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "step_number": {
+            "default": 2,
+            "maximum": 999.0,
+            "minimum": 1.0,
+            "title": "Step Number",
+            "type": "integer"
+          },
+          "target_uri": {
+            "maxLength": 512,
+            "minLength": 6,
+            "title": "Target Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "target_uri"
+        ],
+        "title": "PermissionCheckRequest",
+        "type": "object"
+      },
+      "PermissionCheckResponse": {
+        "additionalProperties": false,
+        "description": "Response payload when `check-access` completes without raising HTTP 403.",
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "connector_scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus",
+              "mcp"
+            ],
+            "title": "Connector Scheme",
+            "type": "string"
+          },
+          "execution_identity": {
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "permission_broker_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permission Broker Hint"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PermissionBrokerPolicyItem"
+          },
+          "status": {
+            "enum": [
+              "GRANTED",
+              "WAITING_FOR_PERMISSION"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_uri": {
+            "maxLength": 512,
+            "minLength": 6,
+            "title": "Target Uri",
+            "type": "string"
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PermissionBrokerTicketItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "allowed",
+          "status",
+          "execution_identity",
+          "target_uri",
+          "connector_scheme",
+          "policy",
+          "trace_id"
+        ],
+        "title": "PermissionCheckResponse",
+        "type": "object"
+      },
+      "PermissionPolicyImportMarkdownRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for importing a Markdown + YAML frontmatter KB policy (`FR-22`).",
+        "properties": {
+          "markdown_text": {
+            "maxLength": 16384,
+            "minLength": 16,
+            "title": "Markdown Text",
+            "type": "string"
+          },
+          "policy_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Key"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "markdown_text"
+        ],
+        "title": "PermissionPolicyImportMarkdownRequest",
+        "type": "object"
+      },
+      "PermissionPolicyImportMarkdownResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after importing a Markdown + YAML frontmatter KB policy.",
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/PermissionBrokerPolicyItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policy",
+          "trace_id"
+        ],
+        "title": "PermissionPolicyImportMarkdownResponse",
+        "type": "object"
+      },
+      "PermissionTicketActionRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for pausing or replaying a blocked step ticket (`UX-DR11`, `FR-22`).",
+        "properties": {
+          "action": {
+            "enum": [
+              "PAUSE",
+              "REPLAY"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "PermissionTicketActionRequest",
+        "type": "object"
+      },
+      "PermissionTicketActionResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after transitioning a Permission Broker ticket (`PAUSED` / `REPLAYED`).",
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/PermissionBrokerTicketItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket",
+          "trace_id"
+        ],
+        "title": "PermissionTicketActionResponse",
+        "type": "object"
+      },
       "ProblemDetails": {
         "additionalProperties": false,
         "description": "RFC 9457 Problem Details envelope returned on all ORCIA API errors.",
@@ -3402,6 +4023,409 @@
         "summary": "Get Direction C 7-module Global Sidebar & Hierarchical Scope Switcher tree",
         "tags": [
           "navigation"
+        ]
+      }
+    },
+    "/api/v1/permissions/broker/check-access": {
+      "post": {
+        "description": "Execute governed connector access check with anti-Confused Deputy and Jira KB brokering.",
+        "operationId": "check_or_intercept_connector_access_api_v1_permissions_broker_check_access_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionCheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Check connector execution (`passthrough` vs `service_principal`) or intercept 401/403",
+        "tags": [
+          "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/permissions/broker/policies/import-markdown": {
+      "post": {
+        "description": "Parse and upsert a Permission KB policy (`READ_ONLY_OBSERVER` rejected with HTTP 403).",
+        "operationId": "import_permission_policy_markdown_api_v1_permissions_broker_policies_import_markdown_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionPolicyImportMarkdownRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionPolicyImportMarkdownResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Import a Permission Knowledge Base Markdown policy with YAML frontmatter",
+        "tags": [
+          "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/permissions/broker/state": {
+      "get": {
+        "description": "Return all Permission Broker KB policies and step denial tickets for `workspace_id`.",
+        "operationId": "get_permission_broker_state_api_v1_permissions_broker_state_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionBrokerStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Permission Broker KB policies and blocked/paused/replayed step tickets",
+        "tags": [
+          "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/permissions/broker/tickets/{ticket_id}/action": {
+      "post": {
+        "description": "Transition `ticket_id` to `PAUSED` or `REPLAYED` (`READ_ONLY_OBSERVER` rejected).",
+        "operationId": "apply_permission_ticket_action_api_v1_permissions_broker_tickets__ticket_id__action_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionTicketActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionTicketActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Pause or replay a blocked Permission Broker step (`Replay Step N`, FR-22)",
+        "tags": [
+          "permission-broker"
         ]
       }
     },

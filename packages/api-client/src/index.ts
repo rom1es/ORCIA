@@ -1,44 +1,4 @@
-export type {
-  AuthTokenResponse,
-  BmadSkillPackImportRequest,
-  BmadSkillPackImportResponse,
-  BmadSkillStepInputItem,
-  CasObjectResponse,
-  CatalogItemResponse,
-  CatalogItemsListResponse,
-  CatalogPromoteRequest,
-  CatalogPromoteResponse,
-  CatalogResourceInspectionResponse,
-  CatalogResourceSourceResponse,
-  CatalogUriResolveRequest,
-  CatalogUriResolveResponse,
-  components,
-  EffectiveWorkflowResolveRequest,
-  EffectiveWorkflowResolveResponse,
-  EvaluationLensItem,
-  HealthResponse,
-  HumanProfileBadge,
-  LocalLoginRequest,
-  LogoutResponse,
-  OidcLoginRequest,
-  OrgUnitTreeItem,
-  PassthroughSecretMetadataResponse,
-  PassthroughSecretStoreRequest,
-  paths,
-  ProblemDetails,
-  RunLockManifestItem,
-  RunLockSourceTripletItem,
-  ScopeMutationCheckResponse,
-  ScopeNode,
-  ShellModuleItem,
-  ShellNavigationResponse,
-  UserMeResponse,
-  WorkflowDefinitionResponseItem,
-  WorkflowStepItem,
-  WorkspaceDatasourceItem,
-  WorkspacesListResponse,
-  WorkspaceSummaryItem,
-} from "./generated/schema";
+export type * from "./generated/schema";
 
 import type {
   AuthTokenResponse,
@@ -60,6 +20,13 @@ import type {
   OidcLoginRequest,
   PassthroughSecretMetadataResponse,
   PassthroughSecretStoreRequest,
+  PermissionBrokerStateResponse,
+  PermissionCheckRequest,
+  PermissionCheckResponse,
+  PermissionPolicyImportMarkdownRequest,
+  PermissionPolicyImportMarkdownResponse,
+  PermissionTicketActionRequest,
+  PermissionTicketActionResponse,
   ProblemDetails,
   ScopeMutationCheckResponse,
   ShellNavigationResponse,
@@ -83,6 +50,10 @@ export class OrciaProblemError extends Error {
     this.name = "OrciaProblemError";
     this.problem = problem;
   }
+}
+
+function buildPersonaQuery(personaKey?: string): string {
+  return personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
 }
 
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
@@ -159,20 +130,19 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
       return requestJson<LogoutResponse>("/api/v1/auth/logout", "POST");
     },
     getMe(personaKey?: string): Promise<UserMeResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
-      return requestJson<UserMeResponse>(`/api/v1/auth/me${query}`);
+      return requestJson<UserMeResponse>(`/api/v1/auth/me${buildPersonaQuery(personaKey)}`);
     },
     listWorkspaces(personaKey?: string): Promise<WorkspacesListResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
-      return requestJson<WorkspacesListResponse>(`/api/v1/workspaces${query}`);
+      return requestJson<WorkspacesListResponse>(
+        `/api/v1/workspaces${buildPersonaQuery(personaKey)}`,
+      );
     },
     checkWorkspaceMutation(
       workspaceId: string,
       personaKey?: string,
     ): Promise<ScopeMutationCheckResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<ScopeMutationCheckResponse>(
-        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/mutations/check${query}`,
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/mutations/check${buildPersonaQuery(personaKey)}`,
         "POST",
       );
     },
@@ -180,43 +150,40 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
       resourceId: string,
       personaKey?: string,
     ): Promise<CatalogResourceInspectionResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<CatalogResourceInspectionResponse>(
-        `/api/v1/catalog/resources/${encodeURIComponent(resourceId)}/inspect${query}`,
+        `/api/v1/catalog/resources/${encodeURIComponent(resourceId)}/inspect${buildPersonaQuery(personaKey)}`,
       );
     },
     getCatalogResourceSource(
       resourceId: string,
       personaKey?: string,
     ): Promise<CatalogResourceSourceResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<CatalogResourceSourceResponse>(
-        `/api/v1/catalog/resources/${encodeURIComponent(resourceId)}/source${query}`,
+        `/api/v1/catalog/resources/${encodeURIComponent(resourceId)}/source${buildPersonaQuery(personaKey)}`,
       );
     },
     storePassthroughCredential(
       payload: PassthroughSecretStoreRequest,
       personaKey?: string,
     ): Promise<PassthroughSecretMetadataResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<PassthroughSecretMetadataResponse>(
-        `/api/v1/auth/passthrough-credentials${query}`,
+        `/api/v1/auth/passthrough-credentials${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
       );
     },
     listCatalogItems(personaKey?: string): Promise<CatalogItemsListResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
-      return requestJson<CatalogItemsListResponse>(`/api/v1/catalog/items${query}`);
+      return requestJson<CatalogItemsListResponse>(
+        `/api/v1/catalog/items${buildPersonaQuery(personaKey)}`,
+      );
     },
     promoteCatalogItem(
       resourceId: string,
       payload: CatalogPromoteRequest,
       personaKey?: string,
     ): Promise<CatalogPromoteResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<CatalogPromoteResponse>(
-        `/api/v1/catalog/items/${encodeURIComponent(resourceId)}/promote${query}`,
+        `/api/v1/catalog/items/${encodeURIComponent(resourceId)}/promote${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
       );
@@ -225,26 +192,23 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
       payload: CatalogUriResolveRequest,
       personaKey?: string,
     ): Promise<CatalogUriResolveResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<CatalogUriResolveResponse>(
-        `/api/v1/catalog/resolve${query}`,
+        `/api/v1/catalog/resolve${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
       );
     },
     getCasObject(sha256: string, personaKey?: string): Promise<CasObjectResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<CasObjectResponse>(
-        `/api/v1/cas/${encodeURIComponent(sha256)}${query}`,
+        `/api/v1/cas/${encodeURIComponent(sha256)}${buildPersonaQuery(personaKey)}`,
       );
     },
     resolveEffectiveWorkflow(
       payload: EffectiveWorkflowResolveRequest,
       personaKey?: string,
     ): Promise<EffectiveWorkflowResolveResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<EffectiveWorkflowResolveResponse>(
-        `/api/v1/catalog/workflows/resolve-effective${query}`,
+        `/api/v1/catalog/workflows/resolve-effective${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
       );
@@ -253,9 +217,51 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
       payload: BmadSkillPackImportRequest,
       personaKey?: string,
     ): Promise<BmadSkillPackImportResponse> {
-      const query = personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
       return requestJson<BmadSkillPackImportResponse>(
-        `/api/v1/catalog/bmad-packs/import${query}`,
+        `/api/v1/catalog/bmad-packs/import${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    getPermissionBrokerState(
+      personaKey?: string,
+      workspaceId?: string,
+    ): Promise<PermissionBrokerStateResponse> {
+      const params = new URLSearchParams();
+      if (personaKey) params.set("persona_key", personaKey);
+      if (workspaceId) params.set("workspace_id", workspaceId);
+      const qs = params.toString();
+      return requestJson<PermissionBrokerStateResponse>(
+        `/api/v1/permissions/broker/state${qs ? `?${qs}` : ""}`,
+      );
+    },
+    importPermissionPolicyMarkdown(
+      payload: PermissionPolicyImportMarkdownRequest,
+      personaKey?: string,
+    ): Promise<PermissionPolicyImportMarkdownResponse> {
+      return requestJson<PermissionPolicyImportMarkdownResponse>(
+        `/api/v1/permissions/broker/policies/import-markdown${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    checkConnectorAccess(
+      payload: PermissionCheckRequest,
+      personaKey?: string,
+    ): Promise<PermissionCheckResponse> {
+      return requestJson<PermissionCheckResponse>(
+        `/api/v1/permissions/broker/check-access${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    applyPermissionTicketAction(
+      ticketId: string,
+      payload: PermissionTicketActionRequest,
+      personaKey?: string,
+    ): Promise<PermissionTicketActionResponse> {
+      return requestJson<PermissionTicketActionResponse>(
+        `/api/v1/permissions/broker/tickets/${encodeURIComponent(ticketId)}/action${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
       );

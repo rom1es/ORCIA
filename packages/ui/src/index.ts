@@ -19,6 +19,10 @@ export {
   type FederatedUriBadgeProps,
 } from "./shell/FederatedUriBadge";
 export { GlobalSidebar, type GlobalSidebarProps } from "./shell/GlobalSidebar";
+export {
+  PermissionBrokerCard,
+  type PermissionBrokerCardProps,
+} from "./shell/PermissionBrokerCard";
 export { ScopeSwitcher, type ScopeSwitcherProps } from "./shell/ScopeSwitcher";
 export {
   WorkspaceTopologyPanel,
@@ -26,16 +30,22 @@ export {
 } from "./shell/WorkspaceTopologyPanel";
 export type {
   UiAccessMode,
+  UiBrokerConnectorScheme,
+  UiBrokerStepState,
+  UiBrokerTicketStatus,
   UiCatalogExplorerItemView,
   UiCatalogExplorerLabels,
   UiCatalogPermissionKey,
   UiCatalogResourcePermissionView,
   UiCatalogVisibilityScope,
   UiDatasourceScheme,
+  UiExecutionIdentityMode,
   UiFederatedScheme,
   UiHumanProfileBadge,
   UiMobileTabKey,
   UiModuleKey,
+  UiPermissionBrokerLabels,
+  UiPermissionBrokerTicketView,
   UiPersonaKey,
   UiRunLockTripletView,
   UiScopeLevel,
