@@ -39,6 +39,20 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
     await page.getByTestId("locale-switcher-button").click();
     await expect(page.getByTestId("locale-switcher-button")).toContainText("(EN)");
 
+    // Story 1.2: Verify WorkspaceTopologyPanel, RBAC persona switch hiding module 7, and black-box source masking
+    await expect(page.getByTestId("workspace-topology-panel")).toBeVisible();
+    await page.getByTestId("persona-switch-nadia").click();
+    await expect(page.getByTestId("sidebar-nav-item-admin")).toHaveCount(0);
+
+    await page.getByTestId("persona-switch-claire").click();
+    await expect(page.getByTestId("sidebar-nav-item-admin")).toHaveCount(1);
+    await expect(page.getByTestId("workspace-card-ws-projet-confidentiel")).toHaveCount(0);
+
+    await page.getByTestId("inspect-source-btn-res-blackbox-security-agent").click();
+    await expect(
+      page.getByTestId("inspect-source-result-res-blackbox-security-agent"),
+    ).toContainText("ERR_READ_SOURCE_DENIED");
+
     // Mobile Companion tab bar is rendered and interactive
     await expect(page.getByTestId("mobile-companion-tabbar")).toBeVisible();
   });

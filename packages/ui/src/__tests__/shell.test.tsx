@@ -182,4 +182,34 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     fireEvent.click(screen.getByText("Signer l'ancrage humain"));
     expect(onSign).toHaveBeenCalledWith("vision", "Architecture Hexagonale Stricte");
   });
+
+  it("hides disabled modules (enabled: false) in GlobalSidebar and displays role/orgUnitName in footer", () => {
+    const filteredModules = MOCK_MODULES.map((m) =>
+      m.key === "admin" ? { ...m, enabled: false } : m,
+    );
+    render(
+      <AppShell
+        modules={filteredModules}
+        activeModuleKey="cockpit"
+        scopes={MOCK_SCOPES}
+        activeScopeId="scope-ws-orcia"
+        humanProfile={{
+          ...MOCK_PROFILE,
+          role: "CONTRIBUTOR",
+          orgUnitName: "Sous-Équipe Checkout",
+        }}
+        labels={MOCK_LABELS}
+        currentLocale="fr"
+        onSelectModule={vi.fn()}
+        onSelectScope={vi.fn()}
+      >
+        <div>Contenu</div>
+      </AppShell>,
+    );
+
+    expect(screen.queryByTestId("sidebar-nav-item-admin")).toBeNull();
+    expect(screen.getByTestId("sidebar-human-profile-org").textContent).toContain(
+      "CONTRIBUTOR · Sous-Équipe Checkout",
+    );
+  });
 });

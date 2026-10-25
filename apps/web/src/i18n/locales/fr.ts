@@ -55,6 +55,33 @@ export const frDictionary: TranslationDictionary = {
     defaultAuthorName: "Architecte / Tech Lead",
     defaultValue: "Isolation hexagonale stricte et contrat OpenAPI 3.1 sans dérive (0-diff).",
   },
+  workspaceTopology: {
+    panelTitle: "Arbre d'Équipes (OrgUnit), Workspaces Multi-Sources & 5 Permissions Dissociées",
+    panelSubtitle:
+      "Authentification Hybride Bi-Mode (OIDC + Locale Argon2id/TOTP), Roll-up ascendant et isolation inter-Workspaces.",
+    personaSelectorLabel: "Simuler la persona RBAC active",
+    personas: {
+      karim: "Karim — PLATFORM_ADMIN (Entreprise)",
+      claire: "Claire — BU_DIRECTOR (Roll-up Observateur)",
+      marc: "Marc — TEAM_LEAD (Sous-Équipe Checkout)",
+      nadia: "Nadia — CONTRIBUTOR (Développeuse)",
+      partenaire: "Partenaire Externe (Invité Workspace 1)",
+    },
+    finopsRollupPrefix: "Roll-up FinOps consolidé",
+    confidentialExcludedNotice:
+      "Les Workspaces marqués CONFIDENTIAL_RESTRICTED bloquent tout Roll-up ascendant sur le contenu métier.",
+    datasourcesCountPrefix: "Sources fédérées rattachées",
+    catalogPermissionsTitle: "5 Permissions Dissociées du Catalogue & Protection Boîte Noire",
+    sourceMaskedBadgeLabel: "🔒 Source masquée (READ_SOURCE=False)",
+    sourceOpenBadgeLabel: "📖 Source accessible (READ_SOURCE=True)",
+    inspectSourceButtonLabel: "Inspecter la source",
+    sourceDeniedErrorBanner: "HTTP 403 ERR_READ_SOURCE_DENIED — Permission READ_SOURCE requise",
+    sourceAllowedBannerPrefix: "HTTP 200 OK — Source autorisée",
+    mutationGuardButtonLabel: "Tester ScopeAccessGuard (Mutation)",
+    mutationAllowedBanner: "HTTP 200 OK — Mutation autorisée (Contributeur)",
+    mutationDeniedObserverBanner:
+      "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Mutation rejetée en mode Observateur",
+  },
   modulePages: {
     cockpit: {
       subtitle: "Espace de co-conception Human-Led, Agent-Accelerated",

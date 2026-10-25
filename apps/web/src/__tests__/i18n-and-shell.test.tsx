@@ -117,5 +117,24 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(screen.getByTestId("sidebar-access-mode-badge").textContent).toBe(
       enDictionary.shell.accessModes.READ_ONLY_OBSERVER,
     );
+
+    // Switch persona to Nadia (CONTRIBUTOR) -> Module 7 (Administration) is hidden in GlobalSidebar
+    fireEvent.click(screen.getByTestId("persona-switch-nadia"));
+    expect(screen.queryByTestId("sidebar-nav-item-admin")).toBeNull();
+
+    // Switch persona to Claire (BU_DIRECTOR) -> Module 7 is visible, WS 3 (CONFIDENTIAL_RESTRICTED) is excluded from roll-up
+    fireEvent.click(screen.getByTestId("persona-switch-claire"));
+    expect(screen.getByTestId("sidebar-nav-item-admin")).toBeDefined();
+    expect(screen.queryByTestId("workspace-card-ws-projet-confidentiel")).toBeNull();
+    fireEvent.click(screen.getByTestId("mutation-guard-btn-ws-solution-paiement"));
+    expect(screen.getByTestId("mutation-guard-result-ws-solution-paiement").textContent).toContain(
+      "ERR_OBSERVER_MODE_READ_ONLY",
+    );
+
+    // Inspect black-box catalog resource -> shows ERR_READ_SOURCE_DENIED
+    fireEvent.click(screen.getByTestId("inspect-source-btn-res-blackbox-security-agent"));
+    expect(
+      screen.getByTestId("inspect-source-result-res-blackbox-security-agent").textContent,
+    ).toContain("ERR_READ_SOURCE_DENIED");
   });
 });

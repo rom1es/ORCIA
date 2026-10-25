@@ -70,6 +70,9 @@ class HumanProfileBadge(BaseModel):
     archetype_key: str
     display_name: str
     access_mode: AccessMode
+    role: str = "TEAM_LEAD"
+    org_unit_id: str = "0192c4e0-0000-7000-8000-000000000104"
+    org_unit_name: str = "Sous-Équipe Checkout & Core Solutions"
 
 
 class ShellNavigationResponse(BaseModel):
@@ -84,7 +87,12 @@ class ShellNavigationResponse(BaseModel):
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
-def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
+def build_default_shell_navigation(
+    trace_id: str,
+    *,
+    enabled_modules: dict[str, bool] | None = None,
+    human_profile: HumanProfileBadge | None = None,
+) -> ShellNavigationResponse:
     """Build the default 7-module Direction C shell topology and hierarchical scope tree."""
     scopes = [
         ScopeNode(
@@ -116,6 +124,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             access_mode="CONTRIBUTOR_ACTION_REQUIRED",
         ),
     ]
+    flags = enabled_modules or {}
     modules = [
         ShellModuleItem(
             key="cockpit",
@@ -124,6 +133,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="message-square",
             contributor_badge_count=1,
             has_stale_warning=False,
+            enabled=flags.get("cockpit", True),
         ),
         ShellModuleItem(
             key="inbox",
@@ -132,6 +142,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="bell",
             contributor_badge_count=2,
             has_stale_warning=False,
+            enabled=flags.get("inbox", True),
         ),
         ShellModuleItem(
             key="catalog",
@@ -140,6 +151,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="package",
             contributor_badge_count=0,
             has_stale_warning=False,
+            enabled=flags.get("catalog", True),
         ),
         ShellModuleItem(
             key="ontology",
@@ -148,6 +160,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="dna",
             contributor_badge_count=0,
             has_stale_warning=True,
+            enabled=flags.get("ontology", True),
         ),
         ShellModuleItem(
             key="gates",
@@ -156,6 +169,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="shield",
             contributor_badge_count=1,
             has_stale_warning=False,
+            enabled=flags.get("gates", True),
         ),
         ShellModuleItem(
             key="finops",
@@ -164,6 +178,7 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="bar-chart",
             contributor_badge_count=0,
             has_stale_warning=False,
+            enabled=flags.get("finops", True),
         ),
         ShellModuleItem(
             key="admin",
@@ -172,13 +187,15 @@ def build_default_shell_navigation(trace_id: str) -> ShellNavigationResponse:
             icon="settings",
             contributor_badge_count=0,
             has_stale_warning=False,
+            enabled=flags.get("admin", True),
         ),
     ]
     return ShellNavigationResponse(
         active_scope_id="scope-ws-orcia",
         scopes=scopes,
         modules=modules,
-        human_profile=HumanProfileBadge(
+        human_profile=human_profile
+        or HumanProfileBadge(
             archetype_key="TECH_LEAD",
             display_name="Tech Lead / Architecte",
             access_mode="CONTRIBUTOR_ACTION_REQUIRED",

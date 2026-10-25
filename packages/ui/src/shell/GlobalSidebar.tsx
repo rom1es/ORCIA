@@ -227,6 +227,17 @@ export function GlobalSidebar({
             >
               {labels.humanProfilePrefixLabel}: {humanProfile.displayName}
             </div>
+            {(humanProfile.role || humanProfile.orgUnitName) && (
+              <div
+                data-testid="sidebar-human-profile-org"
+                style={{
+                  fontSize: "var(--font-size-mono)",
+                  color: "var(--color-sidebar-foreground)",
+                }}
+              >
+                {[humanProfile.role, humanProfile.orgUnitName].filter(Boolean).join(" · ")}
+              </div>
+            )}
             <StatusBadge
               testId="sidebar-access-mode-badge"
               label={labels.accessModes[humanProfile.accessMode]}

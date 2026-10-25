@@ -48,8 +48,22 @@ def _load_maintenance_module():
     return mod
 
 
+def _load_org_tree_backfill_module():
+    import sys
+
+    script_path = (
+        REPO_ROOT / "infra" / "scripts" / "maintenance" / "01_backfill_default_org_tree.py"
+    )
+    spec = importlib.util.spec_from_file_location("backfill_default_org_tree", script_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
-    """Verify Alembic 0001 upgrade/downgrade, pgvector, and append-only trigger on PG 18."""
+    """Verify Alembic 0001 + 0002 upgrade/downgrade, pgvector, org tree backfill, and triggers."""
     pg_sock_dir = _prepare_sock_dir("pg")
 
     pg_container = (
@@ -76,6 +90,14 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
 
         engine = create_async_engine(async_url)
         try:
+            for _attempt in range(30):
+                try:
+                    async with engine.connect() as probe_conn:
+                        await probe_conn.execute(sa.text("SELECT 1"))
+                    break
+                except Exception:
+                    time.sleep(0.2)
+
             async with engine.begin() as conn:
                 await conn.run_sync(
                     lambda sync_conn: (
@@ -84,7 +106,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                     )
                 )
 
-            # Verify maintenance script in dry-run (default rollback) and apply modes
+            # Verify maintenance script 00 in dry-run (default rollback) and apply modes
             maint = _load_maintenance_module()
             dry_report = await maint.verify_database_invariants(engine, apply_changes=False)
             assert dry_report.has_vector_extension is True
@@ -94,6 +116,27 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
 
             apply_report = await maint.verify_database_invariants(engine, apply_changes=True)
             assert apply_report.committed is True
+
+            # Verify Story 1.2 maintenance script 01_backfill_default_org_tree in dry-run & apply
+            backfill_mod = _load_org_tree_backfill_module()
+            bf_dry = await backfill_mod.backfill_default_org_tree(engine, apply_changes=False)
+            assert bf_dry.org_units_count == 5
+            assert bf_dry.workspaces_count == 3
+            assert bf_dry.datasources_count == 10
+            assert bf_dry.dry_run is True
+            assert bf_dry.committed is False
+
+            # After dry-run rollback, table org_units is still empty
+            async with engine.connect() as conn:
+                count_after_dry = await conn.execute(sa.text("SELECT COUNT(*) FROM org_units"))
+                assert int(count_after_dry.scalar() or 0) == 0
+
+            # Now apply idempotently
+            bf_apply = await backfill_mod.backfill_default_org_tree(engine, apply_changes=True)
+            assert bf_apply.committed is True
+            assert bf_apply.org_units_count == 5
+            assert bf_apply.workspaces_count == 3
+            assert bf_apply.datasources_count == 10
 
             # Verify append-only trigger blocks UPDATE and DELETE on PG 18
             async with engine.begin() as conn:
@@ -127,7 +170,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 async with engine.begin() as conn:
                     await conn.execute(sa.text("DELETE FROM test_append_only_ledger;"))
 
-            # Verify downgrade and re-upgrade
+            # Verify downgrade and re-upgrade across 0002 and 0001
             async with engine.begin() as conn:
                 await conn.execute(sa.text("DROP TABLE test_append_only_ledger;"))
                 await conn.run_sync(
@@ -143,7 +186,10 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
 
 
 def test_redis7_atomic_presence_lock_and_minio_container() -> None:
-    """Verify atomic presence lock (`SET NX EX 900`, AD-4) on real Redis 7.4 and MinIO container."""
+    """Verify atomic presence lock, JWT jti revocation on real Redis 7.4, and MinIO container."""
+    from orcia_core.domain.exceptions import RevokedTokenError
+    from orcia_core.permissions import KeyValueRevocationStore, build_default_auth_and_org_service
+
     redis_sock_dir = _prepare_sock_dir("rd")
     redis_sock_path = redis_sock_dir / "redis.sock"
 
@@ -168,6 +214,19 @@ def test_redis7_atomic_presence_lock_and_minio_container() -> None:
             assert acquired_1 is True
             assert acquired_2 is None
             assert client.get(lock_key) == "user-alice"
+
+            # Verify Story 1.2 session revocation backed by real Redis 7.4 container
+            rev_store = KeyValueRevocationStore(client)
+            auth_svc = build_default_auth_and_org_service(revocation_store=rev_store)
+            _user, tokens = auth_svc.login_local("marc.lead@orcia.io", "OrciaLead!2026")
+            assert (
+                auth_svc.authenticate_access_token(tokens.access_token).email
+                == "marc.lead@orcia.io"
+            )
+            auth_svc.revoke_token(tokens.access_token, expected_type="access")
+            with pytest.raises(RevokedTokenError):
+                auth_svc.authenticate_access_token(tokens.access_token)
+
             client.close()
     finally:
         shutil.rmtree(redis_sock_dir, ignore_errors=True)

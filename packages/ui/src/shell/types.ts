@@ -13,6 +13,17 @@ export type UiAccessMode = "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
 
 export type UiMobileTabKey = "inbox" | "chat" | "briefing";
 
+export type UiPersonaKey = "karim" | "claire" | "marc" | "nadia" | "partenaire";
+
+export type UiDatasourceScheme = "git" | "jira" | "confluence" | "db" | "nexus";
+
+export type UiCatalogPermissionKey =
+  | "DISCOVER"
+  | "EXECUTE"
+  | "READ_SOURCE"
+  | "EDIT"
+  | "ADMIN";
+
 export interface UiShellModuleItem {
   key: UiModuleKey;
   order: number;
@@ -35,6 +46,56 @@ export interface UiHumanProfileBadge {
   archetypeKey: string;
   displayName: string;
   accessMode: UiAccessMode;
+  role?: string;
+  orgUnitName?: string;
+}
+
+export interface UiWorkspaceDatasourceView {
+  id: string;
+  alias: string;
+  scheme: UiDatasourceScheme;
+  uri: string;
+  role: string;
+}
+
+export interface UiWorkspaceCardView {
+  id: string;
+  name: string;
+  ownerOrgUnitName: string;
+  visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+  effectiveRole: string;
+  accessMode: UiAccessMode;
+  accessOrigin: "DIRECT_TEAM" | "ROLLUP_PARENT" | "PARTNER_INVITE" | "GLOBAL_ADMIN";
+  finopsCostUsd: number | null;
+  datasources: UiWorkspaceDatasourceView[];
+}
+
+export interface UiCatalogResourcePermissionView {
+  resourceId: string;
+  resourceUri: string;
+  title: string;
+  visibilityScope: string;
+  grantedPermissions: UiCatalogPermissionKey[];
+  sourceMasked: boolean;
+}
+
+export interface UiWorkspaceTopologyLabels {
+  panelTitle: string;
+  panelSubtitle: string;
+  personaSelectorLabel: string;
+  personas: Record<UiPersonaKey, string>;
+  finopsRollupPrefix: string;
+  confidentialExcludedNotice: string;
+  datasourcesCountPrefix: string;
+  catalogPermissionsTitle: string;
+  sourceMaskedBadgeLabel: string;
+  sourceOpenBadgeLabel: string;
+  inspectSourceButtonLabel: string;
+  sourceDeniedErrorBanner: string;
+  sourceAllowedBannerPrefix: string;
+  mutationGuardButtonLabel: string;
+  mutationAllowedBanner: string;
+  mutationDeniedObserverBanner: string;
 }
 
 export interface UiShellLabels {

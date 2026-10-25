@@ -56,6 +56,10 @@ def _json_schema_to_ts(schema: dict[str, Any], indent: int = 4) -> str:
         props: dict[str, Any] = schema.get("properties", {})
         required_set = set(schema.get("required", []))
         if not props:
+            add_props = schema.get("additionalProperties")
+            if isinstance(add_props, dict):
+                val_ts = _json_schema_to_ts(add_props, indent)
+                return f"Record<string, {val_ts}>"
             return "Record<string, unknown>"
         pad = " " * (indent + 2)
         closing_pad = " " * indent
@@ -117,22 +121,11 @@ def render_typescript_schema(openapi_spec: dict[str, Any]) -> str:
             lines.append("    };")
         lines.append("  };")
 
-    lines.extend(
-        [
-            "}",
-            "",
-            'export type ProblemDetails = components["schemas"]["ProblemDetails"];',
-            'export type HealthResponse = components["schemas"]["HealthResponse"];',
-            'export type ShellModuleItem = components["schemas"]["ShellModuleItem"];',
-            'export type ScopeNode = components["schemas"]["ScopeNode"];',
-            'export type HumanProfileBadge = components["schemas"]["HumanProfileBadge"];',
-            (
-                "export type ShellNavigationResponse = "
-                'components["schemas"]["ShellNavigationResponse"];'
-            ),
-            "",
-        ]
-    )
+    lines.append("}")
+    lines.append("")
+    for name in sorted(schemas.keys()):
+        lines.append(f'export type {name} = components["schemas"]["{name}"];')
+    lines.append("")
     return "\n".join(lines)
 
 

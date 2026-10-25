@@ -8,10 +8,13 @@ from orcia_api.middleware.trace_and_error import (
     TraceContextMiddleware,
     register_exception_handlers,
 )
+from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.health import router as health_router
+from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
 from orcia_api.routers.shell import router as shell_router
 from orcia_core import __version__
 from orcia_core.observability.logging import configure_structlog
+from orcia_core.permissions import build_default_auth_and_org_service
 
 
 def create_app() -> FastAPI:
@@ -25,10 +28,13 @@ def create_app() -> FastAPI:
             "Hexagonal Modular Monolith API with RFC 9457 Problem Details."
         ),
     )
+    application.state.auth_service = build_default_auth_and_org_service()
     application.add_middleware(TraceContextMiddleware)
     register_exception_handlers(application)
     application.include_router(health_router)
     application.include_router(shell_router)
+    application.include_router(auth_router)
+    application.include_router(org_and_workspaces_router)
     return application
 
 

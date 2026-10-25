@@ -102,6 +102,46 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             detail="An unexpected error occurred while processing the request.",
         ),
     },
+    "ERR_AUTH_INVALID_CREDENTIALS": {
+        "fr": LocalizedErrorCopy(
+            title="Identifiants d'authentification invalides",
+            detail="L'adresse e-mail, le mot de passe ou le jeton OIDC fourni est invalide.",
+        ),
+        "en": LocalizedErrorCopy(
+            title="Invalid authentication credentials",
+            detail="The supplied email, password, or OIDC token is invalid.",
+        ),
+    },
+    "ERR_AUTH_MFA_INVALID": {
+        "fr": LocalizedErrorCopy(
+            title="Code MFA TOTP invalide ou manquant",
+            detail="Le code d'authentification multifacteur TOTP est requis ou incorrect.",
+        ),
+        "en": LocalizedErrorCopy(
+            title="Invalid or missing TOTP MFA code",
+            detail="A valid TOTP multi-factor authentication code is required.",
+        ),
+    },
+    "ERR_AUTH_TOKEN_REVOKED": {
+        "fr": LocalizedErrorCopy(
+            title="Session expirée ou révoquée",
+            detail="Le jeton de session ou de rafraîchissement a expiré ou a été révoqué.",
+        ),
+        "en": LocalizedErrorCopy(
+            title="Session expired or revoked",
+            detail="The session or refresh token has expired or has been revoked.",
+        ),
+    },
+    "ERR_SCOPE_ACCESS_DENIED": {
+        "fr": LocalizedErrorCopy(
+            title="Accès au périmètre ou module refusé",
+            detail="Votre rôle RBAC ne vous autorise pas à accéder à ce périmètre ou module.",
+        ),
+        "en": LocalizedErrorCopy(
+            title="Scope or module access denied",
+            detail="Your RBAC role does not grant access to this scope or module.",
+        ),
+    },
 }
 
 
@@ -227,3 +267,35 @@ class ValidationDomainError(OrciaDomainError):
     error_code = "ERR_VALIDATION_FAILED"
     http_status = 422
     type_slug = "validation-failed"
+
+
+class InvalidCredentialsError(OrciaDomainError):
+    """Raised when local password or OIDC token authentication fails (AD-6)."""
+
+    error_code = "ERR_AUTH_INVALID_CREDENTIALS"
+    http_status = 401
+    type_slug = "auth-invalid-credentials"
+
+
+class InvalidMfaCodeError(OrciaDomainError):
+    """Raised when TOTP MFA code is missing or invalid (AD-6)."""
+
+    error_code = "ERR_AUTH_MFA_INVALID"
+    http_status = 401
+    type_slug = "auth-mfa-invalid"
+
+
+class RevokedTokenError(OrciaDomainError):
+    """Raised when a session or refresh token is expired or revoked in Redis (AD-6)."""
+
+    error_code = "ERR_AUTH_TOKEN_REVOKED"
+    http_status = 401
+    type_slug = "auth-token-revoked"
+
+
+class ScopeAccessDeniedError(OrciaDomainError):
+    """Raised when a caller attempts to access an unauthorized scope or module (AD-6)."""
+
+    error_code = "ERR_SCOPE_ACCESS_DENIED"
+    http_status = 403
+    type_slug = "scope-access-denied"

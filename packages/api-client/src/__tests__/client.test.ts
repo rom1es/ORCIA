@@ -129,4 +129,37 @@ describe("createOrciaApiClient", () => {
       expect(problemErr.problem.trace_id).toBe("0192c4e0000070008000000000000099");
     }
   });
+
+  it("supports Story 1.2 auth, workspaces, mutation guard, and catalog permission endpoints", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "ok" }),
+    });
+
+    const client = createOrciaApiClient({
+      baseUrl: "http://localhost:8000",
+      accessToken: "jwt-token-123",
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    });
+
+    await client.loginLocal({ email: "marc.lead@orcia.io", password: "secret" });
+    await client.loginOidc({ oidc_subject: "oidc|marc-lead" });
+    await client.refreshSession();
+    await client.logoutSession();
+    await client.getMe("marc");
+    await client.listWorkspaces("claire");
+    await client.checkWorkspaceMutation("ws-1", "marc");
+    await client.inspectCatalogResource("res-1", "marc");
+    await client.getCatalogResourceSource("res-1", "marc");
+    await client.storePassthroughCredential(
+      {
+        connector_scheme: "git",
+        target_host: "gitlab.entreprise.io",
+        plaintext_secret: "pat-123",
+      },
+      "marc",
+    );
+
+    expect(mockFetch).toHaveBeenCalledTimes(10);
+  });
 });

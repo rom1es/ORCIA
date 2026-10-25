@@ -1,5 +1,21 @@
 """Pydantic v2 contracts (single source of truth for OpenAPI 3.1 schema generation, AD-1)."""
 
+from orcia_core.schemas.auth_and_org import (
+    AuthTokenResponse,
+    CatalogResourceInspectionResponse,
+    CatalogResourceSourceResponse,
+    LocalLoginRequest,
+    LogoutResponse,
+    OidcLoginRequest,
+    OrgUnitTreeItem,
+    PassthroughSecretMetadataResponse,
+    PassthroughSecretStoreRequest,
+    ScopeMutationCheckResponse,
+    UserMeResponse,
+    WorkspaceDatasourceItem,
+    WorkspacesListResponse,
+    WorkspaceSummaryItem,
+)
 from orcia_core.schemas.problem_details import ProblemDetails
 from orcia_core.schemas.shell import (
     AccessMode,
@@ -14,12 +30,26 @@ from orcia_core.schemas.shell import (
 
 __all__ = [
     "AccessMode",
+    "AuthTokenResponse",
+    "CatalogResourceInspectionResponse",
+    "CatalogResourceSourceResponse",
     "HealthResponse",
     "HumanProfileBadge",
+    "LocalLoginRequest",
+    "LogoutResponse",
     "ModuleKey",
+    "OidcLoginRequest",
+    "OrgUnitTreeItem",
+    "PassthroughSecretMetadataResponse",
+    "PassthroughSecretStoreRequest",
     "ProblemDetails",
     "ScopeLevel",
+    "ScopeMutationCheckResponse",
     "ScopeNode",
     "ShellModuleItem",
     "ShellNavigationResponse",
+    "UserMeResponse",
+    "WorkspaceDatasourceItem",
+    "WorkspaceSummaryItem",
+    "WorkspacesListResponse",
 ]

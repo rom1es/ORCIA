@@ -1,6 +1,177 @@
 {
   "components": {
     "schemas": {
+      "AuthTokenResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for authentication and session refresh endpoints (AD-6).",
+        "properties": {
+          "access_token": {
+            "minLength": 16,
+            "title": "Access Token",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_in_seconds": {
+            "default": 900,
+            "minimum": 60.0,
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "human_profile_archetype": {
+            "title": "Human Profile Archetype",
+            "type": "string"
+          },
+          "platform_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Platform Role",
+            "type": "string"
+          },
+          "primary_org_unit_id": {
+            "title": "Primary Org Unit Id",
+            "type": "string"
+          },
+          "token_type": {
+            "const": "Bearer",
+            "default": "Bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "user_id",
+          "email",
+          "display_name",
+          "platform_role",
+          "human_profile_archetype",
+          "primary_org_unit_id",
+          "trace_id"
+        ],
+        "title": "AuthTokenResponse",
+        "type": "object"
+      },
+      "CatalogResourceInspectionResponse": {
+        "additionalProperties": false,
+        "description": "Evaluated 5 permissions for a catalog resource (`/inspect`).",
+        "properties": {
+          "granted_permissions": {
+            "items": {
+              "enum": [
+                "DISCOVER",
+                "EXECUTE",
+                "READ_SOURCE",
+                "EDIT",
+                "ADMIN"
+              ],
+              "type": "string"
+            },
+            "title": "Granted Permissions",
+            "type": "array"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "source_masked": {
+            "title": "Source Masked",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "visibility_scope": {
+            "enum": [
+              "DRAFT",
+              "SHARED_WORKSPACE",
+              "SHARED_TEAM",
+              "SHARED_BU",
+              "PUBLISHED_ORG",
+              "PENDING_APPROVAL"
+            ],
+            "title": "Visibility Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_id",
+          "resource_uri",
+          "title",
+          "visibility_scope",
+          "granted_permissions",
+          "source_masked",
+          "trace_id"
+        ],
+        "title": "CatalogResourceInspectionResponse",
+        "type": "object"
+      },
+      "CatalogResourceSourceResponse": {
+        "additionalProperties": false,
+        "description": "Protected internal source payload requiring `READ_SOURCE` (`AD-6`, `FR-21`).",
+        "properties": {
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "system_prompt_secret": {
+            "title": "System Prompt Secret",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_id",
+          "resource_uri",
+          "system_prompt_secret",
+          "trace_id"
+        ],
+        "title": "CatalogResourceSourceResponse",
+        "type": "object"
+      },
       "HealthResponse": {
         "additionalProperties": false,
         "description": "Health check response payload for `/api/v1/health`.",
@@ -50,6 +221,21 @@
           "display_name": {
             "title": "Display Name",
             "type": "string"
+          },
+          "org_unit_id": {
+            "default": "0192c4e0-0000-7000-8000-000000000104",
+            "title": "Org Unit Id",
+            "type": "string"
+          },
+          "org_unit_name": {
+            "default": "Sous-Équipe Checkout & Core Solutions",
+            "title": "Org Unit Name",
+            "type": "string"
+          },
+          "role": {
+            "default": "TEAM_LEAD",
+            "title": "Role",
+            "type": "string"
           }
         },
         "required": [
@@ -58,6 +244,233 @@
           "access_mode"
         ],
         "title": "HumanProfileBadge",
+        "type": "object"
+      },
+      "LocalLoginRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/auth/login/local` (Argon2id + optional TOTP MFA).",
+        "properties": {
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          },
+          "totp_code": {
+            "anyOf": [
+              {
+                "maxLength": 6,
+                "minLength": 6,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totp Code"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LocalLoginRequest",
+        "type": "object"
+      },
+      "LogoutResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/auth/logout`.",
+        "properties": {
+          "revoked": {
+            "default": true,
+            "title": "Revoked",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trace_id"
+        ],
+        "title": "LogoutResponse",
+        "type": "object"
+      },
+      "OidcLoginRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/auth/login/oidc` (Enterprise SSO OIDC / OAuth 2.1).",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "oidc_subject": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Oidc Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "oidc_subject"
+        ],
+        "title": "OidcLoginRequest",
+        "type": "object"
+      },
+      "OrgUnitTreeItem": {
+        "additionalProperties": false,
+        "description": "Organizational Unit node in the hierarchical team tree (`org_units`).",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "unit_type": {
+            "enum": [
+              "ENTERPRISE",
+              "BU",
+              "TRIBE",
+              "TEAM",
+              "SUB_TEAM"
+            ],
+            "title": "Unit Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "unit_type"
+        ],
+        "title": "OrgUnitTreeItem",
+        "type": "object"
+      },
+      "PassthroughSecretMetadataResponse": {
+        "additionalProperties": false,
+        "description": "Metadata returned after storing an AES-256-GCM Passthrough credential.",
+        "properties": {
+          "connector_scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus"
+            ],
+            "title": "Connector Scheme",
+            "type": "string"
+          },
+          "encrypted_at_rest": {
+            "default": true,
+            "title": "Encrypted At Rest",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key_version": {
+            "title": "Key Version",
+            "type": "integer"
+          },
+          "target_host": {
+            "title": "Target Host",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "connector_scheme",
+          "target_host",
+          "key_version",
+          "trace_id"
+        ],
+        "title": "PassthroughSecretMetadataResponse",
+        "type": "object"
+      },
+      "PassthroughSecretStoreRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to encrypt and store a user Passthrough secret in AES-256-GCM.",
+        "properties": {
+          "connector_scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus"
+            ],
+            "title": "Connector Scheme",
+            "type": "string"
+          },
+          "plaintext_secret": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Plaintext Secret",
+            "type": "string"
+          },
+          "target_host": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Target Host",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_scheme",
+          "target_host",
+          "plaintext_secret"
+        ],
+        "title": "PassthroughSecretStoreRequest",
         "type": "object"
       },
       "ProblemDetails": {
@@ -132,6 +545,56 @@
           "trace_id"
         ],
         "title": "ProblemDetails",
+        "type": "object"
+      },
+      "ScopeMutationCheckResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/workspaces/{workspace_id}/mutations/check`.",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "allowed": {
+            "default": true,
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "effective_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Effective Role",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "effective_role",
+          "access_mode",
+          "trace_id"
+        ],
+        "title": "ScopeMutationCheckResponse",
         "type": "object"
       },
       "ScopeNode": {
@@ -285,6 +748,298 @@
         ],
         "title": "ShellNavigationResponse",
         "type": "object"
+      },
+      "UserMeResponse": {
+        "additionalProperties": false,
+        "description": "Complete Human Profile, OrgUnit tree, and accessible Workspaces for `GET /api/v1/auth/me`.",
+        "properties": {
+          "auth_mode": {
+            "enum": [
+              "OIDC",
+              "LOCAL",
+              "HYBRID"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "consolidated_finops_usd": {
+            "title": "Consolidated Finops Usd",
+            "type": "number"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "human_profile_archetype": {
+            "title": "Human Profile Archetype",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "modules": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Modules",
+            "type": "object"
+          },
+          "org_units": {
+            "items": {
+              "$ref": "#/components/schemas/OrgUnitTreeItem"
+            },
+            "title": "Org Units",
+            "type": "array"
+          },
+          "platform_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Platform Role",
+            "type": "string"
+          },
+          "primary_org_unit_id": {
+            "title": "Primary Org Unit Id",
+            "type": "string"
+          },
+          "totp_enabled": {
+            "title": "Totp Enabled",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "transverse_groups": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Transverse Groups",
+            "type": "array"
+          },
+          "workspaces": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSummaryItem"
+            },
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "auth_mode",
+          "human_profile_archetype",
+          "platform_role",
+          "primary_org_unit_id",
+          "totp_enabled",
+          "transverse_groups",
+          "org_units",
+          "workspaces",
+          "consolidated_finops_usd",
+          "modules",
+          "trace_id"
+        ],
+        "title": "UserMeResponse",
+        "type": "object"
+      },
+      "WorkspaceDatasourceItem": {
+        "additionalProperties": false,
+        "description": "Federated datasource (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`).",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "execution_identity": {
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "freshness_ttl_days": {
+            "minimum": 1.0,
+            "title": "Freshness Ttl Days",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus"
+            ],
+            "title": "Scheme",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "alias",
+          "scheme",
+          "uri",
+          "role",
+          "execution_identity",
+          "freshness_ttl_days"
+        ],
+        "title": "WorkspaceDatasourceItem",
+        "type": "object"
+      },
+      "WorkspaceSummaryItem": {
+        "additionalProperties": false,
+        "description": "Solution Workspace summary with effective RBAC access and multi-source topology.",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "access_origin": {
+            "enum": [
+              "DIRECT_TEAM",
+              "ROLLUP_PARENT",
+              "PARTNER_INVITE",
+              "GLOBAL_ADMIN"
+            ],
+            "title": "Access Origin",
+            "type": "string"
+          },
+          "datasources": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceDatasourceItem"
+            },
+            "title": "Datasources",
+            "type": "array"
+          },
+          "effective_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Effective Role",
+            "type": "string"
+          },
+          "finops_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finops Cost Usd"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_org_unit_id": {
+            "title": "Owner Org Unit Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "visibility_mode": {
+            "enum": [
+              "STANDARD",
+              "CONFIDENTIAL_RESTRICTED"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "owner_org_unit_id",
+          "visibility_mode",
+          "effective_role",
+          "access_mode",
+          "access_origin",
+          "datasources"
+        ],
+        "title": "WorkspaceSummaryItem",
+        "type": "object"
+      },
+      "WorkspacesListResponse": {
+        "additionalProperties": false,
+        "description": "Consolidated response for `GET /api/v1/workspaces`.",
+        "properties": {
+          "consolidated_finops_usd": {
+            "title": "Consolidated Finops Usd",
+            "type": "number"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspaces": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSummaryItem"
+            },
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "workspaces",
+          "consolidated_finops_usd",
+          "trace_id"
+        ],
+        "title": "WorkspacesListResponse",
+        "type": "object"
       }
     }
   },
@@ -295,6 +1050,704 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/auth/login/local": {
+      "post": {
+        "description": "Authenticate local user, issue 15-min JWT, and set HttpOnly refresh cookie.",
+        "operationId": "login_local_api_v1_auth_login_local_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Authenticate via Local Argon2id password and optional RFC 6238 TOTP MFA",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login/oidc": {
+      "post": {
+        "description": "Authenticate OIDC user, issue 15-min JWT, and set HttpOnly refresh cookie.",
+        "operationId": "login_oidc_api_v1_auth_login_oidc_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Authenticate via Enterprise SSO OIDC / OAuth 2.1 subject claim",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Revoke refresh and/or access token `jti` and clear cookie.",
+        "operationId": "logout_session_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Revoke active session tokens and clear HttpOnly refresh cookie",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "Return full Human Profile, OrgUnit tree, accessible Workspaces, and RBAC module flags.",
+        "operationId": "get_current_user_me_api_v1_auth_me_get",
+        "parameters": [
+          {
+            "description": "Optional persona key (`karim`, `claire`, `marc`, `nadia`, `partenaire`).",
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional persona key (`karim`, `claire`, `marc`, `nadia`, `partenaire`).",
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get authenticated Human Profile, OrgUnit tree, and accessible Multi-Source Workspaces",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passthrough-credentials": {
+      "post": {
+        "description": "Store a Passthrough token encrypted with AES-256-GCM and per-user HKDF key.",
+        "operationId": "store_passthrough_credential_api_v1_auth_passthrough_credentials_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassthroughSecretStoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PassthroughSecretMetadataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Encrypt and store a user Passthrough credential in AES-256-GCM (NFR-SEC-4)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Rotate refresh token (revoking previous `jti` in Redis/memory) and issue new JWT.",
+        "operationId": "refresh_session_api_v1_auth_refresh_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Rotate HttpOnly refresh token and issue a fresh 15-minute access JWT",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/catalog/resources/{resource_id}/inspect": {
+      "get": {
+        "description": "Evaluate `DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN` for a catalog resource.",
+        "operationId": "inspect_catalog_resource_api_v1_catalog_resources__resource_id__inspect_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogResourceInspectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Inspect a Catalog resource's 5 dissociated permissions (`source_masked`)",
+        "tags": [
+          "workspaces-and-catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/resources/{resource_id}/source": {
+      "get": {
+        "description": "Return internal `system_prompt_secret` if `READ_SOURCE` is granted, else raise HTTP 403.",
+        "operationId": "get_catalog_resource_source_api_v1_catalog_resources__resource_id__source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogResourceSourceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Read internal prompt/code of a Catalog resource (requires READ_SOURCE)",
+        "tags": [
+          "workspaces-and-catalog"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Return platform health status and active 32-hex W3C `trace_id`.",
@@ -375,6 +1828,46 @@
               "title": "Require Contributor",
               "type": "boolean"
             }
+          },
+          {
+            "description": "Optional persona key (`karim`, `claire`, `marc`, `nadia`, `partenaire`).",
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional persona key (`karim`, `claire`, `marc`, `nadia`, `partenaire`).",
+              "title": "Persona Key"
+            }
+          },
+          {
+            "description": "Optional module key to enforce server-side RBAC module access (`HTTP 403`).",
+            "in": "query",
+            "name": "require_module",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional module key to enforce server-side RBAC module access (`HTTP 403`).",
+              "title": "Require Module"
+            }
           }
         ],
         "responses": {
@@ -387,6 +1880,17 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
           },
           "403": {
             "content": {
@@ -425,6 +1929,207 @@
         "summary": "Get Direction C 7-module Global Sidebar & Hierarchical Scope Switcher tree",
         "tags": [
           "navigation"
+        ]
+      }
+    },
+    "/api/v1/workspaces": {
+      "get": {
+        "description": "Return accessible Workspaces (excluding CONFIDENTIAL_RESTRICTED from roll-up) and FinOps.",
+        "operationId": "list_workspaces_api_v1_workspaces_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "org_unit_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Org Unit Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List accessible Multi-Source Workspaces with Upward Roll-up and FinOps consolidation",
+        "tags": [
+          "workspaces-and-catalog"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/mutations/check": {
+      "post": {
+        "description": "Verify the caller can perform mutations on `workspace_id` (`ScopeAccessGuard`).",
+        "operationId": "check_workspace_mutation_guard_api_v1_workspaces__workspace_id__mutations_check_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopeMutationCheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Enforce ScopeAccessGuard on Workspace mutation (rejects READ_ONLY_OBSERVER)",
+        "tags": [
+          "workspaces-and-catalog"
         ]
       }
     }

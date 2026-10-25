@@ -4,11 +4,12 @@ import {
   AppShell,
   type UiHumanProfileBadge,
   type UiModuleKey,
+  type UiPersonaKey,
   type UiScopeNode,
   type UiShellModuleItem,
 } from "@orcia/ui";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useI18n } from "../i18n";
 
 export const DEFAULT_SHELL_MODULES: UiShellModuleItem[] = [
@@ -32,7 +33,69 @@ export const DEFAULT_HUMAN_PROFILE: UiHumanProfileBadge = {
   archetypeKey: "TECH_LEAD",
   displayName: "Tech Lead / Architecte",
   accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+  role: "TEAM_LEAD",
+  orgUnitName: "Sous-Équipe Checkout & Core Solutions",
 };
+
+export const PERSONA_PROFILES: Record<
+  UiPersonaKey,
+  UiHumanProfileBadge & { adminEnabled: boolean }
+> = {
+  karim: {
+    archetypeKey: "SECOPS",
+    displayName: "Karim (Ingénieur Plateforme)",
+    accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+    role: "PLATFORM_ADMIN",
+    orgUnitName: "Entreprise ORCIA Group",
+    adminEnabled: true,
+  },
+  claire: {
+    archetypeKey: "EXECUTIVE",
+    displayName: "Claire (Directrice BU / Équipe Parente)",
+    accessMode: "READ_ONLY_OBSERVER",
+    role: "BU_DIRECTOR",
+    orgUnitName: "BU Digital & Paiements",
+    adminEnabled: true,
+  },
+  marc: {
+    archetypeKey: "TECH_LEAD",
+    displayName: "Tech Lead / Architecte",
+    accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+    role: "TEAM_LEAD",
+    orgUnitName: "Sous-Équipe Checkout & Core Solutions",
+    adminEnabled: true,
+  },
+  nadia: {
+    archetypeKey: "DEVELOPER",
+    displayName: "Nadia (Développeuse Senior)",
+    accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+    role: "CONTRIBUTOR",
+    orgUnitName: "Sous-Équipe Checkout & Core Solutions",
+    adminEnabled: false,
+  },
+  partenaire: {
+    archetypeKey: "DEVELOPER",
+    displayName: "Partenaire Externe (Invité Workspace 1)",
+    accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+    role: "CONTRIBUTOR",
+    orgUnitName: "Équipe Partenaire Intégration",
+    adminEnabled: false,
+  },
+};
+
+interface PersonaContextValue {
+  activePersona: UiPersonaKey;
+  setActivePersona: (persona: UiPersonaKey) => void;
+}
+
+const PersonaContext = createContext<PersonaContextValue>({
+  activePersona: "marc",
+  setActivePersona: () => undefined,
+});
+
+export function usePersonaContext(): PersonaContextValue {
+  return useContext(PersonaContext);
+}
 
 export function resolveModuleFromPathname(pathname: string | null): UiModuleKey {
   if (!pathname || pathname === "/" || pathname.startsWith("/cockpit")) {
@@ -52,6 +115,7 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [activeScopeId, setActiveScopeId] = useState("scope-ws-orcia");
+  const [activePersona, setActivePersona] = useState<UiPersonaKey>("marc");
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
 
   useEffect(() => {
@@ -61,29 +125,44 @@ export function ShellContainer({ children }: { children: React.ReactNode }) {
   const activeModuleKey = selectedModuleOverride ?? resolveModuleFromPathname(pathname);
   const selectedScope =
     DEFAULT_SCOPES.find((s) => s.id === activeScopeId) ?? DEFAULT_SCOPES[3]!;
+  const personaMeta = PERSONA_PROFILES[activePersona];
 
   const effectiveProfile: UiHumanProfileBadge = {
-    ...DEFAULT_HUMAN_PROFILE,
-    accessMode: selectedScope.accessMode,
+    archetypeKey: personaMeta.archetypeKey,
+    displayName: personaMeta.displayName,
+    role: personaMeta.role,
+    orgUnitName: personaMeta.orgUnitName,
+    accessMode:
+      personaMeta.accessMode === "READ_ONLY_OBSERVER"
+        ? "READ_ONLY_OBSERVER"
+        : selectedScope.accessMode,
   };
 
+  const effectiveModules: UiShellModuleItem[] = DEFAULT_SHELL_MODULES.map((mod) =>
+    mod.key === "admin" ? { ...mod, enabled: personaMeta.adminEnabled } : mod,
+  );
+  const safeModuleKey: UiModuleKey =
+    !personaMeta.adminEnabled && activeModuleKey === "admin" ? "cockpit" : activeModuleKey;
+
   return (
-    <AppShell
-      modules={DEFAULT_SHELL_MODULES}
-      activeModuleKey={activeModuleKey}
-      scopes={DEFAULT_SCOPES}
-      activeScopeId={activeScopeId}
-      humanProfile={effectiveProfile}
-      labels={dictionary.shell}
-      currentLocale={locale}
-      onSelectModule={(moduleKey, route) => {
-        setSelectedModuleOverride(moduleKey);
-        router.push(route);
-      }}
-      onSelectScope={(nextScopeId) => setActiveScopeId(nextScopeId)}
-      onToggleLocale={toggleLocale}
-    >
-      {children}
-    </AppShell>
+    <PersonaContext.Provider value={{ activePersona, setActivePersona }}>
+      <AppShell
+        modules={effectiveModules}
+        activeModuleKey={safeModuleKey}
+        scopes={DEFAULT_SCOPES}
+        activeScopeId={activeScopeId}
+        humanProfile={effectiveProfile}
+        labels={dictionary.shell}
+        currentLocale={locale}
+        onSelectModule={(moduleKey, route) => {
+          setSelectedModuleOverride(moduleKey);
+          router.push(route);
+        }}
+        onSelectScope={(nextScopeId) => setActiveScopeId(nextScopeId)}
+        onToggleLocale={toggleLocale}
+      >
+        {children}
+      </AppShell>
+    </PersonaContext.Provider>
   );
 }

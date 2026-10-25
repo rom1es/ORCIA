@@ -2,6 +2,7 @@ import type {
   HumanLedAnchorCardLabels,
   UiModuleKey,
   UiShellLabels,
+  UiWorkspaceTopologyLabels,
 } from "@orcia/ui";
 
 export type SupportedWebLocale = "fr" | "en";
@@ -20,5 +21,6 @@ export interface TranslationDictionary {
     defaultAuthorName: string;
     defaultValue: string;
   };
+  workspaceTopology: UiWorkspaceTopologyLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }
