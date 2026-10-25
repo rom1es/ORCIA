@@ -23,8 +23,12 @@ if (fs.existsSync(rootEnvPath)) {
 
 const mode = process.argv[2] === "start" ? "start" : "dev";
 const extraArgs = process.argv.slice(3);
-const hasPortArg = extraArgs.some((arg) => arg === "-p" || arg === "--port");
-const hasHostArg = extraArgs.some((arg) => arg === "-H" || arg === "--hostname");
+const hasPortArg = extraArgs.some(
+  (arg) => arg === "-p" || arg === "--port" || arg.startsWith("--port=")
+);
+const hasHostArg = extraArgs.some(
+  (arg) => arg === "-H" || arg === "--hostname" || arg.startsWith("--hostname=")
+);
 
 const host = process.env.ORCIA_WEB_HOST ?? "127.0.0.1";
 const port = process.env.ORCIA_WEB_PORT ?? process.env.PORT ?? "3100";
@@ -44,6 +48,9 @@ const child = spawn(nextBin, nextArgs, {
   env: { ...process.env, PORT: port, ORCIA_WEB_PORT: port, ORCIA_WEB_HOST: host },
 });
 
-child.on("exit", (code) => {
+child.on("exit", (code, signal) => {
+  if (signal) {
+    process.exit(1);
+  }
   process.exit(code ?? 0);
 });

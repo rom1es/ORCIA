@@ -100,6 +100,32 @@ export interface components {
       trace_id: string;
       uri: string;
     };
+    DbDdlIndexRequest: {
+      datasource_alias: string;
+      datasource_id: string;
+      db_uri: string;
+      ddl_sql: string;
+      ontology_concepts?: (string)[];
+      schema_version: string;
+      workspace_id: string;
+    };
+    DocVsCodeAuditRequest: {
+      code_rule_summary: string;
+      confluence_uri: string;
+      doc_rule_summary: string;
+      git_repo_uri: string;
+      git_symbol: string;
+      newer_done_jira_key?: string | null;
+    };
+    DocVsCodeAuditResponse: {
+      confluence_uri: string;
+      explanation: string;
+      git_repo_uri: string;
+      git_symbol: string;
+      justifying_jira_key?: string | null;
+      qualification_marker: "[DOC_OBSOLETE_SUSPECTED]" | "[BUG_CODE_SUSPECTED]" | "[ALIGNED]";
+      trace_id?: string | null;
+    };
     EffectiveWorkflowResolveRequest: {
       workflow_uri: string;
       workspace_id: string;
@@ -128,6 +154,33 @@ export interface components {
       org_unit_id?: string;
       org_unit_name?: string;
       role?: string;
+    };
+    HybridRagHitSchemaItem: {
+      bm25_rank: number;
+      chunk_key: string;
+      contextual_header: string;
+      datasource_alias: string;
+      document_key: string;
+      injected_content: string;
+      is_stale: boolean;
+      parent_chunk_key: string;
+      revision_tag: string;
+      rrf_score: number;
+      source_uri: string;
+      stale_warning_marker?: string | null;
+      vector_rank: number;
+    };
+    HybridRagSearchRequest: {
+      allowed_datasource_aliases?: (string)[] | null;
+      query_text: string;
+      top_k?: number;
+      workspace_id: string;
+    };
+    HybridRagSearchResponse: {
+      detected_banned_terms: (string)[];
+      expanded_terms: (string)[];
+      hits: (components["schemas"]["HybridRagHitSchemaItem"])[];
+      trace_id?: string | null;
     };
     InitDatasourceRequest: {
       alias: string;
@@ -197,6 +250,34 @@ export interface components {
       trace_id: string;
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
     };
+    KbDocumentSchemaItem: {
+      age_days: number;
+      content_sha256: string;
+      datasource_alias: string;
+      datasource_id: string;
+      doc_key: string;
+      freshness_ttl_days: number;
+      id: string;
+      indexing_regime: "DOC_PARENT_CHILD" | "CODE_AST_GRAPH" | "DB_DDL_ONLY";
+      is_stale: boolean;
+      revision_tag: string;
+      source_scheme: "confluence" | "jira" | "git" | "db";
+      source_uri: string;
+      title: string;
+      workspace_id: string;
+    };
+    KbStaleAlertSchemaItem: {
+      alert_key: string;
+      alert_reason: "TTL_EXPIRED" | "NEWER_JIRA_CONTRADICTION" | "CODE_DRIFT_DETECTED";
+      diagnostic_marker: string;
+      document_key: string;
+      id: string;
+      impacted_run_ids: (string)[];
+      justifying_jira_key?: string | null;
+      resolved: boolean;
+      source_uri: string;
+      workspace_id: string;
+    };
     LlmModelEndpointItem: {
       connectivity_verified?: boolean;
       endpoint_key: string;
@@ -226,10 +307,85 @@ export interface components {
       email?: string | null;
       oidc_subject: string;
     };
+    OntologyAndRagStateResponse: {
+      concepts: (components["schemas"]["OntologyConceptSchemaItem"])[];
+      documents: (components["schemas"]["KbDocumentSchemaItem"])[];
+      promotions: (components["schemas"]["OntologyPromotionProposalSchemaItem"])[];
+      relations: (components["schemas"]["OntologyRelationSchemaItem"])[];
+      stale_alerts: (components["schemas"]["KbStaleAlertSchemaItem"])[];
+      trace_id?: string | null;
+      tripartite_edges: (components["schemas"]["TripartiteTraceEdgeSchemaItem"])[];
+    };
+    OntologyConceptSchemaItem: {
+      banned_terms: (string)[];
+      canonical_term: string;
+      concept_key: string;
+      definition_text: string;
+      expected_schema: Record<string, string>;
+      id: string;
+      introduced_in_snapshot_id?: string | null;
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      parent_concept_id?: string | null;
+      profile_translations: Record<string, string>;
+      scope_id: string;
+      snapshot_branch_status: "ACTIVE" | "SUPERSEDED";
+      synonyms: (string)[];
+    };
+    OntologyPromoteRequest: {
+      proposal_key: string;
+    };
+    OntologyPromotionProposalSchemaItem: {
+      badge_color_token?: string;
+      canonical_term: string;
+      concept_key: string;
+      id: string;
+      impact_report: components["schemas"]["WhatIfSimulationResponse"];
+      proposal_key: string;
+      proposed_by_user_id: string;
+      source_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+      target_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      target_scope_id: string;
+    };
+    OntologyRelationSchemaItem: {
+      cardinality: string;
+      id: string;
+      relation_key: string;
+      relation_type: string;
+      source_concept_key: string;
+      target_concept_key: string;
+    };
+    OntologyResolveRequest: {
+      domain_scope_id?: string;
+      enterprise_scope_id?: string;
+      human_profile?: string;
+      run_scope_id?: string | null;
+      team_chain_scope_ids?: (string)[];
+      workspace_scope_id?: string;
+    };
+    OntologyResolveResponse: {
+      concepts: (components["schemas"]["OntologyConceptSchemaItem"])[];
+      profile_labels: Record<string, string>;
+      relations: (components["schemas"]["OntologyRelationSchemaItem"])[];
+      trace_id?: string | null;
+    };
     OntologyTermInputItem: {
       definition: string;
       level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
       term_key: string;
+    };
+    OntologyUpsertConceptRequest: {
+      banned_terms?: (string)[];
+      canonical_term: string;
+      concept_key: string;
+      definition_text: string;
+      expected_schema?: Record<string, string>;
+      introduced_in_snapshot_id?: string | null;
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      parent_concept_id?: string | null;
+      profile_translations?: Record<string, string>;
+      scope_id: string;
+      synonyms?: (string)[];
     };
     OrgUnitTreeItem: {
       id: string;
@@ -380,7 +536,7 @@ export interface components {
       enabled?: boolean;
       has_stale_warning?: boolean;
       icon: string;
-      key: "cockpit" | "inbox" | "catalog" | "ontology" | "gates" | "finops" | "admin";
+      key: "cockpit" | "inbox" | "catalog" | "ontology" | "gates" | "finops" | "admin" | "bootstrap";
       order: number;
       route: string;
     };
@@ -423,6 +579,17 @@ export interface components {
       title: string;
       uri: string;
     };
+    TripartiteTraceEdgeSchemaItem: {
+      edge_key: string;
+      id: string;
+      jira_issue_key?: string | null;
+      relation_type: "DOCUMENTS" | "SPECIFIES" | "FIXES" | "BLOCKS" | "IMPLEMENTS_ISSUE" | "AFFECTS_CONCEPT";
+      source_node_type: "CONFLUENCE_PAGE" | "JIRA_ISSUE" | "GIT_SYMBOL" | "GIT_COMMIT" | "ONTOLOGY_CONCEPT";
+      source_uri: string;
+      target_node_type: "CONFLUENCE_PAGE" | "JIRA_ISSUE" | "GIT_SYMBOL" | "GIT_COMMIT" | "ONTOLOGY_CONCEPT";
+      target_uri: string;
+      workspace_id: string;
+    };
     UserMeResponse: {
       auth_mode: "OIDC" | "LOCAL" | "HYBRID";
       consolidated_finops_usd: number;
@@ -450,6 +617,21 @@ export interface components {
       user_email: string;
       user_id?: string | null;
       workspace_ids: (string)[];
+    };
+    WhatIfSimulationRequest: {
+      concept_key: string;
+      proposed_change: string;
+    };
+    WhatIfSimulationResponse: {
+      canonical_term: string;
+      concept_key: string;
+      has_immutable_axiom_conflict: boolean;
+      impacted_active_run_ids: (string)[];
+      impacted_artifact_templates: (string)[];
+      impacted_workflow_uris: (string)[];
+      proposed_change: string;
+      trace_id?: string | null;
+      transitively_affected_concepts: (string)[];
     };
     WorkflowDefinitionResponseItem: {
       adaptive_gate_policy: "STRICT" | "STANDARD" | "FAST_TRACK";
@@ -660,6 +842,62 @@ export interface paths {
       };
     };
   };
+  "/api/v1/ontology-rag/ontology/concepts": {
+    post: {
+      responses: {
+        200: components["schemas"]["OntologyConceptSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/promote": {
+    post: {
+      responses: {
+        200: components["schemas"]["OntologyPromotionProposalSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/resolve": {
+    post: {
+      responses: {
+        200: components["schemas"]["OntologyResolveResponse"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/what-if": {
+    post: {
+      responses: {
+        200: components["schemas"]["WhatIfSimulationResponse"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/rag/index-db-ddl": {
+    post: {
+      responses: {
+        200: components["schemas"]["KbDocumentSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/rag/search": {
+    post: {
+      responses: {
+        200: components["schemas"]["HybridRagSearchResponse"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/state": {
+    get: {
+      responses: {
+        200: components["schemas"]["OntologyAndRagStateResponse"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/tripartite/audit-doc-vs-code": {
+    post: {
+      responses: {
+        200: components["schemas"]["DocVsCodeAuditResponse"];
+      };
+    };
+  };
   "/api/v1/permissions/broker/check-access": {
     post: {
       responses: {
@@ -717,11 +955,17 @@ export type CatalogResourceInspectionResponse = components["schemas"]["CatalogRe
 export type CatalogResourceSourceResponse = components["schemas"]["CatalogResourceSourceResponse"];
 export type CatalogUriResolveRequest = components["schemas"]["CatalogUriResolveRequest"];
 export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolveResponse"];
+export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
+export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
+export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HumanProfileBadge = components["schemas"]["HumanProfileBadge"];
+export type HybridRagHitSchemaItem = components["schemas"]["HybridRagHitSchemaItem"];
+export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchRequest"];
+export type HybridRagSearchResponse = components["schemas"]["HybridRagSearchResponse"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
 export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];
 export type InitOrganizationRequest = components["schemas"]["InitOrganizationRequest"];
@@ -731,12 +975,22 @@ export type InitUserRequest = components["schemas"]["InitUserRequest"];
 export type InitUserResponse = components["schemas"]["InitUserResponse"];
 export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"];
 export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
+export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"];
+export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
 export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
+export type OntologyAndRagStateResponse = components["schemas"]["OntologyAndRagStateResponse"];
+export type OntologyConceptSchemaItem = components["schemas"]["OntologyConceptSchemaItem"];
+export type OntologyPromoteRequest = components["schemas"]["OntologyPromoteRequest"];
+export type OntologyPromotionProposalSchemaItem = components["schemas"]["OntologyPromotionProposalSchemaItem"];
+export type OntologyRelationSchemaItem = components["schemas"]["OntologyRelationSchemaItem"];
+export type OntologyResolveRequest = components["schemas"]["OntologyResolveRequest"];
+export type OntologyResolveResponse = components["schemas"]["OntologyResolveResponse"];
 export type OntologyTermInputItem = components["schemas"]["OntologyTermInputItem"];
+export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsertConceptRequest"];
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
@@ -759,8 +1013,11 @@ export type ShellNavigationResponse = components["schemas"]["ShellNavigationResp
 export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
+export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
+export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
+export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];
 export type WorkflowDefinitionResponseItem = components["schemas"]["WorkflowDefinitionResponseItem"];
 export type WorkflowStepItem = components["schemas"]["WorkflowStepItem"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];

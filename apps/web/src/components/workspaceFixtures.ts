@@ -282,3 +282,9 @@ export function computePersonaTopology(persona: UiPersonaKey): {
     finopsTotal: 539.75,
   };
 }
+
+export {
+  DEFAULT_ONTOLOGY_CONCEPTS,
+  DEFAULT_STALE_ALERTS,
+  DEFAULT_TRIPARTITE_EDGES,
+} from "./ontologyFixtures";

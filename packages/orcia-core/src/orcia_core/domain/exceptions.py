@@ -158,6 +158,28 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "approval (anti-Confused Deputy protection).",
         ),
     },
+    "ERR_ONTOLOGY_CONFLICT": {
+        "fr": LocalizedErrorCopy(
+            "Conflit d'axiome ontologique immuable",
+            "La spécialisation ou surcharge viole un axiome parent marqué immutable: true.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Immutable ontology axiom conflict",
+            "The specialization or override violates a parent axiom marked immutable: true.",
+        ),
+    },
+    "ERR_DDL_ONLY_TRANSACTIONAL_DATA_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Données transactionnelles interdites dans le RAG DB (DDL uniquement)",
+            "Le régime DB_DDL_ONLY n'autorise que les schémas DDL (CREATE TABLE) et interdit "
+            "toute indexation de lignes transactionnelles.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Transactional data forbidden in DB RAG (DDL only)",
+            "The DB_DDL_ONLY regime only allows DDL schema definitions (CREATE TABLE) and "
+            "forbids indexing transactional rows.",
+        ),
+    },
 }
 
 
@@ -278,3 +300,12 @@ class PermissionBrokerDeniedError(OrciaDomainError):
 class ConfusedDeputyBlockedError(OrciaDomainError):
     error_code = "ERR_CONFUSED_DEPUTY_BLOCKED"
     http_status, type_slug = 403, "confused-deputy-blocked"
+
+
+class OntologyConflictError(OrciaDomainError):
+    error_code, http_status, type_slug = "ERR_ONTOLOGY_CONFLICT", 422, "ontology-conflict"
+
+
+class DdlOnlyTransactionalDataError(OrciaDomainError):
+    error_code = "ERR_DDL_ONLY_TRANSACTIONAL_DATA_FORBIDDEN"
+    http_status, type_slug = 422, "ddl-only-transactional-data-forbidden"

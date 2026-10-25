@@ -283,4 +283,93 @@ describe("createOrciaApiClient", () => {
       expect.objectContaining({ method: "POST" }),
     );
   });
+
+  it("supports Epic 2 (Stories 2.1-2.4) ontology & hybrid RAG SDK methods", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "ok" }),
+    });
+
+    const client = createOrciaApiClient({
+      baseUrl: "http://localhost:8000",
+      accessToken: "jwt-token-123",
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    });
+
+    await client.getOntologyAndRagState(true);
+    await client.resolveOntologyHierarchy(
+      {
+        enterprise_scope_id: "scope-global",
+        domain_scope_id: "scope-bu-digital",
+        team_chain_scope_ids: ["scope-team-architecture", "scope-subteam-checkout"],
+        workspace_scope_id: "ws-solution-paiement",
+        run_scope_id: "run-checkout-001",
+      },
+      true,
+    );
+    await client.upsertOntologyConcept(
+      {
+        concept_key: "concept-l4-test",
+        canonical_term: "TestTerm",
+        level: "4_RUN_EPHEMERAL",
+        scope_id: "run-checkout-001",
+        definition_text: "Définition test",
+      },
+      true,
+    );
+    await client.simulateOntologyWhatIf(
+      {
+        concept_key: "concept-l3-ws-idempotency-key",
+        proposed_change: "Nouveau jeton UUIDv7",
+      },
+      true,
+    );
+    await client.promoteOntologyProposal(
+      {
+        proposal_key: "prop-concept-l4-3ds-frictionless-exemption-to-3_workspace",
+      },
+      true,
+    );
+    await client.searchHybridRag(
+      {
+        workspace_id: "ws-solution-paiement",
+        query_text: "seuil validation",
+        allowed_datasource_aliases: ["confluence-claims"],
+        top_k: 5,
+      },
+      true,
+    );
+    await client.indexDbDdlSchema(
+      {
+        workspace_id: "ws-solution-paiement",
+        datasource_id: "ds-db-1",
+        datasource_alias: "db-claims-schema",
+        db_uri: "db://postgres.internal/claims_prod",
+        ddl_sql: "CREATE TABLE claims (id UUID PRIMARY KEY);",
+        schema_version: "2026.10.1",
+      },
+      true,
+    );
+    await client.auditDocVsCode(
+      {
+        confluence_uri: "confluence://CLAIMS/pages/101-spec-seuil-validation",
+        git_repo_uri: "git://claims/core-engine",
+        git_symbol: "calculate_reserve",
+        doc_rule_summary: "5000 EUR",
+        code_rule_summary: "7500 EUR",
+        newer_done_jira_key: "PAY-142",
+      },
+      true,
+    );
+
+    expect(mockFetch).toHaveBeenCalledTimes(8);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/ontology-rag/state?fixture=true",
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/ontology-rag/tripartite/audit-doc-vs-code?fixture=true",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
 });

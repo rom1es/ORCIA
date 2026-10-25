@@ -271,20 +271,30 @@ class MatrixPermissionEvaluator:
         user: UserIdentity, *, scope_level: str | None = None, has_workspaces: bool = True
     ) -> dict[str, bool]:
         is_admin = user.platform_role in ADMIN_MODULE_ALLOWED_ROLES
+        is_supervisor_or_admin = is_admin or user.platform_role == "BU_DIRECTOR"
         return {
             "cockpit": True,
             "inbox": has_workspaces,
             "catalog": True,
             "ontology": has_workspaces and (scope_level in (None, "TEAM", "WORKSPACE") or is_admin),
             "gates": has_workspaces,
-            "finops": has_workspaces,
+            "finops": has_workspaces and is_supervisor_or_admin,
             "admin": is_admin,
             "bootstrap": is_admin,
         }
 
     @classmethod
     def enforce_module_access(
-        cls, user: UserIdentity, module_key: str, *, instance: str | None = None
+        cls,
+        user: UserIdentity,
+        module_key: str,
+        *,
+        scope_level: str | None = None,
+        has_workspaces: bool = True,
+        instance: str | None = None,
     ) -> None:
-        if not cls.evaluate_module_permissions(user).get(module_key, False):
+        perms = cls.evaluate_module_permissions(
+            user, scope_level=scope_level, has_workspaces=has_workspaces
+        )
+        if not perms.get(module_key, False):
             raise ScopeAccessDeniedError(instance=instance)

@@ -260,7 +260,7 @@ def test_fastapi_health_shell_and_rfc9457_localization() -> None:
     shell_res = client.get("/api/v1/navigation/shell")
     assert shell_res.status_code == 200
     shell_data = shell_res.json()
-    assert len(shell_data["modules"]) == 7
+    assert len(shell_data["modules"]) == 8
     assert shell_data["active_scope_id"] == "scope-ws-orcia"
 
     # Observer mode guard (403 ERR_OBSERVER_MODE_READ_ONLY) in French (default) and English
@@ -326,7 +326,7 @@ def test_worker_idempotent_system_ping_actor() -> None:
         registry.mark_if_new("   ")
 
     nav = build_default_shell_navigation(trace_id)
-    assert len(nav.modules) == 7
+    assert len(nav.modules) == 8
 
 
 def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -385,11 +385,14 @@ def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.Monke
     assert resolve_database_url() == expected_db
     assert resolve_redis_url() == "redis://127.0.0.1:6389/2"
 
-    # Support Docker/K8s <VAR>_FILE secret mounting
+    # Support Docker/K8s <VAR>_FILE secret mounting and fail-fast on missing file
     secret_file = tmp_path / "pg_pass.secret"
     secret_file.write_text("k8s_mounted_secret\n", encoding="utf-8")
     monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(secret_file))
     assert get_env("POSTGRES_PASSWORD") == "k8s_mounted_secret"
+    monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(tmp_path / "missing.secret"))
+    with pytest.raises(ValueError, match="POSTGRES_PASSWORD_FILE"):
+        get_env("POSTGRES_PASSWORD")
     monkeypatch.delenv("POSTGRES_PASSWORD_FILE", raising=False)
 
     # Rotate weak placeholder secrets in-place and append missing ones

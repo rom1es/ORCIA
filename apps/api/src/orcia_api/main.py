@@ -12,6 +12,7 @@ from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
 from orcia_api.routers.health import router as health_router
+from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
 from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
 from orcia_api.routers.permission_broker import router as permission_broker_router
 from orcia_api.routers.shell import router as shell_router
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     application.include_router(catalog_router)
     application.include_router(permission_broker_router)
     application.include_router(bootstrap_router)
+    application.include_router(ontology_and_rag_router)
     return application
 
 

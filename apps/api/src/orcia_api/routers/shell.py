@@ -58,14 +58,30 @@ async def get_shell_navigation(
     svc = get_auth_service(request)
     has_identity_context = bool(persona_key or request.headers.get("Authorization"))
 
+    base_nav = build_default_shell_navigation(trace_id=trace_id)
+    if scope_id is None:
+        selected_scope = next(s for s in base_nav.scopes if s.id == base_nav.active_scope_id)
+    else:
+        matched = [s for s in base_nav.scopes if s.id == scope_id]
+        if not matched:
+            raise ResourceNotFoundError(instance=str(request.url.path))
+        selected_scope = matched[0]
+
     enabled_modules: dict[str, bool] | None = None
     custom_profile: HumanProfileBadge | None = None
     if has_identity_context:
         user = resolve_request_user(request, persona_key=persona_key)
-        enabled_modules = svc.evaluator.evaluate_module_permissions(user)
+        has_ws = bool(svc.evaluator.resolve_accessible_workspaces(user))
+        enabled_modules = svc.evaluator.evaluate_module_permissions(
+            user, scope_level=selected_scope.level, has_workspaces=has_ws
+        )
         if require_module is not None:
             svc.evaluator.enforce_module_access(
-                user, require_module, instance=str(request.url.path)
+                user,
+                require_module,
+                scope_level=selected_scope.level,
+                has_workspaces=has_ws,
+                instance=str(request.url.path),
             )
         org_node = next(
             (u for u in svc.evaluator.org_units if u.id == user.primary_org_unit_id),
@@ -85,21 +101,18 @@ async def get_shell_navigation(
         )
     elif require_module is not None:
         user = resolve_request_user(request, persona_key="marc")
-        svc.evaluator.enforce_module_access(user, require_module, instance=str(request.url.path))
+        svc.evaluator.enforce_module_access(
+            user,
+            require_module,
+            scope_level=selected_scope.level,
+            instance=str(request.url.path),
+        )
 
     default_nav = build_default_shell_navigation(
         trace_id=trace_id,
         enabled_modules=enabled_modules,
         human_profile=custom_profile,
     )
-
-    if scope_id is None:
-        selected_scope = next(s for s in default_nav.scopes if s.id == default_nav.active_scope_id)
-    else:
-        matched = [s for s in default_nav.scopes if s.id == scope_id]
-        if not matched:
-            raise ResourceNotFoundError(instance=str(request.url.path))
-        selected_scope = matched[0]
 
     if require_contributor and (
         selected_scope.access_mode == "READ_ONLY_OBSERVER"

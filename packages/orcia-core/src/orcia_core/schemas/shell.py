@@ -14,6 +14,7 @@ ModuleKey = Literal[
     "gates",
     "finops",
     "admin",
+    "bootstrap",
 ]
 
 ScopeLevel = Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
@@ -37,12 +38,12 @@ class HealthResponse(BaseModel):
 
 
 class ShellModuleItem(BaseModel):
-    """Descriptor for one of the 7 Global Sidebar Navigation modules (Direction C)."""
+    """Descriptor for one of the Global Sidebar Navigation modules (Direction C)."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     key: ModuleKey
-    order: int = Field(..., ge=1, le=7)
+    order: int = Field(..., ge=1, le=8)
     route: str
     icon: str
     contributor_badge_count: int = Field(default=0, ge=0)
@@ -82,7 +83,7 @@ class ShellNavigationResponse(BaseModel):
 
     active_scope_id: str
     scopes: list[ScopeNode]
-    modules: list[ShellModuleItem] = Field(..., min_length=7, max_length=7)
+    modules: list[ShellModuleItem] = Field(..., min_length=7, max_length=8)
     human_profile: HumanProfileBadge
     trace_id: str = Field(..., min_length=32, max_length=32)
 
@@ -93,7 +94,7 @@ def build_default_shell_navigation(
     enabled_modules: dict[str, bool] | None = None,
     human_profile: HumanProfileBadge | None = None,
 ) -> ShellNavigationResponse:
-    """Build the default 7-module Direction C shell topology and hierarchical scope tree."""
+    """Build the default 8-module Direction C shell topology and hierarchical scope tree."""
     scopes = [
         ScopeNode(
             id="scope-global",
@@ -188,6 +189,15 @@ def build_default_shell_navigation(
             contributor_badge_count=0,
             has_stale_warning=False,
             enabled=flags.get("admin", True),
+        ),
+        ShellModuleItem(
+            key="bootstrap",
+            order=8,
+            route="/bootstrap",
+            icon="rocket",
+            contributor_badge_count=0,
+            has_stale_warning=False,
+            enabled=flags.get("bootstrap", True),
         ),
     ]
     return ShellNavigationResponse(

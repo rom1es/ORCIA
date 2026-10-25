@@ -13,9 +13,14 @@ import type {
   CatalogResourceSourceResponse,
   CatalogUriResolveRequest,
   CatalogUriResolveResponse,
+  DbDdlIndexRequest,
+  DocVsCodeAuditRequest,
+  DocVsCodeAuditResponse,
   EffectiveWorkflowResolveRequest,
   EffectiveWorkflowResolveResponse,
   HealthResponse,
+  HybridRagSearchRequest,
+  HybridRagSearchResponse,
   InitDatasourceRequest,
   InitDatasourceResponse,
   InitOrganizationRequest,
@@ -24,9 +29,17 @@ import type {
   InitUserResponse,
   InitWorkspaceRequest,
   InitWorkspaceResponse,
+  KbDocumentSchemaItem,
   LocalLoginRequest,
   LogoutResponse,
   OidcLoginRequest,
+  OntologyAndRagStateResponse,
+  OntologyConceptSchemaItem,
+  OntologyPromoteRequest,
+  OntologyPromotionProposalSchemaItem,
+  OntologyResolveRequest,
+  OntologyResolveResponse,
+  OntologyUpsertConceptRequest,
   PassthroughSecretMetadataResponse,
   PassthroughSecretStoreRequest,
   PermissionBrokerStateResponse,
@@ -40,6 +53,8 @@ import type {
   ShellNavigationResponse,
   SystemBootstrapStateResponse,
   UserMeResponse,
+  WhatIfSimulationRequest,
+  WhatIfSimulationResponse,
   WorkspacesListResponse,
 } from "./generated/schema";
 import { buildPersonaQuery, createRequestJson, type OrciaApiClientOptions } from "./helpers";
@@ -247,6 +262,81 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     executeInitUser(payload: InitUserRequest, personaKey?: string): Promise<InitUserResponse> {
       return requestJson<InitUserResponse>(
         `/api/v1/bootstrap/init-user${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    getOntologyAndRagState(fixture = false): Promise<OntologyAndRagStateResponse> {
+      return requestJson<OntologyAndRagStateResponse>(
+        `/api/v1/ontology-rag/state?fixture=${fixture ? "true" : "false"}`,
+      );
+    },
+    resolveOntologyHierarchy(
+      payload: OntologyResolveRequest,
+      fixture = false,
+    ): Promise<OntologyResolveResponse> {
+      return requestJson<OntologyResolveResponse>(
+        `/api/v1/ontology-rag/ontology/resolve?fixture=${fixture ? "true" : "false"}`,
+        "POST",
+        payload,
+      );
+    },
+    upsertOntologyConcept(
+      payload: OntologyUpsertConceptRequest,
+      fixture = false,
+    ): Promise<OntologyConceptSchemaItem> {
+      return requestJson<OntologyConceptSchemaItem>(
+        `/api/v1/ontology-rag/ontology/concepts?fixture=${fixture ? "true" : "false"}`,
+        "POST",
+        payload,
+      );
+    },
+    simulateOntologyWhatIf(
+      payload: WhatIfSimulationRequest,
+      fixture = false,
+    ): Promise<WhatIfSimulationResponse> {
+      return requestJson<WhatIfSimulationResponse>(
+        `/api/v1/ontology-rag/ontology/what-if?fixture=${fixture ? "true" : "false"}`,
+        "POST",
+        payload,
+      );
+    },
+    promoteOntologyProposal(
+      payload: OntologyPromoteRequest,
+      fixture = false,
+    ): Promise<OntologyPromotionProposalSchemaItem> {
+      return requestJson<OntologyPromotionProposalSchemaItem>(
+        `/api/v1/ontology-rag/ontology/promote?fixture=${fixture ? "true" : "false"}`,
+        "POST",
+        payload,
+      );
+    },
+    searchHybridRag(
+      payload: HybridRagSearchRequest,
+      fixture = false,
+    ): Promise<HybridRagSearchResponse> {
+      return requestJson<HybridRagSearchResponse>(
+        `/api/v1/ontology-rag/rag/search?fixture=${fixture ? "true" : "false"}`,
+        "POST",
+        payload,
+      );
+    },
+    indexDbDdlSchema(
+      payload: DbDdlIndexRequest,
+      fixture = false,
+    ): Promise<KbDocumentSchemaItem> {
+      return requestJson<KbDocumentSchemaItem>(
+        `/api/v1/ontology-rag/rag/index-db-ddl?fixture=${fixture ? "true" : "false"}`,
+        "POST",
+        payload,
+      );
+    },
+    auditDocVsCode(
+      payload: DocVsCodeAuditRequest,
+      fixture = false,
+    ): Promise<DocVsCodeAuditResponse> {
+      return requestJson<DocVsCodeAuditResponse>(
+        `/api/v1/ontology-rag/tripartite/audit-doc-vs-code?fixture=${fixture ? "true" : "false"}`,
         "POST",
         payload,
       );

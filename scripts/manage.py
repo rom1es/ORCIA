@@ -93,7 +93,7 @@ def is_pid_alive(pid: int) -> bool:
             state = content.rsplit(")", 1)[-1].split()[0]
             if state == "Z":
                 return False
-        except OSError:
+        except (OSError, IndexError, ValueError):
             pass
     try:
         os.kill(pid, 0)

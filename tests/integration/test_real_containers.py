@@ -171,6 +171,49 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             assert sb_apply.bootstrap_workflows_count == 6 and sb_apply.bootstrap_runs_count == 2
             assert sb_apply.onboarding_states_count == 2
 
+            # Verify Epic 2 maintenance script 05_backfill_ontology_and_rag_graph (dry-run & apply)
+            backfill_ep2 = _load_script_module(
+                "backfill_ontology_and_rag_graph", "05_backfill_ontology_and_rag_graph.py"
+            )
+            ep2_dry = await backfill_ep2.backfill_ontology_and_rag_graph(
+                engine, apply_changes=False
+            )
+            assert ep2_dry.concepts_count == 7 and ep2_dry.axioms_count == 1
+            assert ep2_dry.kb_chunks_count == 1 and ep2_dry.tripartite_edges_count == 1
+            assert ep2_dry.stale_alerts_count == 1 and ep2_dry.committed is False
+            async with engine.connect() as conn:
+                concepts_after_dry = await conn.execute(
+                    sa.text("SELECT COUNT(*) FROM ontology_concepts")
+                )
+                assert int(concepts_after_dry.scalar() or 0) == 0
+
+            ep2_apply = await backfill_ep2.backfill_ontology_and_rag_graph(
+                engine, apply_changes=True
+            )
+            assert ep2_apply.committed is True and ep2_apply.concepts_count == 7
+
+            # Execute build_ontology_resolution_cte_sql() against real PostgreSQL 18
+            from orcia_core.ontology import build_ontology_resolution_cte_sql
+
+            cte_sql = build_ontology_resolution_cte_sql()
+            async with engine.connect() as conn:
+                cte_res = await conn.execute(
+                    sa.text(cte_sql),
+                    {
+                        "team_org_unit_id": "scope-subteam-checkout",
+                        "enterprise_scope_id": "scope-global",
+                        "domain_scope_id": "scope-bu-digital",
+                        "workspace_scope_id": "ws-solution-paiement",
+                        "run_id": "run-checkout-001",
+                    },
+                )
+                cte_rows = cte_res.mappings().all()
+                by_term = {r["canonical_term"]: r for r in cte_rows}
+                assert "Actif Stratégique" in by_term
+                assert by_term["Actif Stratégique"]["scope_id"] == "scope-subteam-checkout"
+                assert "Exemption 3DS Frictionless TRA" in by_term
+                assert "Terme Branche Obsolète Replay" not in by_term
+
             # Verify append-only trigger blocks UPDATE and DELETE on PG 18
             async with engine.begin() as conn:
                 await conn.execute(

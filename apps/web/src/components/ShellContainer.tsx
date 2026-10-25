@@ -308,7 +308,7 @@ export function ShellContainer({
         permissionBrokerLabels={dictionary.permissionBroker}
         onSelectModule={(moduleKey, route) => {
           setSelectedModuleOverride(moduleKey);
-          router.push(route);
+          router.push(urlFixtureFlag && !route.includes("?") ? `${route}?fixture=test` : route);
         }}
         onSelectScope={(nextScopeId) => setActiveScopeId(nextScopeId)}
         onToggleLocale={toggleLocale}

@@ -24,6 +24,10 @@ export {
 } from "./shell/FederatedUriBadge";
 export { GlobalSidebar, type GlobalSidebarProps } from "./shell/GlobalSidebar";
 export {
+  OntologyAndKbExplorerPanel,
+  type OntologyAndKbExplorerPanelProps,
+} from "./shell/OntologyAndKbExplorerPanel";
+export {
   PermissionBrokerCard,
   type PermissionBrokerCardProps,
 } from "./shell/PermissionBrokerCard";
@@ -50,6 +54,9 @@ export type {
   UiHumanProfileBadge,
   UiMobileTabKey,
   UiModuleKey,
+  UiOntologyConceptView,
+  UiOntologyExplorerLabels,
+  UiOntologyLevel,
   UiPermissionBrokerLabels,
   UiPermissionBrokerTicketView,
   UiPersonaKey,
@@ -58,6 +65,8 @@ export type {
   UiScopeNode,
   UiShellLabels,
   UiShellModuleItem,
+  UiStaleAlertView,
+  UiTripartiteEdgeView,
   UiWorkspaceCardView,
   UiWorkspaceDatasourceView,
   UiWorkspaceTopologyLabels,

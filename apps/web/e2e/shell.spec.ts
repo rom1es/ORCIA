@@ -56,6 +56,7 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
 
     // Story 1.3: Navigate to Catalog module -> Verify CatalogExplorerPanel
     await page.getByTestId("sidebar-nav-item-catalog").click();
+    await expect(page).toHaveURL(/\/catalog/);
     await expect(page.getByTestId("catalog-explorer-panel")).toBeVisible();
     await expect(page.getByTestId("uri-badge-res-blackbox-security-agent")).toHaveAttribute(
       "data-uri-scheme",
@@ -78,11 +79,27 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
     await page.getByTestId("bmad-import-trigger-btn").click();
     await expect(page.getByTestId("bmad-import-result")).toContainText("BMAD_PACK");
 
+    // Epic 2 (Stories 2.1-2.4): Navigate to Ontology & KB module -> Verify 4-level ontology, What-If, Promote, Tripartite Graph & Stale Warning
+    await page.getByTestId("sidebar-nav-item-ontology").click();
+    await expect(page).toHaveURL(/\/ontology/);
+    await expect(page.getByTestId("ontology-kb-explorer-panel")).toBeVisible();
+    await expect(page.getByTestId("ontology-columns-grid")).toBeVisible();
+    await expect(page.getByTestId("tripartite-graph-section")).toBeVisible();
+    await expect(page.getByTestId("stale-alerts-section")).toBeVisible();
+    await page.getByTestId("what-if-btn-concept-l1-strategic-asset").click();
+    await expect(page.getByTestId("ontology-action-banner")).toContainText(
+      "ERR_ONTOLOGY_CONFLICT",
+    );
+    await page.getByTestId("promote-btn-concept-l4-3ds-frictionless-exemption").click();
+    await expect(page.getByTestId("ontology-action-banner")).toContainText("3_WORKSPACE");
+
     // Story 1.2 & 1.5: Navigate to Admin & Bootstrap dedicated menu entries
     await page.getByTestId("sidebar-nav-item-admin").click();
+    await expect(page).toHaveURL(/\/workspaces/);
     await expect(page.getByTestId("workspace-topology-panel")).toBeVisible();
 
     await page.getByTestId("sidebar-nav-item-bootstrap").click();
+    await expect(page).toHaveURL(/\/bootstrap/);
     await expect(page.getByTestId("bootstrap-onboarding-panel")).toBeVisible();
     const anchorCard = page.getByTestId("human-led-anchor-card");
     await expect(anchorCard).toBeVisible();
@@ -105,6 +122,7 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
 
     // Story 1.4: Navigate to Gates & Permissions -> Verify Permission Broker auto-opens Dock on PERMISSION_DENIED_STEP
     await page.getByTestId("sidebar-nav-item-gates").click();
+    await expect(page).toHaveURL(/\/gates/);
     await page.getByTestId("simulate-permission-denied-confluence-btn").click();
     await expect(dock).toHaveAttribute("data-collapsed", "false");
     await expect(page.getByTestId("permission-broker-card")).toBeVisible();

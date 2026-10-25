@@ -219,7 +219,7 @@ async def get_current_user_me(
     user = resolve_request_user(request, persona_key=persona_key)
     accessible = svc.evaluator.resolve_accessible_workspaces(user)
     finops_total = svc.evaluator.compute_finops_rollup_usd(user)
-    modules_map = svc.evaluator.evaluate_module_permissions(user)
+    modules_map = svc.evaluator.evaluate_module_permissions(user, has_workspaces=bool(accessible))
 
     return UserMeResponse(
         id=user.id,

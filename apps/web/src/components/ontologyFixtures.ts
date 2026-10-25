@@ -1,0 +1,111 @@
+import type {
+  UiOntologyConceptView,
+  UiStaleAlertView,
+  UiTripartiteEdgeView,
+} from "@orcia/ui";
+
+export const DEFAULT_ONTOLOGY_CONCEPTS: UiOntologyConceptView[] = [
+  {
+    conceptKey: "concept-l1-strategic-asset",
+    canonicalTerm: "Actif Stratégique",
+    level: "1_ENTERPRISE",
+    scopeId: "scope-global",
+    definitionText: "Actif critique du SI Groupe soumis aux exigences d'audit PCI-DSS/DORA.",
+    immutable: true,
+    synonyms: ["Critical Asset", "Brique Critique Groupe"],
+    profileTranslations: {
+      EXECUTIVE: "Actif Stratégique (ROI & Risque Réglementaire DORA/PCI-DSS)",
+      PM_BUSINESS: "Produit Cœur Métier à SLA Critique (99.99%)",
+      ARCHITECT: "Composant Tier-1 sous contrat Architecture Spine immuable",
+      TECH_LEAD: "Service Tier-1 (Couverture >= 90%, 0-diff OpenAPI)",
+      DEVELOPER: "Module critique sous garde-fous CI/CD stricts",
+      SECOPS: "Périmètre régulé PCI-DSS / Audit Ledger Append-Only",
+    },
+    impactedTemplates: ["tpl://architecture-adr-v2"],
+    impactedWorkflows: ["db://workflows/payment-delivery-v1"],
+    impactedRuns: ["run-checkout-001"],
+  },
+  {
+    conceptKey: "concept-l2-payment-ledger",
+    canonicalTerm: "Grand Livre de Paiement",
+    level: "2_DOMAIN",
+    scopeId: "scope-bu-digital",
+    definitionText: "Journal comptable immuable des transactions de la BU Digital & Paiements.",
+    immutable: false,
+    synonyms: ["Payment Ledger", "Journal Transactionnel"],
+    profileTranslations: {
+      EXECUTIVE: "Grand Livre Financier Consolidé BU",
+      ARCHITECT: "Event-Sourced Ledger Append-Only (PostgreSQL 18)",
+    },
+    impactedTemplates: ["tpl://architecture-adr-v2"],
+    impactedWorkflows: ["db://workflows/payment-delivery-v1"],
+    impactedRuns: ["run-checkout-001"],
+  },
+  {
+    conceptKey: "concept-l3-subteam-checkout-asset",
+    canonicalTerm: "Actif Stratégique (Sous-Équipe Checkout)",
+    level: "3_TEAM",
+    scopeId: "scope-subteam-checkout",
+    definitionText: "Spécialisation Sous-Équipe Checkout héritant de l'Équipe Parente Architecture.",
+    immutable: false,
+    synonyms: ["Microservice Tier-1", "Tunnel Checkout Critique"],
+    profileTranslations: {},
+    impactedTemplates: ["tpl://architecture-adr-v2"],
+    impactedWorkflows: [],
+    impactedRuns: [],
+  },
+  {
+    conceptKey: "concept-l3-ws-idempotency-key",
+    canonicalTerm: "Clé d'Idempotence Paiement",
+    level: "3_WORKSPACE",
+    scopeId: "ws-solution-paiement",
+    definitionText: "Jeton UUIDv7 garantissant l'exécution unique d'une capture PSP.",
+    immutable: false,
+    synonyms: ["Idempotency-Key", "Capture Dedup Token"],
+    profileTranslations: {},
+    impactedTemplates: ["tpl://payment-api-contract"],
+    impactedWorkflows: ["db://workflows/payment-delivery-v1"],
+    impactedRuns: ["run-checkout-001"],
+  },
+  {
+    conceptKey: "concept-l4-3ds-frictionless-exemption",
+    canonicalTerm: "Exemption 3DS Frictionless TRA",
+    level: "4_RUN_EPHEMERAL",
+    scopeId: "run-checkout-001",
+    definitionText: "Règle d'exemption Transaction Risk Analysis découverte durant le Run.",
+    immutable: false,
+    synonyms: ["TRA Exemption DSP2"],
+    profileTranslations: {},
+    impactedTemplates: ["tpl://payment-api-contract"],
+    impactedWorkflows: ["db://workflows/payment-delivery-v1"],
+    impactedRuns: ["run-checkout-001"],
+  },
+];
+
+export const DEFAULT_TRIPARTITE_EDGES: UiTripartiteEdgeView[] = [
+  {
+    edgeKey: "trace-doc-jira-pay-142",
+    sourceUri: "confluence://CLAIMS/pages/101-spec-seuil-validation",
+    targetUri: "jira://issues/PAY-142",
+    relationType: "SPECIFIES",
+    jiraIssueKey: "PAY-142",
+  },
+  {
+    edgeKey: "trace-git-jira-pay-142",
+    sourceUri: "git://claims/core-engine#calculate_reserve",
+    targetUri: "jira://issues/PAY-142",
+    relationType: "IMPLEMENTS_ISSUE",
+    jiraIssueKey: "PAY-142",
+  },
+];
+
+export const DEFAULT_STALE_ALERTS: UiStaleAlertView[] = [
+  {
+    alertKey: "stale-doc-confluence-claims-seuil",
+    documentKey: "doc-confluence-claims-seuil",
+    sourceUri: "confluence://CLAIMS/pages/101-spec-seuil-validation",
+    diagnosticMarker: "[STALE_WARNING]",
+    justifyingJiraKey: "PAY-142",
+    impactedRunIds: ["run-active-claims-01"],
+  },
+];

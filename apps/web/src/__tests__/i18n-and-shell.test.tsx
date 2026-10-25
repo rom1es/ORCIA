@@ -154,10 +154,37 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     fireEvent.click(screen.getByTestId("bmad-import-trigger-btn"));
     expect(screen.getByTestId("bmad-import-result").textContent).toContain("BMAD_PACK");
 
-    // Click module 4 (ontology) -> calls router.push and updates active module heading
+    // Click module 4 (ontology) -> calls router.push and renders OntologyAndKbExplorerPanel (Epic 2)
     fireEvent.click(screen.getByTestId("sidebar-nav-item-ontology"));
     expect(mockPush).toHaveBeenCalledWith("/ontology");
     expect(screen.getByTestId("active-module-heading").textContent).toBe("Ontology & KB");
+    expect(screen.getByTestId("ontology-kb-explorer-panel")).toBeDefined();
+    expect(screen.getByTestId("ontology-columns-grid")).toBeDefined();
+    expect(screen.getByTestId("tripartite-graph-section")).toBeDefined();
+    expect(screen.getByTestId("stale-alerts-section")).toBeDefined();
+    fireEvent.click(screen.getByTestId("what-if-btn-concept-l1-strategic-asset"));
+    expect(screen.getByTestId("ontology-action-banner").textContent).toContain(
+      "ERR_ONTOLOGY_CONFLICT",
+    );
+    fireEvent.click(screen.getByTestId("what-if-btn-concept-l3-ws-idempotency-key"));
+    expect(screen.getByTestId("ontology-action-banner").textContent).toContain(
+      "Clé d'Idempotence Paiement",
+    );
+    fireEvent.click(screen.getByTestId("promote-btn-concept-l4-3ds-frictionless-exemption"));
+    expect(screen.getByTestId("ontology-action-banner").textContent).toContain(
+      "Exemption 3DS Frictionless TRA -> 3_WORKSPACE",
+    );
+    fireEvent.change(screen.getByTestId("ontology-profile-selector"), {
+      target: { value: "EXECUTIVE" },
+    });
+    expect(
+      screen.getByTestId("ontology-translation-concept-l1-strategic-asset").textContent,
+    ).toContain("ROI & Risque Réglementaire");
+    fireEvent.change(screen.getByTestId("hybrid-rag-search-input"), {
+      target: { value: "calculate_reserve" },
+    });
+    expect(screen.getByTestId("tripartite-edge-trace-git-jira-pay-142")).toBeDefined();
+    expect(screen.queryByTestId("tripartite-edge-trace-doc-jira-pay-142")).toBeNull();
 
     // Open ScopeSwitcher (Ctrl+W) and select scope-global -> updates access mode badge to READ_ONLY_OBSERVER
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });

@@ -56,8 +56,13 @@ def get_env(key: str, default: str = "") -> str:
     file_var = os.environ.get(f"{key}_FILE", "").strip()
     if file_var:
         secret_path = Path(file_var)
-        if secret_path.is_file():
+        if not secret_path.is_file():
+            raise ValueError(f"Secret file configured in {key}_FILE does not exist: {file_var}")
+        try:
             return secret_path.read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            msg = f"Secret file configured in {key}_FILE is unreadable: {file_var}"
+            raise ValueError(msg) from exc
     return os.environ.get(key, default)
 
 
@@ -115,6 +120,17 @@ def generate_strong_secret(nbytes: int = 32) -> str:
     return secrets.token_urlsafe(nbytes)
 
 
+def _write_secure_file(target: Path, text: str) -> None:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    fd = os.open(target, flags, 0o600)
+    try:
+        os.write(fd, text.encode("utf-8"))
+    finally:
+        os.close(fd)
+    with context_suppress_chmod(target):
+        target.chmod(0o600)
+
+
 def init_or_rotate_env_secrets(
     *,
     env_file: Path | None = None,
@@ -128,7 +144,7 @@ def init_or_rotate_env_secrets(
     target_env = env_file or DEFAULT_ENV_FILE
     source_tpl = template_file or (REPO_ROOT / ".env.example")
     if not target_env.is_file() and source_tpl.is_file():
-        target_env.write_text(source_tpl.read_text(encoding="utf-8"), encoding="utf-8")
+        _write_secure_file(target_env, source_tpl.read_text(encoding="utf-8"))
 
     content = target_env.read_text(encoding="utf-8") if target_env.is_file() else ""
     updated: dict[str, bool] = {}
@@ -149,9 +165,7 @@ def init_or_rotate_env_secrets(
             else:
                 updated[key] = False
 
-    target_env.write_text(content, encoding="utf-8")
-    with context_suppress_chmod(target_env):
-        target_env.chmod(0o600)
+    _write_secure_file(target_env, content)
     load_orcia_env(env_file=target_env, override=True)
     return updated
 

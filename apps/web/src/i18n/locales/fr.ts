@@ -41,6 +41,10 @@ export const frDictionary: TranslationDictionary = {
     assistantInputPlaceholder: "Poser une question à l'Assistant ou diagnostiquer un accès 403...",
     assistantSendLabel: "Envoyer à l'Assistant",
     localeSwitchLabel: "Langue",
+    topbarSearchAriaLabel: "Recherche globale",
+    topbarSearchPlaceholder: "Rechercher... (⌘K)",
+    darkModeToggleLabel: "🌙 Mode sombre",
+    mobileNavigationAriaLabel: "Navigation Compagnon Mobile",
     mobileTabs: {
       inbox: "🔔 Inbox",
       chat: "💬 Arbitrage/Chat",
@@ -174,6 +178,31 @@ export const frDictionary: TranslationDictionary = {
       signaturePlaceholder: "Ex: Marc (Tech Lead Checkout)",
       submitLabel: "Signer l'ancre humaine",
     },
+  },
+  ontologyExplorer: {
+    panelTitle: "Explorateur d'Ontologie à 4 Niveaux, Simulateur What-If & Graphe Tripartite",
+    panelSubtitle:
+      "Héritage CTE (Entreprise -> Domaine -> Équipe/Workspace -> Run), RAG Hybride halfvec(1024)+BM25 et alertes [STALE_WARNING].",
+    emptyStateMessage:
+      "Aucun concept ontologique ni document indexé dans l'état initial (0 donnée par défaut). Utilisez init-workspace ou init-datasource pour alimenter l'ontologie et la base RAG.",
+    columns: {
+      "1_ENTERPRISE": "1. Entreprise (Global)",
+      "2_DOMAIN": "2. Domaine (BU)",
+      "3_TEAM": "3a. Équipe (Arbre)",
+      "3_WORKSPACE": "3b. Workspace Solution",
+      "4_RUN_EPHEMERAL": "4. Run Éphémère (Branche)",
+    },
+    profileSelectorLabel: "Traduction Profil Humain :",
+    whatIfButtonLabel: "Simuler l'Impact (What-If)",
+    promoteButtonLabel: "Promouvoir le concept",
+    promotedBannerPrefix: "Simulation What-If exécutée pour :",
+    immutableConflictBanner: "ERR_ONTOLOGY_CONFLICT (HTTP 422) : axiome parent immutable=true inviolable.",
+    hybridRagTitle: "Recherche RAG Hybride (halfvec(1024) + BM25 RRF)",
+    hybridRagSearchPlaceholder: "Rechercher un concept, ticket Jira (PAY-142) ou symbole AST...",
+    hybridRagSearchButtonLabel: "Rechercher",
+    tripartiteTitle: "Graphe Tripartite Multi-Sources (Confluence <-> Jira <-> Git)",
+    staleAlertsTitle: "Brique data-freshness & Alertes [STALE_WARNING]",
+    docObsoleteBadgeLabel: "[DOC_OBSOLETE_SUSPECTED]",
   },
   modulePages: {
     cockpit: {

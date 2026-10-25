@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
-const rootEnvPath = path.resolve(__dirname, "../../.env");
+const configDir = path.dirname(fileURLToPath(import.meta.url));
+const rootEnvPath = path.resolve(configDir, "../../.env");
 if (fs.existsSync(rootEnvPath)) {
   const lines = fs.readFileSync(rootEnvPath, "utf8").split(/\r?\n/);
   for (const line of lines) {

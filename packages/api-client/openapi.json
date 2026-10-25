@@ -639,6 +639,158 @@
         "title": "CatalogUriResolveResponse",
         "type": "object"
       },
+      "DbDdlIndexRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "datasource_alias": {
+            "title": "Datasource Alias",
+            "type": "string"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "db_uri": {
+            "title": "Db Uri",
+            "type": "string"
+          },
+          "ddl_sql": {
+            "title": "Ddl Sql",
+            "type": "string"
+          },
+          "ontology_concepts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ontology Concepts",
+            "type": "array"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "datasource_id",
+          "datasource_alias",
+          "db_uri",
+          "ddl_sql",
+          "schema_version"
+        ],
+        "title": "DbDdlIndexRequest",
+        "type": "object"
+      },
+      "DocVsCodeAuditRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "code_rule_summary": {
+            "title": "Code Rule Summary",
+            "type": "string"
+          },
+          "confluence_uri": {
+            "title": "Confluence Uri",
+            "type": "string"
+          },
+          "doc_rule_summary": {
+            "title": "Doc Rule Summary",
+            "type": "string"
+          },
+          "git_repo_uri": {
+            "title": "Git Repo Uri",
+            "type": "string"
+          },
+          "git_symbol": {
+            "title": "Git Symbol",
+            "type": "string"
+          },
+          "newer_done_jira_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newer Done Jira Key"
+          }
+        },
+        "required": [
+          "confluence_uri",
+          "git_repo_uri",
+          "git_symbol",
+          "doc_rule_summary",
+          "code_rule_summary"
+        ],
+        "title": "DocVsCodeAuditRequest",
+        "type": "object"
+      },
+      "DocVsCodeAuditResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "confluence_uri": {
+            "title": "Confluence Uri",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "git_repo_uri": {
+            "title": "Git Repo Uri",
+            "type": "string"
+          },
+          "git_symbol": {
+            "title": "Git Symbol",
+            "type": "string"
+          },
+          "justifying_jira_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justifying Jira Key"
+          },
+          "qualification_marker": {
+            "enum": [
+              "[DOC_OBSOLETE_SUSPECTED]",
+              "[BUG_CODE_SUSPECTED]",
+              "[ALIGNED]"
+            ],
+            "title": "Qualification Marker",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "confluence_uri",
+          "git_repo_uri",
+          "git_symbol",
+          "qualification_marker",
+          "explanation"
+        ],
+        "title": "DocVsCodeAuditResponse",
+        "type": "object"
+      },
       "EffectiveWorkflowResolveRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/catalog/workflows/resolve-effective`.",
@@ -797,6 +949,170 @@
           "access_mode"
         ],
         "title": "HumanProfileBadge",
+        "type": "object"
+      },
+      "HybridRagHitSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "bm25_rank": {
+            "title": "Bm25 Rank",
+            "type": "integer"
+          },
+          "chunk_key": {
+            "title": "Chunk Key",
+            "type": "string"
+          },
+          "contextual_header": {
+            "title": "Contextual Header",
+            "type": "string"
+          },
+          "datasource_alias": {
+            "title": "Datasource Alias",
+            "type": "string"
+          },
+          "document_key": {
+            "title": "Document Key",
+            "type": "string"
+          },
+          "injected_content": {
+            "title": "Injected Content",
+            "type": "string"
+          },
+          "is_stale": {
+            "title": "Is Stale",
+            "type": "boolean"
+          },
+          "parent_chunk_key": {
+            "title": "Parent Chunk Key",
+            "type": "string"
+          },
+          "revision_tag": {
+            "title": "Revision Tag",
+            "type": "string"
+          },
+          "rrf_score": {
+            "title": "Rrf Score",
+            "type": "number"
+          },
+          "source_uri": {
+            "title": "Source Uri",
+            "type": "string"
+          },
+          "stale_warning_marker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Warning Marker"
+          },
+          "vector_rank": {
+            "title": "Vector Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chunk_key",
+          "parent_chunk_key",
+          "document_key",
+          "datasource_alias",
+          "source_uri",
+          "revision_tag",
+          "contextual_header",
+          "injected_content",
+          "rrf_score",
+          "vector_rank",
+          "bm25_rank",
+          "is_stale"
+        ],
+        "title": "HybridRagHitSchemaItem",
+        "type": "object"
+      },
+      "HybridRagSearchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_datasource_aliases": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Datasource Aliases"
+          },
+          "query_text": {
+            "title": "Query Text",
+            "type": "string"
+          },
+          "top_k": {
+            "default": 5,
+            "maximum": 25.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "query_text"
+        ],
+        "title": "HybridRagSearchRequest",
+        "type": "object"
+      },
+      "HybridRagSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "detected_banned_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Detected Banned Terms",
+            "type": "array"
+          },
+          "expanded_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Expanded Terms",
+            "type": "array"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/HybridRagHitSchemaItem"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "expanded_terms",
+          "detected_banned_terms",
+          "hits"
+        ],
+        "title": "HybridRagSearchResponse",
         "type": "object"
       },
       "InitDatasourceRequest": {
@@ -1286,6 +1602,169 @@
         "title": "InitWorkspaceResponse",
         "type": "object"
       },
+      "KbDocumentSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "age_days": {
+            "title": "Age Days",
+            "type": "integer"
+          },
+          "content_sha256": {
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "datasource_alias": {
+            "title": "Datasource Alias",
+            "type": "string"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "doc_key": {
+            "title": "Doc Key",
+            "type": "string"
+          },
+          "freshness_ttl_days": {
+            "title": "Freshness Ttl Days",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "indexing_regime": {
+            "enum": [
+              "DOC_PARENT_CHILD",
+              "CODE_AST_GRAPH",
+              "DB_DDL_ONLY"
+            ],
+            "title": "Indexing Regime",
+            "type": "string"
+          },
+          "is_stale": {
+            "title": "Is Stale",
+            "type": "boolean"
+          },
+          "revision_tag": {
+            "title": "Revision Tag",
+            "type": "string"
+          },
+          "source_scheme": {
+            "enum": [
+              "confluence",
+              "jira",
+              "git",
+              "db"
+            ],
+            "title": "Source Scheme",
+            "type": "string"
+          },
+          "source_uri": {
+            "title": "Source Uri",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "doc_key",
+          "workspace_id",
+          "datasource_id",
+          "datasource_alias",
+          "source_uri",
+          "source_scheme",
+          "indexing_regime",
+          "title",
+          "revision_tag",
+          "content_sha256",
+          "freshness_ttl_days",
+          "age_days",
+          "is_stale"
+        ],
+        "title": "KbDocumentSchemaItem",
+        "type": "object"
+      },
+      "KbStaleAlertSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "alert_key": {
+            "title": "Alert Key",
+            "type": "string"
+          },
+          "alert_reason": {
+            "enum": [
+              "TTL_EXPIRED",
+              "NEWER_JIRA_CONTRADICTION",
+              "CODE_DRIFT_DETECTED"
+            ],
+            "title": "Alert Reason",
+            "type": "string"
+          },
+          "diagnostic_marker": {
+            "title": "Diagnostic Marker",
+            "type": "string"
+          },
+          "document_key": {
+            "title": "Document Key",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "impacted_run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Impacted Run Ids",
+            "type": "array"
+          },
+          "justifying_jira_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justifying Jira Key"
+          },
+          "resolved": {
+            "title": "Resolved",
+            "type": "boolean"
+          },
+          "source_uri": {
+            "title": "Source Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "alert_key",
+          "workspace_id",
+          "document_key",
+          "source_uri",
+          "alert_reason",
+          "diagnostic_marker",
+          "impacted_run_ids",
+          "resolved"
+        ],
+        "title": "KbStaleAlertSchemaItem",
+        "type": "object"
+      },
       "LlmModelEndpointItem": {
         "additionalProperties": false,
         "description": "Registered LLM model endpoint item (`AD-10`, `FR-28`).",
@@ -1482,6 +1961,407 @@
         "title": "OidcLoginRequest",
         "type": "object"
       },
+      "OntologyAndRagStateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConceptSchemaItem"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/KbDocumentSchemaItem"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "promotions": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyPromotionProposalSchemaItem"
+            },
+            "title": "Promotions",
+            "type": "array"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyRelationSchemaItem"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "stale_alerts": {
+            "items": {
+              "$ref": "#/components/schemas/KbStaleAlertSchemaItem"
+            },
+            "title": "Stale Alerts",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "tripartite_edges": {
+            "items": {
+              "$ref": "#/components/schemas/TripartiteTraceEdgeSchemaItem"
+            },
+            "title": "Tripartite Edges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "concepts",
+          "relations",
+          "promotions",
+          "documents",
+          "tripartite_edges",
+          "stale_alerts"
+        ],
+        "title": "OntologyAndRagStateResponse",
+        "type": "object"
+      },
+      "OntologyConceptSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "banned_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Banned Terms",
+            "type": "array"
+          },
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "definition_text": {
+            "title": "Definition Text",
+            "type": "string"
+          },
+          "expected_schema": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Expected Schema",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "introduced_in_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Introduced In Snapshot Id"
+          },
+          "level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "parent_concept_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Concept Id"
+          },
+          "profile_translations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Profile Translations",
+            "type": "object"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "snapshot_branch_status": {
+            "enum": [
+              "ACTIVE",
+              "SUPERSEDED"
+            ],
+            "title": "Snapshot Branch Status",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "concept_key",
+          "canonical_term",
+          "level",
+          "scope_id",
+          "definition_text",
+          "synonyms",
+          "banned_terms",
+          "profile_translations",
+          "expected_schema",
+          "snapshot_branch_status"
+        ],
+        "title": "OntologyConceptSchemaItem",
+        "type": "object"
+      },
+      "OntologyPromoteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "proposal_key": {
+            "title": "Proposal Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_key"
+        ],
+        "title": "OntologyPromoteRequest",
+        "type": "object"
+      },
+      "OntologyPromotionProposalSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "badge_color_token": {
+            "default": "ontology-cyan",
+            "title": "Badge Color Token",
+            "type": "string"
+          },
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "impact_report": {
+            "$ref": "#/components/schemas/WhatIfSimulationResponse"
+          },
+          "proposal_key": {
+            "title": "Proposal Key",
+            "type": "string"
+          },
+          "proposed_by_user_id": {
+            "title": "Proposed By User Id",
+            "type": "string"
+          },
+          "source_level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Source Level",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Target Level",
+            "type": "string"
+          },
+          "target_scope_id": {
+            "title": "Target Scope Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "proposal_key",
+          "concept_key",
+          "canonical_term",
+          "source_level",
+          "target_level",
+          "target_scope_id",
+          "proposed_by_user_id",
+          "status",
+          "impact_report"
+        ],
+        "title": "OntologyPromotionProposalSchemaItem",
+        "type": "object"
+      },
+      "OntologyRelationSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "cardinality": {
+            "title": "Cardinality",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "relation_key": {
+            "title": "Relation Key",
+            "type": "string"
+          },
+          "relation_type": {
+            "title": "Relation Type",
+            "type": "string"
+          },
+          "source_concept_key": {
+            "title": "Source Concept Key",
+            "type": "string"
+          },
+          "target_concept_key": {
+            "title": "Target Concept Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "relation_key",
+          "source_concept_key",
+          "target_concept_key",
+          "relation_type",
+          "cardinality"
+        ],
+        "title": "OntologyRelationSchemaItem",
+        "type": "object"
+      },
+      "OntologyResolveRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "domain_scope_id": {
+            "default": "scope-bu-digital",
+            "title": "Domain Scope Id",
+            "type": "string"
+          },
+          "enterprise_scope_id": {
+            "default": "scope-global",
+            "title": "Enterprise Scope Id",
+            "type": "string"
+          },
+          "human_profile": {
+            "default": "TECH_LEAD",
+            "title": "Human Profile",
+            "type": "string"
+          },
+          "run_scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Scope Id"
+          },
+          "team_chain_scope_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Team Chain Scope Ids",
+            "type": "array"
+          },
+          "workspace_scope_id": {
+            "default": "ws-solution-paiement",
+            "title": "Workspace Scope Id",
+            "type": "string"
+          }
+        },
+        "title": "OntologyResolveRequest",
+        "type": "object"
+      },
+      "OntologyResolveResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConceptSchemaItem"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "profile_labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Profile Labels",
+            "type": "object"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyRelationSchemaItem"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "concepts",
+          "relations",
+          "profile_labels"
+        ],
+        "title": "OntologyResolveResponse",
+        "type": "object"
+      },
       "OntologyTermInputItem": {
         "additionalProperties": false,
         "description": "Ontology concept proposed during `init-workspace` (`3_TEAM` / `3_WORKSPACE`).",
@@ -1515,6 +2395,97 @@
           "definition"
         ],
         "title": "OntologyTermInputItem",
+        "type": "object"
+      },
+      "OntologyUpsertConceptRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "banned_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Banned Terms",
+            "type": "array"
+          },
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "definition_text": {
+            "title": "Definition Text",
+            "type": "string"
+          },
+          "expected_schema": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Expected Schema",
+            "type": "object"
+          },
+          "introduced_in_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Introduced In Snapshot Id"
+          },
+          "level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "parent_concept_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Concept Id"
+          },
+          "profile_translations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Profile Translations",
+            "type": "object"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "concept_key",
+          "canonical_term",
+          "level",
+          "scope_id",
+          "definition_text"
+        ],
+        "title": "OntologyUpsertConceptRequest",
         "type": "object"
       },
       "OrgUnitTreeItem": {
@@ -2565,7 +3536,7 @@
       },
       "ShellModuleItem": {
         "additionalProperties": false,
-        "description": "Descriptor for one of the 7 Global Sidebar Navigation modules (Direction C).",
+        "description": "Descriptor for one of the Global Sidebar Navigation modules (Direction C).",
         "properties": {
           "contributor_badge_count": {
             "default": 0,
@@ -2595,13 +3566,14 @@
               "ontology",
               "gates",
               "finops",
-              "admin"
+              "admin",
+              "bootstrap"
             ],
             "title": "Key",
             "type": "string"
           },
           "order": {
-            "maximum": 7.0,
+            "maximum": 8.0,
             "minimum": 1.0,
             "title": "Order",
             "type": "integer"
@@ -2635,7 +3607,7 @@
             "items": {
               "$ref": "#/components/schemas/ShellModuleItem"
             },
-            "maxItems": 7,
+            "maxItems": 8,
             "minItems": 7,
             "title": "Modules",
             "type": "array"
@@ -2897,6 +3869,88 @@
         "title": "SystemBootstrapWorkflowItem",
         "type": "object"
       },
+      "TripartiteTraceEdgeSchemaItem": {
+        "additionalProperties": false,
+        "properties": {
+          "edge_key": {
+            "title": "Edge Key",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "jira_issue_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jira Issue Key"
+          },
+          "relation_type": {
+            "enum": [
+              "DOCUMENTS",
+              "SPECIFIES",
+              "FIXES",
+              "BLOCKS",
+              "IMPLEMENTS_ISSUE",
+              "AFFECTS_CONCEPT"
+            ],
+            "title": "Relation Type",
+            "type": "string"
+          },
+          "source_node_type": {
+            "enum": [
+              "CONFLUENCE_PAGE",
+              "JIRA_ISSUE",
+              "GIT_SYMBOL",
+              "GIT_COMMIT",
+              "ONTOLOGY_CONCEPT"
+            ],
+            "title": "Source Node Type",
+            "type": "string"
+          },
+          "source_uri": {
+            "title": "Source Uri",
+            "type": "string"
+          },
+          "target_node_type": {
+            "enum": [
+              "CONFLUENCE_PAGE",
+              "JIRA_ISSUE",
+              "GIT_SYMBOL",
+              "GIT_COMMIT",
+              "ONTOLOGY_CONCEPT"
+            ],
+            "title": "Target Node Type",
+            "type": "string"
+          },
+          "target_uri": {
+            "title": "Target Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "edge_key",
+          "workspace_id",
+          "source_uri",
+          "source_node_type",
+          "target_uri",
+          "target_node_type",
+          "relation_type"
+        ],
+        "title": "TripartiteTraceEdgeSchemaItem",
+        "type": "object"
+      },
       "UserMeResponse": {
         "additionalProperties": false,
         "description": "Complete Human Profile, OrgUnit tree, and accessible Workspaces for `GET /api/v1/auth/me`.",
@@ -3107,6 +4161,97 @@
           "linked_connectors"
         ],
         "title": "UserOnboardingStateItem",
+        "type": "object"
+      },
+      "WhatIfSimulationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "proposed_change": {
+            "title": "Proposed Change",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept_key",
+          "proposed_change"
+        ],
+        "title": "WhatIfSimulationRequest",
+        "type": "object"
+      },
+      "WhatIfSimulationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "has_immutable_axiom_conflict": {
+            "title": "Has Immutable Axiom Conflict",
+            "type": "boolean"
+          },
+          "impacted_active_run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Impacted Active Run Ids",
+            "type": "array"
+          },
+          "impacted_artifact_templates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Impacted Artifact Templates",
+            "type": "array"
+          },
+          "impacted_workflow_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Impacted Workflow Uris",
+            "type": "array"
+          },
+          "proposed_change": {
+            "title": "Proposed Change",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "transitively_affected_concepts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Transitively Affected Concepts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "concept_key",
+          "canonical_term",
+          "proposed_change",
+          "transitively_affected_concepts",
+          "impacted_artifact_templates",
+          "impacted_workflow_uris",
+          "impacted_active_run_ids",
+          "has_immutable_axiom_conflict"
+        ],
+        "title": "WhatIfSimulationResponse",
         "type": "object"
       },
       "WorkflowDefinitionResponseItem": {
@@ -5522,6 +6667,742 @@
         "summary": "Get Direction C 7-module Global Sidebar & Hierarchical Scope Switcher tree",
         "tags": [
           "navigation"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/concepts": {
+      "post": {
+        "operationId": "upsert_ontology_concept_api_v1_ontology_rag_ontology_concepts_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyUpsertConceptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyConceptSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Upsert an Ontology Concept (enforces L1 immutable axiom protection -> HTTP 422)",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/promote": {
+      "post": {
+        "operationId": "promote_ontology_proposal_api_v1_ontology_rag_ontology_promote_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyPromoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyPromotionProposalSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Promote an Ontology concept proposal (L4 -> L3 or L3 -> L2 -> L1)",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/resolve": {
+      "post": {
+        "operationId": "resolve_ontology_hierarchy_api_v1_ontology_rag_ontology_resolve_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyResolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Resolve effective 4-Level Ontology and Human Profile semantic translations",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/what-if": {
+      "post": {
+        "operationId": "simulate_ontology_what_if_api_v1_ontology_rag_ontology_what_if_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatIfSimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatIfSimulationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute What-If impact simulation across concepts, templates, workflows & runs",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/rag/index-db-ddl": {
+      "post": {
+        "operationId": "index_db_ddl_schema_api_v1_ontology_rag_rag_index_db_ddl_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbDdlIndexRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbDocumentSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Index DB DDL schema (`CREATE TABLE` only; rejects transactional SQL -> HTTP 422)",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/rag/search": {
+      "post": {
+        "operationId": "search_hybrid_rag_api_v1_ontology_rag_rag_search_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HybridRagSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HybridRagSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute Hybrid RAG search (`halfvec(1024)` + BM25 RRF) with Ontology query expansion",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/state": {
+      "get": {
+        "operationId": "get_ontology_and_rag_state_api_v1_ontology_rag_state_get",
+        "parameters": [
+          {
+            "description": "Use deterministic test fixture data",
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Use deterministic test fixture data",
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyAndRagStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Inspect 4-Level Ontology, Promotions, Hybrid RAG Documents & Tripartite Graph",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/tripartite/audit-doc-vs-code": {
+      "post": {
+        "operationId": "audit_doc_vs_code_api_v1_ontology_rag_tripartite_audit_doc_vs_code_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocVsCodeAuditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocVsCodeAuditResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Qualify Doc vs Code divergence (`[DOC_OBSOLETE_SUSPECTED]` citing Done Jira ticket)",
+        "tags": [
+          "ontology-rag"
         ]
       }
     },

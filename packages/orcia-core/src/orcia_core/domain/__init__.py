@@ -3,9 +3,11 @@
 from orcia_core.domain.exceptions import (
     ERROR_CATALOG,
     ConfusedDeputyBlockedError,
+    DdlOnlyTransactionalDataError,
     HumanAnchorRequiredError,
     ModelOrthogonalityViolationError,
     ObserverModeReadOnlyError,
+    OntologyConflictError,
     OrciaDomainError,
     PermissionBrokerDeniedError,
     ReadSourceDeniedError,
@@ -25,9 +27,11 @@ from orcia_core.domain.identifiers import (
 __all__ = [
     "ERROR_CATALOG",
     "ConfusedDeputyBlockedError",
+    "DdlOnlyTransactionalDataError",
     "HumanAnchorRequiredError",
     "ModelOrthogonalityViolationError",
     "ObserverModeReadOnlyError",
+    "OntologyConflictError",
     "OrciaDomainError",
     "PermissionBrokerDeniedError",
     "ReadSourceDeniedError",

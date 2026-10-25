@@ -3,6 +3,7 @@ import type {
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
   UiModuleKey,
+  UiOntologyExplorerLabels,
   UiPermissionBrokerLabels,
   UiShellLabels,
   UiWorkspaceTopologyLabels,
@@ -28,5 +29,6 @@ export interface TranslationDictionary {
   catalogExplorer: UiCatalogExplorerLabels;
   permissionBroker: UiPermissionBrokerLabels;
   bootstrapOnboarding: UiBootstrapOnboardingLabels;
+  ontologyExplorer: UiOntologyExplorerLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

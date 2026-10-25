@@ -31,9 +31,23 @@ OLLAMA_URL = os.environ.get("OLLAMA_URL", f"http://{OLLAMA_HOST}:{OLLAMA_PORT}/a
 def get_git_diff() -> str:
     """Retrieve staged changes (or unstaged changes as fallback) for review."""
     try:
-        diff = subprocess.check_output(["git", "diff", "--cached"], text=True)
+        diff = subprocess.check_output(
+            ["git", "diff", "--cached"],
+            cwd=BASE_DIR,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
         if not diff.strip():
-            diff = subprocess.check_output(["git", "diff"], text=True)
+            diff = subprocess.check_output(
+                ["git", "diff"],
+                cwd=BASE_DIR,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=15,
+            )
         return diff
     except Exception as exc:
         return f"Git Error: {exc}"
@@ -53,6 +67,7 @@ def ask_ollama(diff: str, prompt: str) -> str:
     }
     try:
         response = requests.post(url, json=payload, timeout=300)
+        response.raise_for_status()
         data = response.json()
         return str(data.get("response", "Error: No response from Ollama."))
     except Exception as exc:
@@ -114,7 +129,7 @@ def main() -> int:
     print(result)
     print("=" * 50 + "\n")
 
-    Path("IA_REVIEW.md").write_text(
+    (BASE_DIR / "IA_REVIEW.md").write_text(
         f"# 🔍 AI Security Review Report\n\n*Mode: {AI_MODE} | Tokens: ~{tokens}*\n\n"
         f"---\n\n{result}",
         encoding="utf-8",

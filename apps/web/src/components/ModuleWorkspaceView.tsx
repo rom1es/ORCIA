@@ -4,6 +4,7 @@ import {
   BootstrapOnboardingPanel,
   CatalogExplorerPanel,
   HumanLedAnchorCard,
+  OntologyAndKbExplorerPanel,
   StatusBadge,
   type UiBootstrapWorkflowView,
   type UiModuleKey,
@@ -16,7 +17,10 @@ import {
   computePersonaTopology,
   DEFAULT_CATALOG_EXPLORER_ITEMS,
   DEFAULT_CATALOG_RESOURCES,
+  DEFAULT_ONTOLOGY_CONCEPTS,
   DEFAULT_RUN_LOCK_TRIPLETS,
+  DEFAULT_STALE_ALERTS,
+  DEFAULT_TRIPARTITE_EDGES,
 } from "./workspaceFixtures";
 
 const DEFAULT_BOOTSTRAP_WORKFLOWS: UiBootstrapWorkflowView[] = [
@@ -107,6 +111,17 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
             items={fixtureMode ? DEFAULT_CATALOG_EXPLORER_ITEMS : []}
             runLockTriplets={fixtureMode ? DEFAULT_RUN_LOCK_TRIPLETS : []}
             labels={dictionary.catalogExplorer}
+          />
+        </div>
+      )}
+
+      {currentModule === "ontology" && (
+        <div className="orcia-bento-card">
+          <OntologyAndKbExplorerPanel
+            concepts={fixtureMode ? DEFAULT_ONTOLOGY_CONCEPTS : []}
+            tripartiteEdges={fixtureMode ? DEFAULT_TRIPARTITE_EDGES : []}
+            staleAlerts={fixtureMode ? DEFAULT_STALE_ALERTS : []}
+            labels={dictionary.ontologyExplorer}
           />
         </div>
       )}

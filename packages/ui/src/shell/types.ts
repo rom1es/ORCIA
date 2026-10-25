@@ -236,6 +236,10 @@ export interface UiShellLabels {
   assistantInputPlaceholder: string;
   assistantSendLabel: string;
   localeSwitchLabel: string;
+  topbarSearchAriaLabel?: string;
+  topbarSearchPlaceholder?: string;
+  darkModeToggleLabel?: string;
+  mobileNavigationAriaLabel?: string;
   mobileTabs: Record<UiMobileTabKey, string>;
 }
 
@@ -275,4 +279,60 @@ export interface UiBootstrapOnboardingLabels {
     signaturePlaceholder: string;
     submitLabel: string;
   };
+}
+
+export type UiOntologyLevel =
+  | "1_ENTERPRISE"
+  | "2_DOMAIN"
+  | "3_TEAM"
+  | "3_WORKSPACE"
+  | "4_RUN_EPHEMERAL";
+
+export interface UiOntologyConceptView {
+  conceptKey: string;
+  canonicalTerm: string;
+  level: UiOntologyLevel;
+  scopeId: string;
+  definitionText: string;
+  immutable: boolean;
+  synonyms: string[];
+  profileTranslations: Record<string, string>;
+  impactedTemplates: string[];
+  impactedWorkflows: string[];
+  impactedRuns: string[];
+}
+
+export interface UiTripartiteEdgeView {
+  edgeKey: string;
+  sourceUri: string;
+  targetUri: string;
+  relationType: string;
+  jiraIssueKey: string | null;
+}
+
+export interface UiStaleAlertView {
+  alertKey: string;
+  documentKey: string;
+  sourceUri: string;
+  diagnosticMarker: string;
+  justifyingJiraKey: string | null;
+  impactedRunIds: string[];
+}
+
+export interface UiOntologyExplorerLabels {
+  panelTitle: string;
+  panelSubtitle: string;
+  emptyStateMessage: string;
+  columns: Record<UiOntologyLevel, string>;
+  profileSelectorLabel: string;
+  whatIfButtonLabel: string;
+  promoteButtonLabel: string;
+  promotedBannerPrefix: string;
+  immutableConflictBanner: string;
+  hybridRagTitle: string;
+  hybridRagSearchPlaceholder: string;
+  hybridRagSearchButtonLabel: string;
+  tripartiteTitle: string;
+  staleAlertsTitle: string;
+  docObsoleteBadgeLabel: string;
 }

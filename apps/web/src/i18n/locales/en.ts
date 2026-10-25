@@ -41,6 +41,10 @@ export const enDictionary: TranslationDictionary = {
     assistantInputPlaceholder: "Ask the Assistant or diagnose a 403 access denial...",
     assistantSendLabel: "Send to Assistant",
     localeSwitchLabel: "Language",
+    topbarSearchAriaLabel: "Global search",
+    topbarSearchPlaceholder: "Search... (⌘K)",
+    darkModeToggleLabel: "🌙 Dark mode",
+    mobileNavigationAriaLabel: "Mobile Companion Navigation",
     mobileTabs: {
       inbox: "🔔 Inbox",
       chat: "💬 Arbitration/Chat",
@@ -174,6 +178,31 @@ export const enDictionary: TranslationDictionary = {
       signaturePlaceholder: "e.g. Marc (Checkout Tech Lead)",
       submitLabel: "Sign human anchor",
     },
+  },
+  ontologyExplorer: {
+    panelTitle: "4-Level Ontology Explorer, What-If Simulator & Tripartite Graph",
+    panelSubtitle:
+      "CTE Inheritance (Enterprise -> Domain -> Team/Workspace -> Run), Hybrid RAG halfvec(1024)+BM25, and [STALE_WARNING] alerts.",
+    emptyStateMessage:
+      "No ontology concepts or indexed documents in initial state (0 sample rows by default). Run init-workspace or init-datasource to populate the ontology and Hybrid RAG.",
+    columns: {
+      "1_ENTERPRISE": "1. Enterprise (Global)",
+      "2_DOMAIN": "2. Domain (BU)",
+      "3_TEAM": "3a. Team (Tree)",
+      "3_WORKSPACE": "3b. Solution Workspace",
+      "4_RUN_EPHEMERAL": "4. Ephemeral Run (Branch)",
+    },
+    profileSelectorLabel: "Human Profile Translation:",
+    whatIfButtonLabel: "Simulate Impact (What-If)",
+    promoteButtonLabel: "Promote concept",
+    promotedBannerPrefix: "What-If simulation executed for:",
+    immutableConflictBanner: "ERR_ONTOLOGY_CONFLICT (HTTP 422): parent axiom immutable=true cannot be overridden.",
+    hybridRagTitle: "Hybrid RAG Search (halfvec(1024) + BM25 RRF)",
+    hybridRagSearchPlaceholder: "Search concept, Jira issue (PAY-142), or AST symbol...",
+    hybridRagSearchButtonLabel: "Search",
+    tripartiteTitle: "Multi-Source Tripartite Graph (Confluence <-> Jira <-> Git)",
+    staleAlertsTitle: "data-freshness Brick & [STALE_WARNING] Alerts",
+    docObsoleteBadgeLabel: "[DOC_OBSOLETE_SUSPECTED]",
   },
   modulePages: {
     cockpit: {
