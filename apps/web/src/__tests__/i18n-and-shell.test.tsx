@@ -1,0 +1,121 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import fs from "node:fs";
+import path from "node:path";
+import React from "react";
+import { describe, expect, it, vi } from "vitest";
+import { ModuleWorkspaceView } from "../components/ModuleWorkspaceView";
+import { resolveModuleFromPathname, ShellContainer } from "../components/ShellContainer";
+import { I18nProvider } from "../i18n";
+import { enDictionary } from "../i18n/locales/en";
+import { frDictionary } from "../i18n/locales/fr";
+
+const mockPush = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/cockpit",
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
+function collectNestedKeys(obj: Record<string, unknown>, prefix = ""): string[] {
+  const keys: string[] = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      keys.push(...collectNestedKeys(v as Record<string, unknown>, fullKey));
+    } else {
+      keys.push(fullKey);
+    }
+  }
+  return keys.sort();
+}
+
+function walkTsFiles(dir: string): string[] {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== "__tests__") {
+        files.push(...walkTsFiles(fullPath));
+      }
+    } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+describe("@orcia/web i18n dictionary parity, French default, and 7-module shell integration", () => {
+  it("enforces 100% recursive key parity between fr.ts and en.ts", () => {
+    const frKeys = collectNestedKeys(frDictionary as unknown as Record<string, unknown>);
+    const enKeys = collectNestedKeys(enDictionary as unknown as Record<string, unknown>);
+    expect(frKeys).toEqual(enKeys);
+  });
+
+  it("never uses raw hex colors inside apps/web/src", () => {
+    const webSrcDir = path.resolve(__dirname, "..");
+    const tsFiles = walkTsFiles(webSrcDir);
+    const hexColorRegex = /#[0-9a-fA-F]{3,8}\b/;
+    for (const filePath of tsFiles) {
+      const content = fs.readFileSync(filePath, "utf-8");
+      expect(
+        hexColorRegex.test(content),
+        `Found forbidden hex color in ${path.relative(webSrcDir, filePath)}`,
+      ).toBe(false);
+    }
+  });
+
+  it("resolves all 7 module routes accurately via resolveModuleFromPathname", () => {
+    expect(resolveModuleFromPathname(null)).toBe("cockpit");
+    expect(resolveModuleFromPathname("/")).toBe("cockpit");
+    expect(resolveModuleFromPathname("/cockpit")).toBe("cockpit");
+    expect(resolveModuleFromPathname("/inbox")).toBe("inbox");
+    expect(resolveModuleFromPathname("/catalog")).toBe("catalog");
+    expect(resolveModuleFromPathname("/ontology")).toBe("ontology");
+    expect(resolveModuleFromPathname("/gates")).toBe("gates");
+    expect(resolveModuleFromPathname("/finops")).toBe("finops");
+    expect(resolveModuleFromPathname("/workspaces")).toBe("admin");
+    expect(resolveModuleFromPathname("/admin")).toBe("admin");
+  });
+
+  it("renders French by default, switches dynamically to English (including untouched HumanLedAnchorCard), navigates modules, and updates scope access mode", () => {
+    mockPush.mockClear();
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <ModuleWorkspaceView moduleKey="cockpit" />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    expect(screen.getByTestId("active-module-heading").textContent).toBe("Cockpit & Chat");
+    expect(screen.getByTestId("sidebar-nav-item-inbox").textContent).toContain(
+      "2. Boîte & Mes Runs",
+    );
+
+    const anchorCard = screen.getByTestId("human-anchor-card-architecture-intent");
+    const anchorTextarea = anchorCard.querySelector("textarea") as HTMLTextAreaElement;
+    expect(anchorTextarea.value).toBe(frDictionary.humanAnchor.defaultValue);
+
+    // Toggle locale to English -> sidebar and untouched HumanLedAnchorCard default text update
+    fireEvent.click(screen.getByTestId("locale-switcher-button"));
+    expect(screen.getByTestId("sidebar-nav-item-inbox").textContent).toContain(
+      "2. Inbox & My Runs",
+    );
+    expect(anchorTextarea.value).toBe(enDictionary.humanAnchor.defaultValue);
+
+    // Click module 4 (ontology) -> calls router.push and updates active module heading
+    fireEvent.click(screen.getByTestId("sidebar-nav-item-ontology"));
+    expect(mockPush).toHaveBeenCalledWith("/ontology");
+    expect(screen.getByTestId("active-module-heading").textContent).toBe("Ontology & KB");
+
+    // Open ScopeSwitcher (Ctrl+W) and select scope-global -> updates access mode badge to READ_ONLY_OBSERVER
+    fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+    fireEvent.click(screen.getByTestId("scope-option-scope-global"));
+    expect(screen.getByTestId("sidebar-access-mode-badge").textContent).toBe(
+      enDictionary.shell.accessModes.READ_ONLY_OBSERVER,
+    );
+  });
+});

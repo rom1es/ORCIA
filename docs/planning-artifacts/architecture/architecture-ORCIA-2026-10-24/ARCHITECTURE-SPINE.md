@@ -25,15 +25,19 @@ companions:
 
 ORCIA adopte un paradigme **Monolithe Modulaire Hexagonal (Ports & Adapters) couplé à un Moteur d'Orchestration Durable Checkpointé par Événements**, structuré dans un **Monorepo Hybride TypeScript + Python** :
 
-1. **Frontière de Présentation (`apps/web`)** : Application **Next.js (App Router, TypeScript)** implémentant la Direction C (*Executive Slate Sidebar* `#0F172A` à 7 modules RBAC + *Crisp Light Workspace* `#F8FAFC` + *Agent Concierge Dock*). Consomme exclusivement le client typé `packages/api-client` généré depuis le schéma OpenAPI 3.1 du backend et un flux unifié Server-Sent Events (SSE).
+1. **Frontière de Présentation (`apps/web` + `packages/ui`)** : Application **Next.js (App Router, TypeScript)** (`apps/web`) assemblant les routes, l'`i18n` et les états sur la librairie Design System isolée **`packages/ui` (`@orcia/ui`)** qui héberge exclusivement les tokens CSS sémantiques et l'ensemble des composants UX/UI **Direction C** (*Executive Slate Sidebar* `#0F172A` à 7 modules RBAC + *Crisp Light Workspace* `#F8FAFC` + *Agent Concierge Dock*). `apps/web` consomme exclusivement `@orcia/ui`, le client typé `packages/api-client` généré depuis le schéma OpenAPI 3.1 du backend et un flux unifié Server-Sent Events (SSE) ; `packages/ui` reste pur (zéro appel réseau, zéro dépendance à `next/*` ou `@orcia/api-client`).
 2. **Noyau Applicatif & Domaine (`apps/api` & `apps/worker` partageant `packages/orcia-core`)** : Backend **Python 3.12+ (FastAPI + Pydantic v2)** structuré en 8 domaines bornés (*Bounded Contexts*) : `orchestration`, `blackboard`, `catalog`, `ontology`, `rag`, `gates`, `permissions`, `audit_finops`. Chaque domaine expose ses *Ports* (interfaces Protocol Python) et isole ses *Adapters* (PostgreSQL, Redis, LiteLLM, S3/CAS, Sandbox, Connecteurs URI).
 3. **Exécution Asynchrone & Durable (`apps/worker`)** : Workers **Dramatiq sur Redis** exécutant les transitions d'étapes, les appels d'agents IA, l'indexation RAG/Docling et les *Gates*, sans jamais bloquer la boucle d'événements HTTP/SSE de `apps/api`.
 
 ```mermaid
 flowchart TD
     subgraph Web["apps/web (Next.js 16 + React 19)"]
-        UI["7 Modules UI + Cockpit + Mobile Companion"]
+        Routes["7 Modules App Router + i18n (FR/EN)"]
         State["TanStack Query v5 + Zustand v5 + SSE Client"]
+    end
+
+    subgraph DesignSystem["packages/ui (@orcia/ui)"]
+        DS["Design System Direction C (Tokens CSS + Shell + Composants Cognitifs)"]
     end
 
     subgraph Contracts["packages/api-client"]
@@ -62,7 +66,8 @@ flowchart TD
         Sandbox["Sandbox Isolée (Wasmtime / bwrap --unshare-net)"]
     end
 
-    UI --> State
+    Routes --> DS
+    Routes --> State
     State --> OAS
     OAS --> API
     API --> Core
@@ -294,16 +299,10 @@ erDiagram
 ```text
 orcia/
   apps/
-    web/                          # Next.js 16 (App Router) — Direction C Desktop + Mobile Companion
+    web/                          # Next.js 16 (App Router) — Assemblage, Routage, i18n (FR/EN) & État
       src/
         app/                      # Routes des 7 modules (cockpit, inbox/workspaces, catalog, ontology, gates, finops, admin)
-        components/
-          cockpit/                # Tri-pane Cockpit, Blackboard Canvas, Agent Concierge Dock
-          cognitive/              # BriefingCard (4 blocs), ChunkedArtifactReviewer, TieBreakMatrixModal
-          inbox/                  # UnifiedNotificationInbox, PresenceLockBadge (< 500ms)
-          workspaces/             # ScopeSwitcher (⌘W), WorkspaceControlCenter (4 onglets: Runs, Sources, Workflows/Agents, Équipe)
-          ontology/               # OntologyGraphViewer (4 niveaux), TermPromotionDrawer
-          ui/                     # Primitives shadcn/ui + tokens Tailwind CSS v4 Direction C
+        i18n/                     # Dictionnaire typé zero-debt (locales/fr.ts, locales/en.ts, I18nProvider)
         hooks/                    # useSseStream, useClaimLock, useAdaptiveGate
         stores/                   # Stores Zustand (cockpitStore, presenceStore, scopeStore)
     api/                          # FastAPI HTTP + Server-Sent Events (/api/v1/events/stream)
@@ -315,6 +314,16 @@ orcia/
       src/orcia_worker/
         actors/                   # step_runner, agent_executor, gate_evaluator, docling_indexer
   packages/
+    ui/                           # Design System dédié (@orcia/ui) — Tokens CSS Direction C & Composants UX/UI purs
+      src/
+        styles/                   # tokens.css (Tokens sémantiques Direction C exclusifs)
+        primitives/               # Primitives accessibles (StatusBadge, HumanLedAnchorCard, boutons, panneaux)
+        shell/                    # Coquille Direction C (AppShell, GlobalSidebar, ScopeSwitcher ⌘W, ConciergeDock)
+        cockpit/                  # Tri-pane Cockpit, Blackboard Canvas
+        cognitive/                # BriefingCard (4 blocs), ChunkedArtifactReviewer, TieBreakMatrixModal
+        inbox/                    # UnifiedNotificationInbox, PresenceLockBadge (< 500ms)
+        workspaces/               # WorkspaceControlCenter (4 onglets: Runs, Sources, Workflows/Agents, Équipe)
+        ontology/                 # OntologyGraphViewer (4 niveaux), TermPromotionDrawer
     orcia-core/                   # Bibliothèque Python partagée (Domaine, Ports, Adapters, Modèles)
       src/orcia_core/
         orchestration/            # Machine à états des Runs, JIT Step Hydrator, Bimodal Coaching/FastPath, Replay

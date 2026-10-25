@@ -43,8 +43,8 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 - Tables `audit_ledger` and `blackboard_snapshots` are strictly append-only (protected by PostgreSQL `BEFORE UPDATE OR DELETE RAISE EXCEPTION` triggers); never disable these triggers in migrations or maintenance scripts — draft artifacts live in `step_executions.draft_artifact_jsonb` and intermediate reasoning in `step_executions.step_memlog_jsonb`.
 - Every API error returns an `application/problem+json` envelope (**RFC 9457 Problem Details**) carrying the W3C OpenTelemetry `trace_id`.
 - Every mutation endpoint enforces `RunAccessGuard` / `ScopeAccessGuard` (`GLOBAL | BU | TEAM | WORKSPACE`) and rejects `READ_ONLY_OBSERVER` with `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY`.
-- UI components in `apps/web` use Direction C semantic CSS tokens (`DESIGN.md`), never raw hex colors; Violet `#6D28D9` (`human-led-violet`) is reserved exclusively for `human-led-anchor-card` (`human_authored_required: true`).
-- All user-facing UI labels, microcopy, and documentation artifacts are written in **French**.
+- All UX/UI components and Direction C semantic CSS tokens (`DESIGN.md`) MUST live in the dedicated Design System library `packages/ui` (`@orcia/ui`), isolated from `apps/web` routing, stores, and API calls (`packages/ui` must never import `next/*` or `@orcia/api-client`); never use raw hex colors outside `packages/ui/src/styles/tokens.css`, and reserve Violet `#6D28D9` (`human-led-violet`) exclusively for `HumanLedAnchorCard` (`human_authored_required: true`).
+- All user-facing UI labels, microcopy, and documentation artifacts default to **French (`fr`)**, backed by the typed zero-dependency `i18n` dictionary (`apps/web/src/i18n/locales/{fr,en}.ts`, injected as typed props into `@orcia/ui` components) and localized RFC 9457 error catalogs (`Accept-Language` resolution with invariant `error_code`) — never hardcode raw user-facing strings directly inside JSX components.
 
 ## Known pitfalls
 

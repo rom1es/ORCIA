@@ -19,6 +19,9 @@ node_modules/
 .turbo/
 out/
 coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
 
 # Environment & Secrets
 .env

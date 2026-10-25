@@ -29,14 +29,14 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-25-2026 09:10
+last_updated: 10-25-2026 10:56
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
 story_location: docs/implementation-artifacts
 development_status:
-  epic-1: backlog
-  1-1-amorçage-du-monorepo-hybride-coquille-ui-direction-c-7-modul: backlog
+  epic-1: in-progress
+  1-1-amorçage-du-monorepo-hybride-coquille-ui-direction-c-7-modul: review
   1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi: backlog
   1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db: backlog
   1-4-exécution-passthrough-service-principal-permission-broker-ia: backlog
