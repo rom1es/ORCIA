@@ -1,4 +1,5 @@
 export type * from "./generated/schema";
+export { OrciaProblemError, type OrciaApiClientOptions } from "./helpers";
 
 import type {
   AuthTokenResponse,
@@ -15,6 +16,14 @@ import type {
   EffectiveWorkflowResolveRequest,
   EffectiveWorkflowResolveResponse,
   HealthResponse,
+  InitDatasourceRequest,
+  InitDatasourceResponse,
+  InitOrganizationRequest,
+  InitOrganizationResponse,
+  InitUserRequest,
+  InitUserResponse,
+  InitWorkspaceRequest,
+  InitWorkspaceResponse,
   LocalLoginRequest,
   LogoutResponse,
   OidcLoginRequest,
@@ -27,82 +36,16 @@ import type {
   PermissionPolicyImportMarkdownResponse,
   PermissionTicketActionRequest,
   PermissionTicketActionResponse,
-  ProblemDetails,
   ScopeMutationCheckResponse,
   ShellNavigationResponse,
+  SystemBootstrapStateResponse,
   UserMeResponse,
   WorkspacesListResponse,
 } from "./generated/schema";
-
-export interface OrciaApiClientOptions {
-  baseUrl: string;
-  locale?: "fr" | "en";
-  traceId?: string;
-  accessToken?: string;
-  fetchImpl?: typeof fetch;
-}
-
-export class OrciaProblemError extends Error {
-  public readonly problem: ProblemDetails;
-
-  constructor(problem: ProblemDetails) {
-    super(problem.detail);
-    this.name = "OrciaProblemError";
-    this.problem = problem;
-  }
-}
-
-function buildPersonaQuery(personaKey?: string): string {
-  return personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
-}
+import { buildPersonaQuery, createRequestJson, type OrciaApiClientOptions } from "./helpers";
 
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
-  const fetcher = options.fetchImpl ?? globalThis.fetch;
-  const baseHeaders: Record<string, string> = {
-    Accept: "application/json, application/problem+json",
-    "Accept-Language": options.locale ?? "fr",
-  };
-  if (options.traceId) {
-    baseHeaders["X-Trace-Id"] = options.traceId;
-  }
-  if (options.accessToken) {
-    baseHeaders.Authorization = `Bearer ${options.accessToken}`;
-  }
-
-  async function requestJson<T>(
-    path: string,
-    method: "GET" | "POST" = "GET",
-    body?: unknown,
-  ): Promise<T> {
-    const headers: Record<string, string> = { ...baseHeaders };
-    const init: RequestInit = { method, headers };
-    if (body !== undefined) {
-      headers["Content-Type"] = "application/json";
-      init.body = JSON.stringify(body);
-    }
-    const response = await fetcher(`${options.baseUrl}${path}`, init);
-    if (!response.ok) {
-      const fallbackTraceId =
-        response.headers?.get?.("x-trace-id") ??
-        options.traceId ??
-        "00000000000000000000000000000000";
-      const problem = (await Promise.resolve()
-        .then(() => response.json())
-        .catch(
-          (): ProblemDetails => ({
-            type: "about:blank",
-            title: response.statusText || "HTTP Error",
-            status: response.status || 500,
-            detail: response.statusText || "Unexpected non-JSON error response",
-            instance: path,
-            error_code: "ERR_INTERNAL_SERVER_ERROR",
-            trace_id: fallbackTraceId,
-          }),
-        )) as ProblemDetails;
-      throw new OrciaProblemError(problem);
-    }
-    return (await response.json()) as T;
-  }
+  const requestJson = createRequestJson(options);
 
   return {
     getHealth(): Promise<HealthResponse> {
@@ -262,6 +205,48 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ): Promise<PermissionTicketActionResponse> {
       return requestJson<PermissionTicketActionResponse>(
         `/api/v1/permissions/broker/tickets/${encodeURIComponent(ticketId)}/action${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    getSystemBootstrapState(personaKey?: string): Promise<SystemBootstrapStateResponse> {
+      return requestJson<SystemBootstrapStateResponse>(
+        `/api/v1/bootstrap/state${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    executeInitOrganization(
+      payload: InitOrganizationRequest,
+      personaKey?: string,
+    ): Promise<InitOrganizationResponse> {
+      return requestJson<InitOrganizationResponse>(
+        `/api/v1/bootstrap/init-organization${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    executeInitWorkspace(
+      payload: InitWorkspaceRequest,
+      personaKey?: string,
+    ): Promise<InitWorkspaceResponse> {
+      return requestJson<InitWorkspaceResponse>(
+        `/api/v1/bootstrap/init-workspace${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    executeInitDatasource(
+      payload: InitDatasourceRequest,
+      personaKey?: string,
+    ): Promise<InitDatasourceResponse> {
+      return requestJson<InitDatasourceResponse>(
+        `/api/v1/bootstrap/init-datasource${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    executeInitUser(payload: InitUserRequest, personaKey?: string): Promise<InitUserResponse> {
+      return requestJson<InitUserResponse>(
+        `/api/v1/bootstrap/init-user${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
       );

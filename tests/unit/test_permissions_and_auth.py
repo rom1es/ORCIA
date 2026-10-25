@@ -405,6 +405,10 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
         svc.decrypt_passthrough_credential(marc_user, pt_res.json()["id"])
         == "glpat-secret-token-123"
     )
+    assert any(
+        c.id == pt_res.json()["id"]
+        for c in app.state.permission_broker_service._passthrough_credentials.values()
+    )
     with pytest.raises(ResourceNotFoundError):
         svc.decrypt_passthrough_credential(marc_user, "unknown-cred-id")
     with pytest.raises(ResourceNotFoundError):

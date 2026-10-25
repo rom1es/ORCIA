@@ -237,3 +237,41 @@ export interface UiShellLabels {
   localeSwitchLabel: string;
   mobileTabs: Record<UiMobileTabKey, string>;
 }
+
+export interface UiBootstrapWorkflowView {
+  uri: string;
+  title: string;
+  requiredRole: string;
+  scopeLevel: UiScopeLevel;
+  gateRules: string[];
+}
+
+export interface UiBootstrapOnboardingLabels {
+  panelTitle: string;
+  panelSubtitle: string;
+  orthogonalityTitle: string;
+  orthogonalityPassBadge: string;
+  orthogonalityFailBanner: string;
+  simulateSingleFamilyLabel: string;
+  simulateDualFamilyLabel: string;
+  initWorkspaceTitle: string;
+  initWorkspaceButtonLabel: string;
+  initWorkspaceSuccessBanner: string;
+  initDatasourceTitle: string;
+  initDatasourceButtonLabel: string;
+  initDatasourceSuccessBanner: string;
+  humanAnchorErrorBanner: string;
+  initUserTitle: string;
+  initUserButtonLabel: string;
+  initUserSuccessBanner: string;
+  observerDeniedBanner: string;
+  humanAnchorCardLabels: {
+    badgeTitle: string;
+    authorLabel: string;
+    sectionTitle: string;
+    placeholderText: string;
+    signatureLabel: string;
+    signaturePlaceholder: string;
+    submitLabel: string;
+  };
+}

@@ -40,7 +40,7 @@ development_status:
   1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi: review
   1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db: review
   1-4-exécution-passthrough-service-principal-permission-broker-ia: review
-  1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto: in-progress
+  1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto: review
   epic-1-retrospective: optional
 
   epic-2: backlog

@@ -103,6 +103,27 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
       "ERR_CONFUSED_DEPUTY_BLOCKED",
     );
 
+    // Story 1.5: Verify Day-0 System Bootstrap Workflows, Autonomous Team Onboarding & Human-Led Anchor Card (UX-DR3, FR-28)
+    await expect(page.getByTestId("bootstrap-onboarding-panel")).toBeVisible();
+    const anchorCard = page.getByTestId("human-led-anchor-card");
+    await expect(anchorCard).toBeVisible();
+    await expect(anchorCard).toHaveAttribute("data-human-authored-required", "true");
+
+    await page.getByTestId("simulate-single-llm-family-btn").click();
+    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText(
+      "ERR_MODEL_ORTHOGONALITY_VIOLATION",
+    );
+    await page.getByTestId("simulate-dual-llm-family-btn").click();
+
+    await page.getByTestId("execute-init-workspace-btn").click();
+    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText("HTTP 200 OK");
+
+    await page.getByTestId("execute-init-datasource-btn").click();
+    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText("HTTP 200 OK");
+
+    await page.getByTestId("execute-init-user-btn").click();
+    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText("AES-256-GCM");
+
     // Mobile Companion tab bar is rendered and interactive
     await expect(page.getByTestId("mobile-companion-tabbar")).toBeVisible();
   });

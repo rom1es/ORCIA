@@ -129,6 +129,84 @@ export interface components {
       org_unit_name?: string;
       role?: string;
     };
+    InitDatasourceRequest: {
+      alias: string;
+      cql_filter?: string | null;
+      execution_identity?: "passthrough" | "service_principal";
+      freshness_ttl_days: number;
+      human_anchor_author_id?: string | null;
+      human_anchor_justification: string;
+      human_anchor_signature: string;
+      jql_filter?: string | null;
+      permission_broker_markdown: string;
+      role: string;
+      scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      uri: string;
+      visibility_scope?: "SHARED_WORKSPACE" | "SHARED_TEAM";
+      workspace_id: string;
+    };
+    InitDatasourceResponse: {
+      catalog_item: components["schemas"]["CatalogItemResponse"];
+      datasource: components["schemas"]["WorkspaceDatasourceItem"];
+      policy: components["schemas"]["PermissionBrokerPolicyItem"];
+      run: components["schemas"]["SystemBootstrapRunItem"];
+      trace_id: string;
+    };
+    InitOrganizationRequest: {
+      llm_endpoints: (components["schemas"]["LlmModelEndpointItem"])[];
+      local_argon2id_enabled?: boolean;
+      oidc_enabled?: boolean;
+      organization_name: string;
+      rbac_role_mappings?: Record<string, string>;
+    };
+    InitOrganizationResponse: {
+      orthogonal_families: (string)[];
+      run: components["schemas"]["SystemBootstrapRunItem"];
+      trace_id: string;
+    };
+    InitUserPassthroughSecretItem: {
+      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      plaintext_secret: string;
+      target_host: string;
+    };
+    InitUserRequest: {
+      confirmed_human_profile_archetype: string;
+      passthrough_secrets: (components["schemas"]["InitUserPassthroughSecretItem"])[];
+      user_email?: string | null;
+    };
+    InitUserResponse: {
+      credentials: (components["schemas"]["PassthroughSecretMetadataResponse"])[];
+      onboarding_state: components["schemas"]["UserOnboardingStateItem"];
+      run: components["schemas"]["SystemBootstrapRunItem"];
+      trace_id: string;
+    };
+    InitWorkspaceRequest: {
+      invited_members?: (components["schemas"]["MemberInvitationInputItem"])[];
+      parent_org_unit_id: string;
+      subteam_name?: string | null;
+      subteam_slug?: string | null;
+      team_name: string;
+      team_ontology_terms?: (components["schemas"]["OntologyTermInputItem"])[];
+      team_override_scalars?: Record<string, string | number | boolean>;
+      team_slug: string;
+      workspaces: (components["schemas"]["WorkspaceBootstrapInputItem"])[];
+    };
+    InitWorkspaceResponse: {
+      onboarding_states: (components["schemas"]["UserOnboardingStateItem"])[];
+      run: components["schemas"]["SystemBootstrapRunItem"];
+      trace_id: string;
+      workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
+    };
+    LlmModelEndpointItem: {
+      connectivity_verified?: boolean;
+      endpoint_key: string;
+      endpoint_uri: string;
+      id: string;
+      is_active?: boolean;
+      model_family: string;
+      model_name: string;
+      provider_slug: string;
+    };
     LocalLoginRequest: {
       email: string;
       password: string;
@@ -138,9 +216,20 @@ export interface components {
       revoked?: boolean;
       trace_id: string;
     };
+    MemberInvitationInputItem: {
+      display_name: string;
+      email: string;
+      human_profile_archetype: string;
+      role?: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+    };
     OidcLoginRequest: {
       email?: string | null;
       oidc_subject: string;
+    };
+    OntologyTermInputItem: {
+      definition: string;
+      level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
+      term_key: string;
     };
     OrgUnitTreeItem: {
       id: string;
@@ -302,6 +391,38 @@ export interface components {
       scopes: (components["schemas"]["ScopeNode"])[];
       trace_id: string;
     };
+    SystemBootstrapRunItem: {
+      execution_payload: Record<string, unknown>;
+      gate_passed: boolean;
+      gate_report: Record<string, unknown>;
+      id: string;
+      run_key: string;
+      scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      status: "COMPLETED" | "BLOCKED_BY_GATE" | "FAILED";
+      target_org_unit_id?: string | null;
+      target_workspace_id?: string | null;
+      triggered_by_user_id: string;
+      workflow_uri: string;
+    };
+    SystemBootstrapStateResponse: {
+      is_model_orthogonal: boolean;
+      llm_endpoints: (components["schemas"]["LlmModelEndpointItem"])[];
+      onboarding_states: (components["schemas"]["UserOnboardingStateItem"])[];
+      orthogonal_families: (string)[];
+      runs: (components["schemas"]["SystemBootstrapRunItem"])[];
+      trace_id: string;
+      workflows: (components["schemas"]["SystemBootstrapWorkflowItem"])[];
+    };
+    SystemBootstrapWorkflowItem: {
+      description: string;
+      deterministic_gate_rules: (string)[];
+      id: string;
+      required_role: string;
+      scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      sha256: string;
+      title: string;
+      uri: string;
+    };
     UserMeResponse: {
       auth_mode: "OIDC" | "LOCAL" | "HYBRID";
       consolidated_finops_usd: number;
@@ -317,6 +438,18 @@ export interface components {
       trace_id: string;
       transverse_groups: (string)[];
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
+    };
+    UserOnboardingStateItem: {
+      assigned_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      human_profile_archetype: string;
+      id: string;
+      init_user_completed: boolean;
+      invited_by_user_id?: string | null;
+      linked_connectors: ("git" | "jira" | "confluence" | "db" | "nexus")[];
+      org_unit_id: string;
+      user_email: string;
+      user_id?: string | null;
+      workspace_ids: (string)[];
     };
     WorkflowDefinitionResponseItem: {
       adaptive_gate_policy: "STRICT" | "STANDARD" | "FAST_TRACK";
@@ -340,6 +473,14 @@ export interface components {
       instructions: string;
       step_key: string;
       title: string;
+    };
+    WorkspaceBootstrapInputItem: {
+      name: string;
+      notification_channel?: string;
+      slug: string;
+      visibility_mode?: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+      workspace_ontology_terms?: (components["schemas"]["OntologyTermInputItem"])[];
+      workspace_override_scalars?: Record<string, string | number | boolean>;
     };
     WorkspaceDatasourceItem: {
       alias: string;
@@ -411,6 +552,41 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["AuthTokenResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/init-datasource": {
+    post: {
+      responses: {
+        200: components["schemas"]["InitDatasourceResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/init-organization": {
+    post: {
+      responses: {
+        200: components["schemas"]["InitOrganizationResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/init-user": {
+    post: {
+      responses: {
+        200: components["schemas"]["InitUserResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/init-workspace": {
+    post: {
+      responses: {
+        200: components["schemas"]["InitWorkspaceResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/state": {
+    get: {
+      responses: {
+        200: components["schemas"]["SystemBootstrapStateResponse"];
       };
     };
   };
@@ -546,9 +722,21 @@ export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveW
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HumanProfileBadge = components["schemas"]["HumanProfileBadge"];
+export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
+export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];
+export type InitOrganizationRequest = components["schemas"]["InitOrganizationRequest"];
+export type InitOrganizationResponse = components["schemas"]["InitOrganizationResponse"];
+export type InitUserPassthroughSecretItem = components["schemas"]["InitUserPassthroughSecretItem"];
+export type InitUserRequest = components["schemas"]["InitUserRequest"];
+export type InitUserResponse = components["schemas"]["InitUserResponse"];
+export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"];
+export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
+export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
+export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
+export type OntologyTermInputItem = components["schemas"]["OntologyTermInputItem"];
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
@@ -568,9 +756,14 @@ export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationChe
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
+export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
+export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
+export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
+export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
 export type WorkflowDefinitionResponseItem = components["schemas"]["WorkflowDefinitionResponseItem"];
 export type WorkflowStepItem = components["schemas"]["WorkflowStepItem"];
+export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];

@@ -138,6 +138,42 @@ export const frDictionary: TranslationDictionary = {
     observerDeniedBanner:
       "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Action Permission Broker refusée en mode Observateur",
   },
+  bootstrapOnboarding: {
+    panelTitle: "Workflows Système d'Amorçage Gouverné Jour 0 & Onboarding Autonome d'Équipe",
+    panelSubtitle:
+      "6 workflows pré-embarqués (orcia://system/bootstrap/*), orthogonalité LLM (>= 2 familles), self-service TEAM_LEAD et Ancre Humaine.",
+    orthogonalityTitle: "Gate Jour 0 (init-organization) — ModelRouterService (>= 2 familles LLM)",
+    orthogonalityPassBadge: "Orthogonalité LLM vérifiée (3 familles : anthropic-claude, mistral-large, openai-gpt)",
+    orthogonalityFailBanner:
+      "HTTP 422 ERR_MODEL_ORTHOGONALITY_VIOLATION — Au moins 2 familles LLM orthogonales sont requises",
+    simulateSingleFamilyLabel: "Tester 1 seule famille LLM (Rejet 422)",
+    simulateDualFamilyLabel: "Valider >= 2 familles LLM orthogonales",
+    initWorkspaceTitle: "Onboarding Autonome d'Équipe & Multi-Workspaces (init-workspace, TEAM_LEAD)",
+    initWorkspaceButtonLabel: "Exécuter init-workspace (Multi-Workspaces)",
+    initWorkspaceSuccessBanner:
+      "HTTP 200 OK — Équipe, 2 Workspaces solutions, surcharges 4 niveaux et invitations créés sans ticket IT",
+    initDatasourceTitle: "Rattachement Gouverné Multi-Sources (init-datasource) & Ancre Humaine",
+    initDatasourceButtonLabel: "Publier la source fédérée (init-datasource)",
+    initDatasourceSuccessBanner:
+      "HTTP 200 OK — Source publiée dans le Catalogue Fédéré avec Ancre Humaine signée et TTL de fraîcheur",
+    humanAnchorErrorBanner:
+      "HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED — Justification humaine (>= 30 car.) et signature obligatoires",
+    initUserTitle: "Onboarding Première Connexion & Liaison Passthrough AES-256-GCM (init-user)",
+    initUserButtonLabel: "Exécuter init-user (Liaison Passthrough)",
+    initUserSuccessBanner:
+      "HTTP 200 OK — Profil Humain confirmé & jetons Passthrough (Git, Jira, Confluence) chiffrés AES-256-GCM",
+    observerDeniedBanner:
+      "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Exécution d'amorçage refusée en mode Observateur",
+    humanAnchorCardLabels: {
+      badgeTitle: "✍️ ANCRAGE HUMAIN OBLIGATOIRE (human_authored_required: true)",
+      authorLabel: "Signataire humain",
+      sectionTitle: "Justification de sécurité & périmètre du connecteur fédéré",
+      placeholderText: "Rédigez la justification humaine obligatoire (>= 30 caractères)...",
+      signatureLabel: "Signature cryptographique / nominative de l'auteur humain",
+      signaturePlaceholder: "Ex: Marc (Tech Lead Checkout)",
+      submitLabel: "Signer l'ancre humaine",
+    },
+  },
   modulePages: {
     cockpit: {
       subtitle: "Espace de co-conception Human-Led, Agent-Accelerated",

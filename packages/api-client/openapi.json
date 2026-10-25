@@ -799,6 +799,555 @@
         "title": "HumanProfileBadge",
         "type": "object"
       },
+      "InitDatasourceRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/init-datasource` (`UX-DR3`, `FR-28`, `AD-16`).",
+        "properties": {
+          "alias": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Alias",
+            "type": "string"
+          },
+          "cql_filter": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cql Filter"
+          },
+          "execution_identity": {
+            "default": "passthrough",
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "freshness_ttl_days": {
+            "maximum": 10000.0,
+            "minimum": -3650.0,
+            "title": "Freshness Ttl Days",
+            "type": "integer"
+          },
+          "human_anchor_author_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Anchor Author Id"
+          },
+          "human_anchor_justification": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Human Anchor Justification",
+            "type": "string"
+          },
+          "human_anchor_signature": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Human Anchor Signature",
+            "type": "string"
+          },
+          "jql_filter": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jql Filter"
+          },
+          "permission_broker_markdown": {
+            "maxLength": 16384,
+            "minLength": 10,
+            "title": "Permission Broker Markdown",
+            "type": "string"
+          },
+          "role": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Role",
+            "type": "string"
+          },
+          "scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus"
+            ],
+            "title": "Scheme",
+            "type": "string"
+          },
+          "uri": {
+            "maxLength": 512,
+            "minLength": 6,
+            "title": "Uri",
+            "type": "string"
+          },
+          "visibility_scope": {
+            "default": "SHARED_WORKSPACE",
+            "enum": [
+              "SHARED_WORKSPACE",
+              "SHARED_TEAM"
+            ],
+            "title": "Visibility Scope",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "alias",
+          "scheme",
+          "uri",
+          "role",
+          "freshness_ttl_days",
+          "permission_broker_markdown",
+          "human_anchor_justification",
+          "human_anchor_signature"
+        ],
+        "title": "InitDatasourceRequest",
+        "type": "object"
+      },
+      "InitDatasourceResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/init-datasource`.",
+        "properties": {
+          "catalog_item": {
+            "$ref": "#/components/schemas/CatalogItemResponse"
+          },
+          "datasource": {
+            "$ref": "#/components/schemas/WorkspaceDatasourceItem"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PermissionBrokerPolicyItem"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SystemBootstrapRunItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "datasource",
+          "policy",
+          "catalog_item",
+          "trace_id"
+        ],
+        "title": "InitDatasourceResponse",
+        "type": "object"
+      },
+      "InitOrganizationRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/init-organization` (`AD-10`, `FR-28`).",
+        "properties": {
+          "llm_endpoints": {
+            "items": {
+              "$ref": "#/components/schemas/LlmModelEndpointItem"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Llm Endpoints",
+            "type": "array"
+          },
+          "local_argon2id_enabled": {
+            "default": true,
+            "title": "Local Argon2Id Enabled",
+            "type": "boolean"
+          },
+          "oidc_enabled": {
+            "default": true,
+            "title": "Oidc Enabled",
+            "type": "boolean"
+          },
+          "organization_name": {
+            "maxLength": 128,
+            "minLength": 2,
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "rbac_role_mappings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Rbac Role Mappings",
+            "type": "object"
+          }
+        },
+        "required": [
+          "organization_name",
+          "llm_endpoints"
+        ],
+        "title": "InitOrganizationRequest",
+        "type": "object"
+      },
+      "InitOrganizationResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/init-organization`.",
+        "properties": {
+          "orthogonal_families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Orthogonal Families",
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SystemBootstrapRunItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "orthogonal_families",
+          "trace_id"
+        ],
+        "title": "InitOrganizationResponse",
+        "type": "object"
+      },
+      "InitUserPassthroughSecretItem": {
+        "additionalProperties": false,
+        "description": "Passthrough secret item inside `InitUserRequest` (`AES-256-GCM`).",
+        "properties": {
+          "connector_scheme": {
+            "enum": [
+              "git",
+              "jira",
+              "confluence",
+              "db",
+              "nexus"
+            ],
+            "title": "Connector Scheme",
+            "type": "string"
+          },
+          "plaintext_secret": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Plaintext Secret",
+            "type": "string"
+          },
+          "target_host": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Target Host",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_scheme",
+          "target_host",
+          "plaintext_secret"
+        ],
+        "title": "InitUserPassthroughSecretItem",
+        "type": "object"
+      },
+      "InitUserRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/init-user` (`NFR-SEC-4`, `FR-28`).",
+        "properties": {
+          "confirmed_human_profile_archetype": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Confirmed Human Profile Archetype",
+            "type": "string"
+          },
+          "passthrough_secrets": {
+            "items": {
+              "$ref": "#/components/schemas/InitUserPassthroughSecretItem"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Passthrough Secrets",
+            "type": "array"
+          },
+          "user_email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Email"
+          }
+        },
+        "required": [
+          "confirmed_human_profile_archetype",
+          "passthrough_secrets"
+        ],
+        "title": "InitUserRequest",
+        "type": "object"
+      },
+      "InitUserResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/init-user`.",
+        "properties": {
+          "credentials": {
+            "items": {
+              "$ref": "#/components/schemas/PassthroughSecretMetadataResponse"
+            },
+            "title": "Credentials",
+            "type": "array"
+          },
+          "onboarding_state": {
+            "$ref": "#/components/schemas/UserOnboardingStateItem"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SystemBootstrapRunItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "onboarding_state",
+          "credentials",
+          "trace_id"
+        ],
+        "title": "InitUserResponse",
+        "type": "object"
+      },
+      "InitWorkspaceRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/init-workspace` (`AD-14`, `FR-28`).",
+        "properties": {
+          "invited_members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberInvitationInputItem"
+            },
+            "maxItems": 50,
+            "title": "Invited Members",
+            "type": "array"
+          },
+          "parent_org_unit_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Parent Org Unit Id",
+            "type": "string"
+          },
+          "subteam_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subteam Name"
+          },
+          "subteam_slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subteam Slug"
+          },
+          "team_name": {
+            "maxLength": 128,
+            "minLength": 2,
+            "title": "Team Name",
+            "type": "string"
+          },
+          "team_ontology_terms": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyTermInputItem"
+            },
+            "maxItems": 20,
+            "title": "Team Ontology Terms",
+            "type": "array"
+          },
+          "team_override_scalars": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Team Override Scalars",
+            "type": "object"
+          },
+          "team_slug": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Team Slug",
+            "type": "string"
+          },
+          "workspaces": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceBootstrapInputItem"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "team_slug",
+          "team_name",
+          "parent_org_unit_id",
+          "workspaces"
+        ],
+        "title": "InitWorkspaceRequest",
+        "type": "object"
+      },
+      "InitWorkspaceResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/init-workspace`.",
+        "properties": {
+          "onboarding_states": {
+            "items": {
+              "$ref": "#/components/schemas/UserOnboardingStateItem"
+            },
+            "title": "Onboarding States",
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SystemBootstrapRunItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspaces": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSummaryItem"
+            },
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run",
+          "workspaces",
+          "onboarding_states",
+          "trace_id"
+        ],
+        "title": "InitWorkspaceResponse",
+        "type": "object"
+      },
+      "LlmModelEndpointItem": {
+        "additionalProperties": false,
+        "description": "Registered LLM model endpoint item (`AD-10`, `FR-28`).",
+        "properties": {
+          "connectivity_verified": {
+            "default": true,
+            "title": "Connectivity Verified",
+            "type": "boolean"
+          },
+          "endpoint_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Endpoint Key",
+            "type": "string"
+          },
+          "endpoint_uri": {
+            "maxLength": 512,
+            "minLength": 8,
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "model_family": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "provider_slug": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Provider Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "endpoint_key",
+          "provider_slug",
+          "model_family",
+          "model_name",
+          "endpoint_uri"
+        ],
+        "title": "LlmModelEndpointItem",
+        "type": "object"
+      },
       "LocalLoginRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/auth/login/local` (Argon2id + optional TOTP MFA).",
@@ -858,6 +1407,51 @@
         "title": "LogoutResponse",
         "type": "object"
       },
+      "MemberInvitationInputItem": {
+        "additionalProperties": false,
+        "description": "Invited team member item inside `InitWorkspaceRequest`.",
+        "properties": {
+          "display_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "human_profile_archetype": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Human Profile Archetype",
+            "type": "string"
+          },
+          "role": {
+            "default": "CONTRIBUTOR",
+            "enum": [
+              "PLATFORM_ADMIN",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "display_name",
+          "human_profile_archetype"
+        ],
+        "title": "MemberInvitationInputItem",
+        "type": "object"
+      },
       "OidcLoginRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/auth/login/oidc` (Enterprise SSO OIDC / OAuth 2.1).",
@@ -886,6 +1480,41 @@
           "oidc_subject"
         ],
         "title": "OidcLoginRequest",
+        "type": "object"
+      },
+      "OntologyTermInputItem": {
+        "additionalProperties": false,
+        "description": "Ontology concept proposed during `init-workspace` (`3_TEAM` / `3_WORKSPACE`).",
+        "properties": {
+          "definition": {
+            "maxLength": 512,
+            "minLength": 3,
+            "title": "Definition",
+            "type": "string"
+          },
+          "level": {
+            "default": "3_WORKSPACE",
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "term_key": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Term Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "term_key",
+          "definition"
+        ],
+        "title": "OntologyTermInputItem",
         "type": "object"
       },
       "OrgUnitTreeItem": {
@@ -2035,6 +2664,239 @@
         "title": "ShellNavigationResponse",
         "type": "object"
       },
+      "SystemBootstrapRunItem": {
+        "additionalProperties": false,
+        "description": "Execution record of a system bootstrap workflow run (`FR-28`).",
+        "properties": {
+          "execution_payload": {
+            "additionalProperties": true,
+            "title": "Execution Payload",
+            "type": "object"
+          },
+          "gate_passed": {
+            "title": "Gate Passed",
+            "type": "boolean"
+          },
+          "gate_report": {
+            "additionalProperties": true,
+            "title": "Gate Report",
+            "type": "object"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "run_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Key",
+            "type": "string"
+          },
+          "scope_level": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "BLOCKED_BY_GATE",
+              "FAILED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_org_unit_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Org Unit Id"
+          },
+          "target_workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Workspace Id"
+          },
+          "triggered_by_user_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Triggered By User Id",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_key",
+          "workflow_uri",
+          "scope_level",
+          "triggered_by_user_id",
+          "status",
+          "gate_passed",
+          "gate_report",
+          "execution_payload"
+        ],
+        "title": "SystemBootstrapRunItem",
+        "type": "object"
+      },
+      "SystemBootstrapStateResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/bootstrap/state`.",
+        "properties": {
+          "is_model_orthogonal": {
+            "title": "Is Model Orthogonal",
+            "type": "boolean"
+          },
+          "llm_endpoints": {
+            "items": {
+              "$ref": "#/components/schemas/LlmModelEndpointItem"
+            },
+            "title": "Llm Endpoints",
+            "type": "array"
+          },
+          "onboarding_states": {
+            "items": {
+              "$ref": "#/components/schemas/UserOnboardingStateItem"
+            },
+            "title": "Onboarding States",
+            "type": "array"
+          },
+          "orthogonal_families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Orthogonal Families",
+            "type": "array"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/SystemBootstrapRunItem"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflows": {
+            "items": {
+              "$ref": "#/components/schemas/SystemBootstrapWorkflowItem"
+            },
+            "title": "Workflows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "workflows",
+          "llm_endpoints",
+          "orthogonal_families",
+          "is_model_orthogonal",
+          "runs",
+          "onboarding_states",
+          "trace_id"
+        ],
+        "title": "SystemBootstrapStateResponse",
+        "type": "object"
+      },
+      "SystemBootstrapWorkflowItem": {
+        "additionalProperties": false,
+        "description": "Pre-embedded `orcia://system/bootstrap/*` workflow definition summary.",
+        "properties": {
+          "description": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "deterministic_gate_rules": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Deterministic Gate Rules",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "required_role": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Required Role",
+            "type": "string"
+          },
+          "scope_level": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "uri",
+          "title",
+          "description",
+          "required_role",
+          "scope_level",
+          "deterministic_gate_rules",
+          "sha256"
+        ],
+        "title": "SystemBootstrapWorkflowItem",
+        "type": "object"
+      },
       "UserMeResponse": {
         "additionalProperties": false,
         "description": "Complete Human Profile, OrgUnit tree, and accessible Workspaces for `GET /api/v1/auth/me`.",
@@ -2141,6 +3003,110 @@
           "trace_id"
         ],
         "title": "UserMeResponse",
+        "type": "object"
+      },
+      "UserOnboardingStateItem": {
+        "additionalProperties": false,
+        "description": "Member onboarding and `init-user` first-login state (`FR-28`).",
+        "properties": {
+          "assigned_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Assigned Role",
+            "type": "string"
+          },
+          "human_profile_archetype": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Human Profile Archetype",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "init_user_completed": {
+            "title": "Init User Completed",
+            "type": "boolean"
+          },
+          "invited_by_user_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited By User Id"
+          },
+          "linked_connectors": {
+            "items": {
+              "enum": [
+                "git",
+                "jira",
+                "confluence",
+                "db",
+                "nexus"
+              ],
+              "type": "string"
+            },
+            "title": "Linked Connectors",
+            "type": "array"
+          },
+          "org_unit_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Org Unit Id",
+            "type": "string"
+          },
+          "user_email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "User Email",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "workspace_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Workspace Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "user_email",
+          "org_unit_id",
+          "human_profile_archetype",
+          "assigned_role",
+          "workspace_ids",
+          "init_user_completed",
+          "linked_connectors"
+        ],
+        "title": "UserOnboardingStateItem",
         "type": "object"
       },
       "WorkflowDefinitionResponseItem": {
@@ -2304,6 +3270,74 @@
           "human_authored_required"
         ],
         "title": "WorkflowStepItem",
+        "type": "object"
+      },
+      "WorkspaceBootstrapInputItem": {
+        "additionalProperties": false,
+        "description": "Solution Workspace creation item inside `InitWorkspaceRequest`.",
+        "properties": {
+          "name": {
+            "maxLength": 128,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "notification_channel": {
+            "default": "#workspace-alerts",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Notification Channel",
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Slug",
+            "type": "string"
+          },
+          "visibility_mode": {
+            "default": "STANDARD",
+            "enum": [
+              "STANDARD",
+              "CONFIDENTIAL_RESTRICTED"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          },
+          "workspace_ontology_terms": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyTermInputItem"
+            },
+            "maxItems": 20,
+            "title": "Workspace Ontology Terms",
+            "type": "array"
+          },
+          "workspace_override_scalars": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Workspace Override Scalars",
+            "type": "object"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ],
+        "title": "WorkspaceBootstrapInputItem",
         "type": "object"
       },
       "WorkspaceDatasourceItem": {
@@ -2964,6 +3998,471 @@
         "summary": "Rotate HttpOnly refresh token and issue a fresh 15-minute access JWT",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/init-datasource": {
+      "post": {
+        "operationId": "execute_init_datasource_api_v1_bootstrap_init_datasource_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitDatasourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitDatasourceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute governed `orcia://system/bootstrap/init-datasource` with Human Anchor",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/init-organization": {
+      "post": {
+        "operationId": "execute_init_organization_api_v1_bootstrap_init_organization_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitOrganizationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute Day-0 governed `orcia://system/bootstrap/init-organization` (`AD-10`)",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/init-user": {
+      "post": {
+        "operationId": "execute_init_user_api_v1_bootstrap_init_user_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute first-login `orcia://system/bootstrap/init-user` Passthrough Vault pairing",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/init-workspace": {
+      "post": {
+        "operationId": "execute_init_workspace_api_v1_bootstrap_init_workspace_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitWorkspaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitWorkspaceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute autonomous `TEAM_LEAD` `orcia://system/bootstrap/init-workspace` (`AD-14`)",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/state": {
+      "get": {
+        "operationId": "get_system_bootstrap_state_api_v1_bootstrap_state_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemBootstrapStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Day-0 System Bootstrap workflows, orthogonal LLM endpoints, runs & onboarding",
+        "tags": [
+          "bootstrap"
         ]
       }
     },

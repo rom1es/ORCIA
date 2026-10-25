@@ -19,6 +19,16 @@ from orcia_core.bootstrap.permission_broker_seeds import (
     PermissionBrokerPolicySeed,
     PermissionBrokerTicketSeed,
 )
+from orcia_core.bootstrap.workflow_bootstrap_seeds import (
+    DEFAULT_LLM_MODEL_ENDPOINT_SEEDS,
+    DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS,
+    DEFAULT_SYSTEM_BOOTSTRAP_WORKFLOW_SEEDS,
+    DEFAULT_USER_ONBOARDING_STATE_SEEDS,
+    LlmModelEndpointSeed,
+    SystemBootstrapRunSeed,
+    SystemBootstrapWorkflowSeed,
+    UserOnboardingStateSeed,
+)
 
 IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
@@ -173,119 +183,78 @@ DEFAULT_WORKSPACE_SEEDS: tuple[WorkspaceSeed, ...] = (
     ),
 )  # fmt: skip
 
+_DS_PREFIX = "0192c4e0-0000-7000-8000-000000000"
 DEFAULT_WORKSPACE_DATASOURCE_SEEDS: tuple[WorkspaceDatasourceSeed, ...] = (
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000301", _WS_PAY, "git-payment-frontend",
-        "git", "git://gitlab.entreprise.io/payments/checkout-web", "code_frontend",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000302", _WS_PAY, "git-payment-api",
-        "git", "git://gitlab.entreprise.io/payments/ledger-api", "code_backend",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000303", _WS_PAY, "git-payment-infra",
-        "git", "git://gitlab.entreprise.io/payments/infra-terraform", "infra_iac",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000304", _WS_PAY, "jira-pay-build",
-        "jira", "jira://jira.entreprise.io/projects/PAYBUILD", "backlog_build",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000305", _WS_PAY, "jira-pay-run",
-        "jira", "jira://jira.entreprise.io/projects/PAYSEC", "incidents_secops",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000306", _WS_PAY, "confluence-pay-product",
-        "confluence", "confluence://wiki.entreprise.io/spaces/PAYPROD", "kb_product",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000307", _WS_PAY, "confluence-pay-adr",
-        "confluence", "confluence://wiki.entreprise.io/spaces/PAYADR", "kb_architecture",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000308", _WS_LOY, "git-loyalty-core",
-        "git", "git://gitlab.entreprise.io/loyalty/rewards-engine", "code_backend",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000309", _WS_LOY, "jira-loyalty-backlog",
-        "jira", "jira://jira.entreprise.io/projects/LOYALTY", "backlog_build",
-    ),
-    WorkspaceDatasourceSeed(
-        "0192c4e0-0000-7000-8000-000000000310", _WS_LOY, "confluence-loyalty-kb",
-        "confluence", "confluence://wiki.entreprise.io/spaces/LOYKB", "kb_product",
-    ),
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}301", _WS_PAY, "git-payment-frontend", "git", "git://gitlab.entreprise.io/payments/checkout-web", "code_frontend"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}302", _WS_PAY, "git-payment-api", "git", "git://gitlab.entreprise.io/payments/ledger-api", "code_backend"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}303", _WS_PAY, "git-payment-infra", "git", "git://gitlab.entreprise.io/payments/infra-terraform", "infra_iac"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}304", _WS_PAY, "jira-pay-build", "jira", "jira://jira.entreprise.io/projects/PAYBUILD", "backlog_build"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}305", _WS_PAY, "jira-pay-run", "jira", "jira://jira.entreprise.io/projects/PAYSEC", "incidents_secops"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}306", _WS_PAY, "confluence-pay-product", "confluence", "confluence://wiki.entreprise.io/spaces/PAYPROD", "kb_product"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}307", _WS_PAY, "confluence-pay-adr", "confluence", "confluence://wiki.entreprise.io/spaces/PAYADR", "kb_architecture"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}308", _WS_LOY, "git-loyalty-core", "git", "git://gitlab.entreprise.io/loyalty/rewards-engine", "code_backend"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}309", _WS_LOY, "jira-loyalty-backlog", "jira", "jira://jira.entreprise.io/projects/LOYALTY", "backlog_build"),  # noqa: E501
+    WorkspaceDatasourceSeed(f"{_DS_PREFIX}310", _WS_LOY, "confluence-loyalty-kb", "confluence", "confluence://wiki.entreprise.io/spaces/LOYKB", "kb_product"),  # noqa: E501
 )  # fmt: skip
 
 ORG_UNITS_UPSERT_SPEC = UpsertSpec("org_units", ("slug",), ("id", "name", "unit_type", "parent_id"))
-
 WORKSPACES_UPSERT_SPEC = UpsertSpec(
-    "workspaces",
-    ("slug",),
+    "workspaces", ("slug",),
     ("id", "name", "owner_org_unit_id", "visibility_mode", "finops_cost_usd"),
-)
-
+)  # fmt: skip
 WORKSPACE_DATASOURCES_UPSERT_SPEC = UpsertSpec(
-    "workspace_datasources",
-    ("workspace_id", "alias"),
+    "workspace_datasources", ("workspace_id", "alias"),
     ("id", "scheme", "uri", "role", "execution_identity", "freshness_ttl_days"),
-)
-
+)  # fmt: skip
 CATALOG_ITEMS_UPSERT_SPEC = UpsertSpec(
     "catalog_items", ("resource_id",),
-    (
-        "id", "uri", "title", "description", "resource_type", "source_format",
-        "version", "sha256", "cas_key", "visibility_scope", "owner_org_unit_id",
-        "owner_workspace_id",
-    ),
+    ("id", "uri", "title", "description", "resource_type", "source_format", "version", "sha256", "cas_key", "visibility_scope", "owner_org_unit_id", "owner_workspace_id"),  # noqa: E501
 )  # fmt: skip
-
 WORKFLOW_DEFINITIONS_UPSERT_SPEC = UpsertSpec(
     "workflow_definitions", ("uri",),
-    (
-        "id", "workspace_id", "version", "source_format",
-        "steps_schema_jsonb", "adaptive_gate_policy", "sha256",
-    ),
+    ("id", "workspace_id", "version", "source_format", "steps_schema_jsonb", "adaptive_gate_policy", "sha256"),  # noqa: E501
 )  # fmt: skip
-
 CUSTOMIZATION_OVERRIDES_UPSERT_SPEC = UpsertSpec(
     "workspace_customization_overrides", ("override_key",),
-    (
-        "id", "org_unit_id", "workspace_id", "user_id",
-        "target_uri", "override_layer", "override_manifest_jsonb", "sha256",
-    ),
+    ("id", "org_unit_id", "workspace_id", "user_id", "target_uri", "override_layer", "override_manifest_jsonb", "sha256"),  # noqa: E501
 )  # fmt: skip
-
 PERMISSION_BROKER_POLICIES_UPSERT_SPEC = UpsertSpec(
     "permission_broker_policies", ("policy_key",),
-    (
-        "id", "uri_pattern", "connector_scheme", "required_role", "approver_team",
-        "request_url_template", "sla_hours", "procedure_markdown", "service_principal_allowed",
-        "approved_by_admin_id", "human_anchor_author_id", "human_anchor_signature",
-        "freshness_ttl_days",
-    ),
+    ("id", "uri_pattern", "connector_scheme", "required_role", "approver_team", "request_url_template", "sla_hours", "procedure_markdown", "service_principal_allowed", "approved_by_admin_id", "human_anchor_author_id", "human_anchor_signature", "freshness_ttl_days"),  # noqa: E501
 )  # fmt: skip
-
 PERMISSION_BROKER_TICKETS_UPSERT_SPEC = UpsertSpec(
     "permission_broker_tickets", ("ticket_key",),
-    (
-        "id", "workspace_id", "requester_user_id", "policy_id", "step_key", "step_number",
-        "step_state", "status", "target_uri", "connector_scheme", "execution_identity",
-        "upstream_http_status", "required_role", "approver_team", "sla_hours",
-        "jira_request_url", "permission_broker_hint", "procedure_markdown",
-    ),
+    ("id", "workspace_id", "requester_user_id", "policy_id", "step_key", "step_number", "step_state", "status", "target_uri", "connector_scheme", "execution_identity", "upstream_http_status", "required_role", "approver_team", "sla_hours", "jira_request_url", "permission_broker_hint", "procedure_markdown"),  # noqa: E501
+)  # fmt: skip
+LLM_MODEL_ENDPOINTS_UPSERT_SPEC = UpsertSpec(
+    "llm_model_endpoints", ("endpoint_key",),
+    ("id", "provider_slug", "model_family", "model_name", "endpoint_uri", "connectivity_verified", "is_active"),  # noqa: E501
+)  # fmt: skip
+SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC = UpsertSpec(
+    "system_bootstrap_runs", ("run_key",),
+    ("id", "workflow_uri", "scope_level", "target_org_unit_id", "target_workspace_id", "triggered_by_user_id", "status", "gate_passed", "gate_report_jsonb", "execution_payload_jsonb"),  # noqa: E501
+)  # fmt: skip
+USER_ONBOARDING_STATES_UPSERT_SPEC = UpsertSpec(
+    "user_onboarding_states", ("user_email",),
+    ("id", "user_id", "invited_by_user_id", "org_unit_id", "human_profile_archetype", "assigned_role", "workspace_ids_jsonb", "init_user_completed", "linked_connectors_jsonb"),  # noqa: E501
 )  # fmt: skip
 
 __all__ = [
     "CATALOG_ITEMS_UPSERT_SPEC", "CONCIERGE_WORKFLOW_URI", "CUSTOMIZATION_OVERRIDES_UPSERT_SPEC",
     "DEFAULT_CATALOG_ITEM_SEEDS", "DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS",
-    "DEFAULT_HUMAN_PROFILE_ARCHETYPES", "DEFAULT_ORG_UNIT_SEEDS",
-    "DEFAULT_PERMISSION_BROKER_POLICY_SEEDS", "DEFAULT_PERMISSION_BROKER_TICKET_SEEDS",
+    "DEFAULT_HUMAN_PROFILE_ARCHETYPES", "DEFAULT_LLM_MODEL_ENDPOINT_SEEDS",
+    "DEFAULT_ORG_UNIT_SEEDS", "DEFAULT_PERMISSION_BROKER_POLICY_SEEDS",
+    "DEFAULT_PERMISSION_BROKER_TICKET_SEEDS", "DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS",
+    "DEFAULT_SYSTEM_BOOTSTRAP_WORKFLOW_SEEDS", "DEFAULT_USER_ONBOARDING_STATE_SEEDS",
     "DEFAULT_WORKFLOW_DEFINITION_SEEDS", "DEFAULT_WORKSPACE_DATASOURCE_SEEDS",
-    "DEFAULT_WORKSPACE_SEEDS", "ORG_UNITS_UPSERT_SPEC", "PERMISSION_BROKER_POLICIES_UPSERT_SPEC",
-    "PERMISSION_BROKER_TICKETS_UPSERT_SPEC", "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",
-    "WORKFLOW_DEFINITIONS_UPSERT_SPEC", "WORKSPACES_UPSERT_SPEC",
-    "WORKSPACE_DATASOURCES_UPSERT_SPEC", "CatalogItemSeed", "CustomizationOverrideSeed",
-    "HumanProfileArchetypeSeed", "OrgUnitSeed", "PermissionBrokerPolicySeed",
-    "PermissionBrokerTicketSeed", "UpsertSpec", "WorkflowDefinitionSeed",
-    "WorkspaceDatasourceSeed", "WorkspaceSeed", "build_postgres_upsert_sql",
+    "DEFAULT_WORKSPACE_SEEDS", "LLM_MODEL_ENDPOINTS_UPSERT_SPEC", "ORG_UNITS_UPSERT_SPEC",
+    "PERMISSION_BROKER_POLICIES_UPSERT_SPEC", "PERMISSION_BROKER_TICKETS_UPSERT_SPEC",
+    "SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC", "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",
+    "USER_ONBOARDING_STATES_UPSERT_SPEC", "WORKFLOW_DEFINITIONS_UPSERT_SPEC",
+    "WORKSPACES_UPSERT_SPEC", "WORKSPACE_DATASOURCES_UPSERT_SPEC", "CatalogItemSeed",
+    "CustomizationOverrideSeed", "HumanProfileArchetypeSeed", "LlmModelEndpointSeed",
+    "OrgUnitSeed", "PermissionBrokerPolicySeed", "PermissionBrokerTicketSeed",
+    "SystemBootstrapRunSeed", "SystemBootstrapWorkflowSeed", "UpsertSpec",
+    "UserOnboardingStateSeed", "WorkflowDefinitionSeed", "WorkspaceDatasourceSeed",
+    "WorkspaceSeed", "build_postgres_upsert_sql",
 ]  # fmt: skip

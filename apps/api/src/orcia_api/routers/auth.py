@@ -266,6 +266,9 @@ async def store_passthrough_credential(
         plaintext_secret=payload.plaintext_secret,
         instance=str(request.url.path),
     )
+    broker_svc = getattr(request.app.state, "permission_broker_service", None)
+    if broker_svc is not None:
+        broker_svc.register_passthrough_credential(record)
     return PassthroughSecretMetadataResponse(
         id=record.id,
         user_id=record.user_id,

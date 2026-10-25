@@ -138,6 +138,42 @@ export const enDictionary: TranslationDictionary = {
     observerDeniedBanner:
       "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Permission Broker action rejected in Observer mode",
   },
+  bootstrapOnboarding: {
+    panelTitle: "Day-0 Governed System Bootstrap Workflows & Autonomous Team Onboarding",
+    panelSubtitle:
+      "6 pre-embedded workflows (orcia://system/bootstrap/*), LLM orthogonality (>= 2 families), TEAM_LEAD self-service, and Human Anchor.",
+    orthogonalityTitle: "Day-0 Gate (init-organization) — ModelRouterService (>= 2 LLM families)",
+    orthogonalityPassBadge: "LLM Orthogonality verified (3 families: anthropic-claude, mistral-large, openai-gpt)",
+    orthogonalityFailBanner:
+      "HTTP 422 ERR_MODEL_ORTHOGONALITY_VIOLATION — At least 2 orthogonal LLM families are required",
+    simulateSingleFamilyLabel: "Test single LLM family (Reject 422)",
+    simulateDualFamilyLabel: "Validate >= 2 orthogonal LLM families",
+    initWorkspaceTitle: "Autonomous Team & Multi-Workspace Onboarding (init-workspace, TEAM_LEAD)",
+    initWorkspaceButtonLabel: "Execute init-workspace (Multi-Workspaces)",
+    initWorkspaceSuccessBanner:
+      "HTTP 200 OK — Team, 2 Solution Workspaces, 4-layer overrides, and invitations created without IT ticket",
+    initDatasourceTitle: "Governed Multi-Source Attachment (init-datasource) & Human Anchor",
+    initDatasourceButtonLabel: "Publish federated datasource (init-datasource)",
+    initDatasourceSuccessBanner:
+      "HTTP 200 OK — Datasource published in Federated Catalog with signed Human Anchor and freshness TTL",
+    humanAnchorErrorBanner:
+      "HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED — Human justification (>= 30 chars) and signature required",
+    initUserTitle: "First-Login Onboarding & AES-256-GCM Passthrough Pairing (init-user)",
+    initUserButtonLabel: "Execute init-user (Passthrough Pairing)",
+    initUserSuccessBanner:
+      "HTTP 200 OK — Human Profile confirmed & Passthrough tokens (Git, Jira, Confluence) encrypted AES-256-GCM",
+    observerDeniedBanner:
+      "HTTP 403 ERR_OBSERVER_MODE_READ_ONLY — Bootstrap workflow execution rejected in Observer mode",
+    humanAnchorCardLabels: {
+      badgeTitle: "✍️ MANDATORY HUMAN ANCHOR (human_authored_required: true)",
+      authorLabel: "Human signer",
+      sectionTitle: "Federated connector security & scope justification",
+      placeholderText: "Enter mandatory human justification (>= 30 characters)...",
+      signatureLabel: "Human author signature",
+      signaturePlaceholder: "e.g. Marc (Checkout Tech Lead)",
+      submitLabel: "Sign human anchor",
+    },
+  },
   modulePages: {
     cockpit: {
       subtitle: "Human-Led, Agent-Accelerated Co-Design Space",

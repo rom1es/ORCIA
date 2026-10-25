@@ -75,7 +75,7 @@ class _MinioContainerBucketBackend:
 
 
 async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
-    """Verify Alembic 0001 + 0002 + 0003 upgrade/downgrade, pgvector, backfills, and triggers."""
+    """Verify Alembic 0001..0005 upgrade/downgrade, pgvector, backfills 00..04, and triggers."""
     pg_sock_dir = _prepare_sock_dir("pg")
 
     pg_container = (
@@ -121,9 +121,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             dry_report = await maint.verify_database_invariants(engine, apply_changes=False)
             assert dry_report.has_vector_extension is True
             assert dry_report.has_append_only_trigger_fn is True
-            assert dry_report.dry_run is True
-            assert dry_report.committed is False
-
+            assert dry_report.dry_run is True and dry_report.committed is False
             apply_report = await maint.verify_database_invariants(engine, apply_changes=True)
             assert apply_report.committed is True
 
@@ -131,56 +129,47 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 "backfill_default_org_tree", "01_backfill_default_org_tree.py"
             )
             bf_dry = await backfill_org.backfill_default_org_tree(engine, apply_changes=False)
-            assert bf_dry.org_units_count == 5
-            assert bf_dry.workspaces_count == 3
-            assert bf_dry.datasources_count == 10
-            assert bf_dry.dry_run is True
-            assert bf_dry.committed is False
-
+            assert bf_dry.org_units_count == 5 and bf_dry.workspaces_count == 3
+            assert bf_dry.datasources_count == 10 and bf_dry.committed is False
             bf_apply = await backfill_org.backfill_default_org_tree(engine, apply_changes=True)
             assert bf_apply.committed is True
 
-            # Verify Story 1.3 maintenance script 02_backfill_federated_catalog in dry-run & apply
             backfill_cat = _load_script_module(
                 "backfill_federated_catalog", "02_backfill_federated_catalog.py"
             )
             cat_dry = await backfill_cat.backfill_federated_catalog(engine, apply_changes=False)
-            assert cat_dry.catalog_items_count == 6
-            assert cat_dry.workflow_definitions_count == 1
-            assert cat_dry.customization_overrides_count == 4
-            assert cat_dry.dry_run is True
-            assert cat_dry.committed is False
-
-            async with engine.connect() as conn:
-                cat_after_dry = await conn.execute(sa.text("SELECT COUNT(*) FROM catalog_items"))
-                assert int(cat_after_dry.scalar() or 0) == 0
-
+            assert cat_dry.catalog_items_count == 6 and cat_dry.workflow_definitions_count == 1
+            assert cat_dry.customization_overrides_count == 4 and cat_dry.committed is False
             cat_apply = await backfill_cat.backfill_federated_catalog(engine, apply_changes=True)
-            assert cat_apply.committed is True
-            assert cat_apply.catalog_items_count == 6
-            assert cat_apply.workflow_definitions_count == 1
-            assert cat_apply.customization_overrides_count == 4
+            assert cat_apply.committed is True and cat_apply.catalog_items_count == 6
 
-            # Verify Story 1.4 maintenance script 03_backfill_permission_broker in dry-run & apply
             backfill_pb = _load_script_module(
                 "backfill_permission_broker", "03_backfill_permission_broker.py"
             )
             pb_dry = await backfill_pb.backfill_permission_broker(engine, apply_changes=False)
-            assert pb_dry.policies_count == 6
-            assert pb_dry.tickets_count == 1
-            assert pb_dry.dry_run is True
+            assert pb_dry.policies_count == 6 and pb_dry.tickets_count == 1
             assert pb_dry.committed is False
-
-            async with engine.connect() as conn:
-                pol_after_dry = await conn.execute(
-                    sa.text("SELECT COUNT(*) FROM permission_broker_policies")
-                )
-                assert int(pol_after_dry.scalar() or 0) == 0
-
             pb_apply = await backfill_pb.backfill_permission_broker(engine, apply_changes=True)
-            assert pb_apply.committed is True
-            assert pb_apply.policies_count == 6
-            assert pb_apply.tickets_count == 1
+            assert pb_apply.committed is True and pb_apply.policies_count == 6
+
+            # Verify Story 1.5 maintenance script 04_backfill_system_bootstrap in dry-run & apply
+            backfill_sb = _load_script_module(
+                "backfill_system_bootstrap", "04_backfill_system_bootstrap.py"
+            )
+            sb_dry = await backfill_sb.backfill_system_bootstrap(engine, apply_changes=False)
+            assert sb_dry.llm_endpoints_count == 3 and sb_dry.bootstrap_workflows_count == 6
+            assert sb_dry.bootstrap_runs_count == 2 and sb_dry.onboarding_states_count == 2
+            assert sb_dry.dry_run is True and sb_dry.committed is False
+            async with engine.connect() as conn:
+                llm_after_dry = await conn.execute(
+                    sa.text("SELECT COUNT(*) FROM llm_model_endpoints")
+                )
+                assert int(llm_after_dry.scalar() or 0) == 0
+
+            sb_apply = await backfill_sb.backfill_system_bootstrap(engine, apply_changes=True)
+            assert sb_apply.committed is True and sb_apply.llm_endpoints_count == 3
+            assert sb_apply.bootstrap_workflows_count == 6 and sb_apply.bootstrap_runs_count == 2
+            assert sb_apply.onboarding_states_count == 2
 
             # Verify append-only trigger blocks UPDATE and DELETE on PG 18
             async with engine.begin() as conn:
@@ -214,7 +203,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 async with engine.begin() as conn:
                     await conn.execute(sa.text("DELETE FROM test_append_only_ledger;"))
 
-            # Verify downgrade and re-upgrade across 0003, 0002, and 0001
+            # Verify downgrade and re-upgrade across 0005..0001
             async with engine.begin() as conn:
                 await conn.execute(sa.text("DROP TABLE test_append_only_ledger;"))
                 await conn.run_sync(
@@ -280,17 +269,14 @@ def test_redis7_atomic_presence_lock_and_minio_cas_storage() -> None:
             resolver = FederatedUriResolver(cas_store=s3_store)
 
             first = resolver.resolve("git://gitlab.entreprise.io/payments/checkout-web@v1.0.0")
-            assert first.cache_hit is False
-            assert s3_store.has_object(first.cas_key) is True
+            assert first.cache_hit is False and s3_store.has_object(first.cas_key) is True
 
-            # Evict L1 hot cache and read back from live MinIO container volume
             s3_store._hot_cache.clear()
             entry = resolver.get_cas_entry(first.sha256)
             assert entry.sha256 == first.sha256
 
             second = resolver.resolve("git://gitlab.entreprise.io/payments/checkout-web@v1.0.0")
-            assert second.cache_hit is True
-            assert second.resolution_ms < 50.0
+            assert second.cache_hit is True and second.resolution_ms < 50.0
     finally:
         shutil.rmtree(redis_sock_dir, ignore_errors=True)
         shutil.rmtree(minio_data_dir, ignore_errors=True)

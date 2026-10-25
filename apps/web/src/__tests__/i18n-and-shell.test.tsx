@@ -191,5 +191,20 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(screen.getByTestId("permission-broker-action-banner").textContent).toContain(
       "ERR_CONFUSED_DEPUTY_BLOCKED",
     );
+
+    // Story 1.5: Verify BootstrapOnboardingPanel, LLM orthogonality gate & Human-Led Anchor Card (#6D28D9)
+    expect(screen.getByTestId("bootstrap-onboarding-panel")).toBeDefined();
+    expect(screen.getByTestId("human-led-anchor-card").getAttribute("data-human-authored-required")).toBe("true");
+    fireEvent.click(screen.getByTestId("simulate-single-llm-family-btn"));
+    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
+      "ERR_MODEL_ORTHOGONALITY_VIOLATION",
+    );
+    fireEvent.click(screen.getByTestId("simulate-dual-llm-family-btn"));
+    fireEvent.click(screen.getByTestId("execute-init-workspace-btn"));
+    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("2 Solution Workspaces");
+    fireEvent.click(screen.getByTestId("execute-init-datasource-btn"));
+    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("signed Human Anchor");
+    fireEvent.click(screen.getByTestId("execute-init-user-btn"));
+    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("AES-256-GCM");
   });
 });

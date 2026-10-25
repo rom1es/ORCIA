@@ -48,11 +48,10 @@ from orcia_core.catalog.override_merger import (
     compute_workflow_sha256,
 )
 from orcia_core.catalog.service import FederatedCatalogService
-from orcia_core.permissions import (
+from orcia_core.permissions.evaluator import MatrixPermissionEvaluator
+from orcia_core.permissions.models import (
     CatalogAclEntry,
     CatalogVisibilityScope,
-    MatrixPermissionEvaluator,
-    build_default_auth_and_org_service,
 )
 
 DOMAIN_NAME: str = "catalog"
@@ -111,7 +110,12 @@ def build_default_federated_catalog_service(
     cas_store: CasObjectStoreProtocol | None = None,
 ) -> FederatedCatalogService:
     """Build the reference Story 1.3 Federated Catalog Service with seeded items & overrides."""
-    active_evaluator = evaluator or build_default_auth_and_org_service().evaluator
+    if evaluator is None:
+        from orcia_core.permissions import build_default_auth_and_org_service
+
+        active_evaluator = build_default_auth_and_org_service().evaluator
+    else:
+        active_evaluator = evaluator
     resolver = FederatedUriResolver(cas_store=cas_store)
 
     items: list[CatalogItemEntity] = []

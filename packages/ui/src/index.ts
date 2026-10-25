@@ -10,6 +10,10 @@ export {
 } from "./primitives/StatusBadge";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export {
+  BootstrapOnboardingPanel,
+  type BootstrapOnboardingPanelProps,
+} from "./shell/BootstrapOnboardingPanel";
+export {
   CatalogExplorerPanel,
   type CatalogExplorerPanelProps,
 } from "./shell/CatalogExplorerPanel";
@@ -30,6 +34,8 @@ export {
 } from "./shell/WorkspaceTopologyPanel";
 export type {
   UiAccessMode,
+  UiBootstrapOnboardingLabels,
+  UiBootstrapWorkflowView,
   UiBrokerConnectorScheme,
   UiBrokerStepState,
   UiBrokerTicketStatus,

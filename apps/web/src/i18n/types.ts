@@ -1,5 +1,6 @@
 import type {
   HumanLedAnchorCardLabels,
+  UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
   UiModuleKey,
   UiPermissionBrokerLabels,
@@ -26,5 +27,6 @@ export interface TranslationDictionary {
   workspaceTopology: UiWorkspaceTopologyLabels;
   catalogExplorer: UiCatalogExplorerLabels;
   permissionBroker: UiPermissionBrokerLabels;
+  bootstrapOnboarding: UiBootstrapOnboardingLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

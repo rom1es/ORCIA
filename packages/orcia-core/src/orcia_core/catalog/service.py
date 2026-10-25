@@ -83,6 +83,17 @@ class FederatedCatalogService:
             raise ResourceNotFoundError(instance=instance)
         return item
 
+    def upsert_catalog_item(
+        self, item: CatalogItemEntity, acl: CatalogAclEntry
+    ) -> CatalogItemEntity:
+        self._items_by_id[item.resource_id] = item
+        self.evaluator.upsert_catalog_acl(acl)
+        if item.content_payload:
+            self.resolver.register_upstream_payload(
+                item.uri, item.content_payload, resolved_version=item.version, prewarm_cas=False
+            )
+        return item
+
     def list_catalog_items(
         self,
         user: UserIdentity,
@@ -206,10 +217,7 @@ class FederatedCatalogService:
         instance: str | None = None,
     ) -> EffectiveWorkflowMergeResult:
         """Merge 4 layers (`Base -> Team -> Workspace -> User`) and generate `run-lock.json`."""
-        ws_by_key = {ws.id: ws for ws in self.evaluator.workspaces} | {
-            ws.slug: ws for ws in self.evaluator.workspaces
-        }
-        workspace = ws_by_key.get(workspace_id)
+        workspace = self.evaluator.get_workspace(workspace_id)
         if workspace is None:
             raise ResourceNotFoundError(instance=instance)
         if self.evaluator.resolve_workspace_access(user, workspace.id) is None:
@@ -257,31 +265,25 @@ class FederatedCatalogService:
         """Import a BMAD Skill Pack (`SKILL.md` + `customize.toml`) into the Catalog."""
         self._enforce_workspace_or_role_mutation(user, pack_input.workspace_id, instance=instance)
         item, wf_def = BmadSkillPackAdapter.import_pack(pack_input, resolver=self.resolver)
-        self._items_by_id[item.resource_id] = item
         self._workflows_by_uri[wf_def.uri] = wf_def
-        self.evaluator.upsert_catalog_acl(
-            CatalogAclEntry(
-                id=new_uuid7_str(),
-                resource_id=item.resource_id,
-                resource_uri=item.uri,
-                title=item.title,
-                visibility_scope=item.visibility_scope,
-                owner_org_unit_id=item.owner_org_unit_id,
-                owner_workspace_id=item.owner_workspace_id,
-                grantee_transverse_group="architecture-board",
-                can_discover=True,
-                can_execute=True,
-                can_read_source=True,
-                can_edit=True,
-                can_admin=True,
-                system_prompt_secret=pack_input.skill_markdown,
-            )
+        acl = CatalogAclEntry(
+            id=new_uuid7_str(),
+            resource_id=item.resource_id,
+            resource_uri=item.uri,
+            title=item.title,
+            visibility_scope=item.visibility_scope,
+            owner_org_unit_id=item.owner_org_unit_id,
+            owner_workspace_id=item.owner_workspace_id,
+            grantee_transverse_group="architecture-board",
+            can_discover=True,
+            can_execute=True,
+            can_read_source=True,
+            can_edit=True,
+            can_admin=True,
+            system_prompt_secret=pack_input.skill_markdown,
         )
+        self.upsert_catalog_item(item, acl)
         effective, _ = self.evaluator.evaluate_catalog_resource(
-            user,
-            item.resource_id,
-            workspace_id=item.owner_workspace_id,
-            require_read_source=False,
-            instance=instance,
+            user, item.resource_id, workspace_id=item.owner_workspace_id, instance=instance
         )
         return item, wf_def, effective

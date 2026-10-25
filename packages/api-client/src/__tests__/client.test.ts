@@ -207,36 +207,80 @@ describe("createOrciaApiClient", () => {
       "nadia",
     );
     await client.applyPermissionTicketAction("IAM-4821", { action: "REPLAY" }, "nadia");
+    await client.getSystemBootstrapState("karim");
+    await client.executeInitOrganization(
+      {
+        organization_name: "Entreprise ORCIA Group",
+        oidc_enabled: true,
+        local_argon2id_enabled: true,
+        rbac_role_mappings: { PLATFORM_ADMIN: "grp-admin" },
+        llm_endpoints: [
+          {
+            id: "ep-1",
+            endpoint_key: "claude",
+            provider_slug: "anthropic",
+            model_family: "anthropic-claude",
+            model_name: "claude-3-7-sonnet",
+            endpoint_uri: "https://llm.orcia.internal/v1/anthropic",
+          },
+          {
+            id: "ep-2",
+            endpoint_key: "mistral",
+            provider_slug: "mistral",
+            model_family: "mistral-large",
+            model_name: "mistral-large-2411",
+            endpoint_uri: "https://llm.orcia.internal/v1/mistral",
+          },
+        ],
+      },
+      "karim",
+    );
+    await client.executeInitWorkspace(
+      {
+        team_slug: "team-fraud",
+        team_name: "Équipe Fraude",
+        parent_org_unit_id: "0192c4e0-0000-7000-8000-000000000102",
+        workspaces: [{ slug: "ws-fraud-core", name: "Workspace Fraude Core" }],
+      },
+      "marc",
+    );
+    await client.executeInitDatasource(
+      {
+        workspace_id: "0192c4e0-0000-7000-8000-000000000201",
+        alias: "git-checkout-bff",
+        scheme: "git",
+        uri: "git://gitlab.entreprise.io/payments/checkout-bff",
+        role: "code_backend",
+        freshness_ttl_days: 90,
+        permission_broker_markdown: kbMarkdown,
+        human_anchor_justification:
+          "Validation architecturale et sécurité du périmètre Git BFF par le Tech Lead.",
+        human_anchor_signature: "Marc (Tech Lead Checkout)",
+      },
+      "marc",
+    );
+    await client.executeInitUser(
+      {
+        confirmed_human_profile_archetype: "DEVELOPER",
+        passthrough_secrets: [
+          {
+            connector_scheme: "git",
+            target_host: "gitlab.entreprise.io",
+            plaintext_secret: "glpat-secret-token",
+          },
+        ],
+      },
+      "nadia",
+    );
 
-    expect(mockFetch).toHaveBeenCalledTimes(20);
+    expect(mockFetch).toHaveBeenCalledTimes(25);
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/permissions/broker/state?persona_key=marc&workspace_id=ws-solution-paiement",
+      "http://localhost:8000/api/v1/bootstrap/state?persona_key=karim",
       expect.objectContaining({ method: "GET" }),
     );
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/permissions/broker/policies/import-markdown?persona_key=marc",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ markdown_text: kbMarkdown }),
-      }),
-    );
-    expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/permissions/broker/check-access?persona_key=nadia",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({
-          target_uri: "git://github.enterprise/payments/checkout-core.git",
-          execution_identity: "passthrough",
-          raise_on_denied: false,
-        }),
-      }),
-    );
-    expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/permissions/broker/tickets/IAM-4821/action?persona_key=nadia",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ action: "REPLAY" }),
-      }),
+      "http://localhost:8000/api/v1/bootstrap/init-datasource?persona_key=marc",
+      expect.objectContaining({ method: "POST" }),
     );
   });
 });

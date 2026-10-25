@@ -35,13 +35,10 @@ class MatrixPermissionEvaluator:
     """Pure domain evaluator for ORCIA's 3-axis authorization matrix (AD-6, AD-14, FR-21)."""
 
     def __init__(
-        self,
-        *,
-        org_units: tuple[OrgUnitNode, ...],
-        workspaces: tuple[WorkspaceEntity, ...],
+        self, *, org_units: tuple[OrgUnitNode, ...], workspaces: tuple[WorkspaceEntity, ...],
         memberships: tuple[WorkspaceMembershipEntity, ...] = (),
         catalog_acls: tuple[CatalogAclEntry, ...] = (),
-    ) -> None:
+    ) -> None:  # fmt: skip
         self._org_units_by_id: dict[str, OrgUnitNode] = {u.id: u for u in org_units}
         self._workspaces_by_id: dict[str, WorkspaceEntity] = {w.id: w for w in workspaces}
         self._memberships = memberships
@@ -49,35 +46,45 @@ class MatrixPermissionEvaluator:
 
     @property
     def org_units(self) -> tuple[OrgUnitNode, ...]:
-        """Return all registered organizational units."""
         return tuple(self._org_units_by_id.values())
 
     @property
     def workspaces(self) -> tuple[WorkspaceEntity, ...]:
-        """Return all registered workspaces."""
         return tuple(self._workspaces_by_id.values())
 
+    def upsert_org_unit(self, node: OrgUnitNode) -> OrgUnitNode:
+        self._org_units_by_id[node.id] = node
+        return node
+
+    def get_workspace(self, workspace_id_or_slug: str) -> WorkspaceEntity | None:
+        if workspace_id_or_slug in self._workspaces_by_id:
+            return self._workspaces_by_id[workspace_id_or_slug]
+        return next(
+            (w for w in self._workspaces_by_id.values() if w.slug == workspace_id_or_slug), None
+        )
+
+    def upsert_workspace(self, workspace: WorkspaceEntity) -> WorkspaceEntity:
+        self._workspaces_by_id[workspace.id] = workspace
+        return workspace
+
     def get_primary_catalog_acl(self, resource_id: str) -> CatalogAclEntry | None:
-        """Return the primary `CatalogAclEntry` for `resource_id`, or `None` if absent."""
         return next((e for e in self._catalog_acls if e.resource_id == resource_id), None)
 
     def get_catalog_acl_by_uri(self, resource_uri: str) -> CatalogAclEntry | None:
-        """Return the primary `CatalogAclEntry` matching `resource_uri`, or `None` if absent."""
         return next((e for e in self._catalog_acls if e.resource_uri == resource_uri), None)
 
     def upsert_catalog_acl(self, entry: CatalogAclEntry) -> None:
-        """Insert or replace a `CatalogAclEntry` by `id` (or primary `resource_id`)."""
-        filtered = [
-            e for e in self._catalog_acls if e.id != entry.id and e.resource_id != entry.resource_id
-        ]
-        self._catalog_acls = (*filtered, entry)
+        kept = [e for e in self._catalog_acls if e.id != entry.id and e.resource_id != entry.resource_id]  # noqa: E501  # fmt: skip
+        self._catalog_acls = (*kept, entry)
+
+    def upsert_membership(self, mem: WorkspaceMembershipEntity) -> None:
+        kept = [m for m in self._memberships if (m.workspace_id, m.user_id) != (mem.workspace_id, mem.user_id)]  # noqa: E501  # fmt: skip
+        self._memberships = (*kept, mem)
 
     def has_org_unit(self, org_unit_id: str) -> bool:
-        """Return True if `org_unit_id` exists in the organizational tree."""
         return org_unit_id in self._org_units_by_id
 
     def get_ancestor_org_unit_ids(self, org_unit_id: str) -> set[str]:
-        """Return all strict ancestor `org_unit.id` values above `org_unit_id`."""
         ancestors: set[str] = set()
         current = self._org_units_by_id.get(org_unit_id)
         while current is not None and current.parent_id is not None:
@@ -88,7 +95,6 @@ class MatrixPermissionEvaluator:
         return ancestors
 
     def get_descendant_org_unit_ids(self, org_unit_id: str) -> set[str]:
-        """Return all strict descendant `org_unit.id` values below `org_unit_id`."""
         descendants: set[str] = set()
         frontier = [org_unit_id]
         while frontier:
@@ -100,14 +106,12 @@ class MatrixPermissionEvaluator:
         return descendants
 
     def is_ancestor_of(self, candidate_ancestor_id: str, target_org_unit_id: str) -> bool:
-        """Return True if `candidate_ancestor_id` is a strict ancestor of `target_org_unit_id`."""
         return candidate_ancestor_id in self.get_ancestor_org_unit_ids(target_org_unit_id)
 
     def resolve_workspace_access(
         self, user: UserIdentity, workspace_id: str
     ) -> WorkspaceAccessSummary | None:
-        """Evaluate a user's access to a single Workspace (Direct, Partner Invite, or Roll-up)."""
-        workspace = self._workspaces_by_id.get(workspace_id)
+        workspace = self.get_workspace(workspace_id)
         if workspace is None:
             return None
 
@@ -151,14 +155,12 @@ class MatrixPermissionEvaluator:
         return None
 
     def resolve_accessible_workspaces(self, user: UserIdentity) -> list[WorkspaceAccessSummary]:
-        """Return all Workspaces visible to `user` in deterministic order."""
         summaries = (self.resolve_workspace_access(user, ws_id) for ws_id in self._workspaces_by_id)
         return [s for s in summaries if s is not None]
 
     def compute_finops_rollup_usd(
         self, user: UserIdentity, org_unit_id: str | None = None
     ) -> float:
-        """Compute consolidated FinOps cost (USD) across visible Workspaces in scope."""
         allowed_org_units = (
             {org_unit_id, *self.get_descendant_org_unit_ids(org_unit_id)}
             if org_unit_id is not None
@@ -175,10 +177,10 @@ class MatrixPermissionEvaluator:
     def enforce_scope_mutation_guard(
         self, user: UserIdentity, workspace_id: str, *, instance: str | None = None
     ) -> WorkspaceAccessSummary:
-        """Enforce `ScopeAccessGuard`: reject missing access or `READ_ONLY_OBSERVER` mutations."""
-        if workspace_id not in self._workspaces_by_id:
+        ws = self.get_workspace(workspace_id)
+        if ws is None:
             raise ResourceNotFoundError(instance=instance)
-        access = self.resolve_workspace_access(user, workspace_id)
+        access = self.resolve_workspace_access(user, ws.id)
         if access is None:
             raise ScopeAccessDeniedError(instance=instance)
         if access.access_mode == "READ_ONLY_OBSERVER":
@@ -232,15 +234,9 @@ class MatrixPermissionEvaluator:
         )
 
     def evaluate_catalog_resource(
-        self,
-        user: UserIdentity,
-        resource_id: str,
-        *,
-        workspace_id: str | None = None,
-        require_read_source: bool = False,
-        instance: str | None = None,
-    ) -> tuple[EffectiveResourcePermissions, str | None]:
-        """Evaluate the 5 dissociated catalog permissions and black-box `READ_SOURCE` protection."""
+        self, user: UserIdentity, resource_id: str, *,
+        workspace_id: str | None = None, require_read_source: bool = False, instance: str | None = None,  # noqa: E501
+    ) -> tuple[EffectiveResourcePermissions, str | None]:  # fmt: skip
         entries = [e for e in self._catalog_acls if e.resource_id == resource_id]
         if not entries:
             raise ResourceNotFoundError(instance=instance)
@@ -262,10 +258,8 @@ class MatrixPermissionEvaluator:
             raise ScopeAccessDeniedError(instance=instance)
         if require_read_source and not can_read_source:
             raise ReadSourceDeniedError(
-                instance=instance,
-                permission_broker_hint=f"jira://IAM/PERM-READ-SOURCE-{resource_id}",
-            )
-
+                instance=instance, permission_broker_hint=f"jira://IAM/PERM-READ-SOURCE-{resource_id}",
+            )  # fmt: skip
         effective = EffectiveResourcePermissions(
             primary.resource_id, primary.resource_uri, primary.title, primary.visibility_scope,
             can_discover, can_execute, can_read_source, can_edit, can_admin,
@@ -274,21 +268,14 @@ class MatrixPermissionEvaluator:
 
     @staticmethod
     def evaluate_module_permissions(user: UserIdentity) -> dict[str, bool]:
-        """Return the 7 Global Sidebar module enablement flags for `user.platform_role`."""
         return {
-            "cockpit": True,
-            "inbox": True,
-            "catalog": True,
-            "ontology": True,
-            "gates": True,
-            "finops": True,
-            "admin": user.platform_role in ADMIN_MODULE_ALLOWED_ROLES,
-        }
+            "cockpit": True, "inbox": True, "catalog": True, "ontology": True, "gates": True,
+            "finops": True, "admin": user.platform_role in ADMIN_MODULE_ALLOWED_ROLES,
+        }  # fmt: skip
 
     @classmethod
     def enforce_module_access(
         cls, user: UserIdentity, module_key: str, *, instance: str | None = None
     ) -> None:
-        """Raise `ScopeAccessDeniedError` (`HTTP 403`) if `user` cannot access `module_key`."""
         if not cls.evaluate_module_permissions(user).get(module_key, False):
             raise ScopeAccessDeniedError(instance=instance)

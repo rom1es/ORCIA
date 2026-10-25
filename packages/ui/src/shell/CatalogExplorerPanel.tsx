@@ -11,23 +11,26 @@ import type {
 } from "./types";
 
 const PROMOTION_ORDER: UiCatalogVisibilityScope[] = [
-  "DRAFT",
-  "SHARED_WORKSPACE",
-  "SHARED_TEAM",
-  "SHARED_BU",
-  "PENDING_APPROVAL",
-  "PUBLISHED_ORG",
+  "DRAFT", "SHARED_WORKSPACE", "SHARED_TEAM", "SHARED_BU", "PENDING_APPROVAL", "PUBLISHED_ORG",
 ];
 
 const SCHEMES: Array<UiFederatedScheme | "ALL"> = [
-  "ALL",
-  "git",
-  "nexus",
-  "db",
-  "confluence",
-  "jira",
-  "orcia",
+  "ALL", "git", "nexus", "db", "confluence", "jira", "orcia",
 ];
+
+const itemCardStyle: React.CSSProperties = {
+  border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)",
+  padding: "12px", backgroundColor: "var(--color-surface-bg)",
+  display: "flex", flexDirection: "column", gap: "8px",
+};
+
+const monoBannerStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)", fontSize: "var(--font-size-mono)",
+};
+
+const rowWrapStyle: React.CSSProperties = {
+  display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px",
+};
 
 export interface CatalogExplorerPanelProps {
   activePersona: UiPersonaKey;
@@ -75,22 +78,19 @@ export function CatalogExplorerPanel({
       (activePersona === "claire" && nextScope !== "PUBLISHED_ORG") ||
       (nextScope === "PUBLISHED_ORG" && activePersona !== "karim" && activePersona !== "claire");
     if (isObserverBlocked) {
-      setPromotionBanner((prev) => ({
-        ...prev,
-        [item.resourceId]: labels.promoteDeniedObserverBanner,
-      }));
+      setPromotionBanner((p) => ({ ...p, [item.resourceId]: labels.promoteDeniedObserverBanner }));
       return;
     }
-    setPromotedScopes((prev) => ({ ...prev, [item.resourceId]: nextScope }));
-    setPromotionBanner((prev) => ({
-      ...prev,
+    setPromotedScopes((p) => ({ ...p, [item.resourceId]: nextScope }));
+    setPromotionBanner((p) => ({
+      ...p,
       [item.resourceId]: `${labels.promotedBannerPrefix} : ${currentScope} -> ${nextScope}`,
     }));
   }
 
   function handleResolveCas(item: UiCatalogExplorerItemView) {
-    setCasBanner((prev) => ({
-      ...prev,
+    setCasBanner((p) => ({
+      ...p,
       [item.resourceId]: `${labels.casResolvedBannerPrefix} : ${item.casKey} (cache_hit=true, 0.4ms < 50ms)`,
     }));
   }
@@ -99,29 +99,15 @@ export function CatalogExplorerPanel({
     <section
       data-testid="catalog-explorer-panel"
       style={{
-        backgroundColor: "var(--color-surface-card)",
-        border: "1px solid var(--color-border)",
-        borderRadius: "var(--radius-md)",
-        padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
+        backgroundColor: "var(--color-surface-card)", border: "1px solid var(--color-border)",
+        borderRadius: "var(--radius-md)", padding: "16px",
+        display: "flex", flexDirection: "column", gap: "16px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "8px",
-        }}
-      >
+      <div style={rowWrapStyle}>
         <div>
           <h2 style={{ margin: 0, fontSize: "16px" }}>{labels.panelTitle}</h2>
-          <p style={{ margin: "4px 0 0 0", color: "var(--color-muted-foreground)" }}>
-            {labels.panelSubtitle}
-          </p>
+          <p style={{ margin: "4px 0 0 0", color: "var(--color-muted-foreground)" }}>{labels.panelSubtitle}</p>
         </div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           {SCHEMES.map((schemeKey) => {
@@ -133,16 +119,11 @@ export function CatalogExplorerPanel({
                 data-testid={`catalog-scheme-filter-${schemeKey}`}
                 onClick={() => setSelectedScheme(schemeKey)}
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: "var(--radius-sm)",
+                  padding: "4px 10px", borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--color-border)",
-                  backgroundColor: active
-                    ? "var(--color-primary-cobalt)"
-                    : "var(--color-surface-bg)",
+                  backgroundColor: active ? "var(--color-primary-cobalt)" : "var(--color-surface-bg)",
                   color: active ? "var(--color-primary-foreground)" : "var(--color-foreground)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--font-size-mono)",
-                  cursor: "pointer",
+                  ...monoBannerStyle, cursor: "pointer",
                 }}
               >
                 {schemeKey === "ALL" ? labels.filterAllSchemesLabel : `${schemeKey}://`}
@@ -158,28 +139,8 @@ export function CatalogExplorerPanel({
           const nextScope = nextScopeFor(currentScope);
           const canMutateScope = canPromoteItem(item);
           return (
-            <div
-              key={item.resourceId}
-              data-testid={`catalog-item-card-${item.resourceId}`}
-              style={{
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-sm)",
-                padding: "12px",
-                backgroundColor: "var(--color-surface-bg)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                }}
-              >
+            <div key={item.resourceId} data-testid={`catalog-item-card-${item.resourceId}`} style={itemCardStyle}>
+              <div style={rowWrapStyle}>
                 <strong>{item.title}</strong>
                 <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                   <StatusBadge
@@ -203,9 +164,7 @@ export function CatalogExplorerPanel({
                 openSourceLabel={labels.openSourceBadgeLabel}
               />
 
-              <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>
-                {item.description}
-              </p>
+              <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{item.description}</p>
 
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
                 <button
@@ -213,12 +172,10 @@ export function CatalogExplorerPanel({
                   data-testid={`resolve-cas-btn-${item.resourceId}`}
                   onClick={() => handleResolveCas(item)}
                   style={{
-                    padding: "4px 10px",
-                    borderRadius: "var(--radius-sm)",
+                    padding: "4px 10px", borderRadius: "var(--radius-sm)",
                     border: "1px solid var(--color-primary-cobalt)",
                     backgroundColor: "var(--color-surface-card)",
-                    color: "var(--color-primary-cobalt)",
-                    cursor: "pointer",
+                    color: "var(--color-primary-cobalt)", cursor: "pointer",
                   }}
                 >
                   {labels.resolveCasButtonLabel}
@@ -230,8 +187,7 @@ export function CatalogExplorerPanel({
                     disabled={!canMutateScope}
                     onClick={() => handlePromote(item)}
                     style={{
-                      padding: "4px 10px",
-                      borderRadius: "var(--radius-sm)",
+                      padding: "4px 10px", borderRadius: "var(--radius-sm)",
                       border: "1px solid var(--color-gate-emerald)",
                       backgroundColor: "var(--color-gate-emerald-bg)",
                       color: "var(--color-gate-emerald)",
@@ -245,14 +201,7 @@ export function CatalogExplorerPanel({
               </div>
 
               {casBanner[item.resourceId] && (
-                <div
-                  data-testid={`resolve-cas-result-${item.resourceId}`}
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--font-size-mono)",
-                    color: "var(--color-gate-emerald)",
-                  }}
-                >
+                <div data-testid={`resolve-cas-result-${item.resourceId}`} style={{ ...monoBannerStyle, color: "var(--color-gate-emerald)" }}>
                   {casBanner[item.resourceId]}
                 </div>
               )}
@@ -261,8 +210,7 @@ export function CatalogExplorerPanel({
                 <div
                   data-testid={`promote-result-${item.resourceId}`}
                   style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--font-size-mono)",
+                    ...monoBannerStyle,
                     color: promotionBanner[item.resourceId]?.includes("403")
                       ? "var(--color-stale-crimson)"
                       : "var(--color-gate-emerald)",
@@ -278,18 +226,10 @@ export function CatalogExplorerPanel({
 
       <div
         data-testid="four-layer-override-section"
-        style={{
-          borderTop: "1px solid var(--color-border)",
-          paddingTop: "12px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
+        style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}
       >
         <strong>{labels.overrideSectionTitle}</strong>
-        <span style={{ color: "var(--color-muted-foreground)" }}>
-          {labels.overrideSectionSubtitle}
-        </span>
+        <span style={{ color: "var(--color-muted-foreground)" }}>{labels.overrideSectionSubtitle}</span>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <StatusBadge label={labels.overrideLayers.base} tone="neutral" monospace />
           <StatusBadge label={labels.overrideLayers.teamParent} tone="cobalt" monospace />
@@ -300,12 +240,9 @@ export function CatalogExplorerPanel({
         <div
           data-testid="run-lock-manifest-preview"
           style={{
-            padding: "8px 10px",
-            borderRadius: "var(--radius-sm)",
-            backgroundColor: "var(--color-surface-bg)",
-            border: "1px solid var(--color-border)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--font-size-mono)",
+            padding: "8px 10px", borderRadius: "var(--radius-sm)",
+            backgroundColor: "var(--color-surface-bg)", border: "1px solid var(--color-border)",
+            ...monoBannerStyle,
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: "4px" }}>{labels.runLockTitle}</div>
@@ -319,15 +256,7 @@ export function CatalogExplorerPanel({
 
       <div
         data-testid="bmad-adapter-section"
-        style={{
-          borderTop: "1px solid var(--color-border)",
-          paddingTop: "12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "8px",
-        }}
+        style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px", ...rowWrapStyle }}
       >
         <strong>{labels.bmadAdapterTitle}</strong>
         <button
@@ -335,26 +264,16 @@ export function CatalogExplorerPanel({
           data-testid="bmad-import-trigger-btn"
           onClick={() => setBmadImported(true)}
           style={{
-            padding: "4px 10px",
-            borderRadius: "var(--radius-sm)",
+            padding: "4px 10px", borderRadius: "var(--radius-sm)",
             border: "1px solid var(--color-primary-cobalt)",
             backgroundColor: "var(--color-primary-cobalt)",
-            color: "var(--color-primary-foreground)",
-            cursor: "pointer",
+            color: "var(--color-primary-foreground)", cursor: "pointer",
           }}
         >
           {labels.bmadImportButtonLabel}
         </button>
         {bmadImported && (
-          <div
-            data-testid="bmad-import-result"
-            style={{
-              width: "100%",
-              fontFamily: "var(--font-mono)",
-              fontSize: "var(--font-size-mono)",
-              color: "var(--color-gate-emerald)",
-            }}
-          >
+          <div data-testid="bmad-import-result" style={{ width: "100%", ...monoBannerStyle, color: "var(--color-gate-emerald)" }}>
             {labels.bmadImportedBanner}
           </div>
         )}

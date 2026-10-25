@@ -14,12 +14,20 @@ export interface HumanLedAnchorCardProps {
   value: string;
   readOnly?: boolean;
   labels: HumanLedAnchorCardLabels;
+  testId?: string;
+  justificationTestId?: string;
+  signatureLabel?: string;
+  signatureValue?: string;
+  signaturePlaceholder?: string;
+  signatureTestId?: string;
+  hideSubmitButton?: boolean;
   onChange?: (nextValue: string) => void;
+  onSignatureChange?: (nextSignature: string) => void;
   onSignAnchor?: (sectionKey: string, content: string) => void;
 }
 
 /**
- * HumanLedAnchorCard — Exclusive consumer of `--color-human-led-violet` (DESIGN.md, AD-3).
+ * HumanLedAnchorCard — Exclusive consumer of `--color-human-led-violet` (DESIGN.md, AD-3, UX-DR3).
  * Represents a mandatory human-authored section (`human_authored_required: true`).
  * Never renders an AI auto-generation button.
  */
@@ -30,12 +38,20 @@ export function HumanLedAnchorCard({
   value,
   readOnly = false,
   labels,
+  testId,
+  justificationTestId,
+  signatureLabel,
+  signatureValue,
+  signaturePlaceholder,
+  signatureTestId,
+  hideSubmitButton = false,
   onChange,
+  onSignatureChange,
   onSignAnchor,
 }: HumanLedAnchorCardProps) {
   return (
     <section
-      data-testid={`human-anchor-card-${sectionKey}`}
+      data-testid={testId ?? `human-anchor-card-${sectionKey}`}
       data-human-authored-required="true"
       style={{
         backgroundColor: "var(--color-human-led-bg)",
@@ -89,6 +105,7 @@ export function HumanLedAnchorCard({
       </h3>
 
       <textarea
+        data-testid={justificationTestId}
         aria-label={sectionTitle}
         value={value}
         disabled={readOnly}
@@ -107,7 +124,30 @@ export function HumanLedAnchorCard({
         }}
       />
 
-      {!readOnly && (
+      {signatureLabel && (
+        <input
+          type="text"
+          data-testid={signatureTestId}
+          aria-label={signatureLabel}
+          value={signatureValue ?? ""}
+          disabled={readOnly}
+          placeholder={signaturePlaceholder}
+          onChange={(e) => onSignatureChange?.(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "6px 8px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--color-human-led-violet)",
+            backgroundColor: "var(--color-surface-card)",
+            color: "var(--color-foreground)",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--font-size-mono)",
+            boxSizing: "border-box",
+          }}
+        />
+      )}
+
+      {!readOnly && !hideSubmitButton && (
         <div>
           <button
             type="button"
