@@ -1,0 +1,6 @@
+[workflow]
+persistent_facts = [
+  "file:AGENTS.md",
+  "file:docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md",
+  "file:docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md",
+]

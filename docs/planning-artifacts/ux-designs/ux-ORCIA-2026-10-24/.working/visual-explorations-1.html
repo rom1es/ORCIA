@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORCIA — Explorations Visuelles (Layout Spatial & Directions Esthétiques)</title>
+<style>
+  /*
+   * ORCIA Visual Explorations — BMAD UX Creative Tool
+   * Direction A (Cockpit Precision / Dark-Slate & Indigo):
+   *   bg-primary: #0B0F17, bg-surface: #111827, bg-elevated: #1E293B, text: #F8FAFC, muted: #94A3B8
+   *   accent-primary: #6366F1 (Indigo), gate-pass: #10B981, gate-warn: #F59E0B, human-led: #8B5CF6
+   * Direction B (Editorial Studio / Warm Ivory & Terracotta-Amber):
+   *   bg-primary: #FAF8F5, bg-surface: #FFFFFF, bg-subtle: #F3EFEA, text: #1C1917, muted: #57534E
+   *   accent-primary: #C2410C (Terracotta), gate-pass: #15803D, human-led: #7C3AED, ontology: #0369A1
+   * Direction C (Enterprise Adaptive Hybrid / Crisp Neutral & Cobalt):
+   *   bg-rail: #0F172A, bg-chat: #F8FAFC, bg-canvas: #FFFFFF, text: #0F172A, muted: #475569
+   *   accent-primary: #2563EB (Cobalt), gate-pass: #059669, gate-warn: #D97706, human-led: #6D28D9
+   */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background: #090D14;
+    color: #E2E8F0;
+    line-height: 1.5;
+    padding: 24px 32px 64px;
+  }
+  .top-header {
+    max-width: 1480px;
+    margin: 0 auto 28px;
+    border-bottom: 1px solid #1E293B;
+    padding-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .top-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #F8FAFC;
+    letter-spacing: -0.02em;
+  }
+  .top-header p {
+    font-size: 14px;
+    color: #94A3B8;
+    margin-top: 4px;
+  }
+  .nav-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .nav-pill {
+    background: #1E293B;
+    color: #E2E8F0;
+    border: 1px solid #334155;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .nav-pill:hover {
+    background: #334155;
+    border-color: #6366F1;
+  }
+  .section-block {
+    max-width: 1480px;
+    margin: 0 auto 48px;
+  }
+  .direction-meta {
+    background: #111827;
+    border: 1px solid #1E293B;
+    border-radius: 12px;
+    padding: 18px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .direction-meta h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #F8FAFC;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge-code {
+    background: #312E81;
+    color: #C7D2FE;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .direction-meta p {
+    font-size: 13.5px;
+    color: #94A3B8;
+    max-width: 920px;
+    margin-top: 4px;
+  }
+  .swatches {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #0B0F17;
+    border: 1px solid #334155;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: monospace;
+    color: #CBD5E1;
+  }
+  .swatch-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  /* Browser Frame */
+  .browser-frame {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .browser-bar {
+    background: #1E293B;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #334155;
+  }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #EF4444; }
+  .dot.y { background: #F59E0B; }
+  .dot.g { background: #10B981; }
+  .url-bar {
+    background: #0F172A;
+    color: #94A3B8;
+    font-size: 11.5px;
+    font-family: monospace;
+    padding: 4px 12px;
+    border-radius: 6px;
+    flex: 1;
+    max-width: 480px;
+  }
+
+  /* ==========================================================================
+     DIRECTION A : COCKPIT PRECISION (3 COLONNES : RAIL + CHAT + CANVAS, DARK)
+     ========================================================================== */
+  .dir-a {
+    display: grid;
+    grid-template-columns: 280px 1fr 1.25fr;
+    height: 620px;
+    background: #0B0F17;
+    color: #F1F5F9;
+    font-size: 13px;
+  }
+  .dir-a-rail {
+    background: #0F1420;
+    border-right: 1px solid #1E293B;
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    gap: 14px;
+  }
+  .brand-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1E293B;
+  }
+  .brand-logo {
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    font-size: 14px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-logo span {
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+  .role-badge {
+    font-size: 11px;
+    background: rgba(99, 102, 241, 0.15);
+    color: #A5B4FC;
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .rail-section-title {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748B;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .notif-card {
+    background: #161F30;
+    border: 1px solid #26334D;
+    border-left: 3px solid #F59E0B;
+    border-radius: 8px;
+    padding: 9px 10px;
+    margin-bottom: 8px;
+  }
+  .notif-card.active {
+    background: #1E293B;
+    border-color: #6366F1;
+    border-left: 3px solid #6366F1;
+  }
+  .notif-card.claimed {
+    border-left-color: #10B981;
+    opacity: 0.85;
+  }
+  .notif-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+  .tag-type {
+    font-weight: 600;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .tag-tiebreak { background: rgba(245, 158, 11, 0.2); color: #FCD34D; }
+  .tag-gate { background: rgba(139, 92, 246, 0.2); color: #C4B5FD; }
+  .tag-human { background: rgba(56, 189, 248, 0.2); color: #7DD3FC; }
+  .notif-title { font-weight: 600; font-size: 12px; color: #F8FAFC; }
+  .notif-sub { font-size: 11px; color: #94A3B8; margin-top: 2px; display: flex; justify-content: space-between; align-items: center; }
+  .presence-pill {
+    font-size: 10px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34D399;
+    padding: 1px 6px;
+    border-radius: 99px;
+  }
+  .readonly-run {
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: #111827;
+    border: 1px solid #1E293B;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    color: #94A3B8;
+  }
+  .progress-mini {
+    width: 48px;
+    height: 5px;
+    background: #1E293B;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-mini div { height: 100%; background: #38BDF8; }
+
+  /* Dir A Center Chat */
+  .dir-a-chat {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1E293B;
+    background: #0B0F17;
+  }
+  .chat-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid #1E293B;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0F1420;
+  }
+  .chat-header-title { font-weight: 600; font-size: 13.5px; }
+  .onto-pill {
+    font-size: 11px;
+    background: #1E293B;
+    color: #38BDF8;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+  .chat-messages {
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg-ai {
+    background: #111827;
+    border: 1px solid #1E293B;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+  }
+  .msg-ai-header {
+    font-size: 11px;
+    color: #818CF8;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .tiebreak-card {
+    margin-top: 10px;
+    background: #161F30;
+    border: 1px solid #F59E0B;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .tiebreak-title {
+    color: #FCD34D;
+    font-weight: 700;
+    font-size: 11.5px;
+    margin-bottom: 6px;
+  }
+  .option-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .opt-btn {
+    flex: 1;
+    background: #1E293B;
+    border: 1px solid #475569;
+    color: #F8FAFC;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    text-align: left;
+  }
+  .opt-btn.recommended {
+    border-color: #6366F1;
+    background: rgba(99, 102, 241, 0.15);
+  }
+  .msg-user {
+    align-self: flex-end;
+    background: #312E81;
+    color: #EEF2FF;
+    padding: 10px 14px;
+    border-radius: 10px;
+    max-width: 85%;
+    font-size: 12.5px;
+  }
+  .onto-promo-card {
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px dashed #38BDF8;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 11.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chat-input-bar {
+    padding: 12px 16px;
+    border-top: 1px solid #1E293B;
+    background: #0F1420;
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input-mock {
+    flex: 1;
+    background: #161F30;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #64748B;
+    font-size: 12px;
+  }
+
+  /* Dir A Right Canvas */
+  .dir-a-canvas {
+    background: #0F1420;
+    display: flex;
+    flex-direction: column;
+  }
+  .canvas-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid #1E293B;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #111827;
+  }
+  .gate-chain {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 11px;
+  }
+  .gate-chip {
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+  .gate-chip.pass { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); }
+  .gate-chip.active { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid #F59E0B; }
+  .canvas-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .briefing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .briefing-box {
+    background: #161F30;
+    border: 1px solid #26334D;
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+  .briefing-box h4 {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    color: #94A3B8;
+    margin-bottom: 4px;
+  }
+  .briefing-box p { font-size: 11.5px; color: #E2E8F0; }
+  .human-anchor-box {
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid #8B5CF6;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .human-anchor-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #C4B5FD;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .chunk-card {
+    background: #111827;
+    border: 1px solid #26334D;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chunk-actions { display: flex; gap: 6px; }
+  .btn-xs {
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+  }
+  .btn-approve { background: #10B981; color: #052E16; }
+  .btn-challenge { background: #1E293B; color: #F87171; border: 1px solid #EF4444; }
+
+  /* ==========================================================================
+     DIRECTION B : EDITORIAL STUDIO (2 ZONES + TOP COMMAND BAR, WARM LIGHT)
+     ========================================================================== */
+  .dir-b {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    background: #FAF8F5;
+    color: #1C1917;
+    font-size: 13px;
+  }
+  .dir-b-topbar {
+    background: #F3EFEA;
+    border-bottom: 1px solid #E7E0D6;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .dir-b-main {
+    display: grid;
+    grid-template-columns: 42% 58%;
+    flex: 1;
+    overflow: hidden;
+  }
+  .dir-b-chat {
+    border-right: 1px solid #E7E0D6;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #FAF8F5;
+  }
+  .dir-b-canvas {
+    background: #FFFFFF;
+    padding: 22px 28px;
+    overflow-y: auto;
+  }
+  .serif-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1C1917;
+    margin-bottom: 6px;
+  }
+  .dir-b-card {
+    background: #FFFFFF;
+    border: 1px solid #E7E0D6;
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 6px rgba(28, 25, 23, 0.04);
+  }
+  .dir-b-anchor {
+    background: #FDF4FF;
+    border-left: 4px solid #7C3AED;
+    border: 1px solid #E9D5FF;
+    border-left-width: 4px;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+  .dir-b-stale-alert {
+    background: #FFF7ED;
+    border: 1px solid #FDBA74;
+    border-left: 4px solid #C2410C;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+  }
+
+  /* ==========================================================================
+     DIRECTION C : ENTERPRISE ADAPTIVE HYBRID (DARK RAIL + CRISP LIGHT WORKSPACE)
+     ========================================================================== */
+  .dir-c {
+    display: grid;
+    grid-template-columns: 260px 1fr 1.25fr;
+    height: 580px;
+    background: #F8FAFC;
+    color: #0F172A;
+    font-size: 13px;
+  }
+  .dir-c-rail {
+    background: #0F172A;
+    color: #F8FAFC;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .dir-c-chat {
+    background: #F1F5F9;
+    border-right: 1px solid #E2E8F0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .dir-c-canvas {
+    background: #FFFFFF;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .dir-c-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  /* ==========================================================================
+     MOBILE COMPANION VIEW
+     ========================================================================== */
+  .mobile-showcase {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 24px;
+    background: #111827;
+    border-radius: 12px;
+    border: 1px solid #1E293B;
+  }
+  .phone-frame {
+    width: 340px;
+    height: 640px;
+    background: #0B0F17;
+    border: 8px solid #1E293B;
+    border-radius: 36px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  }
+  .phone-notch {
+    height: 22px;
+    background: #0F172A;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    color: #64748B;
+  }
+  .phone-body {
+    flex: 1;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  .phone-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: #111827;
+    border-top: 1px solid #1E293B;
+    padding: 8px;
+    text-align: center;
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  .phone-tabs div.active { color: #818CF8; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="top-header">
+  <div>
+    <h1>🎨 ORCIA — Banc d'Essai Visuel (Agencement Spatial, Directions & Mobile)</h1>
+    <p>Préparé par Sally (UX Designer BMAD) — Comparez les 3 architectures spatiales/esthétiques Desktop + la vue Mobile Companion restreinte.</p>
+  </div>
+  <div class="nav-pills">
+    <a class="nav-pill" href="#dir-a">1. Direction A : Cockpit 3-Colonnes (Dark)</a>
+    <a class="nav-pill" href="#dir-b">2. Direction B : Studio Éditorial 2-Zones (Warm Light)</a>
+    <a class="nav-pill" href="#dir-c">3. Direction C : Hybride Entreprise (Rail Sombre + Surface Claire)</a>
+    <a class="nav-pill" href="#mobile">4. Expérience Mobile Restreinte</a>
+  </div>
+</div>
+
+<!-- =====================================================================
+     DIRECTION A : COCKPIT PRECISION (3 COLONNES)
+     ===================================================================== -->
+<div id="dir-a" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code">Direction A</span> "Cockpit Cognitif 3-Colonnes" (Style Linear / Cursor / Raycast — Dark Slate & Indigo)</h2>
+      <p><strong>Agencement :</strong> <strong>Colonne 1 (Rail Gauche)</strong> = Centre de Notifications (Individuel & Équipe avec verrou de présence) + Liste des Runs en suivi (Contributeur vs Consultation seule). <strong>Colonne 2 (Centre)</strong> = Conversation adaptative avec l'Agent Concierge & Arbitrages Humains. <strong>Colonne 3 (Canvas Droit)</strong> = Briefing de Revue (4 volets), Ancrages Humains Obligatoires & Validation par Découpage.</p>
+    </div>
+    <div class="swatches">
+      <div class="swatch"><span class="swatch-dot" style="background:#0B0F17"></span>#0B0F17</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#6366F1"></span>#6366F1</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#8B5CF6"></span>#8B5CF6</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#10B981"></span>#10B981</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#F59E0B"></span>#F59E0B</div>
+    </div>
+  </div>
+
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="url-bar">https://orcia.internal/runs/run-fx-refund-v1 • Profil : Nadia (Référente Conformité Paiement)</div>
+    </div>
+    <div class="dir-a">
+      <!-- COL 1 : RAIL -->
+      <div class="dir-a-rail">
+        <div class="brand-row">
+          <div class="brand-logo"><span>ORCIA</span> Cockpit</div>
+          <div class="role-badge">Nadia • Conformité</div>
+        </div>
+
+        <div>
+          <div class="rail-section-title">
+            <span>🔔 Actions Requises (Contributeur)</span>
+            <span style="color:#F59E0B">3</span>
+          </div>
+          <div class="notif-card active">
+            <div class="notif-top">
+              <span class="tag-type tag-tiebreak">⚡ Arbitrage IA</span>
+              <span style="color:#94A3B8">Il y a 4m</span>
+            </div>
+            <div class="notif-title">Onboarding FinTech Alpha</div>
+            <div class="notif-sub">
+              <span>Step 2 • Seuil KYC</span>
+              <span class="presence-pill">Pris par vous</span>
+            </div>
+          </div>
+
+          <div class="notif-card">
+            <div class="notif-top">
+              <span class="tag-type tag-human">💬 Challenge Humain</span>
+              <span style="color:#94A3B8">Équipe Conformité</span>
+            </div>
+            <div class="notif-title">Remboursement Multi-Devises</div>
+            <div class="notif-sub">
+              <span>De: Antoine (Arch) & Yanis</span>
+              <span style="color:#6366F1;font-weight:600">Prendre (Claim)</span>
+            </div>
+          </div>
+
+          <div class="notif-card claimed">
+            <div class="notif-top">
+              <span class="tag-type tag-gate">🛡️ Gate Humaine 2.2</span>
+              <span style="color:#94A3B8">Équipe Conformité</span>
+            </div>
+            <div class="notif-title">Audit Trimestriel DSP2</div>
+            <div class="notif-sub">
+              <span>Artefact (4 sections)</span>
+              <span style="color:#34D399">🔒 En cours: Thomas</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="rail-section-title">
+            <span>👁️ En Suivi (Consultation Seule)</span>
+            <span>5</span>
+          </div>
+          <div class="readonly-run">
+            <div>
+              <div style="color:#E2E8F0;font-weight:600">Migration Base Europe</div>
+              <div style="font-size:10.5px">Step 3/5 • Infra (Lecture seule)</div>
+            </div>
+            <div class="progress-mini"><div style="width:60%"></div></div>
+          </div>
+          <div class="readonly-run">
+            <div>
+              <div style="color:#E2E8F0;font-weight:600">Release Gateway v4.2</div>
+              <div style="font-size:10.5px">Gate 2.1 • Sandbox Tests...</div>
+            </div>
+            <div class="progress-mini"><div style="width:80%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 2 : CHAT -->
+      <div class="dir-a-chat">
+        <div class="chat-header">
+          <div>
+            <div class="chat-header-title">Run #108 — Remboursement Multi-Devises (Step 2)</div>
+            <div style="font-size:11px;color:#94A3B8">Mode : <strong>Contributeur</strong> • Version Pinned : <code>sha256:9f8a..31c</code></div>
+          </div>
+          <div class="onto-pill">🧬 Ontologie : BU Paiement (Niv. 2)</div>
+        </div>
+
+        <div class="chat-messages">
+          <div class="msg-ai">
+            <div class="msg-ai-header">
+              <span>🤖 Agent Concierge (Adapté à : Conformité & Métier)</span>
+              <span>09:12</span>
+            </div>
+            Bonjour Nadia. Antoine (Architecte SI) et Yanis (Tech Lead) ont levé une <strong>Alerte d'Obsolescence Documentaire</strong> sur l'API du partenaire bancaire (<code>v3</code> ne supporte plus le blocage de taux FX pendant 48h).
+            <div class="tiebreak-card">
+              <div class="tiebreak-title">⚖️ Arbitrage Humain Requis (Options Équivalentes / Rewind Step 1)</div>
+              <div style="font-size:11.5px;color:#E2E8F0">Aucune règle de la Base de Connaissances ne tranche entre ces deux orientations :</div>
+              <div class="option-row">
+                <div class="opt-btn recommended">
+                  <strong style="color:#A5B4FC">Option A (Recommandé)</strong><br>
+                  Revoir la règle PRD : appliquer le taux spot immédiat (Impact CGV : Clause 4.2 compatible).
+                </div>
+                <div class="opt-btn">
+                  <strong>Option B</strong><br>
+                  Maintenir 48h : générer le cahier des charges partenaire et mettre le Run en pause longue.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg-user">
+            Je valide l'<strong>Option A</strong> pour le lot MVP, la clause 4.2 des CGV couvre bien le taux spot immédiat si le client voit l'estimation.
+          </div>
+
+          <div class="onto-promo-card">
+            <div>
+              <strong style="color:#38BDF8">✨ Nouveau concept Ontologie détecté (Niveau 4 Run) :</strong><br>
+              <code>Remboursement Spot Immédiat</code> →lié à <code>Clause CGV 4.2</code>. Promouvoir au Niveau 3 (Équipe) ?
+            </div>
+            <button class="btn-xs btn-approve">Promouvoir</button>
+          </div>
+        </div>
+
+        <div class="chat-input-bar">
+          <div class="chat-input-mock">Poser une question à l'Agent Concierge, challenger une étape ou invoquer le Permission Broker...</div>
+        </div>
+      </div>
+
+      <!-- COL 3 : CANVAS -->
+      <div class="dir-a-canvas">
+        <div class="canvas-header">
+          <div>
+            <div style="font-weight:700;font-size:13.5px">📄 Artefact : PRD Évolution v1.1 (Revue par Découpage)</div>
+            <div style="font-size:11px;color:#94A3B8">Gabarit : <code>git://orcia/templates/prd-evolution@2.0</code></div>
+          </div>
+          <div class="gate-chain">
+            <span class="gate-chip pass">✓ Gate 1.1 Déterministe</span>
+            <span class="gate-chip pass">✓ Gate 1.2 Agentique (Cross-Model)</span>
+            <span class="gate-chip active">● Gate 1.3 Humaine</span>
+          </div>
+        </div>
+
+        <div class="canvas-body">
+          <!-- 4-Part Briefing -->
+          <div>
+            <div class="rail-section-title"><span>🧠 Briefing de Revue Cognitif (Généré par Agent Évaluateur Claude->Gemini)</span></div>
+            <div class="briefing-grid">
+              <div class="briefing-box">
+                <h4>1. Résumé Exécutif</h4>
+                <p>Ajout du remboursement instantané multi-devises basé sur l'API partenaire FX v3 en taux spot immédiat.</p>
+              </div>
+              <div class="briefing-box">
+                <h4>2. Éléments Clés & Contrôle Transverse</h4>
+                <p>Aligné à 100% avec l'Architecture SI. 0 Pattern Drift détecté.</p>
+              </div>
+              <div class="briefing-box">
+                <h4>3. Décisions Prises</h4>
+                <p>Abandon de la garantie 48h au profit du taux spot (Arbitrage Nadia/Hélène/Antoine).</p>
+              </div>
+              <div class="briefing-box" style="border-color:#F59E0B">
+                <h4 style="color:#FBBF24">4. Hypothèses Retenues (À vérifier)</h4>
+                <p>Hypothèse H-2 : Plafond de remboursement instantané fixé à 2 500 € par opération.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mandatory Human-Led Anchor -->
+          <div class="human-anchor-box">
+            <div class="human-anchor-header">
+              <span>✍️ ANCRAGE HUMAIN OBLIGATOIRE (human_authored_required: true)</span>
+              <span>Rédigé par : Hélène (PM)</span>
+            </div>
+            <div style="font-size:12px;color:#F3E8FF">
+              <strong>Justification & Risque à ne pas faire :</strong> "Ne pas offrir le remboursement instantané multi-devises bloque la signature des marchands transfrontaliers Q4 (perte estimée 420k€ ARR). L'IA n'a pas pré-rempli cette section."
+            </div>
+          </div>
+
+          <!-- Chunked Validation -->
+          <div>
+            <div class="rail-section-title"><span>🧩 Validation par Découpage du Gabarit (3 sections)</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="chunk-card" style="border-color:#10B981">
+                <div>
+                  <div style="font-weight:600;color:#34D399">✓ Section 1 — Périmètre Métier & Parcours Client</div>
+                  <div style="font-size:11px;color:#94A3B8">Validé par Hélène • Conforme à l'Ontologie BU Paiement</div>
+                </div>
+                <span style="font-size:11px;color:#34D399">Approuvé</span>
+              </div>
+
+              <div class="chunk-card" style="border-color:#6366F1;background:#161F30">
+                <div>
+                  <div style="font-weight:600;color:#F8FAFC">Section 2 — Règle de Change FX & Conformité CGV (Modifiée v1.1)</div>
+                  <div style="font-size:11px;color:#CBD5E1">Intègre la révision suite à l'alerte de Yanis sur l'API partenaire v3.</div>
+                </div>
+                <div class="chunk-actions">
+                  <button class="btn-xs btn-challenge">Co-éditer / Challenger</button>
+                  <button class="btn-xs btn-approve">Valider Section 2</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     DIRECTION B : STUDIO ÉDITORIAL (2 ZONES + COMMAND BAR, WARM LIGHT)
+     ===================================================================== -->
+<div id="dir-b" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code" style="background:#7C2D12;color:#FFEDD5">Direction B</span> "Studio Éditorial & Document-First" (Style Claude Artifacts / Notion — Warm Ivory & Terracotta)</h2>
+      <p><strong>Agencement :</strong> <strong>Bandeau supérieur unifié</strong> (Sélecteur de Workflow Run + Tiroir de Notifications `Cmd+K`) + <strong>2 grandes zones épurées</strong> (Conversation à gauche, Document/Artefact grand format à droite). Très chaleureux, pensé pour la lecture longue, la rédaction des <em>Ancrages Humains Obligatoires</em> et les profils Métiers / PM / Architectes.</p>
+    </div>
+    <div class="swatches">
+      <div class="swatch"><span class="swatch-dot" style="background:#FAF8F5"></span>#FAF8F5</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#FFFFFF"></span>#FFFFFF</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#C2410C"></span>#C2410C</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#7C3AED"></span>#7C3AED</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#15803D"></span>#15803D</div>
+    </div>
+  </div>
+
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="url-bar">https://orcia.internal/studio • Profil : Hélène (Product Manager) & Antoine (Architecte SI)</div>
+    </div>
+    <div class="dir-b">
+      <div class="dir-b-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+          <strong style="font-size:15px;color:#1C1917">ORCIA</strong>
+          <span style="background:#FFFFFF;border:1px solid #D6D3D1;padding:4px 12px;border-radius:6px;font-weight:600">
+            📂 Run actif : Évolution Remboursement Multi-Devises (Step 2 : Architecture SI) ▾
+          </span>
+          <span style="background:#FEF3C7;color:#92400E;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600">
+            🔔 3 Actions Requises (Équipe) • 5 Runs en Consultation
+          </span>
+        </div>
+        <div style="font-size:12px;color:#57534E">
+          Profil actif : <strong>Antoine (Architecte SI)</strong> • <code>Cmd+K</code> Changer de Run
+        </div>
+      </div>
+
+      <div class="dir-b-main">
+        <!-- Left Chat -->
+        <div class="dir-b-chat">
+          <div class="dir-b-card">
+            <div style="font-size:11px;color:#C2410C;font-weight:700;margin-bottom:4px">AGENT CONCIERGE (VOCABULAIRE ARCHITECTE SI)</div>
+            Antoine, j'ai analysé le PRD d'Hélène contre la Base de Connaissances SI. La règle de <em>garantie de taux 48h</em> impacte 3 systèmes centraux (Core Banking, Treasury, Ledger). Souhaitez-vous ouvrir une boucle de challenge vers Hélène avant de rédiger votre Dossier d'Architecture ?
+          </div>
+
+          <div class="dir-b-stale-alert">
+            <div style="font-weight:700;color:#9A3412;font-size:12px">⚠️ ALERTE D'OBSOLESCENCE KB (Remontée par Yanis — Tech Lead, Step 3)</div>
+            <p style="font-size:12px;color:#431407;margin-top:4px">
+              Le contrat OpenAPI live du partenaire bancaire (<code>v3</code>) ne correspond plus au document <code>kb://partner-fx-spec-v2.pdf</code> utilisé au Step 1.
+            </p>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button style="background:#C2410C;color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600">Arbitrer avec Hélène (PM) & Yanis</button>
+              <button style="background:#fff;color:#1C1917;border:1px solid #D6D3D1;padding:5px 10px;border-radius:5px;font-size:11px">Mettre à jour la KB</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Editorial Canvas -->
+        <div class="dir-b-canvas">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #E7E0D6;padding-bottom:12px;margin-bottom:16px">
+            <div>
+              <div class="serif-title">Dossier d'Architecture Technique (DAT) — v1.0</div>
+              <div style="font-size:12px;color:#57534E">Ancré sur l'Ontologie Entreprise • Contrôle Transverse PRD v1.1 : <strong style="color:#15803D">✓ Conforme</strong></div>
+            </div>
+            <span style="background:#F3EFEA;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600">Vue Décisionnelle Humaine</span>
+          </div>
+
+          <div class="dir-b-anchor">
+            <div style="font-size:11px;font-weight:700;color:#6D28D9;text-transform:uppercase">✍️ Zone d'Intention Humaine Obligatoire (Maintien du "Think" Architecte)</div>
+            <p style="font-size:12.5px;color:#2E1065;margin-top:4px">
+              <em>Saisi par Antoine :</em> "Pour préserver la Réversibilité Humaine et éviter tout Pattern Drift, nous réutilisons exclusivement le pattern <code>Outbox Transactionnel PostgreSQL</code> existant de la BU Paiement. Aucun nouveau broker de messages ne doit être introduit."
+            </p>
+          </div>
+
+          <div class="dir-b-card" style="margin-top:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>Découpage 1/4 — Analyse d'Impact & Flux Partenaire FX v3</strong>
+              <span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">Validé par Découpage</span>
+            </div>
+            <p style="font-size:12.5px;color:#44403C;margin-top:6px">
+              Intégration synchrone via l'API Gateway interne avec disjoncteur (Circuit Breaker). En cas d'habilitation manquante sur l'environnement Staging, le <strong>Permission Broker</strong> orientera le développeur vers la procédure <code>#IAM-FX-402</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     DIRECTION C : ENTERPRISE ADAPTIVE HYBRID (DARK RAIL + CRISP LIGHT WORKSPACE)
+     ===================================================================== -->
+<div id="dir-c" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code" style="background:#1D4ED8;color:#DBEAFE">Direction C</span> "Hybride Entreprise Haut-Contraste" (Rail Sombre + Chat Gris Perle + Canvas Blanc Pur)</h2>
+      <p><strong>Agencement :</strong> Combine la puissance du <strong>Cockpit 3-colonnes de la Direction A</strong> (rail gauche sombre dédié aux Notifications d'équipe et aux Runs parallèles) avec la <strong>lisibilité documentaire maximale de la Direction B</strong> (Chat et Canvas clairs, avec bascule Dark Mode en 1 clic pour les développeurs).</p>
+    </div>
+    <div class="swatches">
+      <div class="swatch"><span class="swatch-dot" style="background:#0F172A"></span>#0F172A</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#F1F5F9"></span>#F1F5F9</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#FFFFFF"></span>#FFFFFF</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#2563EB"></span>#2563EB</div>
+      <div class="swatch"><span class="swatch-dot" style="background:#059669"></span>#059669</div>
+    </div>
+  </div>
+
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="url-bar">https://orcia.internal/workspace • Profil : Claire (Directrice BU) — Vue FinOps & Réversibilité</div>
+    </div>
+    <div class="dir-c">
+      <div class="dir-c-rail">
+        <div style="font-weight:800;font-size:14px;padding-bottom:10px;border-bottom:1px solid #1E293B">ORCIA Enterprise</div>
+        <div class="rail-section-title" style="color:#94A3B8"><span>🔔 Mes Actions (2)</span></div>
+        <div style="background:#1E293B;border-left:3px solid #3B82F6;padding:8px 10px;border-radius:6px;font-size:12px">
+          <strong>Arbitrage Budget / Gate</strong><br><span style="font-size:11px;color:#94A3B8">Run #108 • Paiement</span>
+        </div>
+        <div class="rail-section-title" style="color:#94A3B8;margin-top:8px"><span>👁️ Runs BU en Consultation (12)</span></div>
+        <div style="background:#1E293B;padding:8px 10px;border-radius:6px;font-size:11.5px;color:#CBD5E1">
+          • Onboarding FinTech Alpha (Step 2)<br>
+          • Audit DSP2 Trimestriel (Gate 2.2)<br>
+          • Migration Base Europe (Step 3)
+        </div>
+      </div>
+
+      <div class="dir-c-chat">
+        <div style="font-weight:700;color:#0F172A;border-bottom:1px solid #CBD5E1;padding-bottom:8px">
+          🤖 Agent Concierge (Adapté à : Directrice BU — Ontologie Niveau 1)
+        </div>
+        <div class="dir-c-card">
+          Bonjour Claire. Voici le bilan de votre BU ce mois-ci : <strong>-28% de coût complet (Setup + Run)</strong> sur les 12 workflows actifs. Attention toutefois : l'équipe <em>Core Ledger</em> présente une alerte de <strong>Rubber-Stamping</strong> (validations humaines en moins de 12s). Je vous recommande de passer leur Gate 2 en politique <code>risk_or_exception_based</code>.
+        </div>
+      </div>
+
+      <div class="dir-c-canvas">
+        <div style="font-weight:700;font-size:15px;color:#0F172A;border-bottom:1px solid #E2E8F0;padding-bottom:8px">
+          📊 Cockpit FinOps (Setup + Run vs TTM) & Indice de Réversibilité Humaine
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="dir-c-card">
+            <div style="font-size:11px;color:#64748B;font-weight:600">OPTIMISATION BUDGÉTAIRE (SM-1)</div>
+            <div style="font-size:20px;font-weight:800;color:#059669;margin-top:4px">-28.4%</div>
+            <div style="font-size:11px;color:#475569">Coût Setup amorti dès le 4e Run</div>
+          </div>
+          <div class="dir-c-card">
+            <div style="font-size:11px;color:#64748B;font-weight:600">RATIO "HUMAN-LED THINK" (SM-C2)</div>
+            <div style="font-size:20px;font-weight:800;color:#2563EB;margin-top:4px">46%</div>
+            <div style="font-size:11px;color:#475569">Cible ≥ 40% (Cadrage vs Relecture)</div>
+          </div>
+          <div class="dir-c-card" style="border-color:#F59E0B;background:#FFFBEB">
+            <div style="font-size:11px;color:#B45309;font-weight:600">ALERTE RUBBER-STAMPING (SM-C1)</div>
+            <div style="font-size:20px;font-weight:800;color:#D97706;margin-top:4px">1 Équipe</div>
+            <div style="font-size:11px;color:#92400E">Ajuster la Politique de Gate</div>
+          </div>
+        </div>
+        <div class="dir-c-card">
+          <strong>Indice de Réversibilité Humaine & Pattern Drift (SM-C3) : 100% Conforme</strong>
+          <p style="font-size:12px;color:#475569;margin-top:4px">Aucun pattern architectural non référencé dans l'Ontologie n'a été introduit sur les 18 dernières PRs générées.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     4. EXPÉRIENCE MOBILE COMPANION RESTREINTE
+     ===================================================================== -->
+<div id="mobile" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code" style="background:#065F46;color:#D1FAE5">Mobile Companion</span> périmètre restreint & sécurisé (Triage Notifications, Briefing, Arbitrage & Consultation)</h2>
+      <p><strong>Philosophie Mobile :</strong> Pas d'édition lourde de workflows ou de code sur téléphone. Le mobile permet de : <strong>(1) Traiter et "Claim" ses notifications</strong>, <strong>(2) Répondre à une question d'Arbitrage IA ou d'un collègue</strong>, <strong>(3) Lire le Briefing de Revue en 4 cartes et valider par découpage</strong> (avec garde-fou anti-Rubber-Stamping), et <strong>(4) Suivre les Runs en Consultation</strong>.</p>
+    </div>
+  </div>
+
+  <div class="mobile-showcase">
+    <!-- Phone 1 : Notifications & Multi-Run Triage -->
+    <div class="phone-frame">
+      <div class="phone-notch">9:41 • ORCIA Mobile (Nadia)</div>
+      <div class="phone-body">
+        <div style="font-weight:700;font-size:14px;color:#F8FAFC">🔔 Boîte de Réception (3 Actions)</div>
+        <div class="notif-card active">
+          <div class="notif-top"><span class="tag-type tag-tiebreak">⚡ Arbitrage IA</span><span>Il y a 4m</span></div>
+          <div class="notif-title">Onboarding FinTech Alpha</div>
+          <div class="notif-sub"><span>Step 2 • Seuil KYC</span><span class="presence-pill">Pris par vous</span></div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-top"><span class="tag-type tag-human">💬 Question Humaine</span><span>Équipe</span></div>
+          <div class="notif-title">Remboursement Multi-Devises</div>
+          <div class="notif-sub"><span>Antoine (Arch) & Yanis</span><span style="color:#818CF8">Prendre</span></div>
+        </div>
+        <div style="font-weight:700;font-size:12px;color:#94A3B8;margin-top:8px">👁️ Suivi en Consultation (5 Runs)</div>
+        <div class="readonly-run">
+          <span>Migration Base Europe (Step 3/5)</span>
+          <span style="color:#38BDF8">60%</span>
+        </div>
+        <div class="readonly-run">
+          <span>Release Gateway v4.2 (Gate 2.1)</span>
+          <span style="color:#34D399">80%</span>
+        </div>
+      </div>
+      <div class="phone-tabs">
+        <div class="active">🔔 Inbox (3)</div>
+        <div>💬 Chat IA</div>
+        <div>📄 Briefing</div>
+      </div>
+    </div>
+
+    <!-- Phone 2 : Briefing & Tie-Break Arbitration -->
+    <div class="phone-frame">
+      <div class="phone-notch">9:42 • Run #108 (Arbitrage & Briefing)</div>
+      <div class="phone-body">
+        <div style="font-size:11px;color:#A5B4FC;font-weight:700">BRIEFING DE REVUE (4 VOLETS)</div>
+        <div class="briefing-box">
+          <h4>Décision & Hypothèse Clé</h4>
+          <p>Passage au taux spot immédiat (API Partenaire v3). Plafond 2 500 €.</p>
+        </div>
+        <div class="tiebreak-card">
+          <div class="tiebreak-title">⚖️ Arbitrage Humain Requis</div>
+          <div style="font-size:11px;color:#E2E8F0;margin-bottom:8px">Choisir l'orientation suite à l'alerte de Yanis :</div>
+          <div class="opt-btn recommended" style="margin-bottom:6px">
+            <strong>✓ Option A :</strong> Adapter la règle PRD au taux spot (compatible CGV 4.2)
+          </div>
+          <div class="opt-btn">
+            <strong>Option B :</strong> Demander évolution API au partenaire (Pause Run)
+          </div>
+        </div>
+        <div style="background:rgba(239,68,68,0.12);border:1px solid #EF4444;border-radius:8px;padding:8px;font-size:10.5px;color:#FCA5A5">
+          🛡️ <strong>Mode Mobile Restreint :</strong> La co-édition complète du Dossier d'Architecture est réservée au Desktop. Vous pouvez trancher l'arbitrage ou commenter une section.
+        </div>
+      </div>
+      <div class="phone-tabs">
+        <div>🔔 Inbox (3)</div>
+        <div class="active">💬 Arbitrage</div>
+        <div>📄 Découpage</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

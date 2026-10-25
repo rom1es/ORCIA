@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ORCIA — Blueprint d'Architecture Système (Winston)</title>
+  <style>
+    :root {
+      --bg-sidebar: #0F172A;
+      --bg-sidebar-hover: #1E293B;
+      --bg-canvas: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --accent-cobalt: #2563EB;
+      --accent-cobalt-light: #EFF6FF;
+      --accent-indigo: #4F46E5;
+      --accent-indigo-light: #EEF2FF;
+      --status-emerald: #059669;
+      --status-emerald-light: #ECFDF5;
+      --status-amber: #D97706;
+      --status-amber-light: #FFFBEB;
+      --status-rose: #E11D48;
+      --status-rose-light: #FFF1F2;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      display: flex;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Sidebar Navigation (Direction C) */
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-sidebar);
+      color: #F8FAFC;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #1E293B;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #1E293B;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3B82F6;
+      box-shadow: 0 0 10px #3B82F6;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.78rem;
+      color: #94A3B8;
+      margin-top: 4px;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 16px 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-section-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748B;
+      padding: 8px 10px 6px;
+      font-weight: 600;
+    }
+
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: #CBD5E1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      background-color: var(--bg-sidebar-hover);
+      color: #FFFFFF;
+    }
+
+    .nav-btn.active {
+      background-color: var(--accent-cobalt);
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    }
+
+    .nav-num {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid #1E293B;
+      font-size: 0.76rem;
+      color: #94A3B8;
+      background: #0B1120;
+    }
+
+    /* Main Content Area */
+    .main {
+      flex: 1;
+      padding: 28px 36px;
+      max-width: 1400px;
+      overflow-y: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .topbar h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .topbar p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      margin-top: 4px;
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+    }
+
+    .pill-cobalt { background: var(--accent-cobalt-light); color: var(--accent-cobalt); border: 1px solid #BFDBFE; }
+    .pill-emerald { background: var(--status-emerald-light); color: var(--status-emerald); border: 1px solid #A7F3D0; }
+    .pill-indigo { background: var(--accent-indigo-light); color: var(--accent-indigo); border: 1px solid #C7D2FE; }
+    .pill-amber { background: var(--status-amber-light); color: var(--status-amber); border: 1px solid #FDE68A; }
+    .pill-rose { background: var(--status-rose-light); color: var(--status-rose); border: 1px solid #FECDD3; }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .arch-box {
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      background: #FFFFFF;
+      position: relative;
+    }
+
+    .arch-box.cobalt { border-color: #93C5FD; background: #F8FAFF; }
+    .arch-box.indigo { border-color: #A5B4FC; background: #F9F9FF; }
+    .arch-box.emerald { border-color: #6EE7B7; background: #F4FDF9; }
+    .arch-box.amber { border-color: #FCD34D; background: #FFFDF5; }
+    .arch-box.slate { border-color: #CBD5E1; background: #F8FAFC; }
+
+    .arch-box h4 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .arch-box p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .code-tag {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      background: #F1F5F9;
+      color: #0F172A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #E2E8F0;
+    }
+
+    .connector-arrow {
+      text-align: center;
+      padding: 8px 0;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent-cobalt);
+      font-weight: 600;
+    }
+
+    /* State Machine Diagram */
+    .state-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .state-row {
+      display: flex;
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    .state-node {
+      flex: 1;
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border-color);
+      background: #FFFFFF;
+    }
+
+    .state-node .state-id {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    /* Sequence Steps */
+    .seq-step {
+      display: flex;
+      gap: 16px;
+      padding: 12px 16px;
+      border-left: 3px solid var(--accent-cobalt);
+      background: #F8FAFC;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 10px;
+      align-items: flex-start;
+    }
+
+    .seq-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent-cobalt);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    th {
+      background: #F1F5F9;
+      font-weight: 700;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 960px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Direction C Left Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-badge">
+        <span class="brand-dot"></span>
+        <span>ORCIA Architecture</span>
+      </div>
+      <div class="sidebar-subtitle">🏗️ Winston — System Architect Blueprint</div>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-section-label">Vues Architecturales</li>
+      <li>
+        <button class="nav-btn active" onclick="switchTab('tab-c4', this)">
+          <span class="nav-num">01</span>
+          <span>C4 Conteneurs & Monorepo</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-btn" onclick="switchTab('tab-durable', this)">
+          <span class="nav-num">02</span>
+          <span>Orchestration Durable & Replay</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-btn" onclick="switchTab('tab-federation', this)">
+          <span class="nav-num">03</span>
+          <span>Catalogue Fédéré & Permission Broker</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-btn" onclick="switchTab('tab-ontology', this)">
+          <span class="nav-num">04</span>
+          <span>Ontologie 4 Niveaux & RAG Hybride</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-btn" onclick="switchTab('tab-gates', this)">
+          <span class="nav-num">05</span>
+          <span>Gates Tri-Modales & Orthogonalité</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-btn" onclick="switchTab('tab-ads', this)">
+          <span class="nav-num">06</span>
+          <span>Registre AD-1..AD-12 & Stack</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div><strong>Paradigme :</strong> Hexagonal + Checkpointed State Machine</div>
+      <div style="margin-top: 4px;"><strong>Statut :</strong> Validé en Coaching (27 FRs)</div>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1>Blueprint d'Architecture Système — ORCIA MVP</h1>
+        <p>Monorepo Hybride TypeScript (Next.js 16) + Python 3.12 (FastAPI / Dramatiq) • PostgreSQL 18 Unifié • Fédération CAS SHA-256</p>
+      </div>
+      <div class="pill-group">
+        <span class="pill pill-cobalt">AD-1..AD-12</span>
+        <span class="pill pill-emerald">FR-1..FR-27 Couverts</span>
+        <span class="pill pill-indigo">OQ-1..OQ-3 Résolus</span>
+      </div>
+    </header>
+
+    <!-- TAB 1: C4 CONTAINERS & MONOREPO -->
+    <section id="tab-c4" class="tab-panel active">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">1. Topologie C4 des Conteneurs & Frontière TypeScript / Python (AD-1)</div>
+          <span class="pill pill-cobalt">Monorepo Hybride : pnpm/Turborepo + uv</span>
+        </div>
+
+        <!-- Layer 1: Presentation -->
+        <div class="arch-box cobalt" style="margin-bottom: 8px;">
+          <h4>
+            <span>Couche Présentation — <code>apps/web</code> (Next.js 16.4 • React 19 • Tailwind v4 • shadcn/ui)</span>
+            <span class="pill pill-cobalt">Desktop-First + Mobile Companion</span>
+          </h4>
+          <p>Implémente la Direction C : Barre latérale Slate (7 modules filtrés par RBAC), Cockpit tri-panneaux, Canvas d'Artefact par sections, et Dock Agent Concierge.</p>
+          <div class="grid-4" style="margin-top: 10px;">
+            <div class="arch-box slate">
+              <h4>Cockpit & Canvas</h4>
+              <p>Ancres Humaines obligatoires, co-édition Markdown, graphe de workflow vivant.</p>
+            </div>
+            <div class="arch-box slate">
+              <h4>Boîte Unifiée (< 500ms)</h4>
+              <p>Triage Personnel/Équipe, badge de présence temps réel, bascule Lecteur vs Contributeur.</p>
+            </div>
+            <div class="arch-box slate">
+              <h4>Composants Cognitifs</h4>
+              <p><code>BriefingCard</code> (4 blocs), <code>ChunkedReviewer</code>, <code>TieBreakMatrixModal</code>.</p>
+            </div>
+            <div class="arch-box slate">
+              <h4>État & Temps Réel</h4>
+              <p><code>TanStack Query v5</code> (cache serveur) + <code>Zustand v5</code> (UI) + Client SSE natif.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector-arrow">
+          ▲ ▼ Contrat Strict <code>packages/api-client</code> (Généré depuis OpenAPI 3.1 via <code>openapi-typescript</code>) + Flux SSE <code>/api/v1/events/stream</code>
+        </div>
+
+        <!-- Layer 2: Python Backend -->
+        <div class="grid-2" style="margin-bottom: 8px;">
+          <div class="arch-box indigo">
+            <h4>
+              <span>API Synchrone & Temps Réel — <code>apps/api</code></span>
+              <span class="code-tag">FastAPI 0.143 + Pydantic v2.14</span>
+            </h4>
+            <p>Gère les requêtes HTTP à faible latence, la sécurité OIDC/RBAC, l'acquisition atomique des verrous de présence (< 500ms) et le multiplexage Server-Sent Events.</p>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+              <span class="code-tag">Middleware RBAC & Mode Guard</span>
+              <span class="code-tag">RFC 9457 Problem Details</span>
+              <span class="code-tag">SSE Redis Pub/Sub Bridge</span>
+            </div>
+          </div>
+
+          <div class="arch-box indigo">
+            <h4>
+              <span>Exécution Asynchrone Durable — <code>apps/worker</code></span>
+              <span class="code-tag">Dramatiq 2.2 + Redis</span>
+            </h4>
+            <p>Exécute hors boucle HTTP les transitions du moteur de workflow, les appels LLM (Exécuteur/Évaluateur), l'indexation documentaire Docling et les Gates déterministes.</p>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+              <span class="code-tag">step_runner_actor</span>
+              <span class="code-tag">gate_pipeline_actor</span>
+              <span class="code-tag">docling_rag_indexer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector-arrow">
+          ▲ ▼ Partage du Noyau Domaine <code>packages/orcia-core</code> (Architecture Hexagonale — 8 Bounded Contexts Python 3.12)
+        </div>
+
+        <!-- Layer 3: Domain Core -->
+        <div class="arch-box emerald" style="margin-bottom: 8px;">
+          <h4>
+            <span>Noyau Domaine & Ports — <code>packages/orcia-core</code></span>
+            <span class="pill pill-emerald">8 Modules Hexagonaux</span>
+          </h4>
+          <div class="grid-4" style="margin-top: 10px;">
+            <div class="arch-box">
+              <h4>1. orchestration</h4>
+              <p>Machine à états, pauses d'arbitrage, Contestation Amont, Rewind/Replay ciblé.</p>
+            </div>
+            <div class="arch-box">
+              <h4>2. blackboard</h4>
+              <p>Snapshots JSONB immuables, validation d'Ancres Humaines, Validation par Découpage.</p>
+            </div>
+            <div class="arch-box">
+              <h4>3. catalog</h4>
+              <p>Connecteurs <code>db://</code>, <code>git://</code>, <code>nexus://</code>, cache CAS SHA-256, <code>run-lock.json</code>.</p>
+            </div>
+            <div class="arch-box">
+              <h4>4. ontology</h4>
+              <p>Graphe 4 niveaux (CTE récursives), extraction temps réel, traduction de Profil Humain.</p>
+            </div>
+            <div class="arch-box">
+              <h4>5. rag</h4>
+              <p>Parsing Docling, recherche hybride RRF (<code>pgvector</code> + BM25), alerte <code>[STALE_WARNING]</code>.</p>
+            </div>
+            <div class="arch-box">
+              <h4>6. gates</h4>
+              <p>Sandbox déterministe (< 5s), Évaluateur orthogonal LiteLLM, Gates humaines adaptatives.</p>
+            </div>
+            <div class="arch-box">
+              <h4>7. permissions</h4>
+              <p>RBAC 5 niveaux, Passthrough vs Service Principal, Permission Broker (KB YAML).</p>
+            </div>
+            <div class="arch-box">
+              <h4>8. audit_finops</h4>
+              <p>Ledger immuable append-only, télémétrie tokens/coûts par étape, coupe-circuit.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector-arrow">
+          ▲ ▼ Adapters d'Infrastructure
+        </div>
+
+        <!-- Layer 4: Infrastructure -->
+        <div class="grid-4">
+          <div class="arch-box amber">
+            <h4>PostgreSQL 18 + pgvector 0.8.7</h4>
+            <p>Stockage relationnel, JSONB Blackboard, CTE Ontologie 4 niveaux, HNSW Vectors + BM25, Audit Ledger.</p>
+          </div>
+          <div class="arch-box amber">
+            <h4>Redis 7.4</h4>
+            <p>Verrous atomiques <code>SET NX</code> (< 500ms), bus Pub/Sub SSE temps réel, et broker de files Dramatiq.</p>
+          </div>
+          <div class="arch-box amber">
+            <h4>MinIO / S3 (CAS SHA-256)</h4>
+            <p>Stockage Content-Addressable immuable (`cas/&lt;sha256&gt;`) des ressources fédérées épinglées et binaires.</p>
+          </div>
+          <div class="arch-box amber">
+            <h4>Sandbox Isolée & LiteLLM</h4>
+            <p>Exécution <code>bwrap --unshare-net</code> / Wasmtime (< 5s, 256MB) + Routeur multi-modèles orthogonal.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DURABLE ORCHESTRATION & REPLAY -->
+    <section id="tab-durable" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">2. Machine à États Durable, Pauses Cognitives & Replay Ciblé (AD-2, AD-3)</div>
+          <span class="pill pill-indigo">Option 2A : Checkpoints PostgreSQL JSONB + Dramatiq</span>
+        </div>
+
+        <div class="state-flow">
+          <div class="state-row">
+            <div class="state-node" style="border-color:#93C5FD; background:#EFF6FF;">
+              <span class="state-id" style="color:#1D4ED8;">1. PENDING_HUMAN_ANCHOR</span>
+              <h4>Saisie Humaine Préalable (FR-2)</h4>
+              <p>Si l'étape possède des sections <code>human_authored_required: true</code>, l'Agent Exécuteur est verrouillé tant que l'humain n'a pas signé ses ancres.</p>
+            </div>
+            <div class="state-node" style="border-color:#A5B4FC; background:#EEF2FF;">
+              <span class="state-id" style="color:#4338CA;">2. EXECUTING_AGENT</span>
+              <h4>Exécution Agentique & RAG</h4>
+              <p>Le worker Dramatiq hydrate le contexte depuis <code>run-lock.json</code>, l'Ontologie active (Niveaux 4→1) et le snapshot <code>N-1</code> du Blackboard.</p>
+            </div>
+            <div class="state-node" style="border-color:#6EE7B7; background:#ECFDF5;">
+              <span class="state-id" style="color:#047857;">3. EVALUATING_GATES</span>
+              <h4>Pipeline des Gates (FR-18..21)</h4>
+              <p>Passage séquentiel : (1) Sandbox Déterministe (&lt; 5s) → (2) Gate Agentique Orthogonale → (3) Gate Humaine Adaptative + Briefing 4 blocs.</p>
+            </div>
+            <div class="state-node" style="border-color:#10B981; background:#D1FAE5;">
+              <span class="state-id" style="color:#065F46;">4. COMMITTED_SNAPSHOT</span>
+              <h4>Checkpoint Immuable</h4>
+              <p>Persistance d'un nouveau <code>blackboard_snapshot</code> (UUIDv7, JSONB, SHA-256) et déverrouillage de l'étape suivante <code>N+1</code>.</p>
+            </div>
+          </div>
+
+          <div class="connector-arrow">▼ États de Suspension Durable (Zéro consommation CPU/Worker pendant la pause — Réveil par événement HTTP/SSE) ▼</div>
+
+          <div class="state-row">
+            <div class="state-node" style="border-color:#FCD34D; background:#FFFBEB;">
+              <span class="state-id" style="color:#B45309;">PAUSE A : WAITING_FOR_HUMAN_ARBITRATION (FR-3)</span>
+              <h4>Arbitrage d'Ambiguïté (Tie-Break)</h4>
+              <p>Déclenché quand l'agent identifie ≥ 2 options équivalentes non tranchées par l'Ontologie ou la KB. Génère une matrice d'options pour l'humain.</p>
+            </div>
+            <div class="state-node" style="border-color:#FDA4AF; background:#FFF1F2;">
+              <span class="state-id" style="color:#BE123C;">PAUSE B : WAITING_FOR_PERMISSION (FR-27)</span>
+              <h4>Blocage d'Habilitation (Permission Broker)</h4>
+              <p>Déclenché sur erreur <code>401/403</code> d'une URI fédérée ou droit <code>EXECUTE</code> manquant. Affiche la procédure IAM exacte et le bouton <em>Rejouer l'étape</em>.</p>
+            </div>
+            <div class="state-node" style="border-color:#C4B5FD; background:#F5F3FF;">
+              <span class="state-id" style="color:#6D28D9;">PAUSE C : WAITING_FOR_UPSTREAM_RESOLUTION (FR-6)</span>
+              <h4>Contestation Amont & Rewind</h4>
+              <p>Un rôle aval (ex. Architecte en Étape 2 ou Tech Lead en Étape 3) conteste un invariant amont ou signale une doc <code>[STALE_WARNING]</code>. Ouvre un arbitrage tripartite.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Mécanisme d'Arbre de Snapshots lors d'un Rewind / Replay Ciblé</div>
+          <span class="pill pill-emerald">Append-Only (Aucune perte d'historique d'audit)</span>
+        </div>
+        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">
+          Lorsqu'une Contestation Amont à l'Étape 3 modifie le PRD (Étape 1) ou rafraîchit une spécification dans la KB, ORCIA ne supprime jamais les anciens snapshots. Il crée une nouvelle branche à partir du snapshot révisé et marque l'ancienne branche comme <code>SUPERSEDED</code> :
+        </p>
+        <div style="font-family:var(--font-mono); font-size:0.8rem; background:#0F172A; color:#E2E8F0; padding:16px; border-radius:8px; overflow-x:auto;">
+          Snapshot #101 (Étape 1: PRD v1) [SUPERSEDED]<br/>
+          &nbsp;&nbsp;└── Snapshot #102 (Étape 2: Archi v1) [SUPERSEDED]<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Snapshot #103 (Étape 3: Pause Contestation Amont / [STALE_WARNING] OpenAPI v2.1)<br/>
+          <br/>
+          <span style="color:#38BDF8;">──► [Arbitrage Tripartite + Mise à jour KB OpenAPI v2.4 + Replay ciblé]</span><br/>
+          <br/>
+          Snapshot #104 (Étape 1: PRD v1.1 amendé, parent=#101) <span style="color:#34D399;">[ACTIVE_HEAD]</span><br/>
+          &nbsp;&nbsp;└── Snapshot #105 (Étape 2: Archi v1.1 re-validée par diff, parent=#104) <span style="color:#34D399;">[ACTIVE_HEAD]</span><br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Snapshot #106 (Étape 3: Plan Tech généré avec OpenAPI v2.4, parent=#105) <span style="color:#34D399;">[ACTIVE_HEAD]</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: FEDERATED CATALOG & PERMISSION BROKER -->
+    <section id="tab-federation" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">3. Résolution d'URI Fédérées (`db://`, `git://`, `nexus://`), Cache CAS & Permission Broker (AD-5, AD-6, OQ-1, OQ-2)</div>
+          <span class="pill pill-amber">Zéro Duplication Sauvage • Reproductibilité SHA-256</span>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">1</div>
+          <div>
+            <h4>Déclaration Pure d'URI dans le Catalogue Fédéré</h4>
+            <p style="font-size:0.84rem; color:var(--text-secondary);">
+              Les Workflows, Agents, Skills et Gabarits référencent leurs dépendances uniquement par URI canonique :
+              <code>git://gitlab.corp/platform/templates/prd.md@v2.1.0</code>,
+              <code>nexus://registry.corp/skills/openapi-linter@1.4.2</code>,
+              <code>db://postgres-prod.corp/sales/schema_v3</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">2</div>
+          <div>
+            <h4>Sélection de l'Identité d'Exécution (Résolution OQ-1)</h4>
+            <p style="font-size:0.84rem; color:var(--text-secondary);">
+              • <strong>Mode Passthrough (Défaut) :</strong> Le connecteur utilise le jeton OIDC délégué (OAuth2 Token Exchange RFC 8693) ou le PAT personnel chiffré AES-256-GCM de l'utilisateur courant. L'agent ne peut jamais voir plus que l'humain.<br/>
+              • <strong>Mode Service Principal (Gouverné) :</strong> Uniquement si l'étape du workflow a été explicitement approuvée par un Admin avec <code>execution_identity: service_principal</code>, le connecteur utilise une identité machine dédiée issue du coffre-fort.
+            </p>
+          </div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">3</div>
+          <div>
+            <h4>Interception par le Permission Broker en cas de 401/403 (Résolution OQ-2)</h4>
+            <p style="font-size:0.84rem; color:var(--text-secondary);">
+              Si le dépôt distant ou le RBAC interne refuse l'accès, le <code>PermissionBrokerService</code> intercepte l'erreur, consulte la <strong>KB d'Habilitations (Markdown + Frontmatter YAML)</strong> par correspondance de motif d'URI (<code>git://gitlab.corp/platform/*</code>), suspend l'étape en <code>WAITING_FOR_PERMISSION</code> et affiche dans le Dock Agent Concierge : le rôle manquant, l'équipe approbatrice, le lien direct de demande d'accès et le bouton <strong>Rejouer l'étape</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">4</div>
+          <div>
+            <h4>Épinglage `run-lock.json` et Stockage Immuable CAS (`cas/&lt;sha256&gt;`)</h4>
+            <p style="font-size:0.84rem; color:var(--text-secondary);">
+              Lorsque l'accès réussit, le contenu résolu est haché en <code>SHA-256</code>, stocké une seule fois dans le bucket S3/MinIO sous <code>cas/&lt;sha256&gt;</code>, et consigné dans <code>run-lock.json</code>. Toutes les étapes suivantes et tous les Replays lisent ce contenu figé, garantissant une reproductibilité parfaite même si le dépôt Git distant est modifié 10 minutes plus tard.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ONTOLOGY & HYBRID RAG -->
+    <section id="tab-ontology" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">4. Ontologie Dynamique à 4 Niveaux & RAG Hybride Versionné (AD-7, AD-8)</div>
+          <span class="pill pill-emerald">PostgreSQL 18 CTE Récursives + pgvector 0.8.7 + BM25</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="arch-box cobalt">
+            <h4>Hiérarchie d'Ontologie à 4 Niveaux (Résolution `4 → 3 → 2 → 1`)</h4>
+            <p>Stockée dans PostgreSQL (`ontology_concepts`, `ontology_relations`, `ontology_axioms`) avec résolution d'héritage en `< 15ms` par CTE récursive :</p>
+            <ul style="font-size:0.82rem; color:var(--text-secondary); padding-left:18px; margin-top:8px;">
+              <li><strong>Niveau 1 — Entreprise :</strong> Vocabulaire canonique global (gouverné par les Enterprise Ontology Stewards).</li>
+              <li><strong>Niveau 2 — Domaine / BU :</strong> Spécialisations métiers (Finance, Supply Chain, R&D).</li>
+              <li><strong>Niveau 3 — Équipe / Workspace :</strong> Termes projet partagés par une équipe.</li>
+              <li><strong>Niveau 4 — Éphémère (Run) :</strong> Termes extraits à la volée pendant le Run courant (isolés jusqu'à promotion gouvernée vers N3/N2/N1).</li>
+            </ul>
+          </div>
+
+          <div class="arch-box emerald">
+            <h4>Les 3 Rôles Actifs du Moteur d'Ontologie</h4>
+            <ul style="font-size:0.82rem; color:var(--text-secondary); padding-left:18px; margin-top:8px;">
+              <li><strong>1. Typage du Blackboard & des Gabarits (FR-14) :</strong> Valide que les entités produites respectent les relations et cardinalités de l'Ontologie.</li>
+              <li><strong>2. Traduction de Profil Humain (FR-15) :</strong> Adapte dynamiquement les explications et le niveau d'abstraction selon le profil (Product, Architecte, Dev, Métier, Auditeur) sans altérer les concepts canoniques.</li>
+              <li><strong>3. Expansion RAG & Axiomes de Gate (FR-16, FR-18) :</strong> Enrichit les requêtes avec les synonymes/alias et vérifie la non-contradiction sémantique aux Gates.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="arch-box slate" style="margin-top: 18px;">
+          <h4>Pipeline RAG Hybride (RRF) & Détection d'Obsolescence `[STALE_WARNING]` (FR-16, FR-17)</h4>
+          <p>
+            1. <strong>Ingestion Docling :</strong> Conversion structurée des documents (PDF, DOCX, Markdown, OpenAPI) en chunks sémantiques.<br/>
+            2. <strong>Double Indexation PostgreSQL :</strong> Vecteurs denses <code>pgvector</code> (HNSW <code>halfvec</code>) + index lexical plein texte <code>tsvector</code> (BM25) combinés par <em>Reciprocal Rank Fusion (RRF)</em> et filtrés par le <code>kb_snapshot_hash</code> de <code>run-lock.json</code>.<br/>
+            3. <strong>Garde-Fou de Fraîcheur :</strong> Si un chunk provient d'une source dont <code>now() - updated_at &gt; freshness_ttl_days</code> ou si un conflit de version est détecté, le moteur attache le badge <code>[STALE_WARNING]</code> visible par l'agent et par l'humain.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: TRI-MODAL GATES -->
+    <section id="tab-gates" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">5. Architecture Tri-Modale des Gates & Orthogonalité des Modèles (AD-9, AD-10, AD-11, OQ-3)</div>
+          <span class="pill pill-rose">Zéro Auto-Validation LLM • Anti-Rubber-Stamping</span>
+        </div>
+
+        <div class="grid-3">
+          <div class="arch-box slate">
+            <h4>Gate 1 : Déterministe (AD-9)</h4>
+            <p><span class="pill pill-cobalt">Budget &lt; 5000ms • 256MB • No-Net</span></p>
+            <p style="margin-top:8px;">Exécutée en sandbox isolée (<code>bwrap --unshare-net</code> / Wasmtime) :</p>
+            <ul style="font-size:0.8rem; color:var(--text-secondary); padding-left:16px;">
+              <li>Validation JSON Schema / YAML / Sections Markdown</li>
+              <li>Présence des signatures <code>human_authored_required</code></li>
+              <li>Vérification des axiomes de l'Ontologie</li>
+              <li>Analyse statique de <em>Pattern Drift</em></li>
+            </ul>
+          </div>
+
+          <div class="arch-box indigo">
+            <h4>Gate 2 : Agentique Orthogonale (AD-10)</h4>
+            <p><span class="pill pill-indigo">Modèle Évaluateur ≠ Modèle Exécuteur</span></p>
+            <p style="margin-top:8px;">Orchestrée par <code>ModelRouterService</code> (LiteLLM) :</p>
+            <ul style="font-size:0.8rem; color:var(--text-secondary); padding-left:16px;">
+              <li>Famille de modèle différente obligatoire</li>
+              <li>Contexte purgé de la <em>Chain-of-Thought</em> de l'exécuteur</li>
+              <li><strong>Contrôle Transverse d'Invariants :</strong> Vérifie l'alignement direct de l'Étape N contre l'Étape 1 (PRD/Archi)</li>
+              <li>Génère le score <code>agentic_score (0..1)</code> et le <strong>Briefing de Revue (4 blocs)</strong></li>
+            </ul>
+          </div>
+
+          <div class="arch-box emerald">
+            <h4>Gate 3 : Humaine Adaptative (AD-11)</h4>
+            <p><span class="pill pill-emerald">Résolution OQ-3 + Découpage</span></p>
+            <p style="margin-top:8px;">3 modes de gouvernance :</p>
+            <ul style="font-size:0.8rem; color:var(--text-secondary); padding-left:16px;">
+              <li><code>mandatory_full</code> : 100% revue humaine (défaut si ancre humaine)</li>
+              <li><code>risk_or_exception_based</code> : Auto-pass si Déterministe=PASS, Score Agentique ≥ <code>0.85</code>, 0 conflit ontologie et 0 <code>[STALE_WARNING]</code></li>
+              <li><code>sampling</code> : Audit humain sur <code>20%</code> des runs conformes</li>
+              <li><strong>Anti-Rubber-Stamping :</strong> Alerte si validation &lt; <code>15s</code> sur artefact &gt; 1000 mots</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: AD REGISTRY & STACK -->
+    <section id="tab-ads" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">6. Synthèse des 12 Décisions Architecturales (`AD-1` à `AD-12`)</div>
+          <span class="pill pill-cobalt">Substrat de Build pour Epics & Stories</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Décision Architecturale</th>
+              <th>Exigences Liées (Binds)</th>
+              <th>Divergence Évitée (Prevents)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>AD-1</code></td>
+              <td>Monorepo Hybride TypeScript (Next.js 16) + Python 3.12 (FastAPI) à contrat OpenAPI 3.1 strict</td>
+              <td><code>all</code></td>
+              <td>Dérive de types entre Front et Back ou écriture manuelle de DTO dupliqués.</td>
+            </tr>
+            <tr>
+              <td><code>AD-2</code></td>
+              <td>Orchestration durable par snapshots JSONB immuables du Blackboard et Replay en arbre</td>
+              <td><code>FR-1, 4, 5, 6, 26</code></td>
+              <td>Perte d'état sur pause longue ou écrasement de l'historique d'audit lors d'un Replay.</td>
+            </tr>
+            <tr>
+              <td><code>AD-3</code></td>
+              <td>Garantie serveur d'Ancrage Humain (`human_authored_required`) et d'Arbitrage Explicite</td>
+              <td><code>FR-2, 3, 5</code></td>
+              <td>Pré-remplissage IA interdit ou choix arbitraire silencieux d'un LLM.</td>
+            </tr>
+            <tr>
+              <td><code>AD-4</code></td>
+              <td>Verrou de présence atomique Redis `SET NX` et diffusion SSE `&lt; 500ms`</td>
+              <td><code>FR-7, 8, 9</code></td>
+              <td>Double traitement d'une tâche d'équipe ou mutation par un `READ_ONLY_OBSERVER`.</td>
+            </tr>
+            <tr>
+              <td><code>AD-5</code></td>
+              <td>Fédération pure d'URI (`db://`, `git://`, `nexus://`) avec cache CAS `SHA-256` et `run-lock.json`</td>
+              <td><code>FR-10, 11, 27</code></td>
+              <td>Non-reproductibilité des Runs suite à la modification d'une ressource externe.</td>
+            </tr>
+            <tr>
+              <td><code>AD-6</code></td>
+              <td>Authentification Passthrough par défaut vs Service Principal gouverné & Permission Broker YAML</td>
+              <td><code>FR-10, 11, 27 (OQ-1/2)</code></td>
+              <td>Élévation de privilèges (*Confused Deputy*) ou blocage opaque sur erreur 401/403.</td>
+            </tr>
+            <tr>
+              <td><code>AD-7</code></td>
+              <td>Modélisation de l'Ontologie à 4 niveaux dans PostgreSQL avec CTE récursives (`4→3→2→1`)</td>
+              <td><code>FR-12, 13, 14, 15</code></td>
+              <td>Complexité opérationnelle d'un SGBD graphe tiers ou pollution de l'ontologie globale.</td>
+            </tr>
+            <tr>
+              <td><code>AD-8</code></td>
+              <td>RAG Hybride (`pgvector` + BM25 RRF) filtré par hash de KB et détection `[STALE_WARNING]`</td>
+              <td><code>FR-16, 17, 6</code></td>
+              <td>Hallucinations sur documents obsolètes ou non-traçabilité des sources RAG.</td>
+            </tr>
+            <tr>
+              <td><code>AD-9</code></td>
+              <td>Sandbox déterministe sans réseau à budget strict (`&lt; 5s`, `256MB`, `bwrap`/Wasmtime)</td>
+              <td><code>FR-18, 20</code></td>
+              <td>Exécution de code non sûr ou blocage des workers par un validateur lent.</td>
+            </tr>
+            <tr>
+              <td><code>AD-10</code></td>
+              <td>Orthogonalité stricte des modèles (`Évaluateur ≠ Exécuteur`) et purge de la CoT</td>
+              <td><code>FR-19, 20, 25</code></td>
+              <td>Auto-validation complaisante par le même modèle et dérive par rapport au PRD Étape 1.</td>
+            </tr>
+            <tr>
+              <td><code>AD-11</code></td>
+              <td>Gates humaines adaptatives (`mandatory`, `risk >= 0.85`, `sampling 20%`) & anti-Rubber-Stamping</td>
+              <td><code>FR-4, 21, 22 (OQ-3)</code></td>
+              <td>Validation mécanique à l'aveugle (`&lt; 15s`) ou goulot d'étranglement humain.</td>
+            </tr>
+            <tr>
+              <td><code>AD-12</code></td>
+              <td>Journal d'audit append-only (`audit_ledger`) et coupe-circuit FinOps par étape</td>
+              <td><code>FR-23, 24</code></td>
+              <td>Dérive de coûts LLM par boucles infinies et défaut de preuve d'audit réglementaire.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

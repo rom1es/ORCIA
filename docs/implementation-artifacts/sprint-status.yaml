@@ -1,0 +1,78 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 10-25-2026 09:10
+last_updated: 10-25-2026 09:10
+project: ORCIA
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs/implementation-artifacts
+development_status:
+  epic-1: backlog
+  1-1-amorçage-du-monorepo-hybride-coquille-ui-direction-c-7-modul: backlog
+  1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi: backlog
+  1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db: backlog
+  1-4-exécution-passthrough-service-principal-permission-broker-ia: backlog
+  1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-modélisation-relationnelle-graphe-de-l-ontologie-à-4-niveaux: backlog
+  2-2-extraction-ontologique-temps-réel-isolée-par-branche-l4-simu: backlog
+  2-3-indexation-différenciée-incrémentale-multi-sources-n-conflue: backlog
+  2-4-graphe-tripartite-multi-sources-confluence-1-n-jira-1-n-git: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: backlog
+  3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: backlog
+  3-3-agent-concierge-dag-5-nœuds-type-n8n-conciergeharness-5-couc: backlog
+  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
+  3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-sandbox-déterministe-isolée-5-s-sans-réseau-détection-de-pat: backlog
+  4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: backlog
+  4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: backlog
+  4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: backlog
+  5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: backlog
+  5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: backlog
+  6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: backlog
+  6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: backlog
+  epic-6-retrospective: optional

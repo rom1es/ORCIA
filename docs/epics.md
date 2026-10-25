@@ -1,0 +1,625 @@
+---
+status: final
+stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
+inputDocuments:
+  - 'docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md'
+  - 'docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md'
+  - 'docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md'
+  - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md'
+  - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md'
+---
+
+# ORCIA - Epic Breakdown
+
+## Overview
+
+This document provides the complete epic and story breakdown for ORCIA, decomposing the requirements from the PRD, UX Design if it exists, and Architecture requirements into implementable stories.
+
+## Requirements Inventory
+
+### Functional Requirements
+
+- **FR-1 (Interface Chat-First + Canvas, Sélecteur de Périmètre Hiérarchique `⌘W`, Menu Global à 7 Modules & Adaptation au Profil Humain)** : Accès par défaut à l'interface hybride *Chat-First + Canvas* où l'*Agent Concierge* adapte dynamiquement son discours, ses indicateurs et sa terminologie au *Profil Humain* connecté (Rôle, BU, Équipe, Habilitations) via l'*Ontologie*, avec en tête de Sidebar un *Sélecteur de Périmètre Hiérarchique (`⌘W` : `🌐 Plateforme Globale [PLATFORM_ADMIN]` $\rightarrow$ `🏢 BU / Tribu [BU_DIRECTOR]` $\rightarrow$ `👥 Équipe / Sous-Équipe [TEAM_LEAD]` $\rightarrow$ `🗂️ Workspace Solution`)* et un *Menu de Navigation Global* filtré par RBAC donnant accès aux 7 modules (*1. Cockpit & Chat*, *2. Boîte & Mes Runs*, *3. Catalogue Fédéré*, *4. Ontologie & KB*, *5. Gates & Habilitations*, *6. FinOps & Audit*, *7. Administration & Pilotage des Workspaces `/workspaces`*).
+- **FR-2 (Centre de Notifications Unifié Individuel/Équipe avec Claim & Présence Temps Réel)** : Boîte de réception unifiée centralisant les notifications personnelles et d'équipe (validation d'artefact à une *Gate Humaine*, *Arbitrage Humain* IA, question/challenge humain, alerte d'habilitation ou d'obsolescence), avec prise en charge atomique (*Claim*) et verrou de présence diffusé en `< 500 ms` via SSE empêchant les validations concurrentes contradictoires.
+- **FR-3 (Supervision Multi-Workflows Dynamique, Centre de Pilotage Unifié Multi-Niveaux des Workspaces à 4 Onglets & Séparation Consultation Seule vs Contributeur)** : Suivi simultané en temps réel de multiples *Workflow Runs* et bascule instantanée (`< 1 s`) selon deux modes stricts déterminés par le *Profil Humain* : *Consultation seule (`READ_ONLY_OBSERVER`)* (toute mutation désactivée côté UI et rejetée en `HTTP 403` côté API) ou *Contributeur / Valideur (`CONTRIBUTOR_ACTION_REQUIRED`)*, complété par l'écran **Centre de Pilotage Unifié des Workspaces & de l'Organisation (`/workspaces` & `/workspaces/[workspaceId]`)** structuré en **4 onglets fractals** (*1. Instances de Workflow Runs & Artefacts*, *2. Sources Dédiées & Partagées [`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`]*, *3. Workflows, Agents & Surcharges 4 niveaux*, *4. Équipes, Membres & Gouvernance*) offrant une agrégation *Roll-up* et un *Drill-down* à chaque échelle (`PLATFORM_ADMIN` sur toute la plateforme avec télémétrie technique/FinOps sur les espaces `CONFIDENTIAL_RESTRICTED` sans exposer leurs payloads métiers, `BU_DIRECTOR` sur sa BU/Tribu, `TEAM_LEAD` sur ses équipes/solutions, et Contributeur sur son Workspace).
+- **FR-4 (Ancrages Humains Obligatoires — Human-Led Anchors)** : Possibilité de marquer dans un *Workflow* ou un *Gabarit d'Artefact* des sections critiques comme `human_authored_required: true` que l'agent IA a l'interdiction formelle de pré-remplir (rejet API `HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED` sans signature humaine `human_anchor_signatures`), basculant l'agent en accompagnement socratique si l'utilisateur tente de déléguer la rédaction.
+- **FR-5 (Arbitrage Humain Systématique sur Options Équivalentes — No Silent Arbitrary Choice)** : Obligation pour tout *Agent Exécuteur* rencontrant $\ge 2$ options techniques, fonctionnelles ou métier équivalentes non départagées par l'*Ontologie*, la *KB* ou les *Ancrages Humains* de suspendre l'étape en `WAITING_FOR_HUMAN_ARBITRATION` (`request_human_arbitration(options_matrix)`), de notifier l'humain et de présenter une matrice comparative structurée (avantages, inconvénients, impacts SI/FinOps) avant de poursuivre.
+- **FR-6 (Briefing de Revue en 4 Blocs & Validation par Découpage des Artefacts Volumineux)** : Affichage automatique pour tout artefact soumis à une *Gate Humaine* ou dépassant `> 1 500 mots` / `> 3 sections` d'un *Briefing de Revue* structuré en 4 blocs obligatoires (*1. Résumé exécutif*, *2. Éléments clés & Contrôle transverse*, *3. Décisions prises*, *4. Hypothèses retenues*) et d'un mode de *Validation par Découpage* (`chunk_approvals`) permettant d'approuver, co-éditer, commenter ou régénérer chaque section indépendamment.
+- **FR-7 (Challenge Amont Inter-Steps, Simulation d'Impact What-If & Boucle de Rétroaction)** : Capacité pour un acteur aval (ex. Architecte au Step 2 ou Tech Lead au Step 3) d'émettre un challenge formel sur une règle ou section d'un *Artefact* amont, avec calcul et prévisualisation immédiate du graphe d'impact (*What-If Impact Preview* via `ImpactSimulatorService` sur les Steps aval, sections du *Blackboard* et axiomes d'*Ontologie*), traduction dans le vocabulaire du profil amont, révision versionnée (`v1.1`) et déclenchement d'un *Replay* ciblé (`FR-16`).
+- **FR-8 (Structuration de l'Ontologie en 4 Niveaux incluant Arbre d'Équipes `3_TEAM` & Solution `3_WORKSPACE` avec Héritage & Alignement)** : Gestion d'une *Ontologie* hiérarchisée en 4 strates (*1. Entreprise* $\rightarrow$ *2. Domaine/BU* $\rightarrow$ *3. Niveau 3A : Équipe hiérarchique `3_TEAM` (`Équipe Parente -> Sous-Équipe`) & Niveau 3B : Solution logicielle `3_WORKSPACE`* $\rightarrow$ *4. Éphémère/Run*) avec héritage descendant, mapping de synonymes par métier et résolution versionnée des niveaux 1 à 3 depuis le *Catalogue Fédéré*.
+- **FR-9 (Extraction Ontologique Temps Réel, Simulation d'Impact & Promotion Gouvernée)** : Détection en cours de conversation ou d'analyse KB des nouveaux concepts, synonymes ou conflits sémantiques, inscription immédiate au *Niveau 4 (Run)* (isolée sur la branche de snapshots `ACTIVE`), simulation d'impact (*What-If*) avant promotion ou modification aux niveaux supérieurs, et workflow de promotion gouvernée vers les *Niveaux 3 (`3_WORKSPACE` ou `3_TEAM`), 2 et 1*.
+- **FR-10 (Triple Exécution Active de l'Ontologie)** : Application active de l'*Ontologie* lors de chaque *Workflow Run* sur 3 plans : (1) validation du typage des objets du *Blackboard* et des *Gabarits d'Artefact*, (2) traduction du vocabulaire par l'*Agent Concierge* selon le *Profil Humain*, et (3) expansion des requêtes RAG et vérification des axiomes aux *Gates Déterministes* et *Agentiques*.
+- **FR-11 (Définition Déclarative Workflow-as-Code YAML/JSON & Composition Assistée par l'Agent Concierge)** : Définition et validation par schéma de *Workflows* déclaratifs YAML/JSON, ainsi que composition, modification conversationnelle et prévisualisation graphique dans le *Canvas* de nouveaux *Workflows* par l'*Agent Concierge* à partir des briques du *Catalogue Fédéré*, avec enregistrement en portée `DRAFT`/`WORKSPACE` et exécution interactive ou en tâche de fond (`UJ-10`).
+- **FR-12 (Gabarits d'Artefact Multi-Audience Humain vs Agent)** : Support de *Gabarits d'Artefact* bi-faces combinant une structure documentaire Markdown (sections obligatoires, variables Jinja/Mustache, ancres humaines, découpage `FR-6`) pour l'humain et un schéma formel (JSON Schema / YAML Schema typé par l'*Ontologie*) sérialisé dans le *Blackboard* pour les étapes aval.
+- **FR-13 (Garantie de la Discipline Intention -> Code)** : Obligation dans tout workflow d'ingénierie logicielle nominal que toute modification de code soit précédée d'une intention validée ou de la mise à jour de l'artefact de spécification/architecture amont et vérifiée par une *Gate* de conformité Doc/Code ; cantonnement des flux de rétro-documentation (`Code -> Doc`) au mode explicite `brownfield_bootstrap`.
+- **FR-14 (Orchestration Hybride Multi-LLM Agnostique, Exécution Bimodale & Blackboard Filtré)** : Exécution séquentielle, parallèle ou conditionnelle des *Steps* via un routeur Multi-LLM agnostique (OpenAI, Anthropic, Gemini, Ollama, vLLM), hydratation *Just-In-Time* n'injectant dans chaque *Step* que ses `inputs` déclarés depuis le *Blackboard*, et support bimodal : *Mode Coaching* (interactif) vs *Mode Fast-Path / Tâche de Fond (`BACKGROUND_AUDIT`)* accumulant les marqueurs `[ASSUMPTION]`, `[BUG_CODE_SUSPECTED]` et `[DOC_OBSOLETE_SUSPECTED]` dans `step_memlog_jsonb` pour arbitrage groupé en fin de run (`UJ-10`).
+- **FR-15 (Version Pinning Immuable des Workflow Runs — `run-lock.json`)** : Verrouillage au démarrage de chaque *Workflow Run* dans `run-lock.json` des versions exactes et empreintes `SHA-256` du *Workflow*, des surcharges à 4 niveaux, des *Agents*, des *Skills*, des *Gabarits*, de l'*Ontologie* et du snapshot des *Bases de Connaissances*, garantissant une reprise identique même après plusieurs semaines de pause.
+- **FR-16 (Replay Ciblé à partir du Step N — Time-Travel Execution)** : Relance d'un *Workflow Run* à partir d'un *Step* $N$ précis en réutilisant le snapshot validé du *Blackboard* à l'étape $N-1$ (0 token reconsommé sur les étapes $1..N-1$), en créant une nouvelle branche `ACTIVE` de snapshots et en marquant l'ancienne branche aval comme `SUPERSEDED`.
+- **FR-17 (Gates Déterministes en Sandbox, Conformité Gabarit/Ontologie & Anti-Pattern Drift)** : Exécution automatisée dans une *Sandbox* isolée (`< 5s`, sans réseau) de la validation de schéma du *Gabarit d'Artefact*, des axiomes d'*Ontologie*, des linters/compilateurs/tests et des règles d'analyse statique détectant le *Pattern Drift* vis-à-vis de `ARCHITECTURE-SPINE.md`.
+- **FR-18 (Gates Agentiques avec Orthogonalité des Modèles, Lentille `fact_verification` & Contrôle Transverse)** : Audit d'un artefact par un *Agent Évaluateur* opérant obligatoirement sur une famille de modèle distincte de l'*Agent Exécuteur* (`evaluator_model_family != executor_model_family`) et sans accès à sa *Chain-ofThought*, organisé en DAG de 4 lentilles parallèles (*Alignement Transverse Étape 1*, *Vérification Atomique de Faits `fact_verification` avec score de confiance `0..1`*, *Attaque Adversariale & Edge-Cases*, *Conformité Métier/Sécurité*) suivies d'une lentille de synthèse générant le *Briefing de Revue en 4 blocs*.
+- **FR-19 (Gates Humaines à Politique Adaptative & Garde-fou Anti-Rubber-Stamping)** : Support de 3 politiques par *Gate Humaine* (`mandatory_full`, `risk_or_exception_based` si `agentic_score >= 0.85` et `0` anomalie, et `sampling` à `20%`) et déclenchement d'une modale de confirmation active (`fast_approval_warning: true`) si un valideur approuve un artefact volumineux en `< 15 secondes` sans inspecter le *Briefing de Revue* ni les sections découpées.
+- **FR-20 (Résolution Fédérée à la Volée `db://`, `git://`, `nexus://`, `confluence://`, `jira://`, `orcia://`, Surcharges à 4 Niveaux `Base -> Team -> Workspace -> User` & Cache CAS `SHA-256`)** : Enregistrement des seules URI canoniques et métadonnées dans le *Catalogue Fédéré*, résolution à la volée via les connecteurs dédiés (`db://`, `git://`, `nexus://`, `confluence://<space_key>/<page_id>@v<N>`, `jira://<project_key>/<issue_key>`, et `orcia://` inter-étapes), stockage dans le cache content-addressable MinIO/S3 (`cas/<sha256>`), support des surcharges déclaratives à 4 niveaux (`1. Base -> 2. Standards d'Équipe TEAM hiérarchique -> 3. Solution WORKSPACE -> 4. Utilisateur USER`) et import natif de packs BMAD (`BmadSkillPackAdapter`).
+- **FR-21 (Authentification Hybride Bi-Mode, Arbre d'Équipes `OrgUnit` découplé des Espaces Solutions `Workspaces`, Rôle `TEAM_LEAD` & 5 Permissions Dissociées du Catalogue)** : Authentification primaire bi-mode (**SSO d'Entreprise `OIDC / OAuth 2.1`** ET **Authentification Locale autonome `Email + Argon2id + MFA TOTP optionnel`** avec liens d'invitation signés, sur sessions JWT `15 min` + Refresh Token `HttpOnly` révocable en Redis), modélisation RBAC/ABAC sur 3 axes : (1) Arbre hiérarchique d'équipes `org_units` à $N$ niveaux (`Entreprise -> BU -> Tribu/Équipe Parente -> Sous-Équipe`), (2) Groupes transverses, et (3) *Workspaces* représentant chacun **une solution logicielle** (avec ses sources `git://`, `jira://`, `confluence://`, son `ARCHITECTURE-SPINE.md` et ses artefacts isolés, où une même équipe peut gérer plusieurs *Workspaces* et où les équipes parentes disposent d'une visibilité ascendante *Roll-up* en `READ_ONLY_OBSERVER` sauf mode `CONFIDENTIAL_RESTRICTED`), pilotés par un **Chef d'Équipe (`TEAM_LEAD` / `Workspace Admin`)**, et séparation des 5 permissions sur chaque actif du catalogue (`DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN`) à travers un cycle de publication hiérarchique (`DRAFT` $\rightarrow$ `SHARED_WORKSPACE` $\rightarrow$ `SHARED_TEAM` $\rightarrow$ `SHARED_BU` $\rightarrow$ `PENDING_APPROVAL` $\rightarrow$ `PUBLISHED_ORG`).
+- **FR-22 (Exécution Passthrough / Service Principal & Permission Broker IA connecté à Jira)** : Exécution par défaut avec l'identité déléguée de l'utilisateur déclencheur (*Passthrough* OIDC/OAuth 2.0 3LO/PAT chiffré AES-256-GCM dans le coffre d'identité utilisateur) ou via un *Service Principal* explicitement autorisé ; interception de tout refus d'accès (`HTTP 401/403`, y compris restrictions Confluence ou rôles de transition Jira manquants) par le `PermissionBrokerService` qui interroge la KB des procédures d'habilitation (YAML/Markdown), met l'étape en pause `WAITING_FOR_PERMISSION` et fournit le rôle requis, l'approbateur et le lien pré-rempli de demande d'accès dans *Jira*.
+- **FR-23 (Indexation Différenciée Incrémentale, Graphe Tripartite `Confluence ↔ Jira ↔ Git`, Brique `data-freshness` & Alerte `[STALE_WARNING]`)** : Indexation incrémentale en vecteurs `halfvec(1024)` (`pgvector` HNSW + BM25 `tsvector` fusionnés par RRF) selon 3 régimes : (1) *Parent-Child* (`256-512` tokens enfant avec *Contextual Header* $\rightarrow$ `1024-2048` tokens parent) pour *Confluence* (`confluence://` filtré par espace/labels), la documentation Markdown/PDF/OpenAPI (`Docling`) et les tickets *Jira* de référence (`jira://` filtré par JQL sur Epics, Stories, Bugs résolus et Post-mortems), (2) découpage syntaxique par symbole AST (`150-800` tokens via `tree-sitter`) + *Code Property Graph* pour `git://`, reliés au sein d'un *Graphe Tripartite de Traçabilité (`Confluence DOCUMENTS ↔ Jira SPECIFIES/FIXES ↔ Git IMPLEMENTS_ISSUE`)*, et (3) schéma DDL + mapping ontologique uniquement pour `db://` ; contrôle de fraîcheur (`data-freshness`) et levée d'une alerte `[STALE_WARNING]` en cas de dépassement de `freshness_ttl_days` ou de contradiction avec un ticket Jira plus récent ou le code.
+- **FR-24 (Actions & Transitions Jira Staged aux Gates, Exécution de Skills en Sandbox & MCP Bidirectionnel Client + Serveur IDE)** : Capacité pour un *Step* ou une *Gate* de : (1) interroger Jira en direct via JQL et préparer les créations (`create_issue`), modifications (`update_issue`, `add_comment`) et transitions de workflows Jira (`transition_issue` après vérification de `GET /rest/api/3/issue/{key}/transitions`) comme *Actions Staged* dans le brouillon de l'étape, exécutées sur Jira uniquement après validation de la *Gate* avec lien `run-lock.json`, tout en recevant les Webhooks `jira:issue_updated` pour déclencher ou réveiller un *Run* en pause ; (2) exécuter des *Skills* en *Sandbox* isolée ; et (3) exposer le *Serveur MCP gouverné d'ORCIA (`/api/v1/mcp`)* aux IDE externes (VS Code, Cursor, Claude Code, Antigravity) en mode *Passthrough*.
+- **FR-25 (Provenance Auditable Immuable par Step et par Gate)** : Enregistrement synchrone dans le registre append-only `audit_ledger` (protégé contre `UPDATE`/`DELETE` par trigger PostgreSQL) pour chaque *Step* et *Gate* des URI/hashes `SHA-256` (`run-lock.json`), du modèle LLM et de ses paramètres, du prompt assemblé, des chunks KB injectés, des appels Skills/MCP/mutations Jira, des coûts/tokens, des signatures humaines et des durées de revue, avec export d'audit JSON/Markdown.
+- **FR-26 (Comptabilité FinOps Complète Setup + Run vs TTM & Coupe-Circuits Budgétaires)** : Comptabilisation en temps réel des tokens/coûts d'inférence LLM et du temps humain (Setup + Run) par *Step*, *Run*, *Workflow* et *Équipe/BU* comparés au gain de Time-to-Market, avec coupe-circuits automatiques suspendant l'exécution en `PAUSED_BUDGET_EXCEEDED` (`max_cost_usd`) ou `PAUSED_MAX_RETRIES` (`max_agent_retries`, défaut `3`).
+- **FR-27 (Indicateurs d'Impact Cognitif, Anti-Rubber-Stamping & Indice de Réversibilité Humaine)** : Calcul et exposition dans le tableau de bord de gouvernance des 3 contre-métriques : (1) *Ratio Cadrage Actif (`Human-Led Anchors` + `Arbitrages`) vs Simple Relecture* (cible $\ge 40\%$), (2) *Taux de Rubber-Stamping aux Gates Humaines* (cible $< 5\%$), et (3) *Indice de Pattern Drift / Réversibilité Humaine* (cible $0\%$ de dérive non approuvée), avec recommandations automatiques d'ajustement des politiques de *Gates*.
+- **FR-28 (Workflows Système d'Initialisation, Onboarding Autonome d'Équipe & Multi-Workspaces `TEAM_LEAD` & Auto-Amorçage Gouverné — `orcia://system/bootstrap/*`)** : Embarquement natif de 6 workflows système guidés par l'*Agent Concierge* et verrouillés par des *Gates Déterministes* : `init-organization` (SSO OIDC / Auth locale + RBAC, test d'au moins 2 familles de modèles orthogonales, amorçage Ontologie N1), `init-workspace` (onboarding autonome de l'équipe/sous-équipes et création d'un ou plusieurs *Workspaces* de solutions logicielles par le **Chef d'Équipe `TEAM_LEAD`**, invitation des membres avec pré-affectation du *Profil Humain* et des rôles d'exécution, Inbox, surcharges `TEAM` et `WORKSPACE`, Ontologie `3_TEAM` et `3_WORKSPACE`), `init-datasource` (enrôlement par un Admin ou par le **Chef d'Équipe** dans un *Workspace* ou en portée `SHARED_TEAM` de sources `db://`, `git://`, `nexus://`, `confluence://`, `jira://` ou KB avec signature obligatoire de la fiche *Permission Broker* et de `freshness_ttl_days`), `init-existing-project` (scan brownfield vers `ARCHITECTURE-SPINE.md`), `init-skill` (certification en Sandbox `< 5s`), et `init-user` (confirmation du *Profil Humain* pré-assigné et liaison des comptes Jira/Confluence/Git en mode *Passthrough* au 1er login).
+
+### NonFunctional Requirements
+
+- **NFR-SEC-1 (Isolation Stricte de la Sandbox Déterministe — `AD-9`)** : Toute exécution de script d'un *Skill* ou d'une *Gate Déterministe* s'exécutent dans un worker isolé sans accès réseau (`bubblewrap --unshare-net --ro-bind` sous Linux ou runtime WebAssembly **Wasmtime 27.0**), sans privilèges root, avec un timeout matériel de `5 000 ms`, un plafond mémoire de `256 MB` et un système de fichiers éphémère en lecture seule (hors `/tmp` mémoire de `64 MB`).
+- **NFR-SEC-2 (Souveraineté, Classification Ontologique & Pseudonymisation PII Réversible — `AD-10`)** : Le `ModelRouterService` interdit l'envoi vers des APIs Cloud externes de données classifiées sensibles par l'*Ontologie* (routage forcé vers Ollama/vLLM local) et applique à la volée le filtre `PiiReversibleScrubber` (`anonymize_pii_reversible: true`) remplaçant les données personnelles ou secrets métiers par des jetons déterministes stockés en Redis sur la durée du `run_id` et ré-hydratés localement au retour.
+- **NFR-SEC-3 (Immuabilité Cryptographique de la Provenance & des Snapshots — `AD-2`, `AD-12`)** : Les tables `audit_ledger` et `blackboard_snapshots` sont strictement *Append-Only* (protégées par trigger PostgreSQL `BEFORE UPDATE OR DELETE RAISE EXCEPTION`), horodatées en UTC ISO-8601 et chaînées par empreintes `SHA-256`.
+- **NFR-SEC-4 (Protection des Jetons Fédérés Passthrough — `AD-6`)** : Les jetons personnels (PAT Git, Nexus, Confluence, Jira) en mode *Passthrough* sont chiffrés au repos en **AES-256-GCM** avec une clé dérivée par utilisateur (KMS/Vault) et déchiffrés uniquement en mémoire dans le worker le temps de la résolution.
+- **NFR-PERF-1 (Réactivité Conversationnelle & Bascule Multi-Runs)** : Affichage du premier token de réponse de l'*Agent Concierge* en `< 1,5 s` et bascule entre deux *Workflow Runs* depuis le *Centre de Notifications* en `< 1 s`.
+- **NFR-PERF-2 (Latence Temps Réel SSE des Verrous de Présence — `AD-4`)** : L'acquisition d'un verrou d'étape (`SET lock:step:<step_execution_id> <user_id> NX EX 900`) et la diffusion de l'événement SSE `task.claim.locked` ou d'un Webhook Jira entrant à tous les clients connectés s'effectuent en `< 500 ms`.
+- **NFR-PERF-3 (Performance du Cache Fédéré CAS & Recherche RAG Hybride — `AD-5`, `AD-8`)** : Résolution d'une ressource déjà présente dans le cache CAS `SHA-256` en `< 50 ms`, résolution CTE de l'Ontologie à 4 niveaux en `< 15 ms` (jusqu'à $10^6$ concepts), et recherche RAG hybride `pgvector halfvec(1024)` HNSW + BM25 `tsvector` en `< 50 ms`.
+- **NFR-REL-1 (Persistance Durable des Workflows Longs — `AD-2`)** : Persistance transactionnelle complète de chaque transition d'étape, brouillon (`draft_artifact_jsonb`), memlog (`step_memlog_jsonb`) et snapshot dans PostgreSQL 18, permettant à un *Workflow Run* de rester en pause pendant plusieurs semaines et de survivre à un redémarrage complet des services sans perte d'état.
+- **NFR-OBS-1 (Observabilité Structurée & Traçabilité OpenTelemetry)** : Journalisation structurée JSON (`structlog 25.1` côté Python, `pino 9.6` côté Node.js) propageant un `trace_id` W3C OpenTelemetry commun, `workspace_id`, `run_id` et `step_id` à travers FastAPI, SSE, Dramatiq, LiteLLM et la Sandbox, et enveloppe d'erreur normalisée **RFC 9457 Problem Details**.
+- **NFR-A11Y-1 (Accessibilité WCAG 2.2 AA & Signalétique Multi-Modale)** : Conformité WCAG 2.2 AA sur l'ensemble des surfaces ; aucun état critique (*Ancrage Humain*, *Arbitrage*, *Gate*, `[STALE_WARNING]`) ne repose sur la couleur seule (combinaison obligatoire Couleur sémantique + Icône + Libellé explicite + annonces `aria-live="polite"`).
+- **NFR-TEST-1 (Stratégie de Tests à 5 Couches & Couverture Unitaire $\ge 90\%$ — `AD-17`)** : Toute Story doit livrer ses tests selon les 5 couches obligatoires : (1) Tests unitaires de la plateforme (`pytest 9.1` + `hypothesis 6.170` et `Vitest 5.0` + `Testing Library`, exécution `< 5s` sans réseau, couverture minimale $\ge 90\%$ sur `packages/orcia-core`), (2) Tests d'intégration sur vrais conteneurs éphémères via `testcontainers-python 4.15` (PostgreSQL 18 + `pgvector`, Redis 7.4, MinIO — zéro mock SQLite/Redis), (3) Tests de contrat OpenAPI 3.1 (`openapi-typescript` 0-diff + fuzzing `Schemathesis 4.32`), (4) Tests d'orchestration IA par cassettes déterministes `DeterministicCassetteLLM` en CI (`0 $`) et `orcia-evals` en pré-release, et (5) Tests E2E multi-acteurs et multi-device (`@playwright/test 1.64` sur Desktop `1440x900` et Mobile Companion `390x844`).
+
+### Additional Requirements
+
+- **AR-1 (Starter / Greenfield Monorepo Hybride TypeScript + Python — `AD-1`)** : Initialisation d'un monorepo hybride orchestré par **`pnpm 10.6.0` + `Turborepo 2.4.4`** (côté TypeScript/Node.js `24.0.0`) et **`uv 0.13.5` workspace** (côté Python `3.12.9`), comprenant `apps/web` (Next.js `16.4.0`, React `19.1.0`, Tailwind CSS `4.3.0`, `shadcn/ui`), `apps/api` (FastAPI `0.143.0`), `apps/worker` (Dramatiq `2.2.1`), `packages/orcia-core` (noyau hexagonal à 8 domaines bornés : `orchestration`, `blackboard`, `catalog`, `ontology`, `rag`, `gates`, `permissions`, `audit_finops`) et `packages/api-client` (SDK généré automatiquement depuis Pydantic v2 / OpenAPI 3.1 via `openapi-typescript 7.6.1` + `openapi-fetch 0.13.4`). **Note importante : ce socle Greenfield constitue le point de départ de l'Epic 1 Story 1.**
+- **AR-2 (Infrastructure Conteneurisée Unifiée & Schéma Relationnel-Graphe/Vecteur — `Structural Seed`)** : Configuration Docker Compose (`infra/docker/`) provisionnant **PostgreSQL `18.0` + `pgvector 0.8.7`**, **Redis `7.4.2`** (files Dramatiq, verrous atomiques `SET NX EX 900` et Pub/Sub SSE) et **MinIO** (stockage CAS immuable `cas/<sha256>`), avec migrations **SQLAlchemy `2.1.3` (Asyncio) + Alembic `1.15.1`** implémentant les 16 tables du Core ERD à clés primaires **UUIDv7** (`uuid-utils 0.10.0`).
+- **AR-3 (Séparation Stricte Brouillon / Snapshot Immuable & Step Memlog — `AD-2`, `AD-13`)** : Stockage transitoire des artefacts en cours d'exécution/évaluation dans `step_executions.draft_artifact_jsonb` (et des raisonnements/hypothèses intermédiaires ou marqueurs `[ASSUMPTION]` dans `step_executions.step_memlog_jsonb`), et écriture dans `blackboard_snapshots` uniquement au statut `COMMITTED` avec gestion des branches `ACTIVE` vs `SUPERSEDED`.
+- **AR-4 (Architecture de l'Agent Concierge en Workflow de Nœuds type n8n & `ConciergeHarness` à 5 Couches — `AD-15`)** : Implémentation de l'*Agent Concierge* comme un DAG système de 5 nœuds orientés (`orcia://system/workflows/concierge-agent` : *1. Routeur d'Intention $\rightarrow$ 2. Query Planner & Expansion Ontologique $\rightarrow$ 3. Fan-Out Parallèle [RAG, Catalogue, Blackboard, Permission Broker] $\rightarrow$ 4. Tri Critique & Vérification d'Axiomes $\rightarrow$ 5. Synthétiseur Adaptatif au Profil Humain*), visualisable/éditable via **`@xyflow/react 12.12.0`** ou YAML, et exécuté dans le `ConciergeHarness` assemblant 5 couches de prompt dont la Couche 1 (Constitution Immuable) interdit toute écriture sur une *Ancre Humaine* ou validation de *Gate* à la place de l'humain.
+- **AR-5 (Découplage Arbre d'Équipes / Workspaces Solutions, Surcharge Déclarative à 4 Niveaux & Adaptateur Natif de Packs BMAD — `AD-14`)** : Implémentation dans `packages/orcia-core/catalog` du moteur de fusion déterministe à 4 niveaux (`1. Base URI Catalogue -> 2. Standards d'Équipe TEAM hiérarchique -> 3. Solution WORKSPACE -> 4. Préférences Profil Utilisateur USER`, table `workspace_customization_overrides`) et du `BmadSkillPackAdapter` permettant d'importer et d'exécuter nativement les skills BMAD (`SKILL.md`, `customize.toml`, `steps/*.md`).
+- **AR-6 (Pipeline d'Indexation Différenciée Docling + Tree-Sitter & Graphe Tripartite — `AD-8`)** : Intégration de **`Docling 2.142.1`** pour le parsing hiérarchique *Parent-Child* des documents et pages Confluence (`confluence://`), du connecteur **Jira REST API v3 (`jira://`)** (indexation hybride des tickets structurants + JQL temps réel + actions stagées + Webhooks), et de **`tree-sitter 0.24.0`** pour le découpage AST et l'extraction du *Code Property Graph* sur `git://`, alimentant le *Graphe Tripartite `Confluence ↔ Jira ↔ Git`* en vecteurs `halfvec(1024)`.
+- **AR-7 (Serveur MCP Sortant/Entrant Gouverné `/api/v1/mcp` — `AD-6`)** : Exposition dans `apps/api` du endpoint MCP `/api/v1/mcp` permettant aux IDE externes (VS Code, Cursor, Claude Code, Antigravity) d'interroger l'*Ontologie*, la *KB*, le *Catalogue* et le *Blackboard* en mode *Passthrough* sous contrôle du `PermissionBrokerService` et du garde-fou `AD-3`.
+
+### UX Design Requirements
+
+- **UX-DR1 (Système de Design Tokens Direction C & Double Polarité — `DESIGN.md`)** : Implémenter dans Tailwind CSS v4 et CSS Variables la palette sémantique stricte de la Direction C : Sidebar Sombre permanente (`#0F172A`, texte `#F8FAFC`, muet `#94A3B8`, bordure `#1E293B`), Espace Central Haut-Contraste Clair (`#F8FAFC` / `#FFFFFF`, commutable en Dark Slate `#0B0F17`), Dock IA (`#F1F5F9`), Primary Cobalt (`#2563EB` / `#6366F1`), Human-Led Violet (`#6D28D9` / fond `#F5F3FF` exclusivement réservé aux *Ancrages Humains*), Arbitration Amber (`#D97706` / fond `#FFFBEB`), Gate Pass Emerald (`#059669` / fond `#ECFDF5`), Ontology Cyan (`#0284C7` / fond `#F0F9FF`), et Stale/Blocker Crimson (`#DC2626` / fond `#FEF2F2`), ainsi que le trio typographique `Inter`/`Geist Sans` (`13.5px`), `Instrument Serif` (`22px` pour les titres d'artefacts contractuels) et `JetBrains Mono` (`12px` pour les URI, hashes `SHA-256` et logs).
+- **UX-DR2 (Architecture Spatiale à 3 Colonnes Adaptatives, Sélecteur de Périmètre `⌘W` & Menu Global à 7 Modules — `DESIGN.md`, `EXPERIENCE.md §2`)** : Implémenter la grille Desktop à 3 colonnes : (1) *Global Sidebar Navigation* (`235px` dépliée / `68px` repliée en icônes via le bouton `«` ou raccourci `[`) intégrant en en-tête le **Sélecteur de Périmètre Hiérarchique (`⌘W` : `🌐 Plateforme Globale → 🏢 BU / Tribu → 👥 Équipe → 🗂️ Workspace Solution`)** et affichant les 7 modules filtrés par RBAC (*1. 💬 Cockpit & Chat*, *2. 🔔 Boîte & Mes Runs*, *3. 📦 Catalogue Fédéré*, *4. 🧬 Ontologie & KB*, *5. 🛡️ Gates & Habilitations*, *6. 📊 FinOps & Audit*, *7. ⚙️ Administration & Pilotage des Workspaces `/workspaces`*) avec pastilles temps réel (compteur ambre d'actions *Contributeur* et badge rouge `!` pour `[STALE_WARNING]`) et badge de *Profil Humain* en pied de barre ; (2) *Espace Central / Canvas* (`1fr`, min `640px`, en Split-View Chat + Canvas dans le module 1 et plein écran dans les modules 2 à 7) ; et (3) *Dock Persistant Agent Concierge & Permission Broker* (`360px` à droite dans les modules 2 à 7, repliable via `]`).
+- **UX-DR3 (Composant `Human-Led Anchor Card` & Interdiction d'Auto-Complétion IA — `DESIGN.md`, `EXPERIENCE.md §4 & §6`)** : Implémenter le composant `human-led-anchor-card` (bordure gauche violette `4px solid #6D28D9`, fond `#F5F3FF`, en-tête `✍️ ANCRAGE HUMAIN OBLIGATOIRE (human_authored_required: true)` et signature de l'auteur humain) qui verrouille le bouton *Lancer la génération de l'étape* tant qu'un texte humain significatif ($\ge 30$ caractères) n'est pas saisi et signé, interdit strictement tout bouton *"Générer avec l'IA"* à l'intérieur de la carte, et déclenche une relance socratique dans le chat si l'utilisateur demande à l'agent de le rédiger à sa place.
+- **UX-DR4 (Composant `Cognitive Review Briefing` 2x2 — `DESIGN.md`, `EXPERIENCE.md §4`)** : Implémenter en tête de tout artefact volumineux ($> 1\,500$ mots ou $> 3$ sections) ou soumis à une *Gate Humaine* la grille $2 \times 2$ `review-briefing-grid` présentant immuablement les 4 blocs (*1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, *4. Hypothèses Retenues*) où le bloc 4 conserve une bordure ambre (`#D97706`) tant que le valideur n'a pas inspecté ou pointé les hypothèses.
+- **UX-DR5 (Composant `Chunked Validation Card` & Approbation Séquentielle — `DESIGN.md`, `EXPERIENCE.md §4 & §6`)** : Implémenter le composant `chunk-validation-card` segmentant l'artefact (et les éventuelles *Actions Jira Staged*) par section du *Gabarit d'Artefact* avec statut individuel (`PENDING`, `APPROVED`, `CHALLENGED`, `EDITING`), 3 actions directes (*Valider la section*, *Co-éditer*, *Challenger / Rewind amont*), navigation clavier `Alt + ↑ / ↓`, et interdiction formelle d'un bouton *"Tout Approuver en 1 clic"* tant que toutes les sections obligatoires n'ont pas été parcourues et approuvées.
+- **UX-DR6 (Composant `Arbitration Tie-Break Matrix` — `DESIGN.md`, `EXPERIENCE.md §4`)** : Implémenter la carte ambre `arbitration-tiebreak-card` dans le Chat, l'Inbox et sur Mobile Companion dès qu'un agent suspend son exécution sur des options équivalentes (`FR-5`), affichant côte à côte chaque option, ses avantages/inconvénients, ses impacts SI/Métier/FinOps, un champ optionnel *"Justification / Autre orientation"* et le bouton de décision qui débloque immédiatement le *Workflow Run*.
+- **UX-DR7 (Composant `Upstream Challenge & Rewind Modal` avec Aperçu d'Impact What-If — `EXPERIENCE.md §4`, `FR-7`)** : Implémenter la modale de contestation amont permettant de sélectionner un passage d'un artefact amont ou de signaler une `[STALE_WARNING]`, de visualiser l'**Aperçu de Simulation d'Impact (*What-If Impact Preview*)** listant les *Steps*, sections d'artefacts et axiomes aval impactés, de soumettre le challenge traduit par l'Ontologie aux acteurs amont, et de déclencher le **Replay** ciblé (`FR-16`).
+- **UX-DR8 (Composant `Federated URI & RBAC Badge` — `DESIGN.md`)** : Implémenter le badge monospace `uri-badge` (`JetBrains Mono 12px`, `rounded-sm`) distinguant visuellement la source de vérité d'une ressource (`git://` en ambre, `nexus://` en bleu cobalt, `db://` en vert émeraude, `confluence://` et `jira://`, `orcia://`), ses permissions effectives (`DISCOVER`, `EXECUTE`, `🔒 Source masquée`) et son empreinte `SHA-256` tronquée.
+- **UX-DR9 (Composant `Presence & Claim Pill` Temps Réel `< 500ms` — `DESIGN.md`, `EXPERIENCE.md §4 & §5`)** : Implémenter la pastille `presence-claim-pill` sur les notifications d'équipe affichant le bouton `Prendre (Claim)` puis basculant en `< 500 ms` via SSE vers `🔒 Pris par vous` / `🔒 En cours : {Prénom}` (opacité `85%` pour les pairs avec action secondaire *Rejoindre en consultation* ou *Force Unclaim* après 15 minutes d'inactivité).
+- **UX-DR10 (Modale de Friction Positive `Anti-Rubber-Stamping Guard` — `EXPERIENCE.md §4`)** : Implémenter sur les *Gates Humaines* le détecteur de temps de lecture actif ouvrant une modale de confirmation explicite (*"Validation rapide détectée (< 15s) — Confirmez-vous avoir vérifié les {N} hypothèses retenues par l'Agent Évaluateur ?"*) en cas d'approbation précipitée.
+- **UX-DR11 (Traitement Visuel & Comportemental des 5 États Système — `EXPERIENCE.md §5`)** : Implémenter les bandeaux et états dédiés pour : (1) `READ_ONLY_OBSERVER` (bandeau `👁️ Mode Consultation Seule`, masquage/désactivation de tous les contrôles d'édition, d'arbitrage et de Gate), (2) `CONTRIBUTOR_ACTION_REQUIRED` (bandeau Cobalt/Ambre indiquant l'action attendue), (3) `PERMISSION_DENIED_STEP` (ouverture automatique du *Dock Permission Broker* avec le rôle manquant, la procédure KB, le lien Jira pré-rempli et le bouton *Replay Step N*), (4) `STALE_WARNING` (badge rouge `!` sur le module 4 de la Sidebar et bannière d'alerte sur les Runs affectés), et (5) `CLAIMED_BY_PEER`.
+- **UX-DR12 (Adaptation Dynamique du Ton et du Vocabulaire par Profil Humain — `EXPERIENCE.md §3`)** : Adapter le rendu et le microcopy de l'*Agent Concierge* dans l'UI selon les 4 archétypes de *Profil Humain* : *Direction / BU Lead* (KPIs budgétaires, TTM, SLA, Ontologie N1/N2), *Product Manager / Métier* (règles de gestion, parcours client, impacts produit), *Architecte / Tech Lead / Dev* (URI exactes, schémas OpenAPI, diffs, hashes `SHA-256`, Ontologie N3), et *SecOps / Auditeur* (preuves de Gates, orthogonalité des modèles, provenance).
+- **UX-DR13 (Palette de Commandes Universelle `⌘K` / `Ctrl+K`, Sélecteur de Périmètre `⌘W`, Centre de Pilotage Unifié des Workspaces à 4 Onglets & Raccourcis Clavier Power-User — `EXPERIENCE.md §2 & §6`)** : Implémenter la palette `Command` (`⌘K` / `Ctrl+K`) permettant en `< 1s` de changer de *Workflow Run*, de basculer de périmètre (`⌘W` : `🌐 Plateforme Globale → 🏢 BU → 👥 Équipe → 🗂️ Workspace`), de chercher dans le *Catalogue Fédéré*, d'interroger un concept d'*Ontologie* ou de sauter à une notification, ainsi que l'écran **Centre de Pilotage Unifié des Workspaces (`/workspaces` & `/workspaces/[workspaceId]`, `g w`)** à **4 onglets consolidés** (*1. Instances de Workflow Runs & Artefacts*, *2. Sources Dédiées & Partagées*, *3. Workflows, Agents & Surcharges 4 niveaux*, *4. Équipes, Membres & Gouvernance*) et les raccourcis globaux `g c`, `g i`, `g f`, `g o`, `g g`, `g a`, `g s`, `g w`, `[` (repli Sidebar), `]` (repli Dock IA) et `Alt + ↑ / ↓` (navigation par découpage).
+- **UX-DR14 (Explorateur d'Ontologie à 4 Colonnes, Simulation What-If & Gestion KB — `EXPERIENCE.md §2`)** : Implémenter dans le module **🧬 4. Ontologie & KB** un explorateur visuel à 4 colonnes (*1. Entreprise $\rightarrow$ 2. BU $\rightarrow$ 3. Équipe & Workspace $\rightarrow$ 4. Run*) avec tiroir de promotion gouvernée (`TermPromotionDrawer`), aperçu de simulation d'impact (*What-If*), gestion des sources KB (`confluence://`, `jira://`, `git://`, `db://`) et résolution des alertes `[STALE_WARNING]`.
+- **UX-DR15 (Éditeur/Visualiseur de Graphe de Workflow `@xyflow/react` & Prévisualisation Conversationnelle — `AD-15`, `FR-11`, `UJ-10`)** : Intégrer `@xyflow/react` dans le *Canvas* et l'Administration pour inspecter visuellement le DAG des *Workflows* (dont le workflow à 5 nœuds de l'*Agent Concierge*) et prévisualiser en temps réel les graphes et manifestes YAML assemblés ou modifiés conversationnellement par l'*Agent Concierge* (`UJ-10`).
+- **UX-DR16 (Responsive Design à 3 Breakpoints & Expérience Mobile Companion Restreinte — `DESIGN.md`, `EXPERIENCE.md §8`)** : Implémenter les 3 breakpoints : *Desktop Large (`>= 1280px`)* (3 colonnes complètes), *Laptop / Tablet (`768px - 1279px`)* (Sidebar repliée `68px` + Dock IA en `Sheet` sous `1024px`), et *Mobile Companion (`< 768px`)* (vue mono-colonne à barre d'onglets basse à 3 entrées : `🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`, autorisant le triage/*Claim*, les arbitrages, la lecture du *Briefing 4 blocs*, la validation par découpage et le suivi en *Consultation seule*, tout en bloquant l'édition YAML, la co-édition lourde et le module *7. Administration* avec une bannière explicite *"Fonctionnalité réservée au poste Desktop"*).
+
+### FR Coverage Map
+
+- **FR-1** : Epic 3 - Interface Chat-First + Canvas, Sélecteur de Périmètre Hiérarchique (`⌘W`), Menu Global 7 modules & adaptation Agent Concierge au Profil Humain
+- **FR-2** : Epic 5 - Centre de Notifications Unifié (Individuel & Équipe) avec Claim et verrou SSE < 500ms
+- **FR-3** : Epic 5 - Supervision Multi-Workflows, Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces` à 4 onglets) et séparation Consultation seule (HTTP 403) vs Contributeur
+- **FR-4** : Epic 3 - Ancrages Humains Obligatoires (human_authored_required: true) et accompagnement socratique
+- **FR-5** : Epic 3 - Arbitrage Humain systématique sur options équivalentes (WAITING_FOR_HUMAN_ARBITRATION)
+- **FR-6** : Epic 4 - Briefing de Revue (4 blocs) et Validation par Découpage des artefacts volumineux
+- **FR-7** : Epic 3 - Challenge Amont Inter-Steps avec Simulation d'Impact (What-If) et boucle de rétroaction
+- **FR-8** : Epic 2 - Structuration de l'Ontologie en 4 Niveaux (Entreprise, BU, Équipe hiérarchique `3_TEAM` & Solution `3_WORKSPACE`, Run) avec héritage
+- **FR-9** : Epic 2 - Extraction ontologique temps réel, Simulation d'Impact (What-If) et promotion gouvernée
+- **FR-10** : Epic 2 - Triple exécution active de l'Ontologie (Typage Blackboard, Traduction Profil, Gates/RAG)
+- **FR-11** : Epic 3 - Définition Workflow-as-Code (YAML/JSON) et composition/modification assistée par l'Agent Concierge
+- **FR-12** : Epic 3 - Gabarits d'Artefact Multi-Audience (Markdown Humain + JSON/YAML Schema Agent)
+- **FR-13** : Epic 3 - Garantie de la discipline Intention -> Code (et mode brownfield_bootstrap explicite)
+- **FR-14** : Epic 3 - Orchestration Hybride Multi-LLM agnostique, exécution bimodale (Coaching / Fast-Path) & Blackboard filtré
+- **FR-15** : Epic 3 - Version Pinning immuable des Workflow Runs (run-lock.json SHA-256)
+- **FR-16** : Epic 3 - Replay ciblé à partir du Step N (Time-Travel Execution sur branche ACTIVE)
+- **FR-17** : Epic 4 - Gates Déterministes en Sandbox (< 5s, sans réseau, conformité Gabarit/Ontologie & anti-Pattern Drift)
+- **FR-18** : Epic 4 - Gates Agentiques avec Orthogonalité des Modèles, lentille fact_verification & Contrôle Transverse
+- **FR-19** : Epic 4 - Gates Humaines à Politique Adaptative et garde-fou anti-Rubber-Stamping (< 15s)
+- **FR-20** : Epic 1 - Résolution à la volée du Catalogue Fédéré (db://, git://, nexus://, confluence://, jira://, orcia://), surcharges 4 niveaux (Base -> Team -> Workspace -> User) & cache SHA-256
+- **FR-21** : Epic 1 - Authentification hybride bi-mode, hiérarchie d'équipes (`OrgUnit`) découplée des Workspaces solutions, rôle `TEAM_LEAD` & 5 permissions dissociées du Catalogue
+- **FR-22** : Epic 1 - Exécution Passthrough / Service Principal et Permission Broker IA connecté à Jira
+- **FR-23** : Epic 2 - Indexation différenciée incrémentale, Graphe Tripartite (Confluence <-> Jira <-> Git), data-freshness & [STALE_WARNING]
+- **FR-24** : Epic 4 - Actions & transitions de workflows Jira Staged aux Gates (+ Webhooks), Skills en Sandbox & MCP Bidirectionnel (/api/v1/mcp)
+- **FR-25** : Epic 6 - Provenance Auditable complète et immuable par Step et par Gate (audit_ledger)
+- **FR-26** : Epic 6 - Comptabilité FinOps complète (Coût Setup + Run vs TTM) et coupe-circuits budgétaires
+- **FR-27** : Epic 6 - Indicateurs d'impact cognitif, anti-Rubber-Stamping et Indice de Réversibilité Humaine
+- **FR-28** : Epic 1 - Workflows Système d'initialisation, onboarding autonome d'équipe & multi-workspaces (`TEAM_LEAD`) et auto-amorçage gouverné (orcia://system/bootstrap/*)
+
+## Epic List
+
+### Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
+Les Ingénieurs Plateforme, Chefs d'Équipe (`TEAM_LEAD`) et Membres d'équipe (`Karim UJ-9`, `Marc UJ-5`, `Nadia UJ-4`, `Lucas UJ-7`) disposent du socle opérationnel d'ORCIA (monorepo Greenfield `AR-1`, infrastructure `AR-2`, authentification primaire bi-mode **SSO OIDC / OAuth 2.1 + Locale Argon2id/TOTP**, arbre hiérarchique d'équipes `Org -> BU -> Tribu/Équipe Parente -> Sous-Équipe` découplé des `Workspaces` de solutions logicielles, et coquille UI Direction C à 7 modules), initialisent l'organisation dès le Jour 0 et embarquent leurs équipes et leurs différentes solutions logicielles en autonomie via les workflows système (`init-organization`, `init-workspace` piloté par le **Chef d'Équipe**, `init-datasource`, `init-user`), publient et résolvent à la volée des ressources versionnées (`db://`, `git://`, `nexus://`, `confluence://`, `jira://`, packs BMAD et surcharges à 4 niveaux `Base -> Team -> Workspace -> User`) épinglées dans le cache CAS `SHA-256` selon 5 permissions dissociées (`DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN`), et résolvent tout refus d'accès (`401/403`) grâce au **Permission Broker** qui génère la procédure d'habilitation et le lien pré-rempli dans **Jira**.
+**FRs covered:** `FR-20`, `FR-21`, `FR-22`, `FR-28`
+
+### Epic 2: Ontologie Dynamique à 4 Niveaux, Simulation d'Impact (*What-If*) & RAG Hybride sur Graphe Tripartite (`Confluence ↔ Jira ↔ Git`)
+Les Stewards Métier, PMs, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) structurent et font évoluer l'**Ontologie à 4 niveaux** (*1. Entreprise $\rightarrow$ 2. BU $\rightarrow$ 3. Équipe hiérarchique `3_TEAM` & Solution `3_WORKSPACE` $\rightarrow$ 4. Run*) avec héritage, extraction sémantique en temps réel, **Simulation d'Impact (*What-If*)** avant promotion gouvernée et triple exécution active ; ils indexent de façon incrémentale et différenciée leurs espaces **Confluence** (`confluence://` en *Parent-Child*), tickets **Jira** de référence (`jira://`), dépôts de code **Git** (`git://` en *AST + Code Graph*) et schémas DB (`db://`) au sein d'un **Graphe Tripartite `Confluence ↔ Jira ↔ Git`** (`halfvec(1024)` + BM25), et détectent/résolvent toute obsolescence documentaire (`[STALE_WARNING]`, brique `data-freshness`) dans le module **🧬 4. Ontologie & KB**.
+**FRs covered:** `FR-8`, `FR-9`, `FR-10`, `FR-23`
+
+### Epic 3: Cockpit "Human-Led", Agent Concierge Adaptatif & Moteur d'Orchestration Durable (Blackboard, Bimodal & Replay)
+Les Product Managers, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) dialoguent dans le **💬 1. Cockpit & Chat** avec l'**Agent Concierge** (DAG à 5 nœuds orientés type n8n dans le `ConciergeHarness` à 5 couches, adaptant son vocabulaire au **Profil Humain**), définissent ou assemblent conversationnellement des **Workflows-as-Code** YAML/JSON avec prévisualisation graphique (`@xyflow/react`), lancent des **Workflow Runs** épinglés par `run-lock.json` en mode **Coaching interactif** ou **Fast-Path / Tâche de fond (`BACKGROUND_AUDIT`, `UJ-10`)**, rédigent leurs **Ancrages Humains Obligatoires** (`human_authored_required: true`), tranchent les **Arbitrages Humains** sur options équivalentes, émettent des **Challenges Amont** avec simulation d'impact (*What-If*) et déclenchent un **Replay ciblé** à partir du Step $N$ (0 token reconsommé sur les étapes $1..N-1$) dans le respect de la discipline `Intention -> Code`.
+**FRs covered:** `FR-1`, `FR-4`, `FR-5`, `FR-7`, `FR-11`, `FR-12`, `FR-13`, `FR-14`, `FR-15`, `FR-16`
+
+### Epic 4: Pipeline Tri-Modal des Gates, Validation Cognitive par Découpage & Écosystème d'Exécution (Actions Jira, Sandbox & MCP IDE)
+Les Tech Leads, SecOps, Développeurs et Auditeurs (`Yanis UJ-3`, `Marc UJ-5`, `Sophie UJ-6`, `Arthur UJ-10`) valident chaque étape via la chaîne de **Gates Déterministes** en **Sandbox isolée** (`< 5s`, sans réseau, conformité Gabarit/Ontologie et anti-**Pattern Drift**), de **Gates Agentiques** avec **Orthogonalité des Modèles**, pseudonymisation PII réversible (`PiiReversibleScrubber`) et DAG de 5 lentilles (dont `fact_verification` et contrôle transverse Étape $N$ vs Étape 1), et de **Gates Humaines Adaptatives** (`mandatory_full`, `risk_or_exception_based`, `sampling`) équipées du **Briefing de Revue (4 blocs)**, de la **Validation par Découpage** et du garde-fou anti-**Rubber-Stamping** (`< 15s`) ; ils exécutent de manière gouvernée (en mode *Staged* validé aux Gates) la création, la modification et les **transitions de workflows Jira** (+ réception des Webhooks `jira:issue_updated`) et interrogent ORCIA depuis leur IDE via le **Serveur MCP gouverné (`/api/v1/mcp`)**.
+**FRs covered:** `FR-6`, `FR-17`, `FR-18`, `FR-19`, `FR-24`
+
+### Epic 5: Centre de Notifications Temps Réel (`< 500ms`), Supervision Multi-Runs, Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces`) & Expérience Mobile Companion
+Les Administrateurs Plateforme (`Karim UJ-9`), Directeurs de BU (`Claire UJ-8`), Chefs d'Équipe (`Marc UJ-5`) et Contributeurs multi-projets (`Nadia UJ-4`) trient leurs notifications personnelles et d'équipe dans **🔔 2. Boîte & Mes Runs**, prennent en charge (*Claim*) atomiquement une notification d'équipe avec verrou de présence temps réel (`< 500ms` via SSE), supervisent simultanément plusieurs **Workflow Runs** avec séparation stricte entre **Consultation seule (`READ_ONLY_OBSERVER`)** et **Contributeur (`CONTRIBUTOR_ACTION_REQUIRED`)**, pilotent et administrent de manière consolidée (*Roll-up* & *Drill-down* via le sélecteur de périmètre **`⌘W`**) l'ensemble des **Workspaces, Instances de Workflow Runs, Sources (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), Agents/Workflows/Surcharges et Équipes** depuis le **Centre de Pilotage Unifié Multi-Niveaux (`/workspaces` & `/workspaces/[workspaceId]` à 4 onglets)**, pilotent l'interface au clavier (`⌘K`, `⌘W`, `g c`..`g w`, `Alt + ↑/↓`), et traitent leurs arbitrages et validations urgentes en déplacement grâce à l'interface **Mobile Companion** à 3 onglets.
+**FRs covered:** `FR-2`, `FR-3`
+
+### Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Complet (Setup + Run) & Réversibilité Humaine
+Les Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) pilotent dans **📊 6. FinOps & Audit** l'équation économique complète de leurs processus (**Coût de Setup + Coût de Run vs gain de TTM**) protégée par des coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), inspectent et exportent la **Provenance Auditable** immuable de chaque Step et Gate (`audit_ledger`), et suivent les 3 contre-métriques de gouvernance cognitive (**Ratio Cadrage Actif $\ge 40\%$**, **Taux de Rubber-Stamping $< 5\%$**, **Indice de Pattern Drift / Réversibilité Humaine $0\%$**) avec recommandations automatiques d'ajustement des Gates.
+**FRs covered:** `FR-25`, `FR-26`, `FR-27`
+
+## Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
+
+Permettre aux Ingénieurs Plateforme, Chefs d'Équipe (`TEAM_LEAD`) et Membres d'équipe (`Karim UJ-9`, `Marc UJ-5`, `Nadia UJ-4`, `Lucas UJ-7`) de disposer du socle opérationnel d'ORCIA, d'initialiser l'organisation dès le Jour 0 et d'embarquer chaque équipe et ses différentes solutions logicielles (`Workspaces`) en autonomie via les workflows système gouvernés, de publier et résoudre à la volée des ressources fédérées (`db://`, `git://`, `nexus://`, `confluence://`, `jira://`, packs BMAD) avec cache CAS `SHA-256`, surcharges à 4 niveaux et 5 permissions dissociées, et de débloquer tout refus d'accès (`401/403`) grâce au *Permission Broker* connecté à Jira.
+
+### Story 1.1: Amorçage du Monorepo Hybride, Coquille UI Direction C (7 Modules) & Socle de Tests à 5 Couches
+
+As a Ingénieur Plateforme (`Karim, UJ-9`),
+I want initialiser le monorepo hybride TypeScript/Python, l'infrastructure conteneurisée (PostgreSQL 18 + pgvector, Redis 7.4, MinIO), la génération automatique du client OpenAPI 3.1, la coquille visuelle Direction C à 7 modules et le harnais de tests à 5 couches,
+So that toute l'équipe dispose d'une fondation typée de bout en bout, observable et testée unitairement à $\ge 90\%$ avant de développer les briques métiers (`AR-1`, `AR-2`, `UX-DR1`, `UX-DR2`, `NFR-OBS-1`, `NFR-TEST-1`).
+
+**Acceptance Criteria:**
+
+**Given** un environnement de développement vierge disposant de `Node.js 24.0`, `pnpm 10.6`, `Python 3.12.9`, `uv 0.13.5` et `Docker Compose`
+**When** l'ingénieur exécute la commande d'initialisation et de démarrage du monorepo (`pnpm install && uv sync && docker compose up -d`)
+**Then** le workspace démarre `apps/web` (Next.js `16.4`, React `19.1`, Tailwind `4.3`, `shadcn/ui`), `apps/api` (FastAPI `0.143`), `apps/worker` (Dramatiq `2.2`), `packages/orcia-core` (squelette hexagonal des 8 domaines) et les conteneurs **PostgreSQL `18.0` + `pgvector 0.8.7`**, **Redis `7.4.2`** et **MinIO**
+**And** la génération `openapi-typescript` produit `packages/api-client` avec `0 diff` depuis les schémas Pydantic v2 de `packages/orcia-core/schemas`, et toute erreur API retourne une enveloppe **RFC 9457 Problem Details** corrélée par `trace_id` OpenTelemetry (`structlog` / `pino`).
+
+**Given** l'utilisateur qui ouvre `apps/web` sur un écran Desktop (`>= 1280px`) ou Laptop (`768px - 1279px`)
+**When** la coquille applicative Direction C est rendue
+**Then** les tokens CSS (`#0F172A` Sidebar, `#F8FAFC` Surface, `#2563EB` Primary, `#6D28D9` Human-Led Violet, `#D97706` Arbitration Amber, `#059669` Gate Emerald, `#0284C7` Ontology Cyan, `#DC2626` Stale Crimson) et les polices (`Inter`, `Instrument Serif`, `JetBrains Mono`) sont appliqués (`UX-DR1`)
+**And** la grille à 3 colonnes affiche la *Global Sidebar Navigation* (`235px` dépliée / `68px` repliée via `[`) avec les 7 entrées du Menu Global, l'*Espace Central* (`1fr`) et le *Dock Persistant Agent Concierge & Permission Broker* (`360px`, repliable via `]`) (`UX-DR2`)
+**And** la CI exécute avec succès les 5 couches de tests (`pytest` + `hypothesis`, `Vitest`, `testcontainers-python` sur vrais PG18/Redis/MinIO, `Schemathesis` et `@playwright/test`) avec une couverture unitaire $\ge 90\%$ (`AD-17`, `NFR-TEST-1`).
+
+### Story 1.2: Authentification Hybride Bi-Mode (OIDC & Locale), Arbre Hiérarchique d'Équipes (`OrgUnit`) découplé des Espaces Solutions Multi-Sources (`Workspaces`), Rôle `TEAM_LEAD` & 5 Permissions Dissociées
+
+As a Administrateur Plateforme ou Chef d'Équipe (`Karim UJ-9`, `Marc UJ-5`, `Nadia UJ-4`),
+I want authentifier les utilisateurs via SSO d'Entreprise (`OIDC / OAuth 2.1`) ou via Authentification Locale autonome (`Email + Argon2id + MFA TOTP`), modéliser un arbre hiérarchique d'équipes (`org_units` à $N$ niveaux : `Entreprise -> BU -> Tribu/Équipe Parente -> Sous-Équipe`) découplé des `Workspaces` représentant chacun une solution logicielle pouvant agréger **plusieurs dépôts `git://`, plusieurs projets `jira://` et plusieurs espaces `confluence://` dédiés**, et appliquer les 5 permissions dissociées (`DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN`),
+So that chaque solution logicielle d'une équipe ait ses multiples sources (`N × git://`, `N × jira://`, `N × confluence://`) et artefacts isolés, que les équipes parentes disposent d'une supervision consolidée, et que les sous-équipes héritent des agents de leur équipe parente tout en protégeant les prompts/codes en boîte noire (`FR-21`, `AD-6`, `AD-14`, `NFR-SEC-4`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `org_units` (arbre auto-référencé via `parent_id`), `workspaces` (`owner_org_unit_id`, `visibility_mode: STANDARD | CONFIDENTIAL_RESTRICTED`), `workspace_datasources` (relation `1..N` rattachant à un Workspace ses multiples dépôts `git://`, projets `jira://`, espaces `confluence://`, schémas `db://` et registres `nexus://` qualifiés par `alias` et `role`), `users`, `transverse_groups`, `workspace_memberships`, `workspace_invitations`, `user_passthrough_credentials` et `catalog_acl_entries` à clés primaires `UUIDv7`
+**When** un utilisateur s'authentifie soit via **SSO `OIDC / OAuth 2.1`**, soit via le flux **Local autonome (`Email + Argon2id + TOTP optionnel`)** et appelle `/api/v1/auth/me`
+**Then** une session JWT courte (`15 min`) + Refresh Token `HttpOnly / Secure / SameSite=Strict` révocable dans Redis est établie, son *Profil Humain* complet (Archétype, Rôle `PLATFORM_ADMIN` / `TEAM_LEAD` / `CONTRIBUTOR` / `GATE_REVIEWER` / `ONTOLOGY_STEWARD_L3` / `OBSERVER`, arbre d'équipes `org_units`, liste des `Workspaces` solutions accessibles) est affiché en pied de Sidebar (`UX-DR2`), et les entrées du Menu Global non autorisées sont masquées côté UI et protégées en `HTTP 403` côté API.
+
+**Given** une équipe (ou sous-équipe) pilotée par un **Chef d'Équipe (`TEAM_LEAD`)** qui maintient plusieurs solutions logicielles (ex. `Workspace 1 : Solution Paiement` avec 3 dépôts `git://`, 2 projets `jira://` et 2 espaces `confluence://`, et `Workspace 2 : Solution Fidélité` avec ses propres sources)
+**When** le `TEAM_LEAD` gère son équipe et ses `Workspaces`
+**Then** l'ensemble des sources dédiées (`N × git://`, `N × jira://`, `N × confluence://`), les *Workflow Runs* et les *Artefacts* du `Workspace 1` sont strictement isolés de ceux du `Workspace 2` ; le responsable d'une **Équipe Parente / Tribu / BU** dispose automatiquement par héritage ascendant (*Roll-up*) d'un accès `READ_ONLY_OBSERVER` et d'une agrégation FinOps sur les Workspaces des sous-équipes filles (sauf si le Workspace est marqué `CONFIDENTIAL_RESTRICTED`) ; et une équipe partenaire invitée sur le `Workspace 1` n'a aucune visibilité sur le `Workspace 2` (`FR-21`, `AD-14`).
+
+**Given** une ressource du Catalogue publiée en `SHARED_TEAM` ou `SHARED_BU` par une équipe parente avec `DISCOVER` et `EXECUTE` mais **sans** `READ_SOURCE`
+**When** un membre d'une sous-équipe fille inspecte la ressource ou l'exécute dans l'un de ses `Workspaces`
+**Then** la ressource est automatiquement découvrable et exécutable par héritage descendant dans tous les Workspaces des sous-équipes filles, mais son prompt système et ses scripts sources restent masqués (`🔒 Source masquée`, `HTTP 403 ERR_READ_SOURCE_DENIED`), et tout secret *Passthrough* (`user_passthrough_credentials`) est chiffré en **AES-256-GCM** (`NFR-SEC-4`), avec couverture $\ge 90\%$ sur `packages/orcia-core/permissions`.
+
+### Story 1.3: Catalogue Fédéré Multi-Sources (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), Cache CAS `SHA-256`, Surcharges à 4 Niveaux (`Base → Team → Workspace → User`) & Adaptateur BMAD
+
+As a Tech Lead ou Ingénieur Plateforme (`Marc UJ-5`, `Karim UJ-9`),
+I want enregistrer des ressources par leur URI canonique dans le Catalogue Fédéré, les résoudre à la volée vers le cache immuable MinIO (`cas/<sha256>`), appliquer les surcharges déclaratives à 4 niveaux (`1. Base -> 2. Standards d'Équipe TEAM hiérarchique -> 3. Solution WORKSPACE multi-sources -> 4. Utilisateur USER`) et importer nativement des packs de skills BMAD,
+So that une équipe mutualise ses conventions sur toutes ses solutions logicielles au niveau `TEAM` tout en configurant les multiples dépôts `git://`, projets `jira://` et espaces `confluence://` propres à chaque solution au niveau `WORKSPACE` avec une résolution `< 50 ms` (`FR-20`, `FR-21`, `AD-5`, `AD-14`, `AR-5`, `UX-DR8`, `NFR-PERF-3`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `workflow_definitions` (et `catalog_items`) et `workspace_customization_overrides` (`override_layer: TEAM | WORKSPACE | USER`), ainsi que le module **📦 3. Catalogue Fédéré** dans `apps/web`
+**When** un utilisateur publie ou promeut une ressource à travers le cycle `DRAFT` $\rightarrow$ `SHARED_WORKSPACE` $\rightarrow$ `SHARED_TEAM` $\rightarrow$ `SHARED_BU` $\rightarrow$ `PENDING_APPROVAL` $\rightarrow$ `PUBLISHED_ORG` avec une URI `db://`, `git://`, `nexus://` (`.tar.gz`/`.zip`), `confluence://<space>/<page>@v<N>` ou `jira://<project>/<issue>`
+**Then** le `FederatedUriResolver` télécharge la ressource à la première demande, vérifie ou calcule son empreinte `SHA-256`, la stocke de manière immuable dans MinIO sous `cas/<sha256>`, et toute résolution ultérieure du même hash répond en `< 50 ms` (`NFR-PERF-3`)
+**And** chaque carte du Catalogue affiche le composant monospace **`Federated URI & RBAC Badge` (`uri-badge`, `UX-DR8`)** distinguant par couleur et icône la source (`git://`, `nexus://`, `db://`, `confluence://`, `jira://`), les droits effectifs et le hash `SHA-256` tronqué.
+
+**Given** un workflow de base du catalogue et des surcharges déclaratives enregistrées dans `workspace_customization_overrides` aux niveaux `TEAM` (équipe parente / sous-équipe), `WORKSPACE` (mapping des `1..N` dépôts `git://`, `1..N` projets `jira://` et `1..N` espaces `confluence://` dédiés à la solution logicielle) et/ou `USER`
+**When** le moteur résout la définition effective du workflow pour un *Run* lancé dans un *Workspace* donné
+**Then** il applique la fusion déterministe à **4 niveaux (`1. Base -> 2. Team [Arbre Équipe Parente -> Sous-Équipe] -> 3. Workspace [Solution Multi-Sources] -> 4. User`)** : scalaires écrasés, listes de sources/règles/faits concaténées, lentilles fusionnées par `code`, sans modifier la ressource de base (`AD-14`), et épingle dans `run-lock.json` le vecteur complet des triplets `(alias, uri, resolved_version, sha256)` de toutes les sources du Workspace (`AD-5`)
+**And** le `BmadSkillPackAdapter` importe et convertit sans perte un répertoire de skill BMAD (`SKILL.md` + `customize.toml` + `steps/*.md`) référencé via `git://` ou `nexus://` en définition exécutable ORCIA (`AR-5`), avec $\ge 90\%$ de couverture (`hypothesis` + `testcontainers` MinIO/PG18) sur `packages/orcia-core/catalog`.
+
+### Story 1.4: Exécution Passthrough / Service Principal & Permission Broker IA connecté à Jira
+
+As a Développeur ou Contributeur Métier (`Lucas UJ-7`, `Yanis UJ-3`),
+I want que chaque résolution de ressource externe s'exécute par défaut avec mon identité déléguée (`Passthrough`) et qu'en cas de refus d'accès (`401/403`), le Permission Broker intercepte l'erreur et m'affiche la procédure d'obtention ainsi que le lien de demande d'accès pré-remplie dans Jira,
+So that aucune élévation de privilèges (*Confused Deputy*) ne soit possible et qu'aucun blocage d'habilitation ne laisse l'utilisateur dans une impasse (`FR-22`, `AD-6`, `UX-DR11`).
+
+**Acceptance Criteria:**
+
+**Given** un connecteur externe (`git://`, `nexus://`, `confluence://`, `jira://`, `db://` ou client MCP) configuré par défaut en `execution_identity: passthrough` (ou en `service_principal` uniquement si explicitement approuvé par un Administrateur)
+**When** une étape ou une action tente d'accéder à l'un des dépôts Git privés, l'une des pages Confluence restreintes ou l'un des projets/transitions de workflow Jira du Workspace pour lequel l'utilisateur courant ne possède pas le rôle requis (`HTTP 401/403`) ou la permission `EXECUTE`
+**Then** le `PermissionBrokerService` intercepte l'exception, recherche le motif d'URI correspondant dans la Base de Connaissances d'Habilitations (fichiers Markdown à frontmatter YAML `uri_pattern`, `required_role`, `approver_team`, `request_url_template`, `sla_hours`), et retourne une enveloppe RFC 9457 enrichie du champ `permission_broker_hint`.
+
+**Given** la réception de l'état `PERMISSION_DENIED_STEP` / `WAITING_FOR_PERMISSION` dans l'interface web
+**When** l'utilisateur visualise l'étape bloquée dans le Cockpit ou le Catalogue
+**Then** le **Dock Agent Concierge & Permission Broker** s'ouvre automatiquement à droite avec une carte ambre (`#D97706`, `UX-DR11`) présentant : (1) la source exacte (`git://`, `confluence://` ou `jira://`) et le droit ou rôle de projet Jira manquant, (2) l'équipe ou le responsable approbateur identifié et le SLA, (3) le bouton/lien ouvrant la demande d'accès pré-remplie dans **Atlassian Jira**, et (4) le bouton *Mettre en pause / Rejouer l'étape* (`FR-22`)
+**And** les tests unitaires et d'intégration couvrent $\ge 90\%$ du `PermissionBrokerService` et vérifient le rendu du composant UI via Vitest / Playwright.
+
+### Story 1.5: Workflows Système d'Amorçage Gouverné Jour 0 & Onboarding Autonome d'Équipe et Multi-Workspaces Multi-Sources par le Chef d'Équipe (`init-organization`, `init-workspace`, `init-datasource`, `init-user`)
+
+As a Ingénieur Plateforme ou Chef d'Équipe (`Karim UJ-9`, `Marc UJ-5`, `Nadia UJ-4`),
+I want exécuter les workflows système pré-embarqués (`orcia://system/bootstrap/*`) guidés par l'Agent Concierge et verrouillés par des Gates Déterministes bloquantes, permettant à un Chef d'Équipe (`TEAM_LEAD`) d'embarquer son équipe, ses sous-équipes et chacune de ses solutions logicielles (`Workspaces`) avec ses multiples sources dédiées (`N × git://`, `N × jira://`, `N × confluence://`) en totale autonomie,
+So that aucune organisation ne démarre à froid sans modèles LLM orthogonaux configurés, qu'une équipe puisse configurer ses standards une fois et ouvrir autant de Workspaces que de solutions logicielles, et qu'aucune source (`db://`, `git://`, `nexus://`, `confluence://`, `jira://`) ne soit publiée sans fiche Permission Broker ni politique de fraîcheur (`FR-28`, `AD-16`).
+
+**Acceptance Criteria:**
+
+**Given** une nouvelle instance d'ORCIA dans **⚙️ 7. Administration**
+**When** l'administrateur lance `orcia://system/bootstrap/init-organization`
+**Then** la Gate Déterministe bloque la validation de l'organisation tant que (1) la configuration d'authentification (OIDC et/ou Auth locale Argon2id) et le mapping RBAC ne sont pas valides et (2) `ModelRouterService` (LiteLLM) n'a pas vérifié avec succès la connectivité d'au moins **2 familles de modèles LLM distinctes** (condition requise pour l'orthogonalité des Gates Agentiques `AD-10`), puis amorce le catalogue socle.
+
+**Given** un **Chef d'Équipe (`TEAM_LEAD`)** qui exécute `orcia://system/bootstrap/init-workspace` en self-service
+**When** il configure son équipe (et d'éventuelles sous-équipes), invite ses membres et crée un ou plusieurs **Workspaces (solutions logicielles)**
+**Then** il définit les standards `TEAM` et l'*Ontologie* `3_TEAM` communs à l'équipe, crée chaque *Workspace* solution avec sa surcharge `WORKSPACE` (`AD-14`), sa boîte de notifications et son *Ontologie* `3_WORKSPACE` (sans conflit avec N1/N2/`3_TEAM`), et pré-assigne à chaque membre invité son archétype de **Profil Humain** et ses rôles d'exécution ; à la première connexion de chaque membre, `orcia://system/bootstrap/init-user` se déclenche automatiquement pour confirmer son *Profil Humain* et lier ses comptes **Jira**, **Confluence** et **Git** en mode *Passthrough* (OAuth 3LO / PAT chiffré AES-256-GCM).
+
+**Given** un Administrateur ou un **Chef d'Équipe (`TEAM_LEAD`, dans un Workspace solution ou en portée `SHARED_TEAM`)** qui exécute `orcia://system/bootstrap/init-datasource` à plusieurs reprises pour rattacher à un même Workspace **plusieurs dépôts `git://`** (ex. `git:backend`, `git:frontend`, `git:infra`), **plusieurs espaces `confluence://`** (avec filtres CQL `space_key`/labels, ex. `confluence:specs`, `confluence:adr`) et **plusieurs projets `jira://`** (avec filtres JQL, ex. `jira:product`, `jira:secops`) dédiés à la solution
+**When** il soumet chaque source pour publication et liaison (`workspace_datasources`)
+**Then** la Gate Déterministe rejette la publication (`HTTP 422`) tant que (a) la fiche d'habilitation YAML/Markdown du *Permission Broker* n'a pas été rédigée et signée comme **Ancre Humaine** par le propriétaire de la source et (b) le paramètre `freshness_ttl_days` n'est pas renseigné (`FR-28`, `AD-16`), avec une couverture de tests $\ge 90\%$.
+
+## Epic 2: Ontologie Dynamique à 4 Niveaux, Simulation d'Impact (*What-If*) & RAG Hybride sur Graphe Tripartite (`Confluence ↔ Jira ↔ Git`)
+
+Permettre aux Stewards Métier, PMs, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) de structurer et faire évoluer l'*Ontologie à 4 niveaux* (*1. Entreprise $\rightarrow$ 2. BU $\rightarrow$ 3. Équipe hiérarchique `3_TEAM` & Solution `3_WORKSPACE` $\rightarrow$ 4. Run*) avec héritage, extraction sémantique en temps réel, *Simulation d'Impact (What-If)* avant promotion gouvernée et triple exécution active ; d'indexer de façon incrémentale et différenciée leurs multiples espaces *Confluence* (`1..N confluence://` en *Parent-Child*), multiples projets *Jira* de référence (`1..N jira://`), multiples dépôts *Git* (`1..N git://` en *AST + Code Graph*) et schémas DB (`db://`) au sein d'un *Graphe Tripartite Multi-Sources `Confluence ↔ Jira ↔ Git`* (`halfvec(1024)` + BM25) par Workspace, et de détecter/résoudre toute obsolescence documentaire (`[STALE_WARNING]`, brique `data-freshness`) dans le module **🧬 4. Ontologie & KB**.
+
+### Story 2.1: Modélisation Relationnelle-Graphe de l'Ontologie à 4 Niveaux (Arbre d'Équipes `3_TEAM` & Solution `3_WORKSPACE`), Héritage CTE (`< 15 ms`) & Triple Exécution Active
+
+As a Steward Métier, Chef d'Équipe ou Architecte SI (`Hélène UJ-1`, `Antoine UJ-2`, `Marc UJ-5`),
+I want structurer l'Ontologie en 4 niveaux hiérarchiques (`1_ENTERPRISE`, `2_DOMAIN`, `3_TEAM` le long de l'arbre d'équipes `Équipe Parente -> Sous-Équipe` et `3_WORKSPACE` propre à chaque solution logicielle, `4_RUN_EPHEMERAL`) avec héritage d'axiomes, synonymes métiers et triple exécution active (typage du Blackboard/Gabarits, traduction par Profil Humain, expansion RAG & contrôle d'axiomes),
+So that le vocabulaire commun d'une équipe soit automatiquement partagé entre toutes ses solutions logicielles tout en permettant à chaque Workspace d'y ajouter ses propres concepts applicatifs avec une résolution en `< 15 ms` (`FR-8`, `FR-10`, `AD-7`, `NFR-PERF-3`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `ontology_concepts`, `ontology_relations` et `ontology_axioms` avec index sur `(level, scope_id, canonical_term)`
+**When** le moteur `packages/orcia-core/ontology` résout l'ontologie effective pour un *Workspace* (solution logicielle) ou un *Workflow Run*
+**Then** la requête CTE récursive PostgreSQL 18 fusionne par priorité `4_RUN_EPHEMERAL -> 3_WORKSPACE -> 3_TEAM [Sous-Équipe -> Équipe Parente] -> 2_DOMAIN -> 1_ENTERPRISE` en `< 15 ms` (jusqu'à $10^6$ concepts/relations, `NFR-PERF-3`)
+**And** un concept défini au Niveau 1 (ex. `"Actif Stratégique"`) ou au Niveau `3_TEAM` d'une équipe parente est automatiquement hérité par toutes ses sous-équipes et tous ses `Workspaces` solutions, et peut être lié à un synonyme local (ex. `"Microservice Tier-1"`) dans `profile_translations_jsonb`, mais toute tentative de spécialisation violant un axiome parent marqué `immutable: true` lève une erreur bloquante `ONTOLOGY_CONFLICT` (`FR-8`, `AD-7`).
+
+**Given** une ontologie active résolue pour une étape
+**When** le service d'exécution active l'ontologie sur ses 3 plans (`FR-10`)
+**Then** (1) le validateur de schémas vérifie que les entités du *Blackboard* et des *Gabarits d'Artefact* respectent les types et cardinalités ontologiques, (2) le `ProfileSemanticTranslator` traduit les concepts selon l'archétype du *Profil Humain* connecté (`Direction`, `PM/Métier`, `Architecte/Dev`, `SecOps`), et (3) le moteur d'expansion enrichit les requêtes RAG avec les synonymes et concepts reliés tout en détectant les termes bannis/ambigus
+**And** les tests unitaires (`pytest` + `hypothesis`) et d'intégration (`testcontainers` PostgreSQL 18) couvrent $\ge 90\%$ de `packages/orcia-core/ontology`.
+
+### Story 2.2: Extraction Ontologique Temps Réel (Isolée par Branche L4), Simulation d'Impact (*What-If*) & Explorateur à 4 Colonnes
+
+As a Product Manager, Tech Lead ou Steward (`Hélène UJ-1`, `Yanis UJ-3`),
+I want extraire au fil de l'eau les nouveaux concepts au Niveau 4 (Run) isolés sur la branche active, simuler l'impact (*What-If*) avant toute modification ou promotion, et piloter la promotion gouvernée dans l'Explorateur d'Ontologie à 4 colonnes,
+So that au moins 5 concepts découverts en exécution soient capitalisés vers l'Ontologie d'Équipe ou de BU sans jamais polluer un Replay ni casser les workflows existants (`FR-9`, `AD-7`, `UX-DR14`).
+
+**Acceptance Criteria:**
+
+**Given** un nouveau terme métier ou une règle résolue en cours de conversation ou d'analyse KB
+**When** l'extracteur ontologique inscrit le concept au niveau `4_RUN_EPHEMERAL` avec la référence `introduced_in_snapshot_id`
+**Then** la CTE de résolution n'inclut ce concept L4 que pour les étapes appartenant à la lignée de snapshots `ACTIVE` (excluant automatiquement tout concept L4 issu d'une branche `SUPERSEDED` après un *Replay*, `AD-7`)
+**And** une carte de proposition de promotion (badge `{colors.ontology-cyan}` `#0284C7`) est soumise pour gouvernance vers le Niveau 3 (validation Tech Lead / PM) ou les Niveaux 2 et 1 (Gate Humaine Steward).
+
+**Given** un utilisateur qui ouvre le module **🧬 4. Ontologie & KB** (`g o`, `UX-DR14`) et sélectionne un concept pour le promouvoir ou modifier un axiome
+**When** il ouvre le tiroir `TermPromotionDrawer` et lance la **Simulation d'Impact Ontologique (*What-If*)**
+**Then** le `ImpactSimulatorService` exécute une traversée de graphe (CTE sur `ontology_relations`, `workflow_definitions` et `blackboard_snapshots`) et affiche la liste exacte des *Gabarits d'Artefact*, *Workflows* du Catalogue et *Workflow Runs* actifs impactés avant confirmation (`FR-9`, `AD-7`)
+**And** les tests unitaires (`Vitest` sur l'explorateur à 4 colonnes et `pytest` sur `ImpactSimulatorService`) et d'intégration (`testcontainers` PG18) atteignent $\ge 90\%$ de couverture.
+
+### Story 2.3: Indexation Différenciée Incrémentale Multi-Sources (N × Confluence & N × Projets Jira *Parent-Child*, N × Dépôts Code *AST + Code Graph*, Schéma DB) & Recherche Hybride `halfvec(1024)` + BM25
+
+As a Tech Lead ou Architecte (`Yanis UJ-3`, `Arthur UJ-10`),
+I want indexer de manière incrémentale et selon 3 régimes adaptés les multiples espaces Confluence et multiples projets Jira de référence d'un Workspace en découpage *Parent-Child*, ses multiples dépôts Git en découpage syntaxique *AST + Code Graph* inter-dépôts, et uniquement le schéma DDL de ses bases `db://` en vecteurs `halfvec(1024)` couplés à BM25,
+So that les agents retrouvent en `< 50 ms` le contexte exact à travers tous les dépôts et espaces de la solution logicielle sans souffrir du « syndrome du cimetière wiki » ni couper les fonctions de code au milieu (`FR-23`, `AD-8`, `AR-6`, `NFR-PERF-3`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `kb_documents`, `kb_chunks` (avec `workspace_id`, `datasource_id`, index HNSW sur `embedding halfvec(1024)` et index GIN sur `search_tsv tsvector`) et `code_graph_edges`
+**When** le worker Dramatiq `docling_indexer` indexe ou met à jour incrémentalement (par delta `SHA-256` sur chaque dépôt Git, `page.version.number` sur chaque espace Confluence ou timestamp `updated` sur chaque projet Jira du Workspace) les sources enrôlées via `init-datasource`
+**Then** il applique strictement les **3 régimes d'indexation (`AD-8`)** :
+1. **Régime 1 — Documentation, Multi-Espaces Confluence (`1..N confluence://`) & Multi-Projets Jira de Référence (`1..N jira://`)** : Filtrage CQL par espace (`space_key`, page racine, labels `orcia-kb`, exclusion de `draft`/`archived`) et filtrage JQL par projet Jira (uniquement *Epics, User Stories, Bugs résolus avec Root Cause, Post-mortems*) ; parsing via `Docling 2.142.1` en découpage *Parent-Child* où le **chunk enfant (`256-512` tokens)** préfixé par son *Contextual Header* (`[Alias Source : Espace/Projet > Parent > Titre | Concepts Ontologie]`) porte le vecteur `halfvec(1024)`, tandis que le **chunk parent (`1024-2048` tokens)** est stocké pour injection dans le prompt (et 1 chunk unifié `256-1024` tokens par ticket Jira de référence).
+2. **Régime 2 — Multi-Codebases (`1..N git://` via `tree-sitter 0.24.0`)** : Découpage syntaxique strict par symbole AST (`150-800` tokens par fonction/classe/méthode/modèle Pydantic) sur chacun des dépôts Git dédiés au Workspace et extraction déterministe du *Code Property Graph* intra et inter-dépôts (`DEFINES`, `CALLS`, `IMPORTS`, `IMPLEMENTS_CONCEPT`, `TESTED_BY`).
+3. **Régime 3 — Bases de Données (`db://`)** : Indexation exclusive du schéma DDL (`CREATE TABLE`, clés étrangères, commentaires) et de son mapping ontologique (**0 ligne transactionnelle** indexée dans le RAG).
+
+**Given** une requête de recherche émise par un Agent ou un utilisateur dans un Workspace avec un `kb_snapshot_hash` épinglé
+**When** `HybridRagService` exécute la recherche sur l'ensemble des sources du Workspace (ou un sous-ensemble filtré par `alias` de source)
+**Then** il combine en `< 50 ms` (`NFR-PERF-3`) la similarité cosinus `halfvec(1024)` HNSW et le score lexical BM25 `tsvector` par *Reciprocal Rank Fusion (RRF)* en respectant source par source les restrictions de lecture Confluence/Jira/Git en mode *Passthrough*, et retourne les chunks parents accompagnés de leur URI et révision exacte
+**And** les tests unitaires (`pytest` sur le découpage AST/Parent-Child et le calcul RRF) et d'intégration (`testcontainers` PG18 + `pgvector 0.8.7`) couvrent $\ge 90\%$ de `packages/orcia-core/rag`.
+
+### Story 2.4: Graphe Tripartite Multi-Sources (`Confluence 1..N ↔ Jira 1..N ↔ Git 1..N`), Brique `data-freshness` & Alerte d'Obsolescence `[STALE_WARNING]`
+
+As a Tech Lead ou Architecte (`Yanis UJ-3`, `Arthur UJ-10`),
+I want relier automatiquement les pages de tous les espaces Confluence, les tickets de tous les projets Jira et les symboles/commits de tous les dépôts Git d'un même Workspace au sein d'un Graphe Tripartite de Traçabilité unifié, vérifier la fraîcheur via la brique `data-freshness` et lever une alerte `[STALE_WARNING]` dès qu'un document est expiré ou contredit par un ticket Jira plus récent ou par le code,
+So that aucune décision d'architecture ou d'audit ne s'appuie sur une documentation périmée sans que l'équipe ne soit immédiatement avertie (`FR-23`, `AD-8`, `UX-DR11`, `UX-DR14`).
+
+**Acceptance Criteria:**
+
+**Given** l'indexation des multiples espaces `confluence://`, des multiples projets `jira://` et des multiples dépôts `git://` rattachés à un même Workspace
+**When** l'extracteur de liens croisés détecte les clés de tickets des différents projets Jira du Workspace (`[A-Z][A-Z0-9]+-[0-9]+`, ex. `PAY-123`, `SEC-45`) dans les messages de commits/PRs de n'importe lequel des dépôts Git ou dans les pages de n'importe lequel des espaces Confluence
+**Then** il peuple automatiquement les arêtes du **Graphe Tripartite Multi-Sources de Traçabilité** à l'échelle du Workspace : `Confluence (DOCUMENTS)` $\leftrightarrow$ `Jira (SPECIFIES / FIXES / BLOCKS)` $\leftrightarrow$ `Code Git (IMPLEMENTS_ISSUE)` $\leftrightarrow$ `Ontologie (AFFECTS_CONCEPT)`.
+
+**Given** un chunk documentaire ou une page Confluence dont `now() - last_verified_at > freshness_ttl_days` **OU** qui est contredit par un ticket Jira lié plus récent ou un contrat OpenAPI/code mis à jour dans l'un des dépôts Git du Workspace (détecté lors d'une exécution de la brique de workflow `data-freshness` ou d'un signalement `UJ-3` / `UJ-10`)
+**When** ce document est inspecté ou récupéré par le moteur RAG
+**Then** le système injecte automatiquement le marqueur `[STALE_WARNING]` dans le contexte de l'agent, allume le badge rouge `!` (`#DC2626`, `UX-DR11`) sur l'entrée **🧬 4. Ontologie & KB** de la Sidebar, et affiche dans l'explorateur KB la liste des *Workflow Runs* actifs impactés avec l'action de mise à jour et de *Replay* (`FR-23`, `UX-DR14`)
+**And** lors d'un audit Doc vs Code (`UJ-10`), si le code d'un dépôt Git diffère d'une page Confluence mais correspond à un ticket Jira `Done` plus récent relié dans le Graphe Tripartite, l'écart est qualifié de `[DOC_OBSOLETE_SUSPECTED]` avec citation du ticket Jira justificatif
+**And** les tests unitaires et d'intégration couvrent $\ge 90\%$ de la construction du Graphe Tripartite multi-sources et du détecteur `data-freshness` / `[STALE_WARNING]`.
+
+## Epic 3: Cockpit "Human-Led", Agent Concierge Adaptatif & Moteur d'Orchestration Durable (Blackboard, Bimodal & Replay)
+
+Permettre aux Product Managers, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) de dialoguer dans le **💬 1. Cockpit & Chat** avec l'*Agent Concierge* (DAG à 5 nœuds orientés type n8n dans le `ConciergeHarness` à 5 couches, adaptant son vocabulaire au *Profil Humain*), de définir ou d'assembler conversationnellement des *Workflows-as-Code* YAML/JSON avec prévisualisation graphique (`@xyflow/react`), de lancer des *Workflow Runs* épinglés par `run-lock.json` en mode *Coaching interactif* ou *Fast-Path / Tâche de fond (`BACKGROUND_AUDIT`, `UJ-10`)*, de rédiger leurs *Ancrages Humains Obligatoires* (`human_authored_required: true`), de trancher les *Arbitrages Humains* sur options équivalentes, d'émettre des *Challenges Amont* avec simulation d'impact (*What-If*) et de déclencher un *Replay ciblé* à partir du Step $N$ (0 token reconsommé sur les étapes $1..N-1$) dans le respect de la discipline `Intention -> Code`.
+
+### Story 3.1: Workflow-as-Code YAML/JSON, Gabarits d'Artefact Multi-Audience, Discipline `Intention -> Code` & Épinglage `run-lock.json`
+
+As a Concepteur de Workflow ou Architecte (`Antoine UJ-2`, `Marc UJ-5`),
+I want définir des Workflows déclaratifs YAML/JSON validés par schéma, associer à chaque Step un Gabarit d'Artefact Multi-Audience (Markdown Humain + JSON Schema Agent), imposer la discipline `Intention -> Code` et figer toutes les dépendances dans `run-lock.json` au démarrage d'un Run,
+So that chaque Workflow Run soit structurellement valide, reproductible à l'identique même après 10 jours de pause et protégé contre la rétro-documentation sauvage de bugs (`FR-11`, `FR-12`, `FR-13`, `FR-15`, `AD-5`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `workflow_runs` et `run_lock_manifests`
+**When** un concepteur enregistre un manifeste *Workflow-as-Code* YAML/JSON dans `packages/orcia-core/orchestration`
+**Then** le validateur vérifie la syntaxe du DAG (Steps, Agents, Skills, KBs, Gabarits, Ancrages Humains, Gates, routes de rétroaction et sortie de boucle bornée) et rejette toute définition invalide avec le numéro de ligne et la règle violée (`FR-11`)
+**And** tout workflow d'ingénierie logicielle nominal qui comporte une étape d'écriture/modification de code sans étape amont de déclaration d'intention ou de spécification validée est rejeté (`ERR_INTENTION_BEFORE_CODE_REQUIRED`), tandis que les workflows de rétro-documentation (`Code -> Doc`) doivent obligatoirement déclarer `mode: brownfield_bootstrap` (`FR-13`).
+
+**Given** un *Workflow* valide que l'utilisateur instancie en *Workflow Run*
+**When** le moteur initialise le Run
+**Then** il résout toutes les URI externes (`db://`, `git://`, `nexus://`, `confluence://`, `jira://`) et les surcharges à 3 niveaux, et inscrit de manière immuable dans `run_lock_manifests` (`run-lock.json`) les triplets `(uri, resolved_version, sha256)` et le `kb_snapshot_hash` (`FR-15`, `AD-5`)
+**And** chaque *Gabarit d'Artefact* (`FR-12`) compile simultanément la vue documentaire Markdown (avec variables Jinja/Mustache et sections de découpage) pour le Canvas humain et le contrat JSON/YAML Schema typé par l'Ontologie pour les Steps aval
+**And** les tests unitaires (`pytest` + `hypothesis`) et d'intégration (`testcontainers` PG18 + MinIO) couvrent $\ge 90\%$ du validateur de workflows, des gabarits et du verrouillage `run-lock.json`.
+
+### Story 3.2: Moteur d'Orchestration Durable, Checkpoints Immuables du Blackboard, Hydratation JIT & Exécution Bimodale (`Coaching` vs `Fast-Path / Tâche de Fond`)
+
+As a Tech Lead ou Architecte (`Yanis UJ-3`, `Arthur UJ-10`),
+I want exécuter les Steps via un moteur durable basé sur des checkpoints immuables du Blackboard (séparant brouillon et snapshot validé), une hydratation Just-In-Time filtrée (`orcia://`) et un mode bimodal (`COACHING` interactif vs `FAST_PATH / BACKGROUND_AUDIT` en tâche de fond),
+So that les Workflows longs survivent à tout redémarrage serveur, ne divulguent que le contexte déclaré à chaque Step et permettent d'exécuter un audit complet Doc vs Code en tâche de fond sans blocage intempestif (`FR-14`, `AD-2`, `AD-13`, `AR-3`, `NFR-REL-1`, `NFR-SEC-3`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `step_executions` (colonnes `execution_mode`, `status`, `draft_artifact_jsonb`, `draft_cas_key`, `step_memlog_jsonb`) et `blackboard_snapshots` (protégée par trigger PostgreSQL append-only `BEFORE UPDATE OR DELETE RAISE EXCEPTION`, `NFR-SEC-3`)
+**When** le worker Dramatiq `step_runner` démarre l'étape $k$ d'un *Workflow Run*
+**Then** le `JitStepHydrator` (`AD-13`) n'injecte dans le contexte de l'*Agent Exécuteur* (routé de façon agnostique via LiteLLM vers OpenAI, Anthropic, Gemini ou Ollama/vLLM local, `FR-14`) que la directive de l'étape $k$ et les artefacts amont explicitement déclarés dans `inputs` via `orcia://runs/{run_id}/steps/{step_key}/artifacts/{artifact_key}` (0 instruction des étapes futures $k+1..N$ et 0 artefact non déclaré)
+**And** tant que l'étape est en `EXECUTING_AGENT` ou `EVALUATING_GATES`, le livrable candidat est écrit dans `step_executions.draft_artifact_jsonb` et ses raisonnements/hypothèses dans `step_executions.step_memlog_jsonb` ; ce n'est qu'au statut `COMMITTED` qu'un snapshot immuable est ajouté dans `blackboard_snapshots` (`AD-2`, `AR-3`, `NFR-REL-1`).
+
+**Given** un *Workflow Run* lancé en mode **`FAST_PATH` / `BACKGROUND_AUDIT` (Tâche de fond, `UJ-10`)** après signature des éventuelles *Ancres Humaines* initiales
+**When** l'*Agent Exécuteur* rencontre une ambiguïté ou une divergence entre Documentation (Confluence/Jira) et Codebase (`git://`)
+**Then** au lieu de bloquer le worker à mi-parcours, il inscrit dans `step_memlog_jsonb` et dans l'artefact un marqueur structuré `[ASSUMPTION]`, `[BUG_CODE_SUSPECTED]` ou `[DOC_OBSOLETE_SUSPECTED]`, poursuit l'exécution jusqu'au rapport de comparaison final, consolide tous les points d'arbitrage et notifie l'initiateur (`Arthur`) en `< 500 ms` via SSE (`AD-13`)
+**And** les tests unitaires (`pytest` + `DeterministicCassetteLLM`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ de `packages/orcia-core/orchestration` et `blackboard`.
+
+### Story 3.3: Agent Concierge (DAG 5 Nœuds type n8n, `ConciergeHarness` 5 Couches), Adaptation au Profil Humain & Composition Conversationnelle de Workflows (`@xyflow/react`)
+
+As a Directrice de BU, Product Manager ou Architecte (`Claire UJ-8`, `Hélène UJ-1`, `Arthur UJ-10`),
+I want dialoguer dans le Cockpit Chat-First + Canvas (et le Dock persistant) avec l'Agent Concierge structuré en DAG de 5 nœuds orientés dans le `ConciergeHarness` à 5 couches, qui adapte son discours à mon Profil Humain et peut assembler/modifier conversationnellement un Workflow avec aperçu graphique `@xyflow/react`,
+So that j'obtienne un premier token en `< 1,5 s` dans mon vocabulaire métier et puisse créer, ajuster et lancer en tâche de fond un workflow sur mesure en quelques messages (`FR-1`, `FR-11`, `AD-15`, `AR-4`, `UX-DR12`, `UX-DR15`, `NFR-PERF-1`).
+
+**Acceptance Criteria:**
+
+**Given** le workflow système `orcia://system/workflows/concierge-agent` implémenté en DAG de 5 nœuds (*1. Routeur d'Intention $\rightarrow$ 2. Query Planner & Expansion Ontologique $\rightarrow$ 3. Fan-Out Parallèle [RAG, Catalogue, Blackboard, Permission Broker] $\rightarrow$ 4. Tri Critique & Vérification d'Axiomes $\rightarrow$ 5. Synthétiseur Adaptatif au Profil Humain*) exécuté dans `ConciergeHarness` (`AD-15`, `AR-4`)
+**When** un utilisateur interroge l'Agent Concierge depuis **💬 1. Cockpit & Chat** ou le Dock latéral
+**Then** le `ConciergeHarness` assemble les **5 couches de prompt** (avec la Couche 1 Constitutionnelle immuable interdisant toute écriture sur une *Ancre Humaine* ou approbation de *Gate*), diffuse le premier token en `< 1,5 s` via SSE (`NFR-PERF-1`), et adapte le registre et les indicateurs au *Profil Humain* connecté (`Direction/BU` $\rightarrow$ KPIs FinOps/TTM N1/N2 ; `PM/Métier` $\rightarrow$ règles de gestion ; `Architecte/Tech Lead` $\rightarrow$ URI, OpenAPI, hashes `SHA-256` N3 ; `SecOps` $\rightarrow$ preuves de Gates, `FR-1`, `UX-DR12`).
+
+**Given** `Arthur` (`UJ-10`) qui demande à l'Agent Concierge de lui proposer un workflow pour comparer la documentation Confluence/Jira à une codebase `git://`, puis demande une modification d'étape
+**When** l'Agent Concierge génère puis ajuste la proposition à partir des briques du *Catalogue Fédéré*
+**Then** le **Canvas** affiche côte à côte le graphe interactif du workflow rendu avec **`@xyflow/react 12.12.0`** et le manifeste YAML mis à jour (`UX-DR15`, `FR-11`), et permet à `Arthur` en un clic (ou par confirmation dans le chat) d'enregistrer le workflow dans le Workspace et de lancer son exécution en tâche de fond (`BACKGROUND_AUDIT`)
+**And** les tests unitaires (`pytest` sur l'inviolabilité de la Couche 1 du `ConciergeHarness` + `Vitest` sur `@xyflow/react`) et `DeterministicCassetteLLM` couvrent $\ge 90\%$ du module.
+
+### Story 3.4: Ancrages Humains Obligatoires (`human-led-anchor-card`) & Arbitrage Humain Systématique sur Options Équivalentes (`arbitration-tiebreak-card`)
+
+As a Product Manager ou Architecte (`Hélène UJ-1`, `Antoine UJ-2`),
+I want rédiger et signer obligatoirement les sections `human_authored_required: true` avant toute génération IA et trancher via une matrice comparative tout Arbitrage Humain lorsque l'agent rencontre des options équivalentes,
+So that l'humain conserve la maîtrise intellectuelle (*Think*) sans biais d'ancrage cognitif et qu'aucun agent ne prenne de décision arbitraire silencieuse (`FR-4`, `FR-5`, `AD-3`, `UX-DR3`, `UX-DR6`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant les tables `human_anchor_signatures` et `human_arbitration_requests`, ainsi qu'une étape de workflow comportant un champ marqué `human_authored_required: true`
+**When** l'utilisateur ouvre l'étape dans le **Canvas** du Cockpit
+**Then** le composant **`Human-Led Anchor Card` (`human-led-anchor-card`, bordure gauche violette `4px solid #6D28D9`, fond `#F5F3FF`, `UX-DR3`)** est affiché **sans aucun bouton "Générer avec l'IA"**, verrouillant le lancement de l'agent tant qu'un texte humain significatif ($\ge 30$ caractères) n'est pas saisi et signé dans `human_anchor_signatures` (`content_sha256`, `authored_by_user_id`)
+**And** toute tentative d'écriture par une identité d'agent sur ce champ est rejetée par l'API avec `HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED` (`AD-3`), et si l'utilisateur demande dans le chat *"Remplis-le pour moi"*, l'Agent Concierge refuse poliment et engage un questionnement socratique (`FR-4`).
+
+**Given** un *Agent Exécuteur* en mode `COACHING` qui identifie $\ge 2$ options techniques, fonctionnelles ou métier équivalentes non départagées par l'Ontologie, la KB ou les Ancrages Humains
+**When** l'agent invoque l'outil système obligatoire `request_human_arbitration(options_matrix)` (`AD-3`)
+**Then** l'étape passe atomiquement au statut `WAITING_FOR_HUMAN_ARBITRATION`, émet un événement SSE temps réel, et affiche dans le Chat et le Canvas la carte ambre **`Arbitration Tie-Break Matrix` (`arbitration-tiebreak-card`, `#D97706`, `UX-DR6`)** comparant chaque option (avantages, inconvénients, impacts SI/FinOps, recommandation)
+**And** dès que l'humain sélectionne une option (avec justification optionnelle), la décision est enregistrée dans le *Blackboard* et relance immédiatement l'exécution de l'étape (`FR-5`)
+**And** les tests unitaires (`pytest`, `Vitest`) et E2E (`Playwright`) couvrent $\ge 90\%$ de `AD-3`, `UX-DR3` et `UX-DR6`.
+
+### Story 3.5: Challenge Amont Inter-Steps avec Simulation d'Impact (*What-If*) & Replay Ciblé à partir du Step $N$ (`Time-Travel Execution`)
+
+As a Architecte SI ou Tech Lead (`Antoine UJ-2`, `Yanis UJ-3`, `Lucas UJ-7`),
+I want émettre un Challenge formel vers un Step amont avec prévisualisation immédiate du graphe d'impact (*What-If Impact Preview*) et relancer un Replay ciblé à partir d'un Step $N$ en réutilisant le snapshot validé de l'étape $N-1$,
+So that les incohérences métier ou d'API soient corrigées à la source et rejouées sans reconsommer un seul token sur les étapes amont non impactées (`FR-7`, `FR-16`, `AD-2`, `AD-7`, `UX-DR7`).
+
+**Acceptance Criteria:**
+
+**Given** un contributeur aval (ex. `Antoine` au Step 2 ou `Yanis` au Step 3) qui sélectionne une règle ou section d'un *Artefact* amont dans le Canvas et clique sur *Challenger / Rewind amont*
+**When** la modale **`Upstream Challenge & Rewind Modal` (`UX-DR7`)** s'ouvre
+**Then** le `ImpactSimulatorService` (`AD-7`) calcule par traversée de graphe (CTE sur les références `orcia://` de `blackboard_snapshots` et `ontology_relations`) et affiche l'**Aperçu de Simulation d'Impact (*What-If Impact Preview*)** listant exactement quels *Steps* aval, quelles sections d'*Artefacts* et quels axiomes d'*Ontologie* seront invalidés, tandis que l'agent traduit l'impact technique dans le vocabulaire du profil amont (`Hélène`, PM) et lui envoie une notification de challenge (`FR-7`).
+
+**Given** un arbitrage amont validé (créant une révision `v1.1` de l'artefact amont), une résolution d'habilitation (`UJ-7`) ou une mise à jour de KB (`UJ-3`)
+**When** l'utilisateur habilité déclenche l'action **Replay à partir du Step $N$** (`POST /api/v1/runs/{run_id}/steps/{step_id}/replay`, `FR-16`)
+**Then** le moteur d'orchestration réutilise strictement le snapshot validé de l'étape $N-1$ et les versions `SHA-256` figées dans `run-lock.json` (**0 ré-exécution et 0 token consommé** sur les étapes $1..N-1$), marque les anciens snapshots des étapes $\ge N$ comme `SUPERSEDED`, et crée une nouvelle branche `ACTIVE` de snapshots dans `blackboard_snapshots` (`AD-2`)
+**And** les tests unitaires (`hypothesis` sur l'arbre de branchement `ACTIVE`/`SUPERSEDED`) et d'intégration (`testcontainers` PG18) vérifient à $\ge 90\%$ qu'aucun snapshot existant n'est jamais muté lors d'un Replay.
+
+## Epic 4: Pipeline Tri-Modal des Gates, Validation Cognitive par Découpage & Écosystème d'Exécution (Actions Jira, Sandbox & MCP IDE)
+
+Permettre aux Tech Leads, SecOps, Développeurs et Auditeurs (`Yanis UJ-3`, `Marc UJ-5`, `Sophie UJ-6`, `Arthur UJ-10`) de valider chaque étape via la chaîne de *Gates Déterministes* en *Sandbox isolée* (`< 5s`, sans réseau, conformité Gabarit/Ontologie et anti-*Pattern Drift*), de *Gates Agentiques* avec *Orthogonalité des Modèles*, pseudonymisation PII réversible (`PiiReversibleScrubber`) et DAG de 5 lentilles (dont `fact_verification` et contrôle transverse Étape $N$ vs Étape 1), et de *Gates Humaines Adaptatives* (`mandatory_full`, `risk_or_exception_based`, `sampling`) équipées du *Briefing de Revue (4 blocs)*, de la *Validation par Découpage* et du garde-fou anti-*Rubber-Stamping* (`< 15s`) ; tout en exécutant de manière gouvernée (en mode *Staged* validé aux Gates) la création, la modification et les *transitions de workflows Jira* (+ réception des Webhooks `jira:issue_updated`) et en interrogeant ORCIA depuis leur IDE via le *Serveur MCP gouverné (`/api/v1/mcp`)*.
+
+### Story 4.1: Sandbox Déterministe Isolée (`< 5 s`, sans réseau), Détection de Pattern Drift & Workflows Système `init-existing-project` / `init-skill`
+
+As a Tech Lead ou Ingénieur SecOps (`Marc UJ-5`, `Sophie UJ-6`),
+I want exécuter les Gates Déterministes et les Skills dans une Sandbox isolée sans réseau (`bubblewrap --unshare-net` / `Wasmtime`, `< 5 s`, `256 MB`), détecter automatiquement tout Pattern Drift vis-à-vis de `ARCHITECTURE-SPINE.md` et certifier les projets/skills via `init-existing-project` et `init-skill`,
+So that aucun code généré ou script de validation ne puisse exfiltrer des données ni introduire des dépendances ou motifs architecturaux non autorisés (`FR-17`, `FR-28`, `AD-9`, `NFR-SEC-1`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant la table `gate_evaluations`, ainsi que le runner de sandbox (`infra/sandbox/`, `bubblewrap --unshare-net --ro-bind` et runtime WebAssembly `Wasmtime 27.0`)
+**When** une *Gate Déterministe* ou un *Skill* s'exécute à la fin d'un Step
+**Then** le processus tourne sans privilèges root, sans aucun accès réseau (`--unshare-net`), avec un système de fichiers éphémère en lecture seule (hors `/tmp` mémoire de `64 MB`), un plafond RAM de `256 MB` et un timeout matériel de `5 000 ms` (`AD-9`, `NFR-SEC-1`)
+**And** il vérifie (1) le schéma JSON/YAML du *Gabarit d'Artefact*, (2) les axiomes formels de l'*Ontologie*, (3) les suites de tests/linters, et (4) les règles d'analyse statique de **Pattern Drift** (rejetant toute bibliothèque ou motif absent du `ARCHITECTURE-SPINE.md` de référence, `FR-17`).
+
+**Given** un projet existant (*Brownfield*) ou un nouveau *Skill* soumis au Catalogue
+**When** l'utilisateur exécute `orcia://system/bootstrap/init-existing-project` ou `init-skill` (`FR-28`, `AD-16`)
+**Then** `init-existing-project` scanne le dépôt `git://` pour générer et faire signer un `ARCHITECTURE-SPINE.md` initial (`[ADOPTED]`) servant de baseline anti-*Pattern Drift*, et `init-skill` refuse de publier tout *Skill* qui échoue aux contraintes d'isolation de la Sandbox (`< 5 000 ms`, `0` appel réseau)
+**And** les tests unitaires et d'intégration (incluant des tests d'évasion réseau et mémoire de la sandbox) couvrent $\ge 90\%$ de `packages/orcia-core/gates/deterministic`.
+
+### Story 4.2: Gates Agentiques avec Orthogonalité des Modèles, Pseudonymisation PII Réversible (`PiiReversibleScrubber`) & DAG de 5 Lentilles (dont `fact_verification`)
+
+As a Ingénieur SecOps ou Architecte (`Sophie UJ-6`, `Antoine UJ-2`, `Arthur UJ-10`),
+I want qu'une Gate Agentique route obligatoirement l'évaluation vers une famille de modèle distincte de l'exécuteur (sans sa Chain-of-Thought), pseudonymise les PII de manière réversible avant tout appel Cloud, et exécute en parallèle les 4 lentilles d'audit (dont `fact_verification` et Contrôle Transverse Étape 1) suivies de la lentille de synthèse,
+So that le biais d'auto-complaisance LLM, l'effet téléphone arabe entre étapes et les hallucinations factuelles soient neutralisés à la source (`FR-18`, `AD-10`, `NFR-SEC-2`).
+
+**Acceptance Criteria:**
+
+**Given** une *Gate Agentique* déclenchée après une étape exécutée par un modèle de la famille $F_{\text{exec}}$ (ex. `anthropic/claude-*`)
+**When** `ModelRouterService` (LiteLLM) prépare l'invocation de l'*Agent Évaluateur*
+**Then** il impose par construction que `evaluator_model_family != executor_model_family` (ex. `google/gemini-*` ou `openai/gpt-*`, levant une erreur bloquante si la règle est violée), purge intégralement la chaîne de raisonnement interne (*Chain-of-Thought*) de l'exécuteur (`FR-18`, `AD-10`)
+**And** il route les données classifiées sensibles par l'Ontologie exclusivement vers les modèles locaux (Ollama/vLLM) et applique à la volée le filtre **`PiiReversibleScrubber` (`anonymize_pii_reversible: true`)** qui remplace les données personnelles ou secrets par des jetons déterministes stockés en Redis sur la durée du `run_id` et les ré-hydrate localement au retour (`NFR-SEC-2`).
+
+**Given** l'artefact candidat transmis à la *Gate Agentique*
+**When** le moteur de Gate exécute le **DAG de Lentilles d'Évaluation (`AD-10`)**
+**Then** il lance en parallèle et sans visibilité croisée les **4 Lentilles Indépendantes** :
+1. *Lentille 1 — Alignement Transverse Étape 1* : vérifie que l'artefact du Step $N$ ne contredit aucune exigence ou invariant du `PRD` (Step 1) ou de l'`Architecture` (Step 2).
+2. *Lentille 2 — Vérification Atomique de Faits (`fact_verification`)* : décompose l'artefact en assertions factuelles atomiques, confronte chacune à l'*Ontologie (N1..N4)* et aux *KBs* épinglées avec un score de confiance (`0..1`), et bloque toute assertion sous le seuil configuré.
+3. *Lentille 3 — Attaque Adversariale & Edge-Cases*.
+4. *Lentille 4 — Conformité Domaine & Sécurité*.
+**And** la *Lentille 5 — Synthèse & Structure* (`after`) consolide `lens_findings_jsonb`, intègre `step_memlog_jsonb`, calcule `agentic_score` et structure le **Briefing de Revue en 4 blocs** dans `gate_evaluations.briefing_4blocks_jsonb`
+**And** les tests unitaires (`pytest` sur l'orthogonalité, la purge CoT et `PiiReversibleScrubber`) et `DeterministicCassetteLLM` couvrent $\ge 90\%$ du module.
+
+### Story 4.3: Gates Humaines Adaptatives, Briefing de Revue 4 Blocs (`review-briefing-grid`), Validation par Découpage (`chunk-validation-card`) & Garde-fou Anti-Rubber-Stamping (`< 15 s`)
+
+As a Valideur Métier, Tech Lead ou SecOps (`Hélène UJ-1`, `Nadia UJ-4`, `Sophie UJ-6`),
+I want inspecter en tête de tout artefact le Briefing de Revue en 4 blocs, valider ou amender l'artefact section par section (`Validation par Découpage`), bénéficier des 3 politiques de Gates Adaptatives et être protégé contre le Rubber-Stamping (`< 15 s`),
+So that le taux de validation aveugle reste strictement $< 5\%$ tout en automatisant le passage des étapes à faible risque parfaitement conformes (`FR-6`, `FR-19`, `AD-11`, `UX-DR4`, `UX-DR5`, `UX-DR10`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant la table `chunk_approvals`, ainsi que le module **🛡️ 5. Gates & Habilitations** (`g g`) permettant de configurer la politique d'une *Gate Humaine* (`mandatory_full`, `risk_or_exception_based`, `sampling`)
+**When** une étape atteint une *Gate Humaine* configurée en `risk_or_exception_based`
+**Then** la Gate passe automatiquement si et seulement si `deterministic_status == PASS` **ET** `agentic_score >= 0.85` **ET** `ontology_conflicts == 0` **ET** `stale_warnings == 0` (et qu'aucune section ne porte `human_authored_required: true`) ; sinon, ou dans `20 %` des cas en mode `sampling`, elle requiert l'intervention humaine (`FR-19`, `AD-11`).
+
+**Given** un valideur humain qui ouvre dans le **Canvas** une étape soumise à une *Gate Humaine* (ou un artefact $> 1\,500$ mots / $> 3$ sections)
+**When** la vue de validation est rendue
+**Then** elle affiche en haut la grille $2 \times 2$ **`Cognitive Review Briefing` (`review-briefing-grid`, `UX-DR4`)** (*1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, *4. Hypothèses Retenues* encadré en ambre `#D97706` tant qu'il n'est pas inspecté), suivie des cartes **`Chunked Validation Card` (`chunk-validation-card`, `UX-DR5`)** navigables via `Alt + ↑ / ↓` avec 3 actions par section (*Valider la section*, *Co-éditer* avec signature dans `human_anchor_signatures`, ou *Challenger / Rewind amont*), **sans aucun bouton "Tout Approuver en 1 clic"** tant que toutes les sections obligatoires ne sont pas `APPROVED` (`FR-6`)
+**And** si le valideur soumet une approbation sur un artefact $> 1\,000$ mots en moins de `15 secondes` de lecture active, la modale **`Anti-Rubber-Stamping Guard` (`UX-DR10`)** exige une confirmation explicite des hypothèses et enregistre `fast_approval_warning: true` (`AD-11`)
+**And** les tests unitaires (`pytest`, `Vitest`) et E2E (`Playwright`) couvrent $\ge 90\%$ de ces composants et règles.
+
+### Story 4.4: Actions & Transitions de Workflows Jira Multi-Projets Staged aux Gates (+ Webhooks `jira:issue_updated`) & Serveur MCP Gouverné (`/api/v1/mcp` pour IDE)
+
+As a Tech Lead, Développeur ou Architecte (`Yanis UJ-3`, `Lucas UJ-7`, `Arthur UJ-10`),
+I want que les agents puissent interroger en JQL temps réel les multiples projets Jira rattachés au Workspace, préparer des créations/modifications/transitions de tickets Jira (en routant vers le projet Jira approprié par alias/composant) en mode *Staged* soumis aux Gates, réveiller un Run sur Webhook `jira:issue_updated`, et exposer le Serveur MCP gouverné d'ORCIA (`/api/v1/mcp`) à mon IDE (VS Code, Cursor, Claude Code, Antigravity),
+So that les workflows Jira des différents projets de la solution avancent automatiquement en toute sécurité dès qu'une Gate est franchie et que les développeurs accèdent au contexte gouverné d'ORCIA directement depuis leur éditeur de code (`FR-24`, `AD-5`, `AD-6`, `AR-7`).
+
+**Acceptance Criteria:**
+
+**Given** un *Step* utilisant le connecteur/Skill **Jira (`jira://`)** en mode *Passthrough* (OAuth 2.0 3LO / PAT) dans un Workspace rattachant un ou plusieurs projets Jira dédiés (ex. `jira:product`, `jira:secops`)
+**When** l'*Agent Exécuteur* propose de créer un ticket (`create_issue` en sélectionnant le `project_key` cible parmi les projets du Workspace), de le modifier/commenter (`update_issue`, `add_comment`) ou de faire avancer son workflow Jira (`transition_issue`)
+**Then** le connecteur interroge d'abord `GET /rest/api/3/issue/{key}/transitions` sur le projet concerné pour valider que la transition cible est légale et que tous les champs obligatoires de l'écran de transition sont fournis, puis enregistre l'opération comme **Action Staged** dans `step_executions.draft_artifact_jsonb` (affichée comme carte révisable dans la *Validation par Découpage* `UX-DR5`)
+**And** l'appel d'écriture ou de transition vers l'API REST Jira v3 n'est exécuté qu'au passage effectif de la **Gate** de l'étape (`AD-5`, `AD-11`), en inscrivant automatiquement le lien de provenance `run-lock.json` dans le ticket Jira.
+
+**Given** un *Workflow Run* en pause en attente de la résolution d'un ticket sur l'un des projets Jira liés (`UJ-3`), ou un développeur connecté depuis son IDE externe (VS Code, Cursor, Claude Code, Antigravity)
+**When** Jira émet le Webhook `jira:issue_updated` (statut passé à `Done`) **OU** que l'IDE appelle le **Serveur MCP gouverné `/api/v1/mcp`** (`AR-7`)
+**Then** le Webhook Jira notifie l'équipe en `< 500 ms` via SSE pour déclencher le *Replay* ciblé (`FR-16`), et le serveur `/api/v1/mcp` expose en mode *Passthrough* les outils de consultation de l'*Ontologie (N1..N4)*, de la *KB* multi-sources, du *Catalogue* et du *Blackboard* tout en bloquant matériellement toute écriture sur les sections `human_authored_required: true` (`AD-3`, `AD-6`, `FR-24`)
+**And** les tests unitaires, de contrat et d'intégration couvrent $\ge 90\%$ du connecteur d'actions Jira multi-projets stagées, du récepteur de Webhooks et du serveur MCP `/api/v1/mcp`.
+
+## Epic 5: Centre de Notifications Temps Réel (`< 500ms`), Supervision Multi-Runs, Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces`) & Expérience Mobile Companion
+
+Permettre aux Administrateurs Plateforme (`Karim UJ-9`), Directeurs de BU (`Claire UJ-8`), Chefs d'Équipe (`Marc UJ-5`) et Contributeurs multi-projets (`Nadia UJ-4`) de trier leurs notifications personnelles et d'équipe dans **🔔 2. Boîte & Mes Runs**, de prendre en charge (*Claim*) atomiquement une notification d'équipe avec verrou de présence temps réel (`< 500ms` via SSE), de superviser simultanément plusieurs *Workflow Runs* avec séparation stricte entre *Consultation seule (`READ_ONLY_OBSERVER`)* et *Contributeur (`CONTRIBUTOR_ACTION_REQUIRED`)*, de piloter et d'administrer de manière consolidée (*Roll-up* & *Drill-down* via le sélecteur de périmètre **`⌘W`**) l'ensemble des **Workspaces, Instances de Workflow Runs, Sources (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), Agents/Workflows/Surcharges et Équipes** depuis le **Centre de Pilotage Unifié Multi-Niveaux (`/workspaces` & `/workspaces/[workspaceId]` à 4 onglets)**, de piloter l'interface au clavier (`⌘K`, `⌘W`, `g c`..`g w`, `Alt + ↑/↓`), et de traiter leurs arbitrages et validations urgentes en déplacement grâce à l'interface **Mobile Companion** à 3 onglets conforme WCAG 2.2 AA.
+
+### Story 5.1: Centre de Notifications Unifié (Individuel & Équipe), Prise en Charge Atomique (`Claim`) & Verrou de Présence SSE `< 500 ms`
+
+As a Product Manager ou Lead Multi-Projets (`Nadia, UJ-4`),
+I want consulter dans une boîte unifiée mes notifications personnelles et d'équipe, les filtrer par portée/type, et prendre en charge (`Claim`) atomiquement une notification d'équipe avec diffusion SSE en `< 500 ms`,
+So that deux membres d'une même équipe ne travaillent jamais en doublon ni ne soumettent des validations contradictoires sur la même étape (`FR-2`, `AD-4`, `UX-DR9`, `UX-DR11`, `NFR-PERF-2`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant la table `task_notifications` (référençant `step_execution_id`, `target_team_id`, `target_user_id`, `claimed_by_user_id`), ainsi que le broker SSE `/api/v1/events/stream` branché sur Redis Pub/Sub `channel:workspace:{ws_id}`
+**When** une étape requiert une action humaine (*Gate Humaine*, *Arbitrage Humain*, *Challenge Humain*, *Alerte Habilitation / Obsolescence*)
+**Then** la notification apparaît instantanément dans **🔔 2. Boîte & Mes Runs** (`g i`), filtrable par portée (*À moi*, *À mon équipe*) et par type, et incrémente le badge compteur ambre sur la Sidebar (`FR-2`, `UX-DR2`).
+
+**Given** une notification d'équipe affichant le composant **`Presence & Claim Pill` (`presence-claim-pill`, `UX-DR9`)** à deux coéquipiers connectés simultanément (`Nadia` et `Thomas`)
+**When** `Nadia` clique sur `Prendre (Claim)` (`POST /api/v1/tasks/{task_id}/claim` ou `POST /api/v1/runs/{run_id}/steps/{step_id}/claim`)
+**Then** l'API acquiert le verrou atomique Redis `SET lock:step:{step_execution_id} {user_id} NX EX 900`, persiste `claimed_by_user_id` en base et publie `task.claim.locked` sur Redis Pub/Sub (`AD-4`)
+**And** en `< 500 ms` (`NFR-PERF-2`), l'interface de `Nadia` affiche `🔒 Pris par vous` et celle de `Thomas` passe en état `CLAIMED_BY_PEER` (opacité `85%`, pastille émeraude `🔒 En cours : Nadia`, avec possibilité de *Force Unclaim* après 15 minutes d'inactivité, `UX-DR9`, `UX-DR11`)
+**And** les tests d'intégration (`testcontainers` Redis + PG18 sous concurrence) et E2E multi-navigateurs (`@playwright/test` à 2 contextes simultanés) valident l'atomicité du verrou et la latence `< 500 ms`.
+
+### Story 5.2: Supervision Multi-Runs Dynamique (`< 1 s`), Sélecteur de Périmètre Hiérarchique (`⌘W`), Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces` à 4 Onglets), Séparation `READ_ONLY_OBSERVER` (`HTTP 403`) vs `CONTRIBUTOR_ACTION_REQUIRED` & Palette `⌘K`
+
+As a Administrateur Plateforme (`Karim UJ-9`), Directrice de BU (`Claire UJ-8`), Chef d'Équipe (`Marc UJ-5`) ou Lead Multi-Projets (`Nadia UJ-4`),
+I want superviser simultanément mes Workflow Runs actifs en distinguant ceux où une action est attendue (`Contributeur`) de ceux que je suis en `Consultation seule`, basculer de périmètre organisationnel (`🌐 Plateforme Globale → 🏢 BU → 👥 Équipe → 🗂️ Workspace`) via `⌘W` pour consulter et gérer dans un écran unifié (`/workspaces` & `/workspaces/[workspaceId]` à 4 onglets) l'ensemble des instances de runs, des sources dédiées/partagées (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), des agents/workflows/surcharges et des équipes selon mon niveau hiérarchique, basculer entre deux Runs en `< 1 s` via la palette `⌘K`, et être protégé en `HTTP 403` contre toute mutation accidentelle en mode Observateur,
+So that je puisse piloter aussi bien un Workspace isolé qu'une Équipe, une BU entière ou la Plateforme Globale sans jamais interférer par erreur dans une étape qui ne m'est pas assignée (`FR-1`, `FR-3`, `AD-4`, `AD-14`, `UX-DR2`, `UX-DR11`, `UX-DR13`, `NFR-PERF-1`).
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur qui consulte **🔔 2. Boîte & Mes Runs** ou ouvre la palette de commandes universelle **`⌘K` / `Ctrl+K` (`UX-DR13`)**
+**When** il visualise ses *Workflow Runs* ou recherche un Run / Workspace / concept d'Ontologie / item du Catalogue
+**Then** la vue scinde clairement les Runs en **Actions Requises (`CONTRIBUTOR_ACTION_REQUIRED`)** en haut et **En Suivi (`READ_ONLY_OBSERVER`)** en bas (`FR-3`), les raccourcis clavier (`g c`, `g i`, `g f`, `g o`, `g g`, `g a`, `g s`, `g w`, `[`, `]`, `Alt + ↑/↓`) sont actifs, et le clic sur un Run charge son contexte complet dans le Cockpit en `< 1 s` (`NFR-PERF-1`).
+
+**Given** un utilisateur habilité (`PLATFORM_ADMIN`, `BU_DIRECTOR`, `TEAM_LEAD` ou Contributeur) qui utilise le **Sélecteur de Périmètre Hiérarchique (`⌘W` / `Ctrl+W`, `UX-DR2`, `UX-DR13`)** en tête de Sidebar et ouvre le **Centre de Pilotage Unifié des Workspaces (`/workspaces` ou `/workspaces/[workspaceId]`, `g w`)**
+**When** il sélectionne une échelle (`🌐 Plateforme Globale`, `🏢 BU / Tribu`, `👥 Équipe / Sous-Équipe` ou `🗂️ Workspace Solution`) et navigue à travers les **4 onglets fractals** (`GET /api/v1/control-center/overview?scope_type=GLOBAL|BU|TEAM|WORKSPACE&scope_id={id}`)
+**Then** l'écran consolide dynamiquement par *Roll-up* SQL (`WITH RECURSIVE org_tree`) et permet le *Drill-down* en 1 clic sur :
+- **Onglet 1 (`▶️ Instances de Workflow Runs & Artefacts`)** : la liste temps réel (SSE) des *Workflow Runs* du périmètre filtré (statut, étape courante, mode `Coaching` vs `Fast-Path`, verrou *Claim*, actions requises, budget consommé, et lancement d'un nouveau Run ou *Replay*) ;
+- **Onglet 2 (`🔌 Sources Dédiées & Partagées`)** : toutes les sources rattachées aux Workspaces et Équipes du périmètre (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://` de `workspace_datasources`), leur état d'indexation dans le *Graphe Tripartite*, les alertes `[STALE_WARNING]` et le bouton `+ Rattacher une source` (`init-datasource`) ;
+- **Onglet 3 (`🤖 Workflows, Agents & Surcharges 4 niveaux`)** : les *Workflows* et *Agents* actifs avec aperçu `@xyflow/react`, l'inspecteur des surcharges déclaratives (`1. Base -> 2. Équipe TEAM -> 3. Solution WORKSPACE -> 4. Utilisateur USER`) et le contrat `ARCHITECTURE-SPINE.md` ;
+- **Onglet 4 (`👥 Équipes, Membres & Gouvernance`)** : l'arborescence `org_units`, les *Workspaces* rattachés (`+ Créer un Workspace` via `init-workspace`), les membres invités (`init-user`), les délégations de Gates et la politique de visibilité (`STANDARD` vs `CONFIDENTIAL_RESTRICTED`, où le `PLATFORM_ADMIN` conserve la supervision technique/FinOps des espaces `CONFIDENTIAL_RESTRICTED` sans exposer leurs payloads métiers du *Blackboard* sauf habilitation explicite).
+
+**Given** un utilisateur qui ouvre un *Workflow Run* avec le statut `READ_ONLY_OBSERVER` (y compris un Directeur de BU ou un Lead d'équipe parente en supervision *Roll-up*, ou une étape verrouillée par un pair `CLAIMED_BY_PEER`)
+**When** le Cockpit affiche le Run ou qu'une requête `POST/PUT/PATCH/DELETE` de mutation d'étape/artefact/Gate est envoyée à l'API
+**Then** l'interface affiche le bandeau supérieur `👁️ Mode Consultation Seule — Vous suivez ce Workflow Run en tant qu'Observateur` (`UX-DR11`) et désactive tous les boutons d'édition, d'arbitrage et d'approbation de Gate
+**And** le middleware FastAPI `RunAccessGuard` vérifie en $O(1)$ le rôle et la détention de `lock:step:{step_execution_id}` et rejette toute tentative de mutation avec `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` (`FR-3`, `AD-4`)
+**And** les tests unitaires (`pytest` sur `RunAccessGuard` et l'agrégation récursive `control-center/overview`, `Vitest` sur la palette `⌘K`, le sélecteur `⌘W` et les 4 onglets `/workspaces`) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre.
+
+### Story 5.3: Expérience Responsive à 3 Breakpoints, Interface Mobile Companion Restreinte (3 Onglets) & Conformité Accessibilité WCAG 2.2 AA
+
+As a Contributeur ou Valideur en mobilité (`Nadia UJ-4`, `Hélène UJ-1`),
+I want utiliser ORCIA sur Desktop (`>= 1280px`), Laptop (`768px - 1279px`) et sur Smartphone (`< 768px`) via l'interface Mobile Companion dédiée à 3 onglets (`🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`), avec une conformité WCAG 2.2 AA complète,
+So that je puisse débloquer mon équipe en moins de 10 minutes depuis mon téléphone tout en étant protégé contre les manipulations lourdes inadaptées au mobile (`UX-DR16`, `NFR-A11Y-1`, `NFR-TEST-1`).
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur qui accède à `apps/web` depuis un viewport **Mobile Companion (`< 768px`, ex. `390x844`)** (`UX-DR16`)
+**When** l'application adapte sa mise en page
+**Then** la grille à 3 colonnes est remplacée par une vue mono-colonne pilotée par une barre d'onglets basse à 3 entrées (`🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`) permettant de trier et *Claim* les notifications, trancher les *Arbitrages Humains* (`arbitration-tiebreak-card`), lire le *Briefing de Revue (4 blocs)*, approuver les sections par découpage et suivre les Runs en *Consultation seule*
+**And** l'édition de manifestes YAML *Workflow-as-Code*, la co-édition lourde d'artefacts multi-pages et le module *7. Administration* sont explicitement bloqués sur mobile avec la bannière *"Fonctionnalité réservée au poste Desktop"* (`UX-DR16`).
+
+**Given** l'ensemble des surfaces Desktop, Laptop et Mobile Companion d'ORCIA
+**When** un audit d'accessibilité automatisé et clavier est exécuté (`NFR-A11Y-1`)
+**Then** 100% des écrans respectent les ratios de contraste **WCAG 2.2 AA**, aucun état critique (*Ancrage Humain*, *Arbitrage*, *Gate*, `[STALE_WARNING]`) n'utilise la couleur seule (toujours **Couleur sémantique + Icône dédiée + Libellé textuel explicite** : `✍️ Ancrage Humain`, `⚖️ Arbitrage IA`, `🛡️ Gate`, `🚨 Obsolète`), et les régions `aria-live="polite"` annoncent les nouvelles notifications, les *Claims* SSE et le streaming de l'Agent Concierge
+**And** la suite E2E `@playwright/test` s'exécute sur les viewports Desktop (`1440x900`) et Mobile (`390x844`) avec $\ge 90\%$ de couverture des composants UI.
+
+## Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Complet (Setup + Run) & Réversibilité Humaine
+
+Permettre aux Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) de piloter dans **📊 6. FinOps & Audit** l'équation économique complète de leurs processus (*Coût de Setup + Coût de Run vs gain de TTM*) protégée par des coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), d'inspecter et d'exporter la *Provenance Auditable* immuable de chaque Step et Gate (`audit_ledger`), et de suivre les 3 contre-métriques de gouvernance cognitive (*Ratio Cadrage Actif $\ge 40\%$*, *Taux de Rubber-Stamping $< 5\%$*, *Indice de Pattern Drift / Réversibilité Humaine $0\%$*) avec recommandations automatiques d'ajustement des Gates.
+
+### Story 6.1: Registre de Provenance Auditable Immuable (`audit_ledger` Append-Only) & Export de Conformité JSON/Markdown
+
+As a Ingénieur SecOps ou Auditeur Interne (`Sophie UJ-6`, `Claire UJ-8`),
+I want enregistrer de manière synchrone et immuable dans `audit_ledger` la provenance complète de chaque Step et Gate (URI/hashes `SHA-256`, modèle/paramètres, prompt assemblé, chunks KB injectés, appels Skills/MCP/mutations Jira, coûts/tokens, signatures et durées de revue humaines) et l'exporter en JSON/Markdown,
+So that nous puissions prouver réglementairement à 100% quelles ressources exactes, quels modèles et quels experts humains ont produit et validé chaque livrable (`FR-25`, `AD-12`, `NFR-SEC-3`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic créant la table `audit_ledger` protégée par un trigger PostgreSQL `BEFORE UPDATE OR DELETE RAISE EXCEPTION` (`NFR-SEC-3`)
+**When** un appel LLM, une exécution de *Skill*/*MCP*, une mutation *Jira*, un passage de *Gate* ou une action humaine se produit au cours d'un *Workflow Run*
+**Then** `packages/orcia-core/audit_finops` écrit de manière synchrone une entrée horodatée UTC ISO-8601 contenant `run_id`, `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `input_tokens`, `output_tokens`, `cost_usd`, `latency_ms`, `run_lock_sha256` et les références CAS des prompts/chunks KB injectés (`FR-25`, `AD-12`)
+**And** toute tentative de `UPDATE` ou `DELETE` sur `audit_ledger` lève une exception PostgreSQL immédiate.
+
+**Given** un auditeur habilité dans **📊 6. FinOps & Audit** (`g a`)
+**When** il inspecte un *Workflow Run* ou appelle `GET /api/v1/audit/ledger/{run_id}/export?format=json|md`
+**Then** le système génère le dossier complet de **Provenance Auditable** attestant qu'aucune étape n'a consommé une ressource absente de `run-lock.json`
+**And** les tests unitaires (`pytest`) et d'intégration (`testcontainers` PG18 vérifiant le trigger append-only) couvrent $\ge 90\%$ du module.
+
+### Story 6.2: Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM) & Coupe-Circuits Budgétaires / Anti-Boucles
+
+As a Directrice de BU ou Responsable d'Équipe (`Claire UJ-8`, `Marc UJ-5`),
+I want comptabiliser en temps réel le coût complet d'un processus (amortissement du Setup + coût des tokens LLM + temps humain de cadrage/revue) comparé au gain de Time-to-Market, et suspendre automatiquement tout Run qui dépasse son plafond budgétaire ou son nombre maximal de tentatives,
+So that nous mesurions la réduction de $\ge 25\%$ du coût complet (`SM-1`) tout en éliminant tout risque de dérive financière par boucle d'agents infinie (`FR-26`, `AD-12`).
+
+**Acceptance Criteria:**
+
+**Given** un *Workflow* et un *Workflow Run* configurés avec `max_cost_usd` et `max_agent_retries` (défaut : `3`), ainsi qu'une baseline déclarée de coût et de TTM manuel
+**When** un Step accumule des appels LLM ou des boucles de correction suite à un rejet de Gate
+**Then** le coupe-circuit de `packages/orcia-core/audit_finops` vérifie à chaque transition les seuils : s'ils sont atteints, il suspend immédiatement l'étape en statut `PAUSED_BUDGET_EXCEEDED` ou `PAUSED_MAX_RETRIES`, émet une alerte SSE au responsable du Run, et exige un arbitrage humain ou une extension explicite (`POST /api/v1/runs/{run_id}/budget-override`) pour reprendre (`FR-26`, `AD-12`).
+
+**Given** une Directrice de BU (`Claire, UJ-8`) qui consulte **📊 6. FinOps & Audit** ou interroge l'Agent Concierge
+**When** le tableau de bord FinOps est affiché
+**Then** il ventile par *Step*, par *Workflow Run*, par *Workflow* et par *Équipe/BU* le **Coût de Setup** (temps de conception/maintenance du workflow), le **Coût de Run** (tokens LLM en `numeric(12, 6)` USD + temps humain valorisé) et l'écart de **Time-to-Market (TTM)** par rapport à la baseline (`SM-1`, `SM-5`)
+**And** les tests unitaires (`hypothesis` sur les calculs de coûts et coupe-circuits) et d'intégration couvrent $\ge 90\%$ du service FinOps.
+
+### Story 6.3: Tableau de Bord Exécutif d'Impact Cognitif, Anti-Rubber-Stamping & Indice de Réversibilité Humaine
+
+As a Directrice de BU, Tech Lead ou SecOps (`Claire UJ-8`, `Marc UJ-5`, `Sophie UJ-6`),
+I want suivre par Workflow et par Équipe/BU les 3 contre-métriques de gouvernance humaine et technique (Ratio Cadrage Actif $\ge 40\%$, Taux de Rubber-Stamping $< 5\%$, Indice de Pattern Drift / Réversibilité Humaine $0\%$) et recevoir des recommandations automatiques d'ajustement des Gates,
+So that l'accélération par l'IA ne transforme jamais nos experts humains en simples tamponneurs passifs ni notre codebase en boîte noire non maintenable (`FR-27`, `SM-C1`, `SM-C2`, `SM-C3`).
+
+**Acceptance Criteria:**
+
+**Given** les données agrégées depuis `human_anchor_signatures`, `human_arbitration_requests`, `gate_evaluations` (`review_duration_ms`, `fast_approval_warning`) et `audit_ledger`
+**When** l'utilisateur ouvre l'onglet Gouvernance & Réversibilité de **📊 6. FinOps & Audit** (`g a`)
+**Then** le système calcule et affiche par *Workflow*, *Équipe* et *BU* les **3 indicateurs de maîtrise humaine (`FR-27`)** :
+1. **Ratio Cadrage Actif ("Human-Led Think") vs Simple Relecture (`SM-C2`)** : $\frac{\text{Temps Ancrages Humains} + \text{Arbitrages} + \text{Challenges}}{\text{Temps Humain Total}}$ (alerte ambre si $< 40\%$).
+2. **Taux de Validation Aveugle / Rubber-Stamping (`SM-C1`)** : pourcentage d'approbations aux Gates Humaines avec `fast_approval_warning: true` ou sans ouverture du *Briefing de Revue* (alerte rouge si $\ge 5\%$).
+3. **Indice de Pattern Drift & Réversibilité Humaine (`SM-C3`)** : taux d'écarts architecturaux détectés par rapport à `ARCHITECTURE-SPINE.md` (cible $0\%$ hors dérogation signée).
+
+**Given** un *Workflow* présentant un taux d'approbation aux *Gates Humaines* $> 98\%$ avec un temps médian de revue inférieur au seuil minimal et `0` modification/commentaire sur une période donnée
+**When** l'analyseur de gouvernance évalue le *Workflow*
+**Then** il génère une alerte et une recommandation actionnable proposant soit de basculer la *Gate* en politique `risk_or_exception_based` / `sampling`, soit de renforcer les *Ancrages Humains Obligatoires* (`FR-27`)
+**And** les tests unitaires (`pytest`, `Vitest`), d'évaluation (`orcia-evals`) et E2E (`Playwright`) couvrent $\ge 90\%$ du tableau de bord et des règles d'alerte.

@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORCIA — Explorations Visuelles v2 (Intégration du Menu Global à 7 Modules)</title>
+<style>
+  /*
+   * ORCIA Visual Explorations v2 — Global 7-Module Menu Integration
+   * Direction A : Left App Rail (64px) + Context Panel + Chat + Canvas (Dark Slate & Indigo)
+   *   bg-app-rail: #070A10, bg-rail: #0F1420, bg-chat: #0B0F17, bg-canvas: #111827, accent: #6366F1
+   * Direction B : Top Horizontal Mega-Menu Bar + Split Studio (Warm Ivory & Terracotta)
+   *   bg-topbar: #1C1917, bg-subnav: #F3EFEA, bg-chat: #FAF8F5, bg-canvas: #FFFFFF, accent: #C2410C
+   * Direction C : Expandable Left Navigation Sidebar + Workspace + Collapsible AI Dock (Enterprise Cobalt)
+   *   bg-sidebar: #0F172A, bg-canvas: #F8FAFC, bg-card: #FFFFFF, bg-chat-dock: #F1F5F9, accent: #2563EB
+   */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background: #090D14;
+    color: #E2E8F0;
+    line-height: 1.5;
+    padding: 24px 32px 64px;
+  }
+  .top-header {
+    max-width: 1520px;
+    margin: 0 auto 28px;
+    border-bottom: 1px solid #1E293B;
+    padding-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .top-header h1 { font-size: 23px; font-weight: 700; color: #F8FAFC; }
+  .top-header p { font-size: 13.5px; color: #94A3B8; margin-top: 4px; }
+  .nav-pills { display: flex; gap: 10px; flex-wrap: wrap; }
+  .nav-pill {
+    background: #1E293B;
+    color: #E2E8F0;
+    border: 1px solid #334155;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .nav-pill:hover { background: #334155; border-color: #6366F1; }
+
+  .section-block { max-width: 1520px; margin: 0 auto 52px; }
+  .direction-meta {
+    background: #111827;
+    border: 1px solid #1E293B;
+    border-radius: 12px;
+    padding: 16px 22px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .direction-meta h2 { font-size: 17px; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; gap: 10px; }
+  .direction-meta p { font-size: 13px; color: #94A3B8; max-width: 980px; margin-top: 4px; }
+  .badge-code { background: #312E81; color: #C7D2FE; font-size: 11.5px; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+
+  .browser-frame {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+  }
+  .browser-bar {
+    background: #1E293B;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #334155;
+  }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #EF4444; }
+  .dot.y { background: #F59E0B; }
+  .dot.g { background: #10B981; }
+  .url-bar {
+    background: #0F172A;
+    color: #94A3B8;
+    font-size: 11.5px;
+    font-family: monospace;
+    padding: 4px 12px;
+    border-radius: 6px;
+    flex: 1;
+    max-width: 560px;
+  }
+
+  /* ==========================================================================
+     DIRECTION A : LEFT APP RAIL (7 ICÔNES) + PANNEAU CONTEXTUEL + CHAT + CANVAS
+     ========================================================================== */
+  .dir-a {
+    display: grid;
+    grid-template-columns: 74px 260px 1fr 1.2fr;
+    height: 640px;
+    background: #0B0F17;
+    color: #F1F5F9;
+    font-size: 12.5px;
+  }
+  .app-rail-a {
+    background: #06090F;
+    border-right: 1px solid #1E293B;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 6px;
+    justify-content: space-between;
+  }
+  .rail-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+  }
+  .rail-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .rail-btn {
+    width: 60px;
+    padding: 7px 4px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: #64748B;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-align: center;
+    position: relative;
+    border: 1px solid transparent;
+  }
+  .rail-btn .ico { font-size: 16px; }
+  .rail-btn.active {
+    background: rgba(99, 102, 241, 0.16);
+    color: #E0E7FF;
+    border-color: rgba(99, 102, 241, 0.45);
+  }
+  .rail-badge {
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    background: #F59E0B;
+    color: #090D14;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 0 5px;
+    border-radius: 99px;
+  }
+  .rail-badge.alert { background: #EF4444; color: #fff; }
+
+  .dir-a-subrail {
+    background: #0F1420;
+    border-right: 1px solid #1E293B;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rail-section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748B;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .notif-card {
+    background: #161F30;
+    border: 1px solid #26334D;
+    border-left: 3px solid #F59E0B;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 7px;
+  }
+  .notif-card.active {
+    background: #1E293B;
+    border-color: #6366F1;
+    border-left: 3px solid #6366F1;
+  }
+  .notif-top { display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 2px; }
+  .tag-type { font-weight: 600; font-size: 9.5px; padding: 1px 5px; border-radius: 4px; }
+  .tag-tiebreak { background: rgba(245, 158, 11, 0.2); color: #FCD34D; }
+  .tag-gate { background: rgba(139, 92, 246, 0.2); color: #C4B5FD; }
+  .tag-human { background: rgba(56, 189, 248, 0.2); color: #7DD3FC; }
+  .notif-title { font-weight: 600; font-size: 11.5px; color: #F8FAFC; }
+  .notif-sub { font-size: 10.5px; color: #94A3B8; margin-top: 2px; display: flex; justify-content: space-between; }
+  .readonly-run {
+    padding: 7px 9px;
+    border-radius: 6px;
+    background: #111827;
+    border: 1px solid #1E293B;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #94A3B8;
+  }
+
+  .dir-a-chat {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1E293B;
+    background: #0B0F17;
+  }
+  .chat-header {
+    padding: 11px 16px;
+    border-bottom: 1px solid #1E293B;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0F1420;
+  }
+  .chat-messages { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .msg-ai { background: #111827; border: 1px solid #1E293B; border-radius: 10px; padding: 11px 13px; }
+  .tiebreak-card { margin-top: 8px; background: #161F30; border: 1px solid #F59E0B; border-radius: 8px; padding: 9px 11px; }
+  .option-row { display: flex; gap: 8px; margin-top: 7px; }
+  .opt-btn { flex: 1; background: #1E293B; border: 1px solid #475569; color: #F8FAFC; padding: 6px 9px; border-radius: 6px; font-size: 10.5px; }
+  .opt-btn.recommended { border-color: #6366F1; background: rgba(99, 102, 241, 0.15); }
+  .msg-user { align-self: flex-end; background: #312E81; color: #EEF2FF; padding: 9px 13px; border-radius: 10px; max-width: 85%; }
+
+  .dir-a-canvas { background: #0F1420; display: flex; flex-direction: column; }
+  .canvas-header {
+    padding: 11px 16px;
+    border-bottom: 1px solid #1E293B;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #111827;
+  }
+  .gate-chip { padding: 2px 7px; border-radius: 5px; font-weight: 600; font-size: 10.5px; }
+  .gate-chip.pass { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); }
+  .gate-chip.active { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid #F59E0B; }
+  .canvas-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .briefing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .briefing-box { background: #161F30; border: 1px solid #26334D; border-radius: 8px; padding: 8px 10px; }
+  .briefing-box h4 { font-size: 10px; text-transform: uppercase; color: #94A3B8; margin-bottom: 3px; }
+  .human-anchor-box { background: rgba(139, 92, 246, 0.12); border: 1px solid #8B5CF6; border-radius: 8px; padding: 9px 11px; }
+  .chunk-card { background: #111827; border: 1px solid #26334D; border-radius: 8px; padding: 9px 11px; display: flex; justify-content: space-between; align-items: center; }
+  .btn-xs { padding: 4px 8px; border-radius: 5px; font-size: 10.5px; font-weight: 600; border: none; }
+  .btn-approve { background: #10B981; color: #052E16; }
+
+  /* ==========================================================================
+     DIRECTION B : TOP HORIZONTAL MENU BAR (7 ONGLETS) + STUDIO ÉDITORIAL
+     ========================================================================== */
+  .dir-b {
+    display: flex;
+    flex-direction: column;
+    height: 620px;
+    background: #FAF8F5;
+    color: #1C1917;
+    font-size: 12.5px;
+  }
+  .dir-b-topmenu {
+    background: #1C1917;
+    color: #F5F5F4;
+    padding: 0 18px;
+    height: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .topmenu-tabs {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+    align-items: center;
+  }
+  .topmenu-tab {
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #A8A29E;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .topmenu-tab.active {
+    background: #C2410C;
+    color: #FFFFFF;
+  }
+  .topmenu-badge {
+    background: #F59E0B;
+    color: #1C1917;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 0 5px;
+    border-radius: 99px;
+  }
+  .dir-b-subbar {
+    background: #F3EFEA;
+    border-bottom: 1px solid #E7E0D6;
+    padding: 8px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .dir-b-main {
+    display: grid;
+    grid-template-columns: 38% 62%;
+    flex: 1;
+    overflow: hidden;
+  }
+  .dir-b-chat {
+    border-right: 1px solid #E7E0D6;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #FAF8F5;
+  }
+  .dir-b-canvas {
+    background: #FFFFFF;
+    padding: 20px 26px;
+    overflow-y: auto;
+  }
+  .dir-b-card {
+    background: #FFFFFF;
+    border: 1px solid #E7E0D6;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .onto-level-tree {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .onto-col {
+    background: #FAF8F5;
+    border: 1px solid #E7E0D6;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .onto-col h4 { font-size: 11px; color: #C2410C; margin-bottom: 6px; }
+  .onto-item {
+    background: #FFFFFF;
+    border: 1px solid #D6D3D1;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  /* ==========================================================================
+     DIRECTION C : MENU LATÉRAL EXPLICITE (7 ENTRÉES) + MODULE CATALOGUE + DOCK IA
+     ========================================================================== */
+  .dir-c {
+    display: grid;
+    grid-template-columns: 235px 1fr 360px;
+    height: 620px;
+    background: #F8FAFC;
+    color: #0F172A;
+    font-size: 12.5px;
+  }
+  .dir-c-sidebar {
+    background: #0F172A;
+    color: #F8FAFC;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .c-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+  }
+  .c-menu-item {
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #94A3B8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .c-menu-item.active {
+    background: #2563EB;
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+  .dir-c-main {
+    padding: 18px 22px;
+    background: #F8FAFC;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+  }
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .cat-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+  .uri-badge {
+    font-family: monospace;
+    font-size: 10.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .uri-git { background: #FEF3C7; color: #92400E; }
+  .uri-nexus { background: #DBEAFE; color: #1E40AF; }
+  .uri-db { background: #DCFCE7; color: #166534; }
+  .dir-c-chatdock {
+    background: #FFFFFF;
+    border-left: 1px solid #E2E8F0;
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+</head>
+<body>
+
+<div class="top-header">
+  <div>
+    <h1>🎨 ORCIA — Banc d'Essai Visuel v2 (Intégration du Menu Global à 7 Modules)</h1>
+    <p>Préparé par Sally (UX Designer BMAD) — Comparez comment le Menu Global des 7 fonctionnalités s'intègre dans nos 3 directions tout en gardant l'Agent Concierge présent.</p>
+  </div>
+  <div class="nav-pills">
+    <a class="nav-pill" href="#dir-a">1. Direction A : App Rail Iconographique Gauche (Vue Cockpit)</a>
+    <a class="nav-pill" href="#dir-b">2. Direction B : Barre de Menu Horizontale Haute (Vue Ontologie & KB)</a>
+    <a class="nav-pill" href="#dir-c">3. Direction C : Menu Latéral Texte + Dock IA (Vue Catalogue Fédéré)</a>
+    <a class="nav-pill" href="#mobile">4. Menu Mobile Companion</a>
+  </div>
+</div>
+
+<!-- =====================================================================
+     DIRECTION A : LEFT APP RAIL ICONOGRAPHIQUE (7 MODULES) + COCKPIT
+     ===================================================================== -->
+<div id="dir-a" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code">Direction A</span> "Left App Rail Iconographique" (Style Linear / Cursor / VS Code — 7 Icônes à l'extrême-gauche)</h2>
+      <p><strong>Comment le Menu fonctionne :</strong> L'<strong>App Rail vertical (74px)</strong> tout à gauche affiche en permanence les <strong>7 modules d'ORCIA</strong> avec leurs badges temps réel (<code>3</code> sur Boîte de réception, <code>!</code> sur Ontologie/KB). En cliquant sur une icône, le panneau contextuel et le Canvas s'adaptent sans jamais perdre le fil de discussion avec l'Agent Concierge.</p>
+    </div>
+  </div>
+
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="url-bar">https://orcia.internal/cockpit • Menu : [1. Cockpit & Conversation] actif</div>
+    </div>
+    <div class="dir-a">
+      <!-- EXTRÊME GAUCHE : APP RAIL DES 7 MODULES -->
+      <div class="app-rail-a">
+        <div class="rail-items">
+          <div class="rail-logo">OR</div>
+          <div class="rail-btn active">
+            <span class="ico">💬</span>
+            <span>Cockpit</span>
+          </div>
+          <div class="rail-btn">
+            <span class="rail-badge">3</span>
+            <span class="ico">🔔</span>
+            <span>Mes Runs</span>
+          </div>
+          <div class="rail-btn">
+            <span class="ico">📦</span>
+            <span>Catalogue</span>
+          </div>
+          <div class="rail-btn">
+            <span class="rail-badge alert">!</span>
+            <span class="ico">🧬</span>
+            <span>Ontologie</span>
+          </div>
+          <div class="rail-btn">
+            <span class="ico">🛡️</span>
+            <span>Gates/IAM</span>
+          </div>
+          <div class="rail-btn">
+            <span class="ico">📊</span>
+            <span>FinOps</span>
+          </div>
+        </div>
+        <div class="rail-items">
+          <div class="rail-btn">
+            <span class="ico">⚙️</span>
+            <span>Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANNEAU CONTEXTUEL : NOTIFICATIONS & MULTI-RUNS -->
+      <div class="dir-a-subrail">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1E293B;padding-bottom:8px">
+          <strong style="font-size:13px">Cockpit Multi-Runs</strong>
+          <span style="font-size:10.5px;color:#A5B4FC">Nadia (Conformité)</span>
+        </div>
+
+        <div>
+          <div class="rail-section-title">
+            <span>🔔 Actions Requises (Contributeur)</span>
+            <span style="color:#F59E0B">3</span>
+          </div>
+          <div class="notif-card active">
+            <div class="notif-top"><span class="tag-type tag-tiebreak">⚡ Arbitrage IA</span><span>4m</span></div>
+            <div class="notif-title">Remboursement Multi-Devises</div>
+            <div class="notif-sub"><span>Step 2 • API FX v3</span><span style="color:#34D399">Pris par vous</span></div>
+          </div>
+          <div class="notif-card">
+            <div class="notif-top"><span class="tag-type tag-human">💬 Challenge Humain</span><span>Équipe</span></div>
+            <div class="notif-title">Onboarding FinTech Alpha</div>
+            <div class="notif-sub"><span>De: Antoine (Arch)</span><span style="color:#818CF8">Prendre (Claim)</span></div>
+          </div>
+          <div class="notif-card">
+            <div class="notif-top"><span class="tag-type tag-gate">🛡️ Gate Humaine 2.2</span><span>Équipe</span></div>
+            <div class="notif-title">Audit Trimestriel DSP2</div>
+            <div class="notif-sub"><span>4 sections</span><span style="color:#34D399">🔒 En cours: Thomas</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="rail-section-title">
+            <span>👁️ Suivi (Consultation Seule)</span>
+            <span>5</span>
+          </div>
+          <div class="readonly-run">
+            <span>Migration Base Europe (Step 3/5)</span>
+            <span style="color:#38BDF8">60%</span>
+          </div>
+          <div class="readonly-run">
+            <span>Release Gateway v4.2 (Gate 2.1)</span>
+            <span style="color:#34D399">80%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTRE : CHAT CONVERSATIONNEL -->
+      <div class="dir-a-chat">
+        <div class="chat-header">
+          <div>
+            <div style="font-weight:600;font-size:13px">Run #108 — Remboursement Multi-Devises</div>
+            <div style="font-size:10.5px;color:#94A3B8">Mode : <strong>Contributeur</strong> • Pinned : <code>sha256:9f8a..31c</code></div>
+          </div>
+          <span style="font-size:10.5px;background:#1E293B;color:#38BDF8;padding:3px 8px;border-radius:6px">🧬 Ontologie : BU Paiement</span>
+        </div>
+        <div class="chat-messages">
+          <div class="msg-ai">
+            <div style="font-size:10.5px;color:#818CF8;font-weight:700;margin-bottom:4px">🤖 Agent Concierge (Profil : Conformité)</div>
+            Nadia, Yanis (Tech Lead) a signalé une <strong>Alerte d'Obsolescence KB</strong> sur l'API partenaire FX v3 (notée par le badge rouge <code>!</code> sur le menu <strong>🧬 Ontologie</strong> à gauche). Voici l'arbitrage soumis :
+            <div class="tiebreak-card">
+              <div style="color:#FCD34D;font-weight:700;font-size:11px">⚖️ Arbitrage Humain (Options Équivalentes)</div>
+              <div class="option-row">
+                <div class="opt-btn recommended"><strong>Option A (Recommandé)</strong><br>Adapter le PRD au taux spot immédiat (CGV 4.2 OK).</div>
+                <div class="opt-btn"><strong>Option B</strong><br>Demander évolution API au partenaire (Pause Run).</div>
+              </div>
+            </div>
+          </div>
+          <div class="msg-user">Je valide l'Option A pour le MVP. Ouvre la section 2 du PRD à droite pour que je valide le découpage.</div>
+        </div>
+      </div>
+
+      <!-- DROITE : CANVAS -->
+      <div class="dir-a-canvas">
+        <div class="canvas-header">
+          <div style="font-weight:700;font-size:13px">📄 Artefact : PRD Évolution v1.1 (Revue par Découpage)</div>
+          <div style="display:flex;gap:6px">
+            <span class="gate-chip pass">✓ Gate 1.1 Déterministe</span>
+            <span class="gate-chip pass">✓ Gate 1.2 Agentique (Cross-Model)</span>
+            <span class="gate-chip active">● Gate 1.3 Humaine</span>
+          </div>
+        </div>
+        <div class="canvas-body">
+          <div class="briefing-grid">
+            <div class="briefing-box"><h4>1. Résumé</h4><p>Remboursement multi-devises en taux spot immédiat (API FX v3).</p></div>
+            <div class="briefing-box"><h4>2. Éléments Clés</h4><p>Contrôle Transverse Architecture SI : 100% conforme.</p></div>
+            <div class="briefing-box"><h4>3. Décisions Prises</h4><p>Option A retenue (taux spot) suite à l'alerte de Yanis.</p></div>
+            <div class="briefing-box" style="border-color:#F59E0B"><h4>4. Hypothèses</h4><p>Plafond opérationnel fixé à 2 500 € par transaction.</p></div>
+          </div>
+          <div class="human-anchor-box">
+            <div style="font-size:10.5px;color:#C4B5FD;font-weight:700">✍️ ANCRAGE HUMAIN OBLIGATOIRE (Rédigé par Hélène — PM)</div>
+            <div style="font-size:11.5px;margin-top:3px">"Risque à ne pas faire : Perte de 420k€ ARR sur les marchands transfrontaliers Q4."</div>
+          </div>
+          <div class="chunk-card" style="border-color:#6366F1;background:#161F30">
+            <div>
+              <div style="font-weight:600">Section 2/3 — Règle de Change FX & Clause CGV 4.2</div>
+              <div style="font-size:10.5px;color:#94A3B8">Révisée suite au Rewind Step 3 -> Step 1</div>
+            </div>
+            <button class="btn-xs btn-approve">Approuver Section 2</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     DIRECTION B : BARRE DE MENU HORIZONTALE HAUTE (7 ONGLETS) — VUE ONTOLOGIE & KB
+     ===================================================================== -->
+<div id="dir-b" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code" style="background:#7C2D12;color:#FFEDD5">Direction B</span> "Barre de Menu Horizontale Haute" (7 Onglets en haut — illustrée sur le module 4 : 🧬 Ontologie & KB)</h2>
+      <p><strong>Comment le Menu fonctionne :</strong> Les <strong>7 modules d'ORCIA</strong> sont alignés dans la barre supérieure noire. Ici, Yanis (Tech Lead) et Antoine (Architecte) ont cliqué sur l'onglet <strong>🧬 4. Ontologie & Connaissances (KB)</strong> pour traiter l'alerte d'obsolescence de la doc API partenaire et promouvoir un concept du Niveau 4 (Run) au Niveau 3 (Équipe), tout en dialoguant avec l'Agent Concierge à gauche !</p>
+    </div>
+  </div>
+
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="url-bar">https://orcia.internal/ontology-kb • Menu : [4. Ontologie & Connaissances (KB)] actif</div>
+    </div>
+    <div class="dir-b">
+      <!-- BARRE DE MENU GLOBALE HORIZONTALE (7 MODULES) -->
+      <div class="dir-b-topmenu">
+        <div style="display:flex;align-items:center;gap:16px;height:100%">
+          <strong style="font-size:15px;color:#fff;letter-spacing:0.04em">ORCIA</strong>
+          <div class="topmenu-tabs">
+            <div class="topmenu-tab">💬 1. Cockpit</div>
+            <div class="topmenu-tab">🔔 2. Mes Runs <span class="topmenu-badge">3</span></div>
+            <div class="topmenu-tab">📦 3. Catalogue Fédéré</div>
+            <div class="topmenu-tab active">🧬 4. Ontologie & KB <span class="topmenu-badge" style="background:#FFF;color:#C2410C">1 Alerte</span></div>
+            <div class="topmenu-tab">🛡️ 5. Gates & Habilitations</div>
+            <div class="topmenu-tab">📊 6. FinOps & Audit</div>
+            <div class="topmenu-tab">⚙️ 7. Admin</div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:#D6D3D1">
+          👤 <strong>Yanis (Tech Lead)</strong> • <code>Cmd+K</code>
+        </div>
+      </div>
+
+      <div class="dir-b-subbar">
+        <div><strong>Vue active :</strong> Gouvernance de l'Ontologie Multi-Niveaux (4 Strates) & État de Fraîcheur des Bases de Connaissances</div>
+        <div style="color:#C2410C;font-weight:600">Source : <code>git://entreprise/paiement-ontology.yaml@v2.4</code></div>
+      </div>
+
+      <div class="dir-b-main">
+        <!-- GAUCHE : CONVERSATION PERSISTANTE CONTEXTUALISÉE AU MODULE ONTOLOGIE -->
+        <div class="dir-b-chat">
+          <div class="dir-b-card">
+            <div style="font-size:10.5px;color:#C2410C;font-weight:700;margin-bottom:4px">🤖 AGENT CONCIERGE (CONTEXTE : ONTOLOGIE & KB)</div>
+            Yanis, vous êtes dans le module <strong>Ontologie & KB</strong>. J'ai isolé le document obsolète <code>partner-fx-spec-v2.pdf</code> que vous avez signalé au Step 3 du Run #108. Voulez-vous le remplacer par le contrat OpenAPI <code>v3.1.json</code> et lancer le Replay des Steps impactés ?
+          </div>
+          <div class="dir-b-card" style="background:#FFF7ED;border-color:#FDBA74">
+            <div style="font-weight:700;color:#9A3412;font-size:11.5px">⚠️ Action Rapide KB : Résoudre STALE_WARNING</div>
+            <p style="font-size:11.5px;color:#431407;margin-top:4px">
+              1 Workflow Run en cours (#108) dépend de ce document.
+            </p>
+            <button style="margin-top:8px;background:#C2410C;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600">Publier OpenAPI v3.1 & Notifier le Run #108</button>
+          </div>
+        </div>
+
+        <!-- DROITE : CANVAS DU MODULE ONTOLOGIE MULTI-NIVEAUX -->
+        <div class="dir-b-canvas">
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #E7E0D6;padding-bottom:10px">
+            <h3 style="font-family:Georgia,serif;font-size:18px">🧬 Explorateur d'Ontologie Dynamique (4 Niveaux avec Héritage)</h3>
+            <span style="background:#DCFCE7;color:#166534;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600">Synchronisé avec Blackboard & Gates</span>
+          </div>
+
+          <div class="onto-level-tree">
+            <div class="onto-col">
+              <h4>1. Socle Entreprise</h4>
+              <div class="onto-item"><strong>Actif Stratégique</strong><br><span style="color:#57534E">Exige: Audit SecOps</span></div>
+              <div class="onto-item"><strong>Partenaire Externe</strong><br><span style="color:#57534E">Exige: Contrat TLS mTLS</span></div>
+            </div>
+            <div class="onto-col">
+              <h4>2. Domaine / BU Paiement</h4>
+              <div class="onto-item"><strong>Opération FX</strong><br><span style="color:#57534E">Hérite: Actif Stratégique</span></div>
+              <div class="onto-item"><strong>Clause CGV 4.2</strong><br><span style="color:#57534E">Règle: Taux Spot visible</span></div>
+            </div>
+            <div class="onto-col">
+              <h4>3. Équipe / Projet IT</h4>
+              <div class="onto-item"><strong>Microservice Tier-1</strong><br><span style="color:#0369A1">↔ Map: Actif Stratégique</span></div>
+              <div class="onto-item"><strong>Outbox PostgreSQL</strong><br><span style="color:#57534E">Pattern officiel autorisé</span></div>
+            </div>
+            <div class="onto-col" style="border-color:#C2410C;background:#FFF7ED">
+              <h4>4. Éphémère / Run #108</h4>
+              <div class="onto-item" style="border-color:#C2410C">
+                <strong>✨ Remboursement Spot v3</strong><br>
+                <span style="color:#9A3412">Découvert dans Run #108</span><br>
+                <button style="margin-top:5px;background:#15803D;color:#fff;border:none;padding:3px 7px;border-radius:4px;font-size:10px;font-weight:600">↑ Promouvoir Niv. 3</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="dir-b-card" style="margin-top:16px">
+            <strong>📚 Bases de Connaissances Associées & État de Fraîcheur (Knowledge Staleness)</strong>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;padding:8px;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px">
+              <div>
+                <strong style="color:#991B1B">🚨 [STALE_WARNING] kb://paiement/partner-fx-spec-v2.pdf</strong>
+                <div style="font-size:11px;color:#7F1D1D">Signalé obsolète par Yanis (Tech Lead) lors du Step 3 — Incompatibilité API v3 détectée.</div>
+              </div>
+              <span style="background:#991B1B;color:#fff;padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:600">Remplacement en cours</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     DIRECTION C : MENU LATÉRAL EXPLICITE (7 ENTRÉES) + CATALOGUE FÉDÉRÉ + DOCK IA
+     ===================================================================== -->
+<div id="dir-c" class="section-block">
+  <div class="direction-meta">
+    <div>
+      <h2><span class="badge-code" style="background:#1D4ED8;color:#DBEAFE">Direction C</span> "Sidebar Menu Explicite (Gauche) + Espace Central + Dock Agent Concierge (Droite)"</h2>
+      <p><strong>Comment le Menu fonctionne :</strong> Un <strong>menu latéral gauche lisible avec icônes + libellés complets des 7 modules</strong> (pliable en icônes seules quand on veut plus de place). Au centre, la vue du module sélectionné (ici <strong>📦 3. Catalogue Fédéré `db://`, `git://`, `nexus://`</strong> pour Karim). À droite, l'<strong>Agent Concierge + Permission Broker</strong> reste ancré pour agir à la voix ou au clavier sur l'écran central.</p>
+    </div>
+  </div>
+
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="url-bar">https://orcia.internal/catalog • Menu : [3. Catalogue Fédéré (db://, git://, nexus://)] actif</div>
+    </div>
+    <div class="dir-c">
+      <!-- GAUCHE : MENU LATÉRAL EXPLICITE DES 7 MODULES -->
+      <div class="dir-c-sidebar">
+        <div>
+          <div style="font-weight:800;font-size:15px;color:#fff;padding-bottom:12px;border-bottom:1px solid #1E293B;display:flex;justify-content:space-between;align-items:center">
+            <span>ORCIA Platform</span>
+            <span style="font-size:11px;color:#64748B;border:1px solid #334155;padding:1px 5px;border-radius:4px">«</span>
+          </div>
+
+          <div class="c-menu-list">
+            <div class="c-menu-item">
+              <span>💬 1. Cockpit & Chat</span>
+            </div>
+            <div class="c-menu-item">
+              <span>🔔 2. Boîte & Mes Runs</span>
+              <span style="background:#F59E0B;color:#0F172A;font-size:10px;font-weight:800;padding:1px 6px;border-radius:99px">3</span>
+            </div>
+            <div class="c-menu-item active">
+              <span>📦 3. Catalogue Fédéré</span>
+              <span style="font-size:10px;opacity:0.8">DB/Git/Nexus</span>
+            </div>
+            <div class="c-menu-item">
+              <span>🧬 4. Ontologie & KB</span>
+              <span style="background:#EF4444;color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:99px">!</span>
+            </div>
+            <div class="c-menu-item">
+              <span>🛡️ 5. Gates & Habilitations</span>
+            </div>
+            <div class="c-menu-item">
+              <span>📊 6. FinOps & Audit</span>
+            </div>
+            <div class="c-menu-item">
+              <span>⚙️ 7. Administration</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#1E293B;padding:10px;border-radius:8px;font-size:11px;color:#CBD5E1">
+          <strong>👤 Karim (Ing. Plateforme)</strong><br>
+          BU : Tech & Sécurité<br>
+          <span style="color:#34D399">● Cache SHA-256 Actif (14 ms)</span>
+        </div>
+      </div>
+
+      <!-- CENTRE : MODULE ACTIF (CATALOGUE FÉDÉRÉ) -->
+      <div class="dir-c-main">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #E2E8F0;padding-bottom:10px">
+          <div>
+            <h3 style="font-size:16px;font-weight:700">📦 Catalogue Fédéré (Résolution à la volée & Cache SHA-256)</h3>
+            <p style="font-size:11.5px;color:#64748B">Workflows, Agents, Skills, Gabarits d'Artefact et Ontologies gouvernés par RBAC/ABAC.</p>
+          </div>
+          <button style="background:#2563EB;color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:11.5px;font-weight:600">+ Référencer URI (Git / Nexus / DB)</button>
+        </div>
+
+        <div class="catalog-grid">
+          <div class="cat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="uri-badge uri-nexus">nexus://bundles/secops-audit-skill@2.1.0.tar.gz</span>
+              <span style="font-size:10.5px;color:#059669;font-weight:700">● Publié Entreprise</span>
+            </div>
+            <div style="font-weight:700;font-size:13.5px">Skill : Audit Sécurité & Pattern Drift</div>
+            <p style="font-size:11.5px;color:#475569;margin-top:4px">Exécute l'analyse statique en Sandbox et vérifie l'absence de dérive architecturale.</p>
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;font-size:10.5px;color:#64748B">
+              <span>Droits : <strong>DISCOVER, EXECUTE</strong> (Source masquée 🔒)</span>
+              <span>SHA-256 : <code>e3b0c442...</code></span>
+            </div>
+          </div>
+
+          <div class="cat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="uri-badge uri-git">git://paiement/repo.git///.orcia/workflows/fx-evolution.yaml@v1.4</span>
+              <span style="font-size:10.5px;color:#2563EB;font-weight:700">● Partagé BU</span>
+            </div>
+            <div style="font-weight:700;font-size:13.5px">Workflow : Évolution Produit PM -> Arch -> Tech Lead</div>
+            <p style="font-size:11.5px;color:#475569;margin-top:4px">Inclut les Ancrages Humains Obligatoires, les Gates Cross-Model et la boucle de Rewind.</p>
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;font-size:10.5px;color:#64748B">
+              <span>Droits : <strong>DISCOVER, EXECUTE, FORK</strong></span>
+              <span>Utilisé par : 14 Runs</span>
+            </div>
+          </div>
+
+          <div class="cat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="uri-badge uri-db">db://orcia/templates/dat-architecture@1.0.0</span>
+              <span style="font-size:10.5px;color:#059669;font-weight:700">● Publié Entreprise</span>
+            </div>
+            <div style="font-weight:700;font-size:13.5px">Gabarit d'Artefact : Dossier d'Architecture (DAT)</div>
+            <p style="font-size:11.5px;color:#475569;margin-top:4px">Contrat Markdown + JSON Schema avec 4 sections de Validation par Découpage.</p>
+          </div>
+
+          <div class="cat-card" style="border-color:#F59E0B;background:#FFFBEB">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="uri-badge uri-nexus">nexus://bundles/prod-deploy-mcp@3.0.0</span>
+              <span style="font-size:10.5px;color:#B45309;font-weight:700">🔒 Habilitation Requise</span>
+            </div>
+            <div style="font-weight:700;font-size:13.5px">Skill MCP : Déploiement Production</div>
+            <p style="font-size:11.5px;color:#92400E;margin-top:4px">Vous avez le droit <code>DISCOVER</code> mais pas <code>EXECUTE</code>. Cliquez pour demander au Permission Broker.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DROITE : DOCK PERSISTANT DE L'AGENT CONCIERGE & PERMISSION BROKER -->
+      <div class="dir-c-chatdock">
+        <div style="padding:12px 14px;background:#F1F5F9;border-bottom:1px solid #E2E8F0;font-weight:700;font-size:12.5px;display:flex;justify-content:space-between">
+          <span>🤖 Agent Concierge & Permission Broker</span>
+          <span style="color:#2563EB;font-size:11px">Actif</span>
+        </div>
+        <div style="padding:14px;flex:1;display:flex;flex-direction:column;gap:10px;font-size:12px">
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px">
+            <strong>🔑 Guide d'Habilitation (Permission Broker) :</strong><br>
+            Pour obtenir le droit <code>EXECUTE</code> sur le bundle <code>nexus://bundles/prod-deploy-mcp@3.0.0</code>, la procédure <strong>#IAM-PROD-12</strong> indique que vous devez :
+            <ol style="margin-left:16px;margin-top:6px;color:#334155">
+              <li>Ouvrir une demande dans ServiceNow (Groupe : <code>ORCIA-Release-Managers</code>).</li>
+              <li>Faire valider par Claire (Directrice BU).</li>
+            </ol>
+            <button style="margin-top:8px;width:100%;background:#0F172A;color:#fff;border:none;padding:6px;border-radius:5px;font-size:11px;font-weight:600">Pré-remplir la demande d'accès</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
