@@ -227,13 +227,13 @@ export interface UiShellLabels {
   modules: Record<UiModuleKey, string>;
   staleWarningBadgeLabel: string;
   humanProfilePrefixLabel: string;
-  conciergeDockTitle: string;
-  conciergeDockSubtitle: string;
-  conciergeDockToggleExpandLabel: string;
-  conciergeDockToggleCollapseLabel: string;
-  conciergePermissionBrokerReadyLabel: string;
-  conciergeInputPlaceholder: string;
-  conciergeSendLabel: string;
+  assistantDockTitle: string;
+  assistantDockSubtitle: string;
+  assistantDockToggleExpandLabel: string;
+  assistantDockToggleCollapseLabel: string;
+  assistantPermissionBrokerReadyLabel: string;
+  assistantInputPlaceholder: string;
+  assistantSendLabel: string;
   localeSwitchLabel: string;
   mobileTabs: Record<UiMobileTabKey, string>;
 }

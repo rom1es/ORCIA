@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ConciergeDock } from "./ConciergeDock";
+import { AssistantDock } from "./AssistantDock";
 import { GlobalSidebar } from "./GlobalSidebar";
 import type {
   UiHumanProfileBadge,
@@ -27,7 +27,7 @@ export interface AppShellProps {
   onSelectModule: (moduleKey: UiModuleKey, route: string) => void;
   onSelectScope: (scopeId: string) => void;
   onToggleLocale?: () => void;
-  onSubmitConciergePrompt?: (prompt: string) => void;
+  onSubmitAssistantPrompt?: (prompt: string) => void;
   onPausePermissionStep?: (ticketId: string) => void;
   onReplayPermissionStep?: (ticketId: string) => void;
   children: React.ReactNode;
@@ -59,7 +59,7 @@ export function AppShell({
   onSelectModule,
   onSelectScope,
   onToggleLocale,
-  onSubmitConciergePrompt,
+  onSubmitAssistantPrompt,
   onPausePermissionStep,
   onReplayPermissionStep,
   children,
@@ -214,7 +214,7 @@ export function AppShell({
         <div data-testid="app-shell-module-content">{children}</div>
       </main>
 
-      <ConciergeDock
+      <AssistantDock
         activeModuleKey={activeModuleKey}
         activeScopeId={activeScopeId}
         collapsed={dockCollapsed}
@@ -222,7 +222,7 @@ export function AppShell({
         permissionBrokerTicket={permissionBrokerTicket}
         permissionBrokerLabels={permissionBrokerLabels}
         onToggleCollapsed={() => setDockCollapsed((prev) => !prev)}
-        onSubmitPrompt={onSubmitConciergePrompt}
+        onSubmitPrompt={onSubmitAssistantPrompt}
         onPausePermissionStep={onPausePermissionStep}
         onReplayPermissionStep={onReplayPermissionStep}
       />

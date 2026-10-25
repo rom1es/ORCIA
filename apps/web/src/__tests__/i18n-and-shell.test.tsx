@@ -169,10 +169,10 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     fireEvent.click(screen.getByTestId("scope-option-scope-ws-orcia"));
     fireEvent.keyDown(window, { key: "]" });
-    expect(screen.getByTestId("concierge-dock").getAttribute("data-collapsed")).toBe("true");
+    expect(screen.getByTestId("assistant-dock").getAttribute("data-collapsed")).toBe("true");
 
     fireEvent.click(screen.getByTestId("simulate-permission-denied-confluence-btn"));
-    expect(screen.getByTestId("concierge-dock").getAttribute("data-collapsed")).toBe("false");
+    expect(screen.getByTestId("assistant-dock").getAttribute("data-collapsed")).toBe("false");
     expect(screen.getByTestId("permission-broker-required-role").textContent).toBe(
       "CONFLUENCE_PAY_ADR_READER",
     );

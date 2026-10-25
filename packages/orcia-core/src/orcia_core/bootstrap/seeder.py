@@ -32,7 +32,7 @@ from orcia_core.bootstrap.workflow_bootstrap_seeds import (
 
 IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
-CONCIERGE_WORKFLOW_URI: str = "orcia://system/workflows/concierge-agent"
+ASSISTANT_WORKFLOW_URI: str = "orcia://system/workflows/assistant-agent"
 
 SYSTEM_BOOTSTRAP_WORKFLOW_URIS: tuple[str, ...] = (
     "orcia://system/bootstrap/init-organization",
@@ -240,7 +240,7 @@ USER_ONBOARDING_STATES_UPSERT_SPEC = UpsertSpec(
 )  # fmt: skip
 
 __all__ = [
-    "CATALOG_ITEMS_UPSERT_SPEC", "CONCIERGE_WORKFLOW_URI", "CUSTOMIZATION_OVERRIDES_UPSERT_SPEC",
+    "ASSISTANT_WORKFLOW_URI", "CATALOG_ITEMS_UPSERT_SPEC", "CUSTOMIZATION_OVERRIDES_UPSERT_SPEC",
     "DEFAULT_CATALOG_ITEM_SEEDS", "DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS",
     "DEFAULT_HUMAN_PROFILE_ARCHETYPES", "DEFAULT_LLM_MODEL_ENDPOINT_SEEDS",
     "DEFAULT_ORG_UNIT_SEEDS", "DEFAULT_PERMISSION_BROKER_POLICY_SEEDS",

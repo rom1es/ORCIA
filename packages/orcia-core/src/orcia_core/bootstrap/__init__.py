@@ -34,7 +34,7 @@ from orcia_core.bootstrap.models import (
     WorkspaceBootstrapInput,
 )
 from orcia_core.bootstrap.seeder import (
-    CONCIERGE_WORKFLOW_URI,
+    ASSISTANT_WORKFLOW_URI,
     DEFAULT_HUMAN_PROFILE_ARCHETYPES,
     SYSTEM_BOOTSTRAP_WORKFLOW_URIS,
     HumanProfileArchetypeSeed,
@@ -91,8 +91,8 @@ def build_default_system_bootstrap_service(
 
 
 __all__ = [
+    "ASSISTANT_WORKFLOW_URI",
     "CANONICAL_UPSTREAM_ONTOLOGY",
-    "CONCIERGE_WORKFLOW_URI",
     "DEFAULT_HUMAN_PROFILE_ARCHETYPES",
     "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",
     "VALID_ARCHETYPES",

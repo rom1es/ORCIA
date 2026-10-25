@@ -4,7 +4,7 @@ title: ORCIA — Visual Identity & Design System (Direction C : Enterprise Adapt
 status: final
 created: 2026-10-24
 updated: 2026-10-24
-description: Plateforme d'exécution de processus d'entreprise et personnels "Human-Led, Agent-Accelerated". Basée sur shadcn/ui (Radix + Tailwind CSS) avec l'architecture visuelle Direction C (Menu Latéral Sombre Explicite + Espace Central Haut-Contraste + Dock Agent Concierge Persistant).
+description: Plateforme d'exécution de processus d'entreprise et personnels "Human-Led, Agent-Accelerated". Basée sur shadcn/ui (Radix + Tailwind CSS) avec l'architecture visuelle Direction C (Menu Latéral Sombre Explicite + Espace Central Haut-Contraste + Dock Agent Assistant Persistant).
 colors:
   sidebar-bg: '#0F172A'
   sidebar-foreground: '#F8FAFC'
@@ -80,7 +80,7 @@ components:
 **ORCIA** incarne la posture **"Human-Led, Agent-Accelerated"** à travers la **Direction C (Hybride Entreprise Haut-Contraste)**. Son identité visuelle combine trois sensations immédiates :
 1. **Autorité & Orientation (Sidebar Sombre `#0F172A`)** : Un repère stable à gauche qui affiche clairement les **7 Modules Globaux** d'ORCIA et leurs badges d'activité temps réel, repliable en icônes seules (`68px`) lorsque l'utilisateur souhaite maximiser sa surface de travail.
 2. **Clarté Cognitive & Lisibilité Documentaire (Espace Central Clair `#F8FAFC` / `#FFFFFF`)** : Une surface calme et lumineuse pensée pour la lecture sans fatigue des **Briefings de Revue**, la rédaction réfléchie des **Ancrages Humains Obligatoires** et la **Validation par Découpage** des **Artefacts** volumineux (avec un thème Dark Slate `#0B0F17` commutable pour les sessions de développement nocturnes ou techniques).
-3. **Co-présence Intelligente (Dock Agent Concierge `#F1F5F9` / `#FFFFFF`)** : Un espace conversationnel toujours accessible, au centre dans le module *1. Cockpit*, ou ancré à droite (`360px`) dans les modules *2 à 7*.
+3. **Co-présence Intelligente (Dock Agent Assistant `#F1F5F9` / `#FFFFFF`)** : Un espace conversationnel toujours accessible, au centre dans le module *1. Cockpit*, ou ancré à droite (`360px`) dans les modules *2 à 7*.
 
 ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce document spécifie uniquement la couche identitaire et les composants cognitifs propres à ORCIA.
 
@@ -89,7 +89,7 @@ ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce docu
 Chaque couleur sémantique d'ORCIA possède une signification stricte liée à la gouvernance humano-agentique — aucune couleur d'accent n'est utilisée à titre purement décoratif :
 
 - **Sidebar Slate (`#0F172A`)** : Fond permanent du menu de navigation global à 7 modules, isolant visuellement la navigation de la surface de travail.
-- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, module actif dans la Sidebar, et indicateur de présence de l'**Agent Concierge**.
+- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, module actif dans la Sidebar, et indicateur de présence de l'**Agent Assistant**.
 - **Human-Led Violet (`#6D28D9` / Fond `#F5F3FF`)** : Réservé exclusivement aux **Ancrages Humains Obligatoires** (`human_authored_required: true`). Dès que l'utilisateur voit une bordure violette, il sait que l'IA a l'interdiction de rédiger cette zone à sa place et que sa réflexion d'expert (*Think*) est attendue.
 - **Arbitration & Challenge Amber (`#D97706` / Fond `#FFFBEB`)** : Indique une suspension du **Workflow Run** requérant une décision humaine : **Arbitrage Humain** sur options équivalentes, challenge inter-rôles (ex: Architecte $\rightarrow$ PM), ou suspicion de *Rubber-Stamping*.
 - **Gate Pass Emerald (`#059669` / Fond `#ECFDF5`)** : Indique une **Gate** (Déterministe, Agentique Cross-Model ou Humaine) franchie avec succès, un verrou de présence pris en charge (*Claimed*), ou un cache `SHA-256` vérifié.
@@ -98,7 +98,7 @@ Chaque couleur sémantique d'ORCIA possède une signification stricte liée à l
 
 ## Typography
 
-- **Interface & Conversation (`Inter` / `Geist Sans`, `13.5px`)** : Densité calibrée pour afficher côte à côte le menu, le **Canvas** et le **Dock Agent Concierge** sans troncature sur un écran portable 14" ou un moniteur externe.
+- **Interface & Conversation (`Inter` / `Geist Sans`, `13.5px`)** : Densité calibrée pour afficher côte à côte le menu, le **Canvas** et le **Dock Agent Assistant** sans troncature sur un écran portable 14" ou un moniteur externe.
 - **Titres d'Artefacts & Livrables (`Instrument Serif` / `Georgia`, `22px`)** : Utilisé uniquement pour l'en-tête des **Artefacts** documentaires (`PRD`, `Dossier d'Architecture`) dans le **Canvas** afin de marquer visuellement la distinction entre le flux de discussion éphémère (sans-serif) et le livrable contractuel de référence (serif).
 - **Provenance, URI & Code (`JetBrains Mono` / `Geist Mono`, `12px`)** : Obligatoire pour toutes les URI du **Catalogue Fédéré** (`db://`, `git://`, `nexus://`), les empreintes `SHA-256` et les logs de **Sandbox**.
 
@@ -109,7 +109,7 @@ L'architecture spatiale Desktop repose sur une grille fluide à **3 colonnes ada
 2. **Colonne Centrale — Espace Principal / Canvas (`1fr`, min `640px`)** :
    - Dans le module **1. Cockpit & Chat**, l'espace central est partagé en Split-View entre la **Conversation principale** et le **Canvas d'Artefact/Gate**.
    - Dans les modules **2 à 7** (*Mes Runs, Catalogue Fédéré, Ontologie & KB, Gates & IAM, FinOps, Admin*), le module occupe tout l'espace central (`1fr`).
-3. **Colonne Droite — Dock Persistant Agent Concierge & Permission Broker (`360px`, repliable)** : Présent dans les modules 2 à 7 pour permettre de piloter, filtrer ou résoudre un problème d'habilitation en langage naturel tout en travaillant sur le module central.
+3. **Colonne Droite — Dock Persistant Agent Assistant & Permission Broker (`360px`, repliable)** : Présent dans les modules 2 à 7 pour permettre de piloter, filtrer ou résoudre un problème d'habilitation en langage naturel tout en travaillant sur le module central.
 
 Sur **Mobile Companion (`< 768px`)**, la grille à 3 colonnes cède la place à une vue mono-colonne pilotée par une barre d'onglets inférieure à 3 entrées (`🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`).
 
@@ -142,4 +142,4 @@ Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `T
 | Utiliser le violet `{colors.human-led}` exclusivement pour les **Ancrages Humains Obligatoires** | Pré-remplir par IA un champ marqué `human_authored_required: true` ou y ajouter un bouton d'auto-complétion IA |
 | Afficher systématiquement le **Briefing de Revue (4 blocs)** en haut du Canvas avant un **Artefact** volumineux | Afficher un document brut de 30 pages avec un unique bouton "Tout Approuver" en bas de page |
 | Séparer visuellement les **Workflow Runs** en mode *Contributeur (Actions requises)* et *Consultation seule (Observateur)* | Laisser un utilisateur en mode *Consultation seule* cliquer sur des boutons d'édition qui échouent ensuite |
-| Garder le **Dock Agent Concierge & Permission Broker** accessible à droite dans les modules 2 à 7 | Forcer l'utilisateur à quitter le Catalogue ou l'Ontologie pour revenir au Cockpit quand il a une question |
+| Garder le **Dock Agent Assistant & Permission Broker** accessible à droite dans les modules 2 à 7 | Forcer l'utilisateur à quitter le Catalogue ou l'Ontologie pour revenir au Cockpit quand il a une question |

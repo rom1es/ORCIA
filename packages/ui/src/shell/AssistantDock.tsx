@@ -8,7 +8,7 @@ import type {
   UiShellLabels,
 } from "./types";
 
-export interface ConciergeDockProps {
+export interface AssistantDockProps {
   activeModuleKey: UiModuleKey;
   activeScopeId: string;
   collapsed: boolean;
@@ -21,7 +21,7 @@ export interface ConciergeDockProps {
   onReplayPermissionStep?: (ticketId: string) => void;
 }
 
-export function ConciergeDock({
+export function AssistantDock({
   activeModuleKey,
   activeScopeId,
   collapsed,
@@ -32,7 +32,7 @@ export function ConciergeDock({
   onSubmitPrompt,
   onPausePermissionStep,
   onReplayPermissionStep,
-}: ConciergeDockProps) {
+}: AssistantDockProps) {
   const [promptValue, setPromptValue] = useState("");
   const hasWaitingDenial =
     permissionBrokerTicket?.status === "WAITING_FOR_PERMISSION" ||
@@ -41,7 +41,7 @@ export function ConciergeDock({
   if (collapsed) {
     return (
       <aside
-        data-testid="concierge-dock"
+        data-testid="assistant-dock"
         data-collapsed="true"
         style={{
           width: "48px",
@@ -57,8 +57,8 @@ export function ConciergeDock({
       >
         <button
           type="button"
-          data-testid="concierge-dock-toggle"
-          aria-label={labels.conciergeDockToggleExpandLabel}
+          data-testid="assistant-dock-toggle"
+          aria-label={labels.assistantDockToggleExpandLabel}
           onClick={onToggleCollapsed}
           style={{
             backgroundColor: "var(--color-surface-card)",
@@ -78,7 +78,7 @@ export function ConciergeDock({
 
   return (
     <aside
-      data-testid="concierge-dock"
+      data-testid="assistant-dock"
       data-collapsed="false"
       style={{
         width: "min(var(--dock-width), 48vw)",
@@ -104,20 +104,20 @@ export function ConciergeDock({
           }}
         >
           <div>
-            <strong style={{ display: "block" }}>{labels.conciergeDockTitle}</strong>
+            <strong style={{ display: "block" }}>{labels.assistantDockTitle}</strong>
             <span
               style={{
                 fontSize: "var(--font-size-mono)",
                 color: "var(--color-muted-foreground)",
               }}
             >
-              {labels.conciergeDockSubtitle}
+              {labels.assistantDockSubtitle}
             </span>
           </div>
           <button
             type="button"
-            data-testid="concierge-dock-toggle"
-            aria-label={labels.conciergeDockToggleCollapseLabel}
+            data-testid="assistant-dock-toggle"
+            aria-label={labels.assistantDockToggleCollapseLabel}
             onClick={onToggleCollapsed}
             style={{
               backgroundColor: "var(--color-surface-card)",
@@ -135,8 +135,8 @@ export function ConciergeDock({
 
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           <StatusBadge
-            testId="concierge-permission-broker-status"
-            label={labels.conciergePermissionBrokerReadyLabel}
+            testId="assistant-permission-broker-status"
+            label={labels.assistantPermissionBrokerReadyLabel}
             tone={hasWaitingDenial ? "amber" : "emerald"}
           />
           <StatusBadge
@@ -174,9 +174,9 @@ export function ConciergeDock({
       >
         <input
           type="text"
-          data-testid="concierge-prompt-input"
-          aria-label={labels.conciergeInputPlaceholder}
-          placeholder={labels.conciergeInputPlaceholder}
+          data-testid="assistant-prompt-input"
+          aria-label={labels.assistantInputPlaceholder}
+          placeholder={labels.assistantInputPlaceholder}
           value={promptValue}
           onChange={(e) => setPromptValue(e.target.value)}
           style={{
@@ -192,7 +192,7 @@ export function ConciergeDock({
         />
         <button
           type="submit"
-          data-testid="concierge-prompt-submit"
+          data-testid="assistant-prompt-submit"
           style={{
             backgroundColor: "var(--color-primary-cobalt)",
             color: "var(--color-primary-foreground)",
@@ -203,7 +203,7 @@ export function ConciergeDock({
             cursor: "pointer",
           }}
         >
-          {labels.conciergeSendLabel}
+          {labels.assistantSendLabel}
         </button>
       </form>
     </aside>

@@ -9,6 +9,7 @@ export {
   type StatusBadgeTone,
 } from "./primitives/StatusBadge";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
+export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {
   BootstrapOnboardingPanel,
   type BootstrapOnboardingPanelProps,
@@ -17,7 +18,6 @@ export {
   CatalogExplorerPanel,
   type CatalogExplorerPanelProps,
 } from "./shell/CatalogExplorerPanel";
-export { ConciergeDock, type ConciergeDockProps } from "./shell/ConciergeDock";
 export {
   FederatedUriBadge,
   type FederatedUriBadgeProps,

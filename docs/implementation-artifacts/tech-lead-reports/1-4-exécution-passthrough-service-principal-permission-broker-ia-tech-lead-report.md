@@ -15,12 +15,12 @@ Dans une plateforme d'orchestration d'agents connectée aux sources d'entreprise
 1. **L'élévation de privilèges par *Confused Deputy*** : si un agent exécute ses appels externes via un compte de service global omnipotent (`service_principal` non gouverné), un utilisateur peut contourner les habilitations natives de Git, Confluence ou Jira.
 2. **L'impasse opérationnelle sur refus d'accès (`HTTP 401/403`)** : lorsqu'une étape de workflow échoue faute de droit sur un dépôt Git privé, une page Confluence restreinte ou une transition de projet Jira, l'utilisateur se retrouve bloqué devant une erreur technique opaque sans savoir quel rôle demander, à quelle équipe approbatrice s'adresser, ni comment débloquer et rejouer son étape (`Replay Step N`).
 
-La **Story 1.4** (`FR-22`, `AD-6`, `UX-DR11`) résout ces deux problèmes en imposant l'exécution `passthrough` par défaut (identité déléguée chiffrée `AES-256-GCM`, avec garde-fou strict sur `service_principal` réservé aux ressources explicitement approuvées par un administrateur) et en introduisant le **`PermissionBrokerService`** adossé à une Base de Connaissances d'Habilitations (fichiers Markdown à frontmatter YAML `uri_pattern`, `required_role`, `approver_team`, `request_url_template`, `sla_hours`), restituant une enveloppe **RFC 9457** enrichie de `permission_broker_hint` et ouvrant automatiquement le **Dock Agent Concierge & Permission Broker** sur une carte ambre (`#D97706`, `UX-DR11`) munie du lien Jira pré-rempli et du bouton *Mettre en pause / Rejouer l'étape*.
+La **Story 1.4** (`FR-22`, `AD-6`, `UX-DR11`) résout ces deux problèmes en imposant l'exécution `passthrough` par défaut (identité déléguée chiffrée `AES-256-GCM`, avec garde-fou strict sur `service_principal` réservé aux ressources explicitement approuvées par un administrateur) et en introduisant le **`PermissionBrokerService`** adossé à une Base de Connaissances d'Habilitations (fichiers Markdown à frontmatter YAML `uri_pattern`, `required_role`, `approver_team`, `request_url_template`, `sla_hours`), restituant une enveloppe **RFC 9457** enrichie de `permission_broker_hint` et ouvrant automatiquement le **Dock Agent Assistant & Permission Broker** sur une carte ambre (`#D97706`, `UX-DR11`) munie du lien Jira pré-rempli et du bouton *Mettre en pause / Rejouer l'étape*.
 
 ### 1.2. Analyse d'Impact GitNexus (Obligatoire)
 - **Requêtes exécutées (`repo: "ORCIA"`)** :
-  - `gitnexus_query({repo: "ORCIA", search_query: "permission broker passthrough service principal concierge dock"})`
-  - `gitnexus_impact({repo: "ORCIA", target: "ConciergeDock", direction: "upstream"})` $\rightarrow$ **`risk: LOW`** (`impactedCount: 3` : `AppShell.tsx` d=1, `ShellContainer.tsx` d=2, `RootLayout` d=3).
+  - `gitnexus_query({repo: "ORCIA", search_query: "permission broker passthrough service principal assistant dock"})`
+  - `gitnexus_impact({repo: "ORCIA", target: "AssistantDock", direction: "upstream"})` $\rightarrow$ **`risk: LOW`** (`impactedCount: 3` : `AppShell.tsx` d=1, `ShellContainer.tsx` d=2, `RootLayout` d=3).
   - `gitnexus_impact({repo: "ORCIA", target: "ProblemDetails", direction: "upstream"})` $\rightarrow$ **`risk: LOW`** (`impactedCount: 2` : `schemas/__init__.py` d=1, `OrciaProblemError.constructor` dans `packages/api-client/src/index.ts` d=1).
   - `gitnexus_impact({repo: "ORCIA", target: "AuthAndOrganizationService", direction: "upstream"})` $\rightarrow$ **`risk: LOW`** (`impactedCount: 2` : `permissions/__init__.py` d=1, `catalog/__init__.py` d=2).
   - `gitnexus_impact({repo: "ORCIA", target: "PassthroughVaultCipher", direction: "upstream"})` $\rightarrow$ **`risk: LOW`** (`impactedCount: 3` : `permissions/service.py` d=1, `permissions/__init__.py` d=1).
@@ -35,7 +35,7 @@ La **Story 1.4** (`FR-22`, `AD-6`, `UX-DR11`) résout ces deux problèmes en imp
 - **Contrôle de volumétrie des fichiers existants** :
   - `packages/orcia-core/src/orcia_core/permissions/service.py` : `290` lignes $\rightarrow$ conserver intact et créer un module dédié `packages/orcia-core/src/orcia_core/permissions/broker.py` (`< 260` lignes) pour éviter tout dépassement du seuil des `300` lignes.
   - `packages/orcia-core/src/orcia_core/domain/exceptions.py` : `302` lignes $\rightarrow$ conserver sous le seuil en ajoutant uniquement les 2 entrées compactes `ERR_PERMISSION_BROKER_INTERCEPTED` et `ERR_CONFUSED_DEPUTY_BLOCKED`.
-  - `packages/ui/src/shell/ConciergeDock.tsx` : `185` lignes $\rightarrow$ extraire la carte ambre dans un composant dédié `packages/ui/src/shell/PermissionBrokerCard.tsx` (`< 180` lignes).
+  - `packages/ui/src/shell/AssistantDock.tsx` : `185` lignes $\rightarrow$ extraire la carte ambre dans un composant dédié `packages/ui/src/shell/PermissionBrokerCard.tsx` (`< 180` lignes).
 
 ### 1.4. Opportunités de Factorisation & Dette Technique Identifiée
 - **Factorisation retenue (`Étape 0 / DRY`)** :
@@ -75,7 +75,7 @@ La **Story 1.4** (`FR-22`, `AD-6`, `UX-DR11`) résout ces deux problèmes en imp
   2. L'équipe approbatrice (`approver_team`), le SLA (`sla_hours`) et la procédure Markdown de la KB,
   3. Le bouton/lien ouvrant la demande d'accès pré-remplie dans **Atlassian Jira**,
   4. Les boutons *Mettre en pause* et *Rejouer l'étape (Replay Step N)* (`FR-22`).
-- Mettre à jour `ConciergeDock.tsx` et `AppShell.tsx` pour que la réception ou la sélection d'un état `PERMISSION_DENIED_STEP` / `WAITING_FOR_PERMISSION` **ouvre automatiquement le Dock Agent Concierge & Permission Broker à droite** (`dockCollapsed -> false`) et affiche la `PermissionBrokerCard`.
+- Mettre à jour `AssistantDock.tsx` et `AppShell.tsx` pour que la réception ou la sélection d'un état `PERMISSION_DENIED_STEP` / `WAITING_FOR_PERMISSION` **ouvre automatiquement le Dock Agent Assistant & Permission Broker à droite** (`dockCollapsed -> false`) et affiche la `PermissionBrokerCard`.
 - Intégrer le simulateur et le tableau de bord du Permission Broker dans **🛡️ 5. Gates & Habilitations** (`ModuleWorkspaceView.tsx`) ainsi que dans le Cockpit/Catalogue, avec dictionnaires `i18n` `fr`/`en` complets.
 
 ---
@@ -97,7 +97,7 @@ La **Story 1.4** (`FR-22`, `AD-6`, `UX-DR11`) résout ces deux problèmes en imp
 | `apps/api/src/orcia_api/routers/permission_broker.py` | Créé | Routeur FastAPI `/api/v1/permissions/broker/*` branché sur `MatrixPermissionEvaluator` et `PassthroughVaultCipher`. | 209 |
 | `packages/api-client/src/index.ts` | Modifié | Client typé `getPermissionBrokerState(personaKey?, workspaceId?)` et méthodes Permission Broker (`0-diff` OpenAPI). | 270 |
 | `packages/ui/src/shell/PermissionBrokerCard.tsx` | Créé | Composant pur `@orcia/ui` (`UX-DR11`) affichant la carte ambre `#D97706`, le rôle manquant, l'approbateur, le SLA, `procedureMarkdown`, le lien Jira pré-rempli et *Pause / Replay Step N*. | 265 |
-| `packages/ui/src/shell/ConciergeDock.tsx` & `AppShell.tsx` | Modifié | Ouverture automatique du Dock à droite sur état `PERMISSION_DENIED_STEP` / `WAITING_FOR_PERMISSION` et intégration de `PermissionBrokerCard`. | 208 / 225 |
+| `packages/ui/src/shell/AssistantDock.tsx` & `AppShell.tsx` | Modifié | Ouverture automatique du Dock à droite sur état `PERMISSION_DENIED_STEP` / `WAITING_FOR_PERMISSION` et intégration de `PermissionBrokerCard`. | 208 / 225 |
 | `apps/web/src/components/ModuleWorkspaceView.tsx` & `workspaceFixtures.ts` | Modifié | Panneau simulateur `PERMISSION_DENIED_STEP` (ciblé sur `cockpit`, `catalog`, `gates`) et fixtures `procedureMarkdown` (`fr`/`en`). | 217 / 284 |
 | `tests/unit/test_permission_broker.py` & `tests/integration/test_real_containers.py` | Créé / Modifié | Tests unitaires (`pytest` + `hypothesis`, 27 tests) et tests d'intégration `testcontainers` (migration `0004` + backfill `03`). | 350 |
 

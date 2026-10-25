@@ -1,16 +1,16 @@
 # Project Brief : ORCIA (Orchestration of Processes, Context, and Intelligent Agents)
 
-> **Méthode** : BMAD (Breakthrough Method of Agile AI-Driven Development) — **Phase 1 : Analyst**  
-> **Statut** : Draft v1.0 (En attente de validation pour passage en Phase 2 : PM / PRD)  
+> **Méthode** : BMAD (Breakthrough Method of Agile AI-Driven Development) — **Phase 1 : Analyst**
+> **Statut** : Draft v1.0 (En attente de validation pour passage en Phase 2 : PM / PRD)
 > **Date** : 24 Octobre 2026
 
 ---
 
 ## 1. Résumé Exécutif & Vision
 
-**ORCIA** est une plateforme logicielle complète (**Interface Web "Conversational-First" avec Canvas dynamique** + Moteur d'Orchestration) permettant de concevoir, gouverner et exécuter des **processus d'entreprise complexes ou des processus personnels**. 
+**ORCIA** est une plateforme logicielle complète (**Interface Web "Conversational-First" avec Canvas dynamique** + Moteur d'Orchestration) permettant de concevoir, gouverner et exécuter des **processus d'entreprise complexes ou des processus personnels**.
 
-L'accès par défaut à la plateforme se fait via une **interface conversationnelle intelligente** où l'**Agent IA d'accueil (Concierge / Orchestrateur)** s'adapte dynamiquement au profil de son interlocuteur humain (Rôle, Département/BU, Habilitations) : synthèse exécutive et KPIs pour un Directeur, détails techniques/code/logs pour un Développeur, focus conformité/risques pour un Auditeur. Depuis cette conversation (enrichie d'un volet latéral *Canvas / Split-View*), l'utilisateur peut lancer et piloter ses processus, passer ses Gates, co-éditer des livrables, explorer le catalogue ou demander des habilitations.
+L'accès par défaut à la plateforme se fait via une **interface conversationnelle intelligente** où l'**Agent IA d'accueil (Assistant / Orchestrateur)** s'adapte dynamiquement au profil de son interlocuteur humain (Rôle, Département/BU, Habilitations) : synthèse exécutive et KPIs pour un Directeur, détails techniques/code/logs pour un Développeur, focus conformité/risques pour un Auditeur. Depuis cette conversation (enrichie d'un volet latéral *Canvas / Split-View*), l'utilisateur peut lancer et piloter ses processus, passer ses Gates, co-éditer des livrables, explorer le catalogue ou demander des habilitations.
 
 Chaque processus est modélisé comme une séquence ou un graphe d'étapes combinant :
 1. **Des Agents IA spécialisés** (exécuteurs ou orchestrateurs), propulsés de manière agnostique par des modèles Cloud ou Locaux (Ollama/vLLM).
@@ -37,7 +37,7 @@ Aujourd'hui, les organisations et les individus font face à trois limites majeu
 ```mermaid
 flowchart TB
     subgraph UX["0. Expérience Conversationnelle Adaptative & Ergonomie Cognitive"]
-        Chat["Agent IA Concierge Adaptatif (Rôle, BU, Habilitations)\n+ Arbitrage Humain sur Options Équivalentes"]
+        Chat["Agent IA Assistant Adaptatif (Rôle, BU, Habilitations)\n+ Arbitrage Humain sur Options Équivalentes"]
         Canvas["Canvas / Split-View Dynamique\n(Briefing Décisions/Hypothèses, Revue par Découpage)"]
         Chat <--> Canvas
     end
@@ -117,7 +117,7 @@ flowchart TB
   - Ces découvertes sont immédiatement exploitées au **Niveau 4 (Run)** et le système propose leur **promotion gouvernée** (via une carte interactive dans le chat ou une Gate dédiée) vers l'ontologie d'**Équipe (Niveau 3)**, de **BU (Niveau 2)** ou d'**Entreprise (Niveau 1)**.
 - **Les 3 Rôles Actifs Combinés de l'Ontologie dans ORCIA** :
   1. **Ancrage du Blackboard et des Gabarits (Contrat de données sémantique)** : Les variables du dossier d'exécution (Blackboard) et les sections/schémas des Gabarits d'artefacts sont typés par les concepts de l'ontologie, garantissant que tous les agents d'un workflow partagent exactement les mêmes définitions et attributs obligatoires.
-  2. **Traduction Adaptative par Profil Humain (Pont linguistique)** : L'Agent Concierge s'appuie sur les correspondances entre niveaux d'ontologie pour traduire automatiquement les concepts techniques (ex: *Microservice Tier-1 / Latence P99* pour le Développeur) en concepts métiers/exécutifs (ex: *Actif Stratégique / Impact SLA* pour le Directeur).
+  2. **Traduction Adaptative par Profil Humain (Pont linguistique)** : L'Agent Assistant s'appuie sur les correspondances entre niveaux d'ontologie pour traduire automatiquement les concepts techniques (ex: *Microservice Tier-1 / Latence P99* pour le Développeur) en concepts métiers/exécutifs (ex: *Actif Stratégique / Impact SLA* pour le Directeur).
   3. **Guidage du RAG et Contrôle par les Gates (Garde-fou sémantique)** : La recherche dans les Bases de Connaissances utilise les relations de l'ontologie pour étendre le contexte pertinent, tandis que les **Gates Déterministes et Agentiques** vérifient formellement que les artefacts produits respectent le vocabulaire autorisé et les axiomes de l'ontologie active.
 
 ### Pilier 2 : Modélisation des Processus, Gabarits d'Artefacts & Ancrages "Human-Led"
@@ -228,7 +228,7 @@ Pour valider de bout en bout l'architecture d'ORCIA dès le MVP, le premier work
 
 | Domaine | Lot 1 : MVP (Fondations & Pilote IT) | Lot 2 : Scale Entreprise & Visuel | Lot 3 : Écosystème Avancé & Autonomie |
 | :--- | :--- | :--- | :--- |
-| **Expérience & Posture "Human-Led"** | **Interface "Chat-First + Canvas/Split-View"**, **Agent Concierge adaptatif**, **Ancrages Humains Obligatoires (`human_authored_required`)**, **Briefing, Découpage & Arbitrage d'options équivalentes** | Éditeur Visuel de Graphe (No-Code/Low-Code) bidirectionnel YAML, Widgets Generative UI avancés | Génération et modification de workflows assistées par IA directement dans le chat |
+| **Expérience & Posture "Human-Led"** | **Interface "Chat-First + Canvas/Split-View"**, **Agent Assistant adaptatif**, **Ancrages Humains Obligatoires (`human_authored_required`)**, **Briefing, Découpage & Arbitrage d'options équivalentes** | Éditeur Visuel de Graphe (No-Code/Low-Code) bidirectionnel YAML, Widgets Generative UI avancés | Génération et modification de workflows assistées par IA directement dans le chat |
 | **Ontologie Multi-Niveaux** | **Ontologie déclarative à 4 niveaux (`Entreprise -> BU -> Équipe -> Run`)**, **Extraction temps réel + Promotion gouvernée**, **3 usages (Ancrage Blackboard/Gabarits, Traduction profil, Contrôle Gates/RAG)** | Éditeur visuel de graphe ontologique (OWL/RDF/Property Graph), détection avancée de conflits sémantiques inter-BU | Alignement ontologique autonome inter-entreprises et raisonnement neuro-symbolique complet |
 | **Fédération & Gabarits** | **Résolution à la volée `db://`, `git://`, `nexus://` + Cache local immuable SHA-256**, **Gabarits Multi-Audience (Humain/Agent) + validation par Gates** | Publication en un clic depuis l'UI ORCIA vers Git (PR) ou Nexus (Bundle), Scaffolds multi-fichiers | Signature cryptographique des bundles (Cosign/SLSA) et gouvernance inter-registres |
 | **Orchestration & Réversibilité** | Mode **Hybride Human-Led**, **Orthogonalité des modèles (Exécuteur $\neq$ Évaluateur)**, **Discipline `Intention -> Code`** | Mode **Déterministe pur** haute performance, Tableaux de bord de **Dette de Compréhension & Réversibilité** | Mode **Dynamique / Autonome** encadré par invariants transverses |

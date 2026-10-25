@@ -31,7 +31,7 @@ L'architecture système d'ORCIA est conçue pour garantir simultanément :
 
 Pour combiner l'excellence ergonomique de l'écosystème React moderne avec la puissance native de l'écosystème IA/Data Python, ORCIA repose sur un **Monorepo Hybride TypeScript + Python** :
 
-- **Frontend (`apps/web`)** : **Next.js 16.4.0 (App Router, React 19.1.0, TypeScript 5.8.2)** + **Tailwind CSS 4.3.0** + **shadcn/ui (Radix 1.1.2)** + **TanStack Query 5.69.0** + **Zustand 5.0.3**. Implémente la Direction C (*Executive Slate Sidebar* `#0F172A` à 7 modules RBAC + *Crisp Light Workspace* `#F8FAFC` + *Agent Concierge Dock*) sur Desktop et le compagnon Mobile restreint.
+- **Frontend (`apps/web`)** : **Next.js 16.4.0 (App Router, React 19.1.0, TypeScript 5.8.2)** + **Tailwind CSS 4.3.0** + **shadcn/ui (Radix 1.1.2)** + **TanStack Query 5.69.0** + **Zustand 5.0.3**. Implémente la Direction C (*Executive Slate Sidebar* `#0F172A` à 7 modules RBAC + *Crisp Light Workspace* `#F8FAFC` + *Agent Assistant Dock*) sur Desktop et le compagnon Mobile restreint.
 - **Contrat d'Interface (`packages/api-client`)** : Généré automatiquement à partir du schéma **OpenAPI 3.1** exposé par FastAPI via `openapi-typescript` (`7.6.1`) et consommé avec `openapi-fetch` (`0.13.4`). Aucune définition manuelle de DTO n'est tolérée côté frontend.
 - **Backend Synchrone & Temps Réel (`apps/api`)** : **FastAPI 0.143.0 (Python 3.12.9, Pydantic 2.14.1, orjson 3.10.15)** gérant les requêtes REST, l'authentification OIDC, le contrôle RBAC, l'accès sécurisé en streaming aux objets du cache CAS (`/api/v1/cas/<sha256>`), les verrous de présence atomiques et le flux **Server-Sent Events (SSE)** `/api/v1/events/stream`.
 - **Backend Asynchrone Durable (`apps/worker`)** : Workers **Dramatiq 2.2.1** adossés à **Redis 7.4.2**, exécutant les transitions d'étapes, les appels LLM via **LiteLLM 1.106.2**, l'ingestion documentaire **Docling 2.142.1** et les *Gates Déterministes* en sandbox.
@@ -226,19 +226,19 @@ Inspiré de `bmad-review` et des meilleures pratiques de vérification factuelle
 
 ---
 
-### 3.6. Architecture de l'Agent Concierge : Workflow de Nœuds type n8n, `ConciergeHarness` & Prompt à 5 Couches (`AD-15`)
+### 3.6. Architecture de l'Agent Assistant : Workflow de Nœuds type n8n, `AssistantHarness` & Prompt à 5 Couches (`AD-15`)
 
-L'*Agent Concierge* est conçu comme un **Workflow Système de Nœuds orientés (DAG type n8n)** enregistré dans le *Catalogue Fédéré* (`orcia://system/workflows/concierge-agent`) et éditable visuellement dans l'UI via **`@xyflow/react` (`12.12.0`)** ou en manifeste YAML :
+L'*Agent Assistant* est conçu comme un **Workflow Système de Nœuds orientés (DAG type n8n)** enregistré dans le *Catalogue Fédéré* (`orcia://system/workflows/assistant-agent`) et éditable visuellement dans l'UI via **`@xyflow/react` (`12.12.0`)** ou en manifeste YAML :
 
-1. **Graphe de Nœuds du Concierge (Exécution visible en temps réel via SSE)** :
+1. **Graphe de Nœuds de l'Assistant (Exécution visible en temps réel via SSE)** :
    - **Nœud 1 — Routeur d'Intention & Désambiguïsation** : Analyse la question de l'humain et l'Ontologie active (Niveaux 1 à 4). Si l'intention est ambiguë, sollicite une clarification immédiate ; sinon, achemine vers le planificateur.
    - **Nœud 2 — Planificateur de Recherche (`Query Planner & Ontology Expander`)** : Décompose la question en sous-requêtes typées et enrichit les termes via les synonymes de l'Ontologie.
    - **Nœud 3 — Fan-Out Parallèle de Recherche** : Exécute simultanément les branches pertinentes : (3A) *RAG Hybride + vérification `[STALE_WARNING]`*, (3B) *Catalogue Fédéré filtré RBAC*, (3C) *Inspection du Blackboard & Step Memlog du Run actif*, et (3D) *Permission Broker*.
    - **Nœud 4 — Tri Critique & Vérification d'Axiomes** : Écarte les résultats hors-sujet, vérifie la cohérence avec les axiomes de l'Ontologie et prépare les preuves citées.
    - **Nœud 5 — Synthétiseur Adaptatif au *Profil Humain* & Compositeur de Workflow** : Formate la réponse selon le profil de l'utilisateur (`FR-15`), génère les cartes d'action interactives du Dock, et permet d'assembler ou d'ajuster conversationnellement un manifeste **Workflow-as-Code** à partir des briques du *Catalogue Fédéré* puis de l'enregistrer et le lancer en tâche de fond (`UJ-10`, `FR-11`).
 
-2. **Encapsulation par le `ConciergeHarness` et Prompt Modulaire à 5 Couches** :
-   - Le `ConciergeHarness` injecte de manière déterministe le contexte de l'écran actif (`active_module`, `run_id`, `step_id`, `access_mode`, `human_profile`), impose l'identité `passthrough` de l'utilisateur et bloque matériellement toute tentative d'écriture directe sur une *Ancre Humaine* (`human_authored_required: true`).
+2. **Encapsulation par le `AssistantHarness` et Prompt Modulaire à 5 Couches** :
+   - Le `AssistantHarness` injecte de manière déterministe le contexte de l'écran actif (`active_module`, `run_id`, `step_id`, `access_mode`, `human_profile`), impose l'identité `passthrough` de l'utilisateur et bloque matériellement toute tentative d'écriture directe sur une *Ancre Humaine* (`human_authored_required: true`).
    - Pour chaque nœud, le Harness compile un prompt structuré en **5 couches** :
      1. **Couche 1 — Constitution Immuable du Harness** *(verrouillée en code Python, non modifiable par surcharge)* : philosophie *Human-Led*, interdiction de pré-remplir les *Ancres Humaines*, obligation de signaler `[STALE_WARNING]`, respect du mode `READ_ONLY_OBSERVER`.
      2. **Couche 2 — Directive & Contrat Pydantic du Nœud Actif**.
@@ -255,7 +255,7 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
 1. **`init-organization` (Initialisation d'une Organisation / Tenant — Jour 0)** :
    - Configure l'authentification primaire bi-mode (**SSO d'Entreprise `OIDC / OAuth 2.1`** et/ou **Authentification Locale autonome `Argon2id + TOTP`**) et le mapping des groupes vers les rôles RBAC.
    - **Gate Déterministe d'Orthogonalité (`AD-10`)** : Refuse de valider l'initialisation tant qu'au moins **2 familles de modèles distinctes** ne sont pas opérationnelles dans LiteLLM (condition sine qua non pour `FR-18`).
-   - Amorce l'*Ontologie* Niveau 1 (Entreprise) par extraction assistée sur les documents fondateurs et validation par découpage du Steward, puis charge le catalogue socle (Agent Concierge + pack BMAD).
+   - Amorce l'*Ontologie* Niveau 1 (Entreprise) par extraction assistée sur les documents fondateurs et validation par découpage du Steward, puis charge le catalogue socle (Agent Assistant + pack BMAD).
 2. **`init-workspace` (Initialisation & Onboarding Autonome d'une Équipe et de ses Workspaces Solutions par le Chef d'Équipe `TEAM_LEAD`)** :
    - Exécutable en autonomie par un **Chef d'Équipe (`TEAM_LEAD` / `Workspace Admin`)** sans solliciter un Administrateur Plateforme.
    - Permet de structurer l'équipe (et d'éventuelles sous-équipes dans l'arbre `org_units`), d'inviter ou d'affecter ses membres (par recherche OIDC ou lien d'invitation signé en mode local), de pré-assigner à chaque membre son **Profil Humain** (`PM/Métier`, `Architecte`, `Tech Lead`, `Développeur`, `SecOps`, `Direction`) et ses rôles d'exécution (`CONTRIBUTOR`, `GATE_REVIEWER`, `ONTOLOGY_STEWARD_L3`, `OBSERVER`), de définir les standards d'équipe (`TEAM`) et l'*Ontologie* `3_TEAM`, puis de créer **un ou plusieurs `Workspaces` (solutions logicielles)** rattachés à l'équipe avec leur surcharge `WORKSPACE` (`AD-14`), leur *Boîte de Notifications* (`FR-2`) et leur *Ontologie* `3_WORKSPACE`.
@@ -343,7 +343,7 @@ Exigence de couverture minimale de **90 %** sur le code de la plateforme (`packa
   - `gates` : Tests unitaires du `ModelRouterService` vérifiant qu'aucun couple `(executor_model, evaluator_model)` de même famille n'est accepté (`AD-10`), de la fonction pure de purge de la *Chain-of-Thought*, du moteur de politiques adaptatives (`mandatory_full`, `risk >= 0.85`, `sampling 20%`) et du détecteur de *Rubber-Stamping* `< 15s` (`AD-11`).
   - `permissions` : Tests unitaires de la matrice RBAC et du matcher de motifs d'URI du `PermissionBrokerService` (`AD-6`).
   - `audit_finops` : Tests unitaires du calculateur de coûts tokens et du déclenchement des coupe-circuits `PAUSED_BUDGET_EXCEEDED` / `PAUSED_MAX_RETRIES` (`AD-12`).
-  - `ConciergeHarness` : Tests unitaires de l'assemblage des **5 couches de prompt** et de l'inviolabilité de la Couche 1 (`AD-15`).
+  - `AssistantHarness` : Tests unitaires de l'assemblage des **5 couches de prompt** et de l'inviolabilité de la Couche 1 (`AD-15`).
 - **API & Workers (`apps/api/tests/unit/`, `apps/worker/tests/unit/`)** : Tests unitaires des middlewares (`RunAccessGuard` bloquant le mode `READ_ONLY_OBSERVER`, formateur d'erreurs **RFC 9457**) et de l'idempotence des acteurs Dramatiq.
 - **Frontend Web (`apps/web/src/**/__tests__/`)** : Tests unitaires **Vitest + React Testing Library** des composants cognitifs (`BriefingCard`, `ChunkedArtifactReviewer`, `TieBreakMatrixModal`, `PresenceLockBadge`), des hooks (`useSseStream`, `useClaimLock`) et des stores Zustand.
 
@@ -355,8 +355,7 @@ Exigence de couverture minimale de **90 %** sur le code de la plateforme (`packa
 
 ### 7.4. Couche 4 — Tests d'Orchestration IA : Cassettes Déterministes (CI) & Suite d'Evals (`orcia-evals`)
 - En CI à chaque commit, `DeterministicCassetteLLM` rejoue de manière instantanée et déterministe (`0 $`) les réponses d'agents (incluant appels d'arbitrage, erreurs `403`, rejets de gates).
-- En pré-release, `orcia-evals` évalue sur un *Golden Dataset* la qualité du workflow de l'Agent Concierge (`AD-15`) et des lentilles d'évaluation (`AD-10`).
+- En pré-release, `orcia-evals` évalue sur un *Golden Dataset* la qualité du workflow de l'Agent Assistant (`AD-15`) et des lentilles d'évaluation (`AD-10`).
 
 ### 7.5. Couche 5 — Tests End-to-End Multi-Utilisateurs & Multi-Device (`@playwright/test 1.64`)
 - Exécution de parcours complets ouvrant simultanément deux sessions navigateur (ex. Nadia en *Contributeur* et un coéquipier en *Observateur* dans `UJ-4`) pour valider la latence SSE `< 500ms` des verrous de présence, tant sur **Desktop (`1440x900`)** que sur **Mobile Companion (`390x844`)**.
-

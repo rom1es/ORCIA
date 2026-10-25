@@ -28,7 +28,7 @@
   3. **Harnais `DeterministicCassetteLLM` (`packages/orcia-core/src/orcia_core/ports/llm_port.py` & `testing/cassette_llm.py`)** : Fournir dès la `Story 1.1` le port `LlmGatewayPort` et son implémentation déterministe par cassettes JSON/SHA-256 pour que toutes les Stories des Epics 1 à 6 puissent tester leurs interactions IA à `0 $` en CI.
   4. **Fonction Trigger PostgreSQL *Append-Only* (`infra/migrations/versions/0001_story_1_1_foundation_extensions.py`)** : Créer dès la révision Alembic `0001` l'extension `vector` (`pgvector`) et la fonction PL/pgSQL réutilisable `orcia_prevent_append_only_mutation()` que `blackboard_snapshots` (`Story 3.2`) et `audit_ledger` (`Story 6.1`) brancheront en une ligne.
   5. **Architecture `i18n` *Zero-Debt* Typée de Bout en Bout (`apps/web/src/i18n/` & `packages/orcia-core/src/orcia_core/domain/exceptions.py`)** : Structurer dès la `Story 1.1` un dictionnaire TypeScript strictement typé (`locales/fr.ts` par défaut + `locales/en.ts`, zéro dépendance externe hors Spine, zéro chaîne littérale UI en dur dans le JSX) et un catalogue d'erreurs RFC 9457 localisable (`Accept-Language: fr|en` avec `error_code` machine invariant).
-  6. **Librairie Design System Dédiée `packages/ui` (`@orcia/ui`)** : Isoler l'intégralité des Design Tokens CSS sémantiques Direction C (`packages/ui/src/styles/tokens.css`), des primitives accessibles (`StatusBadge`, `HumanLedAnchorCard`) et des composants de coquille UX/UI (`AppShell`, `GlobalSidebar`, `ScopeSwitcher`, `ConciergeDock`) dans un package autonome `@orcia/ui` découplé de `next/*`, `zustand` et `@orcia/api-client`. C'est le pendant frontend exact de l'architecture hexagonale de `packages/orcia-core`.
+  6. **Librairie Design System Dédiée `packages/ui` (`@orcia/ui`)** : Isoler l'intégralité des Design Tokens CSS sémantiques Direction C (`packages/ui/src/styles/tokens.css`), des primitives accessibles (`StatusBadge`, `HumanLedAnchorCard`) et des composants de coquille UX/UI (`AppShell`, `GlobalSidebar`, `ScopeSwitcher`, `AssistantDock`) dans un package autonome `@orcia/ui` découplé de `next/*`, `zustand` et `@orcia/api-client`. C'est le pendant frontend exact de l'architecture hexagonale de `packages/orcia-core`.
 - **Contrôle de Volumétrie & Découpage** :
   - Séparation franche entre `packages/ui` (composants visuels contrôlés `< 150` lignes chacun + tokens CSS + tests unitaires Vitest dédiés) et `apps/web` (routage App Router, `i18n`, connexion aux stores et à l'API).
 - **Tickets de Dette Technique / Refactoring créés** :
@@ -70,10 +70,10 @@
   - `src/styles/tokens.css` : Source unique des tokens CSS sémantiques Direction C (`--color-sidebar-bg: #0F172A`, `--color-surface-bg: #F8FAFC`, `--color-dock-bg: #F1F5F9`, `--color-primary-cobalt: #2563EB`, `--color-human-led-violet: #6D28D9`, `--color-arbitration-amber: #D97706`, `--color-gate-emerald: #059669`, `--color-ontology-cyan: #0284C7`, `--color-stale-crimson: #DC2626`) et polices `--font-sans` (`Inter`), `--font-serif` (`Instrument Serif`), `--font-mono` (`JetBrains Mono`).
   - `src/primitives/` : `StatusBadge.tsx`, `HumanLedAnchorCard.tsx` (seul composant autorisé à consommer `--color-human-led-violet`).
   - `src/shell/` :
-    - `AppShell.tsx` : Grille Desktop à 3 colonnes adaptatives (`Sidebar 235px/68px` + `Canvas Central 1fr` + `Dock Agent Concierge & Permission Broker 360px`), écouteurs clavier `[` (repli Sidebar), `]` (repli Dock IA) et `⌘W` / `Ctrl+W` (ouverture du sélecteur de périmètre), et régions `aria-live="polite"`.
+    - `AppShell.tsx` : Grille Desktop à 3 colonnes adaptatives (`Sidebar 235px/68px` + `Canvas Central 1fr` + `Dock Agent Assistant & Permission Broker 360px`), écouteurs clavier `[` (repli Sidebar), `]` (repli Dock IA) et `⌘W` / `Ctrl+W` (ouverture du sélecteur de périmètre), et régions `aria-live="polite"`.
     - `GlobalSidebar.tsx` : Composant contrôlé affichant les 7 modules avec icônes, libellés injectés via props `labels`, badge compteur ambre d'actions *Contributeur*, badge rouge `!` (`[STALE_WARNING]`) et badge de *Profil Humain*.
     - `ScopeSwitcher.tsx` : Sélecteur hiérarchique (`🌐 Plateforme Globale → 🏢 BU / Tribu → 👥 Équipe → 🗂️ Workspace Solution`).
-    - `ConciergeDock.tsx` : Dock persistant de l'Agent Concierge & Permission Broker.
+    - `AssistantDock.tsx` : Dock persistant de l'Agent Assistant & Permission Broker.
 - `apps/web/` (`@orcia/web`) :
   - `src/i18n/` (`types.ts`, `locales/fr.ts`, `locales/en.ts`, `index.tsx`) : Dictionnaire `i18n` typé (`TranslationDictionary`), `I18nProvider` (défaut `'fr'`) et hook `useI18n()`.
   - `src/app/` : Layout racine important `@orcia/ui/styles/tokens.css`, assemblant `AppShell` (`@orcia/ui`) avec `useI18n()`, et exposant les 7 routes modules.
@@ -93,7 +93,7 @@
 | `apps/api/src/orcia_api/**`, `scripts/export_openapi.py` | Création | Application FastAPI (`/api/v1/health`, `/api/v1/navigation/shell`), `TraceContextMiddleware`, gestionnaire global RFC 9457 localisé (`Accept-Language: fr\|en`) et exporteur déterministe OpenAPI 3.1 (`0-diff`). |
 | `apps/worker/src/orcia_worker/broker.py` | Création | Broker Dramatiq Redis et acteur idempotent `system_ping_actor` (`ProcessedPingRegistry`). |
 | `packages/api-client/**` | Création | Schéma `openapi.json`, types générés `src/generated/schema.ts`, client typé `createOrciaApiClient` et erreur `OrciaProblemError`. |
-| `packages/ui/**` (`@orcia/ui`) | Création | Librairie Design System Direction C isolée (`src/styles/tokens.css`, `StatusBadge.tsx`, `HumanLedAnchorCard.tsx`, `AppShell.tsx`, `GlobalSidebar.tsx`, `ScopeSwitcher.tsx`, `ConciergeDock.tsx` et tests Vitest). |
+| `packages/ui/**` (`@orcia/ui`) | Création | Librairie Design System Direction C isolée (`src/styles/tokens.css`, `StatusBadge.tsx`, `HumanLedAnchorCard.tsx`, `AppShell.tsx`, `GlobalSidebar.tsx`, `ScopeSwitcher.tsx`, `AssistantDock.tsx` et tests Vitest). |
 | `apps/web/**` (`@orcia/web`) | Création | Application Next.js App Router assemblant `@orcia/ui`, le dictionnaire `i18n` typé (`locales/fr.ts`, `locales/en.ts`, `I18nProvider`), les 7 routes modules (`/cockpit`, `/inbox`, `/catalog`, `/ontology`, `/gates`, `/finops`, `/workspaces`) et les tests Vitest + Playwright E2E. |
 | `tests/unit/**`, `tests/integration/**`, `tests/contract/**` | Création | Suite de tests Python couvrant les couches 1, 2 (`testcontainers`), 3 (`0-diff` + `Schemathesis`) et 4 (`DeterministicCassetteLLM`). |
 
@@ -122,5 +122,4 @@
 - **Couche 4 — Tests d'Orchestration IA (`DeterministicCassetteLLM`)** :
   - Rejeu déterministe (`0 $` en CI) par empreinte `sha256:<64-hex>`, pause `WAITING_FOR_HUMAN_ARBITRATION` en mode `COACHING`, balise `[ASSUMPTION]` en mode `FAST_PATH` et rejet `ModelOrthogonalityViolationError` (`AD-10`) lorsque `evaluator_model_family == executor_model_family`.
 - **Couche 5 — Tests E2E & Multi-Viewport (`@playwright/test` Desktop `1440x900` & Mobile `390x844`)** :
-  - Rendu de la coquille Direction C à 3 colonnes et 7 modules en français par défaut, repli de la Sidebar via `[`, repli du Dock Concierge via `]`, bascule dynamique `FR -> EN` et barre d'onglets Mobile Companion.
-
+  - Rendu de la coquille Direction C à 3 colonnes et 7 modules en français par défaut, repli de la Sidebar via `[`, repli du Dock Assistant via `]`, bascule dynamique `FR -> EN` et barre d'onglets Mobile Companion.

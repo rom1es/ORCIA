@@ -35,7 +35,7 @@ Fournir aux Ingénieurs Plateforme, Chefs d'Équipe (`TEAM_LEAD`) et Membres d'�
 - **Architecture Spatiale à 3 Colonnes Adaptatives (`@orcia/ui`)** :
   1. *Global Sidebar Navigation* (`235px` dépliée / `68px` repliée via `[`) intégrant en tête le **Sélecteur de Périmètre Hiérarchique (`⌘W` : `🌐 Plateforme Globale → 🏢 BU → 👥 Équipe → 🗂️ Workspace`)**, les 7 entrées du Menu Global filtrées par RBAC (*1. 💬 Cockpit & Chat*, *2. 🔔 Boîte & Mes Runs*, *3. 📦 Catalogue Fédéré*, *4. 🧬 Ontologie & KB*, *5. 🛡️ Gates & Habilitations*, *6. 📊 FinOps & Audit*, *7. ⚙️ Administration & Pilotage des Workspaces*) et le badge de *Profil Humain* en pied de barre.
   2. *Espace Central / Canvas* (`1fr`, min `640px`).
-  3. *Dock Persistant Agent Concierge & Permission Broker* (`360px` à droite, repliable via `]`).
+  3. *Dock Persistant Agent Assistant & Permission Broker* (`360px` à droite, repliable via `]`).
 - **Composants Spécifiques Epic 1** : Badge monospace `Federated URI & RBAC Badge` (`uri-badge`) et carte ambre d'alerte d'habilitation dans le Dock Permission Broker. Toute l'interface utilisateur est servie via le dictionnaire `i18n` typé (`fr` par défaut, `en` supporté).
 
 ## Cross-Story Dependencies

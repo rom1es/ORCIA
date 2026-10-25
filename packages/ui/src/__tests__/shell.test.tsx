@@ -42,13 +42,13 @@ const MOCK_LABELS: UiShellLabels = {
   },
   staleWarningBadgeLabel: "! [STALE_WARNING]",
   humanProfilePrefixLabel: "Profil Humain",
-  conciergeDockTitle: "Agent Concierge & Permission Broker",
-  conciergeDockSubtitle: "Co-présence gouvernée (Passthrough)",
-  conciergeDockToggleExpandLabel: "Déplier le Dock Concierge",
-  conciergeDockToggleCollapseLabel: "Replier le Dock Concierge",
-  conciergePermissionBrokerReadyLabel: "Permission Broker actif",
-  conciergeInputPlaceholder: "Interroger le Concierge ou diagnostiquer un refus 403...",
-  conciergeSendLabel: "Envoyer",
+  assistantDockTitle: "Agent Assistant & Permission Broker",
+  assistantDockSubtitle: "Co-présence gouvernée (Passthrough)",
+  assistantDockToggleExpandLabel: "Déplier le Dock Assistant",
+  assistantDockToggleCollapseLabel: "Replier le Dock Assistant",
+  assistantPermissionBrokerReadyLabel: "Permission Broker actif",
+  assistantInputPlaceholder: "Interroger l'Assistant ou diagnostiquer un refus 403...",
+  assistantSendLabel: "Envoyer",
   localeSwitchLabel: "Langue",
   mobileTabs: {
     inbox: "🔔 Inbox",
@@ -80,11 +80,11 @@ const MOCK_PROFILE: UiHumanProfileBadge = {
   accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
 };
 
-describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchorCard", () => {
+describe("AppShell, GlobalSidebar, ScopeSwitcher, AssistantDock & HumanLedAnchorCard", () => {
   it("renders the 3 columns, 7 Global Sidebar modules, and toggles sidebar/dock/scope via keyboard shortcuts", () => {
     const onSelectModule = vi.fn();
     const onSelectScope = vi.fn();
-    const onSubmitConciergePrompt = vi.fn();
+    const onSubmitAssistantPrompt = vi.fn();
 
     render(
       <AppShell
@@ -97,7 +97,7 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
         currentLocale="fr"
         onSelectModule={onSelectModule}
         onSelectScope={onSelectScope}
-        onSubmitConciergePrompt={onSubmitConciergePrompt}
+        onSubmitAssistantPrompt={onSubmitAssistantPrompt}
       >
         <div data-testid="child-canvas">Contenu Central</div>
       </AppShell>,
@@ -105,7 +105,7 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
 
     const appShell = screen.getByTestId("orcia-app-shell");
     const sidebar = screen.getByTestId("global-sidebar");
-    const dock = screen.getByTestId("concierge-dock");
+    const dock = screen.getByTestId("assistant-dock");
     expect(sidebar.getAttribute("data-collapsed")).toBe("false");
     expect(dock.getAttribute("data-collapsed")).toBe("false");
     expect(appShell.getAttribute("data-active-mobile-tab")).toBe("inbox");
@@ -122,10 +122,10 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     fireEvent.keyDown(window, { key: "]" });
     expect(dock.getAttribute("data-collapsed")).toBe("true");
 
-    fireEvent.click(screen.getByTestId("concierge-dock-toggle"));
+    fireEvent.click(screen.getByTestId("assistant-dock-toggle"));
     expect(dock.getAttribute("data-collapsed")).toBe("false");
 
-    const promptInput = screen.getByTestId("concierge-prompt-input") as HTMLInputElement;
+    const promptInput = screen.getByTestId("assistant-prompt-input") as HTMLInputElement;
     promptInput.focus();
     fireEvent.keyDown(promptInput, { key: "[" });
     fireEvent.keyDown(promptInput, { key: "]" });
@@ -133,8 +133,8 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     expect(dock.getAttribute("data-collapsed")).toBe("false");
 
     fireEvent.change(promptInput, { target: { value: "  Diagnostiquer refus 403  " } });
-    fireEvent.click(screen.getByTestId("concierge-prompt-submit"));
-    expect(onSubmitConciergePrompt).toHaveBeenCalledWith("Diagnostiquer refus 403");
+    fireEvent.click(screen.getByTestId("assistant-prompt-submit"));
+    expect(onSubmitAssistantPrompt).toHaveBeenCalledWith("Diagnostiquer refus 403");
     expect(promptInput.value).toBe("");
 
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });
@@ -320,7 +320,7 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
     expect(screen.getByTestId("bmad-import-result").textContent).toContain("BMAD_PACK");
   });
 
-  it("auto-expands ConciergeDock and renders PermissionBrokerCard (UX-DR11) on PERMISSION_DENIED_STEP", () => {
+  it("auto-expands AssistantDock and renders PermissionBrokerCard (UX-DR11) on PERMISSION_DENIED_STEP", () => {
     const onPause = vi.fn();
     const onReplay = vi.fn();
 
@@ -384,7 +384,7 @@ describe("AppShell, GlobalSidebar, ScopeSwitcher, ConciergeDock & HumanLedAnchor
       </AppShell>,
     );
 
-    const dock = screen.getByTestId("concierge-dock");
+    const dock = screen.getByTestId("assistant-dock");
     expect(dock.getAttribute("data-collapsed")).toBe("false");
 
     const card = screen.getByTestId("permission-broker-card");

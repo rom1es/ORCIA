@@ -23,7 +23,7 @@ from orcia_core import (
     rag,
 )
 from orcia_core.bootstrap.seeder import (
-    CONCIERGE_WORKFLOW_URI,
+    ASSISTANT_WORKFLOW_URI,
     DEFAULT_HUMAN_PROFILE_ARCHETYPES,
     SYSTEM_BOOTSTRAP_WORKFLOW_URIS,
     UpsertSpec,
@@ -203,7 +203,7 @@ def test_observability_trace_context_and_structlog() -> None:
 
 def test_bootstrap_seeder_specs_and_upsert_sql() -> None:
     """Verify idempotent upsert SQL builder and system bootstrap constants."""
-    assert CONCIERGE_WORKFLOW_URI == "orcia://system/workflows/concierge-agent"
+    assert ASSISTANT_WORKFLOW_URI == "orcia://system/workflows/assistant-agent"
     assert len(SYSTEM_BOOTSTRAP_WORKFLOW_URIS) == 6
     assert len(DEFAULT_HUMAN_PROFILE_ARCHETYPES) == 6
 

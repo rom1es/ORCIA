@@ -8,7 +8,7 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
 
     const sidebar = page.getByTestId("global-sidebar");
     const canvas = page.getByTestId("app-shell-canvas");
-    const dock = page.getByTestId("concierge-dock");
+    const dock = page.getByTestId("assistant-dock");
 
     await expect(sidebar).toBeVisible();
     await expect(canvas).toBeVisible();
@@ -31,7 +31,7 @@ test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX
     await page.keyboard.press("[");
     await expect(sidebar).toHaveAttribute("data-collapsed", "true");
 
-    // Keyboard shortcut ']' collapses Concierge Dock
+    // Keyboard shortcut ']' collapses Assistant Dock
     await page.keyboard.press("]");
     await expect(dock).toHaveAttribute("data-collapsed", "true");
 
