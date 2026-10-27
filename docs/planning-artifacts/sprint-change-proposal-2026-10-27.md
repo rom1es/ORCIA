@@ -3,8 +3,8 @@
 - **Projet** : ORCIA (*Orchestration of Processes, Context, and Intelligent Agents*)
 - **Date** : 2026-10-27
 - **Auteur** : Winston (Architecte Système) & John (Product Manager) — Workflow `bmad-correct-course`
-- **Périmètre** : Intégration de la revue de stack (`stack-review-2026-10-27.md` — `E1..E8`, `P1..P9`), de l'analyse de modularité (`modularity-analysis-2026-10-27.md` — `M1..M11`, Phases `A..F`), du Deep Recon Frontend (`OQ-02`) et des arbitrages utilisateur (`OQ-01..03`, `Q1..Q5`) dans le plan d'exécution ORCIA
-- **Statut** : **EN ATTENTE DE VALIDATION UTILISATEUR (Gate Étape 2)**
+- **Périmètre** : Intégration de la revue de stack (`stack-review-2026-10-27.md` — `E1..E8`, `P1..P9`), de l'analyse de modularité (`modularity-analysis-2026-10-27.md` — `M1..M11`, Phases `A..F`), du Deep Recon Frontend (`OQ-02`), des arbitrages utilisateur (`OQ-01..03`, `Q1..Q5`) et de l'**Avenant A1 (`C1..C8`)** dans le plan d'exécution ORCIA
+- **Statut** : **VALIDÉ & APPLIQUÉ (incluant Avenant A1 du 27/10/2026 — Vérifié en Étape 5 : CONFORME)**
 
 ---
 
@@ -202,7 +202,7 @@ flowchart LR
 
 #### Changement S-2 : Mise à jour des `action_items` (`ARCH-P1..P9`, `ARCH-M1..M11` et ajout de `ARCH-RUST-DEFERRED` & `ARCH-M10`)
 - Rattacher `ARCH-P3`, `ARCH-P4` et `ARCH-M1..M5` (`orcia-kernel`, rupture des 3 cycles, `orcia_api/schemas/`, `<domaine>/errors.py`, suppression des 3 singletons) à `3-2a-phase-a-socle-du-monolithe-modulaire-orcia-kernel-workspace`.
-- Rattacher `ARCH-01`, `ARCH-P1`, `ARCH-P2`, `ARCH-P6`, `ARCH-P7`, `ARCH-P9` à `3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-moteur-db`.
+- Rattacher `ARCH-P1` (fusionnant l'ancien item SQLAlchemy), `ARCH-P2`, `ARCH-P6`, `ARCH-P7`, `ARCH-P9` à `3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp`.
 - Créer `ARCH-M6` (Outbox transactionnelle `domain_events_outbox` + bus d'événements) et `ARCH-M7` (plugins `entry_points`) rattachés à `3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transactio`.
 - Rattacher `ARCH-P8` et `ARCH-M11` (SPA Vite 6 + TanStack Router v1 + `features/<domaine>/`) à `3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router`.
 - Rattacher `ARCH-P5`, `ARCH-M8` et `ARCH-M9` (Sandbox hors processus 2 paliers + 5 rôles de déploiement + isolation de `Docling`) à `4-1a-sandbox-bimodale-palier-2-conteneur-isolé-gvisor-rootless-60`.
@@ -215,6 +215,119 @@ flowchart LR
 ## 5. Plan de Passation (Handoff) & Gate de Validation (`Checklist §5 & §6`)
 
 Dès votre validation de cette **Proposition de Modification de Sprint (Étape 2)**, nous enchaînerons séquentiellement :
-1. **Étape 3 (`bmad-create-epics-and-stories`)** : Mise à jour de `docs/planning-artifacts/epics.md` avec les stories `3.2a`, `3.2b`, `3.2c`, `3.2d`, la mise à jour de `4.1` / `4.1a`, et l'enrichissement des critères d'acceptation des stories `3.3+`.
-2. **Étape 4 (`bmad-sprint-planning`)** : Mise à jour de `docs/implementation-artifacts/sprint-status.yaml` (ordre exact des stories, `3.2a` en `ready-for-dev`, `action_items` mis à jour incluant `ARCH-RUST-DEFERRED` et `ARCH-M10`) et validation automatique via `.venv/bin/python .agent/skills/bmad-sprint-planning/scripts/sprint_plan.py validate --file docs/implementation-artifacts/sprint-status.yaml`.
-3. **Étape 5 (`bmad-project-context`)** : Rafraîchissement du bloc `<!-- bmad:context -->` dans `AGENTS.md` et `GEMINI.md` avec les règles de l'`AD-19` et la référence explicite aux 3 cycles et aux 3 singletons d'import à éliminer en `Story 3.2a`.
+1. **Étape 3 (`bmad-create-epics-and-stories`)** : Mise à jour de `docs/planning-artifacts/epics.md` avec les stories `3.2a`, `3.2s`, `3.2b`, `3.2c`, `3.2d`, la mise à jour de `4.1` / `4.1a`, et l'enrichissement des critères d'acceptation des stories `3.3+`.
+2. **Étape 4 (`bmad-sprint-planning`)** : Mise à jour de `docs/implementation-artifacts/sprint-status.yaml` (ordre exact des stories, `3.2a` et `3.2s` en `ready-for-dev`, `action_items` mis à jour incluant `ARCH-P2-SPIKE`, `ARCH-RUST-DEFERRED`, `ARCH-M2-EXTRACT` et `ARCH-M10`) et validation automatique via `.venv/bin/python .agent/skills/bmad-sprint-planning/scripts/sprint_plan.py validate --status-file docs/implementation-artifacts/sprint-status.yaml`.
+3. **Étape 5 (`bmad-project-context` / `bmad-review`)** : Vérification croisée de conformité (`C1..C8`, `Q2`, `Q5`, `0` finding `lint_spine.py`, `0` modification sur `3.1`/`3.2`, `0` cycle dans `depends_on`).
+
+---
+
+## 6. Avenant A1 — 27/10/2026 : Correction de l'Ordonnancement, Extraction du Spike DBOS (`3.2s`), Indépendance de l'Outbox & Parallélisation (`C1..C8`)
+
+Suite à la revue d'ordonnancement post-intégration, le présent **Avenant A1** corrige **8 écarts structurels (`C1` à `C8`)**, documente l'analyse d'impact GitNexus sur le remplacement du moteur maison de la `Story 3.2` (`C4`) et formalise le nouveau graphe d'exécution parallèle avant le lancement du développement.
+
+### 6.1 Tableau Synthétique des 8 Corrections (`C1` à `C8`)
+
+| # | Écart constaté | Correction appliquée dans l'Avenant A1 | Artefacts impactés |
+|---|---|---|---|
+| **`C1`** | Le spike DBOS (`ARCH-P2`) était inclus dans `3.2b` aux côtés de `P1`, `P6`, `P7` et `P9`, surchargeant `3.2b` (repositories SQLAlchemy de 8 domaines + spike + intégration DBOS + SeaweedFS + BM25 + OpenTelemetry). | Création d'une **story de spike dédiée `Story 3.2s`** (*Spike `DBOS Transact` sur PostgreSQL 18*) associée au nouvel `action_item` **`ARCH-P2-SPIKE`**, **bornée à 2–3 jours**, **sans dépendance (`depends_on: []`)**, exécutée **en parallèle immédiat de `3.2a`** (`status: ready-for-dev`). Critères de sortie Go / No-Go : (1) pause/reprise après crash via `DBOS.recv`, (2) relance chirurgicale via `DBOS.fork_workflow`, (3) cron `@DBOS.scheduled`, (4) idempotence `SetWorkflowID` (`0` doublon), (5) cohabitation avec `blackboard_snapshots` en ajout seul et avec Dramatiq, (6) intégration avec la Unit of Work `SQLAlchemy 2.1` (`@DBOS.transaction`), et (7) testabilité `testcontainers`. Livrable : rapport Go / No-Go. `3.2b` ne conserve que **l'intégration** de DBOS (si verdict Go). | `epics.md` (`Story 3.2s`, `Story 3.2b`), `sprint-status.yaml` (`3-2s-...`, `ARCH-P2-SPIKE`, `ARCH-P2`) |
+| **`C2`** | Sens de dépendance inversé : `ARCH-P2.depends_on = [ARCH-P1]`. | **Inversion corrigée** : `ARCH-P1.depends_on = [ARCH-M5, ARCH-P3, ARCH-P4, ARCH-P2-SPIKE]` et `ARCH-P2.depends_on = [ARCH-P2-SPIKE, ARCH-M5, ARCH-P4]` (`ARCH-P2` ne dépend plus de `ARCH-P1`). **Justification technique** : dans `DBOS Transact`, ce sont les transactions décorées par `@DBOS.transaction` qui pilotent le cycle de vie des sessions SQLAlchemy ; la *Unit of Work* et les repositories SQLAlchemy (`ARCH-P1`) doivent donc être implémentés *après* la validation du modèle transactionnel DBOS par `ARCH-P2-SPIKE`. | `sprint-status.yaml` (`ARCH-P1`, `ARCH-P2`, `ARCH-P2-SPIKE`), `epics.md` (`Story 3.2b`) |
+| **`C3`** | Couplage indu de l'Outbox à DBOS : `ARCH-M6.depends_on = [ARCH-P1, ARCH-P2]`. | **Découplage strict (`Q2 = 2A`)** : `ARCH-M6.depends_on = [ARCH-P1]` **uniquement** (`0` dépendance vers `ARCH-P2`). Introduction dans `orcia_kernel.ports` du port **`OutboxRelayPort`** permettant d'exécuter le relais idempotent (`SELECT ... FOR UPDATE SKIP LOCKED`) soit via un acteur **Dramatiq**, soit via un workflow planifié **DBOS** (`@DBOS.scheduled`). Mise à jour de `Story 3.2c` et d'`AD-12`/`AD-19`. | `sprint-status.yaml` (`ARCH-M6`), `epics.md` (`Story 3.2c`), `ARCHITECTURE-SPINE.md` (`AD-12`, `AD-19`) |
+| **`C4`** | Le remplacement par DBOS du moteur d'orchestration maison livré en `Story 3.2` (`done`) n'était pas spécifié. | Sans toucher une seule ligne de `Story 3.2` (`done`), ajout dans **`Story 3.2b`** du critère d'acceptation explicite : *« Les tests de la Story 3.2 (`tests/unit/test_durable_orchestration_and_blackboard.py`) sont conservés comme tests de non-régression et restent 100 % verts ; le code du moteur d'orchestration maison remplacé par DBOS (`DurableOrchestrationEngine` en mémoire et acteur `step_runner.py` Dramatiq) est supprimé (`0` code mort) ; et le rapport Tech Lead de `3.2b` documente ce remplacement. »* | `epics.md` (`Story 3.2b` uniquement ; `Story 3.2` intacte) |
+| **`C5`** | Confusion sur `ARCH-M10` : dans `modularity-analysis-2026-10-27.md`, `M10` désigne les **profils activables `lite`, `standard`, `full`**, alors que l'item décrivait l'extraction de packages (`M2`). | Renommage de l'item d'extraction de packages en **`ARCH-M2-EXTRACT`** (`priority: P3`, post-MVP) et création du véritable **`ARCH-M10`** : *« Profils de déploiement `lite`, `standard`, `full` (modules activables, manifeste exposé par `/api/v1/shell`) »* (`priority: P3`, post-MVP, `depends_on: [ARCH-P5, ARCH-P8]`). | `sprint-status.yaml` (`ARCH-M2-EXTRACT`, `ARCH-M10`) |
+| **`C6`** | Redondance entre l'ancien item doublon SQLAlchemy (`ARCH‑01`) et `ARCH-P1` (tous deux dédiés aux adaptateurs SQLAlchemy 2.1 Asyncio dans `<domaine>/_internal/`). | **Fusion dans `ARCH-P1`** (intégrant explicitement la mention de la *Unit of Work* SQLAlchemy 2.1 Asyncio dans `<domaine>/_internal/` sur le schéma `public` unique `Q4: 4A`), **suppression totale du doublon** et nettoyage de toutes ses références actives. | `sprint-status.yaml`, `epics.md`, `sprint-change-proposal-2026-10-27.md` |
+| **`C7`** | Séquencement artificiellement linéaire `3.2a → 3.2b → 3.2c → 3.2d`. | **Parallélisation du front (`3.2d`)** : `Story 3.2d` (`ARCH-P8` / `ARCH-M11`) ne dépend que de `ARCH-P3` et `ARCH-M3` (livrés par **`Story 3.2a`**) et s'exécute **en parallèle** de `3.2b` et `3.2c`. `Story 3.3` déclare explicitement qu'elle dépend de **`Story 3.2c` ET `Story 3.2d`**. | `epics.md` (`Story 3.2d`, `Story 3.3`), `sprint-status.yaml` |
+| **`C8`** | Résidus Rust/Cedar dans le diagramme Mermaid d'`ARCHITECTURE-SPINE.md` contraires à l'arbitrage `Q5` : `L57` (`RBAC/Cedar Port`) et `L67` (`T1: Wasmtime/Rust < 5s`). | En Étape 2 (`bmad-architecture` *update*) : remplacement de `L57` par `permissions (RBAC/ABAC Port, seeds.py & Permission Broker)` et de `L67` par `T1: wasmtime-py < 5s`. Vérification par `grep -niE "rust|cedar|cargo|pyo3"` qu'aucune mention ne subsiste hors de la section `Deferred` (`L445`) et de `ARCH-RUST-DEFERRED`. | `ARCHITECTURE-SPINE.md` (`L57`, `L67`, `AD-2`, `AD-12`, `AD-19`) |
+
+---
+
+### 6.2 Analyse d'Impact GitNexus sur `orchestration/engine.py` (`C4`)
+
+Conformément au protocole Tech Lead et à l'exigence `C4`, nous avons exécuté `gitnexus_impact({target, direction: "upstream", repo: "ORCIA"})` sur `packages/orcia-core/src/orcia_core/orchestration/engine.py`, `DurableOrchestrationEngine` et `JitStepHydrator`, complété par une recherche textuelle exhaustive des appelants :
+
+- **Résultat GitNexus (`direction: "upstream"`)** :
+  - **Cible** : `File:packages/orcia-core/src/orcia_core/orchestration/engine.py` (`439` lignes), `Class:DurableOrchestrationEngine`, `Class:JitStepHydrator`.
+  - **Niveau de risque GitNexus** : **`LOW`** (`impactedCount: 3`, `direct: 2`, `0` risque `HIGH` ou `CRITICAL` — le couplage entrant sur `engine.py` est strictement confiné).
+  - **Dépendances amont `d=1`** :
+    1. `packages/orcia-core/src/orcia_core/orchestration/__init__.py` (réexporte `DurableOrchestrationEngine` et `JitStepHydrator`).
+    2. `packages/orcia-core/src/orcia_core/orchestration/run_lock_service.py:L27,L100` (`WorkflowOrchestrationSetupService` instancie `self.engine = DurableOrchestrationEngine(setup_service=self)`).
+  - **Dépendance amont `d=2`** :
+    3. `packages/orcia-core/src/orcia_core/orchestration/seeds.py` (construit le service par défaut).
+  - **Appelants applicatifs et tests hors `orcia_core` (confirmés par recherche textuelle)** :
+    4. `apps/api/src/orcia_api/routers/blackboard_and_engine.py:L17,L167` (appelle `JitStepHydrator.hydrate_step` et délègue l'exécution/pause/reprise d'étape à `svc.engine.*`).
+    5. `apps/worker/src/orcia_worker/step_runner.py:L35,L80` (`execute_step_runner_job` et `step_runner_actor` Dramatiq créés en `Story 3.2`).
+    6. `tests/unit/test_durable_orchestration_and_blackboard.py` (suite de tests unitaires de la `Story 3.2`).
+
+- **Périmètre exact conservé vs remplacé en `Story 3.2b` (si verdict Go de `3.2s`)** :
+  1. **Conservé (`0` régression)** : `JitStepHydrator` (`AD-13` — filtrage strict du contexte injecté au Step $k$ garantissant `0` fuite des étapes futures $k+1..N$), les modèles de domaine (`StepExecutionEntity`, `BlackboardSnapshotEntity`, `StepMemlogEntry`, `BackgroundAuditConsolidatedReport`) et la sémantique d'immuabilité du Blackboard (`parent_snapshot_id`, `ACTIVE` vs `SUPERSEDED`).
+  2. **Remplacé et supprimé (`0` code mort)** : l'orchestration d'état en mémoire de `DurableOrchestrationEngine` (`_step_executions_by_run`, boucles manuelles de pause/reprise/fork en RAM) et le runner d'étape Dramatiq maison `apps/worker/src/orcia_worker/step_runner.py` sont remplacés par le workflow durable `@DBOS.workflow()` / `@DBOS.step()` (`DBOS.recv`, `DBOS.fork_workflow`, `SetWorkflowID`) dans `orchestration/_internal/dbos_engine.py`, tout en maintenant 100 % des tests de `tests/unit/test_durable_orchestration_and_blackboard.py` au vert.
+
+---
+
+### 6.3 Réévaluation et Justification de `ARCH-P5.depends_on`
+
+- **Question posée** : Faut-il conserver `ARCH-M6` (Outbox `domain_events_outbox`) dans `ARCH-P5.depends_on = [ARCH-P1, ARCH-M6]` ?
+- **Analyse architecturale** :
+  - `ARCH-P5` (`Story 4.1` & `Story 4.1a`) implémente l'exécution déterministe en sandbox hors processus (`sandbox-runner` Palier 1 `wasmtime-py < 5 s` et Palier 2 `gVisor/Podman < 60 s`) au sein des *Deterministic Gates* (`packages/orcia-core/gates/`).
+  - Conformément à **`AD-12` et `AD-19`**, chaque évaluation de Gate (`Deterministic Gate`, `Agentic Gate`, `Human Gate`) produit un événement de domaine immuable **`GateEvaluated`** qui **doit** être inscrit transactionnellement dans **`domain_events_outbox` (`ARCH-M6`)** afin de déclencher sans couplage direct :
+    1. l'enregistrement du verdict et des métriques d'exécution sandbox dans `audit_ledger` par l'abonné `audit_finops`,
+    2. la notification temps réel SSE (`< 500 ms`) vers le Cockpit / Centre de Contrôle,
+    3. l'évaluation de la boucle d'auto-remédiation (`Story 7.3`, `UJ-12`).
+- **Décision** : Nous **conservons `ARCH-P5.depends_on = [ARCH-P1, ARCH-M6]`**. Ce choix est cohérent avec l'ordre des Epics (`Story 3.2c` dans l'Epic 3 précède `Story 4.1` / `4.1a` dans l'Epic 4) et garantit que `gates` n'importe jamais directement `audit_finops` ni `sse`.
+
+---
+
+### 6.4 Nouvel Ordonnancement Cible (Graphe DAG Parallélisé) & Estimation d'Effort
+
+```
+3.2a (Socle modulaire, 4 pkgs uv, 0 cycle, import-linter) ─┬─> 3.2b (Persistance SQLAlchemy 2.1, Intégration DBOS, SeaweedFS, BM25, OTel) ─> 3.2c (Outbox domain_events_outbox via OutboxRelayPort & Plugins entry_points) ─┐
+3.2s (Spike DBOS Transact timeboxé 2-3j, Go/No-Go) ────────┘                                                                                                                                                                 ├─> 3.3 et suite
+3.2a ────────────────────────────────────────────────────────> 3.2d (Front SPA Vite 6 + TanStack Router v1 + features/<domaine>/, en parallèle) ─────────────────────────────────────────────────────────────────────────────┘
+```
+
+```mermaid
+flowchart LR
+    S32["Story 3.2 (done)"] --> S32A["Story 3.2a (ready-for-dev)\nPhase A : orcia-kernel, 4 pkgs uv,\nrupture 3 cycles, schemas/,\nerrors.py, import-linter"]
+    S32 --> S32S["Story 3.2s (ready-for-dev)\nSpike DBOS Transact (2-3j)\nPause/Recv, Fork, Schedule,\nSetWorkflowID, UoW SQLAlchemy"]
+    S32A --> S32B["Story 3.2b\nPhase B : SQLAlchemy 2.1 Async,\nIntégration DBOS (si Go),\nSeaweedFS, BM25, OTel"]
+    S32S --> S32B
+    S32B --> S32C["Story 3.2c\nPhase C : Outbox domain_events_outbox\n(OutboxRelayPort indépendant)\n& Plugins entry_points"]
+    S32A --> S32D["Story 3.2d (En parallèle)\nPhase D : SPA Vite 6 +\nTanStack Router v1,\nfeatures/<domaine>/"]
+    S32C --> S33["Story 3.3\nAgent Assistant DAG 5 nœuds\n& @xyflow/react"]
+    S32D --> S33
+```
+
+#### Estimation d'Effort, Risques & Gain de Chemin Critique
+| Lot / Story | Effort estimé | Parallélisme | Risque principal & parade |
+|---|---|---|---|
+| **`Story 3.2a`** (Phase A — Socle modulaire) | `3 j` | En parallèle de `3.2s` | Risque `CRITICAL` sur l'éclatement de `domain/exceptions.py` (59 dépendants) $\rightarrow$ parade : classe racine `orcia_kernel.errors.OrciaDomainError` + registre HTTP dans `apps/api` + `lint-imports` en CI. |
+| **`Story 3.2s`** (Spike DBOS Transact) | `2 à 3 j` (timeboxé) | En parallèle de `3.2a` (`depends_on: []`) | Risque d'incompatibilité entre `@DBOS.transaction` et `AsyncSession` SQLAlchemy ou les triggers append-only $\rightarrow$ parade : validation isolée sur `testcontainers` PG18 avant d'écrire les 8 repositories de `3.2b` ; repli documenté si No-Go. |
+| **`Story 3.2b`** (Phase B — Persistance, DBOS, SeaweedFS, BM25, OTel) | `4 j` | Après `3.2a` + `3.2s` (en parallèle de `3.2d`) | Remplacement de `DurableOrchestrationEngine` en mémoire $\rightarrow$ parade (`C4`) : conservation de 100 % des tests de `Story 3.2` comme suite de non-régression + `0` code mort. |
+| **`Story 3.2c`** (Phase C — Outbox & Plugins `entry_points`) | `2,5 j` | Après `3.2b` (en parallèle de `3.2d`) | Indépendance du relais Outbox (`C3`) $\rightarrow$ parade : `OutboxRelayPort` découplé du moteur durable (supportant Dramatiq ou DBOS). |
+| **`Story 3.2d`** (Phase D — SPA Vite 6 + TanStack Router v1) | `3 j` | Dès la fin de `3.2a` (**en parallèle de `3.2b` + `3.2c`**) | **Gain de 3 jours sur le chemin critique** grâce à la parallélisation avec `3.2b`/`3.2c` (`C7`). |
+| **Total Chemin Critique avant `Story 3.3`** | **`9,5 j` ouvrés** (contre `14,5 j` en séquentiel pur) | 2 flux parallèles (`3.2a ∥ 3.2s`, puis `(3.2b → 3.2c) ∥ 3.2d`) | Chemin critique réduit de **34 %** tout en abaissant le risque technique de `3.2b`. |
+
+---
+
+## 7. Vérification Avenant A1 (`bmad-review` — Étape 5)
+
+Revue croisée exécutée avec les lentilles *verification-gap* et *structure* (`bmad-review`) sur le diff complet des Étapes 1 à 4 :
+
+| Point | Attendu | Fichier et ligne (ou commande) | Statut |
+|---|---|---|---|
+| **C1** | Spike DBOS séparé (`3.2s` / `ARCH-P2-SPIKE`), 2-3 j, sans dépendance, en parallèle de `3.2a` | `epics.md:L401-413` (`Story 3.2s`, 8 critères Go/No-Go) ; `sprint-status.yaml:L56` (`3-2s-...: ready-for-dev`) & `L221-232` (`ARCH-P2-SPIKE`, `depends_on: []`) | **CONFORME** |
+| **C2** | `ARCH-P1.depends_on` contient `ARCH-P2-SPIKE` ; `ARCH-P2` ne dépend pas d'`ARCH-P1` | `sprint-status.yaml:L237-241` (`ARCH-P1.depends_on: [ARCH-M5, ARCH-P3, ARCH-P4, ARCH-P2-SPIKE]`) ; `sprint-status.yaml:L253-256` (`ARCH-P2.depends_on: [ARCH-P2-SPIKE, ARCH-M5, ARCH-P4]`) | **CONFORME** |
+| **C3** | `ARCH-M6.depends_on = [ARCH-P1]` seulement ; `OutboxRelayPort` indépendant du moteur | `sprint-status.yaml:L307-308` (`ARCH-M6.depends_on: [ARCH-P1]`) ; `epics.md:L393,L432-443` (`OutboxRelayPort` Dramatiq ou DBOS) ; `ARCHITECTURE-SPINE.md:L282,L431` | **CONFORME** |
+| **C4** | Remplacement du moteur maison documenté dans `3.2b` ; `3.2` (`done`) non modifiée | `epics.md:L425` (AC explicite dans `Story 3.2b`) ; `git diff -U0 docs/planning-artifacts/epics.md` $\rightarrow$ première ligne modifiée `L393` (`0` ligne modifiée sur `3.1` `L345-362` et `3.2` `L364-381`) | **CONFORME** |
+| **C5** | `ARCH-M2-EXTRACT` + `ARCH-M10` (profils `lite`/`standard`/`full`) | `sprint-status.yaml:L349-372` (`ARCH-M2-EXTRACT` L349 & `ARCH-M10` L360) | **CONFORME** |
+| **C6** | Doublon SQLAlchemy supprimé et fusionné dans `ARCH-P1` ; `0` référence restante dans les artefacts actifs | `sprint-status.yaml:L233-248` (`ARCH-P1` consolidé, `"arch_01_present": false`) ; `0` occurrence dans `sprint-status.yaml`, `epics.md`, `ARCHITECTURE-SPINE.md` et `sprint-change-proposal-2026-10-27.md` | **CONFORME** |
+| **C7** | `3.2d` en parallèle de `3.2b` et `3.2c` ; `3.3` dépend de `3.2c` et `3.2d` | `epics.md:L451-460` (`Story 3.2d` dès la fin de `3.2a`) & `L468-475` (`Story 3.3` après `3.2c` ET `3.2d`) ; `sprint-status.yaml:L318-323` (`ARCH-P8.depends_on: [ARCH-P3, ARCH-M3]`) | **CONFORME** |
+| **C8** | `0` mention Rust/Cedar dans la spine hors `Deferred` | `grep -niE "rust\|cedar\|cargo\|pyo3" docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md` $\rightarrow$ uniquement `L445` (`Deferred #7`) | **CONFORME** |
+| **Q2** | Outbox indépendante du moteur | `ARCHITECTURE-SPINE.md:L282,L431` ; `epics.md:L432-443` ; `sprint-status.yaml:L303-315` | **CONFORME** |
+| **Q5** | Pas de Rust au MVP, seulement `ARCH-RUST-DEFERRED` (P3) | `ARCHITECTURE-SPINE.md:L445` (`Deferred #7`) ; `sprint-status.yaml:L336-348` (`ARCH-RUST-DEFERRED`, `priority: P3`) | **CONFORME** |
+
+### Résultats des Contrôles Automatisés Obligatoires
+1. **`lint_spine.py`** : `{"ok": true, "spine": "ARCHITECTURE-SPINE.md", "total_findings": 0, "by_severity": {}, "findings": []}`.
+2. **`sprint_plan.py validate`** : `{"ok": true, "action": "validate", "status_file": "docs/implementation-artifacts/sprint-status.yaml", "valid": true, "problems": [], "legacy_mapped": []}` (`in_sync: true`, `34` stories, `2` stories `ready-for-dev` : `3.2a` et `3.2s`).
+3. **`git diff --stat`** : seuls `docs/planning-artifacts/sprint-change-proposal-2026-10-27.md`, `docs/planning-artifacts/epics.md`, `docs/implementation-artifacts/sprint-status.yaml` et `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md` sont modifiés (`4 files changed`).
+4. **Intégrité des stories `done` (`Story 3.1` et `Story 3.2`)** : `0` ligne modifiée (`git diff` commence à `epics.md:L393`).
+5. **Vérification acyclique du DAG `depends_on`** : `{"ok": true, "action_items_count": 22, "arch_01_present": false, "missing_story_refs": [], "missing_deps": [], "cycles": []}`.

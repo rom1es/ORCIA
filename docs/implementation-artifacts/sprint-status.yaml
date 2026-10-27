@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-27-2026 19:55
+last_updated: 10-27-2026 22:20
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -54,7 +54,8 @@ development_status:
   3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: done
   3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: done
   3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: ready-for-dev
-  3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp: backlog
+  3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali: ready-for-dev
+  3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: backlog
   3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: backlog
   3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: backlog
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
@@ -217,47 +218,49 @@ action_items:
     epic: epic-3
     description: >
       Transformer les règles d'architecture d'AD-1 et AD-19 en garde-fou bloquant de la couche 1 de tests CI.
-  - id: ARCH-01
-    title: "Adaptateurs SQLAlchemy 2.1 Asyncio (Unit of Work PostgreSQL 18) dans <domaine>/_internal/ (Q4: 4A)"
-    action: "Consolider dans Story 3.2b (ARCH-P1) l'implémentation des repositories SQLAlchemy 2.1 Async + asyncpg dans le schéma public unique sur les migrations Alembic 0001..0011"
+  - id: ARCH-P2-SPIKE
+    title: "Spike timeboxé (2–3 jours) de validation de DBOS Transact (dbos 2.14.0, MIT) sur PostgreSQL 18 (C1, C2, OQ-01)"
+    action: "Valider en parallèle de 3.2a les 8 critères Go/No-Go (DBOS.recv pause/reprise après crash, DBOS.fork_workflow, @DBOS.scheduled, SetWorkflowID sans doublon, cohabitation Blackboard append-only et Dramatiq, intégration Unit of Work SQLAlchemy 2.1 Asyncio, testabilité testcontainers) et livrer le rapport Go/No-Go"
     priority: P0
-    depends_on:
-      - ARCH-M5
-      - ARCH-P4
-    ad_ref: "AD-1, AD-2, AD-19"
-    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
-    owner: "Amelia (Dev) / Winston (Architect)"
-    status: open
-    epic: epic-3
-    description: >
-      Relier les services de tous les domaines à des repositories SQLAlchemy Asyncio sur PostgreSQL 18 + pgvector en Story 3.2b.
-  - id: ARCH-P1
-    title: "Persistance réelle de bout en bout : SQLAlchemy 2.1 Async + asyncpg, LiteLLMAdapter & reprise sur redémarrage (P1)"
-    action: "Brancher les repositories SQLAlchemy Async sur les migrations Alembic 0001..0011 et implémenter LiteLLMAdapter à côté de DeterministicCassetteLLM derrière LLMPort"
-    priority: P0
-    depends_on:
-      - ARCH-P3
-      - ARCH-P4
-    ad_ref: "AD-1, AD-2, AD-10, AD-17"
-    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
-    owner: "Amelia (Dev) / Winston (Architect)"
-    status: open
-    epic: epic-3
-    description: >
-      Livrer en Story 3.2b un Workflow Run complet traversant API -> Worker -> PostgreSQL 18 et reprenant son exécution après extinction/redémarrage des processus sans aucune perte d'état.
-  - id: ARCH-P2
-    title: "Spike & intégration du moteur d'exécution durable transactionnel DBOS Transact (dbos 2.14.0, MIT) sur PostgreSQL 18 (P2, OQ-01)"
-    action: "Valider par spike puis intégrer DBOS Transact (@DBOS.workflow, @DBOS.step, DBOS.recv, @DBOS.scheduled, DBOS.fork_workflow, SetWorkflowID) sur PostgreSQL 18 tout en conservant Dramatiq pour le délestage lourd (Docling/RAG)"
-    priority: P0
-    depends_on:
-      - ARCH-P1
+    depends_on: []
     ad_ref: "AD-2, AD-13, AD-18"
-    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    story_ref: "3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali"
     owner: "Winston (Architect) / Amelia (Dev)"
     status: open
     epic: epic-3
     description: >
-      Éviter de réimplémenter manuellement un moteur de workflow distribué au-dessus de Dramatiq tout en évitant le surcoût opérationnel d'un cluster Temporal externe grâce au checkpointing ACID natif de DBOS Transact dans PostgreSQL 18.
+      Mener un spike court sans dépendance en parallèle de Story 3.2a pour valider formellement DBOS Transact sur PostgreSQL 18 et figer le patron de session SQLAlchemy avant d'écrire les repositories d'ARCH-P1 et d'intégrer DBOS en Story 3.2b.
+  - id: ARCH-P1
+    title: "Persistance réelle de bout en bout : repositories SQLAlchemy 2.1 Asyncio + asyncpg (Unit of Work dans <domaine>/_internal/, Q4: 4A), LiteLLMAdapter & reprise sur redémarrage (P1, C2, C6)"
+    action: "Implémenter les repositories SQLAlchemy 2.1 Async + asyncpg et la Unit of Work PostgreSQL 18 dans <domaine>/_internal/ (schéma public unique sur les migrations Alembic 0001..0011 selon le patron validé par ARCH-P2-SPIKE) et implémenter LiteLLMAdapter à côté de DeterministicCassetteLLM derrière LLMPort"
+    priority: P0
+    depends_on:
+      - ARCH-M5
+      - ARCH-P3
+      - ARCH-P4
+      - ARCH-P2-SPIKE
+    ad_ref: "AD-1, AD-2, AD-10, AD-17, AD-19"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-3
+    description: >
+      Relier les services de tous les domaines à des repositories SQLAlchemy 2.1 Asyncio dans <domaine>/_internal/ sur PostgreSQL 18 + pgvector et livrer en Story 3.2b un Workflow Run complet traversant API -> Worker -> PostgreSQL 18 et reprenant son exécution après extinction/redémarrage des processus sans aucune perte d'état.
+  - id: ARCH-P2
+    title: "Intégration du moteur d'exécution durable transactionnel DBOS Transact (dbos 2.14.0, MIT) sur PostgreSQL 18 conditionnée au Go de Story 3.2s (P2, OQ-01, C1, C2, C4)"
+    action: "Intégrer DBOS Transact (@DBOS.workflow, @DBOS.step, DBOS.recv, @DBOS.scheduled, DBOS.fork_workflow, SetWorkflowID) sur PostgreSQL 18 (sous réserve du verdict Go d'ARCH-P2-SPIKE), conserver Dramatiq pour le délestage lourd (Docling/RAG), maintenir verts les tests de Story 3.2 et supprimer le moteur maison remplacé (0 code mort)"
+    priority: P0
+    depends_on:
+      - ARCH-P2-SPIKE
+      - ARCH-M5
+      - ARCH-P4
+    ad_ref: "AD-2, AD-13, AD-18"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Intégrer DBOS Transact en Story 3.2b après validation du spike 3.2s, sans dépendance circulaire vers ARCH-P1, en conservant les tests de Story 3.2 comme suite de non-régression et en supprimant le code mort du moteur en mémoire initial.
   - id: ARCH-P6
     title: "Remplacement de MinIO (AGPL-3.0, archivé en 2026) par ObjectStoragePort S3 v4 adossé à SeaweedFS (Apache-2.0) (P6, OQ-03)"
     action: "Implémenter l'adaptateur S3 v4 SeaweedFS derrière ObjectStoragePort (orcia_kernel.ports) et remplacer l'image MinIO par SeaweedFS 4.17 (Apache-2.0) dans docker-compose.yml"
@@ -265,7 +268,7 @@ action_items:
     depends_on:
       - ARCH-P1
     ad_ref: "AD-5"
-    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Karim (Platform)"
     status: open
     epic: epic-3
@@ -278,7 +281,7 @@ action_items:
     depends_on:
       - ARCH-P1
     ad_ref: "AD-8"
-    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Amelia (Dev)"
     status: open
     epic: epic-3
@@ -291,28 +294,27 @@ action_items:
     depends_on:
       - ARCH-P1
     ad_ref: "AD-12"
-    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Karim (Platform) / Amelia (Dev)"
     status: open
     epic: epic-3
     description: >
       Remplacer les identifiants de trace synthétiques par de vraies traces distribuées OpenTelemetry corrélant API, Worker, DB et enveloppes d'erreur RFC 9457.
   - id: ARCH-M6
-    title: "Bus d'événements de domaine, table Outbox transactionnelle domain_events_outbox (migration 0012) & plugins entry_points (M6, M7, Q2: 2A, Q3: 3A)"
-    action: "Créer la table domain_events_outbox, publier StepCompleted/ArtifactProduced/GateEvaluated/RunTerminated dans la même transaction SQL que le changement d'état, relayer de manière idempotente vers audit_finops/ontology/sse et charger les entry_points orcia.uri_resolvers / orcia.llm_gateways"
+    title: "Bus d'événements de domaine, table Outbox transactionnelle domain_events_outbox indépendante du moteur (OutboxRelayPort, migration 0012) & plugins entry_points (M6, M7, Q2: 2A, Q3: 3A, C3)"
+    action: "Créer la table domain_events_outbox, publier StepCompleted/ArtifactProduced/GateEvaluated/RunTerminated dans la même transaction SQL que le changement d'état, relayer de manière idempotente via OutboxRelayPort (implémentation Dramatiq ou DBOS) vers audit_finops/ontology/sse et charger les entry_points orcia.uri_resolvers / orcia.llm_gateways"
     priority: P0
     depends_on:
       - ARCH-P1
-      - ARCH-P2
     ad_ref: "AD-12, AD-19"
     story_ref: "3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction"
     owner: "Winston (Architect) / Amelia (Dev)"
     status: open
     epic: epic-3
     description: >
-      Découpler orchestration/engine.py des effets secondaires non bloquants (FinOps, audit, extraction ontologique, SSE) avec garantie transactionnelle Outbox et extensibilité par plugins entry_points.
+      Découpler orchestration/engine.py des effets secondaires non bloquants (FinOps, audit, extraction ontologique, SSE) avec garantie transactionnelle Outbox indépendante du moteur d'orchestration (OutboxRelayPort) et extensibilité par plugins entry_points.
   - id: ARCH-P8
-    title: "Migration de apps/web vers Vite 6 + TanStack Router v1 (SPA pure), dépendances frontend & découpage features/<domaine>/ (P8, M11, OQ-02)"
+    title: "Migration de apps/web vers Vite 6 + TanStack Router v1 (SPA pure), dépendances frontend & découpage features/<domaine>/ en parallèle de 3.2b/3.2c (P8, M11, OQ-02, C7)"
     action: "Remplacer Next.js par Vite 6 + @tanstack/react-router dans apps/web, installer @tanstack/react-query, tailwindcss, @xyflow/react et openapi-fetch, structurer apps/web/src/features/<domaine>/ et régénérer packages/api-client depuis apps/api/src/orcia_api/schemas/"
     priority: P1
     depends_on:
@@ -324,7 +326,7 @@ action_items:
     status: open
     epic: epic-3
     description: >
-      Décision OQ-02 issue du Deep Recon (score 4,70/5 vs 2,65/5 pour Next.js Client-First) : éliminer 100 % de la surface d'attaque serveur Node.js/RSC, diviser par 8 l'empreinte RAM K8s, supprimer les erreurs d'hydratation SSR sur @xyflow/react et le buffering SSE, et isoler chaque fonctionnalité frontend dans features/<domaine>/.
+      Décision OQ-02 issue du Deep Recon (score 4,70/5 vs 2,65/5 pour Next.js Client-First) : migrer vers Vite 6 + TanStack Router v1 dès la fin de Story 3.2a (en parallèle de 3.2b et 3.2c) et isoler chaque fonctionnalité frontend dans features/<domaine>/.
   - id: ARCH-P5
     title: "Sandbox déterministe bimodale hors processus (Palier 1 wasmtime-py < 5 s / 256 Mo & Palier 2 gVisor/Rootless < 60 s / 1024 Mo) & 5 rôles de déploiement isolant Docling (P5, M8, M9, Q3: 3A, Q5)"
     action: "Isoler sandbox-runner hors processus (MCP/sous-processus) avec Palier 1 WASM (< 5s) et Palier 2 conteneur gVisor/Podman --network=none (< 60s, sans Rust selon Q5), et séparer les 5 rôles d'exécution (api, worker-orchestration, worker-indexing avec extra Docling, trigger-dispatcher, sandbox-runner)"
@@ -352,8 +354,8 @@ action_items:
     epic: epic-4
     description: >
       Arbitrage utilisateur Q5 : pas de Rust dans le MVP actif ; inscrit en action_item différé pour évaluation ultérieure guidée par les métriques de production.
-  - id: ARCH-M10
-    title: "Extraction optionnelle post-MVP (Phase F) de packages/orcia-rag ou packages/orcia-sandbox en packages uv autonomes si cadence de release divergente (M10)"
+  - id: ARCH-M2-EXTRACT
+    title: "Extraction optionnelle post-MVP (Phase F) de packages/orcia-rag ou packages/orcia-sandbox en packages uv autonomes si cadence de release divergente (M2, C5)"
     action: "Évaluer après livraison complète du MVP si le domaine rag ou sandbox nécessite un cycle de publication indépendant du reste de packages/orcia-core"
     priority: P3
     depends_on:
@@ -363,4 +365,17 @@ action_items:
     status: open
     epic: epic-7
     description: >
-      Phase F de l'analyse de modularité : ne scinder packages/orcia-core en packages supplémentaires que si les cadences de release divergent réellement.
+      Phase F de l'analyse de modularité (renommé en ARCH-M2-EXTRACT selon C5) : ne scinder packages/orcia-core en packages uv supplémentaires que si les cadences de release divergent réellement post-MVP.
+  - id: ARCH-M10
+    title: "Profils de déploiement lite, standard, full (modules activables, manifeste exposé par /api/v1/shell) (M10, C5)"
+    action: "Implémenter en post-MVP les profils de déploiement activables (ORCIA_EDITION=lite|standard|full ou ORCIA_ENABLED_MODULES) et exposer le manifeste des modules actifs sur /api/v1/shell pour masquer dynamiquement les entrées désactivées dans la Sidebar"
+    priority: P3
+    depends_on:
+      - ARCH-P5
+      - ARCH-P8
+    ad_ref: "AD-19"
+    owner: "Winston (Architect) / Karim (Platform)"
+    status: open
+    epic: epic-7
+    description: >
+      Piste M10 de l'analyse de modularité : permettre d'exécuter ORCIA selon trois éditions configurables (lite, standard, full) pilotées par le point d'assemblage et reflétées par /api/v1/shell.
