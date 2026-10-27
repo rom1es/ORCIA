@@ -115,6 +115,33 @@ export const frDictionary: TranslationDictionary = {
     bmadImportButtonLabel: "Importer un Pack BMAD",
     bmadImportedBanner:
       "HTTP 200 OK — Pack BMAD converti en WorkflowDefinitionEntity (source_format=BMAD_PACK) et épinglé dans cas/<sha256>",
+    workflowStudio: {
+      studioTitle:
+        "Studio Workflow-as-Code YAML/JSON (SUB_WORKFLOW <= 3), Discipline Intention -> Code & Gabarits Multi-Audience",
+      studioSubtitle:
+        "Validation statique par numéro de ligne, garde-fou HIGH_CRITICAL vs AUTONOMOUS_CONTRACT et épinglage récursif sub_workflow_locks.",
+      validateNominalLabel: "Valider DAG nominal (depth=2 <= 3)",
+      simulateCriticalAutonomousLabel: "Tester HIGH_CRITICAL + AUTONOMOUS_CONTRACT (422)",
+      simulateMissingIntentionLabel: "Tester écriture code sans Intention amont (422)",
+      simulateMaxDepthLabel: "Tester SUB_WORKFLOW depth=4 > 3 (422)",
+      validDagBanner:
+        "HTTP 200 OK — DAG valide : 3 étapes topologiques, Intention -> Code respecté, max_nesting_depth=2 <= 3",
+      criticalAutonomousErrorBanner:
+        "HTTP 422 ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE [Ligne 6] — Un workflow HIGH_CRITICAL ne peut pas utiliser AUTONOMOUS_CONTRACT",
+      missingIntentionErrorBanner:
+        "HTTP 422 ERR_INTENTION_BEFORE_CODE_REQUIRED [Ligne 18] — Étape writes_code=true sans étape amont declares_intention=true",
+      maxDepthErrorBanner:
+        "HTTP 422 ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED [Ligne 24] — Profondeur SUB_WORKFLOW 4 > 3",
+      templatePreviewTitle:
+        "Compilateur de Gabarit d'Artefact Multi-Audience (tpl-architecture-decision-record)",
+      humanMarkdownTabLabel: "Vue Humaine (Markdown + Chunks)",
+      agentSchemaTabLabel: "Vue Agent (JSON Schema Ontologie)",
+      sampleHumanMarkdown:
+        "## 1. Intention Stratégique & Arbitrage Humain [✍️ ANCRE HUMAINE OBLIGATOIRE]\nIntention directrice pour **Claims Core Engine** (Ticket `PAY-142`)",
+      sampleAgentJsonSchema:
+        '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique","Exemption 3DS Frictionless TRA"]}',
+      subWorkflowLocksTitle: "Arbre récursif sub_workflow_locks épinglé dans run-lock.json",
+    },
   },
   permissionBroker: {
     cardBadgeTitle: "⚠️ PERMISSION BROKER",

@@ -3,10 +3,20 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if __name__ == "__main__" and os.environ.get("ORCIA_SKIP_VENV_REEXEC") != "1":
+    _venv_dir = (REPO_ROOT / ".venv").resolve()
+    _venv_python = _venv_dir / "bin" / "python"
+    if _venv_python.is_file() and Path(sys.prefix).resolve() != _venv_dir:
+        os.execv(
+            str(_venv_python),
+            [str(_venv_python), str(Path(__file__).resolve()), *sys.argv[1:]],
+        )
+
 for rel_src in ("packages/orcia-core/src", "apps/api/src", "apps/worker/src"):
     candidate = str(REPO_ROOT / rel_src)
     if candidate not in sys.path:

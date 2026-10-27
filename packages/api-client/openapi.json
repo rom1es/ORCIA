@@ -1,6 +1,58 @@
 {
   "components": {
     "schemas": {
+      "ArtifactTemplateCompileRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/templates/compile`.",
+        "properties": {
+          "template_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Template Key",
+            "type": "string"
+          },
+          "variables": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Variables",
+            "type": "object"
+          },
+          "workspace_id": {
+            "default": "ws-solution-paiement",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_key"
+        ],
+        "title": "ArtifactTemplateCompileRequest",
+        "type": "object"
+      },
+      "ArtifactTemplateCompileResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/templates/compile`.",
+        "properties": {
+          "compiled_template": {
+            "$ref": "#/components/schemas/CompiledArtifactTemplateSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "compiled_template",
+          "trace_id"
+        ],
+        "title": "ArtifactTemplateCompileResponse",
+        "type": "object"
+      },
       "AuthTokenResponse": {
         "additionalProperties": false,
         "description": "Response payload for authentication and session refresh endpoints (AD-6).",
@@ -73,6 +125,200 @@
           "trace_id"
         ],
         "title": "AuthTokenResponse",
+        "type": "object"
+      },
+      "BackgroundAuditReportSchemaItem": {
+        "additionalProperties": false,
+        "description": "Consolidated report for `BACKGROUND_FAST_PATH` (`UJ-10`, `AD-13`).",
+        "properties": {
+          "assumptions": {
+            "items": {
+              "$ref": "#/components/schemas/StepMemlogSchemaItem"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sse_event_topic": {
+            "title": "Sse Event Topic",
+            "type": "string"
+          },
+          "sse_latency_ms": {
+            "exclusiveMaximum": 500.0,
+            "minimum": 0.0,
+            "title": "Sse Latency Ms",
+            "type": "number"
+          },
+          "suspected_code_bugs": {
+            "items": {
+              "$ref": "#/components/schemas/StepMemlogSchemaItem"
+            },
+            "title": "Suspected Code Bugs",
+            "type": "array"
+          },
+          "suspected_obsolete_docs": {
+            "items": {
+              "$ref": "#/components/schemas/StepMemlogSchemaItem"
+            },
+            "title": "Suspected Obsolete Docs",
+            "type": "array"
+          },
+          "total_steps_committed": {
+            "minimum": 0.0,
+            "title": "Total Steps Committed",
+            "type": "integer"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workflow_uri",
+          "total_steps_committed",
+          "assumptions",
+          "suspected_code_bugs",
+          "suspected_obsolete_docs",
+          "sse_event_topic",
+          "sse_latency_ms"
+        ],
+        "title": "BackgroundAuditReportSchemaItem",
+        "type": "object"
+      },
+      "BackgroundAuditRunRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/runs/fast-path-audit` (`UJ-10`).",
+        "properties": {
+          "divergence_note": {
+            "default": "Écart seuil TRA : Confluence v12 indique 500€ vs Codebase git:// indique 350€",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Divergence Note",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "BackgroundAuditRunRequest",
+        "type": "object"
+      },
+      "BackgroundAuditRunResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/runs/fast-path-audit`.",
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/BackgroundAuditReportSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report",
+          "trace_id"
+        ],
+        "title": "BackgroundAuditRunResponse",
+        "type": "object"
+      },
+      "BlackboardSnapshotSchemaItem": {
+        "additionalProperties": false,
+        "description": "Immutable append-only checkpoint row in `blackboard_snapshots` (`AD-2`).",
+        "properties": {
+          "artifact_cas_key": {
+            "title": "Artifact Cas Key",
+            "type": "string"
+          },
+          "artifact_payload": {
+            "additionalProperties": true,
+            "title": "Artifact Payload",
+            "type": "object"
+          },
+          "artifact_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Artifact Sha256",
+            "type": "string"
+          },
+          "branch_status": {
+            "enum": [
+              "ACTIVE",
+              "SUPERSEDED"
+            ],
+            "title": "Branch Status",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "memlog_summary": {
+            "items": {
+              "$ref": "#/components/schemas/StepMemlogSchemaItem"
+            },
+            "title": "Memlog Summary",
+            "type": "array"
+          },
+          "parent_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Snapshot Id"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "snapshot_key": {
+            "title": "Snapshot Key",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "superseded_snapshot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Superseded Snapshot Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "snapshot_key",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "branch_status",
+          "artifact_payload",
+          "artifact_cas_key",
+          "artifact_sha256"
+        ],
+        "title": "BlackboardSnapshotSchemaItem",
         "type": "object"
       },
       "BmadSkillPackImportRequest": {
@@ -639,6 +885,107 @@
         "title": "CatalogUriResolveResponse",
         "type": "object"
       },
+      "CompiledArtifactTemplateSchemaItem": {
+        "additionalProperties": false,
+        "description": "Dual-compiled Multi-Audience Artifact Template (`FR-12`).",
+        "properties": {
+          "agent_json_schema": {
+            "additionalProperties": true,
+            "title": "Agent Json Schema",
+            "type": "object"
+          },
+          "bound_ontology_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bound Ontology Terms",
+            "type": "array"
+          },
+          "cognitive_chunks": {
+            "items": {
+              "$ref": "#/components/schemas/CompiledMarkdownChunkSchemaItem"
+            },
+            "title": "Cognitive Chunks",
+            "type": "array"
+          },
+          "human_markdown_view": {
+            "title": "Human Markdown View",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "template_key": {
+            "title": "Template Key",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_key",
+          "uri",
+          "version",
+          "human_markdown_view",
+          "cognitive_chunks",
+          "agent_json_schema",
+          "bound_ontology_terms",
+          "sha256"
+        ],
+        "title": "CompiledArtifactTemplateSchemaItem",
+        "type": "object"
+      },
+      "CompiledMarkdownChunkSchemaItem": {
+        "additionalProperties": false,
+        "description": "Cognitive chunk (`<= 800 words`) produced for human Canvas review (`FR-6`).",
+        "properties": {
+          "chunk_index": {
+            "minimum": 0.0,
+            "title": "Chunk Index",
+            "type": "integer"
+          },
+          "human_authored_required": {
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "markdown_content": {
+            "title": "Markdown Content",
+            "type": "string"
+          },
+          "section_key": {
+            "title": "Section Key",
+            "type": "string"
+          },
+          "section_title": {
+            "title": "Section Title",
+            "type": "string"
+          },
+          "word_count": {
+            "minimum": 0.0,
+            "title": "Word Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chunk_index",
+          "section_key",
+          "section_title",
+          "markdown_content",
+          "word_count",
+          "human_authored_required"
+        ],
+        "title": "CompiledMarkdownChunkSchemaItem",
+        "type": "object"
+      },
       "DbDdlIndexRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1113,6 +1460,85 @@
           "hits"
         ],
         "title": "HybridRagSearchResponse",
+        "type": "object"
+      },
+      "HydratedStepContextSchemaItem": {
+        "additionalProperties": false,
+        "description": "Filtered Just-In-Time context injected into Step $k$ (`JitStepHydrator`, `AD-13`).",
+        "properties": {
+          "declared_input_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Declared Input Uris",
+            "type": "array"
+          },
+          "execution_mode": {
+            "enum": [
+              "INTERACTIVE_COACHING",
+              "BACKGROUND_FAST_PATH",
+              "AUTONOMOUS_CONTRACT"
+            ],
+            "title": "Execution Mode",
+            "type": "string"
+          },
+          "future_step_instructions_leaked": {
+            "default": 0,
+            "maximum": 0.0,
+            "minimum": 0.0,
+            "title": "Future Step Instructions Leaked",
+            "type": "integer"
+          },
+          "resolved_inputs": {
+            "additionalProperties": true,
+            "title": "Resolved Inputs",
+            "type": "object"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_directive": {
+            "title": "Step Directive",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "step_title": {
+            "title": "Step Title",
+            "type": "string"
+          },
+          "step_type": {
+            "enum": [
+              "AGENT",
+              "SKILL",
+              "SUB_WORKFLOW",
+              "POST_ACTION_VERIFICATION"
+            ],
+            "title": "Step Type",
+            "type": "string"
+          },
+          "undeclared_artifacts_leaked": {
+            "default": 0,
+            "maximum": 0.0,
+            "minimum": 0.0,
+            "title": "Undeclared Artifacts Leaked",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "step_key",
+          "step_title",
+          "step_type",
+          "execution_mode",
+          "step_directive",
+          "declared_input_uris",
+          "resolved_inputs"
+        ],
+        "title": "HydratedStepContextSchemaItem",
         "type": "object"
       },
       "InitDatasourceRequest": {
@@ -2488,6 +2914,43 @@
         "title": "OntologyUpsertConceptRequest",
         "type": "object"
       },
+      "OrchestrationSetupStateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `GET /api/v1/orchestration/state`.",
+        "properties": {
+          "compiled_default_template": {
+            "$ref": "#/components/schemas/CompiledArtifactTemplateSchemaItem"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowRunSchemaItem"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflows": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowAsCodeDefinitionSchemaItem"
+            },
+            "title": "Workflows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "workflows",
+          "runs",
+          "compiled_default_template",
+          "trace_id"
+        ],
+        "title": "OrchestrationSetupStateResponse",
+        "type": "object"
+      },
       "OrgUnitTreeItem": {
         "additionalProperties": false,
         "description": "Organizational Unit node in the hierarchical team tree (`org_units`).",
@@ -3321,6 +3784,141 @@
         "title": "ProblemDetails",
         "type": "object"
       },
+      "RecursiveRunLockManifestSchemaItem": {
+        "additionalProperties": false,
+        "description": "Extended `run-lock.json` pinning sources, overrides, KB hash, and sub-workflows.",
+        "properties": {
+          "applied_override_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Applied Override Keys",
+            "type": "array"
+          },
+          "effective_workflow_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Effective Workflow Sha256",
+            "type": "string"
+          },
+          "kb_snapshot_hash": {
+            "title": "Kb Snapshot Hash",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "overrides_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Overrides Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RunLockSourceTripletItem"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "sub_workflow_locks": {
+            "items": {
+              "$ref": "#/components/schemas/SubWorkflowLockSchemaItem"
+            },
+            "title": "Sub Workflow Locks",
+            "type": "array"
+          },
+          "workflow_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Workflow Sha256",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workflow_version": {
+            "title": "Workflow Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "workflow_uri",
+          "workflow_version",
+          "workflow_sha256",
+          "effective_workflow_sha256",
+          "overrides_sha256",
+          "kb_snapshot_hash",
+          "applied_override_keys",
+          "sources",
+          "sub_workflow_locks",
+          "manifest_sha256"
+        ],
+        "title": "RecursiveRunLockManifestSchemaItem",
+        "type": "object"
+      },
+      "RunBlackboardStateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `GET /api/v1/orchestration/runs/{run_id}/blackboard`.",
+        "properties": {
+          "accumulated_root_cost_usd": {
+            "title": "Accumulated Root Cost Usd",
+            "type": "number"
+          },
+          "active_snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/BlackboardSnapshotSchemaItem"
+            },
+            "title": "Active Snapshots",
+            "type": "array"
+          },
+          "root_run_id": {
+            "title": "Root Run Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_executions": {
+            "items": {
+              "$ref": "#/components/schemas/StepExecutionSchemaItem"
+            },
+            "title": "Step Executions",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "root_run_id",
+          "accumulated_root_cost_usd",
+          "step_executions",
+          "active_snapshots",
+          "trace_id"
+        ],
+        "title": "RunBlackboardStateResponse",
+        "type": "object"
+      },
       "RunLockManifestItem": {
         "additionalProperties": false,
         "description": "Serialized `run-lock.json` provenance manifest (`AD-5`, `AD-14`).",
@@ -3634,6 +4232,395 @@
           "trace_id"
         ],
         "title": "ShellNavigationResponse",
+        "type": "object"
+      },
+      "StepExecuteRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/runs/steps/execute`.",
+        "properties": {
+          "commit_immediately": {
+            "default": true,
+            "title": "Commit Immediately",
+            "type": "boolean"
+          },
+          "cost_usd": {
+            "default": 0.25,
+            "maximum": 500.0,
+            "minimum": 0.0,
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "simulated_divergence": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Divergence"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "step_key"
+        ],
+        "title": "StepExecuteRequest",
+        "type": "object"
+      },
+      "StepExecuteResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/runs/steps/execute`.",
+        "properties": {
+          "committed_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlackboardSnapshotSchemaItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step_execution": {
+            "$ref": "#/components/schemas/StepExecutionSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_execution",
+          "trace_id"
+        ],
+        "title": "StepExecuteResponse",
+        "type": "object"
+      },
+      "StepExecutionSchemaItem": {
+        "additionalProperties": false,
+        "description": "Mutable draft and execution state for a single workflow step (`AD-2`).",
+        "properties": {
+          "attempt_count": {
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Attempt Count",
+            "type": "integer"
+          },
+          "child_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Run Id"
+          },
+          "committed_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committed Snapshot Id"
+          },
+          "cost_usd": {
+            "minimum": 0.0,
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "draft_artifact": {
+            "additionalProperties": true,
+            "title": "Draft Artifact",
+            "type": "object"
+          },
+          "draft_cas_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Cas Key"
+          },
+          "execution_mode": {
+            "enum": [
+              "INTERACTIVE_COACHING",
+              "BACKGROUND_FAST_PATH",
+              "AUTONOMOUS_CONTRACT"
+            ],
+            "title": "Execution Mode",
+            "type": "string"
+          },
+          "hydrated_input_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hydrated Input Uris",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_agent_retries": {
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Agent Retries",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "WAITING_FOR_HUMAN_ANCHOR",
+              "EXECUTING_AGENT",
+              "WAITING_FOR_HUMAN_ARBITRATION",
+              "EVALUATING_GATES",
+              "WAITING_FOR_HUMAN_GATE",
+              "COMMITTED",
+              "CHALLENGED_REWIND",
+              "FAILED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_key": {
+            "title": "Step Execution Key",
+            "type": "string"
+          },
+          "step_index": {
+            "minimum": 0.0,
+            "title": "Step Index",
+            "type": "integer"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "step_memlog": {
+            "items": {
+              "$ref": "#/components/schemas/StepMemlogSchemaItem"
+            },
+            "title": "Step Memlog",
+            "type": "array"
+          },
+          "step_type": {
+            "enum": [
+              "AGENT",
+              "SKILL",
+              "SUB_WORKFLOW",
+              "POST_ACTION_VERIFICATION"
+            ],
+            "title": "Step Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "step_execution_key",
+          "run_id",
+          "step_key",
+          "step_index",
+          "step_type",
+          "execution_mode",
+          "status",
+          "attempt_count",
+          "max_agent_retries",
+          "draft_artifact",
+          "cost_usd"
+        ],
+        "title": "StepExecutionSchemaItem",
+        "type": "object"
+      },
+      "StepHydrateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/runs/steps/hydrate`.",
+        "properties": {
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "step_key"
+        ],
+        "title": "StepHydrateRequest",
+        "type": "object"
+      },
+      "StepHydrateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/runs/steps/hydrate`.",
+        "properties": {
+          "hydrated_context": {
+            "$ref": "#/components/schemas/HydratedStepContextSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hydrated_context",
+          "trace_id"
+        ],
+        "title": "StepHydrateResponse",
+        "type": "object"
+      },
+      "StepMemlogSchemaItem": {
+        "additionalProperties": false,
+        "description": "Structured reasoning, assumption, or divergence entry in `step_memlog_jsonb`.",
+        "properties": {
+          "details": {
+            "title": "Details",
+            "type": "string"
+          },
+          "entry_id": {
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "marker_type": {
+            "enum": [
+              "REASONING",
+              "ASSUMPTION",
+              "BUG_CODE_SUSPECTED",
+              "DOC_OBSOLETE_SUSPECTED",
+              "FEEDBACK_RETRY",
+              "SUB_WORKFLOW_OUTPUT"
+            ],
+            "title": "Marker Type",
+            "type": "string"
+          },
+          "source_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Uris",
+            "type": "array"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "step_key",
+          "marker_type",
+          "summary",
+          "details"
+        ],
+        "title": "StepMemlogSchemaItem",
+        "type": "object"
+      },
+      "SubWorkflowLockSchemaItem": {
+        "additionalProperties": false,
+        "description": "Recursive sub-workflow lock entry in `run-lock.json` (`FR-30`, `AD-18`).",
+        "properties": {
+          "applied_override_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Applied Override Keys",
+            "type": "array"
+          },
+          "effective_workflow_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Effective Workflow Sha256",
+            "type": "string"
+          },
+          "nesting_depth": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Nesting Depth",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RunLockSourceTripletItem"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "sub_workflow_locks": {
+            "items": {
+              "$ref": "#/components/schemas/SubWorkflowLockSchemaItem"
+            },
+            "title": "Sub Workflow Locks",
+            "type": "array"
+          },
+          "workflow_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Workflow Sha256",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workflow_version": {
+            "title": "Workflow Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_key",
+          "workflow_uri",
+          "workflow_version",
+          "workflow_sha256",
+          "effective_workflow_sha256",
+          "nesting_depth",
+          "applied_override_keys",
+          "sources"
+        ],
+        "title": "SubWorkflowLockSchemaItem",
         "type": "object"
       },
       "SystemBootstrapRunItem": {
@@ -4254,6 +5241,174 @@
         "title": "WhatIfSimulationResponse",
         "type": "object"
       },
+      "WorkflowAsCodeDefinitionSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized Workflow-as-Code DAG supporting `SUB_WORKFLOW <= 3` and criticality.",
+        "properties": {
+          "adaptive_gate_policy": {
+            "enum": [
+              "STRICT",
+              "STANDARD",
+              "FAST_TRACK"
+            ],
+            "title": "Adaptive Gate Policy",
+            "type": "string"
+          },
+          "criticality": {
+            "enum": [
+              "LOW_NON_CRITICAL",
+              "STANDARD",
+              "HIGH_CRITICAL"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "datasources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Datasources",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "execution_regime": {
+            "enum": [
+              "INTERACTIVE_COACHING",
+              "BACKGROUND_FAST_PATH",
+              "AUTONOMOUS_CONTRACT"
+            ],
+            "title": "Execution Regime",
+            "type": "string"
+          },
+          "facts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_cost_usd": {
+            "minimum": 0.0,
+            "title": "Max Cost Usd",
+            "type": "number"
+          },
+          "max_nesting_depth": {
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Max Nesting Depth",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "standard",
+              "brownfield_bootstrap"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "scalars": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Scalars",
+            "type": "object"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStepSpecSchemaItem"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "tie_break_policy": {
+            "enum": [
+              "ONTOLOGY_AXIOM_FIRST",
+              "DEFER_AND_CONTINUE_WITH_ASSUMPTION",
+              "PAUSE_AND_ESCALATE"
+            ],
+            "title": "Tie Break Policy",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "id",
+          "uri",
+          "title",
+          "description",
+          "version",
+          "criticality",
+          "execution_regime",
+          "tie_break_policy",
+          "mode",
+          "adaptive_gate_policy",
+          "max_cost_usd",
+          "scalars",
+          "datasources",
+          "rules",
+          "facts",
+          "steps",
+          "sha256",
+          "max_nesting_depth"
+        ],
+        "title": "WorkflowAsCodeDefinitionSchemaItem",
+        "type": "object"
+      },
       "WorkflowDefinitionResponseItem": {
         "additionalProperties": false,
         "description": "Serialized workflow definition (`ORCIA` native or `BMAD_PACK`).",
@@ -4387,6 +5542,404 @@
         "title": "WorkflowDefinitionResponseItem",
         "type": "object"
       },
+      "WorkflowManifestRegisterRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/workflows/register`.",
+        "properties": {
+          "raw_manifest": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Raw Manifest",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "raw_manifest"
+        ],
+        "title": "WorkflowManifestRegisterRequest",
+        "type": "object"
+      },
+      "WorkflowManifestRegisterResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/workflows/register`.",
+        "properties": {
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowAsCodeDefinitionSchemaItem"
+          }
+        },
+        "required": [
+          "workflow",
+          "trace_id"
+        ],
+        "title": "WorkflowManifestRegisterResponse",
+        "type": "object"
+      },
+      "WorkflowManifestValidateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/workflows/validate`.",
+        "properties": {
+          "raw_manifest": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Raw Manifest",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "raw_manifest"
+        ],
+        "title": "WorkflowManifestValidateRequest",
+        "type": "object"
+      },
+      "WorkflowManifestValidateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/workflows/validate`.",
+        "properties": {
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowValidationFindingSchemaItem"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "resolved_max_nesting_depth": {
+            "minimum": 0.0,
+            "title": "Resolved Max Nesting Depth",
+            "type": "integer"
+          },
+          "topological_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Topological Order",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "workflow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowAsCodeDefinitionSchemaItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "valid",
+          "findings",
+          "resolved_max_nesting_depth",
+          "topological_order",
+          "trace_id"
+        ],
+        "title": "WorkflowManifestValidateResponse",
+        "type": "object"
+      },
+      "WorkflowRunInstantiateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/runs/instantiate`.",
+        "properties": {
+          "execution_identity_mode": {
+            "default": "passthrough",
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity Mode",
+            "type": "string"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "parent_step_execution_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Step Execution Id"
+          },
+          "trigger_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Id"
+          },
+          "trigger_idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Idempotency Key"
+          },
+          "workflow_uri": {
+            "maxLength": 512,
+            "minLength": 8,
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_uri",
+          "workspace_id"
+        ],
+        "title": "WorkflowRunInstantiateRequest",
+        "type": "object"
+      },
+      "WorkflowRunInstantiateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/runs/instantiate`.",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/WorkflowRunSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "trace_id"
+        ],
+        "title": "WorkflowRunInstantiateResponse",
+        "type": "object"
+      },
+      "WorkflowRunSchemaItem": {
+        "additionalProperties": false,
+        "description": "Instantiated Workflow Run or nested Sub-Workflow Run (`nesting_depth <= 3`).",
+        "properties": {
+          "budget_max_usd": {
+            "minimum": 0.0,
+            "title": "Budget Max Usd",
+            "type": "number"
+          },
+          "criticality": {
+            "enum": [
+              "LOW_NON_CRITICAL",
+              "STANDARD",
+              "HIGH_CRITICAL"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "execution_identity_mode": {
+            "enum": [
+              "passthrough",
+              "service_principal"
+            ],
+            "title": "Execution Identity Mode",
+            "type": "string"
+          },
+          "execution_regime": {
+            "enum": [
+              "INTERACTIVE_COACHING",
+              "BACKGROUND_FAST_PATH",
+              "AUTONOMOUS_CONTRACT"
+            ],
+            "title": "Execution Regime",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "initiated_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initiated By User Id"
+          },
+          "nesting_depth": {
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Nesting Depth",
+            "type": "integer"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "parent_step_execution_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Step Execution Id"
+          },
+          "root_run_id": {
+            "title": "Root Run Id",
+            "type": "string"
+          },
+          "run_key": {
+            "title": "Run Key",
+            "type": "string"
+          },
+          "run_lock": {
+            "$ref": "#/components/schemas/RecursiveRunLockManifestSchemaItem"
+          },
+          "status": {
+            "enum": [
+              "INITIALIZED",
+              "RUNNING",
+              "WAITING_FOR_HUMAN_ARBITRATION",
+              "WAITING_FOR_HUMAN_GATE",
+              "PAUSED_CIRCUIT_BREAKER",
+              "PAUSED_BUDGET_EXCEEDED",
+              "COMPLETED",
+              "FAILED",
+              "ROLLED_BACK"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Id"
+          },
+          "trigger_idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Idempotency Key"
+          },
+          "workflow_def_id": {
+            "title": "Workflow Def Id",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_key",
+          "workspace_id",
+          "workflow_def_id",
+          "workflow_uri",
+          "root_run_id",
+          "nesting_depth",
+          "execution_regime",
+          "criticality",
+          "status",
+          "execution_identity_mode",
+          "budget_max_usd",
+          "run_lock"
+        ],
+        "title": "WorkflowRunSchemaItem",
+        "type": "object"
+      },
       "WorkflowStepItem": {
         "additionalProperties": false,
         "description": "Workflow step item in a workflow definition.",
@@ -4415,6 +5968,209 @@
           "human_authored_required"
         ],
         "title": "WorkflowStepItem",
+        "type": "object"
+      },
+      "WorkflowStepSpecSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized step node in a validated Workflow-as-Code DAG.",
+        "properties": {
+          "agent_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Uri"
+          },
+          "declares_intention": {
+            "title": "Declares Intention",
+            "type": "boolean"
+          },
+          "depends_on": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Depends On",
+            "type": "array"
+          },
+          "feedback_target_step_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Target Step Key"
+          },
+          "human_authored_required": {
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "input_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Input Mapping",
+            "type": "object"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          },
+          "kb_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Kb Uris",
+            "type": "array"
+          },
+          "line_number": {
+            "minimum": 1.0,
+            "title": "Line Number",
+            "type": "integer"
+          },
+          "max_agent_retries": {
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Agent Retries",
+            "type": "integer"
+          },
+          "output_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Output Mapping",
+            "type": "object"
+          },
+          "requires_human_gate": {
+            "title": "Requires Human Gate",
+            "type": "boolean"
+          },
+          "reverse_doc_from_code": {
+            "title": "Reverse Doc From Code",
+            "type": "boolean"
+          },
+          "skill_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Uri"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "step_type": {
+            "enum": [
+              "AGENT",
+              "SKILL",
+              "SUB_WORKFLOW",
+              "POST_ACTION_VERIFICATION"
+            ],
+            "title": "Step Type",
+            "type": "string"
+          },
+          "sub_workflow_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Workflow Uri"
+          },
+          "template_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Key"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "verification_window_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Window Seconds"
+          },
+          "writes_code": {
+            "title": "Writes Code",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "step_key",
+          "title",
+          "step_type",
+          "instructions",
+          "depends_on",
+          "max_agent_retries",
+          "input_mapping",
+          "output_mapping",
+          "kb_uris",
+          "human_authored_required",
+          "requires_human_gate",
+          "declares_intention",
+          "writes_code",
+          "reverse_doc_from_code",
+          "line_number"
+        ],
+        "title": "WorkflowStepSpecSchemaItem",
+        "type": "object"
+      },
+      "WorkflowValidationFindingSchemaItem": {
+        "additionalProperties": false,
+        "description": "Line-accurate validation finding for a Workflow-as-Code YAML/JSON manifest.",
+        "properties": {
+          "field_path": {
+            "title": "Field Path",
+            "type": "string"
+          },
+          "line": {
+            "minimum": 1.0,
+            "title": "Line",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "rule_code": {
+            "title": "Rule Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "rule_code",
+          "field_path",
+          "message"
+        ],
+        "title": "WorkflowValidationFindingSchemaItem",
         "type": "object"
       },
       "WorkspaceBootstrapInputItem": {
@@ -7403,6 +9159,861 @@
         "summary": "Qualify Doc vs Code divergence (`[DOC_OBSOLETE_SUSPECTED]` citing Done Jira ticket)",
         "tags": [
           "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/fast-path-audit": {
+      "post": {
+        "description": "Run all steps in `BACKGROUND_FAST_PATH` mode, recording assumptions and divergences.",
+        "operationId": "execute_background_fast_path_audit_api_v1_orchestration_runs_fast_path_audit_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackgroundAuditRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackgroundAuditRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute a non-blocking BACKGROUND_FAST_PATH audit with structured markers (UJ-10)",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/instantiate": {
+      "post": {
+        "description": "Instantiate a Workflow Run and lock all sources, overrides, KB hash, and sub-workflows.",
+        "operationId": "instantiate_workflow_run_api_v1_orchestration_runs_instantiate_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRunInstantiateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRunInstantiateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Instantiate a Workflow Run and recursively pin run-lock.json (SUB_WORKFLOW <= 3)",
+        "tags": [
+          "orchestration-setup"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/steps/execute": {
+      "post": {
+        "description": "Execute a step, writing draft_artifact first and committing to blackboard_snapshots.",
+        "operationId": "execute_workflow_step_api_v1_orchestration_runs_steps_execute_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepExecuteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute a durable workflow step (AGENT, SKILL, SUB_WORKFLOW, POST_ACTION)",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/steps/hydrate": {
+      "post": {
+        "description": "Resolve isolated `HydratedStepContext` for Step $k$ (`JitStepHydrator`, `AD-13`).",
+        "operationId": "hydrate_step_context_api_v1_orchestration_runs_steps_hydrate_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepHydrateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepHydrateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Hydrate Just-In-Time context for Step k (0 future step leakage, AD-13)",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/blackboard": {
+      "get": {
+        "description": "Return durable `step_executions` and active `blackboard_snapshots` for `run_id`.",
+        "operationId": "get_run_blackboard_state_api_v1_orchestration_runs__run_id__blackboard_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunBlackboardStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get durable step executions and append-only Blackboard snapshots for a Run",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/state": {
+      "get": {
+        "description": "Return registered Workflow-as-Code definitions, runs, and compiled ADR template.",
+        "operationId": "get_orchestration_state_api_v1_orchestration_state_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrchestrationSetupStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get Story 3.1 Workflow-as-Code DAGs, compiled template, and recursive run-lock state",
+        "tags": [
+          "orchestration-setup"
+        ]
+      }
+    },
+    "/api/v1/orchestration/templates/compile": {
+      "post": {
+        "description": "Compile dual-view Multi-Audience Artifact Template (`FR-12`).",
+        "operationId": "compile_artifact_template_api_v1_orchestration_templates_compile_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactTemplateCompileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactTemplateCompileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Compile a Multi-Audience Artifact Template into Human Markdown + Ontology JSON Schema",
+        "tags": [
+          "orchestration-setup"
+        ]
+      }
+    },
+    "/api/v1/orchestration/workflows/register": {
+      "post": {
+        "description": "Register a validated Workflow-as-Code manifest (`ScopeAccessGuard` enforced).",
+        "operationId": "register_workflow_manifest_api_v1_orchestration_workflows_register_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowManifestRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManifestRegisterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Validate and register a Workflow-as-Code YAML/JSON manifest",
+        "tags": [
+          "orchestration-setup"
+        ]
+      }
+    },
+    "/api/v1/orchestration/workflows/validate": {
+      "post": {
+        "description": "Validate DAG syntax, criticality vs regime, Intention -> Code, and SUB_WORKFLOW <= 3.",
+        "operationId": "validate_workflow_manifest_api_v1_orchestration_workflows_validate_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowManifestValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManifestValidateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Validate a Workflow-as-Code YAML/JSON manifest with exact line numbers",
+        "tags": [
+          "orchestration-setup"
         ]
       }
     },

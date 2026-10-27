@@ -33,6 +33,10 @@ export {
 } from "./shell/PermissionBrokerCard";
 export { ScopeSwitcher, type ScopeSwitcherProps } from "./shell/ScopeSwitcher";
 export {
+  WorkflowStudioSection,
+  type WorkflowStudioSectionProps,
+} from "./shell/WorkflowStudioSection";
+export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,
 } from "./shell/WorkspaceTopologyPanel";
@@ -67,6 +71,7 @@ export type {
   UiShellModuleItem,
   UiStaleAlertView,
   UiTripartiteEdgeView,
+  UiWorkflowStudioLabels,
   UiWorkspaceCardView,
   UiWorkspaceDatasourceView,
   UiWorkspaceTopologyLabels,

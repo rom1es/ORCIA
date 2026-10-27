@@ -9,6 +9,7 @@ import type {
   UiPersonaKey,
   UiRunLockTripletView,
 } from "./types";
+import { WorkflowStudioSection } from "./WorkflowStudioSection";
 
 const PROMOTION_ORDER: UiCatalogVisibilityScope[] = [
   "DRAFT", "SHARED_WORKSPACE", "SHARED_TEAM", "SHARED_BU", "PENDING_APPROVAL", "PUBLISHED_ORG",
@@ -293,6 +294,8 @@ export function CatalogExplorerPanel({
           </div>
         )}
       </div>
+
+      {labels.workflowStudio && <WorkflowStudioSection labels={labels.workflowStudio} />}
     </section>
   );
 }

@@ -192,6 +192,58 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             )
             assert ep2_apply.committed is True and ep2_apply.concepts_count == 7
 
+            # Verify Story 3.1 maintenance script 06_backfill_workflow_orchestration_and_locks
+            backfill_ep3 = _load_script_module(
+                "backfill_workflow_orchestration_and_locks",
+                "06_backfill_workflow_orchestration_and_locks.py",
+            )
+            ep3_dry = await backfill_ep3.backfill_workflow_orchestration_and_locks(
+                engine, apply_changes=False
+            )
+            assert ep3_dry.workflows_count == 3 and ep3_dry.triggers_count == 1
+            assert ep3_dry.runs_count == 1 and ep3_dry.run_locks_count == 1
+            assert ep3_dry.dry_run is True and ep3_dry.committed is False
+            async with engine.connect() as conn:
+                runs_after_dry = await conn.execute(sa.text("SELECT COUNT(*) FROM workflow_runs"))
+                assert int(runs_after_dry.scalar() or 0) == 0
+
+            ep3_apply = await backfill_ep3.backfill_workflow_orchestration_and_locks(
+                engine, apply_changes=True
+            )
+            assert ep3_apply.committed is True and ep3_apply.runs_count == 1
+            assert ep3_apply.run_locks_count == 1
+
+            # Verify Story 3.2 script 07_backfill_step_executions_and_blackboard_snapshots
+            backfill_s32 = _load_script_module(
+                "backfill_step_executions_and_blackboard_snapshots",
+                "07_backfill_step_executions_and_blackboard_snapshots.py",
+            )
+            s32_dry = await backfill_s32.backfill_step_executions_and_blackboard_snapshots(
+                engine, apply_changes=False
+            )
+            assert s32_dry.dry_run is True and s32_dry.committed is False
+            assert s32_dry.step_executions_count == 7 and s32_dry.blackboard_snapshots_count == 7
+            async with engine.connect() as conn:
+                snaps_after_dry = await conn.execute(
+                    sa.text("SELECT COUNT(*) FROM blackboard_snapshots")
+                )
+                assert int(snaps_after_dry.scalar() or 0) == 0
+
+            s32_apply = await backfill_s32.backfill_step_executions_and_blackboard_snapshots(
+                engine, apply_changes=True
+            )
+            assert s32_apply.committed is True and s32_apply.blackboard_snapshots_count == 7
+
+            with pytest.raises(DBAPIError, match="ERR_BLACKBOARD_APPEND_ONLY_VIOLATION"):
+                async with engine.begin() as conn:
+                    await conn.execute(
+                        sa.text("UPDATE blackboard_snapshots SET branch_status = 'SUPERSEDED';")
+                    )
+
+            with pytest.raises(DBAPIError, match="ERR_BLACKBOARD_APPEND_ONLY_VIOLATION"):
+                async with engine.begin() as conn:
+                    await conn.execute(sa.text("DELETE FROM blackboard_snapshots;"))
+
             # Execute build_ontology_resolution_cte_sql() against real PostgreSQL 18
             from orcia_core.ontology import build_ontology_resolution_cte_sql
 

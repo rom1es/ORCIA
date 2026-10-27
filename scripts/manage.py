@@ -30,6 +30,23 @@ from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _ensure_project_venv() -> None:
+    """Re-exec with `.venv/bin/python` when invoked via system `python3` (`./scripts/manage.py`)."""
+    if __name__ != "__main__" or os.environ.get("ORCIA_SKIP_VENV_REEXEC") == "1":
+        return
+    venv_dir = (REPO_ROOT / ".venv").resolve()
+    venv_python = venv_dir / "bin" / "python"
+    if venv_python.is_file() and Path(sys.prefix).resolve() != venv_dir:
+        os.execv(
+            str(venv_python),
+            [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]],
+        )
+
+
+_ensure_project_venv()
+
 for rel_src in ("packages/orcia-core/src", "apps/api/src", "apps/worker/src"):
     candidate = str(REPO_ROOT / rel_src)
     if candidate not in sys.path:

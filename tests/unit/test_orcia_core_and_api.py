@@ -419,3 +419,21 @@ def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.Monke
     monkeypatch.setenv("REDIS_URL", "redis://explicit:6379/0")
     assert resolve_database_url() == "postgresql+asyncpg://explicit/db"
     assert resolve_redis_url() == "redis://explicit:6379/0"
+
+    # Stdlib fallback loader when python-dotenv is absent
+    import orcia_core.config as config_mod
+
+    fallback_env = tmp_path / ".env.fallback"
+    fallback_env.write_text(
+        "# comment line\n"
+        "\n"
+        "INVALID_LINE_WITHOUT_EQUALS\n"
+        "export ORCIA_WEB_PORT='3199'\n"
+        'ORCIA_API_HOST="0.0.0.0"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(config_mod, "_dotenv_load", None)
+    monkeypatch.delenv("ORCIA_WEB_PORT", raising=False)
+    load_orcia_env(env_file=fallback_env, override=True)
+    assert get_env_int("ORCIA_WEB_PORT", 3100) == 3199
+    assert get_env("ORCIA_API_HOST") == "0.0.0.0"

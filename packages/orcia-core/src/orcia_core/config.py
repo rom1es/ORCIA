@@ -12,10 +12,15 @@ from __future__ import annotations
 import os
 import re
 import secrets
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from dotenv import load_dotenv
+_dotenv_load: Callable[..., bool] | None
+try:
+    from dotenv import load_dotenv as _dotenv_load
+except ModuleNotFoundError:  # pragma: no cover
+    _dotenv_load = None
 
 REPO_ROOT: Path = Path(__file__).resolve().parents[4]
 DEFAULT_ENV_FILE: Path = REPO_ROOT / ".env"
@@ -39,12 +44,35 @@ ROTATABLE_SECRET_KEYS: tuple[str, ...] = (
 _ENV_LOADED = False
 
 
+def _fallback_load_dotenv(*, dotenv_path: Path, override: bool = False) -> bool:
+    """Minimal stdlib `.env` parser fallback when `python-dotenv` is unavailable."""
+    for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        key = key.strip()
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
+            val = val[1:-1]
+        if key and (override or key not in os.environ):
+            os.environ[key] = val
+    return True
+
+
 def load_orcia_env(*, env_file: Path | None = None, override: bool = False) -> Path:
     """Load the root `.env` file into `os.environ` without clobbering explicit env vars."""
     global _ENV_LOADED
     target = env_file or Path(os.environ.get("ORCIA_ENV_FILE", str(DEFAULT_ENV_FILE)))
     if target.is_file():
-        load_dotenv(dotenv_path=target, override=override)
+        if _dotenv_load is not None:
+            _dotenv_load(dotenv_path=target, override=override)
+        else:
+            _fallback_load_dotenv(dotenv_path=target, override=override)
     _ENV_LOADED = True
     return target
 

@@ -169,6 +169,25 @@ export interface UiPermissionBrokerLabels {
   observerDeniedBanner: string;
 }
 
+export interface UiWorkflowStudioLabels {
+  studioTitle: string;
+  studioSubtitle: string;
+  validateNominalLabel: string;
+  simulateCriticalAutonomousLabel: string;
+  simulateMissingIntentionLabel: string;
+  simulateMaxDepthLabel: string;
+  validDagBanner: string;
+  criticalAutonomousErrorBanner: string;
+  missingIntentionErrorBanner: string;
+  maxDepthErrorBanner: string;
+  templatePreviewTitle: string;
+  humanMarkdownTabLabel: string;
+  agentSchemaTabLabel: string;
+  sampleHumanMarkdown: string;
+  sampleAgentJsonSchema: string;
+  subWorkflowLocksTitle: string;
+}
+
 export interface UiCatalogExplorerLabels {
   panelTitle: string;
   panelSubtitle: string;
@@ -193,6 +212,7 @@ export interface UiCatalogExplorerLabels {
   bmadAdapterTitle: string;
   bmadImportButtonLabel: string;
   bmadImportedBanner: string;
+  workflowStudio?: UiWorkflowStudioLabels;
 }
 
 export interface UiWorkspaceTopologyLabels {
