@@ -10,14 +10,13 @@ from typing import Any
 
 from orcia_core.catalog.cas_resolver import compute_bytes_sha256
 from orcia_core.catalog.models import ScalarValue
-from orcia_core.domain.exceptions import (
+from orcia_core.orchestration.errors import (
     CriticalWorkflowRequiresHumanGateError,
     IntentionBeforeCodeRequiredError,
     SubWorkflowCycleDetectedError,
     SubWorkflowMaxDepthExceededError,
     ValidationDomainError,
 )
-from orcia_core.domain.identifiers import new_uuid7_str
 from orcia_core.orchestration.models import (
     MAX_SUB_WORKFLOW_NESTING_DEPTH,
     WorkflowAsCodeDefinition,
@@ -36,6 +35,7 @@ from orcia_core.orchestration.yaml_loader import (
     parse_raw_yaml_or_json,
     parse_single_step_spec,
 )
+from orcia_kernel.ids import new_uuid7_str
 
 
 class WorkflowAsCodeValidator:

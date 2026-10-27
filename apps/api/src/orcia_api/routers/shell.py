@@ -4,15 +4,16 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, Request
 
-from orcia_api.routers.auth import get_auth_service, resolve_request_user
-from orcia_core.domain.exceptions import ObserverModeReadOnlyError, ResourceNotFoundError
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.schemas.problem_details import ProblemDetails
-from orcia_core.schemas.shell import (
+from orcia_api.dependencies import get_auth_service
+from orcia_api.routers.auth import resolve_request_user
+from orcia_api.schemas.problem_details import ProblemDetails
+from orcia_api.schemas.shell import (
     HumanProfileBadge,
     ShellNavigationResponse,
     build_default_shell_navigation,
 )
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions.errors import ObserverModeReadOnlyError, ResourceNotFoundError
 
 router = APIRouter(prefix="/api/v1/navigation", tags=["navigation"])
 

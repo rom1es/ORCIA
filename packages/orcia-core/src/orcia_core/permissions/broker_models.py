@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from typing import Literal, cast
 from urllib.parse import quote
 
-from orcia_core.domain.exceptions import ValidationDomainError
-from orcia_core.domain.identifiers import new_uuid7_str
+from orcia_core.permissions.errors import ValidationDomainError
 from orcia_core.permissions.models import ExecutionIdentityMode
+from orcia_kernel.ids import new_uuid7_str
 
 BrokerConnectorScheme = Literal["git", "jira", "confluence", "db", "nexus", "mcp"]
 BrokerStepState = Literal["PERMISSION_DENIED_STEP", "PAUSED", "REPLAYED", "GRANTED"]

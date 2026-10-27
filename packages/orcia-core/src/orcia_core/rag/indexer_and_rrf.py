@@ -9,8 +9,7 @@ import ast
 import hashlib
 import re
 
-from orcia_core.domain.exceptions import DdlOnlyTransactionalDataError
-from orcia_core.domain.identifiers import new_uuid7_str
+from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_core.rag.models import (
     CodeGraphEdgeEntity,
     KbChunkEntity,
@@ -25,6 +24,7 @@ from orcia_core.rag.vector_and_ast import (
 from orcia_core.rag.vector_and_ast import (
     chunk_ast_symbol as _chunk_ast_symbol,
 )
+from orcia_kernel.ids import new_uuid7_str
 
 __all__ = [
     "ALLOWED_JIRA_REFERENCE_TYPES",

@@ -53,7 +53,7 @@ development_status:
   epic-3: in-progress
   3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: done
   3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: done
-  3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: ready-for-dev
+  3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: done
   3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali: ready-for-dev
   3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: backlog
   3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: backlog
@@ -162,7 +162,7 @@ action_items:
     ad_ref: "AD-1, AD-19"
     story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Permettre à chaque domaine de packages/orcia-core d'évoluer indépendamment sans dépendance circulaire.
@@ -175,7 +175,7 @@ action_items:
     ad_ref: "AD-1, AD-19"
     story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Supprimer le couplage entre le domaine métier et le contrat REST et éliminer le point chaud domain/exceptions.py.
@@ -188,7 +188,7 @@ action_items:
     ad_ref: "AD-1, AD-19"
     story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Garantir l'inversion de contrôle et un seul point d'assemblage (Composition Root) dans apps/api et apps/worker.
@@ -200,7 +200,7 @@ action_items:
     ad_ref: "AD-1, AD-17, AD-19"
     story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
     owner: "Karim (Platform) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Corriger l'écart entre la Spine et pyproject.toml / package.json et garantir la reproductibilité des builds via uv.lock et pnpm-lock.yaml.
@@ -214,7 +214,7 @@ action_items:
     ad_ref: "AD-1, AD-17, AD-19"
     story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Transformer les règles d'architecture d'AD-1 et AD-19 en garde-fou bloquant de la couche 1 de tests CI.

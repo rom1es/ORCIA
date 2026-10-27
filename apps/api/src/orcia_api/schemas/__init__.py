@@ -1,6 +1,6 @@
 """Pydantic v2 contracts (single source of truth for OpenAPI 3.1 schema generation, AD-1)."""
 
-from orcia_core.schemas.auth_and_org import (
+from orcia_api.schemas.auth_and_org import (
     AuthTokenResponse,
     CatalogResourceInspectionResponse,
     CatalogResourceSourceResponse,
@@ -16,7 +16,7 @@ from orcia_core.schemas.auth_and_org import (
     WorkspacesListResponse,
     WorkspaceSummaryItem,
 )
-from orcia_core.schemas.bootstrap import (
+from orcia_api.schemas.bootstrap import (
     InitDatasourceRequest,
     InitDatasourceResponse,
     InitOrganizationRequest,
@@ -35,7 +35,7 @@ from orcia_core.schemas.bootstrap import (
     UserOnboardingStateItem,
     WorkspaceBootstrapInputItem,
 )
-from orcia_core.schemas.catalog import (
+from orcia_api.schemas.catalog import (
     BmadSkillPackImportRequest,
     BmadSkillPackImportResponse,
     BmadSkillStepInputItem,
@@ -54,7 +54,7 @@ from orcia_core.schemas.catalog import (
     WorkflowDefinitionResponseItem,
     WorkflowStepItem,
 )
-from orcia_core.schemas.ontology_and_rag import (
+from orcia_api.schemas.ontology_and_rag import (
     DbDdlIndexRequest,
     DocVsCodeAuditRequest,
     DocVsCodeAuditResponse,
@@ -75,7 +75,7 @@ from orcia_core.schemas.ontology_and_rag import (
     WhatIfSimulationRequest,
     WhatIfSimulationResponse,
 )
-from orcia_core.schemas.orchestration import (
+from orcia_api.schemas.orchestration import (
     ArtifactTemplateCompileRequest,
     ArtifactTemplateCompileResponse,
     CompiledArtifactTemplateSchemaItem,
@@ -94,7 +94,7 @@ from orcia_core.schemas.orchestration import (
     WorkflowStepSpecSchemaItem,
     WorkflowValidationFindingSchemaItem,
 )
-from orcia_core.schemas.permission_broker import (
+from orcia_api.schemas.permission_broker import (
     PermissionBrokerPolicyItem,
     PermissionBrokerStateResponse,
     PermissionBrokerTicketItem,
@@ -105,8 +105,8 @@ from orcia_core.schemas.permission_broker import (
     PermissionTicketActionRequest,
     PermissionTicketActionResponse,
 )
-from orcia_core.schemas.problem_details import ProblemDetails
-from orcia_core.schemas.shell import (
+from orcia_api.schemas.problem_details import ProblemDetails
+from orcia_api.schemas.shell import (
     AccessMode,
     HealthResponse,
     HumanProfileBadge,

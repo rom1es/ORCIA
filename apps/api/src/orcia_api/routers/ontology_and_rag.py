@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, Request
 
+from orcia_api.dependencies import get_epic2_services
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import (
-    get_epic2_services,
     get_trace_id,
     serialize_concept,
     serialize_doc,
@@ -16,15 +16,15 @@ from orcia_api.routers.ontology_rag_helpers import (
     serialize_trace_edge,
     serialize_what_if,
 )
-from orcia_core.domain.exceptions import ObserverModeReadOnlyError
-from orcia_core.domain.identifiers import new_uuid7_str
+from orcia_api.schemas import ontology_and_rag as s
 from orcia_core.ontology import (
     OntologyConceptEntity,
     OntologyHierarchyResolver,
     ProfileSemanticTranslator,
 )
+from orcia_core.ontology.errors import ObserverModeReadOnlyError
 from orcia_core.rag import DifferentiatedIncrementalIndexer
-from orcia_core.schemas import ontology_and_rag as s
+from orcia_kernel.ids import new_uuid7_str
 
 router = APIRouter(prefix="/api/v1/ontology-rag", tags=["ontology-rag"])
 

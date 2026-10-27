@@ -4,18 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
+from orcia_api.dependencies import get_orchestration_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
-from orcia_api.routers.orchestration import get_orchestration_service
-from orcia_core.blackboard import (
-    BackgroundAuditConsolidatedReport,
-    BlackboardSnapshotEntity,
-    HydratedStepContext,
-    StepExecutionEntity,
-    StepMemlogEntry,
-)
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.orchestration import JitStepHydrator
-from orcia_core.schemas.blackboard import (
+from orcia_api.schemas.blackboard import (
     BackgroundAuditReportSchemaItem,
     BackgroundAuditRunRequest,
     BackgroundAuditRunResponse,
@@ -29,6 +20,15 @@ from orcia_core.schemas.blackboard import (
     StepHydrateResponse,
     StepMemlogSchemaItem,
 )
+from orcia_core.blackboard import (
+    BackgroundAuditConsolidatedReport,
+    BlackboardSnapshotEntity,
+    HydratedStepContext,
+    StepExecutionEntity,
+    StepMemlogEntry,
+)
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.orchestration import JitStepHydrator
 
 router = APIRouter(prefix="/api/v1/orchestration/runs", tags=["durable-orchestration-blackboard"])
 

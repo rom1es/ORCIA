@@ -6,14 +6,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from orcia_api.main import create_app
-from orcia_core.domain.exceptions import (
-    ObserverModeReadOnlyError,
-    ResourceNotFoundError,
-    ValidationDomainError,
-)
 from orcia_core.orchestration import (
     JitStepHydrator,
     build_default_orchestration_setup_service,
+)
+from orcia_core.orchestration.errors import (
+    ObserverModeReadOnlyError,
+    ResourceNotFoundError,
+    ValidationDomainError,
 )
 from orcia_core.permissions.models import UserIdentity
 from orcia_worker.step_runner import execute_step_runner_job

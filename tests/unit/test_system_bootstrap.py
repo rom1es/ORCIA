@@ -25,14 +25,14 @@ from orcia_core.bootstrap import (
     WorkspaceBootstrapInput,
     build_default_system_bootstrap_service,
 )
-from orcia_core.catalog import build_default_federated_catalog_service
-from orcia_core.domain.exceptions import (
+from orcia_core.bootstrap.errors import (
     HumanAnchorRequiredError,
     ModelOrthogonalityViolationError,
     ObserverModeReadOnlyError,
     ScopeAccessDeniedError,
     ValidationDomainError,
 )
+from orcia_core.catalog import build_default_federated_catalog_service
 from orcia_core.permissions import (
     build_default_auth_and_org_service,
     build_default_permission_broker_service,

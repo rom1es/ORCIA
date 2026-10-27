@@ -6,35 +6,15 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any
 
-from orcia_core.orchestration.models import (
+from orcia_kernel.enums import (
+    MemlogMarkerType,
+    SnapshotBranchStatus,
+    StepExecutionStatus,
     WorkflowExecutionRegime,
     WorkflowStepType,
 )
-
-StepExecutionStatus = Literal[
-    "PENDING",
-    "WAITING_FOR_HUMAN_ANCHOR",
-    "EXECUTING_AGENT",
-    "WAITING_FOR_HUMAN_ARBITRATION",
-    "EVALUATING_GATES",
-    "WAITING_FOR_HUMAN_GATE",
-    "COMMITTED",
-    "CHALLENGED_REWIND",
-    "FAILED",
-]
-
-MemlogMarkerType = Literal[
-    "REASONING",
-    "ASSUMPTION",
-    "BUG_CODE_SUSPECTED",
-    "DOC_OBSOLETE_SUSPECTED",
-    "FEEDBACK_RETRY",
-    "SUB_WORKFLOW_OUTPUT",
-]
-
-SnapshotBranchStatus = Literal["ACTIVE", "SUPERSEDED"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,3 +112,17 @@ class BackgroundAuditConsolidatedReport:
     suspected_obsolete_docs: tuple[StepMemlogEntry, ...]
     sse_event_topic: str
     sse_latency_ms: float
+
+
+__all__ = [
+    "BackgroundAuditConsolidatedReport",
+    "BlackboardSnapshotEntity",
+    "HydratedStepContext",
+    "MemlogMarkerType",
+    "SnapshotBranchStatus",
+    "StepExecutionEntity",
+    "StepExecutionStatus",
+    "StepMemlogEntry",
+    "WorkflowExecutionRegime",
+    "WorkflowStepType",
+]

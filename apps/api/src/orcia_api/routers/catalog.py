@@ -4,19 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
+from orcia_api.dependencies import get_catalog_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
-from orcia_core.catalog import (
-    BmadSkillPackInput,
-    BmadSkillStepFile,
-    CatalogItemEntity,
-    FederatedCatalogService,
-    FederatedScheme,
-    WorkflowDefinitionEntity,
-    build_default_federated_catalog_service,
-)
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.permissions import CatalogVisibilityScope, EffectiveResourcePermissions
-from orcia_core.schemas.catalog import (
+from orcia_api.schemas.catalog import (
     BmadSkillPackImportRequest,
     BmadSkillPackImportResponse,
     CasObjectResponse,
@@ -34,16 +24,17 @@ from orcia_core.schemas.catalog import (
     WorkflowDefinitionResponseItem,
     WorkflowStepItem,
 )
-
-_DEFAULT_CATALOG_SERVICE = build_default_federated_catalog_service()
+from orcia_core.catalog import (
+    BmadSkillPackInput,
+    BmadSkillStepFile,
+    CatalogItemEntity,
+    FederatedScheme,
+    WorkflowDefinitionEntity,
+)
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions import CatalogVisibilityScope, EffectiveResourcePermissions
 
 router = APIRouter(prefix="/api/v1", tags=["federated-catalog"])
-
-
-def get_catalog_service(request: Request) -> FederatedCatalogService:
-    """Return the active `FederatedCatalogService` attached to `app.state` or default."""
-    svc: FederatedCatalogService | None = getattr(request.app.state, "catalog_service", None)
-    return svc if svc is not None else _DEFAULT_CATALOG_SERVICE
 
 
 def _trace(request: Request) -> str:

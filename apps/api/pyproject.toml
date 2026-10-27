@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orcia-api"
+version = "0.1.0"
+description = "ORCIA API — FastAPI HTTP/SSE Composition Root & OpenAPI 3.1 Schemas (AD-1, AD-19)"
+requires-python = ">=3.12"
+dependencies = [
+    "orcia-kernel>=0.1.0",
+    "orcia-core>=0.1.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.11.0",
+    "orjson>=3.10.0",
+    "httpx>=0.28.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

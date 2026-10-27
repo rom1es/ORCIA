@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orcia-worker"
+version = "0.1.0"
+description = "ORCIA Worker — Dramatiq Heavy Workers & Transactional Outbox Relay (AD-2, AD-19)"
+requires-python = ">=3.12"
+dependencies = [
+    "orcia-kernel>=0.1.0",
+    "orcia-core>=0.1.0",
+    "dramatiq[redis]>=1.17.0",
+    "redis>=5.2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

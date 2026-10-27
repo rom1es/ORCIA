@@ -4,20 +4,20 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
+from orcia_api.dependencies import get_auth_service
 from orcia_api.routers.auth import (
     PROBLEM_RESPONSES,
-    get_auth_service,
     resolve_request_user,
     serialize_workspace_summary,
 )
-from orcia_core.domain.exceptions import ResourceNotFoundError
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.schemas.auth_and_org import (
+from orcia_api.schemas.auth_and_org import (
     CatalogResourceInspectionResponse,
     CatalogResourceSourceResponse,
     ScopeMutationCheckResponse,
     WorkspacesListResponse,
 )
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions.errors import ResourceNotFoundError
 
 router = APIRouter(prefix="/api/v1", tags=["workspaces-and-catalog"])
 

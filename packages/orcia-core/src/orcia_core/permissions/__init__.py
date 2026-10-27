@@ -4,11 +4,6 @@ from __future__ import annotations
 
 from typing import cast
 
-from orcia_core.bootstrap.seeder import (
-    DEFAULT_ORG_UNIT_SEEDS,
-    DEFAULT_WORKSPACE_DATASOURCE_SEEDS,
-    DEFAULT_WORKSPACE_SEEDS,
-)
 from orcia_core.permissions.broker import (
     BrokerConnectorScheme,
     BrokerStepState,
@@ -57,6 +52,11 @@ from orcia_core.permissions.models import (
     WorkspaceEntity,
     WorkspaceMembershipEntity,
     WorkspaceVisibilityMode,
+)
+from orcia_core.permissions.seeds import (
+    DEFAULT_ORG_UNIT_SEEDS,
+    DEFAULT_WORKSPACE_DATASOURCE_SEEDS,
+    DEFAULT_WORKSPACE_SEEDS,
 )
 from orcia_core.permissions.service import (
     DEFAULT_TOTP_SECRET_KARIM,

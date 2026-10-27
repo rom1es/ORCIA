@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from orcia_core.domain.exceptions import ModelOrthogonalityViolationError
+from orcia_core.gates.errors import ModelOrthogonalityViolationError
 from orcia_core.ports.llm_port import (
     LlmPromptRequest,
     assert_model_orthogonality,

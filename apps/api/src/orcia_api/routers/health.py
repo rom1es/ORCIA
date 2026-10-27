@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
+from orcia_api.schemas.problem_details import ProblemDetails
+from orcia_api.schemas.shell import HealthResponse
 from orcia_core import __version__
 from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.schemas.problem_details import ProblemDetails
-from orcia_core.schemas.shell import HealthResponse
 
 router = APIRouter(prefix="/api/v1", tags=["system"])
 

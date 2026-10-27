@@ -10,8 +10,8 @@ import hashlib
 import math
 import re
 
-from orcia_core.domain.identifiers import new_uuid7_str
 from orcia_core.rag.models import CodeGraphEdgeEntity, KbChunkEntity
+from orcia_kernel.ids import new_uuid7_str
 
 EMBEDDING_DIM: int = 1024
 

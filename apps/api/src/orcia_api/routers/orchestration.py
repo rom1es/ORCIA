@@ -4,19 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, Request
 
+from orcia_api.dependencies import get_orchestration_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.orchestration import (
-    CompiledArtifactTemplate,
-    RecursiveRunLockManifest,
-    SubWorkflowLockEntry,
-    WorkflowAsCodeDefinition,
-    WorkflowOrchestrationSetupService,
-    WorkflowRunEntity,
-    build_default_orchestration_setup_service,
-)
-from orcia_core.schemas.catalog import RunLockSourceTripletItem
-from orcia_core.schemas.orchestration import (
+from orcia_api.schemas.catalog import RunLockSourceTripletItem
+from orcia_api.schemas.orchestration import (
     ArtifactTemplateCompileRequest,
     ArtifactTemplateCompileResponse,
     CompiledArtifactTemplateSchemaItem,
@@ -35,18 +26,16 @@ from orcia_core.schemas.orchestration import (
     WorkflowStepSpecSchemaItem,
     WorkflowValidationFindingSchemaItem,
 )
-
-_DEFAULT_ORCHESTRATION_SERVICE = build_default_orchestration_setup_service()
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.orchestration import (
+    CompiledArtifactTemplate,
+    RecursiveRunLockManifest,
+    SubWorkflowLockEntry,
+    WorkflowAsCodeDefinition,
+    WorkflowRunEntity,
+)
 
 router = APIRouter(prefix="/api/v1/orchestration", tags=["orchestration-setup"])
-
-
-def get_orchestration_service(request: Request) -> WorkflowOrchestrationSetupService:
-    """Return active `WorkflowOrchestrationSetupService` attached to `app.state` or default."""
-    svc: WorkflowOrchestrationSetupService | None = getattr(
-        request.app.state, "orchestration_service", None
-    )
-    return svc if svc is not None else _DEFAULT_ORCHESTRATION_SERVICE
 
 
 def _trace(request: Request) -> str:

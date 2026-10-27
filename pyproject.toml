@@ -9,8 +9,8 @@ description = "ORCIA — Orchestration of Processes, Context, and Intelligent Ag
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
-    "pydantic>=2.9.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.11.0",
     "orjson>=3.10.0",
     "uuid-utils>=0.9.0",
     "structlog>=24.4.0",
@@ -20,7 +20,12 @@ dependencies = [
     "alembic>=1.14.0",
     "dramatiq[redis]>=1.17.0",
     "redis>=5.2.0",
-    "httpx>=0.27.0",
+    "httpx>=0.28.0",
+    "argon2-cffi>=23.1.0",
+    "cryptography>=44.0.0",
+    "pyjwt>=2.10.0",
+    "pyotp>=2.9.0",
+    "pyyaml>=6.0.2",
 ]
 
 [project.optional-dependencies]
@@ -33,20 +38,100 @@ dev = [
     "hypothesis>=6.115.0",
     "testcontainers[postgres,redis,minio]>=4.8.0",
     "schemathesis>=3.38.0",
+    "import-linter>=2.1",
 ]
 
+[tool.uv.workspace]
+members = [
+    "packages/orcia-kernel",
+    "packages/orcia-core",
+    "apps/api",
+    "apps/worker",
+]
+
+[tool.uv.sources]
+orcia-kernel = { workspace = true }
+orcia-core = { workspace = true }
+orcia-api = { workspace = true }
+orcia-worker = { workspace = true }
+
 [tool.setuptools.package-dir]
-"" = "packages/orcia-core/src"
+orcia_kernel = "packages/orcia-kernel/src/orcia_kernel"
+orcia_core = "packages/orcia-core/src/orcia_core"
 orcia_api = "apps/api/src/orcia_api"
 orcia_worker = "apps/worker/src/orcia_worker"
 
 [tool.setuptools.packages.find]
-where = ["packages/orcia-core/src", "apps/api/src", "apps/worker/src"]
+where = [
+    "packages/orcia-kernel/src",
+    "packages/orcia-core/src",
+    "apps/api/src",
+    "apps/worker/src",
+]
+
+[tool.importlinter]
+root_packages = [
+    "orcia_kernel",
+    "orcia_core",
+    "orcia_api",
+    "orcia_worker",
+]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "AD-19 Contract 1: Unidirectional Package Layers (api/worker -> core -> kernel)"
+type = "layers"
+layers = [
+    "orcia_api | orcia_worker",
+    "orcia_core",
+    "orcia_kernel",
+]
+
+[[tool.importlinter.contracts]]
+name = "AD-19 Contract 2: Acyclic Domain Hierarchy in orcia_core (zero circular dependencies)"
+type = "layers"
+containers = ["orcia_core"]
+layers = [
+    "bootstrap | orchestration",
+    "blackboard | ontology | rag | gates | audit_finops",
+    "catalog",
+    "permissions",
+    "domain | ports | config | observability",
+]
+
+[[tool.importlinter.contracts]]
+name = "AD-19 Contract 3: Pure Hexagonal Kernel & Core Domain/Ports (zero framework/SDK imports)"
+type = "forbidden"
+source_modules = [
+    "orcia_kernel",
+    "orcia_core.domain",
+    "orcia_core.ports",
+]
+forbidden_modules = [
+    "fastapi",
+    "sqlalchemy",
+    "dramatiq",
+    "dbos",
+    "redis",
+    "litellm",
+    "docling",
+    "wasmtime",
+    "orcia_api",
+    "orcia_worker",
+]
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["packages/orcia-core/src", "apps/api/src", "apps/worker/src", "tests", "infra", "scripts"]
+src = [
+    "packages/orcia-kernel/src",
+    "packages/orcia-core/src",
+    "apps/api/src",
+    "apps/worker/src",
+    "tests",
+    "infra",
+    "scripts",
+]
 extend-exclude = [".agent", "_bmad", ".venv", "node_modules", ".gitnexus"]
 
 [tool.ruff.lint]
@@ -56,6 +141,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 strict = true
 mypy_path = [
+    "packages/orcia-kernel/src",
     "packages/orcia-core/src",
     "apps/api/src",
     "apps/worker/src",
@@ -77,6 +163,7 @@ ignore_missing_imports = true
 minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = [
+    "packages/orcia-kernel/src",
     "packages/orcia-core/src",
     "apps/api/src",
     "apps/worker/src",

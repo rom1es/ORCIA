@@ -5,7 +5,7 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
-from orcia_core.domain.exceptions import (
+from orcia_core.permissions.errors import (
     ObserverModeReadOnlyError,
     ReadSourceDeniedError,
     ResourceNotFoundError,

@@ -35,7 +35,7 @@ from orcia_core.catalog import (
     compute_bytes_sha256,
     parse_federated_uri,
 )
-from orcia_core.domain.exceptions import (
+from orcia_core.catalog.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
 )
@@ -457,7 +457,7 @@ def test_fastapi_catalog_routes_promotion_cas_merge_and_bmad() -> None:
     assert pub_org.json()["item"]["visibility_scope"] == "PUBLISHED_ORG"
 
     # 4. Resolve effective workflow & run-lock.json + register override ownership guards
-    from orcia_core.domain.exceptions import ScopeAccessDeniedError
+    from orcia_core.catalog.errors import ScopeAccessDeniedError
 
     auth_svc = build_default_auth_and_org_service()
     cat_svc = build_default_federated_catalog_service(evaluator=auth_svc.evaluator)

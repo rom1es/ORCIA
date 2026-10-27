@@ -6,17 +6,8 @@ from typing import Any
 
 from fastapi import APIRouter, Query, Request, Response
 
-from orcia_core.domain.exceptions import InvalidCredentialsError, OrciaDomainError
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.permissions import (
-    REFRESH_TOKEN_TTL_SECONDS,
-    AuthAndOrganizationService,
-    SessionTokenPair,
-    UserIdentity,
-    WorkspaceAccessSummary,
-    build_default_auth_and_org_service,
-)
-from orcia_core.schemas.auth_and_org import (
+from orcia_api.dependencies import get_auth_service
+from orcia_api.schemas.auth_and_org import (
     AuthTokenResponse,
     LocalLoginRequest,
     LogoutResponse,
@@ -28,7 +19,15 @@ from orcia_core.schemas.auth_and_org import (
     WorkspaceDatasourceItem,
     WorkspaceSummaryItem,
 )
-from orcia_core.schemas.problem_details import ProblemDetails
+from orcia_api.schemas.problem_details import ProblemDetails
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions import (
+    REFRESH_TOKEN_TTL_SECONDS,
+    SessionTokenPair,
+    UserIdentity,
+    WorkspaceAccessSummary,
+)
+from orcia_core.permissions.errors import InvalidCredentialsError, OrciaDomainError
 
 REFRESH_COOKIE_NAME: str = "orcia_refresh_token"
 
@@ -39,15 +38,7 @@ PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     422: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
 }
 
-_DEFAULT_AUTH_SERVICE = build_default_auth_and_org_service()
-
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
-
-
-def get_auth_service(request: Request) -> AuthAndOrganizationService:
-    """Return the active `AuthAndOrganizationService` attached to `app.state` or default."""
-    svc: AuthAndOrganizationService | None = getattr(request.app.state, "auth_service", None)
-    return svc if svc is not None else _DEFAULT_AUTH_SERVICE
 
 
 def resolve_request_user(request: Request, persona_key: str | None = None) -> UserIdentity:

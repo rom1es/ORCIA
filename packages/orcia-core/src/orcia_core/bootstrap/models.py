@@ -8,9 +8,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
+from orcia_core.bootstrap.errors import ModelOrthogonalityViolationError
 from orcia_core.bootstrap.seeder import DEFAULT_HUMAN_PROFILE_ARCHETYPES
 from orcia_core.catalog.models import CatalogItemEntity, ScalarValue
-from orcia_core.domain.exceptions import ModelOrthogonalityViolationError
 from orcia_core.permissions.broker_models import PermissionBrokerPolicy
 from orcia_core.permissions.models import (
     DatasourceScheme,

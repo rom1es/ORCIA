@@ -12,6 +12,7 @@ import threading
 import time
 from typing import Protocol, cast
 
+from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.catalog.models import (
     ArchiveFormat,
     CasObjectEntry,
@@ -19,7 +20,6 @@ from orcia_core.catalog.models import (
     FederatedScheme,
     ParsedFederatedUri,
 )
-from orcia_core.domain.exceptions import ResourceNotFoundError, ValidationDomainError
 
 ALLOWED_SCHEMES: frozenset[str] = frozenset({"git", "nexus", "db", "confluence", "jira", "orcia"})
 HEX_SHA_RE = re.compile(r"^[0-9a-f]{6,64}$")

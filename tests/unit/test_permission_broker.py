@@ -19,14 +19,6 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from orcia_api.main import create_app
-from orcia_core.domain.exceptions import (
-    ConfusedDeputyBlockedError,
-    ObserverModeReadOnlyError,
-    PermissionBrokerDeniedError,
-    ResourceNotFoundError,
-    ScopeAccessDeniedError,
-    ValidationDomainError,
-)
 from orcia_core.permissions import (
     CatalogAclEntry,
     PermissionBrokerService,
@@ -35,6 +27,14 @@ from orcia_core.permissions import (
     build_prefilled_jira_request_url,
     extract_connector_scheme,
     parse_permission_kb_markdown,
+)
+from orcia_core.permissions.errors import (
+    ConfusedDeputyBlockedError,
+    ObserverModeReadOnlyError,
+    PermissionBrokerDeniedError,
+    ResourceNotFoundError,
+    ScopeAccessDeniedError,
+    ValidationDomainError,
 )
 
 VALID_KB_MARKDOWN = """---

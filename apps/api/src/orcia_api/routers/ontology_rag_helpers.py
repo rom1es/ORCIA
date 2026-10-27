@@ -4,71 +4,24 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from orcia_api.schemas import ontology_and_rag as s
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.ontology import (
     OntologyConceptEntity,
-    OntologyGovernanceService,
     OntologyPromotionProposal,
     OntologyRelationEntity,
     WhatIfImpactReport,
-    build_empty_ontology_service,
-    build_seeded_ontology_service,
 )
 from orcia_core.rag import (
-    HybridRagService,
     KbDocumentEntity,
     KbStaleAlertEntity,
-    TripartiteGraphAndFreshnessService,
     TripartiteTraceEdgeEntity,
-    build_empty_rag_service,
-    build_seeded_rag_service,
 )
-from orcia_core.schemas import ontology_and_rag as s
 
 
 def get_trace_id(request: Request) -> str:
     """Return active W3C OpenTelemetry trace_id from request state or contextvar."""
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def get_epic2_services(
-    request: Request, *, fixture: bool = False
-) -> tuple[
-    OntologyGovernanceService,
-    HybridRagService,
-    TripartiteGraphAndFreshnessService,
-]:
-    """Return Either the empty runtime Epic 2 bundle or the deterministic test fixture bundle."""
-    if fixture:
-        seeded: (
-            tuple[
-                OntologyGovernanceService,
-                HybridRagService,
-                TripartiteGraphAndFreshnessService,
-            ]
-            | None
-        ) = getattr(request.app.state, "epic2_seeded_bundle", None)
-        if seeded is None:
-            gov = build_seeded_ontology_service()
-            rag, trip = build_seeded_rag_service()
-            seeded = (gov, rag, trip)
-            request.app.state.epic2_seeded_bundle = seeded
-        return seeded
-
-    runtime: (
-        tuple[
-            OntologyGovernanceService,
-            HybridRagService,
-            TripartiteGraphAndFreshnessService,
-        ]
-        | None
-    ) = getattr(request.app.state, "epic2_runtime_bundle", None)
-    if runtime is None:
-        gov = build_empty_ontology_service()
-        rag, trip = build_empty_rag_service()
-        runtime = (gov, rag, trip)
-        request.app.state.epic2_runtime_bundle = runtime
-    return runtime
 
 
 def serialize_concept(c: OntologyConceptEntity) -> s.OntologyConceptSchemaItem:

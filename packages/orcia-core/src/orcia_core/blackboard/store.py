@@ -10,6 +10,7 @@ import json
 from dataclasses import replace
 from typing import Any
 
+from orcia_core.blackboard.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.blackboard.models import (
     BlackboardSnapshotEntity,
     StepExecutionEntity,
@@ -18,8 +19,7 @@ from orcia_core.blackboard.models import (
 )
 from orcia_core.catalog.cas_resolver import FederatedUriResolver, compute_bytes_sha256
 from orcia_core.catalog.models import CasObjectEntry
-from orcia_core.domain.exceptions import ResourceNotFoundError, ValidationDomainError
-from orcia_core.domain.identifiers import new_uuid7_str
+from orcia_kernel.ids import new_uuid7_str
 
 
 class AppendOnlyBlackboardStore:

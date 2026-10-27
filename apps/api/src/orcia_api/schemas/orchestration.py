@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from orcia_api.schemas.catalog import RunLockSourceTripletItem
 from orcia_core.catalog.models import AdaptiveGatePolicy, ScalarValue
 from orcia_core.orchestration.models import (
     TieBreakPolicy,
@@ -16,7 +17,6 @@ from orcia_core.orchestration.models import (
     WorkflowStepType,
 )
 from orcia_core.permissions.models import ExecutionIdentityMode
-from orcia_core.schemas.catalog import RunLockSourceTripletItem
 
 
 class WorkflowValidationFindingSchemaItem(BaseModel):

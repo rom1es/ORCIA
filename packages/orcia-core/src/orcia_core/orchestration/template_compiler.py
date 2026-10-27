@@ -15,8 +15,8 @@ import re
 from typing import Any
 
 from orcia_core.catalog.cas_resolver import compute_bytes_sha256
-from orcia_core.domain.exceptions import ValidationDomainError
 from orcia_core.ontology.models import OntologyConceptEntity, ResolvedOntologySnapshot
+from orcia_core.orchestration.errors import ValidationDomainError
 from orcia_core.orchestration.models import (
     ArtifactTemplateDefinition,
     ArtifactTemplateSectionSpec,

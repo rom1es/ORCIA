@@ -9,6 +9,13 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from orcia_api.schemas.auth_and_org import (
+    PassthroughSecretMetadataResponse,
+    WorkspaceDatasourceItem,
+    WorkspaceSummaryItem,
+)
+from orcia_api.schemas.catalog import CatalogItemResponse
+from orcia_api.schemas.permission_broker import PermissionBrokerPolicyItem
 from orcia_core.bootstrap.models import (
     BootstrapRunStatus,
     BootstrapScopeLevel,
@@ -21,13 +28,6 @@ from orcia_core.permissions.models import (
     PlatformRole,
     WorkspaceVisibilityMode,
 )
-from orcia_core.schemas.auth_and_org import (
-    PassthroughSecretMetadataResponse,
-    WorkspaceDatasourceItem,
-    WorkspaceSummaryItem,
-)
-from orcia_core.schemas.catalog import CatalogItemResponse
-from orcia_core.schemas.permission_broker import PermissionBrokerPolicyItem
 
 
 class LlmModelEndpointItem(BaseModel):

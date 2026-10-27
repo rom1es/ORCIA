@@ -5,12 +5,11 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
-from orcia_core.domain.exceptions import (
+from orcia_core.ontology.errors import (
     ObserverModeReadOnlyError,
     OntologyConflictError,
     ResourceNotFoundError,
 )
-from orcia_core.domain.identifiers import new_uuid7_str
 from orcia_core.ontology.models import (
     ONTOLOGY_LEVEL_PRIORITY,
     OntologyAxiomEntity,
@@ -23,6 +22,7 @@ from orcia_core.ontology.models import (
 )
 from orcia_core.ontology.resolver import OntologyHierarchyResolver
 from orcia_core.permissions.models import UserIdentity
+from orcia_kernel.ids import new_uuid7_str
 
 
 class ImpactSimulatorService:

@@ -17,12 +17,12 @@ from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from Crypto.Cipher import AES
 
-from orcia_core.domain.exceptions import (
+from orcia_core.permissions.errors import (
     InvalidCredentialsError,
     RevokedTokenError,
     ValidationDomainError,
 )
-from orcia_core.domain.identifiers import new_uuid7_str
+from orcia_kernel.ids import new_uuid7_str
 
 ACCESS_TOKEN_TTL_SECONDS: int = 900  # 15 minutes (AD-6)
 REFRESH_TOKEN_TTL_SECONDS: int = 86400 * 7  # 7 days

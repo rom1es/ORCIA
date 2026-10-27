@@ -8,7 +8,6 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from orcia_core.domain.identifiers import new_uuid7_str
 from orcia_core.rag.hybrid_rag_service import RRF_K, HybridRagService
 from orcia_core.rag.models import (
     DocVsCodeAuditFinding,
@@ -17,6 +16,7 @@ from orcia_core.rag.models import (
     TripartiteRelationType,
     TripartiteTraceEdgeEntity,
 )
+from orcia_kernel.ids import new_uuid7_str
 
 JIRA_KEY_RE = re.compile(r"\b([A-Z][A-Z0-9]+-[0-9]+)\b")
 

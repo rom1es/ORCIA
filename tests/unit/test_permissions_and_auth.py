@@ -11,15 +11,6 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from orcia_api.main import create_app
-from orcia_core.domain.exceptions import (
-    InvalidCredentialsError,
-    ObserverModeReadOnlyError,
-    ReadSourceDeniedError,
-    ResourceNotFoundError,
-    RevokedTokenError,
-    ScopeAccessDeniedError,
-    ValidationDomainError,
-)
 from orcia_core.permissions import (
     DEFAULT_TOTP_SECRET_KARIM,
     Argon2idPasswordHasher,
@@ -29,6 +20,15 @@ from orcia_core.permissions import (
     PassthroughVaultCipher,
     TotpManager,
     build_default_auth_and_org_service,
+)
+from orcia_core.permissions.errors import (
+    InvalidCredentialsError,
+    ObserverModeReadOnlyError,
+    ReadSourceDeniedError,
+    ResourceNotFoundError,
+    RevokedTokenError,
+    ScopeAccessDeniedError,
+    ValidationDomainError,
 )
 
 FORBIDDEN_IMPORTS = {"fastapi", "sqlalchemy", "dramatiq", "redis", "litellm"}

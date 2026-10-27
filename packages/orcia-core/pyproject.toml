@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orcia-core"
+version = "0.1.0"
+description = "ORCIA Core — Hexagonal Bounded Contexts & Domain Services (AD-19)"
+requires-python = ">=3.12"
+dependencies = [
+    "orcia-kernel>=0.1.0",
+    "pydantic>=2.11.0",
+    "argon2-cffi>=23.1.0",
+    "cryptography>=44.0.0",
+    "pyjwt>=2.10.0",
+    "pyotp>=2.9.0",
+    "pyyaml>=6.0.2",
+    "structlog>=24.4.0",
+    "uuid-utils>=0.9.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

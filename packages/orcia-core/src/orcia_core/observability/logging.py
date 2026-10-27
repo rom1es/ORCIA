@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import structlog
 
-from orcia_core.domain.identifiers import new_uuid7
+from orcia_kernel.ids import new_uuid7
 
 HEX_32_RE = re.compile(r"^[0-9a-f]{32}$")
 TRACEPARENT_RE = re.compile(r"^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$")

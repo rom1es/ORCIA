@@ -10,18 +10,19 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from orcia_core.domain.exceptions import (
+from orcia_api.errors.registry import (
     OrciaDomainError,
     get_localized_error_text,
+    resolve_domain_error_mapping,
     resolve_locale,
 )
+from orcia_api.schemas.problem_details import ProblemDetails
 from orcia_core.observability.logging import (
     bind_trace_context,
     clear_trace_context,
     get_logger,
     resolve_or_create_trace_id,
 )
-from orcia_core.schemas.problem_details import ProblemDetails
 
 PROBLEM_JSON_MEDIA_TYPE = "application/problem+json"
 logger = get_logger("orcia.api")
@@ -105,11 +106,12 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(OrciaDomainError)
     async def handle_domain_error(request: Request, exc: OrciaDomainError) -> JSONResponse:
+        mapping = resolve_domain_error_mapping(exc)
         return build_problem_response(
             request,
-            status_code=exc.http_status,
-            error_code=exc.error_code,
-            type_uri=exc.type_uri,
+            status_code=mapping.http_status,
+            error_code=mapping.error_code,
+            type_uri=mapping.type_uri,
             detail_override=exc.detail_override,
             instance_override=exc.instance,
             permission_broker_hint=exc.permission_broker_hint,

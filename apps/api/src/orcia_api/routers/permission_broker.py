@@ -4,15 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.routers.auth import PROBLEM_RESPONSES, get_auth_service, resolve_request_user
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.permissions import (
-    PermissionBrokerPolicy,
-    PermissionBrokerService,
-    PermissionBrokerTicket,
-    build_default_permission_broker_service,
-)
-from orcia_core.schemas.permission_broker import (
+from orcia_api.dependencies import get_permission_broker_service
+from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.schemas.permission_broker import (
     PermissionBrokerPolicyItem,
     PermissionBrokerStateResponse,
     PermissionBrokerTicketItem,
@@ -23,22 +17,13 @@ from orcia_core.schemas.permission_broker import (
     PermissionTicketActionRequest,
     PermissionTicketActionResponse,
 )
+from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions import (
+    PermissionBrokerPolicy,
+    PermissionBrokerTicket,
+)
 
 router = APIRouter(prefix="/api/v1/permissions/broker", tags=["permission-broker"])
-
-
-def get_permission_broker_service(request: Request) -> PermissionBrokerService:
-    """Return the active `PermissionBrokerService` attached to `app.state` or initialize one."""
-    svc: PermissionBrokerService | None = getattr(
-        request.app.state, "permission_broker_service", None
-    )
-    if svc is None:
-        auth_svc = get_auth_service(request)
-        svc = build_default_permission_broker_service(
-            evaluator=auth_svc.evaluator, vault_cipher=auth_svc.vault_cipher
-        )
-        request.app.state.permission_broker_service = svc
-    return svc
 
 
 def _trace(request: Request) -> str:

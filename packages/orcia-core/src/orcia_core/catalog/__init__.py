@@ -5,11 +5,6 @@ from __future__ import annotations
 import json
 from typing import cast
 
-from orcia_core.bootstrap.seeder import (
-    DEFAULT_CATALOG_ITEM_SEEDS,
-    DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS,
-    DEFAULT_WORKFLOW_DEFINITION_SEEDS,
-)
 from orcia_core.catalog.bmad_adapter import BmadSkillPackAdapter
 from orcia_core.catalog.cas_resolver import (
     CasObjectStoreProtocol,
@@ -46,6 +41,11 @@ from orcia_core.catalog.override_merger import (
     EffectiveWorkflowMergeResult,
     FourLayerOverrideMerger,
     compute_workflow_sha256,
+)
+from orcia_core.catalog.seeds import (
+    DEFAULT_CATALOG_ITEM_SEEDS,
+    DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS,
+    DEFAULT_WORKFLOW_DEFINITION_SEEDS,
 )
 from orcia_core.catalog.service import FederatedCatalogService
 from orcia_core.permissions.evaluator import MatrixPermissionEvaluator

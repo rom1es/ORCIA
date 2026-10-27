@@ -8,14 +8,6 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from orcia_api.main import create_app
-from orcia_core.domain.exceptions import (
-    CriticalWorkflowRequiresHumanGateError,
-    IntentionBeforeCodeRequiredError,
-    ObserverModeReadOnlyError,
-    SubWorkflowCycleDetectedError,
-    SubWorkflowMaxDepthExceededError,
-    ValidationDomainError,
-)
 from orcia_core.orchestration import (
     DEFAULT_ROOT_WORKFLOW_YAML,
     ArtifactTemplateDefinition,
@@ -23,6 +15,14 @@ from orcia_core.orchestration import (
     MultiAudienceTemplateCompiler,
     WorkflowAsCodeValidator,
     build_default_orchestration_setup_service,
+)
+from orcia_core.orchestration.errors import (
+    CriticalWorkflowRequiresHumanGateError,
+    IntentionBeforeCodeRequiredError,
+    ObserverModeReadOnlyError,
+    SubWorkflowCycleDetectedError,
+    SubWorkflowMaxDepthExceededError,
+    ValidationDomainError,
 )
 from orcia_core.permissions.models import UserIdentity
 

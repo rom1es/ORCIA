@@ -316,8 +316,8 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
 def test_redis7_atomic_presence_lock_and_minio_cas_storage() -> None:
     """Verify Redis 7.4 atomic lock/revocation and real MinIO container `cas/<sha256>` storage."""
     from orcia_core.catalog import FederatedUriResolver, S3CompatibleCasObjectStore
-    from orcia_core.domain.exceptions import RevokedTokenError
     from orcia_core.permissions import KeyValueRevocationStore, build_default_auth_and_org_service
+    from orcia_core.permissions.errors import RevokedTokenError
 
     redis_sock_dir = _prepare_sock_dir("rd")
     redis_sock_path = redis_sock_dir / "redis.sock"

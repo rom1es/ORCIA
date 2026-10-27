@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 import re
 
-from orcia_core.domain.exceptions import ResourceNotFoundError
+from orcia_core.rag.errors import ResourceNotFoundError
 from orcia_core.rag.indexer_and_rrf import (
     compute_deterministic_halfvec_1024,
     cosine_similarity,

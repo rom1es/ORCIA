@@ -6,36 +6,20 @@ from dataclasses import asdict
 
 from fastapi import APIRouter, Query, Request
 
-from orcia_api.routers.auth import PROBLEM_RESPONSES, get_auth_service, resolve_request_user
-from orcia_api.routers.catalog import get_catalog_service
-from orcia_api.routers.permission_broker import get_permission_broker_service
-from orcia_core import bootstrap as bm
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.schemas import bootstrap as bs
-from orcia_core.schemas.auth_and_org import (
+from orcia_api.dependencies import get_bootstrap_service
+from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.schemas import bootstrap as bs
+from orcia_api.schemas.auth_and_org import (
     PassthroughSecretMetadataResponse,
     WorkspaceDatasourceItem,
     WorkspaceSummaryItem,
 )
-from orcia_core.schemas.catalog import CatalogItemResponse
-from orcia_core.schemas.permission_broker import PermissionBrokerPolicyItem
+from orcia_api.schemas.catalog import CatalogItemResponse
+from orcia_api.schemas.permission_broker import PermissionBrokerPolicyItem
+from orcia_core import bootstrap as bm
+from orcia_core.observability.logging import get_current_trace_id
 
 router = APIRouter(prefix="/api/v1/bootstrap", tags=["bootstrap"])
-
-
-def get_bootstrap_service(request: Request) -> bm.SystemBootstrapWorkflowService:
-    """Return the active `SystemBootstrapWorkflowService` attached to `app.state` or initialize."""
-    svc: bm.SystemBootstrapWorkflowService | None = getattr(
-        request.app.state, "bootstrap_service", None
-    )
-    if svc is None:
-        svc = bm.build_default_system_bootstrap_service(
-            auth_service=get_auth_service(request),
-            catalog_service=get_catalog_service(request),
-            permission_broker_service=get_permission_broker_service(request),
-        )
-        request.app.state.bootstrap_service = svc
-    return svc
 
 
 def _trace(request: Request) -> str:

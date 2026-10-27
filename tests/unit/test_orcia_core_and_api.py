@@ -10,7 +10,18 @@ from fastapi.testclient import TestClient
 from hypothesis import given
 from hypothesis import strategies as st
 
+from orcia_api.errors.registry import (
+    HumanAnchorRequiredError,
+    ModelOrthogonalityViolationError,
+    ObserverModeReadOnlyError,
+    ReadSourceDeniedError,
+    ResourceNotFoundError,
+    ValidationDomainError,
+    get_localized_error_text,
+    resolve_locale,
+)
 from orcia_api.main import create_app
+from orcia_api.schemas.shell import build_default_shell_navigation
 from orcia_core import (
     BOUNDED_CONTEXTS,
     audit_finops,
@@ -29,16 +40,6 @@ from orcia_core.bootstrap.seeder import (
     UpsertSpec,
     build_postgres_upsert_sql,
 )
-from orcia_core.domain.exceptions import (
-    HumanAnchorRequiredError,
-    ModelOrthogonalityViolationError,
-    ObserverModeReadOnlyError,
-    ReadSourceDeniedError,
-    ResourceNotFoundError,
-    ValidationDomainError,
-    get_localized_error_text,
-    resolve_locale,
-)
 from orcia_core.domain.identifiers import (
     extract_uuid7_timestamp_ms,
     is_valid_uuid7,
@@ -55,7 +56,6 @@ from orcia_core.observability.logging import (
     get_logger,
     resolve_or_create_trace_id,
 )
-from orcia_core.schemas.shell import build_default_shell_navigation
 from orcia_worker.broker import (
     ProcessedPingRegistry,
     configure_broker,

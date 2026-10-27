@@ -8,13 +8,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from orcia_api.main import create_app
-from orcia_core.domain.exceptions import DdlOnlyTransactionalDataError
 from orcia_core.rag import (
     DifferentiatedIncrementalIndexer,
     build_empty_rag_service,
     build_seeded_rag_service,
     extract_jira_issue_keys,
 )
+from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_worker.docling_indexer import docling_indexer_actor, execute_docling_index_job
 
 

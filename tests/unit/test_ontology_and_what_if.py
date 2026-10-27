@@ -10,7 +10,6 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from orcia_api.main import create_app
-from orcia_core.domain.exceptions import ObserverModeReadOnlyError, OntologyConflictError
 from orcia_core.ontology import (
     OntologyConceptEntity,
     OntologyHierarchyResolver,
@@ -19,6 +18,7 @@ from orcia_core.ontology import (
     build_ontology_resolution_cte_sql,
     build_seeded_ontology_service,
 )
+from orcia_core.ontology.errors import ObserverModeReadOnlyError, OntologyConflictError
 from orcia_core.permissions.models import UserIdentity
 
 

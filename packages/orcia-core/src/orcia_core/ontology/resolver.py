@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from orcia_core.domain.exceptions import OntologyConflictError
+from orcia_core.ontology.errors import OntologyConflictError
 from orcia_core.ontology.models import (
     ONTOLOGY_LEVEL_PRIORITY,
     BlackboardSchemaValidationResult,

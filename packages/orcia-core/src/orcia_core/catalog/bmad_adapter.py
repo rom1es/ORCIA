@@ -19,6 +19,7 @@ from orcia_core.catalog.cas_resolver import (
     compute_bytes_sha256,
     parse_federated_uri,
 )
+from orcia_core.catalog.errors import ValidationDomainError
 from orcia_core.catalog.models import (
     AdaptiveGatePolicy,
     BmadSkillPackInput,
@@ -30,8 +31,7 @@ from orcia_core.catalog.models import (
     WorkflowStepDefinition,
 )
 from orcia_core.catalog.override_merger import compute_workflow_sha256
-from orcia_core.domain.exceptions import ValidationDomainError
-from orcia_core.domain.identifiers import new_uuid7_str
+from orcia_kernel.ids import new_uuid7_str
 
 HEADING_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n([\s\S]*))?$")
