@@ -7,6 +7,10 @@ inputDocuments:
   - 'docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md'
   - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md'
   - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md'
+  - 'docs/planning-artifacts/research/stack-review-2026-10-27.md'
+  - 'docs/planning-artifacts/research/modularity-analysis-2026-10-27.md'
+  - 'docs/planning-artifacts/research/technical-frontend-spa-nextjs-vs-vite-tanstack-rou-2026-10-27/report.md'
+  - 'docs/planning-artifacts/sprint-change-proposal-2026-10-27.md'
 ---
 
 # ORCIA - Epic Breakdown
@@ -47,6 +51,8 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-26 (Comptabilité FinOps Complète Setup + Run vs TTM & Coupe-Circuits Budgétaires)** : Comptabilisation en temps réel des tokens/coûts d'inférence LLM et du temps humain (Setup + Run) par *Step*, *Run*, *Workflow* et *Équipe/BU* comparés au gain de Time-to-Market, avec coupe-circuits automatiques suspendant l'exécution en `PAUSED_BUDGET_EXCEEDED` (`max_cost_usd`) ou `PAUSED_MAX_RETRIES` (`max_agent_retries`, défaut `3`).
 - **FR-27 (Indicateurs d'Impact Cognitif, Anti-Rubber-Stamping & Indice de Réversibilité Humaine)** : Calcul et exposition dans le tableau de bord de gouvernance des 3 contre-métriques : (1) *Ratio Cadrage Actif (`Human-Led Anchors` + `Arbitrages`) vs Simple Relecture* (cible $\ge 40\%$), (2) *Taux de Rubber-Stamping aux Gates Humaines* (cible $< 5\%$), et (3) *Indice de Pattern Drift / Réversibilité Humaine* (cible $0\%$ de dérive non approuvée), avec recommandations automatiques d'ajustement des politiques de *Gates*.
 - **FR-28 (Workflows Système d'Initialisation, Onboarding Autonome d'Équipe & Multi-Workspaces `TEAM_LEAD` & Auto-Amorçage Gouverné — `orcia://system/bootstrap/*`)** : Embarquement natif de 6 workflows système guidés par l'*Agent Assistant* et verrouillés par des *Gates Déterministes* : `init-organization` (SSO OIDC / Auth locale + RBAC, test d'au moins 2 familles de modèles orthogonales, amorçage Ontologie N1), `init-workspace` (onboarding autonome de l'équipe/sous-équipes et création d'un ou plusieurs *Workspaces* de solutions logicielles par le **Chef d'Équipe `TEAM_LEAD`**, invitation des membres avec pré-affectation du *Profil Humain* et des rôles d'exécution, Inbox, surcharges `TEAM` et `WORKSPACE`, Ontologie `3_TEAM` et `3_WORKSPACE`), `init-datasource` (enrôlement par un Admin ou par le **Chef d'Équipe** dans un *Workspace* ou en portée `SHARED_TEAM` de sources `db://`, `git://`, `nexus://`, `confluence://`, `jira://` ou KB avec signature obligatoire de la fiche *Permission Broker* et de `freshness_ttl_days`), `init-existing-project` (scan brownfield vers `ARCHITECTURE-SPINE.md`), `init-skill` (certification en Sandbox `< 5s`), et `init-user` (confirmation du *Profil Humain* pré-assigné et liaison des comptes Jira/Confluence/Git en mode *Passthrough* au 1er login).
+- **FR-29 (Exécution Autonome sous Contrat, Déclencheurs Événementiels Idempotents [Webhooks, Puits de Logs, Cron], Vérification Post-Action en Boucle Fermée & Audit Post-Hoc — `AD-18`, `UJ-11`, `UJ-12`)** : Classification des *Workflows* par criticité (`LOW_NON_CRITICAL`, `STANDARD`, `HIGH_CRITICAL`, avec interdiction d'autonomie de bout en bout sur `HIGH_CRITICAL`), signature préalable obligatoire d'un **Contrat d'Autonomie** dans `human_anchor_signatures`, déclenchement idempotent (`UNIQUE (trigger_id, trigger_idempotency_key)` + verrou Redis + *Self-Trigger Guard*) selon 4 modes (`MANUAL_AUTONOMOUS`, `WEBHOOK`, `LOG_SINK_ALERT`, `CRON`), boucle fermée d'auto-remédiation (`UJ-12` : diagnostic `root_cause_confidence >= 0.90`, intention de remédiation, reproduction/correction TDD en Sandbox, test staging prod-like, déploiement et étape obligatoire `POST_ACTION_VERIFICATION` déclenchant un **Rollback automatique** et l'ouverture du coupe-circuit `CIRCUIT_OPEN` si l'erreur persiste), et tirage aléatoire d'audit humain *a posteriori* (`POST_HOC_AUDIT_SAMPLE`).
+- **FR-30 (Imbrication Fractale de Workflows — `Sub-Workflows` & `Workflow-as-Agent`, Profondeur $\le 3$ — `AD-2`, `AD-5`, `AD-12`, `AD-18`)** : Capacité d'invoquer un *Workflow* du Catalogue comme une étape `step_type: SUB_WORKFLOW` ou comme un agent composite (`parent_run_id`, `parent_step_execution_id`, `root_run_id`, `nesting_depth <= 3` sans cycle), avec épinglage récursif dans `run-lock.json` (`sub_workflow_locks`), isolation lexicale du *Blackboard* enfant (`input_mapping` / `output_mapping`), budget FinOps partagé sur `root_run_id` et *Replay* ciblé intra-sous-workflow.
 
 ### NonFunctional Requirements
 
@@ -60,21 +66,22 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **NFR-REL-1 (Persistance Durable des Workflows Longs — `AD-2`)** : Persistance transactionnelle complète de chaque transition d'étape, brouillon (`draft_artifact_jsonb`), memlog (`step_memlog_jsonb`) et snapshot dans PostgreSQL 18, permettant à un *Workflow Run* de rester en pause pendant plusieurs semaines et de survivre à un redémarrage complet des services sans perte d'état.
 - **NFR-OBS-1 (Observabilité Structurée & Traçabilité OpenTelemetry)** : Journalisation structurée JSON (`structlog 25.1` côté Python, `pino 9.6` côté Node.js) propageant un `trace_id` W3C OpenTelemetry commun, `workspace_id`, `run_id` et `step_id` à travers FastAPI, SSE, Dramatiq, LiteLLM et la Sandbox, et enveloppe d'erreur normalisée **RFC 9457 Problem Details**.
 - **NFR-A11Y-1 (Accessibilité WCAG 2.2 AA & Signalétique Multi-Modale)** : Conformité WCAG 2.2 AA sur l'ensemble des surfaces ; aucun état critique (*Ancrage Humain*, *Arbitrage*, *Gate*, `[STALE_WARNING]`) ne repose sur la couleur seule (combinaison obligatoire Couleur sémantique + Icône + Libellé explicite + annonces `aria-live="polite"`).
-- **NFR-TEST-1 (Stratégie de Tests à 5 Couches & Couverture Unitaire $\ge 90\%$ — `AD-17`)** : Toute Story doit livrer ses tests selon les 5 couches obligatoires : (1) Tests unitaires de la plateforme (`pytest 9.1` + `hypothesis 6.170` et `Vitest 5.0` + `Testing Library`, exécution `< 5s` sans réseau, couverture minimale $\ge 90\%$ sur `packages/orcia-core`), (2) Tests d'intégration sur vrais conteneurs éphémères via `testcontainers-python 4.15` (PostgreSQL 18 + `pgvector`, Redis 7.4, MinIO — zéro mock SQLite/Redis), (3) Tests de contrat OpenAPI 3.1 (`openapi-typescript` 0-diff + fuzzing `Schemathesis 4.32`), (4) Tests d'orchestration IA par cassettes déterministes `DeterministicCassetteLLM` en CI (`0 $`) et `orcia-evals` en pré-release, et (5) Tests E2E multi-acteurs et multi-device (`@playwright/test 1.64` sur Desktop `1440x900` et Mobile Companion `390x844`).
+- **NFR-TEST-1 (Stratégie de Tests à 5 Couches & Couverture Unitaire $\ge 90\%$ — `AD-17`)** : Toute Story doit livrer ses tests selon les 5 couches obligatoires : (1) Tests unitaires de la plateforme (`pytest 9.0` + `hypothesis 6.135` et `Vitest 3.2` + `Testing Library` + vérification `import-linter 2.7` / `lint-imports` à `0` violation, exécution `< 5s` sans réseau, couverture minimale $\ge 90\%$ sur `packages/orcia-kernel` et `packages/orcia-core`), (2) Tests d'intégration sur vrais conteneurs éphémères via `testcontainers-python 4.10` (PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS 4.17 — zéro mock SQLite/Redis), (3) Tests de contrat OpenAPI 3.1 (`openapi-typescript` 0-diff depuis `apps/api/src/orcia_api/schemas/` + fuzzing `Schemathesis 3.39`), (4) Tests d'orchestration IA par cassettes déterministes `DeterministicCassetteLLM` en CI (`0 $`) et `orcia-evals` en pré-release, et (5) Tests E2E multi-acteurs et multi-device (`@playwright/test 1.52` sur Desktop `1440x900` et Mobile Companion `390x844`).
 
 ### Additional Requirements
 
-- **AR-1 (Starter / Greenfield Monorepo Hybride TypeScript + Python — `AD-1`)** : Initialisation d'un monorepo hybride orchestré par **`pnpm 10.6.0` + `Turborepo 2.4.4`** (côté TypeScript/Node.js `24.0.0`) et **`uv 0.13.5` workspace** (côté Python `3.12.9`), comprenant `apps/web` (Next.js `16.4.0`, React `19.1.0`, Tailwind CSS `4.3.0`, `shadcn/ui`), `apps/api` (FastAPI `0.143.0`), `apps/worker` (Dramatiq `2.2.1`), `packages/orcia-core` (noyau hexagonal à 8 domaines bornés : `orchestration`, `blackboard`, `catalog`, `ontology`, `rag`, `gates`, `permissions`, `audit_finops`) et `packages/api-client` (SDK généré automatiquement depuis Pydantic v2 / OpenAPI 3.1 via `openapi-typescript 7.6.1` + `openapi-fetch 0.13.4`). **Note importante : ce socle Greenfield constitue le point de départ de l'Epic 1 Story 1.**
-- **AR-2 (Infrastructure Conteneurisée Unifiée & Schéma Relationnel-Graphe/Vecteur — `Structural Seed`)** : Configuration Docker Compose (`infra/docker/`) provisionnant **PostgreSQL `18.0` + `pgvector 0.8.7`**, **Redis `7.4.2`** (files Dramatiq, verrous atomiques `SET NX EX 900` et Pub/Sub SSE) et **MinIO** (stockage CAS immuable `cas/<sha256>`), avec migrations **SQLAlchemy `2.1.3` (Asyncio) + Alembic `1.15.1`** implémentant les 16 tables du Core ERD à clés primaires **UUIDv7** (`uuid-utils 0.10.0`).
+- **AR-1 (Starter / Greenfield Monorepo Hybride TypeScript + Python — `AD-1`, `AD-19`)** : Initialisation et structuration d'un monorepo hybride orchestré par **`pnpm 10.6.0` + `Turborepo 2.4.4`** (côté TypeScript/Node.js `24.0.0`) et **`uv 0.13.5` workspace à 4 packages** (côté Python `3.12.9`, `Q1: 1A`), comprenant `apps/web` (SPA pure **`Vite 6.4.1` + `TanStack Router 1.166.2`**, React `19.1.0`, Tailwind CSS `4.3.0`, `TanStack Query 5.90.0`, `@xyflow/react 12.12.0`, `OQ-02`), `apps/api` (FastAPI `0.136.0` portant ses propres schémas `orcia_api/schemas/`), `apps/worker` (moteur durable `DBOS Transact 2.14.0` + `Dramatiq 2.1.0`), `packages/orcia-kernel` (noyau partagé minimal : `ids.py`, `enums.py`, `errors.py`, `events.py`, `ports.py`), `packages/orcia-core` (noyau hexagonal modulaire à domaines bornés indépendants), `packages/ui` (`@orcia/ui` isolé) et `packages/api-client` (SDK généré automatiquement depuis Pydantic v2 / OpenAPI 3.1 via `openapi-typescript 7.13.0` + `openapi-fetch 0.17.0`).
+- **AR-2 (Infrastructure Conteneurisée Unifiée & Schéma Relationnel-Graphe/Vecteur — `Structural Seed`)** : Configuration Docker Compose (`infra/docker/`) provisionnant **PostgreSQL `18.0` + `pgvector 0.8.7`**, **Redis `7.4.2`** (files Dramatiq, verrous atomiques `SET NX EX 900` et Pub/Sub SSE) et **SeaweedFS `4.17` (`Apache-2.0`, `OQ-03`)** (stockage CAS immuable `cas/<sha256>` derrière `ObjectStoragePort`), avec migrations **SQLAlchemy `2.1.0` (Asyncio) + Alembic `1.15.1`** implémentant les 18 tables du Core ERD (dont `domain_events_outbox`, schéma PostgreSQL `public` unique avec préfixes de domaine, `Q4: 4A`) à clés primaires **UUIDv7** (`uuid-utils 0.10.0`).
 - **AR-3 (Séparation Stricte Brouillon / Snapshot Immuable & Step Memlog — `AD-2`, `AD-13`)** : Stockage transitoire des artefacts en cours d'exécution/évaluation dans `step_executions.draft_artifact_jsonb` (et des raisonnements/hypothèses intermédiaires ou marqueurs `[ASSUMPTION]` dans `step_executions.step_memlog_jsonb`), et écriture dans `blackboard_snapshots` uniquement au statut `COMMITTED` avec gestion des branches `ACTIVE` vs `SUPERSEDED`.
 - **AR-4 (Architecture de l'Agent Assistant en Workflow de Nœuds type n8n & `AssistantHarness` à 5 Couches — `AD-15`)** : Implémentation de l'*Agent Assistant* comme un DAG système de 5 nœuds orientés (`orcia://system/workflows/assistant-agent` : *1. Routeur d'Intention $\rightarrow$ 2. Query Planner & Expansion Ontologique $\rightarrow$ 3. Fan-Out Parallèle [RAG, Catalogue, Blackboard, Permission Broker] $\rightarrow$ 4. Tri Critique & Vérification d'Axiomes $\rightarrow$ 5. Synthétiseur Adaptatif au Profil Humain*), visualisable/éditable via **`@xyflow/react 12.12.0`** ou YAML, et exécuté dans le `AssistantHarness` assemblant 5 couches de prompt dont la Couche 1 (Constitution Immuable) interdit toute écriture sur une *Ancre Humaine* ou validation de *Gate* à la place de l'humain.
 - **AR-5 (Découplage Arbre d'Équipes / Workspaces Solutions, Surcharge Déclarative à 4 Niveaux & Adaptateur Natif de Packs BMAD — `AD-14`)** : Implémentation dans `packages/orcia-core/catalog` du moteur de fusion déterministe à 4 niveaux (`1. Base URI Catalogue -> 2. Standards d'Équipe TEAM hiérarchique -> 3. Solution WORKSPACE -> 4. Préférences Profil Utilisateur USER`, table `workspace_customization_overrides`) et du `BmadSkillPackAdapter` permettant d'importer et d'exécuter nativement les skills BMAD (`SKILL.md`, `customize.toml`, `steps/*.md`).
-- **AR-6 (Pipeline d'Indexation Différenciée Docling + Tree-Sitter & Graphe Tripartite — `AD-8`)** : Intégration de **`Docling 2.142.1`** pour le parsing hiérarchique *Parent-Child* des documents et pages Confluence (`confluence://`), du connecteur **Jira REST API v3 (`jira://`)** (indexation hybride des tickets structurants + JQL temps réel + actions stagées + Webhooks), et de **`tree-sitter 0.24.0`** pour le découpage AST et l'extraction du *Code Property Graph* sur `git://`, alimentant le *Graphe Tripartite `Confluence ↔ Jira ↔ Git`* en vecteurs `halfvec(1024)`.
+- **AR-6 (Pipeline d'Indexation Différenciée Docling + Tree-Sitter, BM25 `tsvector` + RRF & Graphe Tripartite Borné — `AD-8`, `P7`)** : Intégration de **`Docling 2.91.0`** (isolé dans le rôle `worker-indexing` via l'extra `orcia-worker[indexing]`) pour le parsing hiérarchique *Parent-Child* des documents et pages Confluence (`confluence://`), du connecteur **Jira REST API v3 (`jira://`)**, et de **`tree-sitter 0.24.0`** pour le découpage AST et l'extraction du *Code Property Graph* sur `git://`, alimentant le *Graphe Tripartite `Confluence ↔ Jira ↔ Git`* (traversée CTE bornée à `depth <= 2`) et la recherche hybride `pgvector halfvec(1024)` HNSW + PostgreSQL 18 `tsvector` GIN (`ts_rank_cd` pondéré `A/B/C/D`) fusionnée par RRF (`k=60`).
 - **AR-7 (Serveur MCP Sortant/Entrant Gouverné `/api/v1/mcp` — `AD-6`)** : Exposition dans `apps/api` du endpoint MCP `/api/v1/mcp` permettant aux IDE externes (VS Code, Cursor, Claude Code, Antigravity) d'interroger l'*Ontologie*, la *KB*, le *Catalogue* et le *Blackboard* en mode *Passthrough* sous contrôle du `PermissionBrokerService` et du garde-fou `AD-3`.
+- **AR-8 (Architecture en Monolithe Modulaire, Bus d'Événements Outbox & Plugins — `AD-19`, `M1..M11`, `Q1..Q5`)** : Application stricte du graphe de dépendances unidirectionnel vérifié par `import-linter 2.7` (`orcia_kernel` $\leftarrow$ domaines indépendants de `orcia_core` $\leftarrow$ `orcia_api` / `orcia_worker`), encapsulation de `_internal/` par domaine (`Q4: 4A`), erreurs métier dans `<domaine>/errors.py` héritant de `orcia_kernel.errors.OrciaDomainError`, schémas HTTP dans `apps/api/src/orcia_api/schemas/`, découplage des effets secondaires inter-domaines non bloquants via la table Outbox transactionnelle `domain_events_outbox` (`Q2: 2A`), modèle d'extension hybride (`entry_points` Python en processus + MCP/sous-processus hors processus pour `sandbox-runner`, `Q3: 3A`), 5 rôles de déploiement (`api`, `worker-orchestration`, `worker-indexing`, `trigger-dispatcher`, `sandbox-runner`), et organisation frontend par fonctionnalité `apps/web/src/features/<domaine>/` (`M11`).
 
 ### UX Design Requirements
 
-- **UX-DR1 (Système de Design Tokens Direction C & Double Polarité — `DESIGN.md`)** : Implémenter dans Tailwind CSS v4 et CSS Variables la palette sémantique stricte de la Direction C : Sidebar Sombre permanente (`#0F172A`, texte `#F8FAFC`, muet `#94A3B8`, bordure `#1E293B`), Espace Central Haut-Contraste Clair (`#F8FAFC` / `#FFFFFF`, commutable en Dark Slate `#0B0F17`), Dock IA (`#F1F5F9`), Primary Cobalt (`#2563EB` / `#6366F1`), Human-Led Violet (`#6D28D9` / fond `#F5F3FF` exclusivement réservé aux *Ancrages Humains*), Arbitration Amber (`#D97706` / fond `#FFFBEB`), Gate Pass Emerald (`#059669` / fond `#ECFDF5`), Ontology Cyan (`#0284C7` / fond `#F0F9FF`), et Stale/Blocker Crimson (`#DC2626` / fond `#FEF2F2`), ainsi que le trio typographique `Inter`/`Geist Sans` (`13.5px`), `Instrument Serif` (`22px` pour les titres d'artefacts contractuels) et `JetBrains Mono` (`12px` pour les URI, hashes `SHA-256` et logs).
+- **UX-DR1 (Système de Design Tokens Direction C & Double Polarité — `DESIGN.md`)** : Implémenter dans Tailwind CSS v4 et CSS Variables la palette sémantique stricte de la Direction C : Sidebar Sombre permanente (`#0F172A`, texte `#F8FAFC`, muet `#94A3B8`, bordure `#1E293B`), Espace Central Haut-Contraste Clair (`#F8FAFC` / `#FFFFFF`, commutable en Dark Slate `#0B0F17`), Dock IA (`#F1F5F9`), Primary Cobalt (`#2563EB` / `#6366F1`), Human-Led Violet (`#6D28D9` / fond `#F5F3FF` exclusivement réservé aux *Ancrages Humains*), Arbitration Amber (`#D97706` / fond `#FFFBEB`), Gate Pass Emerald (`#059669` / fond `#ECFDF5`), Ontology Cyan (`#0284C7` / fond `#F0F9FF`), et Stale/Blocker Crimson (`#DC2626` / fond `#FEF2F2`), ainsi que le duo typographique strict `Inter`/`Geist Sans` (`13.5px` corps, `22px` titres) et `JetBrains Mono` (`12px` pour les URI, hashes `SHA-256` et logs).
 - **UX-DR2 (Architecture Spatiale à 3 Colonnes Adaptatives, Sélecteur de Périmètre `⌘W` & Menu Global à 7 Modules — `DESIGN.md`, `EXPERIENCE.md §2`)** : Implémenter la grille Desktop à 3 colonnes : (1) *Global Sidebar Navigation* (`235px` dépliée / `68px` repliée en icônes via le bouton `«` ou raccourci `[`) intégrant en en-tête le **Sélecteur de Périmètre Hiérarchique (`⌘W` : `🌐 Plateforme Globale → 🏢 BU / Tribu → 👥 Équipe → 🗂️ Workspace Solution`)** et affichant les 7 modules filtrés par RBAC (*1. 💬 Cockpit & Chat*, *2. 🔔 Boîte & Mes Runs*, *3. 📦 Catalogue Fédéré*, *4. 🧬 Ontologie & KB*, *5. 🛡️ Gates & Habilitations*, *6. 📊 FinOps & Audit*, *7. ⚙️ Administration & Pilotage des Workspaces `/workspaces`*) avec pastilles temps réel (compteur ambre d'actions *Contributeur* et badge rouge `!` pour `[STALE_WARNING]`) et badge de *Profil Humain* en pied de barre ; (2) *Espace Central / Canvas* (`1fr`, min `640px`, en Split-View Chat + Canvas dans le module 1 et plein écran dans les modules 2 à 7) ; et (3) *Dock Persistant Agent Assistant & Permission Broker* (`360px` à droite dans les modules 2 à 7, repliable via `]`).
 - **UX-DR3 (Composant `Human-Led Anchor Card` & Interdiction d'Auto-Complétion IA — `DESIGN.md`, `EXPERIENCE.md §4 & §6`)** : Implémenter le composant `human-led-anchor-card` (bordure gauche violette `4px solid #6D28D9`, fond `#F5F3FF`, en-tête `✍️ ANCRAGE HUMAIN OBLIGATOIRE (human_authored_required: true)` et signature de l'auteur humain) qui verrouille le bouton *Lancer la génération de l'étape* tant qu'un texte humain significatif ($\ge 30$ caractères) n'est pas saisi et signé, interdit strictement tout bouton *"Générer avec l'IA"* à l'intérieur de la carte, et déclenche une relance socratique dans le chat si l'utilisateur demande à l'agent de le rédiger à sa place.
 - **UX-DR4 (Composant `Cognitive Review Briefing` 2x2 — `DESIGN.md`, `EXPERIENCE.md §4`)** : Implémenter en tête de tout artefact volumineux ($> 1\,500$ mots ou $> 3$ sections) ou soumis à une *Gate Humaine* la grille $2 \times 2$ `review-briefing-grid` présentant immuablement les 4 blocs (*1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, *4. Hypothèses Retenues*) où le bloc 4 conserve une bordure ambre (`#D97706`) tant que le valideur n'a pas inspecté ou pointé les hypothèses.
@@ -90,6 +97,7 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **UX-DR14 (Explorateur d'Ontologie à 4 Colonnes, Simulation What-If & Gestion KB — `EXPERIENCE.md §2`)** : Implémenter dans le module **🧬 4. Ontologie & KB** un explorateur visuel à 4 colonnes (*1. Entreprise $\rightarrow$ 2. BU $\rightarrow$ 3. Équipe & Workspace $\rightarrow$ 4. Run*) avec tiroir de promotion gouvernée (`TermPromotionDrawer`), aperçu de simulation d'impact (*What-If*), gestion des sources KB (`confluence://`, `jira://`, `git://`, `db://`) et résolution des alertes `[STALE_WARNING]`.
 - **UX-DR15 (Éditeur/Visualiseur de Graphe de Workflow `@xyflow/react` & Prévisualisation Conversationnelle — `AD-15`, `FR-11`, `UJ-10`)** : Intégrer `@xyflow/react` dans le *Canvas* et l'Administration pour inspecter visuellement le DAG des *Workflows* (dont le workflow à 5 nœuds de l'*Agent Assistant*) et prévisualiser en temps réel les graphes et manifestes YAML assemblés ou modifiés conversationnellement par l'*Agent Assistant* (`UJ-10`).
 - **UX-DR16 (Responsive Design à 3 Breakpoints & Expérience Mobile Companion Restreinte — `DESIGN.md`, `EXPERIENCE.md §8`)** : Implémenter les 3 breakpoints : *Desktop Large (`>= 1280px`)* (3 colonnes complètes), *Laptop / Tablet (`768px - 1279px`)* (Sidebar repliée `68px` + Dock IA en `Sheet` sous `1024px`), et *Mobile Companion (`< 768px`)* (vue mono-colonne à barre d'onglets basse à 3 entrées : `🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`, autorisant le triage/*Claim*, les arbitrages, la lecture du *Briefing 4 blocs*, la validation par découpage et le suivi en *Consultation seule*, tout en bloquant l'édition YAML, la co-édition lourde et le module *7. Administration* avec une bannière explicite *"Fonctionnalité réservée au poste Desktop"*).
+- **UX-DR17 (Composant `AutonomousExecutionBadge`, Vue Regroupée par Déclencheur & Sorties de Secours `Kill-Switch` / `Rollback` — `DESIGN.md`, `EXPERIENCE.md §4 & §5`, `FR-29`)** : Implémenter dans `@orcia/ui` le composant `AutonomousExecutionBadge` en Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`, sans jamais utiliser le Violet `#6D28D9` réservé à `HumanLedAnchorCard`) affichant `🤖 Exécuté sous Contrat d'Autonomie #{contract_id} — Déclencheur : {MANUAL | WEBHOOK | LOG_SINK_ALERT | CRON} — 0 intervention humaine en cours de run`, le filtre regroupé par déclencheur dans **🔔 2. Boîte & Mes Runs** (Loi de Hick), et les deux sorties de secours immédiates `🛑 Kill-Switch (Suspendre le Trigger & les Runs actifs)` et `⏪ Invalider & Rollback`.
 
 ### FR Coverage Map
 
@@ -97,7 +105,7 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-2** : Epic 5 - Centre de Notifications Unifié (Individuel & Équipe) avec Claim et verrou SSE < 500ms
 - **FR-3** : Epic 5 - Supervision Multi-Workflows, Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces` à 4 onglets) et séparation Consultation seule (HTTP 403) vs Contributeur
 - **FR-4** : Epic 3 - Ancrages Humains Obligatoires (human_authored_required: true) et accompagnement socratique
-- **FR-5** : Epic 3 - Arbitrage Humain systématique sur options équivalentes (WAITING_FOR_HUMAN_ARBITRATION)
+- **FR-5** : Epic 3 & Epic 7 - Arbitrage Humain systématique sur options équivalentes (`WAITING_FOR_HUMAN_ARBITRATION`) & politique de départage sous contrat (`tie_break_policy`)
 - **FR-6** : Epic 4 - Briefing de Revue (4 blocs) et Validation par Découpage des artefacts volumineux
 - **FR-7** : Epic 3 - Challenge Amont Inter-Steps avec Simulation d'Impact (What-If) et boucle de rétroaction
 - **FR-8** : Epic 2 - Structuration de l'Ontologie en 4 Niveaux (Entreprise, BU, Équipe hiérarchique `3_TEAM` & Solution `3_WORKSPACE`, Run) avec héritage
@@ -105,22 +113,24 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-10** : Epic 2 - Triple exécution active de l'Ontologie (Typage Blackboard, Traduction Profil, Gates/RAG)
 - **FR-11** : Epic 3 - Définition Workflow-as-Code (YAML/JSON) et composition/modification assistée par l'Agent Assistant
 - **FR-12** : Epic 3 - Gabarits d'Artefact Multi-Audience (Markdown Humain + JSON/YAML Schema Agent)
-- **FR-13** : Epic 3 - Garantie de la discipline Intention -> Code (et mode brownfield_bootstrap explicite)
-- **FR-14** : Epic 3 - Orchestration Hybride Multi-LLM agnostique, exécution bimodale (Coaching / Fast-Path) & Blackboard filtré
-- **FR-15** : Epic 3 - Version Pinning immuable des Workflow Runs (run-lock.json SHA-256)
-- **FR-16** : Epic 3 - Replay ciblé à partir du Step N (Time-Travel Execution sur branche ACTIVE)
+- **FR-13** : Epic 3 & Epic 7 - Garantie de la discipline Intention -> Code (mode `brownfield_bootstrap` et boucle d'auto-remédiation `Intention de Remédiation -> Correctif`)
+- **FR-14** : Epic 3 & Epic 7 - Orchestration Hybride Multi-LLM agnostique, exécution tri-modale (`Coaching` / `Fast-Path` / `Autonomous Contract`) & Blackboard filtré
+- **FR-15** : Epic 3 - Version Pinning immuable des Workflow Runs (`run-lock.json` SHA-256 récursif)
+- **FR-16** : Epic 3 - Replay ciblé à partir du Step N (Time-Travel Execution sur branche ACTIVE et intra-sous-workflow)
 - **FR-17** : Epic 4 - Gates Déterministes en Sandbox (< 5s, sans réseau, conformité Gabarit/Ontologie & anti-Pattern Drift)
 - **FR-18** : Epic 4 - Gates Agentiques avec Orthogonalité des Modèles, lentille fact_verification & Contrôle Transverse
-- **FR-19** : Epic 4 - Gates Humaines à Politique Adaptative et garde-fou anti-Rubber-Stamping (< 15s)
+- **FR-19** : Epic 4 & Epic 7 - Gates Humaines à Politique Adaptative, tirage d'audit post-hoc (`POST_HOC_AUDIT_SAMPLE`) et garde-fou anti-Rubber-Stamping (< 15s)
 - **FR-20** : Epic 1 - Résolution à la volée du Catalogue Fédéré (db://, git://, nexus://, confluence://, jira://, orcia://), surcharges 4 niveaux (Base -> Team -> Workspace -> User) & cache SHA-256
 - **FR-21** : Epic 1 - Authentification hybride bi-mode, hiérarchie d'équipes (`OrgUnit`) découplée des Workspaces solutions, rôle `TEAM_LEAD` & 5 permissions dissociées du Catalogue
-- **FR-22** : Epic 1 - Exécution Passthrough / Service Principal et Permission Broker IA connecté à Jira
+- **FR-22** : Epic 1 & Epic 7 - Exécution Passthrough / Service Principal scopé et Permission Broker IA connecté à Jira
 - **FR-23** : Epic 2 - Indexation différenciée incrémentale, Graphe Tripartite (Confluence <-> Jira <-> Git), data-freshness & [STALE_WARNING]
-- **FR-24** : Epic 4 - Actions & transitions de workflows Jira Staged aux Gates (+ Webhooks), Skills en Sandbox & MCP Bidirectionnel (/api/v1/mcp)
+- **FR-24** : Epic 4 & Epic 7 - Actions & transitions de workflows Jira Staged aux Gates (+ Webhooks), Skills en Sandbox & MCP Bidirectionnel (/api/v1/mcp)
 - **FR-25** : Epic 6 - Provenance Auditable complète et immuable par Step et par Gate (audit_ledger)
-- **FR-26** : Epic 6 - Comptabilité FinOps complète (Coût Setup + Run vs TTM) et coupe-circuits budgétaires
-- **FR-27** : Epic 6 - Indicateurs d'impact cognitif, anti-Rubber-Stamping et Indice de Réversibilité Humaine
+- **FR-26** : Epic 6 & Epic 7 - Comptabilité FinOps complète (Coût Setup + Run vs TTM) et coupe-circuits budgétaires par Run/Arbre/Trigger
+- **FR-27** : Epic 6 & Epic 7 - Indicateurs d'impact cognitif, anti-Rubber-Stamping, Indice de Réversibilité Humaine et métriques d'autonomie (`SM-A1..A3`)
 - **FR-28** : Epic 1 - Workflows Système d'initialisation, onboarding autonome d'équipe & multi-workspaces (`TEAM_LEAD`) et auto-amorçage gouverné (orcia://system/bootstrap/*)
+- **FR-29** : Epic 7 - Exécution Autonome sous Contrat, Déclencheurs Événementiels Idempotents (Webhooks, Puits de Logs, Cron), Boucle Fermée d'Auto-Remédiation (`UJ-12`) & Audit Post-Hoc
+- **FR-30** : Epic 3 & Epic 7 - Imbrication Fractale de Workflows (`Sub-Workflows` & `Workflow-as-Agent`, profondeur $\le 3$)
 
 ## Epic List
 
@@ -132,9 +142,9 @@ Les Ingénieurs Plateforme, Chefs d'Équipe (`TEAM_LEAD`) et Membres d'équipe (
 Les Stewards Métier, PMs, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) structurent et font évoluer l'**Ontologie à 4 niveaux** (*1. Entreprise $\rightarrow$ 2. BU $\rightarrow$ 3. Équipe hiérarchique `3_TEAM` & Solution `3_WORKSPACE` $\rightarrow$ 4. Run*) avec héritage, extraction sémantique en temps réel, **Simulation d'Impact (*What-If*)** avant promotion gouvernée et triple exécution active ; ils indexent de façon incrémentale et différenciée leurs espaces **Confluence** (`confluence://` en *Parent-Child*), tickets **Jira** de référence (`jira://`), dépôts de code **Git** (`git://` en *AST + Code Graph*) et schémas DB (`db://`) au sein d'un **Graphe Tripartite `Confluence ↔ Jira ↔ Git`** (`halfvec(1024)` + BM25), et détectent/résolvent toute obsolescence documentaire (`[STALE_WARNING]`, brique `data-freshness`) dans le module **🧬 4. Ontologie & KB**.
 **FRs covered:** `FR-8`, `FR-9`, `FR-10`, `FR-23`
 
-### Epic 3: Cockpit "Human-Led", Agent Assistant Adaptatif & Moteur d'Orchestration Durable (Blackboard, Bimodal & Replay)
-Les Product Managers, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) dialoguent dans le **💬 1. Cockpit & Chat** avec l'**Agent Assistant** (DAG à 5 nœuds orientés type n8n dans le `AssistantHarness` à 5 couches, adaptant son vocabulaire au **Profil Humain**), définissent ou assemblent conversationnellement des **Workflows-as-Code** YAML/JSON avec prévisualisation graphique (`@xyflow/react`), lancent des **Workflow Runs** épinglés par `run-lock.json` en mode **Coaching interactif** ou **Fast-Path / Tâche de fond (`BACKGROUND_AUDIT`, `UJ-10`)**, rédigent leurs **Ancrages Humains Obligatoires** (`human_authored_required: true`), tranchent les **Arbitrages Humains** sur options équivalentes, émettent des **Challenges Amont** avec simulation d'impact (*What-If*) et déclenchent un **Replay ciblé** à partir du Step $N$ (0 token reconsommé sur les étapes $1..N-1$) dans le respect de la discipline `Intention -> Code`.
-**FRs covered:** `FR-1`, `FR-4`, `FR-5`, `FR-7`, `FR-11`, `FR-12`, `FR-13`, `FR-14`, `FR-15`, `FR-16`
+### Epic 3: Cockpit "Human-Led", Agent Assistant Adaptatif, Moteur d'Orchestration Durable & Sous-Workflows Fractals (`SUB_WORKFLOW <= 3`)
+Les Product Managers, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) dialoguent dans le **💬 1. Cockpit & Chat** avec l'**Agent Assistant** (DAG à 5 nœuds orientés type n8n dans le `AssistantHarness` à 5 couches, adaptant son vocabulaire au **Profil Humain**), définissent ou assemblent conversationnellement des **Workflows-as-Code** YAML/JSON (incluant les étapes composites `SUB_WORKFLOW` jusqu'à une profondeur $\le 3$, la criticité `criticality`, le régime `execution_regime` et la politique `tie_break_policy`) avec prévisualisation graphique (`@xyflow/react`), lancent des **Workflow Runs** épinglés récursivement par `run-lock.json` en mode **Coaching interactif**, **Fast-Path / Tâche de fond (`BACKGROUND_AUDIT`, `UJ-10`)** ou **Autonome sous Contrat (`AUTONOMOUS_CONTRACT`)**, rédigent leurs **Ancrages Humains Obligatoires** (`human_authored_required: true`), tranchent les **Arbitrages Humains** sur options équivalentes, émettent des **Challenges Amont** avec simulation d'impact (*What-If*) et déclenchent un **Replay ciblé** à partir du Step $N$ (y compris à l'intérieur d'un sous-workflow enfant) dans le respect de la discipline `Intention -> Code`.
+**FRs covered:** `FR-1`, `FR-4`, `FR-5`, `FR-7`, `FR-11`, `FR-12`, `FR-13`, `FR-14`, `FR-15`, `FR-16`, `FR-30`
 
 ### Epic 4: Pipeline Tri-Modal des Gates, Validation Cognitive par Découpage & Écosystème d'Exécution (Actions Jira, Sandbox & MCP IDE)
 Les Tech Leads, SecOps, Développeurs et Auditeurs (`Yanis UJ-3`, `Marc UJ-5`, `Sophie UJ-6`, `Arthur UJ-10`) valident chaque étape via la chaîne de **Gates Déterministes** en **Sandbox isolée** (`< 5s`, sans réseau, conformité Gabarit/Ontologie et anti-**Pattern Drift**), de **Gates Agentiques** avec **Orthogonalité des Modèles**, pseudonymisation PII réversible (`PiiReversibleScrubber`) et DAG de 5 lentilles (dont `fact_verification` et contrôle transverse Étape $N$ vs Étape 1), et de **Gates Humaines Adaptatives** (`mandatory_full`, `risk_or_exception_based`, `sampling`) équipées du **Briefing de Revue (4 blocs)**, de la **Validation par Découpage** et du garde-fou anti-**Rubber-Stamping** (`< 15s`) ; ils exécutent de manière gouvernée (en mode *Staged* validé aux Gates) la création, la modification et les **transitions de workflows Jira** (+ réception des Webhooks `jira:issue_updated`) et interrogent ORCIA depuis leur IDE via le **Serveur MCP gouverné (`/api/v1/mcp`)**.
@@ -145,8 +155,12 @@ Les Administrateurs Plateforme (`Karim UJ-9`), Directeurs de BU (`Claire UJ-8`),
 **FRs covered:** `FR-2`, `FR-3`
 
 ### Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Complet (Setup + Run) & Réversibilité Humaine
-Les Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) pilotent dans **📊 6. FinOps & Audit** l'équation économique complète de leurs processus (**Coût de Setup + Coût de Run vs gain de TTM**) protégée par des coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), inspectent et exportent la **Provenance Auditable** immuable de chaque Step et Gate (`audit_ledger`), et suivent les 3 contre-métriques de gouvernance cognitive (**Ratio Cadrage Actif $\ge 40\%$**, **Taux de Rubber-Stamping $< 5\%$**, **Indice de Pattern Drift / Réversibilité Humaine $0\%$**) avec recommandations automatiques d'ajustement des Gates.
+Les Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) pilotent dans **📊 6. FinOps & Audit** l'équation économique complète de leurs processus (**Coût de Setup + Coût de Run vs gain de TTM**) protégée par des coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), inspectent et exportent la **Provenance Auditable** immuable de chaque Step et Gate (`audit_ledger`), et suivent les contre-métriques de gouvernance cognitive (**Ratio Cadrage Actif $\ge 40\%$**, **Taux de Rubber-Stamping $< 5\%$**, **Indice de Pattern Drift / Réversibilité Humaine $0\%$**, **Taux d'Escalade Autonome `SM-A1`**, **Taux d'Invalidation Post-Hoc `SM-A2`** et **Coût Moyen par Run Autonome `SM-A3`**) avec recommandations automatiques d'ajustement des Gates.
 **FRs covered:** `FR-25`, `FR-26`, `FR-27`
+
+### Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Boucle d'Auto-Remédiation & Gouvernance Post-Hoc
+Les Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) configurent et signent des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), déclenchent de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11` : génération autonome de rapports analytiques multi-sources complexes)** ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et supervisent ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+**FRs covered:** `FR-5`, `FR-13`, `FR-14`, `FR-19`, `FR-22`, `FR-24`, `FR-26`, `FR-27`, `FR-29`, `FR-30`
 
 ## Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
 
@@ -303,7 +317,7 @@ So that les agents retrouvent en `< 50 ms` le contexte exact à travers tous les
 
 **Given** une requête de recherche émise par un Agent ou un utilisateur dans un Workspace avec un `kb_snapshot_hash` épinglé
 **When** `HybridRagService` exécute la recherche sur l'ensemble des sources du Workspace (ou un sous-ensemble filtré par `alias` de source)
-**Then** il combine en `< 50 ms` (`NFR-PERF-3`) la similarité cosinus `halfvec(1024)` HNSW et le score lexical BM25 `tsvector` par *Reciprocal Rank Fusion (RRF)* en respectant source par source les restrictions de lecture Confluence/Jira/Git en mode *Passthrough*, et retourne les chunks parents accompagnés de leur URI et révision exacte
+**Then** il combine en `< 50 ms` (`NFR-PERF-3`) la similarité cosinus `halfvec(1024)` HNSW et le score lexical BM25 natif PostgreSQL 18 (`tsvector` + GIN + `ts_rank_cd` pondéré `A/B/C/D`, sans extension AGPL, `P7`) par *Reciprocal Rank Fusion (RRF, $k=60$)* en respectant source par source les restrictions de lecture Confluence/Jira/Git en mode *Passthrough*, et retourne les chunks parents accompagnés de leur URI et révision exacte
 **And** les tests unitaires (`pytest` sur le découpage AST/Parent-Child et le calcul RRF) et d'intégration (`testcontainers` PG18 + `pgvector 0.8.7`) couvrent $\ge 90\%$ de `packages/orcia-core/rag`.
 
 ### Story 2.4: Graphe Tripartite Multi-Sources (`Confluence 1..N ↔ Jira 1..N ↔ Git 1..N`), Brique `data-freshness` & Alerte d'Obsolescence `[STALE_WARNING]`
@@ -316,7 +330,7 @@ So that aucune décision d'architecture ou d'audit ne s'appuie sur une documenta
 
 **Given** l'indexation des multiples espaces `confluence://`, des multiples projets `jira://` et des multiples dépôts `git://` rattachés à un même Workspace
 **When** l'extracteur de liens croisés détecte les clés de tickets des différents projets Jira du Workspace (`[A-Z][A-Z0-9]+-[0-9]+`, ex. `PAY-123`, `SEC-45`) dans les messages de commits/PRs de n'importe lequel des dépôts Git ou dans les pages de n'importe lequel des espaces Confluence
-**Then** il peuple automatiquement les arêtes du **Graphe Tripartite Multi-Sources de Traçabilité** à l'échelle du Workspace : `Confluence (DOCUMENTS)` $\leftrightarrow$ `Jira (SPECIFIES / FIXES / BLOCKS)` $\leftrightarrow$ `Code Git (IMPLEMENTS_ISSUE)` $\leftrightarrow$ `Ontologie (AFFECTS_CONCEPT)`.
+**Then** il peuple automatiquement les arêtes du **Graphe Tripartite Multi-Sources de Traçabilité** à l'échelle du Workspace : `Confluence (DOCUMENTS)` $\leftrightarrow$ `Jira (SPECIFIES / FIXES / BLOCKS)` $\leftrightarrow$ `Code Git (IMPLEMENTS_ISSUE)` $\leftrightarrow$ `Ontologie (AFFECTS_CONCEPT)`, avec une traversée CTE bornée à `depth <= 2` (`AD-8`, `P7`).
 
 **Given** un chunk documentaire ou une page Confluence dont `now() - last_verified_at > freshness_ttl_days` **OU** qui est contredit par un ticket Jira lié plus récent ou un contrat OpenAPI/code mis à jour dans l'un des dépôts Git du Workspace (détecté lors d'une exécution de la brique de workflow `data-freshness` ou d'un signalement `UJ-3` / `UJ-10`)
 **When** ce document est inspecté ou récupéré par le moteur RAG
@@ -324,69 +338,140 @@ So that aucune décision d'architecture ou d'audit ne s'appuie sur une documenta
 **And** lors d'un audit Doc vs Code (`UJ-10`), si le code d'un dépôt Git diffère d'une page Confluence mais correspond à un ticket Jira `Done` plus récent relié dans le Graphe Tripartite, l'écart est qualifié de `[DOC_OBSOLETE_SUSPECTED]` avec citation du ticket Jira justificatif
 **And** les tests unitaires et d'intégration couvrent $\ge 90\%$ de la construction du Graphe Tripartite multi-sources et du détecteur `data-freshness` / `[STALE_WARNING]`.
 
-## Epic 3: Cockpit "Human-Led", Agent Assistant Adaptatif & Moteur d'Orchestration Durable (Blackboard, Bimodal & Replay)
+## Epic 3: Cockpit "Human-Led", Agent Assistant Adaptatif, Moteur d'Orchestration Durable & Sous-Workflows Fractals (`SUB_WORKFLOW <= 3`)
 
-Permettre aux Product Managers, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) de dialoguer dans le **💬 1. Cockpit & Chat** avec l'*Agent Assistant* (DAG à 5 nœuds orientés type n8n dans le `AssistantHarness` à 5 couches, adaptant son vocabulaire au *Profil Humain*), de définir ou d'assembler conversationnellement des *Workflows-as-Code* YAML/JSON avec prévisualisation graphique (`@xyflow/react`), de lancer des *Workflow Runs* épinglés par `run-lock.json` en mode *Coaching interactif* ou *Fast-Path / Tâche de fond (`BACKGROUND_AUDIT`, `UJ-10`)*, de rédiger leurs *Ancrages Humains Obligatoires* (`human_authored_required: true`), de trancher les *Arbitrages Humains* sur options équivalentes, d'émettre des *Challenges Amont* avec simulation d'impact (*What-If*) et de déclencher un *Replay ciblé* à partir du Step $N$ (0 token reconsommé sur les étapes $1..N-1$) dans le respect de la discipline `Intention -> Code`.
+Permettre aux Product Managers, Architectes et Tech Leads (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`, `Arthur UJ-10`) de dialoguer dans le **💬 1. Cockpit & Chat** avec l'*Agent Assistant* (DAG à 5 nœuds orientés type n8n dans le `AssistantHarness` à 5 couches, adaptant son vocabulaire au *Profil Humain*), de définir ou d'assembler conversationnellement des *Workflows-as-Code* YAML/JSON (incluant les étapes composites `SUB_WORKFLOW` jusqu'à une profondeur $\le 3$, la criticité `criticality`, le régime `execution_regime` et la politique `tie_break_policy`) avec prévisualisation graphique (`@xyflow/react`), de lancer des *Workflow Runs* épinglés récursivement par `run-lock.json` en mode *Coaching interactif*, *Fast-Path / Tâche de fond (`BACKGROUND_AUDIT`, `UJ-10`)* ou *Autonome sous Contrat (`AUTONOMOUS_CONTRACT`)*, de rédiger leurs *Ancrages Humains Obligatoires* (`human_authored_required: true`), de trancher les *Arbitrages Humains* sur options équivalentes, d'émettre des *Challenges Amont* avec simulation d'impact (*What-If*) et de déclencher un *Replay ciblé* à partir du Step $N$ (y compris à l'intérieur d'un sous-workflow enfant) dans le respect de la discipline `Intention -> Code`.
 
-### Story 3.1: Workflow-as-Code YAML/JSON, Gabarits d'Artefact Multi-Audience, Discipline `Intention -> Code` & Épinglage `run-lock.json`
+### Story 3.1: Workflow-as-Code YAML/JSON, Gabarits d'Artefact Multi-Audience, Discipline `Intention -> Code`, Épinglage Récursif `run-lock.json` & Sous-Workflows (`SUB_WORKFLOW <= 3` & Criticité)
 
 As a Concepteur de Workflow ou Architecte (`Antoine UJ-2`, `Marc UJ-5`),
-I want définir des Workflows déclaratifs YAML/JSON validés par schéma, associer à chaque Step un Gabarit d'Artefact Multi-Audience (Markdown Humain + JSON Schema Agent), imposer la discipline `Intention -> Code` et figer toutes les dépendances dans `run-lock.json` au démarrage d'un Run,
-So that chaque Workflow Run soit structurellement valide, reproductible à l'identique même après 10 jours de pause et protégé contre la rétro-documentation sauvage de bugs (`FR-11`, `FR-12`, `FR-13`, `FR-15`, `AD-5`).
+I want définir des Workflows déclaratifs YAML/JSON validés par schéma (supportant `criticality`, `execution_regime`, `tie_break_policy` et les étapes composites `SUB_WORKFLOW` sans cycle jusqu'à une profondeur $\le 3$), associer à chaque Step un Gabarit d'Artefact Multi-Audience (Markdown Humain + JSON Schema Agent), imposer la discipline `Intention -> Code` et figer récursivement toutes les dépendances dans `run-lock.json` au démarrage d'un Run,
+So that chaque Workflow Run (et ses éventuels sous-workflows) soit structurellement valide, reproductible à l'identique même après 10 jours de pause et protégé contre la rétro-documentation sauvage de bugs (`FR-11`, `FR-12`, `FR-13`, `FR-15`, `FR-30`, `AD-5`, `AD-18`).
 
 **Acceptance Criteria:**
 
-**Given** la migration Alembic créant les tables `workflow_runs` et `run_lock_manifests`
+**Given** la migration Alembic créant les tables `workflow_runs` (incluant `parent_run_id`, `parent_step_execution_id`, `root_run_id`, `nesting_depth <= 3`, `execution_regime`, `criticality`, `trigger_id`, `trigger_idempotency_key`), `run_lock_manifests` et `workflow_triggers`
 **When** un concepteur enregistre un manifeste *Workflow-as-Code* YAML/JSON dans `packages/orcia-core/orchestration`
-**Then** le validateur vérifie la syntaxe du DAG (Steps, Agents, Skills, KBs, Gabarits, Ancrages Humains, Gates, routes de rétroaction et sortie de boucle bornée) et rejette toute définition invalide avec le numéro de ligne et la règle violée (`FR-11`)
-**And** tout workflow d'ingénierie logicielle nominal qui comporte une étape d'écriture/modification de code sans étape amont de déclaration d'intention ou de spécification validée est rejeté (`ERR_INTENTION_BEFORE_CODE_REQUIRED`), tandis que les workflows de rétro-documentation (`Code -> Doc`) doivent obligatoirement déclarer `mode: brownfield_bootstrap` (`FR-13`).
+**Then** le validateur vérifie la syntaxe du DAG (Steps `AGENT | SKILL | SUB_WORKFLOW | POST_ACTION_VERIFICATION`, `criticality`, `execution_regime`, `tie_break_policy`, Agents, Skills, KBs, Gabarits, Ancrages Humains, Gates, détection statique de cycles d'appels de sous-workflows et profondeur maximale `nesting_depth <= 3`, `ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED`) et rejette toute définition invalide avec le numéro de ligne et la règle violée (`FR-11`, `FR-30`, `AD-18`)
+**And** tout workflow `HIGH_CRITICAL` déclarant `execution_regime: AUTONOMOUS_CONTRACT` est rejeté (`HTTP 422 ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE`), et tout workflow d'ingénierie logicielle nominal qui comporte une étape d'écriture/modification de code sans étape amont de déclaration d'intention ou de spécification validée est rejeté (`ERR_INTENTION_BEFORE_CODE_REQUIRED`), tandis que les workflows de rétro-documentation (`Code -> Doc`) doivent obligatoirement déclarer `mode: brownfield_bootstrap` (`FR-13`, `FR-29`).
 
 **Given** un *Workflow* valide que l'utilisateur instancie en *Workflow Run*
 **When** le moteur initialise le Run
-**Then** il résout toutes les URI externes (`db://`, `git://`, `nexus://`, `confluence://`, `jira://`) et les surcharges à 3 niveaux, et inscrit de manière immuable dans `run_lock_manifests` (`run-lock.json`) les triplets `(uri, resolved_version, sha256)` et le `kb_snapshot_hash` (`FR-15`, `AD-5`)
+**Then** il résout toutes les URI externes (`db://`, `git://`, `nexus://`, `confluence://`, `jira://`), les surcharges à 4 niveaux et l'arbre récursif des sous-workflows (`sub_workflow_locks`), et inscrit de manière immuable dans `run_lock_manifests` (`run-lock.json`) les triplets `(uri, resolved_version, sha256)` et le `kb_snapshot_hash` (`FR-15`, `FR-30`, `AD-5`)
 **And** chaque *Gabarit d'Artefact* (`FR-12`) compile simultanément la vue documentaire Markdown (avec variables Jinja/Mustache et sections de découpage) pour le Canvas humain et le contrat JSON/YAML Schema typé par l'Ontologie pour les Steps aval
-**And** les tests unitaires (`pytest` + `hypothesis`) et d'intégration (`testcontainers` PG18 + MinIO) couvrent $\ge 90\%$ du validateur de workflows, des gabarits et du verrouillage `run-lock.json`.
+**And** les tests unitaires (`pytest` + `hypothesis`) et d'intégration (`testcontainers` PG18 + SeaweedFS S3) couvrent $\ge 90\%$ du validateur de workflows, des gabarits et du verrouillage `run-lock.json`.
 
-### Story 3.2: Moteur d'Orchestration Durable, Checkpoints Immuables du Blackboard, Hydratation JIT & Exécution Bimodale (`Coaching` vs `Fast-Path / Tâche de Fond`)
+### Story 3.2: Moteur d'Orchestration Durable, Checkpoints Immuables du Blackboard, Isolation des Sous-Workflows (`SUB_WORKFLOW`), Hydratation JIT & Exécution Tri-Modale
 
 As a Tech Lead ou Architecte (`Yanis UJ-3`, `Arthur UJ-10`),
-I want exécuter les Steps via un moteur durable basé sur des checkpoints immuables du Blackboard (séparant brouillon et snapshot validé), une hydratation Just-In-Time filtrée (`orcia://`) et un mode bimodal (`COACHING` interactif vs `FAST_PATH / BACKGROUND_AUDIT` en tâche de fond),
-So that les Workflows longs survivent à tout redémarrage serveur, ne divulguent que le contexte déclaré à chaque Step et permettent d'exécuter un audit complet Doc vs Code en tâche de fond sans blocage intempestif (`FR-14`, `AD-2`, `AD-13`, `AR-3`, `NFR-REL-1`, `NFR-SEC-3`).
+I want exécuter les Steps (y compris les étapes composites `SUB_WORKFLOW`) via un moteur durable basé sur des checkpoints immuables du Blackboard (séparant brouillon et snapshot validé et isolant lexicalement les Blackboards parents/enfants), une hydratation Just-In-Time filtrée (`orcia://`) et un mode tri-modal (`INTERACTIVE_COACHING`, `BACKGROUND_FAST_PATH` et `AUTONOMOUS_CONTRACT`),
+So that les Workflows longs et imbriqués survivent à tout redémarrage serveur, partagent un plafond budgétaire commun sur `root_run_id`, ne divulguent que le contexte déclaré à chaque Step et permettent d'exécuter un audit complet Doc vs Code en tâche de fond sans blocage intempestif (`FR-14`, `FR-30`, `AD-2`, `AD-12`, `AD-13`, `AD-18`, `AR-3`, `NFR-REL-1`, `NFR-SEC-3`).
 
 **Acceptance Criteria:**
 
-**Given** la migration Alembic créant les tables `step_executions` (colonnes `execution_mode`, `status`, `draft_artifact_jsonb`, `draft_cas_key`, `step_memlog_jsonb`) et `blackboard_snapshots` (protégée par trigger PostgreSQL append-only `BEFORE UPDATE OR DELETE RAISE EXCEPTION`, `NFR-SEC-3`)
-**When** le worker Dramatiq `step_runner` démarre l'étape $k$ d'un *Workflow Run*
+**Given** la migration Alembic créant les tables `step_executions` (colonnes `step_type`, `execution_mode`, `status`, `draft_artifact_jsonb`, `draft_cas_key`, `step_memlog_jsonb`) et `blackboard_snapshots` (protégée par trigger PostgreSQL append-only `BEFORE UPDATE OR DELETE RAISE EXCEPTION`, `NFR-SEC-3`)
+**When** le worker d'orchestration démarre l'étape $k$ d'un *Workflow Run*
 **Then** le `JitStepHydrator` (`AD-13`) n'injecte dans le contexte de l'*Agent Exécuteur* (routé de façon agnostique via LiteLLM vers OpenAI, Anthropic, Gemini ou Ollama/vLLM local, `FR-14`) que la directive de l'étape $k$ et les artefacts amont explicitement déclarés dans `inputs` via `orcia://runs/{run_id}/steps/{step_key}/artifacts/{artifact_key}` (0 instruction des étapes futures $k+1..N$ et 0 artefact non déclaré)
-**And** tant que l'étape est en `EXECUTING_AGENT` ou `EVALUATING_GATES`, le livrable candidat est écrit dans `step_executions.draft_artifact_jsonb` et ses raisonnements/hypothèses dans `step_executions.step_memlog_jsonb` ; ce n'est qu'au statut `COMMITTED` qu'un snapshot immuable est ajouté dans `blackboard_snapshots` (`AD-2`, `AR-3`, `NFR-REL-1`).
+**And** tant que l'étape est en `EXECUTING_AGENT` ou `EVALUATING_GATES`, le livrable candidat est écrit dans `step_executions.draft_artifact_jsonb` et ses raisonnements/hypothèses dans `step_executions.step_memlog_jsonb` ; ce n'est qu'au statut `COMMITTED` qu'un snapshot immuable est ajouté dans `blackboard_snapshots` (`AD-2`, `AR-3`, `NFR-REL-1`)
+**And** lorsqu'une étape est de type `SUB_WORKFLOW`, le moteur instancie un `workflow_run` enfant (`parent_run_id`, `parent_step_execution_id`, `root_run_id`, `nesting_depth = parent.nesting_depth + 1 <= 3`) doté d'un *Blackboard* propre alimenté par `input_mapping`, partageant le budget `max_cost_usd` du `root_run_id`, et reversant ses seules sorties déclarées via `output_mapping` au snapshot parent (`FR-30`, `AD-2`, `AD-18`).
 
 **Given** un *Workflow Run* lancé en mode **`FAST_PATH` / `BACKGROUND_AUDIT` (Tâche de fond, `UJ-10`)** après signature des éventuelles *Ancres Humaines* initiales
 **When** l'*Agent Exécuteur* rencontre une ambiguïté ou une divergence entre Documentation (Confluence/Jira) et Codebase (`git://`)
 **Then** au lieu de bloquer le worker à mi-parcours, il inscrit dans `step_memlog_jsonb` et dans l'artefact un marqueur structuré `[ASSUMPTION]`, `[BUG_CODE_SUSPECTED]` ou `[DOC_OBSOLETE_SUSPECTED]`, poursuit l'exécution jusqu'au rapport de comparaison final, consolide tous les points d'arbitrage et notifie l'initiateur (`Arthur`) en `< 500 ms` via SSE (`AD-13`)
 **And** les tests unitaires (`pytest` + `DeterministicCassetteLLM`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ de `packages/orcia-core/orchestration` et `blackboard`.
 
+### Story 3.2a: Phase A — Socle du Monolithe Modulaire (`packages/orcia-kernel`), Workspace `uv` à 4 Packages, Rupture des 3 Cycles, Découplage `schemas/` & `<domaine>/errors.py`, Point d'Assemblage Unique & Garde-Fou `import-linter`
+
+As a Architecte Système ou Tech Lead (`Winston`, `Marc UJ-5`),
+I want extraire un noyau partagé minimal `packages/orcia-kernel` (`0` dépendance métier), structurer le dépôt Python en un workspace `uv` à 4 packages (`packages/orcia-kernel`, `packages/orcia-core`, `apps/api`, `apps/worker`), rompre les 3 cycles de dépendances entre domaines (`blackboard ↔ orchestration`, `catalog ↔ bootstrap`, `permissions ↔ bootstrap`), déplacer les 10 fichiers de schémas HTTP (`orcia_core/schemas/`, `2 060` lignes) vers `apps/api/src/orcia_api/schemas/`, éclater `domain/exceptions.py` (`377` lignes, risque `CRITICAL` à 59 dépendants) en `<domaine>/errors.py`, supprimer les 3 singletons d'import `_DEFAULT_*_SERVICE` au profit d'un point d'assemblage unique (`lifespan` + `Depends`), déplacer les classes `InMemory*` dans `tests/unit/fakes/`, et verrouiller le graphe d'imports avec `import-linter` en CI,
+So that chaque domaine métier de `packages/orcia-core` évolue et soit testé de manière isolée sans dépendance circulaire, sans fuite de contrat REST dans le domaine et avec une frontière architecturale vérifiée mécaniquement à chaque commit (`AD-1`, `AD-17`, `AD-19`, `AR-8`, `M1..M5`, `P3`, `P4`, `Q1: 1A`, `Q4: 4A`).
+
+**Acceptance Criteria:**
+
+**Given** le dépôt Python restructuré en workspace `uv` à **4 packages** (`pyproject.toml` racine + `packages/orcia-kernel`, `packages/orcia-core`, `apps/api`, `apps/worker` et `uv.lock`) avec bornes minimales alignées sur la Spine (`P3`, `Q1: 1A`)
+**When** `packages/orcia-kernel/src/orcia_kernel/` est créé et que les 3 cycles de dépendances de `packages/orcia-core` sont résolus (`M1`, `M2`)
+**Then** `orcia_kernel` expose uniquement les primitives universelles (`ids.py` UUIDv7, `enums.py` incluant `StepExecutionState`, `errors.py` avec la classe de base `OrciaDomainError`, `events.py`, et `ports.py` avec `BlackboardPort`, `LLMPort`, `ObjectStoragePort`, `SandboxPort`, `ClockPort`) sans importer aucun domaine métier
+**And** les 3 cycles identifiés par GitNexus sont éliminés : (1) `blackboard` n'importe plus `orchestration` (utilise `orcia_kernel.enums.StepExecutionState` et expose `BlackboardPort`), (2) `catalog/service.py` n'importe plus `bootstrap/workflows.py` (les constantes de seeds système sont définies dans `catalog/seeds.py`), et (3) `permissions/broker.py` n'importe plus `bootstrap/workflows.py` (la constante `INIT_USER_WORKFLOW_URI` est définie dans `permissions/seeds.py` et consommée à sens unique par `bootstrap`).
+
+**Given** le découplage des schémas HTTP (`M3`), des exceptions métier (`M4`) et du point d'assemblage (`M5`)
+**When** la restructuration est appliquée et que la CI exécute `lint-imports` (`import-linter 2.7`, `P4`)
+**Then** les 10 fichiers de `packages/orcia-core/src/orcia_core/schemas/` (`2 060` lignes) sont déplacés dans `apps/api/src/orcia_api/schemas/<domaine>.py` (`0` fichier restant dans `orcia_core/schemas/`), `domain/exceptions.py` (`377` lignes) est remplacé par `<domaine>/errors.py` dans chaque domaine (héritant de `orcia_kernel.errors.OrciaDomainError`) avec un registre HTTP RFC 9457 centralisé dans `apps/api/src/orcia_api/errors/registry.py`, les 3 singletons d'import `_DEFAULT_AUTH_SERVICE`, `_DEFAULT_CATALOG_SERVICE` et `_DEFAULT_ORCHESTRATION_SERVICE` sont supprimés de `apps/api/src/orcia_api/routers/{auth,catalog,orchestration}.py` au profit d'une injection exclusive dans `apps/api/src/orcia_api/dependencies.py` (`lifespan` $\rightarrow$ `app.state` + `Depends()`), et les stores `InMemory*` sont isolés dans `tests/unit/fakes/`
+**And** `lint-imports` vérifie avec **`0` violation** : (a) l'ordre strict des couches `orcia_kernel` $\leftarrow$ `orcia_core` $\leftarrow$ (`orcia_api`, `orcia_worker`), (b) l'indépendance entre domaines pairs (`auth`, `permissions`, `catalog`, `ontology`, `rag`, `blackboard`, `gates`, `audit_finops`), (c) l'interdiction d'importer `<domaine>._internal` depuis l'extérieur du domaine (`Q4: 4A`), et (d) l'interdiction de `fastapi`, `sqlalchemy`, `dramatiq`, `dbos`, `redis`, `litellm` dans `orcia_kernel` et dans les modèles/ports de `orcia_core`, avec couverture unitaire $\ge 90\%$.
+
+### Story 3.2b: Phase B — Persistance Réelle `SQLAlchemy 2.1 Asyncio` (`asyncpg`), Spike & Moteur Durable `DBOS Transact` sur PostgreSQL 18, Stockage CAS `SeaweedFS` (`ObjectStoragePort`), `LiteLLMAdapter` & Instrumentation `OpenTelemetry`
+
+As a Architecte Système ou Ingénieur Plateforme (`Winston`, `Karim UJ-9`),
+I want valider par un spike court puis intégrer `DBOS Transact` (`dbos 2.14.0`, MIT) sur PostgreSQL 18, implémenter les repositories `SQLAlchemy 2.1 Asyncio` (`asyncpg`) dans le sous-package `_internal/` de chaque domaine sur les migrations Alembic `0001..0011` (incluant la recherche hybride SQL `halfvec` + `tsvector` GIN `ts_rank_cd` RRF `P7`), brancher `SeaweedFS` (`Apache-2.0`) derrière `ObjectStoragePort`, implémenter `LiteLLMAdapter` derrière `LLMPort`, et instrumenter la chaîne avec `OpenTelemetry`,
+So that tout `Workflow Run` et toute entité d'ORCIA soient réellement persistés dans PostgreSQL 18 et SeaweedFS, survivent à tout redémarrage de processus avec reprise transactionnelle ACID (`DBOS.recv`, `DBOS.fork_workflow`, `SetWorkflowID`), et propagent un `trace_id` W3C réel de bout en bout (`AD-2`, `AD-5`, `AD-8`, `AD-10`, `AD-12`, `AD-13`, `AD-18`, `AD-19`, `P1`, `P2`, `P6`, `P7`, `P9`, `OQ-01`, `OQ-03`).
+
+**Acceptance Criteria:**
+
+**Given** le spike de validation et l'intégration de `DBOS Transact` (`dbos 2.14.0`) sur PostgreSQL 18 dans `apps/worker` et `packages/orcia-core/orchestration/_internal/`
+**When** un *Workflow Run* s'exécute, se met en pause sur `WAITING_FOR_HUMAN_ARBITRATION` (`DBOS.recv`), exécute un `SUB_WORKFLOW` enfant (`nesting_depth <= 3`), est planifié via `@DBOS.scheduled` ou fait l'objet d'un *Rewind / Replay* à partir du Step $N$ (`DBOS.fork_workflow`)
+**Then** chaque transition d'étape (`@DBOS.step()`) et chaque création de snapshot `blackboard_snapshots` (`ACTIVE` / `SUPERSEDED`) est persistée de manière transactionnelle dans PostgreSQL 18 sans consommer de worker actif pendant les pauses, reprend exactement à l'étape en pause après extinction et redémarrage complet du processus, et `SetWorkflowID("<trigger_id>:<idempotency_key>")` garantit l'unicité stricte d'instanciation en complément de la contrainte SQL `UNIQUE` (`AD-2`, `AD-13`, `AD-18`, `P2`).
+
+**Given** les 11 migrations Alembic (`0001..0011`) appliquées dans le schéma PostgreSQL `public` unique (`Q4: 4A`) et le conteneur **SeaweedFS `4.17` (`chrislusf/seaweedfs`, `Apache-2.0`)** remplaçant MinIO dans `docker-compose.yml` (`OQ-03`, `P6`)
+**When** les services des domaines (`auth`, `catalog`, `permissions`, `bootstrap`, `ontology`, `rag`, `orchestration`, `blackboard`) sont invoqués via `apps/api` ou `apps/worker`
+**Then** chaque domaine persiste et relit ses entités via son repository `SQLAlchemy 2.1 Asyncio` (`asyncpg`) encapsulé dans `<domaine>/_internal/`, `HybridRagService` exécute en SQL réel la recherche hybride `pgvector halfvec(1024)` HNSW + `tsvector` GIN (`ts_rank_cd` pondéré `A/B/C/D`) fusionnée par RRF (`k=60`) et la CTE du graphe tripartite bornée à `depth <= 2` (`P7`), l'adaptateur S3 v4 `SeaweedFS` implémente `ObjectStoragePort` (`cas/<sha256>`), `LiteLLMAdapter` implémente `LLMPort` aux côtés de `DeterministicCassetteLLM`, et `OpenTelemetry` (`opentelemetry-sdk`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-sqlalchemy`) injecte le `trace_id` W3C réel dans `structlog`, `audit_ledger` et toutes les enveloppes **RFC 9457** (`P1`, `P9`)
+**And** les tests d'intégration sur conteneurs éphémères réels `testcontainers-python` (PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS) valident la persistance et la reprise après redémarrage avec une couverture $\ge 90\%$ et `lint-imports` à `0` violation.
+
+### Story 3.2c: Phase C — Bus d'Événements de Domaine, Table Outbox Transactionnelle (`domain_events_outbox`) & Plugins `entry_points`
+
+As a Architecte Système ou Tech Lead (`Winston`, `Marc UJ-5`),
+I want créer la table Outbox transactionnelle `domain_events_outbox` (migration Alembic `0012`), publier dans la même transaction SQL que le changement d'état du Run/Step les événements immuables du domaine (`StepCompleted`, `ArtifactProduced`, `GateEvaluated`, `RunTerminated`, `HumanArbitrationRequested`), relayer ces événements de manière idempotente vers les abonnés découplés (`audit_finops`, `ontology`, `sse`, réveil de déclencheurs), et charger les extensions internes via les `entry_points` Python (`orcia.uri_resolvers`, `orcia.llm_gateways`),
+So that le moteur d'orchestration (`orchestration/engine.py`) reste compact et fermé à la modification (principe Open/Closed) lorsque les Epics 4 à 7 ajoutent de nouveaux effets secondaires ou connecteurs, sans jamais perdre un événement d'audit ou de notification en cas de crash entre l'écriture SQL et le traitement aval (`AD-12`, `AD-19`, `AR-8`, `M6`, `M7`, `Q2: 2A`, `Q3: 3A`).
+
+**Acceptance Criteria:**
+
+**Given** la migration Alembic immuable `0012_domain_events_outbox` créant dans le schéma `public` la table `domain_events_outbox` (`event_id UUIDv7 PK`, `event_type`, `aggregate_type`, `aggregate_id`, `run_id`, `workspace_id`, `payload_jsonb`, `trace_id`, `status PENDING | PUBLISHED | FAILED`, `attempts`, `created_at`, `published_at`) avec index partiel sur `status = 'PENDING'` et test complet `upgrade()` / `downgrade()`
+**When** une transition d'état se produit sur `workflow_runs`, `step_executions` ou `blackboard_snapshots`
+**Then** le moteur d'orchestration n'effectue d'appels directs synchrones que pour les décisions bloquantes du flux d'exécution (`permissions`, passage des `gates` et arbitrage humain), et écrit dans la **même transaction SQL (`AsyncSession`)** les événements immuables de `orcia_kernel.events` (`StepCompleted`, `ArtifactProduced`, `GateEvaluated`, `RunTerminated`, `HumanArbitrationRequested`) dans `domain_events_outbox` (`M6`, `Q2: 2A`)
+**And** le relais Outbox de `apps/worker` (`SELECT ... FOR UPDATE SKIP LOCKED` par lots) distribue de manière idempotente (`0` doublon par `event_id`) ces événements aux abonnés découplés (`audit_finops` pour l'écriture `audit_ledger`/coûts, `ontology` pour l'extraction L4 asynchrone, `sse` pour la diffusion Redis Pub/Sub `< 500 ms` et le réveil des triggers/sous-workflows), sans qu'`orchestration/engine.py` n'importe `audit_finops`, `ontology` ni `sse`.
+
+**Given** les groupes de plugins Python `entry_points` `orcia.uri_resolvers` (`git://`, `jira://`, `confluence://`, `db://`, `nexus://`, `orcia://`) et `orcia.llm_gateways` déclarés dans `packages/orcia-core/pyproject.toml` (en limitant la création de nouveaux ports à la Règle de Trois, `M7`, `Q3: 3A`)
+**When** `FederatedUriResolver` ou `ModelRouterService` démarre au sein du point d'assemblage
+**Then** il découvre et enregistre dynamiquement via `importlib.metadata.entry_points` tous les résolveurs d'URI et passerelles LLM installés sans modifier le cœur du domaine
+**And** un test d'intégration (`testcontainers` PG18 + Redis) simulant un crash immédiatement après le `COMMIT` SQL mais avant le relais Outbox vérifie que 100 % des événements en attente sont livrés sans doublon au redémarrage, avec couverture $\ge 90\%$ et `lint-imports` à `0` violation.
+
+### Story 3.2d: Phase D — Migration Frontend SPA Pure `Vite 6 + TanStack Router v1`, Intégration `TanStack Query v5` / `Tailwind v4` / `@xyflow/react v12` / `openapi-fetch` & Découpage par Fonctionnalité `features/<domaine>/`
+
+As a Architecte Frontend ou UX Designer (`Sally`, `Amelia`),
+I want migrer `apps/web` de Next.js App Router vers une SPA pure `Vite 6 + TanStack Router v1`, installer et configurer `@tanstack/react-query 5.90`, `tailwindcss 4.3`, `@xyflow/react 12.12` et `openapi-fetch 0.17`, générer le client OpenAPI découpé par domaine à partir de `apps/api/src/orcia_api/schemas/`, et organiser `apps/web/src/` en routes minces (`src/routes/`) et modules fonctionnels isolés (`src/features/<domaine>/`),
+So that le frontend élimine 100 % de la surface d'attaque serveur Node.js/RSC, divise par 8 son empreinte mémoire en production (`nginx:alpine` statique), supprime les erreurs d'hydratation SSR sur `@xyflow/react` et le buffering SSE, et permette de développer les Epics 3 à 7 dans des modules frontend découplés (`AD-1`, `AD-15`, `AD-19`, `AR-1`, `AR-8`, `P8`, `M11`, `OQ-02`).
+
+**Acceptance Criteria:**
+
+**Given** le remplacement de Next.js dans `apps/web/package.json` par `vite ^6.4.1`, `@vitejs/plugin-react ^4.5.2`, `@tanstack/react-router ^1.166.2`, `@tanstack/router-plugin ^1.166.2`, `@tanstack/react-query ^5.90.0`, `tailwindcss ^4.3.0`, `@xyflow/react ^12.12.0` et `openapi-fetch ^0.17.0` (`P8`, `OQ-02`)
+**When** les routes de `apps/web` sont compilées et exécutées en développement et en build de production
+**Then** les 10 fichiers de routes existants (`75` lignes dans `apps/web/src/app/`) sont convertis vers `apps/web/src/routes/` avec `createRootRouteWithContext<{ queryClient: QueryClient }>()`, validation typée des paramètres de recherche d'URL (`validateSearch`) et préchargement déclaratif (`loader`), sans aucun serveur Node.js/RSC en production.
+
+**Given** l'organisation modulaire par fonctionnalité (`M11`, `AD-19`) et la génération du SDK OpenAPI 3.1 (`packages/api-client`)
+**When** `pnpm turbo run lint typecheck test` est exécuté en CI
+**Then** `apps/web/src/` est structuré en `src/routes/` (assemblage mince) et `src/features/<domaine>/` (`cockpit`, `inbox`, `catalog`, `ontology`, `gates`, `finops`, `admin`, `workspaces`), une règle ESLint interdit tout import direct entre deux dossiers `features/<domaine_A>/` et `features/<domaine_B>/`, `@orcia/ui` (`packages/ui`) ne comporte aucun import de `@tanstack/react-router`, `next/*` ni `@orcia/api-client`, et `packages/api-client/src/generated/` est régénéré avec `0 diff` depuis `apps/api/src/orcia_api/schemas/`
+**And** les tests unitaires (`Vitest 3.2` + `@testing-library/react`) et E2E (`@playwright/test 1.52`) passent à 100 % avec couverture $\ge 90\%$.
+
 ### Story 3.3: Agent Assistant (DAG 5 Nœuds type n8n, `AssistantHarness` 5 Couches), Adaptation au Profil Humain & Composition Conversationnelle de Workflows (`@xyflow/react`)
 
 As a Directrice de BU, Product Manager ou Architecte (`Claire UJ-8`, `Hélène UJ-1`, `Arthur UJ-10`),
 I want dialoguer dans le Cockpit Chat-First + Canvas (et le Dock persistant) avec l'Agent Assistant structuré en DAG de 5 nœuds orientés dans le `AssistantHarness` à 5 couches, qui adapte son discours à mon Profil Humain et peut assembler/modifier conversationnellement un Workflow avec aperçu graphique `@xyflow/react`,
-So that j'obtienne un premier token en `< 1,5 s` dans mon vocabulaire métier et puisse créer, ajuster et lancer en tâche de fond un workflow sur mesure en quelques messages (`FR-1`, `FR-11`, `AD-15`, `AR-4`, `UX-DR12`, `UX-DR15`, `NFR-PERF-1`).
+So that j'obtienne un premier token en `< 1,5 s` dans mon vocabulaire métier et puisse créer, ajuster et lancer en tâche de fond un workflow sur mesure en quelques messages (`FR-1`, `FR-11`, `AD-15`, `AD-19`, `AR-4`, `UX-DR12`, `UX-DR15`, `NFR-PERF-1`).
 
 **Acceptance Criteria:**
 
 **Given** le workflow système `orcia://system/workflows/assistant-agent` implémenté en DAG de 5 nœuds (*1. Routeur d'Intention $\rightarrow$ 2. Query Planner & Expansion Ontologique $\rightarrow$ 3. Fan-Out Parallèle [RAG, Catalogue, Blackboard, Permission Broker] $\rightarrow$ 4. Tri Critique & Vérification d'Axiomes $\rightarrow$ 5. Synthétiseur Adaptatif au Profil Humain*) exécuté dans `AssistantHarness` (`AD-15`, `AR-4`)
-**When** un utilisateur interroge l'Agent Assistant depuis **💬 1. Cockpit & Chat** ou le Dock latéral
+**When** un utilisateur interroge l'Agent Assistant depuis **💬 1. Cockpit & Chat** (`apps/web/src/features/cockpit/`) ou le Dock latéral
 **Then** le `AssistantHarness` assemble les **5 couches de prompt** (avec la Couche 1 Constitutionnelle immuable interdisant toute écriture sur une *Ancre Humaine* ou approbation de *Gate*), diffuse le premier token en `< 1,5 s` via SSE (`NFR-PERF-1`), et adapte le registre et les indicateurs au *Profil Humain* connecté (`Direction/BU` $\rightarrow$ KPIs FinOps/TTM N1/N2 ; `PM/Métier` $\rightarrow$ règles de gestion ; `Architecte/Tech Lead` $\rightarrow$ URI, OpenAPI, hashes `SHA-256` N3 ; `SecOps` $\rightarrow$ preuves de Gates, `FR-1`, `UX-DR12`).
 
 **Given** `Arthur` (`UJ-10`) qui demande à l'Agent Assistant de lui proposer un workflow pour comparer la documentation Confluence/Jira à une codebase `git://`, puis demande une modification d'étape
 **When** l'Agent Assistant génère puis ajuste la proposition à partir des briques du *Catalogue Fédéré*
 **Then** le **Canvas** affiche côte à côte le graphe interactif du workflow rendu avec **`@xyflow/react 12.12.0`** et le manifeste YAML mis à jour (`UX-DR15`, `FR-11`), et permet à `Arthur` en un clic (ou par confirmation dans le chat) d'enregistrer le workflow dans le Workspace et de lancer son exécution en tâche de fond (`BACKGROUND_AUDIT`)
-**And** les tests unitaires (`pytest` sur l'inviolabilité de la Couche 1 du `AssistantHarness` + `Vitest` sur `@xyflow/react`) et `DeterministicCassetteLLM` couvrent $\ge 90\%$ du module.
+**And** les schémas HTTP vivent dans `apps/api/src/orcia_api/schemas/`, les erreurs dans `<domaine>/errors.py`, `lint-imports` passe avec `0` violation, et les tests unitaires (`pytest` + `Vitest` sur `@xyflow/react`), d'intégration (`testcontainers` PG18 + Redis + SeaweedFS) et `DeterministicCassetteLLM` couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
 
-### Story 3.4: Ancrages Humains Obligatoires (`human-led-anchor-card`) & Arbitrage Humain Systématique sur Options Équivalentes (`arbitration-tiebreak-card`)
+### Story 3.4: Ancrages Humains Obligatoires (`human-led-anchor-card`), Arbitrage Humain Systématique (`arbitration-tiebreak-card`) & Politique de Départage (`tie_break_policy`)
 
 As a Product Manager ou Architecte (`Hélène UJ-1`, `Antoine UJ-2`),
-I want rédiger et signer obligatoirement les sections `human_authored_required: true` avant toute génération IA et trancher via une matrice comparative tout Arbitrage Humain lorsque l'agent rencontre des options équivalentes,
-So that l'humain conserve la maîtrise intellectuelle (*Think*) sans biais d'ancrage cognitif et qu'aucun agent ne prenne de décision arbitraire silencieuse (`FR-4`, `FR-5`, `AD-3`, `UX-DR3`, `UX-DR6`).
+I want rédiger et signer obligatoirement les sections `human_authored_required: true` avant toute génération IA, trancher via une matrice comparative tout Arbitrage Humain lorsque l'agent rencontre des options équivalentes, et appliquer de manière déterministe la politique `tie_break_policy` déclarée sur l'étape ou le workflow,
+So that l'humain conserve la maîtrise intellectuelle (*Think*) sans biais d'ancrage cognitif et qu'aucun agent ne prenne de décision arbitraire silencieuse (`FR-4`, `FR-5`, `FR-29`, `AD-3`, `AD-18`, `AD-19`, `UX-DR3`, `UX-DR6`).
 
 **Acceptance Criteria:**
 
@@ -395,50 +480,68 @@ So that l'humain conserve la maîtrise intellectuelle (*Think*) sans biais d'anc
 **Then** le composant **`Human-Led Anchor Card` (`human-led-anchor-card`, bordure gauche violette `4px solid #6D28D9`, fond `#F5F3FF`, `UX-DR3`)** est affiché **sans aucun bouton "Générer avec l'IA"**, verrouillant le lancement de l'agent tant qu'un texte humain significatif ($\ge 30$ caractères) n'est pas saisi et signé dans `human_anchor_signatures` (`content_sha256`, `authored_by_user_id`)
 **And** toute tentative d'écriture par une identité d'agent sur ce champ est rejetée par l'API avec `HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED` (`AD-3`), et si l'utilisateur demande dans le chat *"Remplis-le pour moi"*, l'Agent Assistant refuse poliment et engage un questionnement socratique (`FR-4`).
 
-**Given** un *Agent Exécuteur* en mode `COACHING` qui identifie $\ge 2$ options techniques, fonctionnelles ou métier équivalentes non départagées par l'Ontologie, la KB ou les Ancrages Humains
-**When** l'agent invoque l'outil système obligatoire `request_human_arbitration(options_matrix)` (`AD-3`)
-**Then** l'étape passe atomiquement au statut `WAITING_FOR_HUMAN_ARBITRATION`, émet un événement SSE temps réel, et affiche dans le Chat et le Canvas la carte ambre **`Arbitration Tie-Break Matrix` (`arbitration-tiebreak-card`, `#D97706`, `UX-DR6`)** comparant chaque option (avantages, inconvénients, impacts SI/FinOps, recommandation)
-**And** dès que l'humain sélectionne une option (avec justification optionnelle), la décision est enregistrée dans le *Blackboard* et relance immédiatement l'exécution de l'étape (`FR-5`)
-**And** les tests unitaires (`pytest`, `Vitest`) et E2E (`Playwright`) couvrent $\ge 90\%$ de `AD-3`, `UX-DR3` et `UX-DR6`.
+**Given** un *Agent Exécuteur* qui identifie $\ge 2$ options techniques, fonctionnelles ou métier équivalentes
+**When** l'agent invoque l'outil système obligatoire `request_human_arbitration(options_matrix)` (`AD-3`, `AD-18`)
+**Then** en mode `PAUSE_AND_ESCALATE` (défaut `COACHING` et `HIGH_CRITICAL`), l'étape passe atomiquement au statut `WAITING_FOR_HUMAN_ARBITRATION` (`DBOS.recv`), publie `HumanArbitrationRequested` via `domain_events_outbox` pour notification SSE temps réel, et affiche dans le Chat et le Canvas la carte ambre **`Arbitration Tie-Break Matrix` (`arbitration-tiebreak-card`, `#D97706`, `UX-DR6`)** comparant chaque option (avantages, inconvénients, impacts SI/FinOps, recommandation) ; en mode `ONTOLOGY_AXIOM_FIRST`, le moteur vérifie d'abord si un axiome de l'Ontologie départage formellement les options ; en mode `DEFER_AND_CONTINUE_WITH_ASSUMPTION` (`BACKGROUND_FAST_PATH` / `AUTONOMOUS_CONTRACT` non critique), le choix par défaut et l'hypothèse `[ASSUMPTION]` sont journalisés dans `step_memlog_jsonb`
+**And** dès que l'humain sélectionne une option (avec justification optionnelle), la décision est enregistrée dans le *Blackboard* et relance immédiatement l'exécution de l'étape (`DBOS.send`, `FR-5`)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'intégration (`testcontainers` PG18 + Redis) et E2E (`Playwright`) couvrent $\ge 90\%$ de `AD-3`, `UX-DR3` et `UX-DR6` (`AD-17`, `AD-19`).
 
-### Story 3.5: Challenge Amont Inter-Steps avec Simulation d'Impact (*What-If*) & Replay Ciblé à partir du Step $N$ (`Time-Travel Execution`)
+### Story 3.5: Challenge Amont Inter-Steps avec Simulation d'Impact (*What-If*) & Replay Ciblé à partir du Step $N$ (incluant Replay Intra-Sous-Workflow)
 
 As a Architecte SI ou Tech Lead (`Antoine UJ-2`, `Yanis UJ-3`, `Lucas UJ-7`),
-I want émettre un Challenge formel vers un Step amont avec prévisualisation immédiate du graphe d'impact (*What-If Impact Preview*) et relancer un Replay ciblé à partir d'un Step $N$ en réutilisant le snapshot validé de l'étape $N-1$,
-So that les incohérences métier ou d'API soient corrigées à la source et rejouées sans reconsommer un seul token sur les étapes amont non impactées (`FR-7`, `FR-16`, `AD-2`, `AD-7`, `UX-DR7`).
+I want émettre un Challenge formel vers un Step amont avec prévisualisation immédiate du graphe d'impact (*What-If Impact Preview*) et relancer un Replay ciblé à partir d'un Step $N$ (y compris un Step $k$ à l'intérieur d'un sous-workflow enfant) en réutilisant le snapshot validé de l'étape $N-1$,
+So that les incohérences métier ou d'API soient corrigées à la source et rejouées sans reconsommer un seul token sur les étapes amont non impactées (`FR-7`, `FR-16`, `FR-30`, `AD-2`, `AD-7`, `AD-18`, `AD-19`, `UX-DR7`).
 
 **Acceptance Criteria:**
 
 **Given** un contributeur aval (ex. `Antoine` au Step 2 ou `Yanis` au Step 3) qui sélectionne une règle ou section d'un *Artefact* amont dans le Canvas et clique sur *Challenger / Rewind amont*
 **When** la modale **`Upstream Challenge & Rewind Modal` (`UX-DR7`)** s'ouvre
-**Then** le `ImpactSimulatorService` (`AD-7`) calcule par traversée de graphe (CTE sur les références `orcia://` de `blackboard_snapshots` et `ontology_relations`) et affiche l'**Aperçu de Simulation d'Impact (*What-If Impact Preview*)** listant exactement quels *Steps* aval, quelles sections d'*Artefacts* et quels axiomes d'*Ontologie* seront invalidés, tandis que l'agent traduit l'impact technique dans le vocabulaire du profil amont (`Hélène`, PM) et lui envoie une notification de challenge (`FR-7`).
+**Then** le `ImpactSimulatorService` (`AD-7`) calcule par traversée de graphe (CTE sur les références `orcia://` de `blackboard_snapshots` et `ontology_relations`) et affiche l'**Aperçu de Simulation d'Impact (*What-If Impact Preview*)** listant exactement quels *Steps* aval, quelles sections d'*Artefacts* et quels axiomes d'*Ontologie* seront invalidés, tandis que l'agent traduit l'impact technique dans le vocabulaire du profil amont (`Hélène`, PM) et lui envoie une notification de challenge via `domain_events_outbox` (`FR-7`, `AD-19`).
 
-**Given** un arbitrage amont validé (créant une révision `v1.1` de l'artefact amont), une résolution d'habilitation (`UJ-7`) ou une mise à jour de KB (`UJ-3`)
-**When** l'utilisateur habilité déclenche l'action **Replay à partir du Step $N$** (`POST /api/v1/runs/{run_id}/steps/{step_id}/replay`, `FR-16`)
-**Then** le moteur d'orchestration réutilise strictement le snapshot validé de l'étape $N-1$ et les versions `SHA-256` figées dans `run-lock.json` (**0 ré-exécution et 0 token consommé** sur les étapes $1..N-1$), marque les anciens snapshots des étapes $\ge N$ comme `SUPERSEDED`, et crée une nouvelle branche `ACTIVE` de snapshots dans `blackboard_snapshots` (`AD-2`)
-**And** les tests unitaires (`hypothesis` sur l'arbre de branchement `ACTIVE`/`SUPERSEDED`) et d'intégration (`testcontainers` PG18) vérifient à $\ge 90\%$ qu'aucun snapshot existant n'est jamais muté lors d'un Replay.
+**Given** un arbitrage amont validé (créant une révision `v1.1` de l'artefact amont), une résolution d'habilitation (`UJ-7`), une mise à jour de KB (`UJ-3`) ou un échec sur l'étape $k$ d'un sous-workflow enfant (`SUB_WORKFLOW`, `FR-30`)
+**When** l'utilisateur habilité déclenche l'action **Replay à partir du Step $N$** (`POST /api/v1/runs/{run_id}/steps/{step_id}/replay`, `FR-16`, `FR-30`)
+**Then** le moteur d'orchestration (`DBOS.fork_workflow`) réutilise strictement le snapshot validé de l'étape $N-1$ (et, en cas de Replay intra-sous-workflow, ne rejoue que l'étape $k$ du sous-workflow enfant sans recalculer les étapes amont du workflow parent) ainsi que les versions `SHA-256` figées dans `run-lock.json` (**0 ré-exécution et 0 token consommé** sur les étapes $1..N-1$), marque les anciens snapshots des étapes $\ge N$ comme `SUPERSEDED`, et crée une nouvelle branche `ACTIVE` de snapshots dans `blackboard_snapshots` (`AD-2`)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`hypothesis` sur l'arbre de branchement `ACTIVE`/`SUPERSEDED`) et d'intégration (`testcontainers` PG18 + SeaweedFS) vérifient à $\ge 90\%$ qu'aucun snapshot existant n'est jamais muté lors d'un Replay (`AD-17`, `AD-19`).
 
 ## Epic 4: Pipeline Tri-Modal des Gates, Validation Cognitive par Découpage & Écosystème d'Exécution (Actions Jira, Sandbox & MCP IDE)
 
-Permettre aux Tech Leads, SecOps, Développeurs et Auditeurs (`Yanis UJ-3`, `Marc UJ-5`, `Sophie UJ-6`, `Arthur UJ-10`) de valider chaque étape via la chaîne de *Gates Déterministes* en *Sandbox isolée* (`< 5s`, sans réseau, conformité Gabarit/Ontologie et anti-*Pattern Drift*), de *Gates Agentiques* avec *Orthogonalité des Modèles*, pseudonymisation PII réversible (`PiiReversibleScrubber`) et DAG de 5 lentilles (dont `fact_verification` et contrôle transverse Étape $N$ vs Étape 1), et de *Gates Humaines Adaptatives* (`mandatory_full`, `risk_or_exception_based`, `sampling`) équipées du *Briefing de Revue (4 blocs)*, de la *Validation par Découpage* et du garde-fou anti-*Rubber-Stamping* (`< 15s`) ; tout en exécutant de manière gouvernée (en mode *Staged* validé aux Gates) la création, la modification et les *transitions de workflows Jira* (+ réception des Webhooks `jira:issue_updated`) et en interrogeant ORCIA depuis leur IDE via le *Serveur MCP gouverné (`/api/v1/mcp`)*.
+Permettre aux Tech Leads, SecOps, Développeurs et Auditeurs (`Yanis UJ-3`, `Marc UJ-5`, `Sophie UJ-6`, `Arthur UJ-10`) de valider chaque étape via la chaîne de *Gates Déterministes* en *Sandbox isolée bimodale hors processus* (`AD-9`, `AD-19`, `Q3: 3A`, `Q5` : Palier 1 `wasmtime-py < 5s / 256MB` pour règles pures et Palier 2 conteneur isolé `gVisor/Rootless < 60s / 1024MB` sans réseau pour linters, compilateurs et tests TDD `UJ-12`, sans Rust dans le MVP), de *Gates Agentiques* avec *Orthogonalité des Modèles*, pseudonymisation PII réversible (`PiiReversibleScrubber`) et DAG de 5 lentilles (dont `fact_verification` et contrôle transverse Étape $N$ vs Étape 1), et de *Gates Humaines Adaptatives* (`mandatory_full`, `risk_or_exception_based`, `sampling`) équipées du *Briefing de Revue (4 blocs)*, de la *Validation par Découpage* et du garde-fou anti-*Rubber-Stamping* (`< 15s`) ; tout en exécutant de manière gouvernée (en mode *Staged* validé aux Gates) la création, la modification et les *transitions de workflows Jira* (+ réception des Webhooks `jira:issue_updated`) et en interrogeant ORCIA depuis leur IDE via le *Serveur MCP gouverné (`/api/v1/mcp`)*.
 
-### Story 4.1: Sandbox Déterministe Isolée (`< 5 s`, sans réseau), Détection de Pattern Drift & Workflows Système `init-existing-project` / `init-skill`
+### Story 4.1: Sandbox Déterministe Isolée Hors Processus Palier 1 (`wasmtime-py < 5 s`, sans réseau), Détection de Pattern Drift & Workflows Système `init-existing-project` / `init-skill`
 
 As a Tech Lead ou Ingénieur SecOps (`Marc UJ-5`, `Sophie UJ-6`),
-I want exécuter les Gates Déterministes et les Skills dans une Sandbox isolée sans réseau (`bubblewrap --unshare-net` / `Wasmtime`, `< 5 s`, `256 MB`), détecter automatiquement tout Pattern Drift vis-à-vis de `ARCHITECTURE-SPINE.md` et certifier les projets/skills via `init-existing-project` et `init-skill`,
-So that aucun code généré ou script de validation ne puisse exfiltrer des données ni introduire des dépendances ou motifs architecturaux non autorisés (`FR-17`, `FR-28`, `AD-9`, `NFR-SEC-1`).
+I want exécuter les Gates Déterministes rapides et les Skills purs via `orcia_kernel.ports.SandboxPort` par délégation hors processus au service `sandbox-runner` (protocole MCP/sous-processus isolé, Palier 1 `wasmtime-py 27.0.0`, `< 5 s`, `256 MB`, `0` réseau, sans Rust dans le MVP selon `Q5`), détecter automatiquement tout Pattern Drift vis-à-vis de `ARCHITECTURE-SPINE.md` et certifier les projets/skills via `init-existing-project` et `init-skill`,
+So that aucun code généré ou script de validation ne puisse compromettre le worker d'orchestration, exfiltrer des données ni introduire des dépendances ou motifs architecturaux non autorisés (`FR-17`, `FR-28`, `AD-9`, `AD-19`, `M8`, `Q3: 3A`, `Q5`, `NFR-SEC-1`).
 
 **Acceptance Criteria:**
 
-**Given** la migration Alembic créant la table `gate_evaluations`, ainsi que le runner de sandbox (`infra/sandbox/`, `bubblewrap --unshare-net --ro-bind` et runtime WebAssembly `Wasmtime 27.0`)
-**When** une *Gate Déterministe* ou un *Skill* s'exécute à la fin d'un Step
-**Then** le processus tourne sans privilèges root, sans aucun accès réseau (`--unshare-net`), avec un système de fichiers éphémère en lecture seule (hors `/tmp` mémoire de `64 MB`), un plafond RAM de `256 MB` et un timeout matériel de `5 000 ms` (`AD-9`, `NFR-SEC-1`)
-**And** il vérifie (1) le schéma JSON/YAML du *Gabarit d'Artefact*, (2) les axiomes formels de l'*Ontologie*, (3) les suites de tests/linters, et (4) les règles d'analyse statique de **Pattern Drift** (rejetant toute bibliothèque ou motif absent du `ARCHITECTURE-SPINE.md` de référence, `FR-17`).
+**Given** la migration Alembic créant la table `gate_evaluations`, ainsi que le port `orcia_kernel.ports.SandboxPort` déléguant hors processus au runner de sandbox Palier 1 (`infra/sandbox/`, runtime WebAssembly `wasmtime-py 27.0.0`, `Q3: 3A`, `Q5`)
+**When** une *Gate Déterministe* rapide ou un *Skill* pur (`sandbox_tier: TIER_1_WASM`) s'exécute à la fin d'un Step
+**Then** le sous-processus/service `sandbox-runner` tourne sans privilèges root, sans aucun accès réseau, avec un système de fichiers éphémère en lecture seule (hors `/tmp` mémoire de `64 MB`), un plafond RAM de `256 MB` et un timeout matériel de `5 000 ms` (`AD-9`, `NFR-SEC-1`)
+**And** il vérifie (1) le schéma JSON/YAML du *Gabarit d'Artefact*, (2) les axiomes formels de l'*Ontologie*, et (3) les règles d'analyse statique de **Pattern Drift** (rejetant toute bibliothèque ou motif absent du `ARCHITECTURE-SPINE.md` de référence, `FR-17`), puis publie `GateEvaluated` dans `domain_events_outbox` (`AD-19`).
 
 **Given** un projet existant (*Brownfield*) ou un nouveau *Skill* soumis au Catalogue
 **When** l'utilisateur exécute `orcia://system/bootstrap/init-existing-project` ou `init-skill` (`FR-28`, `AD-16`)
 **Then** `init-existing-project` scanne le dépôt `git://` pour générer et faire signer un `ARCHITECTURE-SPINE.md` initial (`[ADOPTED]`) servant de baseline anti-*Pattern Drift*, et `init-skill` refuse de publier tout *Skill* qui échoue aux contraintes d'isolation de la Sandbox (`< 5 000 ms`, `0` appel réseau)
-**And** les tests unitaires et d'intégration (incluant des tests d'évasion réseau et mémoire de la sandbox) couvrent $\ge 90\%$ de `packages/orcia-core/gates/deterministic`.
+**And** `lint-imports` passe à `0` violation et les tests unitaires et d'intégration (incluant des tests d'évasion réseau et mémoire de la sandbox hors processus) couvrent $\ge 90\%$ de `packages/orcia-core/gates` (`AD-17`, `AD-19`).
+
+### Story 4.1a: Phase E — Sandbox Bimodale Palier 2 Hors Processus (Conteneur Isolé `gVisor/Rootless`, `< 60 s`, `1024 Mo`, `--network=none`) & Séparation des 5 Rôles de Déploiement (Isolation de `Docling`)
+
+As a Ingénieur SecOps ou SRE (`Sophie UJ-6`, `Karim UJ-9/UJ-12`),
+I want compléter la Sandbox WASM Palier 1 (`< 5 s`) par un runner Palier 2 hors processus en conteneur éphémère isolé sans réseau (`gVisor runsc` en Kubernetes / `Podman/Docker rootless --network=none --read-only --pids-limit=64 --memory=1024m`, `< 60 s`, sans Rust selon `Q5`) et configurer l'image conteneur backend unique pour s'exécuter selon 5 rôles opérationnels distincts (`api`, `worker-orchestration`, `worker-indexing` isolant `Docling 2.91`, `trigger-dispatcher`, `sandbox-runner`),
+So that les linters, compilateurs et suites de tests unitaires `pytest`/`vitest` de la boucle d'auto-remédiation TDD (`Red -> Green`, `UJ-12`) s'exécutent dans un budget réaliste et hermétique, et que la consommation CPU/RAM lourde de `Docling` ne dégrade jamais la latence de l'API ni du worker d'orchestration (`FR-17`, `FR-29`, `AD-9`, `AD-18`, `AD-19`, `P5`, `M8`, `M9`, `Q3: 3A`, `Q5`).
+
+**Acceptance Criteria:**
+
+**Given** une *Gate Déterministe* ou une étape de reproduction/correction TDD (`UJ-12`) déclarant `sandbox_tier: TIER_2_CONTAINER`
+**When** le service hors processus `sandbox-runner` (`ContainerSandboxRunner`) lance l'exécution sur le snapshot CAS (`SeaweedFS`) monté en lecture seule
+**Then** le conteneur s'exécute avec `--network=none`, `--read-only`, `--tmpfs /tmp:rw,noexec,nosuid,size=256m`, `--memory=1024m`, `--cpus=2.0`, `--pids-limit=64` et un timeout matériel strict de `60 000 ms` (`AD-9`, `P5`, sans dépendance aux `user namespaces` Kubernetes hôtes ni binaire Rust dans le MVP `Q5`)
+**And** il permet d'exécuter `pytest`, `ruff`, `mypy`, `tsc` et `vitest` pour vérifier qu'un test unitaire reproduisant un bug échoue avant correctif (`Red`) et passe à `100 %` après correctif (`Green`).
+
+**Given** la configuration de packaging `apps/worker/pyproject.toml` (avec l'extra optionnel `orcia-worker[indexing]` pour `docling 2.91.0`) et `infra/docker/docker-compose.yml` (`M9`, `AD-19`)
+**When** la plateforme est déployée
+**Then** la même image conteneur s'exécute selon **5 rôles séparés** par leur commande de démarrage et leurs extras : (1) `api` (FastAPI REST + SSE), (2) `worker-orchestration` (DBOS Transact, sans charger `Docling`), (3) `worker-indexing` (Dramatiq + `Docling` + `tree-sitter`), (4) `trigger-dispatcher` (Webhooks, Log Sink, Cron), et (5) `sandbox-runner` (Wasmtime Palier 1 & gVisor/Podman Palier 2)
+**And** `lint-imports` vérifie qu'`apps/api` et le code d'orchestration n'importent jamais `docling`, avec tests d'intégration d'isolation réseau/fichiers couvrant $\ge 90\%$.
 
 ### Story 4.2: Gates Agentiques avec Orthogonalité des Modèles, Pseudonymisation PII Réversible (`PiiReversibleScrubber`) & DAG de 5 Lentilles (dont `fact_verification`)
 
@@ -460,18 +563,18 @@ So that le biais d'auto-complaisance LLM, l'effet téléphone arabe entre étape
 2. *Lentille 2 — Vérification Atomique de Faits (`fact_verification`)* : décompose l'artefact en assertions factuelles atomiques, confronte chacune à l'*Ontologie (N1..N4)* et aux *KBs* épinglées avec un score de confiance (`0..1`), et bloque toute assertion sous le seuil configuré.
 3. *Lentille 3 — Attaque Adversariale & Edge-Cases*.
 4. *Lentille 4 — Conformité Domaine & Sécurité*.
-**And** la *Lentille 5 — Synthèse & Structure* (`after`) consolide `lens_findings_jsonb`, intègre `step_memlog_jsonb`, calcule `agentic_score` et structure le **Briefing de Revue en 4 blocs** dans `gate_evaluations.briefing_4blocks_jsonb`
-**And** les tests unitaires (`pytest` sur l'orthogonalité, la purge CoT et `PiiReversibleScrubber`) et `DeterministicCassetteLLM` couvrent $\ge 90\%$ du module.
+**And** la *Lentille 5 — Synthèse & Structure* (`after`) consolide `lens_findings_jsonb`, intègre `step_memlog_jsonb`, calcule `agentic_score`, structure le **Briefing de Revue en 4 blocs** dans `gate_evaluations.briefing_4blocks_jsonb` et publie `GateEvaluated` dans `domain_events_outbox` (`AD-19`)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest` sur l'orthogonalité, la purge CoT et `PiiReversibleScrubber`), d'intégration (`testcontainers` PG18 + Redis) et `DeterministicCassetteLLM` couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
 
 ### Story 4.3: Gates Humaines Adaptatives, Briefing de Revue 4 Blocs (`review-briefing-grid`), Validation par Découpage (`chunk-validation-card`) & Garde-fou Anti-Rubber-Stamping (`< 15 s`)
 
 As a Valideur Métier, Tech Lead ou SecOps (`Hélène UJ-1`, `Nadia UJ-4`, `Sophie UJ-6`),
 I want inspecter en tête de tout artefact le Briefing de Revue en 4 blocs, valider ou amender l'artefact section par section (`Validation par Découpage`), bénéficier des 3 politiques de Gates Adaptatives et être protégé contre le Rubber-Stamping (`< 15 s`),
-So that le taux de validation aveugle reste strictement $< 5\%$ tout en automatisant le passage des étapes à faible risque parfaitement conformes (`FR-6`, `FR-19`, `AD-11`, `UX-DR4`, `UX-DR5`, `UX-DR10`).
+So that le taux de validation aveugle reste strictement $< 5\%$ tout en automatisant le passage des étapes à faible risque parfaitement conformes (`FR-6`, `FR-19`, `AD-11`, `AD-19`, `UX-DR4`, `UX-DR5`, `UX-DR10`).
 
 **Acceptance Criteria:**
 
-**Given** la migration Alembic créant la table `chunk_approvals`, ainsi que le module **🛡️ 5. Gates & Habilitations** (`g g`) permettant de configurer la politique d'une *Gate Humaine* (`mandatory_full`, `risk_or_exception_based`, `sampling`)
+**Given** la migration Alembic créant la table `chunk_approvals`, ainsi que le module **🛡️ 5. Gates & Habilitations** (`g g`, `apps/web/src/features/gates/`) permettant de configurer la politique d'une *Gate Humaine* (`mandatory_full`, `risk_or_exception_based`, `sampling`)
 **When** une étape atteint une *Gate Humaine* configurée en `risk_or_exception_based`
 **Then** la Gate passe automatiquement si et seulement si `deterministic_status == PASS` **ET** `agentic_score >= 0.85` **ET** `ontology_conflicts == 0` **ET** `stale_warnings == 0` (et qu'aucune section ne porte `human_authored_required: true`) ; sinon, ou dans `20 %` des cas en mode `sampling`, elle requiert l'intervention humaine (`FR-19`, `AD-11`).
 
@@ -479,13 +582,13 @@ So that le taux de validation aveugle reste strictement $< 5\%$ tout en automati
 **When** la vue de validation est rendue
 **Then** elle affiche en haut la grille $2 \times 2$ **`Cognitive Review Briefing` (`review-briefing-grid`, `UX-DR4`)** (*1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, *4. Hypothèses Retenues* encadré en ambre `#D97706` tant qu'il n'est pas inspecté), suivie des cartes **`Chunked Validation Card` (`chunk-validation-card`, `UX-DR5`)** navigables via `Alt + ↑ / ↓` avec 3 actions par section (*Valider la section*, *Co-éditer* avec signature dans `human_anchor_signatures`, ou *Challenger / Rewind amont*), **sans aucun bouton "Tout Approuver en 1 clic"** tant que toutes les sections obligatoires ne sont pas `APPROVED` (`FR-6`)
 **And** si le valideur soumet une approbation sur un artefact $> 1\,000$ mots en moins de `15 secondes` de lecture active, la modale **`Anti-Rubber-Stamping Guard` (`UX-DR10`)** exige une confirmation explicite des hypothèses et enregistre `fast_approval_warning: true` (`AD-11`)
-**And** les tests unitaires (`pytest`, `Vitest`) et E2E (`Playwright`) couvrent $\ge 90\%$ de ces composants et règles.
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'intégration (`testcontainers` PG18) et E2E (`Playwright`) couvrent $\ge 90\%$ de ces composants et règles (`AD-17`, `AD-19`).
 
 ### Story 4.4: Actions & Transitions de Workflows Jira Multi-Projets Staged aux Gates (+ Webhooks `jira:issue_updated`) & Serveur MCP Gouverné (`/api/v1/mcp` pour IDE)
 
 As a Tech Lead, Développeur ou Architecte (`Yanis UJ-3`, `Lucas UJ-7`, `Arthur UJ-10`),
 I want que les agents puissent interroger en JQL temps réel les multiples projets Jira rattachés au Workspace, préparer des créations/modifications/transitions de tickets Jira (en routant vers le projet Jira approprié par alias/composant) en mode *Staged* soumis aux Gates, réveiller un Run sur Webhook `jira:issue_updated`, et exposer le Serveur MCP gouverné d'ORCIA (`/api/v1/mcp`) à mon IDE (VS Code, Cursor, Claude Code, Antigravity),
-So that les workflows Jira des différents projets de la solution avancent automatiquement en toute sécurité dès qu'une Gate est franchie et que les développeurs accèdent au contexte gouverné d'ORCIA directement depuis leur éditeur de code (`FR-24`, `AD-5`, `AD-6`, `AR-7`).
+So that les workflows Jira des différents projets de la solution avancent automatiquement en toute sécurité dès qu'une Gate est franchie et que les développeurs accèdent au contexte gouverné d'ORCIA directement depuis leur éditeur de code (`FR-24`, `AD-5`, `AD-6`, `AD-19`, `AR-7`).
 
 **Acceptance Criteria:**
 
@@ -496,8 +599,8 @@ So that les workflows Jira des différents projets de la solution avancent autom
 
 **Given** un *Workflow Run* en pause en attente de la résolution d'un ticket sur l'un des projets Jira liés (`UJ-3`), ou un développeur connecté depuis son IDE externe (VS Code, Cursor, Claude Code, Antigravity)
 **When** Jira émet le Webhook `jira:issue_updated` (statut passé à `Done`) **OU** que l'IDE appelle le **Serveur MCP gouverné `/api/v1/mcp`** (`AR-7`)
-**Then** le Webhook Jira notifie l'équipe en `< 500 ms` via SSE pour déclencher le *Replay* ciblé (`FR-16`), et le serveur `/api/v1/mcp` expose en mode *Passthrough* les outils de consultation de l'*Ontologie (N1..N4)*, de la *KB* multi-sources, du *Catalogue* et du *Blackboard* tout en bloquant matériellement toute écriture sur les sections `human_authored_required: true` (`AD-3`, `AD-6`, `FR-24`)
-**And** les tests unitaires, de contrat et d'intégration couvrent $\ge 90\%$ du connecteur d'actions Jira multi-projets stagées, du récepteur de Webhooks et du serveur MCP `/api/v1/mcp`.
+**Then** le Webhook Jira notifie l'équipe en `< 500 ms` via `domain_events_outbox` / SSE pour déclencher le *Replay* ciblé (`FR-16`), et le serveur `/api/v1/mcp` expose en mode *Passthrough* les outils de consultation de l'*Ontologie (N1..N4)*, de la *KB* multi-sources, du *Catalogue* et du *Blackboard* tout en bloquant matériellement toute écriture sur les sections `human_authored_required: true` (`AD-3`, `AD-6`, `FR-24`)
+**And** `lint-imports` passe à `0` violation et les tests unitaires, de contrat et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du connecteur d'actions Jira multi-projets stagées, du récepteur de Webhooks et du serveur MCP `/api/v1/mcp` (`AD-17`, `AD-19`).
 
 ## Epic 5: Centre de Notifications Temps Réel (`< 500ms`), Supervision Multi-Runs, Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces`) & Expérience Mobile Companion
 
@@ -507,25 +610,25 @@ Permettre aux Administrateurs Plateforme (`Karim UJ-9`), Directeurs de BU (`Clai
 
 As a Product Manager ou Lead Multi-Projets (`Nadia, UJ-4`),
 I want consulter dans une boîte unifiée mes notifications personnelles et d'équipe, les filtrer par portée/type, et prendre en charge (`Claim`) atomiquement une notification d'équipe avec diffusion SSE en `< 500 ms`,
-So that deux membres d'une même équipe ne travaillent jamais en doublon ni ne soumettent des validations contradictoires sur la même étape (`FR-2`, `AD-4`, `UX-DR9`, `UX-DR11`, `NFR-PERF-2`).
+So that deux membres d'une même équipe ne travaillent jamais en doublon ni ne soumettent des validations contradictoires sur la même étape (`FR-2`, `AD-4`, `AD-19`, `UX-DR9`, `UX-DR11`, `NFR-PERF-2`).
 
 **Acceptance Criteria:**
 
-**Given** la migration Alembic créant la table `task_notifications` (référençant `step_execution_id`, `target_team_id`, `target_user_id`, `claimed_by_user_id`), ainsi que le broker SSE `/api/v1/events/stream` branché sur Redis Pub/Sub `channel:workspace:{ws_id}`
+**Given** la migration Alembic créant la table `task_notifications` (référençant `step_execution_id`, `target_team_id`, `target_user_id`, `claimed_by_user_id`), l'abonné Outbox `notifications` consommant `domain_events_outbox` (`AD-19`), ainsi que le broker SSE `/api/v1/events/stream` branché sur Redis Pub/Sub `channel:workspace:{ws_id}`
 **When** une étape requiert une action humaine (*Gate Humaine*, *Arbitrage Humain*, *Challenge Humain*, *Alerte Habilitation / Obsolescence*)
-**Then** la notification apparaît instantanément dans **🔔 2. Boîte & Mes Runs** (`g i`), filtrable par portée (*À moi*, *À mon équipe*) et par type, et incrémente le badge compteur ambre sur la Sidebar (`FR-2`, `UX-DR2`).
+**Then** la notification apparaît instantanément dans **🔔 2. Boîte & Mes Runs** (`g i`, `apps/web/src/features/inbox/`), filtrable par portée (*À moi*, *À mon équipe*) et par type, et incrémente le badge compteur ambre sur la Sidebar (`FR-2`, `UX-DR2`).
 
 **Given** une notification d'équipe affichant le composant **`Presence & Claim Pill` (`presence-claim-pill`, `UX-DR9`)** à deux coéquipiers connectés simultanément (`Nadia` et `Thomas`)
 **When** `Nadia` clique sur `Prendre (Claim)` (`POST /api/v1/tasks/{task_id}/claim` ou `POST /api/v1/runs/{run_id}/steps/{step_id}/claim`)
 **Then** l'API acquiert le verrou atomique Redis `SET lock:step:{step_execution_id} {user_id} NX EX 900`, persiste `claimed_by_user_id` en base et publie `task.claim.locked` sur Redis Pub/Sub (`AD-4`)
 **And** en `< 500 ms` (`NFR-PERF-2`), l'interface de `Nadia` affiche `🔒 Pris par vous` et celle de `Thomas` passe en état `CLAIMED_BY_PEER` (opacité `85%`, pastille émeraude `🔒 En cours : Nadia`, avec possibilité de *Force Unclaim* après 15 minutes d'inactivité, `UX-DR9`, `UX-DR11`)
-**And** les tests d'intégration (`testcontainers` Redis + PG18 sous concurrence) et E2E multi-navigateurs (`@playwright/test` à 2 contextes simultanés) valident l'atomicité du verrou et la latence `< 500 ms`.
+**And** `lint-imports` passe à `0` violation et les tests d'intégration (`testcontainers` Redis + PG18 sous concurrence) et E2E multi-navigateurs (`@playwright/test` à 2 contextes simultanés) valident l'atomicité du verrou et la latence `< 500 ms` (`AD-17`, `AD-19`).
 
 ### Story 5.2: Supervision Multi-Runs Dynamique (`< 1 s`), Sélecteur de Périmètre Hiérarchique (`⌘W`), Centre de Pilotage Unifié Multi-Niveaux des Workspaces (`/workspaces` à 4 Onglets), Séparation `READ_ONLY_OBSERVER` (`HTTP 403`) vs `CONTRIBUTOR_ACTION_REQUIRED` & Palette `⌘K`
 
 As a Administrateur Plateforme (`Karim UJ-9`), Directrice de BU (`Claire UJ-8`), Chef d'Équipe (`Marc UJ-5`) ou Lead Multi-Projets (`Nadia UJ-4`),
 I want superviser simultanément mes Workflow Runs actifs en distinguant ceux où une action est attendue (`Contributeur`) de ceux que je suis en `Consultation seule`, basculer de périmètre organisationnel (`🌐 Plateforme Globale → 🏢 BU → 👥 Équipe → 🗂️ Workspace`) via `⌘W` pour consulter et gérer dans un écran unifié (`/workspaces` & `/workspaces/[workspaceId]` à 4 onglets) l'ensemble des instances de runs, des sources dédiées/partagées (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), des agents/workflows/surcharges et des équipes selon mon niveau hiérarchique, basculer entre deux Runs en `< 1 s` via la palette `⌘K`, et être protégé en `HTTP 403` contre toute mutation accidentelle en mode Observateur,
-So that je puisse piloter aussi bien un Workspace isolé qu'une Équipe, une BU entière ou la Plateforme Globale sans jamais interférer par erreur dans une étape qui ne m'est pas assignée (`FR-1`, `FR-3`, `AD-4`, `AD-14`, `UX-DR2`, `UX-DR11`, `UX-DR13`, `NFR-PERF-1`).
+So that je puisse piloter aussi bien un Workspace isolé qu'une Équipe, une BU entière ou la Plateforme Globale sans jamais interférer par erreur dans une étape qui ne m'est pas assignée (`FR-1`, `FR-3`, `AD-4`, `AD-14`, `AD-19`, `UX-DR2`, `UX-DR11`, `UX-DR13`, `NFR-PERF-1`).
 
 **Acceptance Criteria:**
 
@@ -533,7 +636,7 @@ So that je puisse piloter aussi bien un Workspace isolé qu'une Équipe, une BU 
 **When** il visualise ses *Workflow Runs* ou recherche un Run / Workspace / concept d'Ontologie / item du Catalogue
 **Then** la vue scinde clairement les Runs en **Actions Requises (`CONTRIBUTOR_ACTION_REQUIRED`)** en haut et **En Suivi (`READ_ONLY_OBSERVER`)** en bas (`FR-3`), les raccourcis clavier (`g c`, `g i`, `g f`, `g o`, `g g`, `g a`, `g s`, `g w`, `[`, `]`, `Alt + ↑/↓`) sont actifs, et le clic sur un Run charge son contexte complet dans le Cockpit en `< 1 s` (`NFR-PERF-1`).
 
-**Given** un utilisateur habilité (`PLATFORM_ADMIN`, `BU_DIRECTOR`, `TEAM_LEAD` ou Contributeur) qui utilise le **Sélecteur de Périmètre Hiérarchique (`⌘W` / `Ctrl+W`, `UX-DR2`, `UX-DR13`)** en tête de Sidebar et ouvre le **Centre de Pilotage Unifié des Workspaces (`/workspaces` ou `/workspaces/[workspaceId]`, `g w`)**
+**Given** un utilisateur habilité (`PLATFORM_ADMIN`, `BU_DIRECTOR`, `TEAM_LEAD` ou Contributeur) qui utilise le **Sélecteur de Périmètre Hiérarchique (`⌘W` / `Ctrl+W`, `UX-DR2`, `UX-DR13`)** en tête de Sidebar et ouvre le **Centre de Pilotage Unifié des Workspaces (`/workspaces` ou `/workspaces/$workspaceId` sous `TanStack Router v1`, `apps/web/src/features/workspaces/`, `g w`)**
 **When** il sélectionne une échelle (`🌐 Plateforme Globale`, `🏢 BU / Tribu`, `👥 Équipe / Sous-Équipe` ou `🗂️ Workspace Solution`) et navigue à travers les **4 onglets fractals** (`GET /api/v1/control-center/overview?scope_type=GLOBAL|BU|TEAM|WORKSPACE&scope_id={id}`)
 **Then** l'écran consolide dynamiquement par *Roll-up* SQL (`WITH RECURSIVE org_tree`) et permet le *Drill-down* en 1 clic sur :
 - **Onglet 1 (`▶️ Instances de Workflow Runs & Artefacts`)** : la liste temps réel (SSE) des *Workflow Runs* du périmètre filtré (statut, étape courante, mode `Coaching` vs `Fast-Path`, verrou *Claim*, actions requises, budget consommé, et lancement d'un nouveau Run ou *Replay*) ;
@@ -545,7 +648,7 @@ So that je puisse piloter aussi bien un Workspace isolé qu'une Équipe, une BU 
 **When** le Cockpit affiche le Run ou qu'une requête `POST/PUT/PATCH/DELETE` de mutation d'étape/artefact/Gate est envoyée à l'API
 **Then** l'interface affiche le bandeau supérieur `👁️ Mode Consultation Seule — Vous suivez ce Workflow Run en tant qu'Observateur` (`UX-DR11`) et désactive tous les boutons d'édition, d'arbitrage et d'approbation de Gate
 **And** le middleware FastAPI `RunAccessGuard` vérifie en $O(1)$ le rôle et la détention de `lock:step:{step_execution_id}` et rejette toute tentative de mutation avec `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` (`FR-3`, `AD-4`)
-**And** les tests unitaires (`pytest` sur `RunAccessGuard` et l'agrégation récursive `control-center/overview`, `Vitest` sur la palette `⌘K`, le sélecteur `⌘W` et les 4 onglets `/workspaces`) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre.
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest` sur `RunAccessGuard` et l'agrégation récursive `control-center/overview`, `Vitest` sur la palette `⌘K`, le sélecteur `⌘W` et les 4 onglets `/workspaces`), d'intégration (`testcontainers` PG18 + Redis) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
 
 ### Story 5.3: Expérience Responsive à 3 Breakpoints, Interface Mobile Companion Restreinte (3 Onglets) & Conformité Accessibilité WCAG 2.2 AA
 
@@ -572,48 +675,48 @@ Permettre aux Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`
 ### Story 6.1: Registre de Provenance Auditable Immuable (`audit_ledger` Append-Only) & Export de Conformité JSON/Markdown
 
 As a Ingénieur SecOps ou Auditeur Interne (`Sophie UJ-6`, `Claire UJ-8`),
-I want enregistrer de manière synchrone et immuable dans `audit_ledger` la provenance complète de chaque Step et Gate (URI/hashes `SHA-256`, modèle/paramètres, prompt assemblé, chunks KB injectés, appels Skills/MCP/mutations Jira, coûts/tokens, signatures et durées de revue humaines) et l'exporter en JSON/Markdown,
-So that nous puissions prouver réglementairement à 100% quelles ressources exactes, quels modèles et quels experts humains ont produit et validé chaque livrable (`FR-25`, `AD-12`, `NFR-SEC-3`).
+I want enregistrer de manière immuable dans `audit_ledger` la provenance complète de chaque Step et Gate (URI/hashes `SHA-256`, modèle/paramètres, prompt assemblé, chunks KB injectés, appels Skills/MCP/mutations Jira, coûts/tokens, signatures et durées de revue humaines) et l'exporter en JSON/Markdown,
+So that nous puissions prouver réglementairement à 100% quelles ressources exactes, quels modèles et quels experts humains ont produit et validé chaque livrable (`FR-25`, `AD-12`, `AD-19`, `NFR-SEC-3`).
 
 **Acceptance Criteria:**
 
-**Given** la migration Alembic créant la table `audit_ledger` protégée par un trigger PostgreSQL `BEFORE UPDATE OR DELETE RAISE EXCEPTION` (`NFR-SEC-3`)
+**Given** la migration Alembic créant la table `audit_ledger` protégée par un trigger PostgreSQL `BEFORE UPDATE OR DELETE RAISE EXCEPTION` (`NFR-SEC-3`) et l'abonné Outbox idempotent de `packages/orcia-core/audit_finops` (`AD-19`)
 **When** un appel LLM, une exécution de *Skill*/*MCP*, une mutation *Jira*, un passage de *Gate* ou une action humaine se produit au cours d'un *Workflow Run*
-**Then** `packages/orcia-core/audit_finops` écrit de manière synchrone une entrée horodatée UTC ISO-8601 contenant `run_id`, `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `input_tokens`, `output_tokens`, `cost_usd`, `latency_ms`, `run_lock_sha256` et les références CAS des prompts/chunks KB injectés (`FR-25`, `AD-12`)
+**Then** `packages/orcia-core/audit_finops` consomme les événements de `domain_events_outbox` (`StepCompleted`, `GateEvaluated`, `ArtifactProduced`, `RunTerminated`) sans couplage entrant depuis `orchestration/engine.py` et écrit sans doublon (idempotence par `event_id`) une entrée horodatée UTC ISO-8601 contenant `run_id`, `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `input_tokens`, `output_tokens`, `cost_usd`, `latency_ms`, `trace_id`, `run_lock_sha256` et les références CAS (`SeaweedFS`) des prompts/chunks KB injectés (`FR-25`, `AD-12`, `AD-19`)
 **And** toute tentative de `UPDATE` ou `DELETE` sur `audit_ledger` lève une exception PostgreSQL immédiate.
 
-**Given** un auditeur habilité dans **📊 6. FinOps & Audit** (`g a`)
+**Given** un auditeur habilité dans **📊 6. FinOps & Audit** (`g a`, `apps/web/src/features/finops/`)
 **When** il inspecte un *Workflow Run* ou appelle `GET /api/v1/audit/ledger/{run_id}/export?format=json|md`
 **Then** le système génère le dossier complet de **Provenance Auditable** attestant qu'aucune étape n'a consommé une ressource absente de `run-lock.json`
-**And** les tests unitaires (`pytest`) et d'intégration (`testcontainers` PG18 vérifiant le trigger append-only) couvrent $\ge 90\%$ du module.
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`) et d'intégration (`testcontainers` PG18 vérifiant le trigger append-only + SeaweedFS) couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
 
 ### Story 6.2: Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM) & Coupe-Circuits Budgétaires / Anti-Boucles
 
 As a Directrice de BU ou Responsable d'Équipe (`Claire UJ-8`, `Marc UJ-5`),
 I want comptabiliser en temps réel le coût complet d'un processus (amortissement du Setup + coût des tokens LLM + temps humain de cadrage/revue) comparé au gain de Time-to-Market, et suspendre automatiquement tout Run qui dépasse son plafond budgétaire ou son nombre maximal de tentatives,
-So that nous mesurions la réduction de $\ge 25\%$ du coût complet (`SM-1`) tout en éliminant tout risque de dérive financière par boucle d'agents infinie (`FR-26`, `AD-12`).
+So that nous mesurions la réduction de $\ge 25\%$ du coût complet (`SM-1`) tout en éliminant tout risque de dérive financière par boucle d'agents infinie (`FR-26`, `AD-12`, `AD-19`).
 
 **Acceptance Criteria:**
 
 **Given** un *Workflow* et un *Workflow Run* configurés avec `max_cost_usd` et `max_agent_retries` (défaut : `3`), ainsi qu'une baseline déclarée de coût et de TTM manuel
 **When** un Step accumule des appels LLM ou des boucles de correction suite à un rejet de Gate
-**Then** le coupe-circuit de `packages/orcia-core/audit_finops` vérifie à chaque transition les seuils : s'ils sont atteints, il suspend immédiatement l'étape en statut `PAUSED_BUDGET_EXCEEDED` ou `PAUSED_MAX_RETRIES`, émet une alerte SSE au responsable du Run, et exige un arbitrage humain ou une extension explicite (`POST /api/v1/runs/{run_id}/budget-override`) pour reprendre (`FR-26`, `AD-12`).
+**Then** le coupe-circuit vérifie à chaque transition les seuils : s'ils sont atteints, il suspend immédiatement l'étape en statut `PAUSED_BUDGET_EXCEEDED` ou `PAUSED_MAX_RETRIES`, émet une alerte SSE via `domain_events_outbox` au responsable du Run, et exige un arbitrage humain ou une extension explicite (`POST /api/v1/runs/{run_id}/budget-override`) pour reprendre (`FR-26`, `AD-12`, `AD-19`).
 
 **Given** une Directrice de BU (`Claire, UJ-8`) qui consulte **📊 6. FinOps & Audit** ou interroge l'Agent Assistant
 **When** le tableau de bord FinOps est affiché
 **Then** il ventile par *Step*, par *Workflow Run*, par *Workflow* et par *Équipe/BU* le **Coût de Setup** (temps de conception/maintenance du workflow), le **Coût de Run** (tokens LLM en `numeric(12, 6)` USD + temps humain valorisé) et l'écart de **Time-to-Market (TTM)** par rapport à la baseline (`SM-1`, `SM-5`)
-**And** les tests unitaires (`hypothesis` sur les calculs de coûts et coupe-circuits) et d'intégration couvrent $\ge 90\%$ du service FinOps.
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`hypothesis` sur les calculs de coûts et coupe-circuits) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du service FinOps (`AD-17`, `AD-19`).
 
 ### Story 6.3: Tableau de Bord Exécutif d'Impact Cognitif, Anti-Rubber-Stamping & Indice de Réversibilité Humaine
 
 As a Directrice de BU, Tech Lead ou SecOps (`Claire UJ-8`, `Marc UJ-5`, `Sophie UJ-6`),
 I want suivre par Workflow et par Équipe/BU les 3 contre-métriques de gouvernance humaine et technique (Ratio Cadrage Actif $\ge 40\%$, Taux de Rubber-Stamping $< 5\%$, Indice de Pattern Drift / Réversibilité Humaine $0\%$) et recevoir des recommandations automatiques d'ajustement des Gates,
-So that l'accélération par l'IA ne transforme jamais nos experts humains en simples tamponneurs passifs ni notre codebase en boîte noire non maintenable (`FR-27`, `SM-C1`, `SM-C2`, `SM-C3`).
+So that l'accélération par l'IA ne transforme jamais nos experts humains en simples tamponneurs passifs ni notre codebase en boîte noire non maintenable (`FR-27`, `AD-19`, `SM-C1`, `SM-C2`, `SM-C3`).
 
 **Acceptance Criteria:**
 
 **Given** les données agrégées depuis `human_anchor_signatures`, `human_arbitration_requests`, `gate_evaluations` (`review_duration_ms`, `fast_approval_warning`) et `audit_ledger`
-**When** l'utilisateur ouvre l'onglet Gouvernance & Réversibilité de **📊 6. FinOps & Audit** (`g a`)
+**When** l'utilisateur ouvre l'onglet Gouvernance & Réversibilité de **📊 6. FinOps & Audit** (`g a`, `apps/web/src/features/finops/`)
 **Then** le système calcule et affiche par *Workflow*, *Équipe* et *BU* les **3 indicateurs de maîtrise humaine (`FR-27`)** :
 1. **Ratio Cadrage Actif ("Human-Led Think") vs Simple Relecture (`SM-C2`)** : $\frac{\text{Temps Ancrages Humains} + \text{Arbitrages} + \text{Challenges}}{\text{Temps Humain Total}}$ (alerte ambre si $< 40\%$).
 2. **Taux de Validation Aveugle / Rubber-Stamping (`SM-C1`)** : pourcentage d'approbations aux Gates Humaines avec `fast_approval_warning: true` ou sans ouverture du *Briefing de Revue* (alerte rouge si $\ge 5\%$).
@@ -622,4 +725,80 @@ So that l'accélération par l'IA ne transforme jamais nos experts humains en si
 **Given** un *Workflow* présentant un taux d'approbation aux *Gates Humaines* $> 98\%$ avec un temps médian de revue inférieur au seuil minimal et `0` modification/commentaire sur une période donnée
 **When** l'analyseur de gouvernance évalue le *Workflow*
 **Then** il génère une alerte et une recommandation actionnable proposant soit de basculer la *Gate* en politique `risk_or_exception_based` / `sampling`, soit de renforcer les *Ancrages Humains Obligatoires* (`FR-27`)
-**And** les tests unitaires (`pytest`, `Vitest`), d'évaluation (`orcia-evals`) et E2E (`Playwright`) couvrent $\ge 90\%$ du tableau de bord et des règles d'alerte.
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'évaluation (`orcia-evals`) et E2E (`Playwright`) couvrent $\ge 90\%$ du tableau de bord et des règles d'alerte (`AD-17`, `AD-19`).
+
+## Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Boucle d'Auto-Remédiation & Gouvernance Post-Hoc
+
+Permettre aux Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) de configurer et signer des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), de déclencher de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11` : génération autonome de rapports analytiques multi-sources complexes)** ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox Palier 2, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et de superviser ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+
+### Story 7.1: Contrat d'Autonomie Signé, Identité Service-Principal Scopée & Régime d'Exécution `AUTONOMOUS_CONTRACT`
+
+As a Chef d'Équipe ou Ingénieur SecOps (`Marc UJ-5`, `Sophie UJ-6`),
+I want déclarer et signer un Contrat d'Autonomie sur un Workflow éligible (`LOW_NON_CRITICAL` ou `STANDARD`), lui attacher un `service_principal` à privilèges minimaux et activer le régime `AUTONOMOUS_CONTRACT`,
+So that les processus répétitifs ou analytiques (`UJ-11`) puissent s'exécuter de bout en bout sans intervention humaine synchrone tout en bloquant formellement toute autonomie non supervisée sur les processus `HIGH_CRITICAL` (`FR-5`, `FR-22`, `FR-29`, `AD-3`, `AD-6`, `AD-18`, `AD-19`).
+
+**Acceptance Criteria:**
+
+**Given** un *Workflow* enregistré dans le Catalogue
+**When** un `TEAM_LEAD` tente d'activer `execution_regime: AUTONOMOUS_CONTRACT` sur un workflow de criticité `HIGH_CRITICAL`
+**Then** l'API rejette la requête avec `HTTP 422 ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE` (`AD-18`, `FR-29`)
+**And** sur un workflow `LOW_NON_CRITICAL` ou `STANDARD`, l'activation requiert la signature d'un **Contrat d'Autonomie** dans `human_anchor_signatures` (co-signé par un `SECOPS` si une identité `service_principal` est utilisée), définissant les sources autorisées en lecture seule, la liste blanche des *Actions Staged*, les plafonds budgétaires et la `tie_break_policy`.
+
+**Given** un *Workflow Run* s'exécutant sous `AUTONOMOUS_CONTRACT` (`UJ-11`)
+**When** toutes les *Gates Déterministes* (`PASS`) et *Gates Agentiques* (`agentic_score >= 0.85`, `fact_verification >= 0.90`, `0` conflit d'ontologie, `0` `[STALE_WARNING]`) sont franchies
+**Then** le Run finalise son livrable et exécute les seules *Actions Staged* autorisées par le contrat avec le statut `COMMITTED_AUTONOMOUS`
+**And** si un seuil de Gate n'est pas atteint ou qu'un conflit survient, le Run suspend immédiatement l'action d'écriture et escalade vers l'équipe propriétaire (`PAUSED_AUTONOMOUS_ESCALATION`) via `domain_events_outbox`
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest` + `hypothesis`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
+
+### Story 7.2: Déclencheurs Événementiels Idempotents (`WEBHOOK`, `LOG-SINK-ALERT`, `CRON`, `MANUAL_AUTONOMOUS`), Déduplication & Protection Anti-Boucle (*Self-Trigger Guard*)
+
+As a Ingénieur Plateforme / SRE ou Directrice de BU (`Karim UJ-9/UJ-12`, `Claire UJ-11`),
+I want enregistrer des déclencheurs autonomes planifiés (`CRON`) ou événementiels (`WEBHOOK` Jira/Git/Confluence, `LOG_SINK_ALERT` depuis le puits de logs) exécutés par le rôle `trigger-dispatcher` et dotés d'une clé d'idempotence stricte (`DBOS SetWorkflowID`), d'une fenêtre de cooldown et d'un garde-fou anti-auto-déclenchement,
+So that les rapports analytiques périodiques (`UJ-11`) et les diagnostics d'erreurs de logs (`UJ-12`) se lancent automatiquement sans jamais créer de doublons lors des ré-essais ni provoquer de tempête de boucles infinies (`FR-24`, `FR-26`, `FR-29`, `AD-12`, `AD-18`, `AD-19`).
+
+**Acceptance Criteria:**
+
+**Given** un déclencheur actif dans `workflow_triggers` (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON` via `@DBOS.scheduled` ou `MANUAL_AUTONOMOUS`) géré par le rôle `trigger-dispatcher` (`M9`, `AD-19`)
+**When** deux événements identiques (même `X-Webhook-Delivery-Id`, même `error_fingerprint_sha256` dans la fenêtre `cooldown_window_seconds`, ou même fenêtre `CRON`) ou un ré-essai se présentent simultanément
+**Then** `DBOS SetWorkflowID("<trigger_id>:<idempotency_key>")`, le verrou atomique Redis `SET lock:trigger:{trigger_id}:{idempotency_key} NX EX 86400` et la contrainte PostgreSQL `UNIQUE (trigger_id, trigger_idempotency_key)` garantissent qu'un seul `workflow_run` est créé (`AD-18`).
+
+**Given** un événement Webhook ou de puits de logs dont l'émetteur est le `service_principal` d'ORCIA ou qui contient le marqueur `x-orcia-origin-run-id`
+**When** le récepteur de triggers inspecte l'événement
+**Then** le **Self-Trigger Guard** ignore l'événement et publie la prévention de boucle dans `domain_events_outbox` vers `audit_ledger`
+**And** si le déclencheur dépasse `max_runs_per_hour`, `max_daily_cost_usd` ou `max_consecutive_failures` (défaut `3`), son statut passe automatiquement à `CIRCUIT_OPEN` avec alerte SSE `< 500 ms`
+**And** `lint-imports` passe à `0` violation et les tests unitaires et d'intégration sous concurrence (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du dispatcher de triggers (`AD-17`, `AD-19`).
+
+### Story 7.3: Boucle Fermée d'Auto-Remédiation (`UJ-12` : Diagnostic >= 0.90, Reproduction TDD en Sandbox Palier 2, Test Staging Prod-Like, Déploiement & Vérification Post-Action avec Rollback Automatique)
+
+As a Ingénieur SRE ou Tech Lead (`Karim UJ-12`, `Yanis UJ-3`),
+I want qu'une erreur détectée dans le puits de logs déclenche un workflow autonome de diagnostic qui, uniquement si la cause racine est certaine ($\ge 0.90$), rédige l'intention de remédiation, reproduit et corrige le bug par tests unitaires TDD en Sandbox Palier 2 (`TIER_2_CONTAINER < 60 s`), valide le correctif au plus proche des conditions de production, l'applique en production puis vérifie dans le puits de logs que l'erreur a disparu (avec Rollback automatique sinon),
+So that les incidents récurrents à cause racine claire soient résolus en quelques minutes avec la même rigueur d'ingénierie qu'un développeur senior et une sécurité de retour arrière immédiat (`FR-13`, `FR-17`, `FR-18`, `FR-29`, `FR-30`, `AD-9`, `AD-10`, `AD-18`, `AD-19`, `UJ-12`).
+
+**Acceptance Criteria:**
+
+**Given** un *Workflow Run* d'auto-remédiation déclenché par `LOG_SINK_ALERT` (`UJ-12`)
+**When** l'étape de diagnostic analyse la stacktrace et le *Graphe Tripartite (`Confluence ↔ Jira ↔ Git`)*
+**Then** si `root_cause_confidence < 0.90` ou si le périmètre touche une zone `HIGH_CRITICAL`, le workflow s'arrête immédiatement après le diagnostic et crée un ticket Jira d'escalade sans modifier aucun code (`FR-29`, `AD-18`).
+
+**Given** un diagnostic avec `root_cause_confidence >= 0.90` sur un périmètre autorisé par le *Contrat d'Autonomie*
+**When** le workflow poursuit la chaîne de remédiation (potentiellement structurée en `SUB_WORKFLOW`, `FR-30`)
+**Then** il exécute séquentiellement : (1) la génération et validation de l'**Intention de Remédiation** (`FR-13`), (2) l'écriture dans le service hors processus `sandbox-runner` Palier 2 (`TIER_2_CONTAINER`, `gVisor/Podman rootless --network=none < 60 s`, `AD-9`, `P5`, sans Rust selon `Q5`) d'un test unitaire reproduisant l'erreur (`Red`) puis du correctif applicatif ou IaC faisant passer 100 % des tests unitaires et du contrôle anti-*Pattern Drift* (`Green`) validé par une *Gate Agentique Orthogonale* (`AD-10`), (3) le déploiement et le test de non-régression / rejeu de trafic sur l'environnement **Staging / Prod-Like**, (4) la mise en production selon la stratégie du contrat, et (5) l'étape obligatoire **`POST_ACTION_VERIFICATION`** qui observe le puits de logs et les métriques pendant `verification_window_seconds`
+**And** si l'erreur réapparaît dans le puits de logs ou si le taux d'erreur/latence se dégrade pendant `POST_ACTION_VERIFICATION`, ORCIA déclenche automatiquement le **Rollback** vers la version précédente, bascule le déclencheur en `CIRCUIT_OPEN` et notifie l'astreinte en `< 500 ms` via `domain_events_outbox`
+**And** `lint-imports` passe à `0` violation et les tests unitaires, cassettes déterministes (`DeterministicCassetteLLM`) et tests d'intégration (`testcontainers` PG18 + Redis + SeaweedFS) couvrent $\ge 90\%$ de la boucle fermée et du Rollback automatique (`AD-17`, `AD-19`).
+
+### Story 7.4: Supervision UX des Runs Autonomes (`AutonomousExecutionBadge`, `UX-DR17`), Sorties de Secours (`Kill-Switch` & `Rollback`), Échantillonnage Post-Hoc & Métriques `SM-A1..A3`
+
+As a Directrice de BU, Chef d'Équipe ou Auditeur SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Sophie UJ-6`),
+I want distinguer visuellement tout run ou livrable exécuté sans humain (`AutonomousExecutionBadge`), disposer d'un filtre regroupé par déclencheur dans la Boîte de Notifications, auditer par échantillonnage post-hoc une fraction des runs autonomes, actionner en 1 clic le `Kill-Switch` ou l'invalidation/Rollback, et suivre les indicateurs `SM-A1`, `SM-A2`, `SM-A3` séparément des indicateurs `SM-C1`/`SM-C2`,
+So that l'ouverture aux workflows autonomes préserve la lisibilité cognitive du portail (Loi de Hick), la transparence d'audit et le contrôle humain immédiat (`FR-27`, `FR-29`, `AD-19`, `UX-DR17`, `SM-C1`, `SM-C2`, `SM-A1`, `SM-A2`, `SM-A3`).
+
+**Acceptance Criteria:**
+
+**Given** un *Workflow Run* ou un *Artefact* produit sous `AUTONOMOUS_CONTRACT`
+**When** il est affiché dans le Cockpit, **🔔 2. Boîte & Mes Runs** ou le Centre de Pilotage `/workspaces`
+**Then** le composant **`AutonomousExecutionBadge` (`UX-DR17` dans `@orcia/ui`)** est rendu en Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`, **jamais** en Violet `#6D28D9` réservé à `HumanLedAnchorCard`) avec la mention du contrat et du déclencheur, les runs autonomes nominaux sont regroupés par déclencheur dans un tiroir replié de l'Inbox (seules les escalades, ouvertures `CIRCUIT_OPEN` et tirages `POST_HOC_AUDIT_SAMPLE` remontant en priorité), et les boutons **`🛑 Kill-Switch`** et **`⏪ Invalider & Rollback`** sont immédiatement accessibles.
+
+**Given** le module **📊 6. FinOps & Audit** (`g a`, `apps/web/src/features/finops/`)
+**When** les indicateurs de gouvernance sont calculés
+**Then** `SM-C1` et `SM-C2` sont calculés sur le périmètre des runs interactifs et des Gates Humaines sans être faussés par les runs autonomes, tandis que les 3 nouveaux indicateurs **`SM-A1` (Taux d'Escalade Autonome)**, **`SM-A2` (Taux d'Invalidation Post-Hoc / Rollback, cible $< 1\%$)** et **`SM-A3` (Coût Moyen & Gain TTM par Run Autonome)** sont affichés avec alerte automatique si `SM-A2 >= 1%`
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'intégration (`testcontainers` PG18) et E2E (`Playwright`) couvrent $\ge 90\%$ des composants `UX-DR17`, du `Kill-Switch` et des métriques `SM-A1..A3` (`AD-17`, `AD-19`).

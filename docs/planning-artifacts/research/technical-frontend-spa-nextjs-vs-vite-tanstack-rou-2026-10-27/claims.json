@@ -1,0 +1,112 @@
+{
+  "claims": [
+    {
+      "ref": 1,
+      "claim": "Plane a migré son application B2B client-first (1 200+ fichiers, 20 000+ lignes) de Next.js vers Vite + React Router, réduisant le temps de rechargement local de 20–30 s à quelques millisecondes.",
+      "class": "perf_scale",
+      "pub_date": "2025-05"
+    },
+    {
+      "ref": 2,
+      "claim": "Inngest a migré son dashboard de Next.js App Router vers Vite + TanStack Router/Start après des temps de démarrage dev de 10–12 s et une forte friction RSC, réduisant de 83 % le temps de cycle local et l'empreinte RAM.",
+      "class": "perf_scale",
+      "pub_date": "2025-07"
+    },
+    {
+      "ref": 3,
+      "claim": "Dans les benchmarks 2025–2026, Vite 6 démarre à froid en ~380 ms (contre ~640 ms pour Next.js Turbopack) sur des applications de taille petite à moyenne (~40–100 composants), avec une latence HMR plate de 60–140 ms sans graphe RSC en RAM.",
+      "class": "perf_scale",
+      "pub_date": "2025-09"
+    },
+    {
+      "ref": 4,
+      "claim": "Les mises à jour HMR touchant des React Server Components ou des layouts racines dans Next.js 15/16 montent à ~450 ms et maintiennent un graphe incrémental Rust persistant beaucoup plus gourmand en RAM que Vite 6.",
+      "class": "perf_scale",
+      "pub_date": "2025-06"
+    },
+    {
+      "ref": 5,
+      "claim": "Le mode Static Export de Next.js 15/16 (output: 'export') génère un fichier .html distinct par route et exige que tous les paramètres dynamiques ([id]) soient énumérés au build via generateStaticParams (retournant 404 sur les UUID créés au runtime sans réécriture externe).",
+      "class": "architecture_pattern",
+      "pub_date": "2025-10"
+    },
+    {
+      "ref": 6,
+      "claim": "React Router v7 en mode SPA (ssr: false sur Vite 6) pré-rend uniquement la coquille racine dans un index.html unique et supporte nativement les routes dynamiques au runtime (/runs/:id) via clientLoader.",
+      "class": "architecture_pattern",
+      "pub_date": "2025-03"
+    },
+    {
+      "ref": 7,
+      "claim": "TanStack Router v1 traite les searchParams d'URL comme un magasin d'état typé à la compilation (validateSearch avec Zod/Valibot) et fait échouer tsc sur tout <Link> ou navigate() invalide, là où Next.js App Router et React Router v7 laissent les query strings non typées par défaut.",
+      "class": "architecture_pattern",
+      "pub_date": "2025-08"
+    },
+    {
+      "ref": 8,
+      "claim": "Vite 6 + @tanstack/router-plugin/vite (autoCodeSplitting: true) découpe automatiquement les routes et loaders au build en 12–18 s pour un poids cœur de ~30 Ko gzippé (~88 Ko minifié).",
+      "class": "perf_scale",
+      "pub_date": "2025-04"
+    },
+    {
+      "ref": 9,
+      "claim": "L'utilisation de Next.js App Router face à un backend Python FastAPI séparé oblige à désactiver manuellement les 4 couches de cache serveur (dynamic = 'force-dynamic') sur les vues dynamiques B2B.",
+      "class": "architecture_pattern",
+      "pub_date": "2025-06"
+    },
+    {
+      "ref": 10,
+      "claim": "TanStack Router v1 injecte QueryClient dans le contexte du routeur (ensureQueryData dans loader avec defaultPreloadStaleTime: 0), unifiant le préchargement au survol (<Link preload='intent'>) et le cache @tanstack/react-query v5 + openapi-fetch.",
+      "class": "architecture_pattern",
+      "pub_date": "2025-02"
+    },
+    {
+      "ref": 11,
+      "claim": "Dans Next.js App Router, les composants marqués 'use client' subissent malgré tout une passe SSR initiale sur Node.js, provoquant des erreurs d'hydratation sur les canevas DOM comme @xyflow/react v12 sauf encapsulation systématique dans next/dynamic(..., { ssr: false }).",
+      "class": "architecture_pattern",
+      "pub_date": "2025-01"
+    },
+    {
+      "ref": 12,
+      "claim": "Le proxying de flux Server-Sent Events (text/event-stream) depuis FastAPI via les rewrites de next.config.js souffre de problèmes documentés de buffering des réponses (Issue Next.js #45048), contrairement au proxy Vite en dev et Nginx (proxy_buffering off) en production.",
+      "class": "perf_scale",
+      "pub_date": "2025-02"
+    },
+    {
+      "ref": 13,
+      "claim": "CVE-2025-29927 (CVSS 9.1 Critique, mars 2025) permet de contourner intégralement l'authentification et les contrôles de sécurité du Middleware Next.js (< 15.2.3) via l'en-tête interne x-middleware-subrequest.",
+      "class": "version_compat",
+      "pub_date": "2025-03"
+    },
+    {
+      "ref": 14,
+      "claim": "CVE-2025-55182 ('React2Shell', CVSS 10.0 Critique, décembre 2025) est une exécution de code à distance (RCE) sans authentification dans la désérialisation RSC Flight impactant les serveurs Next.js 15.x et 16.x App Router même lorsqu'aucune Server Action personnalisée n'est définie.",
+      "class": "version_compat",
+      "pub_date": "2025-12"
+    },
+    {
+      "ref": 15,
+      "claim": "Entre mai 2024 et juillet 2026, le serveur Next.js a nécessité des correctifs de sécurité récurrents (CVE-2024-34351 SSRF CVSS 7.5, CVE-2026-23870 DoS boucle d'événements Node.js via références $K, CVE-2026-64645/64649 SSRF, CVE-2026-64642 bypass proxy), alors qu'un bundle SPA statique Vite servi par nginx:alpine élimine 100 % de la surface d'attaque Node.js/RSC/Middleware.",
+      "class": "version_compat",
+      "pub_date": "2026-07"
+    },
+    {
+      "ref": 16,
+      "claim": "En production Docker/Kubernetes, une image SPA statique Vite + nginx:alpine pèse 20–50 Mo sur disque et consomme 5–15 Mo de RAM au repos (limite pod 30–50 Mo), contre 150–300 Mo sur disque et 60–120 Mo de RAM au repos (limite pod 256–512 Mo) pour Next.js standalone.",
+      "class": "perf_scale",
+      "pub_date": "2025-06"
+    },
+    {
+      "ref": 17,
+      "claim": "L'auto-hébergement horizontal de Next.js 15/16 sur plusieurs réplicas Kubernetes hors Vercel impose des adaptateurs Redis personnalisés (cacheHandler / cacheHandlers) et cacheMaxMemorySize: 0 pour éviter la désynchronisation des caches LRU locaux, tandis qu'un conteneur SPA Vite + Nginx est 100 % sans état.",
+      "class": "architecture_pattern",
+      "pub_date": "2026-05"
+    },
+    {
+      "ref": 18,
+      "claim": "En octobre 2026, @tanstack/react-router et @tanstack/react-start atteignent 12–16M+ téléchargements hebdomadaires npm avec la sortie en disponibilité générale (GA) de TanStack Start v1.0 le 13 octobre 2026, offrant une réversibilité sans lock-in entre SPA pure et SSR optionnel.",
+      "class": "ecosystem_signal",
+      "pub_date": "2026-10"
+    }
+  ]
+}

@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-25-2026 12:12
+last_updated: 10-27-2026 19:55
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -50,16 +50,21 @@ development_status:
   2-4-graphe-tripartite-multi-sources-confluence-1-n-jira-1-n-git: done
   epic-2-retrospective: done
 
-  epic-3: backlog
-  3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: backlog
-  3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: backlog
+  epic-3: in-progress
+  3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: done
+  3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: done
+  3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: ready-for-dev
+  3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp: backlog
+  3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: backlog
+  3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: backlog
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: backlog
   epic-3-retrospective: optional
 
   epic-4: backlog
-  4-1-sandbox-déterministe-isolée-5-s-sans-réseau-détection-de-pat: backlog
+  4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: backlog
+  4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: backlog
   4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: backlog
   4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: backlog
   4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: backlog
@@ -77,56 +82,285 @@ development_status:
   6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: backlog
   epic-6-retrospective: optional
 
+  epic-7: backlog
+  7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: backlog
+  7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler: backlog
+  7-3-boucle-fermée-d-auto-remédiation-uj-12-diagnostic-0-90-repro: backlog
+  7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: backlog
+  epic-7-retrospective: optional
 action_items:
   - id: SEC-01
     title: "Chiffrement GitOps des secrets d'équipe via Mozilla SOPS + age (.env.secrets.enc)"
     status: open
     epic: epic-1
     description: >
-      Séparer la topologie non-sensible (.env.example) des secrets chiffrés (.env.secrets.enc via
-      Mozilla SOPS + clés publiques age d'équipe/CI) et permettre à `./manage.sh start` de déchiffrer
+      Séparer la topologie non-sensible (.env.example) des secrets chiffrés (.env.secrets.enc
+      via
+      Mozilla SOPS + clés publiques age d'équipe/CI) et permettre à `./manage.sh start`
+      de déchiffrer
       les secrets en mémoire (`sops exec-env`) sans fichier en clair sur disque.
   - id: SEC-02
-    title: "Keyring multi-versions (rotation sans coupure) pour PassthroughVaultCipher (AES-256-GCM) et JwtSessionManager"
+    title: "Keyring multi-versions (rotation sans coupure) pour PassthroughVaultCipher
+      (AES-256-GCM) et JwtSessionManager"
     status: open
     epic: epic-1
     description: >
       Supporter `ORCIA_PASSTHROUGH_MASTER_KEYS="v2:<key2>,v1:<key1>"` et `ORCIA_JWT_SIGNING_SECRETS`
-      dans `packages/orcia-core/src/orcia_core/permissions/crypto.py` afin de chiffrer/signer avec
-      la clé active (`v2`) tout en déchiffrant/vérifiant les jetons et credentials historiques (`v1`)
-      pendant la fenêtre de rotation, couplé à un script de maintenance `infra/scripts/maintenance/XX_rewrap_passthrough_secrets.py --dry-run|--apply`.
+      dans `packages/orcia-core/src/orcia_core/permissions/crypto.py` afin de chiffrer/signer
+      avec
+      la clé active (`v2`) tout en déchiffrant/vérifiant les jetons et credentials
+      historiques (`v1`)
+      pendant la fenêtre de rotation, couplé à un script de maintenance `infra/scripts/maintenance/XX_rewrap_passthrough_secrets.py
+      --dry-run|--apply`.
   - id: SEC-03
-    title: "Adaptateur KMS / Secret Manager externe (Infisical / HashiCorp Vault / Cloud KMS) & Enveloppe DEK/KEK"
+    title: "Adaptateur KMS / Secret Manager externe (Infisical / HashiCorp Vault /
+      Cloud KMS) & Enveloppe DEK/KEK"
     status: open
     epic: epic-6
     description: >
-      Introduire un port hexagonal `SecretProviderPort` dans `packages/orcia-core/ports/` avec
-      chiffrement par enveloppe (Data Encryption Key par Workspace chiffrée par une Key Encryption Key
+      Introduire un port hexagonal `SecretProviderPort` dans `packages/orcia-kernel/ports.py`
+      avec
+      chiffrement par enveloppe (Data Encryption Key par Workspace chiffrée par une
+      Key Encryption Key
       dans Vault/KMS) et audit immuable des rotations de clés dans `audit_ledger`.
   - id: UX-01
-    title: "Refonte complète UX/UI (Sally / bmad-ux) selon les 11 règles fondamentales (Loi de Hick, 2 typographies max, grilles, feedback, Mobile-First)"
+    title: "Refonte complète UX/UI (Sally / bmad-ux) selon les 11 règles fondamentales
+      (Loi de Hick, 2 typographies max, grilles, feedback, Mobile-First)"
     status: done
     epic: epic-1
     description: >
-      Revoir l'ensemble des écrans `apps/web` et composants `@orcia/ui` (`packages/ui`) avec l'agent
-      BMAD UX Designer (`Sally` / `bmad-ux`) pour éliminer la surcharge visuelle de `ModuleWorkspaceView`
-      (séparation stricte par module selon la Loi de Hick), unifier sur 2 typographies maximum
-      (`Inter`/`Geist Sans` + `JetBrains Mono`), renforcer la hiérarchie visuelle, les grilles CSS,
+      Revoir l'ensemble des écrans `apps/web` et composants `@orcia/ui` (`packages/ui`)
+      avec l'agent
+      BMAD UX Designer (`Sally` / `bmad-ux`) pour éliminer la surcharge visuelle de
+      `ModuleWorkspaceView`
+      (séparation stricte par module selon la Loi de Hick), unifier sur 2 typographies
+      maximum
+      (`Inter`/`Geist Sans` + `JetBrains Mono`), renforcer la hiérarchie visuelle,
+      les grilles CSS,
       les sorties de secours et les retours visuels immédiats.
-  - id: ARCH-01
-    title: "Adaptateurs SQLAlchemy Asyncio (Unit of Work PostgreSQL 18) pour la persistance transactionnelle des routes FastAPI"
-    status: open
-    epic: epic-3
-    description: >
-      Relier les services du domaine (`AuthAndOrganizationService`, `FederatedCatalogService`,
-      `PermissionBrokerService`, `SystemBootstrapWorkflowService`, `OntologyGovernanceService`,
-      `HybridRagService`) à des dépôts SQLAlchemy Asyncio sur PostgreSQL 18 + pgvector lors de
-      l'implémentation du moteur d'orchestration durable et du Blackboard en Epic 3.
   - id: SPEC-01
-    title: "Génération systématique des spécifications `spec-{story-key}.md` et enrichissement des rapports Tech Lead pour l'Epic 2"
+    title: "Génération systématique des spécifications `spec-{story-key}.md` et enrichissement
+      des rapports Tech Lead pour l'Epic 2"
+    action: "Spécifications et rapports Tech Lead Epic 2"
+    priority: P2
+    depends_on: []
+    ad_ref: "AD-17"
+    owner: "Amelia (Dev)"
     status: done
     epic: epic-2
     description: >
-      Créer les spécifications `spec-2-1` à `spec-2-4` ainsi que `epic-2-context.md` et les
+      Créer les spécifications `spec-2-1` à `spec-2-4` ainsi que `epic-2-context.md`
+      et les
       rétrospectives `epic-1-retro-2026-10-25.md` / `epic-2-retro-2026-10-25.md` dans
       `docs/implementation-artifacts/`.
+  - id: ARCH-M1
+    title: "Extraction du noyau partagé minimal packages/orcia-kernel & rupture des 3 cycles inter-domaines (M1, M2, Q1: 1A)"
+    action: "Créer packages/orcia-kernel (ids.py, enums.py, errors.py, events.py, ports.py) et éliminer les 3 cycles (blackboard <-> orchestration, catalog <-> bootstrap, permissions <-> bootstrap)"
+    priority: P0
+    depends_on: []
+    ad_ref: "AD-1, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Permettre à chaque domaine de packages/orcia-core d'évoluer indépendamment sans dépendance circulaire.
+  - id: ARCH-M3
+    title: "Déplacement de packages/orcia-core/schemas/ (2 060 lignes) vers apps/api/src/orcia_api/schemas/ & éclatement de domain/exceptions.py en <domaine>/errors.py (M3, M4)"
+    action: "Sortir les 10 fichiers de DTOs HTTP hors de orcia-core vers apps/api/src/orcia_api/schemas/<domaine>.py et remplacer domain/exceptions.py (risque CRITICAL 59 dépendants) par <domaine>/errors.py + registre HTTP RFC 9457 dans apps/api"
+    priority: P0
+    depends_on:
+      - ARCH-M1
+    ad_ref: "AD-1, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Supprimer le couplage entre le domaine métier et le contrat REST et éliminer le point chaud domain/exceptions.py.
+  - id: ARCH-M5
+    title: "Suppression des 3 singletons d'import (_DEFAULT_*_SERVICE) et point d'assemblage unique FastAPI lifespan/Depends (M5)"
+    action: "Supprimer _DEFAULT_AUTH_SERVICE, _DEFAULT_CATALOG_SERVICE et _DEFAULT_ORCHESTRATION_SERVICE dans apps/api/src/orcia_api/routers/{auth,catalog,orchestration}.py, déplacer les 39 InMemory* dans tests/unit/fakes/ et câbler exclusivement dans dependencies.py"
+    priority: P0
+    depends_on:
+      - ARCH-M1
+    ad_ref: "AD-1, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Garantir l'inversion de contrôle et un seul point d'assemblage (Composition Root) dans apps/api et apps/worker.
+  - id: ARCH-P3
+    title: "Réalignement des versions de la stack, workspace uv à 4 packages + uv.lock & Renovate (P3, Q1: 1A)"
+    action: "Structurer le workspace uv à 4 packages (packages/orcia-kernel, packages/orcia-core, apps/api, apps/worker + uv.lock), aligner les bornes minimales Python/TS sur les versions réelles validées et configurer Renovate"
+    priority: P0
+    depends_on: []
+    ad_ref: "AD-1, AD-17, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Karim (Platform) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Corriger l'écart entre la Spine et pyproject.toml / package.json et garantir la reproductibilité des builds via uv.lock et pnpm-lock.yaml.
+  - id: ARCH-P4
+    title: "Vérification automatique du graphe d'imports et de l'encapsulation _internal/ par import-linter 2.7 en CI (P4, Q4: 4A)"
+    action: "Configurer import-linter 2.7 (lint-imports) pour vérifier l'ordre des couches (orcia_kernel <- orcia_core <- api/worker), l'indépendance des domaines pairs, l'encapsulation de <domaine>._internal et l'absence de fastapi/sqlalchemy/dramatiq/dbos/redis/litellm dans les modèles et ports"
+    priority: P0
+    depends_on:
+      - ARCH-M1
+      - ARCH-P3
+    ad_ref: "AD-1, AD-17, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Transformer les règles d'architecture d'AD-1 et AD-19 en garde-fou bloquant de la couche 1 de tests CI.
+  - id: ARCH-01
+    title: "Adaptateurs SQLAlchemy 2.1 Asyncio (Unit of Work PostgreSQL 18) dans <domaine>/_internal/ (Q4: 4A)"
+    action: "Consolider dans Story 3.2b (ARCH-P1) l'implémentation des repositories SQLAlchemy 2.1 Async + asyncpg dans le schéma public unique sur les migrations Alembic 0001..0011"
+    priority: P0
+    depends_on:
+      - ARCH-M5
+      - ARCH-P4
+    ad_ref: "AD-1, AD-2, AD-19"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-3
+    description: >
+      Relier les services de tous les domaines à des repositories SQLAlchemy Asyncio sur PostgreSQL 18 + pgvector en Story 3.2b.
+  - id: ARCH-P1
+    title: "Persistance réelle de bout en bout : SQLAlchemy 2.1 Async + asyncpg, LiteLLMAdapter & reprise sur redémarrage (P1)"
+    action: "Brancher les repositories SQLAlchemy Async sur les migrations Alembic 0001..0011 et implémenter LiteLLMAdapter à côté de DeterministicCassetteLLM derrière LLMPort"
+    priority: P0
+    depends_on:
+      - ARCH-P3
+      - ARCH-P4
+    ad_ref: "AD-1, AD-2, AD-10, AD-17"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-3
+    description: >
+      Livrer en Story 3.2b un Workflow Run complet traversant API -> Worker -> PostgreSQL 18 et reprenant son exécution après extinction/redémarrage des processus sans aucune perte d'état.
+  - id: ARCH-P2
+    title: "Spike & intégration du moteur d'exécution durable transactionnel DBOS Transact (dbos 2.14.0, MIT) sur PostgreSQL 18 (P2, OQ-01)"
+    action: "Valider par spike puis intégrer DBOS Transact (@DBOS.workflow, @DBOS.step, DBOS.recv, @DBOS.scheduled, DBOS.fork_workflow, SetWorkflowID) sur PostgreSQL 18 tout en conservant Dramatiq pour le délestage lourd (Docling/RAG)"
+    priority: P0
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-2, AD-13, AD-18"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Éviter de réimplémenter manuellement un moteur de workflow distribué au-dessus de Dramatiq tout en évitant le surcoût opérationnel d'un cluster Temporal externe grâce au checkpointing ACID natif de DBOS Transact dans PostgreSQL 18.
+  - id: ARCH-P6
+    title: "Remplacement de MinIO (AGPL-3.0, archivé en 2026) par ObjectStoragePort S3 v4 adossé à SeaweedFS (Apache-2.0) (P6, OQ-03)"
+    action: "Implémenter l'adaptateur S3 v4 SeaweedFS derrière ObjectStoragePort (orcia_kernel.ports) et remplacer l'image MinIO par SeaweedFS 4.17 (Apache-2.0) dans docker-compose.yml"
+    priority: P1
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-5"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    owner: "Karim (Platform)"
+    status: open
+    epic: epic-3
+    description: >
+      Éliminer le risque de licence AGPL-3.0 et de maintenance lié à l'archivage du dépôt communautaire MinIO en 2026 tout en conservant le contrat S3 v4 CAS immuable (cas/<sha256>).
+  - id: ARCH-P7
+    title: "Recherche lexicale BM25 native PostgreSQL 18 (tsvector + GIN + ts_rank_cd pondéré A/B/C/D + RRF k=60) sans extension AGPL (P7)"
+    action: "Implémenter en SQL réel la recherche hybride pgvector halfvec(1024) HNSW + PostgreSQL 18 tsvector GIN + ts_rank_cd pondéré fusionnés par RRF (k=60), et borner la traversée CTE du graphe tripartite à depth <= 2"
+    priority: P1
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-8"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Écarter ParadeDB pg_search (licence AGPL-3.0 et restrictions sur réplicas physiques) pour le MVP et exploiter l'indexation GIN tsvector déjà créée par la migration 0008.
+  - id: ARCH-P9
+    title: "Instrumentation OpenTelemetry de bout en bout (FastAPI, SQLAlchemy, DBOS/Dramatiq) et corrélation trace_id RFC 9457 (P9)"
+    action: "Brancher opentelemetry-sdk, opentelemetry-instrumentation-fastapi et opentelemetry-instrumentation-sqlalchemy dans apps/api et apps/worker pour propager le traceparent W3C réel dans structlog, audit_ledger et les erreurs RFC 9457"
+    priority: P0
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-12"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-sp"
+    owner: "Karim (Platform) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Remplacer les identifiants de trace synthétiques par de vraies traces distribuées OpenTelemetry corrélant API, Worker, DB et enveloppes d'erreur RFC 9457.
+  - id: ARCH-M6
+    title: "Bus d'événements de domaine, table Outbox transactionnelle domain_events_outbox (migration 0012) & plugins entry_points (M6, M7, Q2: 2A, Q3: 3A)"
+    action: "Créer la table domain_events_outbox, publier StepCompleted/ArtifactProduced/GateEvaluated/RunTerminated dans la même transaction SQL que le changement d'état, relayer de manière idempotente vers audit_finops/ontology/sse et charger les entry_points orcia.uri_resolvers / orcia.llm_gateways"
+    priority: P0
+    depends_on:
+      - ARCH-P1
+      - ARCH-P2
+    ad_ref: "AD-12, AD-19"
+    story_ref: "3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Découpler orchestration/engine.py des effets secondaires non bloquants (FinOps, audit, extraction ontologique, SSE) avec garantie transactionnelle Outbox et extensibilité par plugins entry_points.
+  - id: ARCH-P8
+    title: "Migration de apps/web vers Vite 6 + TanStack Router v1 (SPA pure), dépendances frontend & découpage features/<domaine>/ (P8, M11, OQ-02)"
+    action: "Remplacer Next.js par Vite 6 + @tanstack/react-router dans apps/web, installer @tanstack/react-query, tailwindcss, @xyflow/react et openapi-fetch, structurer apps/web/src/features/<domaine>/ et régénérer packages/api-client depuis apps/api/src/orcia_api/schemas/"
+    priority: P1
+    depends_on:
+      - ARCH-P3
+      - ARCH-M3
+    ad_ref: "AD-1, AD-15, AD-19"
+    story_ref: "3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v"
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Décision OQ-02 issue du Deep Recon (score 4,70/5 vs 2,65/5 pour Next.js Client-First) : éliminer 100 % de la surface d'attaque serveur Node.js/RSC, diviser par 8 l'empreinte RAM K8s, supprimer les erreurs d'hydratation SSR sur @xyflow/react et le buffering SSE, et isoler chaque fonctionnalité frontend dans features/<domaine>/.
+  - id: ARCH-P5
+    title: "Sandbox déterministe bimodale hors processus (Palier 1 wasmtime-py < 5 s / 256 Mo & Palier 2 gVisor/Rootless < 60 s / 1024 Mo) & 5 rôles de déploiement isolant Docling (P5, M8, M9, Q3: 3A, Q5)"
+    action: "Isoler sandbox-runner hors processus (MCP/sous-processus) avec Palier 1 WASM (< 5s) et Palier 2 conteneur gVisor/Podman --network=none (< 60s, sans Rust selon Q5), et séparer les 5 rôles d'exécution (api, worker-orchestration, worker-indexing avec extra Docling, trigger-dispatcher, sandbox-runner)"
+    priority: P1
+    depends_on:
+      - ARCH-P1
+      - ARCH-M6
+    ad_ref: "AD-9, AD-18, AD-19"
+    story_ref: "4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i"
+    owner: "Sophie (SecOps) / Karim (Platform)"
+    status: open
+    epic: epic-4
+    description: >
+      Supprimer la dépendance bloquante aux user namespaces Linux sur Kubernetes (bubblewrap), offrir un budget réaliste (< 60s) pour les tests TDD d'auto-remédiation (UJ-12) et isoler Docling du serveur API et du worker d'orchestration.
+  - id: ARCH-RUST-DEFERRED
+    title: "Évaluation post-MVP des briques Rust optionnelles (orcia-sandbox-runner CLI, jsonschema-rs, cedarpy PyO3) sur métriques OpenTelemetry réelles (Q5, Deferred #7)"
+    action: "Conserver Python pur (wasmtime-py, gVisor/Podman, Pydantic v2) pour le MVP (0 toolchain Cargo requise) et réévaluer l'introduction ciblée de Rust uniquement si les traces OpenTelemetry en production démontrent un goulot d'étranglement CPU/latence mesuré"
+    priority: P3
+    depends_on:
+      - ARCH-P5
+      - ARCH-P9
+    ad_ref: "AD-9, AD-19"
+    owner: "Karim (Platform) / Winston (Architect)"
+    status: open
+    epic: epic-4
+    description: >
+      Arbitrage utilisateur Q5 : pas de Rust dans le MVP actif ; inscrit en action_item différé pour évaluation ultérieure guidée par les métriques de production.
+  - id: ARCH-M10
+    title: "Extraction optionnelle post-MVP (Phase F) de packages/orcia-rag ou packages/orcia-sandbox en packages uv autonomes si cadence de release divergente (M10)"
+    action: "Évaluer après livraison complète du MVP si le domaine rag ou sandbox nécessite un cycle de publication indépendant du reste de packages/orcia-core"
+    priority: P3
+    depends_on:
+      - ARCH-P5
+    ad_ref: "AD-19"
+    owner: "Winston (Architect)"
+    status: open
+    epic: epic-7
+    description: >
+      Phase F de l'analyse de modularité : ne scinder packages/orcia-core en packages supplémentaires que si les cadences de release divergent réellement.

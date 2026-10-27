@@ -156,6 +156,7 @@ Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `T
 5. **Arbitration Tie-Break Matrix (`arbitration-tiebreak-card`)** : Carte ambre affichée dans le Chat et le Canvas lorsque l'**Agent Exécuteur** suspend son exécution face à des options équivalentes, présentant côte à côte chaque option, ses impacts SI/Métier et le bouton de décision.
 6. **Federated URI & RBAC Badge (`uri-badge`)** : Composant monospace distinguant visuellement la source de vérité d'une ressource : ambre pour `git://`, bleu cobalt pour `nexus://`, vert émeraude pour `db://`, accompagné des droits effectifs (`DISCOVER`, `EXECUTE`, ` 🔒 Source masquée`) et du hash `SHA-256` tronqué.
 7. **Presence & Claim Pill (`presence-claim-pill`)** : Indicateur temps réel sur les notifications d'équipe affichant soit le bouton d'action `Prendre (Claim)`, soit l'état verrouillé `🔒 En cours : [Prénom]`.
+8. **Autonomous Execution Badge & Kill-Switch Bar (`autonomous-execution-badge`, `UX-DR17`)** : Badge distinctif en **Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`)** — *sans jamais utiliser le Violet `#6D28D9` réservé exclusivement aux Ancrages Humains* — affichant `🤖 Exécuté sous Contrat d'Autonomie #{contract_id} — Déclencheur : {MANUAL | WEBHOOK | LOG_SINK_ALERT | CRON} — 0 intervention humaine en cours de run`, accompagné des sorties de secours explicites `🛑 Kill-Switch (Suspendre le Trigger & les Runs actifs)` et `⏪ Invalider & Rollback`.
 
 ## Do's and Don'ts
 
@@ -163,6 +164,7 @@ Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `T
 | :--- | :--- |
 | Conserver les 7 entrées du Menu Global visibles dans la Sidebar gauche (avec filtrage RBAC) | Cacher la navigation globale uniquement derrière des commandes texte dans le chat |
 | Utiliser le violet `{colors.human-led}` exclusivement pour les **Ancrages Humains Obligatoires** | Pré-remplir par IA un champ marqué `human_authored_required: true` ou y ajouter un bouton d'auto-complétion IA |
+| Signaler tout livrable produit en mode `AUTONOMOUS_CONTRACT` par le badge Cyan/Cobalt `AutonomousExecutionBadge` avec `🛑 Kill-Switch` et `⏪ Invalider & Rollback` | Faire passer un artefact généré sans humain pour un artefact relu par un expert humain ou utiliser le violet `human-led` sur un badge autonome |
 | Afficher systématiquement le **Briefing de Revue (4 blocs)** en haut du Canvas avant un **Artefact** volumineux | Afficher un document brut de 30 pages avec un unique bouton "Tout Approuver" en bas de page |
 | Séparer visuellement les **Workflow Runs** en mode *Contributeur (Actions requises)* et *Consultation seule (Observateur)* | Laisser un utilisateur en mode *Consultation seule* cliquer sur des boutons d'édition qui échouent ensuite |
 | Garder le **Dock Agent Assistant & Permission Broker** accessible à droite dans les modules 2 à 7 | Forcer l'utilisateur à quitter le Catalogue ou l'Ontologie pour revenir au Cockpit quand il a une question |
