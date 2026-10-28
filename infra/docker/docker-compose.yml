@@ -38,23 +38,23 @@ services:
       timeout: 3s
       retries: 10
 
-  minio:
-    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
-    container_name: orcia-minio
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.17
+    container_name: orcia-seaweedfs
     restart: unless-stopped
     env_file:
       - ../../.env
-    command: server /data --console-address ":9001"
+    command: "server -s3 -s3.port=9000 -ip.bind=0.0.0.0 -dir=/data"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-orcia_minio}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-orcia_minio_secret}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-orcia_seaweed}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-orcia_seaweed_secret}
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${S3_API_PORT:-9000}:9000"
+      - "${SEAWEED_MASTER_PORT:-9333}:9333"
     volumes:
-      - orcia_minio_data:/data
+      - orcia_seaweedfs_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:9333/cluster/status"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -62,4 +62,4 @@ services:
 volumes:
   orcia_pg_data:
   orcia_redis_data:
-  orcia_minio_data:
+  orcia_seaweedfs_data:

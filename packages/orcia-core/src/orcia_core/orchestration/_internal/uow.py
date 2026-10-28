@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
+from contextlib import asynccontextmanager
 from typing import Any, Literal, TypeVar
 
 from dbos import AsyncSQLAlchemyDatasource
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 R = TypeVar("R")
 IsolationLevel = Literal["SERIALIZABLE", "REPEATABLE READ", "READ COMMITTED"]
@@ -30,6 +36,9 @@ class DbosSqlAlchemyUnitOfWork:
 
     def __init__(self, datasource: AsyncSQLAlchemyDatasource) -> None:
         self._datasource = datasource
+        self._session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
+            datasource.engine, expire_on_commit=False
+        )
 
     @classmethod
     async def create(
@@ -63,9 +72,20 @@ class DbosSqlAlchemyUnitOfWork:
         return self._datasource.engine
 
     @property
+    def session_factory(self) -> async_sessionmaker[AsyncSession]:
+        """Return the `async_sessionmaker[AsyncSession]` bound to the underlying `AsyncEngine`."""
+        return self._session_factory
+
+    @property
     def session(self) -> AsyncSession:
-        """Return the active `AsyncSession` bound to the current transaction."""
+        """Return the active `AsyncSession` bound to the current DBOS transaction."""
         return self._datasource.sql_session()
+
+    @asynccontextmanager
+    async def session_scope(self) -> AsyncIterator[AsyncSession]:
+        """Provide an atomic `AsyncSession` transaction (`async with session.begin():`)."""
+        async with self._session_factory() as session, session.begin():
+            yield session
 
     async def run_transaction(
         self,

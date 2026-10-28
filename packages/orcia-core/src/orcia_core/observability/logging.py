@@ -1,12 +1,16 @@
-"""Structured JSON logging (`structlog`) with W3C OpenTelemetry `trace_id` propagation."""
+"""Structured JSON logging (`structlog`) with W3C OpenTelemetry `trace_id` (`AD-12`, `ARCH-P9`)."""
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import structlog
+from opentelemetry import context as otel_context
+from opentelemetry import trace as otel_trace
+from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, set_span_in_context
 
 from orcia_kernel.ids import new_uuid7
 
@@ -14,24 +18,38 @@ HEX_32_RE = re.compile(r"^[0-9a-f]{32}$")
 TRACEPARENT_RE = re.compile(r"^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$")
 
 
+def generate_trace_id() -> str:
+    """Generate a valid 32-hex lowercase W3C OpenTelemetry trace identifier from UUIDv7."""
+    return new_uuid7().hex
+
+
+def generate_span_id() -> str:
+    """Generate a 16-hex W3C OpenTelemetry span identifier from UUIDv7."""
+    return new_uuid7().hex[:16]
+
+
 @dataclass(frozen=True, slots=True)
 class TraceContext:
-    """Immutable telemetry correlation context bound per request/task (NFR-OBS-1)."""
+    """Immutable telemetry correlation context bound per request/task (`NFR-OBS-1`, `ARCH-P9`)."""
 
     trace_id: str
     workspace_id: str | None = None
     run_id: str | None = None
     step_id: str | None = None
+    span_id: str = field(default_factory=generate_span_id)
+
+    @property
+    def traceparent(self) -> str:
+        """Format W3C `traceparent` header (`00-<trace-id>-<span-id>-01`)."""
+        return f"00-{self.trace_id}-{self.span_id}-01"
 
 
 _trace_ctx_var: contextvars.ContextVar[TraceContext | None] = contextvars.ContextVar(
     "orcia_trace_context", default=None
 )
-
-
-def generate_trace_id() -> str:
-    """Generate a valid 32-hex lowercase W3C OpenTelemetry trace identifier from UUIDv7."""
-    return new_uuid7().hex
+_otel_token_var: contextvars.ContextVar[contextvars.Token[otel_context.Context] | None] = (
+    contextvars.ContextVar("orcia_otel_context_token", default=None)
+)
 
 
 def resolve_or_create_trace_id(
@@ -52,27 +70,49 @@ def resolve_or_create_trace_id(
         if HEX_32_RE.match(candidate) and candidate != "0" * 32:
             return candidate
 
+    active_otel_span = otel_trace.get_current_span()
+    active_otel_ctx = active_otel_span.get_span_context() if active_otel_span else None
+    if active_otel_ctx is not None and active_otel_ctx.is_valid:
+        return f"{active_otel_ctx.trace_id:032x}"
+
     return generate_trace_id()
 
 
 def bind_trace_context(
-    trace_id: str,
+    trace_id: str | None = None,
     *,
     workspace_id: str | None = None,
     run_id: str | None = None,
     step_id: str | None = None,
+    span_id: str | None = None,
 ) -> TraceContext:
-    """Bind `trace_id`, `workspace_id`, `run_id`, and `step_id` to contextvars and structlog."""
+    """Bind `trace_id`, `workspace_id`, `run_id`, and `step_id` to contextvars, structlog & OTel."""
     normalized = resolve_or_create_trace_id(x_trace_id=trace_id)
+    resolved_span_id = span_id or generate_span_id()
     ctx = TraceContext(
         trace_id=normalized,
         workspace_id=workspace_id,
         run_id=run_id,
         step_id=step_id,
+        span_id=resolved_span_id,
     )
     _trace_ctx_var.set(ctx)
+
+    prev_token = _otel_token_var.get()
+    if prev_token is not None:
+        with contextlib.suppress(Exception):
+            otel_context.detach(prev_token)
+    otel_span_ctx = SpanContext(
+        trace_id=int(normalized, 16),
+        span_id=int(resolved_span_id, 16),
+        is_remote=False,
+        trace_flags=TraceFlags(TraceFlags.SAMPLED),
+    )
+    token = otel_context.attach(set_span_in_context(NonRecordingSpan(otel_span_ctx)))
+    _otel_token_var.set(token)
+
     structlog.contextvars.clear_contextvars()
-    bound_fields: dict[str, str] = {"trace_id": ctx.trace_id}
+    bound_fields: dict[str, str] = {"trace_id": ctx.trace_id, "span_id": ctx.span_id}
     if ctx.workspace_id:
         bound_fields["workspace_id"] = ctx.workspace_id
     if ctx.run_id:
@@ -84,7 +124,12 @@ def bind_trace_context(
 
 
 def clear_trace_context() -> None:
-    """Clear active trace contextvars."""
+    """Clear active trace contextvars and OpenTelemetry span context."""
+    prev_token = _otel_token_var.get()
+    if prev_token is not None:
+        with contextlib.suppress(Exception):
+            otel_context.detach(prev_token)
+        _otel_token_var.set(None)
     _trace_ctx_var.set(None)
     structlog.contextvars.clear_contextvars()
 

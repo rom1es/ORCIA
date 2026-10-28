@@ -16,7 +16,7 @@ from orcia_core.orchestration.errors import (
     ValidationDomainError,
 )
 from orcia_core.permissions.models import UserIdentity
-from orcia_worker.step_runner import execute_step_runner_job
+from orcia_worker.dbos_workflow_runner import execute_step_runner_job
 
 
 def _lead_user() -> UserIdentity:

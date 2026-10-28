@@ -55,8 +55,8 @@ development_status:
   3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: done
   3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: done
   3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali: done
-  3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: ready-for-dev
-  3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: backlog
+  3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: done
+  3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: ready-for-dev
   3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: ready-for-dev
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
@@ -242,7 +242,7 @@ action_items:
     ad_ref: "AD-1, AD-2, AD-10, AD-17, AD-19"
     story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Amelia (Dev) / Winston (Architect)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Relier les services de tous les domaines à des repositories SQLAlchemy 2.1 Asyncio dans <domaine>/_internal/ sur PostgreSQL 18 + pgvector et livrer en Story 3.2b un Workflow Run complet traversant API -> Worker -> PostgreSQL 18 et reprenant son exécution après extinction/redémarrage des processus sans aucune perte d'état.
@@ -257,7 +257,7 @@ action_items:
     ad_ref: "AD-2, AD-13, AD-18"
     story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Intégrer DBOS Transact en Story 3.2b après validation du spike 3.2s, sans dépendance circulaire vers ARCH-P1, en conservant les tests de Story 3.2 comme suite de non-régression et en supprimant le code mort du moteur en mémoire initial.
@@ -270,7 +270,7 @@ action_items:
     ad_ref: "AD-5"
     story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Karim (Platform)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Éliminer le risque de licence AGPL-3.0 et de maintenance lié à l'archivage du dépôt communautaire MinIO en 2026 tout en conservant le contrat S3 v4 CAS immuable (cas/<sha256>).
@@ -283,7 +283,7 @@ action_items:
     ad_ref: "AD-8"
     story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Écarter ParadeDB pg_search (licence AGPL-3.0 et restrictions sur réplicas physiques) pour le MVP et exploiter l'indexation GIN tsvector déjà créée par la migration 0008.
@@ -296,7 +296,7 @@ action_items:
     ad_ref: "AD-12"
     story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
     owner: "Karim (Platform) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Remplacer les identifiants de trace synthétiques par de vraies traces distribuées OpenTelemetry corrélant API, Worker, DB et enveloppes d'erreur RFC 9457.
