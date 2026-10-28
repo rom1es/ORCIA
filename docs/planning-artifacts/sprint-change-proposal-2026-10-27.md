@@ -4,7 +4,7 @@
 - **Date** : 2026-10-27
 - **Auteur** : Winston (Architecte Système) & John (Product Manager) — Workflow `bmad-correct-course`
 - **Périmètre** : Intégration de la revue de stack (`stack-review-2026-10-27.md` — `E1..E8`, `P1..P9`), de l'analyse de modularité (`modularity-analysis-2026-10-27.md` — `M1..M11`, Phases `A..F`), du Deep Recon Frontend (`OQ-02`), des arbitrages utilisateur (`OQ-01..03`, `Q1..Q5`) et de l'**Avenant A1 (`C1..C8`)** dans le plan d'exécution ORCIA
-- **Statut** : **VALIDÉ & APPLIQUÉ (incluant Avenant A1 du 27/10/2026 — Vérifié en Étape 5 : CONFORME)**
+- **Statut** : **VALIDÉ & APPLIQUÉ (incluant Avenant A1 du 27/10/2026 et Avenant A2 du 28/10/2026 — Vérifié en Étape 5 : CONFORME)**
 
 ---
 
@@ -331,3 +331,402 @@ Revue croisée exécutée avec les lentilles *verification-gap* et *structure* (
 3. **`git diff --stat`** : seuls `docs/planning-artifacts/sprint-change-proposal-2026-10-27.md`, `docs/planning-artifacts/epics.md`, `docs/implementation-artifacts/sprint-status.yaml` et `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md` sont modifiés (`4 files changed`).
 4. **Intégrité des stories `done` (`Story 3.1` et `Story 3.2`)** : `0` ligne modifiée (`git diff` commence à `epics.md:L393`).
 5. **Vérification acyclique du DAG `depends_on`** : `{"ok": true, "action_items_count": 22, "arch_01_present": false, "missing_story_refs": [], "missing_deps": [], "cycles": []}`.
+
+---
+
+## 8. Avenant A2 — 28/10/2026 : Core agnostique et packs métier, interface de connecteur unique, exécution réelle des étapes et taxonomie d'erreurs
+
+- **Déclencheur** : [`architecture-decoupling-audit-2026-10-28.md`](research/architecture-decoupling-audit-2026-10-28.md) (note de découplage **2/5**, fuites `L1..L11`, risques `K1..K9`, plan `P0-1..P2-2`).
+- **Auteurs** : Winston (Architecte) & John (PM) — `bmad-correct-course` (mode *Batch*).
+- **Base de code vérifiée** : `main` @ `8678266` (`3.2c`), `3.2b` = `fb7d460`.
+- **Décisions non rouvertes** : `Q1 = 1A`, `Q2 = 2A`, `Q3 = 3A`, `Q4 = 4A`, `Q5` (pas de Rust au MVP), monolithe modulaire `AD-19` (pas de microservices).
+- **Statut** : **VALIDÉ & APPLIQUÉ le 28/10/2026 par Romain (options Q-A2-1 et Q-A2-2 retenues — vérifié en Étape 5 : CONFORME)**.
+
+### 8.1 Résumé du problème (`Checklist §1`, §5.1)
+
+- **Catégorie** : *limitation technique découverte pendant l'implémentation* + *approche livrée non conforme* (écart `3.2b`).
+- **Énoncé** : ORCIA se positionne comme plateforme d'orchestration **agnostique** (Core), mais le vocabulaire SDLC (code, documentation, Jira, Confluence, Git, BMAD) est inscrit dans le kernel, le modèle de workflow, le validateur et le moteur. La liste des types de source est fermée et recopiée en 5 endroits du code et 4 contraintes SQL. Enfin, **aucune étape n'exécute de travail réel** : les deux moteurs produisent un contenu simulé ou figé.
+- **Conséquence** : un vertical hors IT (Finance, Juridique, MCO) est aujourd'hui impossible sans modifier le Core, et l'ajout d'un connecteur (`sap://`) coûte environ 15 fichiers et 4 migrations (audit §2.1). Les Stories `3.3+` (Assistant, Gates, Autonomie) seraient construites sur un moteur qui n'exécute rien.
+
+#### 8.1.1 Étape 0 — Vérification des constats de l'audit (preuves au commit `8678266`)
+
+| # | Constat de l'audit | Verdict | Preuve (`fichier:ligne` / commande) |
+|---|---|---|---|
+| K3-a | `engine.py:L258-L275` produit un livrable simulé | **CONFIRMÉ** | `orchestration/engine.py:L258-275` : `draft_payload` factice (`artifact` / `adr` / `report`) et texte de démonstration « Confluence (seuil 500€) vs git://core-engine (350€) » |
+| K3-b | `_internal/dbos_engine.py:L231-L251` écrit un contenu figé | **CONFIRMÉ** | `@DBOS.step()` `_execute_durable_step` (`L231-252`) écrit l'artefact figé `{"engine": "dbos-transact-pg18"}` (`L244-247`), sans appel d'exécuteur |
+| K3-c | `_ACTIVE_ENGINE` global + API privée DBOS | **CONFIRMÉ** | `dbos_engine.py:L26` (`_ACTIVE_ENGINE`, `global` en `L81`, `L110`), `L105` `DBOS._recover_pending_workflows()` ; également `_internal/dbos_spike.py:L261` |
+| K3-d | Aucun des deux moteurs branché dans `dependencies.py` | **CONFIRMÉ, avec précision** | `DbosDurableWorkflowEngine` : 0 référence dans `apps/` (seul importeur : `_internal/__init__.py`). `dependencies.py:L28-L76` branche `build_default_orchestration_setup_service()`, donc `WorkflowOrchestrationSetupService.engine = DurableOrchestrationEngine` (**moteur simulé** en mémoire, `run_lock_service.py:L100`). Le worker `apps/worker/.../dbos_workflow_runner.py` enveloppe ce moteur simulé dans un `@DBOS.workflow()` (`svc.engine.execute_step`). **Le chemin API/worker exécute donc le moteur simulé.** |
+| L1 | Vocabulaire SDLC dans le kernel | **CONFIRMÉ** | `orcia_kernel/enums.py:L57-58` (`BUG_CODE_SUSPECTED`, `DOC_OBSOLETE_SUSPECTED` dans `MemlogMarkerType`) |
+| L2-L3 | Mode et attributs SDLC sur le modèle | **CONFIRMÉ** | `orchestration/models.py:L22` (`WorkflowEngineeringMode = Literal["standard","brownfield_bootstrap"]`), `L71-73` (`declares_intention`, `writes_code`, `reverse_doc_from_code`) |
+| L4 | Règle FR-13 dans le validateur | **CONFIRMÉ** | `orchestration/yaml_validator.py:L158-185` |
+| L5-L6 | Marqueurs SDLC fabriqués par le moteur | **CONFIRMÉ** | `orchestration/engine.py:L349-388` (`_build_fast_path_markers`, `run_background_fast_path_audit`) |
+| L1-L6 (référence) | Grep d'acceptation | **33 occurrences dans 7 fichiers** | `grep -rnIiE "writes_code\|BUG_CODE\|DOC_OBSOLETE\|brownfield\|confluence\|git://\|jira" packages/orcia-kernel packages/orcia-core/src/orcia_core/orchestration \| wc -l` → `33` (`enums.py`, `models.py`, `yaml_validator.py`, `seeds.py`, `yaml_loader.py`, `engine.py`, `errors.py`) |
+| K2 | Types de source fermés et recopiés | **CONFIRMÉ** | `catalog/cas_resolver.py:L24` (`ALLOWED_SCHEMES`) + 4 `Literal` : `catalog/models.py:L14`, `permissions/models.py:L23`, `permissions/broker_models.py:L16`, `rag/models.py:L57` ; `CHECK` SQL : `0002:L97-98`, `0002:L174`, `0004:L24-25`, `0004:L60-61` ; `0004:L72` `jira_request_url NOT NULL` (L10) |
+| Imports | `import orcia_core.orchestration` charge `catalog.bmad_adapter` et `permissions.broker` | **CONFIRMÉ** | `.venv/bin/python -c "import sys, orcia_core.orchestration; …"` → 43 modules `orcia_core.*` chargés, dont `orcia_core.catalog.bmad_adapter` et `orcia_core.permissions.broker` (aucun `dbos` / `sqlalchemy` / `litellm` chargé) ; `.venv/bin/lint-imports` → 3 contrats KEPT |
+
+#### 8.1.2 Analyse d'impact GitNexus (`repo: "ORCIA"`, `direction: upstream`, index rafraîchi le 28/10)
+
+| Symbole | Risque | Directs (`d=1`) / total | Commentaire |
+|---|---|---|---|
+| `parse_federated_uri` (`catalog/cas_resolver.py`) | 🔴 **CRITICAL** | 5 / 11 · **7 processus**, 4 modules (`Catalog`, `Orchestration`, `Permissions`, `Routers`) | Processus touchés : `import_bmad_skill_pack`, `resolve_effective_workflow`, `instantiate_workflow_run` (API et `run_lock_service`), `import_from_archive_bytes`, `build_default_orchestration_setup_service`, `build_default_federated_catalog_service`. **Parade** : registre `orcia.connectors` introduit *derrière* la signature existante de `parse_federated_uri` (compatibilité stricte), kit de conformité exécuté sur les 5 schémas actuels **avant** suppression d'`ALLOWED_SCHEMES`. |
+| `WorkflowStepSpec` (`orchestration/models.py`) | 🟠 MEDIUM | 8 / 10 | Champs SDLC exposés par l'API (`routers/orchestration.py:L92-94`) et le SDK généré. **Parade** : *Expand → Contract* au niveau du schéma Pydantic (ajout de `tags` / `policies`, dépréciation des 3 booléens et traduction par le pack, puis retrait) et régénération du SDK (0-diff, **après** livraison de `3.2d`). |
+| `DurableOrchestrationEngine` | LOW selon le graphe, **sous-estimé** | 2 / 3 | Le graphe ne voit pas les appels dynamiques `svc.engine.*` : `routers/blackboard_and_engine.py` (11 appels) et `dbos_workflow_runner.py` (2), plus 8 fichiers de tests. Risque réel jugé **MEDIUM**. |
+| `DbosDurableWorkflowEngine` | LOW | 1 / 1 | Non branché (code non atteint en production). |
+| `WorkflowOrchestrationSetupService` | LOW | 3 / 3 | Point d'injection du moteur à remplacer. |
+| `MemlogMarkerType` (`orcia_kernel/enums.py`) | ⚪ **UNKNOWN**, vérifié par recherche textuelle | — | 5 fichiers : `orcia_kernel/enums.py`, `orcia_kernel/__init__.py`, `blackboard/models.py`, `blackboard/__init__.py`, `apps/api/.../schemas/blackboard.py` (contrat OpenAPI). |
+
+> [!WARNING]
+> **Risque CRITICAL** sur `parse_federated_uri` (P0-2) : 7 flux d'exécution traversent ce point. Le passage au registre de connecteurs doit garder la signature et être couvert par des tests de non-régression des 7 flux **avant** tout retrait de code.
+
+### 8.2 Écarts de livraison constatés
+
+| Écart | Story (`done`, non rouverte) | Constat | Reprise |
+|---|---|---|---|
+| **EC-1** — « DBOS engine » livré sans exécution réelle | `3.2b` (`fb7d460`) | Le commit annonce un « DBOS engine », mais : (1) l'étape durable écrit un contenu figé (`dbos_engine.py:L244-247`) ; (2) `DbosDurableWorkflowEngine` n'est branché ni dans l'API ni dans le worker ; (3) l'AC `C4` de `3.2b` (« `DurableOrchestrationEngine` en mémoire supprimé, 0 code mort », `epics.md:L425`) **n'est pas satisfait** : `engine.py` (438 lignes) reste le moteur effectivement appelé ; (4) API privée `DBOS._recover_pending_workflows()` et état global `_ACTIVE_ENGINE`. | Repris intégralement dans **`Story 3.2f`** (P0-3). `3.2b` reste `done` et n'est pas modifiée. |
+| **EC-2** — DoD insuffisante | Processus | Les tests unitaires du moteur passent sans qu'aucun run réel ne traverse l'API. | Nouvel `action_item` **`PROC-01`** : *Definition of Done* renforcée, avec un run réel de bout en bout via l'API (instanciation → exécution → pause → redémarrage → reprise, 0 contenu simulé) exigé pour toute story qui touche le moteur. |
+
+### 8.3 Positionnement et PRD (`Checklist §3.1`)
+
+**Principe « Core agnostique et packs métier »** : le Core ORCIA (kernel, orchestration, blackboard, catalog, permissions, audit_finops, identity, bootstrap) ne contient **aucun vocabulaire métier**. Le SDLC devient **le premier pack** (`packages/orcia-pack-sdlc`), installé par défaut au MVP mais désinstallable. FR-13 reste **en vigueur pour le SDLC**, mais elle est portée par le pack (plugin `orcia.workflow_policies`) et non plus par le validateur du Core. L'objectif MVP (cycle SDLC complet, UJ-1 à UJ-12) est **inchangé**.
+
+Ajouts proposés à `prd.md` §10 (ancien → nouveau) :
+
+| Exigence | Ancien | Nouveau (proposé) |
+|---|---|---|
+| **NFR-EXT-1** (nouvelle, §10.4 « Extensibilité & Isolation ») | — | « Un nouveau connecteur de source ou d'action s'ajoute **sans modifier aucun fichier du Core**, en **< 150 lignes** (hors tests) et en **< ½ journée**, via le registre `orcia.connectors`, et passe le kit de conformité `ConnectorPort`. » |
+| **NFR-ISO-1** (nouvelle, §10.4) | — | « Le Core s'exécute **sans le pack SDLC** : un workflow non IT (Finance, « Rapprochement de factures ») avec un connecteur ERP factice s'exécute en CI avec `orcia-pack-sdlc` désinstallé (job `core-without-sdlc`). » |
+| **NFR-SEC-4** (§10.1) | Absente du PRD. **Attention** : `epics.md:L62` définit déjà `NFR-SEC-4` (« Protection des jetons fédérés Passthrough », AES-256-GCM, `AD-6`). | **Proposition** : **étendre** la `NFR-SEC-4` existante sans changer son identifiant, et l'inscrire dans le PRD : « **Protection des secrets et jetons fédérés** : (a) jetons Passthrough chiffrés AES-256-GCM (inchangé) ; (b) **aucun secret** ne doit apparaître dans les tables (`dbos.*`, `audit_ledger`, `domain_events_outbox`, `step_executions`) ni dans les logs, vérifié par le **test du secret témoin** ; (c) les secrets ne circulent que sous forme de `SecretRef` non sérialisable résolue par `SecretProviderPort`. » (voir question ouverte Q-A2-1) |
+| **FR-13** | Règle imposée « par le moteur » | Texte inchangé. Ajout d'une note de traçabilité : « Portée par le pack `orcia-pack-sdlc` (plugin `orcia.workflow_policies`, `AD-20`). Active dès que le pack est installé, sur tout workflow étiqueté `sdlc.*`. » Les termes `mode: brownfield_bootstrap` et `writes_code` deviennent des `tags` et des `policies` du pack. |
+
+### 8.4 Impact sur les epics et les stories (`Checklist §2`)
+
+- **Epic 3** : elle reste réalisable, avec ajout de deux stories intercalaires `3.2e` et `3.2f` (§8.5). P2-2 (`core-without-sdlc`) devient un critère d'acceptation de l'Epic 3.
+- **Aucun epic rendu obsolète, aucun nouvel epic.** Les stories `done` (`3.1`, `3.2`, `3.2a`, `3.2s`, `3.2b`, `3.2c`) et `3.2d` (en cours) ne sont **pas** modifiées.
+- **Stories futures ajustées** (dépendance + critère d'acceptation, appliqués en Étape 3) :
+
+| Story | Nouvelle dépendance | Ajustement de critère d'acceptation |
+|---|---|---|
+| `3.3` Assistant | `3.2c`, `3.2d` **et `3.2f`** | Les workflows composés par l'Assistant s'exécutent via les exécuteurs réels `orcia.step_executors`. Le contexte injecté passe par `ContextSourcePort` (`DEC-CTX-01`). Aucun vocabulaire SDLC dans l'Assistant du Core : les gabarits SDLC sont fournis par le pack. |
+| `4.1` / `4.1a` Sandbox | `3.2f` | Les Gates déterministes sont un exécuteur `SKILL` du registre. Les erreurs de sandbox sont classées selon la taxonomie `AD-12` (dépassement de délai `UpstreamTimeoutError`, violation `PolicyDeniedError`). |
+| `4.2` Gates agentiques / PII | `3.2f` | Les appels LLM passent par `ConnectorInvoker` (relances, `Retry-After`, budget). Le test du secret témoin et le masquage structlog sont livrés avec `DEC-SEC-01`. |
+| `4.4` Actions Jira / MCP | `3.2e` | Jira est un **adaptateur `ConnectorPort` du pack SDLC** (`invoke(…, idempotency_key)`). La demande d'accès passe par `AccessRequestChannelPort` (`DEC-ACC-01`). Le serveur MCP reste hors processus (`Q3 = 3A`). |
+| `5.1` Claim / verrous | `3.2f` | Les baux de ressources `ResourceLeasePort` (bail PostgreSQL + jeton de fencing) complètent le verrou de présence Redis (`DEC-CONC-01`). |
+| `7.1` à `7.4` Autonomie | `3.2f` | Les actions autonomes passent par `ConnectorInvoker` (coupe-circuit par connecteur, idempotence). `7.3` : la règle FR-13 (intention de remédiation) est appliquée par la politique du pack SDLC. Aucune action autonome n'utilise de secret en clair (`NFR-SEC-4`). |
+
+### 8.5 Approche recommandée (`Checklist §4`) et découpage `3.2e` / `3.2f`
+
+- **Option 1, ajustement direct (nouvelles stories dans l'Epic 3)** : **retenue**. Effort élevé (13 à 16 jours), risque moyen, MVP préservé.
+- **Option 2, rollback de `3.2b`** : **non viable**. Rouvrir une story `done` est interdit, et la persistance SQLAlchemy, SeaweedFS et OpenTelemetry de `3.2b` restent valables.
+- **Option 3, réduction du MVP** : **non nécessaire**. Le périmètre fonctionnel est inchangé ; seule la place du code SDLC change.
+
+**Découpage justifié** : avec 13 à 16 jours, le travail dépasse un sprint de 10 jours ouvrés. Il est découpé selon la frontière naturelle « *structure* » / « *exécution* » :
+
+| Story | Contenu | Effort | Dépend de |
+|---|---|---|---|
+| **`3.2e`** — Séparation Core et pack SDLC, interface de connecteur unique | **P0-1** (3–4 j) + **P0-2** (4–5 j) + **`DEC-SEED-01`** en Étape 0 (0,5 j) | **7,5 à 9,5 j** | `3.2c` (done) ; parallélisable avec `3.2d` |
+| **`3.2f`** — Exécution réelle des étapes, taxonomie d'erreurs et preuve sur un vertical | **P0-3** (4–5 j) + **P0-4** (2 j) + **P2-2** (1–2 j) + reprise de l'écart **EC-1** | **7 à 9 j** | `3.2e` |
+
+Raisons de ce découpage :
+1. P0-3 (exécuteurs) a besoin d'un moteur déjà débarrassé du vocabulaire SDLC (P0-1).
+2. P0-4 (`ConnectorInvoker`) a besoin de `ConnectorPort` (P0-2).
+3. La preuve `core-without-sdlc` exige une exécution réelle (P0-3).
+4. Chaque story livre une valeur vérifiable de façon autonome : `3.2e` permet d'ajouter `sap://` sans toucher au Core ; `3.2f` permet un run réel de bout en bout.
+
+#### 8.5.1 Story 3.2e — contenu et critères d'acceptation
+
+| Bloc | Contenu |
+|---|---|
+| **Étape 0 (`DEC-SEED-01`)** | Données de démonstration de `rag/__init__.py:L49-95` et `orchestration/seeds.py:L29-158` déplacées vers `bootstrap/seeder.py` (upserts idempotents) ou vers `tests/fixtures/`. |
+| **P0-1 Pack SDLC** | Création de `packages/orcia-pack-sdlc` (5ᵉ package du workspace `uv`). `writes_code`, `declares_intention`, `reverse_doc_from_code` et `mode` deviennent des `tags` / `policies` génériques sur `WorkflowStepSpec` (*Expand → Contract* sur le schéma Pydantic et l'API). FR-13 devient un plugin `orcia.workflow_policies`. `MemlogMarkerType` devient une chaîne avec espace de noms (`sdlc.bug_code_suspected`…), validée par un registre de marqueurs. `bmad_adapter`, les régimes RAG code et Jira, l'audit documentation-vs-code et le graphe tripartite passent dans le pack. Les chaînes de démonstration sont retirées du moteur. |
+| **P0-2 `ConnectorPort`** | `orcia_kernel.ports.ConnectorPort` (`capabilities()`, `fetch(uri)`, `invoke(action, payload, idempotency_key)`, `health()`, `map_error(exc)`). Registre `orcia.connectors` (entry points, `Q3 = 3A`) **branché** sur `FederatedUriResolver` / `parse_federated_uri` (signature inchangée). **Une seule source de vérité** pour les types de source (suppression d'`ALLOWED_SCHEMES` et des 4 `Literal`). Migrations **`0013` (Expand)** : table `connector_schemes`, *seed* des 5 schémas actuels, clés étrangères `NOT VALID` puis `VALIDATE` ; **`0014` (Contract)** : suppression des 4 `CHECK` (`0002:L97-98`, `L174` ; `0004:L24-25`, `L60-61`) avec `downgrade()` testé. Aucune révision existante n'est modifiée. Kit de conformité `tests/conformance/connector_port/`. |
+
+Critères d'acceptation (testables) :
+- **AC-E1** : nouveau contrat `import-linter` « `orcia_kernel` et `orcia_core` n'importent jamais `orcia_pack_sdlc` » → `lint-imports` 4 contrats KEPT.
+- **AC-E2** : `grep -rnIiE "writes_code|BUG_CODE|DOC_OBSOLETE|brownfield|confluence|git://|jira" packages/orcia-kernel packages/orcia-core/src/orcia_core/orchestration` → **0 ligne** (référence actuelle : 33).
+- **AC-E3** : connecteur factice `sap://` (`tests/fixtures/plugins/orcia_connector_sap_fake/`) ajouté **sans modifier aucun fichier du Core** (`git diff --stat packages/orcia-kernel packages/orcia-core` vide), **< 150 lignes** (`wc -l`), qui passe le kit de conformité.
+- **AC-E4** : les 7 flux GitNexus qui traversent `parse_federated_uri` restent verts (non-régression).
+- **AC-E5** : migrations `0013` / `0014` testées en `upgrade` / `downgrade` sur `testcontainers` PG18 **avec des données existantes** (lignes préexistantes de `workspace_datasources`, `user_passthrough_credentials`, `permission_broker_policies` et `permission_broker_tickets` conservées).
+- **AC-E6** : l'API conserve la compatibilité pendant l'*Expand* (champs dépréciés acceptés et traduits en `tags`) ; SDK régénéré avec 0-diff après la livraison de `3.2d`.
+- **AC-E7** : couverture ≥ 90 % et les 5 couches de tests (`AD-17`).
+
+#### 8.5.2 Story 3.2f — contenu et critères d'acceptation
+
+| Bloc | Contenu |
+|---|---|
+| **P0-3 Exécution réelle** | Registre `orcia.step_executors` (`AGENT`, `SKILL`, `SUB_WORKFLOW`, `HUMAN_TASK`, `HTTP_ACTION`). L'étape `@DBOS.step()` appelle l'exécuteur résolu. Suppression du moteur simulé (`DurableOrchestrationEngine` en mémoire, `draft_payload` factice) ; ses tests (`tests/unit/test_durable_orchestration_and_blackboard.py`) sont repris en non-régression sur le moteur réel. Suppression de `_ACTIVE_ENGINE` (injection explicite par le Composition Root) et de l'appel `DBOS._recover_pending_workflows()` (API publique `DBOS.launch()` uniquement). Branchement dans `apps/api/.../dependencies.py` (`lifespan`) et `apps/worker`. **Reprise de l'écart EC-1.** |
+| **P0-4 Erreurs et relances** | Dans `orcia_kernel.errors` : `TransientInfraError(retry_after_s)`, `RateLimitedError`, `UpstreamTimeoutError`, `FunctionalConnectorError`, `PolicyDeniedError`, `PermanentInfraError`. `ConnectorInvoker` exécuté comme étape durable DBOS : relances sur les seules erreurs passagères (backoff exponentiel avec gigue), respect de `Retry-After`, coupe-circuit par connecteur, `idempotency_key` transmise, plafond de relances imputé au budget `AD-12`. |
+| **P2-2 Preuve sur un vertical** | Workflow Finance « Rapprochement de factures » avec un connecteur ERP factice, exécuté en CI **sans le pack SDLC** (job `core-without-sdlc`). |
+
+Critères d'acceptation (testables) :
+- **AC-F1** : run **réel** de bout en bout via l'API (`POST /runs` → exécution → pause `HUMAN_TASK` → arrêt du processus → redémarrage → reprise), sans aucun contenu simulé (`grep -rn "simulated\|draft_payload = {" orchestration/` → 0) ; conforme à `PROC-01`.
+- **AC-F2** : `grep -rn "_recover_pending_workflows\|_ACTIVE_ENGINE" packages apps` → 0 ligne.
+- **AC-F3** : erreur 429 avec `Retry-After: 2` → relances après au moins 2 s, puis succès ; erreur fonctionnelle (4xx métier) → **0 relance** et passage en `WAITING_FOR_HUMAN_ARBITRATION` ; coupe-circuit **ouvert après N échecs** consécutifs (N configurable), puis semi-ouvert.
+- **AC-F4** : idempotence, c'est-à-dire qu'une relance DBOS d'un `invoke` ne crée **aucun doublon** d'effet externe, de ligne `audit_ledger` ou de ligne `domain_events_outbox`.
+- **AC-F5** : job CI **`core-without-sdlc`** au vert (`uv pip uninstall orcia-pack-sdlc` puis exécution du workflow Finance).
+- **AC-F6** : couverture ≥ 90 % et les 5 couches de tests (`AD-17`) ; rapport Tech Lead `3-2f-…` documentant la fermeture d'EC-1.
+
+### 8.6 Action items P1, P2 et processus (rattachés aux stories existantes)
+
+| ID | Titre | Rattachement (`story_ref`) | `depends_on` | `ad_ref` | Priorité |
+|---|---|---|---|---|---|
+| **`DEC-SEC-01`** | `SecretRef` non sérialisable, `SecretProviderPort` (**relié à `SEC-03`**, qui fournit l'adaptateur Vault / Infisical), masquage structlog (`observability/logging.py:L153-157`), liste blanche pour l'outbox et l'audit, **test du secret témoin** (`dbos.*`, `audit_ledger`, `domain_events_outbox`, `step_executions`, logs), suppression de la valeur par défaut `api_key="sk-orcia-local"` (`bootstrap/_internal/litellm_adapter.py:L31`) | `4.2` | `3.2e`, `3.2f` | `AD-6`, `AD-12` | P1 |
+| **`DEC-ACC-01`** | `AccessRequestChannelPort` (Jira devient un adaptateur du pack SDLC) ; `jira_request_url` remplacée par `request_url` générique (*Expand → Contract* : nouvelle colonne + backfill SQL, puis suppression dans une révision ultérieure) | `4.4` | `3.2e` | `AD-6`, `AD-20` | P1 |
+| **`DEC-CONC-01`** | `ResourceLeasePort` (bail PostgreSQL + jeton de fencing), files DBOS par classe de ressource, ordre d'acquisition canonique, délais d'expiration, détection des attentes cycliques parent-enfant | `5.1` | `3.2f` | `AD-4` | P1 |
+| **`DEC-CTX-01`** | `ContextSourcePort` (JSON, CAS, document), `VectorStorePort`, régimes d'indexation en plugins `orcia.indexers` | `3.3` | `3.2e` | `AD-8`, `AD-20` | P1 |
+| **`DEC-SEED-01`** | Données de démonstration sorties de `rag/__init__.py` et `orchestration/seeds.py` vers `bootstrap` ou les fixtures | `3.2e` (Étape 0) | — | `AD-20` | P2 |
+| **`PROC-01`** | *Definition of Done* renforcée : run réel de bout en bout via l'API exigé pour toute story qui touche le moteur | Processus (`3.2f` est la première application) | — | `AD-17` | P1 |
+
+### 8.7 Ordonnancement cible et calendrier (`Checklist §2.5`, §5.4)
+
+```
+3.2c (done) ─> 3.2e (Core / pack SDLC, ConnectorPort) ─> 3.2f (exécution réelle, erreurs, core-without-sdlc) ─┬─> 3.3 ─> 3.4 ─> 3.5 ─> Epic 4 …
+3.2d (en cours, en parallèle, non impactée) ─────────────────────────────────────────────────────────────────┘
+```
+
+```mermaid
+flowchart LR
+    S32C["3.2c (done)"] --> S32E["3.2e : pack SDLC + ConnectorPort\n(7,5–9,5 j)"]
+    S32E --> S32F["3.2f : exécution réelle + erreurs\n+ core-without-sdlc (7–9 j)"]
+    S32D["3.2d (en cours, parallèle)"] --> S33["3.3 Assistant"]
+    S32F --> S33
+    S32F --> E4["Epic 4 (4.1, 4.2)"]
+    S32E --> S44["4.4 (Jira = adaptateur)"]
+    S32F --> S51["5.1 (baux)"]
+    S32F --> E7["Epic 7"]
+```
+
+- **Impact calendrier** : le chemin critique avant `3.3` s'allonge de **14,5 à 18,5 jours ouvrés**, soit environ 1,5 à 2 sprints. `3.2d` reste en parallèle.
+- **Risques et parades** :
+  1. **Migration des `CHECK` sur des données existantes** : *Expand* avec clé étrangère `NOT VALID` puis `VALIDATE` (aucun verrou long), *seed* préalable des 5 schémas, test avec des données réelles (AC-E5), `downgrade` qui restaure les `CHECK`.
+  2. **Reprise des tests du moteur simulé** : inventaire préalable des assertions de `test_durable_orchestration_and_blackboard.py` et des 8 fichiers de tests appelant `engine.*` ; seules les assertions sur le contenu factice sont remplacées, sous la forme d'exécuteurs de test déterministes (`DeterministicCassetteLLM`).
+  3. **`parse_federated_uri` CRITICAL** : signature inchangée et non-régression des 7 flux (AC-E4).
+  4. **Conflit avec `3.2d`** : le SDK OpenAPI n'est régénéré qu'après la livraison de `3.2d` ; `3.2e` ne touche ni `apps/web` ni `packages/api-client` avant cette date.
+
+### 8.8 Impact sur les autres artefacts (`Checklist §3.2–3.4`)
+
+- **Architecture (Étape 2)** :
+  - **AD-20** « Core agnostique et packs métier » ;
+  - amendements AD-5 (`connector_schemes`), AD-12 (taxonomie, `ConnectorInvoker`), AD-13 et AD-2 (exécuteurs réels, ni état global ni API privée DBOS), AD-6 (`SecretRef`, `SecretProviderPort`, canal d'accès générique), AD-4 (baux et fencing), AD-19 (contrat sur le pack SDLC) ;
+  - tableau des capacités, avec FR-13 rattachée à `orcia-pack-sdlc` ;
+  - ERD de `architecture.md` : table `connector_schemes`.
+- **UX** : aucun impact sur `DESIGN.md` ou `EXPERIENCE.md` (N/A).
+- **CI** : nouveau job `core-without-sdlc`, 4ᵉ contrat `import-linter`, kit de conformité des connecteurs.
+
+### 8.9 Passation (`Checklist §5.5`)
+
+- **Portée** : **Majeure** (PRD, architecture, epics).
+- **PM et Architecte (Winston, John)** : Étapes 2 à 4 après validation de cet avenant.
+- **Dev (Amelia, `bmad-build`)** : `3.2e`, dès que la capacité le permet (en parallèle de `3.2d`), puis `3.2f`.
+- **Critère de succès** : vérification §9 (Étape 5) CONFORME.
+
+### 8.10 Questions ouvertes à arbitrer lors de la validation
+
+- **Q-A2-1 (identifiant NFR-SEC-4)** : l'ID `NFR-SEC-4` existe déjà dans `epics.md` (jetons Passthrough). **Recommandé** : étendre cette exigence (même ID) avec la clause « aucun secret dans les tables et les logs, test du secret témoin ». Alternative : créer `NFR-SEC-5`.
+- **Q-A2-2 (découpage)** : **recommandé** `3.2e` + `3.2f` (§8.5). Alternative : une seule story `3.2e` de 13 à 16 jours.
+
+### 8.11 Statut de la checklist `bmad-correct-course`
+
+| Section | Statut |
+|---|---|
+| §1 Déclencheur et preuves | [x] Fait (§8.1, §8.1.1) |
+| §2 Impact sur les epics | [x] Fait (§8.4, §8.7 ; Stories `3.2e` et `3.2f` créées) |
+| §3.1 PRD · §3.2 Architecture · §3.3 UX · §3.4 Autres | [x] · [x] · [N/A] · [x] (§8.3, §8.8) |
+| §4 Options | [x] Option 1 retenue (§8.5 ; découpage `3.2e` + `3.2f`) |
+| §5 Composants de la proposition | [x] (§8.1 à §8.9) |
+| §6.3 Validation utilisateur | [x] Validé le 28/10/2026 par Romain (options `Q-A2-1` et `Q-A2-2` retenues) |
+| §6.4 `sprint-status.yaml` | [x] Appliqué (Stories `3.2e` et `3.2f` en backlog ; action items `DEC-P0-*`, `DEC-*`, `PROC-01` créés) |
+
+---
+
+## 9. Vérification Avenant A2 (`bmad-review` — Étape 5)
+
+La vérification finale de l'Avenant A2 est conduite selon le protocole `bmad-review` au travers des lentilles **`verification-gaps`** et **`structure`**, appliquées à l'ensemble des artefacts modifiés lors des étapes 1 à 4 : `ARCHITECTURE-SPINE.md`, `.memlog.md`, `architecture.md`, `prd.md`, `epics.md`, `sprint-status.yaml` et cette présente proposition.
+
+### 9.1 Matrice de Traçabilité Exhaustive (Audit 28/10/2026 $\rightarrow$ Plan & Spécifications)
+
+Aucune case vide. Chaque constat de l'audit (`architecture-decoupling-audit-2026-10-28.md`), chaque action du plan de remédiation, chaque point de la checklist et les écarts de livraison constatés font l'objet d'une décision motivée et d'un rattachement contractuel vérifiable.
+
+| Élément audit | Description | Décision | AD associée | Story / action_item | Critère d'acceptation vérifiable | Preuve `fichier:ligne` |
+|---|---|---|---|---|---|---|
+| **L1** | `MemlogMarkerType` contient `BUG_CODE_SUSPECTED` et `DOC_OBSOLETE_SUSPECTED` (vocabulaire SDLC dans le kernel) | **Retenu** (Core agnostique) | `AD-13`, `AD-20` | `Story 3.2e` (P0-1) | `AC-E2` : marqueurs à espace de noms validés par registre (`sdlc.*` dans pack SDLC) | `packages/orcia-kernel/src/orcia_kernel/enums.py:L57-58` |
+| **L2** | `WorkflowEngineeringMode = Literal["standard", "brownfield_bootstrap"]` dans le modèle Core | **Retenu** (Core agnostique) | `AD-20` | `Story 3.2e` (P0-1) | `AC-E2` : mode d'ingénierie déplacé en tag de workflow dans le pack SDLC | `packages/orcia-core/src/orcia_core/orchestration/models.py:L22` |
+| **L3** | `WorkflowStepSpec` porte `declares_intention`, `writes_code`, `reverse_doc_from_code` | **Retenu** (Core agnostique) | `AD-20` | `Story 3.2e` (P0-1) | `AC-E2` : attributs remplacés par `tags` / `policies` génériques avec espace de noms | `packages/orcia-core/src/orcia_core/orchestration/models.py:L71-73` |
+| **L4** | Règle `FR-13` (« intention $\rightarrow$ code ») et restriction `brownfield_bootstrap` en dur dans validateur Core | **Retenu** (Core agnostique) | `AD-20` | `Story 3.2e` (P0-1) | `AC-E2` : règle déplacée dans le plugin `orcia.workflow_policies` du pack SDLC | `packages/orcia-core/src/orcia_core/orchestration/yaml_validator.py:L158-185` |
+| **L5** | Exécution avec livrable simulé (`draft_payload`) et texte de démonstration dans le moteur | **Retenu** (Exécution réelle) | `AD-2`, `AD-20` | `Story 3.2f` (P0-3) | `AC-F1`, `AC-F2` : suppression de `draft_payload` factice, exécuteurs réels `orcia.step_executors` | `packages/orcia-core/src/orcia_core/orchestration/engine.py:L258-275` |
+| **L6** | Marqueurs SDLC fabriqués par le moteur (`_build_fast_path_markers`) | **Retenu** (Exécution réelle) | `AD-13`, `AD-20` | `Story 3.2f` (P0-3) | `AC-F2` : moteur simulé supprimé, audit documentaire reporté dans le pack SDLC | `packages/orcia-core/src/orcia_core/orchestration/engine.py:L349-388` |
+| **L7** | Workflows démo `claims-engineering-delivery` dans `orchestration/seeds.py` | **Retenu** (Étape 0) | `AD-20` | `Story 3.2e` (`DEC-SEED-01`) | `AC-E0` : déplacé vers `bootstrap/seeder.py` ou `tests/fixtures/` | `packages/orcia-core/src/orcia_core/orchestration/seeds.py:L29-158` |
+| **L8** | Données démo (`ws-claims-alpha`, `ds-jira-claims`) dans `rag/__init__.py` | **Retenu** (Étape 0) | `AD-20` | `Story 3.2e` (`DEC-SEED-01`) | `AC-E0` : `__init__.py` nettoyé de toute donnée de démonstration | `packages/orcia-core/src/orcia_core/rag/__init__.py:L49-95` |
+| **L9** | Modes d'indexation fermés (`CODE_AST_GRAPH`…) et schémas couplés au code/Jira | **Retenu** (Extension Core) | `AD-8`, `AD-20` | `Story 3.3` (`DEC-CTX-01`) / `Story 3.2e` | `AC-E1` : régimes code/Jira dans pack SDLC, `ContextSourcePort` et `VectorStorePort` | `packages/orcia-core/src/orcia_core/rag/models.py:L11-15, L57, L155` |
+| **L10** | Canal de demande d'accès couplé à Jira (`jira_request_url NOT NULL`) | **Retenu** (Généralisation) | `AD-6`, `AD-20` | `Story 4.4` (`DEC-ACC-01`) | `DEC-ACC-01` : `AccessRequestChannelPort` et colonne `request_url` générique | `packages/orcia-core/src/orcia_core/permissions/broker.py:L202-209`, migration `0004:L72` |
+| **L11** | Format BMAD (`SKILL.md`) inscrit dans le catalogue Core | **Retenu** (Pack SDLC) | `AD-20` | `Story 3.2e` (P0-1) | `AC-E1` : adaptateur BMAD déplacé dans `packages/orcia-pack-sdlc` | `packages/orcia-core/src/orcia_core/catalog/models.py:L16`, `catalog/bmad_adapter.py` |
+| **K1** | Risque vocabulaire SDLC dans kernel, modèle, validateur, moteur (L1-L6) | **Retenu** | `AD-20` | `Story 3.2e` (`DEC-P0-CORE`) | `AC-E1`, `AC-E2` : grep vocabulaire = 0, `lint-imports` 4 contrats KEPT | Diagnostic audit §2.1 |
+| **K2** | Risque schémas fermés recopiés en 5 endroits et 4 `CHECK` SQL | **Retenu** | `AD-5`, `AD-20` | `Story 3.2e` (P0-2) | `AC-E3`, `AC-E4`, `AC-E5` : table `connector_schemes`, migrations `0013`/`0014`, `ConnectorPort` | Diagnostic audit §2.1 |
+| **K3** | Risque aucune exécution réelle, deux moteurs, étape figée, API privée | **Retenu** | `AD-2`, `AD-13`, `AD-20` | `Story 3.2f` (`DEC-P0-EXEC`, `PROC-01`) | `AC-F1`, `AC-F2` : `DbosDurableWorkflowEngine` branché, exécuteurs réels, pause/reprise | Diagnostic audit §2.2 |
+| **K4** | Risque absence de taxonomie d'erreurs et de relances communes | **Retenu** | `AD-12` | `Story 3.2f` (P0-4) | `AC-F3`, `AC-F4` : `ConnectorInvoker`, retry 429 avec `Retry-After`, circuit breaker | Diagnostic audit §2.2 |
+| **K5** | Risque fuite de secrets, persistance non contrôlée, pas de `SecretRef` | **Retenu** | `AD-6`, `AD-12` | `Story 4.2` (`DEC-SEC-01` + `SEC-03`) | `DEC-SEC-01` : test du secret témoin, masquage structlog, `SecretRef`, suppression clé par défaut | Diagnostic audit §2.3 |
+| **K6** | Risque BMAD, Jira et RAG code embarqués dans le Core | **Retenu** | `AD-20` | `Story 3.2e` (P0-1) / `Story 4.4` | `AC-E1` : extraction vers `packages/orcia-pack-sdlc` | Diagnostic audit §2.1 |
+| **K7** | Risque absence de bail et fencing sur ressources partagées | **Retenu** | `AD-4` | `Story 5.1` (`DEC-CONC-01`) | `DEC-CONC-01` : table `resource_leases`, `ResourceLeasePort`, fencing token | Diagnostic audit §2.3 |
+| **K8** | Risque absence de `ContextSourcePort` et `VectorStorePort` | **Retenu** | `AD-8`, `AD-20` | `Story 3.3` (`DEC-CTX-01`) | `DEC-CTX-01` : abstraction des sources de contexte et du stockage vectoriel | Diagnostic audit §2.3 |
+| **K9** | Risque données de démonstration dans le code source de domaine | **Retenu** | `AD-20` | `Story 3.2e` (`DEC-SEED-01`) | `AC-E0` : sortie vers fixtures ou `bootstrap/seeder.py` | Diagnostic audit §2.1 |
+| **P0-1** | Extraction du pack SDLC dans `packages/orcia-pack-sdlc` | **Retenu** | `AD-19`, `AD-20` | `Story 3.2e` | `AC-E1`, `AC-E2` : 5ᵉ package `uv`, 4 contrats `import-linter`, grep vocabulaire = 0 | Audit §4.1 |
+| **P0-2** | Interface unique `ConnectorPort`, registre `orcia.connectors`, table `connector_schemes` | **Retenu** | `AD-5`, `AD-20` | `Story 3.2e` | `AC-E3`, `AC-E4`, `AC-E5` : connecteur `sap://` factice en < 150 lignes sans toucher au Core | Audit §4.2 |
+| **P0-3** | Exécution réelle via `orcia.step_executors` et suppression moteur simulé | **Retenu** | `AD-2`, `AD-13`, `AD-20` | `Story 3.2f` | `AC-F1`, `AC-F2` : suppression de `DurableOrchestrationEngine`, branchement DBOS réel | Audit §4.3 |
+| **P0-4** | Taxonomie d'erreurs et `ConnectorInvoker` (relances, coupe-circuit) | **Retenu** | `AD-12` | `Story 3.2f` | `AC-F3`, `AC-F4` : retry 429 respecté, 0 retry sur erreur métier, pas de doublon Outbox/Audit | Audit §4.4 |
+| **P1-1** | Gestion robuste des secrets (`SecretRef`, `SecretProviderPort`, secret témoin) | **Retenu** | `AD-6`, `AD-12` | `Story 4.2` (`DEC-SEC-01`, relié à `SEC-03`) | `NFR-SEC-4` étendue : test du secret témoin (canari absent des tables et des logs) | Audit §4.5 |
+| **P1-2** | Circuit de demande d'accès générique (`AccessRequestChannelPort`) | **Retenu** | `AD-6`, `AD-20` | `Story 4.4` (`DEC-ACC-01`) | `DEC-ACC-01` : colonne `request_url` générique (Expand $\rightarrow$ Contract) | Audit §4.6 |
+| **P1-3** | Baux de ressources et fencing (`ResourceLeasePort`) | **Retenu** | `AD-4` | `Story 5.1` (`DEC-CONC-01`) | `DEC-CONC-01` : table `resource_leases` et détection attentes cycliques | Audit §4.7 |
+| **P1-4** | Contexte et indexation génériques (`ContextSourcePort`, `VectorStorePort`) | **Retenu** | `AD-8`, `AD-20` | `Story 3.3` (`DEC-CTX-01`) | `DEC-CTX-01` : point d'extension `orcia.indexers` | Audit §4.8 |
+| **P2-1** | Sortie des données de démonstration | **Retenu** | `AD-20` | `Story 3.2e` (`DEC-SEED-01`, Étape 0) | `AC-E0` : 0 donnée de démonstration dans les domaines du Core | Audit §4.9 |
+| **P2-2** | Preuve sur vertical Finance sans pack SDLC (`core-without-sdlc`) | **Retenu** | `AD-20`, `NFR-ISO-1` | `Story 3.2f` (`AC-F5`) + Critère Epic 3 | `AC-F5` : job CI `core-without-sdlc` au vert | Audit §4.10 |
+| **§3.1** | PRD : `NFR-EXT-1`, `NFR-ISO-1`, extension `NFR-SEC-4`, note traçabilité `FR-13` | **Retenu** | `AD-20`, `AD-6` | `prd.md` §10.1, §10.4 ; `epics.md` | Exigences formellement inscrites avec critères chiffrés (< 150 lignes, < ½ j) | `prd.md:L608-612` |
+| **§3.2** | Architecture : `AD-20`, amendements AD-2/4/5/6/8/12/13/14/19, tables SQL | **Retenu** | `AD-20` | `ARCHITECTURE-SPINE.md`, `architecture.md` | `lint_spine.py` : 0 finding ; 2 tables à PK UUIDv7 documentées | Spine + architecture.md |
+| **§3.3** | UX : impact sur les interfaces utilisateur et les parcours | **Retenu (N/A)** | N/A | `DESIGN.md`, `EXPERIENCE.md` inchangés | Aucun composant UI impacté ; Direction C et 11 règles UX/UI préservées | N/A |
+| **§3.4** | Autres artefacts : CI, outillage et contraintes de linter | **Retenu** | `AD-17`, `AD-19` | CI & validation | Job `core-without-sdlc`, 4ᵉ contrat `import-linter`, conformité connecteurs | Proposition §8.8 |
+| **EC-1** | Écart de livraison Story 3.2b (moteur DBOS figé, non branché, AC C4 non satisfait) | **Retenu** (Repris sans réouverture) | `AD-2` | `Story 3.2f` | `AC-F1`, `AC-F2` : suppression de `DurableOrchestrationEngine` et branchement réel | Commit `fb7d460` |
+| **EC-2** | Écart de processus (DoD insuffisante, tests unitaires sans run réel API) | **Retenu** (DoD renforcée) | `AD-17` | `Story 3.2f` (`PROC-01`) | `AC-F1` : run réel de bout en bout obligatoire via l'API avant passage en review | Proposition §8.2 |
+
+---
+
+### 9.2 Preuves d'Exécution des Contrôles Automatisés (Sorties Réelles)
+
+Les 8 vérifications automatisées ont été exécutées dans l'environnement du projet (`/home/romain/Documents/Projects/ORCIA`) et confirment la validité stricte des modifications.
+
+#### Contrôle 1 — Lint de la Spine d'Architecture (`lint_spine.py`)
+```json
+{
+  "ok": true,
+  "spine": "ARCHITECTURE-SPINE.md",
+  "total_findings": 0,
+  "by_severity": {},
+  "findings": []
+}
+```
+*Verdict : 0 violation de la convention d'architecture, conformité totale.*
+
+#### Contrôle 2 — Validation du Fichier de Suivi du Sprint (`sprint_plan.py validate`)
+```json
+{"ok": true, "action": "validate", "status_file": "docs/implementation-artifacts/sprint-status.yaml", "valid": true, "problems": [], "legacy_mapped": []}
+```
+*Verdict : `valid: true`, 0 problème de structure ou de format.*
+
+#### Contrôle 3 — Synchronisation Épics $\leftrightarrow$ Statut de Sprint (`sprint_plan.py generate --dry-run`)
+```json
+{"ok": true, "action": "generate", "status_file": "docs/implementation-artifacts/sprint-status.yaml", "dry_run": true, "fresh": false, "epics": 7, "stories": 36, "counts": {"done": 20, "in-progress": 1, "backlog": 24, "optional": 5}, "generated": "10-25-2026 09:10", "last_updated": "2026-10-28", "warnings": ["unparsed Epic/Story-like heading at docs/planning-artifacts/epics.md:17: # ORCIA - Epic Breakdown", "unparsed Epic/Story-like heading at docs/planning-artifacts/epics.md:138: ## Epic List"], "new_entries": [], "preserved": 50, "changed": 0, "upgraded_from_disk": [], "dropped_orphans": [], "legacy_mapped": [], "illegal": [], "in_sync": true, "explicit_set": []}
+```
+*Verdict : `in_sync: true`, `new_entries: []`, `dropped_orphans: []`. Les clés dérivées des titres correspondent exactement.*
+
+#### Contrôle 4 — Vérification d'Intégrité Globale Avenant A2 (`scratch/verify_a2.py`)
+```
+=== 1. Action Items A2 Presence ===
+  DEC-P0-CORE: PRESENT (priority=P0, story_ref=3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co)
+  DEC-P0-EXEC: PRESENT (priority=P0, story_ref=3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d)
+  DEC-SEC-01: PRESENT (priority=P1, story_ref=4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa)
+  DEC-ACC-01: PRESENT (priority=P1, story_ref=4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a)
+  DEC-CONC-01: PRESENT (priority=P1, story_ref=5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch)
+  DEC-CTX-01: PRESENT (priority=P1, story_ref=3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc)
+  DEC-SEED-01: PRESENT (priority=P2, story_ref=3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co)
+  PROC-01: PRESENT (priority=P1, story_ref=3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d)
+
+=== 2. Stories 3.2e & 3.2f Presence ===
+  3.2e in epics: True | in sprint-status: ['3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co']
+  3.2f in epics: True | in sprint-status: ['3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d']
+
+=== 3. Dependency Graph & Cycles Check ===
+  Missing deps targets: {}
+  Cycle check passed: True
+
+=== 4. Story Ref Validity in sprint-status ===
+  Invalid story_ref: {}
+
+=== 5. AD-20 and Architecture Presence ===
+  AD-20 in ARCHITECTURE-SPINE.md: True
+  AD-20 in architecture.md: True
+  connector_schemes in spine: True | in arch: True
+  orcia-pack-sdlc in spine: True
+
+=== 6. PRD and NFRs ===
+  NFR-EXT-1 in prd: True | in epics: True
+  NFR-ISO-1 in prd: True | in epics: True
+  NFR-SEC-4 in prd: True | in epics: True
+
+=== 7. Acceptance Criteria Check ===
+  3.2e AC-E1: FOUND
+  3.2e AC-E2: FOUND
+  3.2e AC-E3: FOUND
+  3.2e AC-E4: FOUND
+  3.2e AC-E5: FOUND
+  3.2e AC-E6: FOUND
+  3.2e AC-E7: FOUND
+  3.2f AC-F1: FOUND
+  3.2f AC-F2: FOUND
+  3.2f AC-F3: FOUND
+  3.2f AC-F4: FOUND
+  3.2f AC-F5: FOUND
+  3.2f AC-F6: FOUND
+```
+*Verdict : 100 % des présences confirmées, 0 cycle de dépendance, 0 cible d'action_item manquante, tous les critères d'acceptation AC-E1..E7 et AC-F1..F6 présents.*
+
+#### Contrôle 5 — Présence d'AD-20 et des Amendements d'Architecture
+```
+ARCHITECTURE-SPINE.md:468:### AD-20: Core Agnostique & Packs Métier Découplés (Avenant A2 du 28/10/2026)
+architecture.md:214:### 3.10 Découplage Plateforme vs Métier & Packs Découplés (AD-20, Avenant A2 du 28/10/2026)
+```
+*Verdict : AD-20 et les nouvelles tables `connector_schemes` et `resource_leases` sont formellement référencées dans les deux documents d'architecture.*
+
+#### Contrôle 6 — Cohérence des Exigences Non Fonctionnelles (`prd.md` & `epics.md`)
+```
+prd.md:576:- **NFR-SEC-4 (Protection des secrets et jetons fédérés — AD-6, AD-12)** : ...
+prd.md:608:- **NFR-EXT-1 (Ajout d'un connecteur sans modifier le Core)** : ...
+prd.md:609:- **NFR-ISO-1 (Core exécutable sans le pack SDLC)** : ...
+epics.md:63:- **NFR-SEC-4 (Protection des Secrets et Jetons Fédérés — AD-6, AD-12 ; étendue par l'Avenant A2 du 28/10/2026)** : ...
+epics.md:71:- **NFR-EXT-1 (Ajout d'un Connecteur sans Modifier le Core — AD-5, AD-20 ; Avenant A2)** : ...
+epics.md:72:- **NFR-ISO-1 (Core Exécutable sans le Pack SDLC — AD-19, AD-20 ; Avenant A2)** : ...
+```
+*Verdict : alignement textuel et traçabilité bilatérale stricts.*
+
+#### Contrôle 7 — Invariance des Stories Terminées et de `Story 3.2d`
+```bash
+git diff docs/planning-artifacts/epics.md | grep "^@@"
+# Chunks strictement limités au frontmatter, aux listes de NFRs, à l'en-tête de l'Epic 3,
+# à l'insertion des stories 3.2e/3.2f et aux Given/When/Then des stories futures 3.3, 4.1, 4.2, 4.4, 5.1, 7.1, 7.2, 7.3.
+```
+*Verdict : 0 ligne modifiée dans les stories livrées (`1.1..1.5`, `2.1..2.4`, `3.1`, `3.2`, `3.2a`, `3.2s`, `3.2b`, `3.2c`) et dans `Story 3.2d`.*
+
+#### Contrôle 8 — Volumétrie des Fichiers Modifiés par l'Avenant A2
+```
+ docs/implementation-artifacts/sprint-status.yaml   | 108 ++++++++++-
+ .../architecture-ORCIA-2026-10-24/.memlog.md       |   6 +-
+ .../ARCHITECTURE-SPINE.md                          |  44 +++--
+ .../architecture-ORCIA-2026-10-24/architecture.md  |  12 ++
+ docs/planning-artifacts/epics.md                   |  72 ++++++-
+ .../prds/prd-ORCIA-2026-10-24/prd.md               |   6 +
+ .../sprint-change-proposal-2026-10-27.md           | 206 ++++++++++++++++++++-
+ 7 files changed, 438 insertions(+), 16 deletions(-)
+```
+*Verdict : strictement limité aux 7 fichiers de documentation et de gouvernance prévus.*
+
+---
+
+### 9.3 Synthèse des Lentilles de Revue (`bmad-review`)
+
+1. **Lentille `verification-gaps` (Trous de vérification)** :
+   - *Risque critique `parse_federated_uri`* : sécurisé par le kit de conformité sur les 5 schémas existants et le maintien de la signature publique.
+   - *Non-régression moteur* : la suppression de `DurableOrchestrationEngine` est conditionnée à la reprise de l'ensemble des tests existants sur le moteur réel avec des cassettes déterministes.
+   - *Écart EC-1 de 3.2b* : le plan garantit que `3.2b` ne reste pas sans suite ; `Story 3.2f` prend en charge l'exécution réelle et la suppression du moteur en mémoire.
+   - *Test du secret témoin (`NFR-SEC-4`)* : obligation explicite introduite dans `Story 4.2` (`DEC-SEC-01`), assurant que les secrets ne fuient pas dans `dbos.*` ou l'outbox.
+   - *Validation de bout en bout (`PROC-01`)* : renforcement de la DoD interdisant de marquer une story du moteur `done` sans run API réel traversant une pause et une reprise.
+
+2. **Lentille `structure` (Architecture & Découpage modulaire)** :
+   - *Inversion des dépendances* : le Core ne dépend d'aucun pack (`orcia-kernel` et `orcia-core` n'importent jamais `orcia-pack-sdlc`, garanti par contrat `import-linter`).
+   - *Généralisation des connecteurs* : une table unique `connector_schemes` et une interface unique `ConnectorPort` éliminent 5 `Literal` redondants et 4 contraintes SQL rigides.
+   - *Découpage équilibré* : séparation nette entre structure (`3.2e` : 7,5 à 9,5 j) et exécution réelle (`3.2f` : 7 à 9 j), évitant une macro-story ingérable.
+   - *Absence de cycles* : vérifié formellement sur le graphe des 28 `action_items`.
+
+---
+
+### 9.4 Verdict Final de l'Avenant A2
+
+> [!IMPORTANT]
+> **VERDICT : CONFORME**
+> L'Avenant A2 est entièrement validé, documenté, tracé et répercuté dans la totalité des artefacts du projet (PRD, Architecture Spine, Architecture Détaillée, Epics & Stories, Suivi de Sprint).
+> Les stories `3.2e` et `3.2f` sont prêtes pour prise en charge par l'équipe de développement (`bmad-build`).

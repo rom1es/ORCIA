@@ -330,6 +330,16 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
    - 5 rôles opérationnels : `api`, `worker-orchestration`, `worker-indexing` (isolant Docling), `trigger-dispatcher`, `sandbox-runner`.
    - Organisation frontend par fonctionnalité métier dans `apps/web/src/features/<domaine>/`.
 
+### 3.10. Core Agnostique, Pack SDLC, Interface de Connecteur Unique, Exécution Réelle & Taxonomie d'Erreurs (`AD-20`, Avenant A2 du 28/10/2026)
+
+1. **Frontière Core / Packs** : `orcia_kernel` et `orcia_core` sont exempts de vocabulaire métier. Le SDLC est livré dans `packages/orcia-pack-sdlc` (connecteurs `git`, `jira`, `confluence`, `nexus` ; `BmadSkillPackAdapter` ; politique FR-13 ; marqueurs `sdlc.*` ; indexeurs code AST et Jira ; graphe tripartite). Contrat `import-linter` : `orcia_kernel` / `orcia_core` ↛ `orcia_pack_*`. Job CI `core-without-sdlc` (workflow Finance « Rapprochement de factures » + connecteur ERP factice, pack désinstallé).
+2. **Registres `entry_points`** : `orcia.connectors`, `orcia.step_executors`, `orcia.workflow_policies`, `orcia.indexers` (absorbe `orcia.uri_resolvers`).
+3. **`ConnectorPort`** (`orcia_kernel.ports`) : `capabilities()`, `fetch(uri)`, `invoke(action, payload, idempotency_key)`, `health()`, `map_error(exc)` ; kit de conformité commun ; `FederatedUriResolver` délègue au registre sans changer la signature de `parse_federated_uri` (risque GitNexus CRITICAL, 7 flux).
+4. **Exécution réelle** : un seul moteur DBOS injecté par le *Composition Root* ; chaque `@DBOS.step()` appelle l'exécuteur résolu (`AGENT`, `SKILL`, `SUB_WORKFLOW`, `HUMAN_TASK`, `HTTP_ACTION`) ; suppression du moteur simulé en mémoire, de `_ACTIVE_ENGINE` et de tout appel à une API privée `dbos._*`.
+5. **Taxonomie d'erreurs & `ConnectorInvoker`** : `TransientInfraError(retry_after_s)`, `RateLimitedError`, `UpstreamTimeoutError` (relançables) ; `FunctionalConnectorError`, `PolicyDeniedError`, `PermanentInfraError` (non relançables → arbitrage humain) ; relances bornées par le budget `AD-12`, `Retry-After`, coupe-circuit par connecteur, `idempotency_key`.
+6. **Secrets** : `SecretRef` non sérialisable + `SecretProviderPort` ; masquage structlog ; liste blanche de sérialisation pour outbox, audit, `step_executions` et `dbos.*` ; test du secret témoin (`NFR-SEC-4`).
+7. **Concurrence** : `ResourceLeasePort` (bail PostgreSQL + jeton de fencing), ordre d'acquisition canonique, files DBOS par classe de ressource.
+
 ---
 
 ## 4. Schéma de Données Principal (PostgreSQL 18 + `pgvector`)
@@ -354,6 +364,8 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
 | `ontology_axioms` | Règles d'intégrité sémantique et invariants (`AD-7`) | `id`, `concept_id`, `axiom_expression_jsonb`, `immutable (bool)`, `level` |
 | `kb_documents` & `kb_chunks` | Index RAG hybride & fraîcheur documentaire isolé par *Workspace* et par `datasource_id` (`AD-8`) | `id`, `workspace_id`, `datasource_id`, `kb_id`, `kb_snapshot_hash`, `embedding halfvec(1024)` (Index HNSW), `search_tsv tsvector` (Index GIN), `freshness_ttl_days`, `last_verified_at` |
 | `audit_ledger` | Journal d'audit et de télémétrie FinOps append-only (`AD-12`) | `id`, `run_id`, `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `input_tokens`, `output_tokens`, `cost_usd`, `created_at` (Trigger `BEFORE UPDATE OR DELETE RAISE EXCEPTION`) |
+| `connector_schemes` | Source de vérité unique des types de source (Avenant A2, `AD-5`, `AD-20`) — remplace les 4 contraintes `CHECK` (migrations `0013` Expand / `0014` Contract) | `id (uuid PK UUIDv7)`, `scheme (varchar UNIQUE)`, `provided_by_package`, `capabilities_jsonb`, `enabled`, `registered_at` ; FK vers `connector_schemes(scheme)` depuis `workspace_datasources.scheme`, `user_passthrough_credentials.connector_scheme`, `permission_broker_policies.connector_scheme`, `permission_broker_tickets.connector_scheme` |
+| `resource_leases` | Baux de ressources partagées avec fencing (Avenant A2, `AD-4`, `DEC-CONC-01`) | `id (uuid PK UUIDv7)`, `resource_uri (UNIQUE)`, `holder_run_id`, `holder_step_execution_id`, `fencing_token (bigint monotone)`, `expires_at` |
 
 ---
 
