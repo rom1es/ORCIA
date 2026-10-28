@@ -26,8 +26,10 @@ from orcia_core.ontology import (
     build_seeded_ontology_service,
 )
 from orcia_core.orchestration import (
+    ConnectorInvoker,
     WorkflowOrchestrationSetupService,
     build_default_orchestration_setup_service,
+    register_default_step_executors,
 )
 from orcia_core.permissions import (
     AuthAndOrganizationService,
@@ -41,12 +43,22 @@ from orcia_core.rag import (
     build_empty_rag_service,
     build_seeded_rag_service,
 )
+from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_pack_sdlc import activate_sdlc_pack
 
 
 def initialize_app_services(app: FastAPI) -> None:
     """Wire and attach all domain services to `app.state` (idempotent Composition Root)."""
     activate_sdlc_pack()
+    if getattr(app.state, "llm_gateway", None) is None:
+        app.state.llm_gateway = DeterministicCassetteLLM()
+    if getattr(app.state, "connector_invoker", None) is None:
+        app.state.connector_invoker = ConnectorInvoker()
+    register_default_step_executors(
+        llm_gateway=app.state.llm_gateway,
+        connector_invoker=app.state.connector_invoker,
+    )
+
     if getattr(app.state, "auth_service", None) is None:
         auth_service = build_default_auth_and_org_service()
         app.state.auth_service = auth_service

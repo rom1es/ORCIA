@@ -31,5 +31,13 @@ orcia = "orcia_core.bootstrap.plugin_registry:resolve_orcia_scheme_plugin"
 litellm = "orcia_core.bootstrap.plugin_registry:build_litellm_gateway_plugin"
 cassette = "orcia_core.bootstrap.plugin_registry:build_cassette_gateway_plugin"
 
+[project.entry-points."orcia.step_executors"]
+AGENT = "orcia_core.orchestration.step_executors:build_agent_step_executor_plugin"
+SKILL = "orcia_core.orchestration.step_executors:build_skill_step_executor_plugin"
+SUB_WORKFLOW = "orcia_core.orchestration.step_executors:build_sub_workflow_step_executor_plugin"
+HUMAN_TASK = "orcia_core.orchestration.step_executors:build_human_task_step_executor_plugin"
+HTTP_ACTION = "orcia_core.orchestration.step_executors:build_http_action_step_executor_plugin"
+POST_ACTION_VERIFICATION = "orcia_core.orchestration.step_executors:build_post_action_step_executor_plugin"
+
 [tool.setuptools.packages.find]
 where = ["src"]

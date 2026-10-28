@@ -193,8 +193,8 @@ async def test_spike_blackboard_snapshot_tx_and_runtime_methods() -> None:
     ):
         await runtime.start()
         assert runtime.uow is fake_uow
-        await runtime.simulate_crash_and_relaunch()
-        mock_dbos._recover_pending_workflows.assert_called_once()
+        await runtime.crash_and_relaunch()
+        assert mock_dbos.launch.call_count == 2
         await runtime.stop()
         assert runtime.uow is None
 

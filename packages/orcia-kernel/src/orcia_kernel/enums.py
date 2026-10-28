@@ -17,6 +17,8 @@ WorkflowStepType = Literal[
     "AGENT",
     "SKILL",
     "SUB_WORKFLOW",
+    "HUMAN_TASK",
+    "HTTP_ACTION",
     "POST_ACTION_VERIFICATION",
 ]
 

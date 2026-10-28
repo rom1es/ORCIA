@@ -31,7 +31,7 @@ from orcia_core.orchestration._internal.dbos_engine import (
     DbosDurableWorkflowEngine,
     _execute_durable_step,
     _orcia_durable_run_workflow,
-    _require_active_engine,
+    _require_bound_runtime,
 )
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration.errors import ResourceNotFoundError
@@ -204,7 +204,7 @@ async def test_sql_repositories_and_dbos_engine_unit_paths() -> None:
     assert vec_str == "[0.500000,-0.250000,0.000000,0.000000]"
 
     with pytest.raises(RuntimeError, match="is not launched"):
-        _require_active_engine()
+        _require_bound_runtime()
 
     engine = DbosDurableWorkflowEngine(
         system_database_url="postgresql://localhost/orcia",

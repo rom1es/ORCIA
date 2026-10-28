@@ -1,19 +1,16 @@
-"""JitStepHydrator & DurableOrchestrationEngine (Story 3.2, Story 3.2e, AD-2, AD-12, AD-13, AD-20).
+"""DurableOrchestrationEngine dispatching real `StepExecutorPort` implementations (`Story 3.2f`).
 
 Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`) and zero SDLC
-vocabulary (`AD-19`, `AD-20`, `AC-E2`).
+vocabulary (`AD-19`, `AD-20`, `AC-E2`, `AC-F1`, `AC-F2`).
 """
 
 from __future__ import annotations
 
-import importlib.metadata
-import threading
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any
 
 from orcia_core.blackboard.models import (
     BackgroundAuditConsolidatedReport,
     BlackboardSnapshotEntity,
-    HydratedStepContext,
     StepExecutionEntity,
     StepMemlogEntry,
 )
@@ -22,155 +19,33 @@ from orcia_core.orchestration.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
 )
+from orcia_core.orchestration.jit_hydrator import (
+    JitStepHydrator,
+    MemlogMarkerPluginProtocol,
+    build_default_fast_path_markers,
+    get_memlog_marker_plugin,
+    register_memlog_marker_plugin,
+)
 from orcia_core.orchestration.models import (
     WorkflowAsCodeDefinition,
     WorkflowRunEntity,
     WorkflowStepSpec,
 )
+from orcia_core.orchestration.step_executors import register_default_step_executors
 from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.enums import normalize_memlog_marker
 from orcia_kernel.ids import new_uuid7_str
+from orcia_kernel.ports import (
+    StepExecutorContext,
+    get_registered_step_executor,
+)
 
 if TYPE_CHECKING:
     from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
 
 
-@runtime_checkable
-class MemlogMarkerPluginProtocol(Protocol):
-    """Plugin protocol discovered via `entry_points(group='orcia.memlog_markers')` (`AD-20`)."""
-
-    @property
-    def primary_divergence_marker(self) -> str:
-        """Return primary divergence marker key (e.g. `<namespace>.<marker>` or alias)."""
-        ...
-
-    @property
-    def secondary_divergence_marker(self) -> str:
-        """Return secondary divergence marker key (e.g. `<namespace>.<marker>` or alias)."""
-        ...
-
-    def build_fast_path_markers(
-        self, step_key: str, divergence_note: str, datasources: tuple[str, ...]
-    ) -> tuple[StepMemlogEntry, ...]:
-        """Build fast-path divergence markers for a step execution."""
-        ...
-
-
-_MARKER_PLUGIN_LOCK = threading.Lock()
-_MARKER_PLUGIN: MemlogMarkerPluginProtocol | None = None
-_MARKER_ENTRY_POINTS_LOADED: bool = False
-
-
-def register_memlog_marker_plugin(plugin: MemlogMarkerPluginProtocol) -> None:
-    """Register a pack `MemlogMarkerPluginProtocol` (`AD-20`, `AC-E1`, `AC-E2`)."""
-    global _MARKER_PLUGIN
-    with _MARKER_PLUGIN_LOCK:
-        _MARKER_PLUGIN = plugin
-
-
-def _get_memlog_marker_plugin() -> MemlogMarkerPluginProtocol | None:
-    global _MARKER_ENTRY_POINTS_LOADED, _MARKER_PLUGIN
-    with _MARKER_PLUGIN_LOCK:
-        if not _MARKER_ENTRY_POINTS_LOADED:
-            _MARKER_ENTRY_POINTS_LOADED = True
-            try:
-                eps = importlib.metadata.entry_points(group="orcia.memlog_markers")
-                for ep in eps:
-                    loaded = ep.load()
-                    instance = loaded() if callable(loaded) else loaded
-                    if isinstance(instance, MemlogMarkerPluginProtocol):
-                        _MARKER_PLUGIN = instance
-            except Exception:
-                pass
-        return _MARKER_PLUGIN
-
-
-class JitStepHydrator:
-    """Just-In-Time Step Context Hydrator (`AD-13`).
-
-    Injects ONLY step $k$'s directive and explicitly declared upstream artifacts (`orcia://`).
-    Guarantees 0 instructions from future steps $k+1..N$ and 0 undeclared upstream artifacts.
-    """
-
-    @staticmethod
-    def hydrate_step(
-        *,
-        run: WorkflowRunEntity,
-        workflow: WorkflowAsCodeDefinition,
-        step_key: str,
-        blackboard: AppendOnlyBlackboardStore,
-        seed_inputs: dict[str, Any] | None = None,
-    ) -> HydratedStepContext:
-        """Build isolated `HydratedStepContext` for `step_key` in `run`."""
-        target_step: WorkflowStepSpec | None = None
-        for step in workflow.steps:
-            if step.step_key == step_key:
-                target_step = step
-                break
-        if target_step is None:
-            raise ResourceNotFoundError(
-                detail_override=f"Étape '{step_key}' introuvable dans '{workflow.uri}'."
-            )
-
-        declared_uris: list[str] = []
-        resolved_inputs: dict[str, Any] = dict(seed_inputs or {})
-
-        # Resolve only explicitly mapped inputs or direct dependencies
-        mapping_sources = dict(target_step.input_mapping)
-        if not mapping_sources and target_step.depends_on:
-            for dep_key in target_step.depends_on:
-                mapping_sources[dep_key] = f"steps.{dep_key}.artifact"
-
-        for alias, ref_expr in sorted(mapping_sources.items()):
-            upstream_step_key, field_key = JitStepHydrator._parse_input_ref(ref_expr, run.id)
-            canonical_uri = f"orcia://runs/{run.id}/steps/{upstream_step_key}/artifacts/{field_key}"
-            declared_uris.append(canonical_uri)
-            snap = blackboard.get_active_step_snapshot(run.id, upstream_step_key)
-            if snap is None:
-                raise ResourceNotFoundError(
-                    detail_override=(
-                        f"Snapshot amont requis introuvable pour '{canonical_uri}' "
-                        f"lors de l'hydratation JIT de '{step_key}'."
-                    )
-                )
-            if field_key in snap.artifact_payload:
-                resolved_inputs[alias] = snap.artifact_payload[field_key]
-            else:
-                resolved_inputs[alias] = snap.artifact_payload
-
-        return HydratedStepContext(
-            run_id=run.id,
-            step_key=target_step.step_key,
-            step_title=target_step.title,
-            step_type=target_step.step_type,
-            execution_mode=run.execution_regime,
-            step_directive=target_step.instructions,
-            declared_input_uris=tuple(declared_uris),
-            resolved_inputs=resolved_inputs,
-            future_step_instructions_leaked=0,
-            undeclared_artifacts_leaked=0,
-        )
-
-    @staticmethod
-    def _parse_input_ref(ref_expr: str, run_id: str) -> tuple[str, str]:
-        cleaned = ref_expr.strip()
-        if cleaned.startswith("orcia://runs/"):
-            parts = cleaned.removeprefix("orcia://runs/").split("/")
-            if len(parts) >= 5 and parts[1] == "steps" and parts[3] == "artifacts":
-                return parts[2], parts[4]
-        if cleaned.startswith("steps."):
-            parts = cleaned.split(".")
-            if len(parts) >= 3:
-                return parts[1], parts[2]
-            if len(parts) == 2:
-                return parts[1], "artifact"
-        raise ValidationDomainError(
-            detail_override=f"Référence d'entrée JIT invalide '{ref_expr}' sur le run '{run_id}'."
-        )
-
-
 class DurableOrchestrationEngine:
-    """Durable workflow execution engine with append-only checkpoints & fractal SUB_WORKFLOWs."""
+    """Durable workflow execution engine dispatching real `orcia.step_executors` (`AC-F1`)."""
 
     def __init__(
         self,
@@ -181,6 +56,7 @@ class DurableOrchestrationEngine:
         self.setup_service = setup_service
         self.blackboard = blackboard or AppendOnlyBlackboardStore(resolver=setup_service.resolver)
         self._run_seed_inputs: dict[str, dict[str, Any]] = {}
+        register_default_step_executors()
 
     def initialize_run_steps(
         self, run: WorkflowRunEntity, workflow: WorkflowAsCodeDefinition
@@ -223,11 +99,20 @@ class DurableOrchestrationEngine:
         run_id: str,
         step_key: str,
         commit_immediately: bool = True,
-        simulated_divergence: str | None = None,
+        divergence_note: str | None = None,
+        human_decision: str | None = None,
+        executor_metadata: dict[str, Any] | None = None,
         cost_usd: float = 0.25,
         instance: str | None = None,
+        **legacy_kwargs: Any,
     ) -> tuple[StepExecutionEntity, BlackboardSnapshotEntity | None]:
-        """Execute a single step (`AGENT`, `SKILL`, `SUB_WORKFLOW`, `POST_ACTION_VERIFICATION`)."""
+        """Execute a single step via its registered `StepExecutorPort` (`AC-F1`, `AC-F2`)."""
+        legacy_div = legacy_kwargs.get("divergence_hint") or next(
+            (v for k, v in legacy_kwargs.items() if "divergence" in k and isinstance(v, str)),
+            None,
+        )
+        effective_divergence = divergence_note or legacy_div
+
         run = self._get_run(run_id, instance=instance)
         self.setup_service._enforce_mutation_guard(user, run.workspace_id, instance=instance)
         wf = self._get_workflow(run.workflow_uri, instance=instance)
@@ -306,36 +191,82 @@ class DurableOrchestrationEngine:
                 )
             )
             effective_step_cost = 0.0
+            draft_status = "EXECUTING_AGENT"
         else:
-            draft_payload = {
-                "step_key": step_key,
-                "step_type": step_spec.step_type,
-                "directive_applied": hydrated.step_directive,
-                "inputs_received": list(hydrated.resolved_inputs.keys()),
-                "artifact": f"Livrable généré pour {step_key} ({wf.uri})",
-                "adr": f"ADR validé pour {step_key}",
-                "report": f"Rapport de vérification {step_key} : PASS",
-            }
-            if simulated_divergence or run.execution_regime == "BACKGROUND_FAST_PATH":
-                div_note = simulated_divergence or (
+            executor = get_registered_step_executor(step_spec.step_type)
+            if executor is None:
+                raise ValidationDomainError(
+                    detail_override=(
+                        f"Aucun exécuteur d'étape enregistré dans orcia.step_executors "
+                        f"pour step_type='{step_spec.step_type}'."
+                    ),
+                    instance=instance,
+                )
+            meta = dict(executor_metadata or {})
+            if human_decision is not None:
+                meta["human_decision"] = human_decision
+            exec_ctx = StepExecutorContext(
+                run_id=run.id,
+                root_run_id=root_run.id,
+                workspace_id=run.workspace_id,
+                workflow_uri=wf.uri,
+                step_key=step_key,
+                step_title=step_spec.title,
+                step_type=step_spec.step_type,
+                execution_regime=run.execution_regime,
+                directive=hydrated.step_directive,
+                declared_input_uris=hydrated.declared_input_uris,
+                resolved_inputs=hydrated.resolved_inputs,
+                datasources=wf.datasources,
+                agent_uri=step_spec.agent_uri,
+                skill_uri=step_spec.skill_uri,
+                sub_workflow_uri=step_spec.sub_workflow_uri,
+                max_agent_retries=step_spec.max_agent_retries,
+                budget_remaining_usd=max(0.0, root_run.budget_max_usd - current_root_cost),
+                idempotency_key=f"idem:{run.id}:{step_key}",
+                metadata=meta,
+            )
+            exec_result = executor.execute_step(exec_ctx)
+            draft_payload = dict(exec_result.artifact_payload)
+            memlog_entries.append(
+                StepMemlogEntry(
+                    entry_id=new_uuid7_str(),
+                    step_key=step_key,
+                    marker_type="REASONING",
+                    summary=exec_result.summary,
+                    details=exec_result.details,
+                    source_uris=hydrated.declared_input_uris,
+                )
+            )
+            if effective_divergence or run.execution_regime == "BACKGROUND_FAST_PATH":
+                div_note = effective_divergence or (
                     "Divergence détectée entre source documentaire (seuil 500€) "
                     "et source opérationnelle (seuil 350€)"
                 )
-                fast_markers = self._build_fast_path_markers(step_key, div_note, wf.datasources)
+                fast_markers = build_default_fast_path_markers(step_key, div_note, wf.datasources)
                 memlog_entries.extend(fast_markers)
                 draft_payload["fast_path_markers"] = [m.to_dict() for m in fast_markers]
-            effective_step_cost = cost_usd
+            effective_step_cost = exec_result.cost_usd if exec_result.cost_usd > 0.0 else cost_usd
+            draft_status = (
+                "WAITING_FOR_HUMAN_ARBITRATION"
+                if exec_result.status == "WAITING_FOR_HUMAN_ARBITRATION"
+                else "EXECUTING_AGENT"
+            )
 
         draft_step = self.blackboard.save_step_draft(
             run.id,
             step_key,
-            status="EXECUTING_AGENT",
+            status=draft_status,  # type: ignore[arg-type]
             draft_artifact=draft_payload,
             memlog_entries=tuple(memlog_entries),
             hydrated_input_uris=hydrated.declared_input_uris,
             child_run_id=child_run_id,
             added_cost_usd=effective_step_cost,
         )
+
+        if draft_status == "WAITING_FOR_HUMAN_ARBITRATION":
+            self.setup_service.set_run_status(run.id, "WAITING_FOR_HUMAN_ARBITRATION")
+            return draft_step, None
 
         if not commit_immediately:
             return draft_step, None
@@ -346,7 +277,32 @@ class DurableOrchestrationEngine:
             run.id, step_key, parent_snapshot_id=parent_snap_id
         )
         committed_step = self.blackboard.get_step_execution(run.id, step_key)
+        all_steps = self.blackboard.list_step_executions(run.id)
+        if all_steps and all(s.status == "COMMITTED" for s in all_steps):
+            self.setup_service.set_run_status(run.id, "COMPLETED")
+        else:
+            self.setup_service.set_run_status(run.id, "RUNNING")
         return committed_step, snapshot
+
+    def resume_human_task(
+        self,
+        user: UserIdentity,
+        *,
+        run_id: str,
+        step_key: str,
+        decision: str,
+        instance: str | None = None,
+    ) -> tuple[StepExecutionEntity, BlackboardSnapshotEntity | None]:
+        """Resume a paused `HUMAN_TASK` or `WAITING_FOR_HUMAN_ARBITRATION` step (`AC-F1`)."""
+        return self.execute_step(
+            user,
+            run_id=run_id,
+            step_key=step_key,
+            commit_immediately=True,
+            human_decision=decision,
+            cost_usd=0.0,
+            instance=instance,
+        )
 
     def _execute_isolated_sub_workflow(
         self,
@@ -395,32 +351,6 @@ class DurableOrchestrationEngine:
                 )
         return child_run, mapped_outputs
 
-    @staticmethod
-    def _build_fast_path_markers(
-        step_key: str, divergence_note: str, datasources: tuple[str, ...]
-    ) -> tuple[StepMemlogEntry, ...]:
-        plugin = _get_memlog_marker_plugin()
-        if plugin is not None:
-            return plugin.build_fast_path_markers(step_key, divergence_note, datasources)
-        return (
-            StepMemlogEntry(
-                entry_id=new_uuid7_str(),
-                step_key=step_key,
-                marker_type="ASSUMPTION",
-                summary="[ASSUMPTION] Continuité d'audit en tâche de fond retenue",
-                details=f"Hypothèse appliquée sans blocage worker: {divergence_note}",
-                source_uris=datasources,
-            ),
-            StepMemlogEntry(
-                entry_id=new_uuid7_str(),
-                step_key=step_key,
-                marker_type="core.divergence_suspected",
-                summary="[DIVERGENCE] Écart détecté entre sources fédérées",
-                details=divergence_note,
-                source_uris=datasources,
-            ),
-        )
-
     def run_background_fast_path_audit(
         self,
         user: UserIdentity,
@@ -442,14 +372,14 @@ class DurableOrchestrationEngine:
                 run_id=run.id,
                 step_key=step.step_key,
                 commit_immediately=True,
-                simulated_divergence=divergence_note,
+                divergence_note=divergence_note,
                 cost_usd=0.2,
                 instance=instance,
             )
         all_memlogs = [
             entry for s in self.blackboard.list_step_executions(run.id) for entry in s.step_memlog
         ]
-        plugin = _get_memlog_marker_plugin()
+        plugin = get_memlog_marker_plugin()
         primary_canonical = (
             normalize_memlog_marker(plugin.primary_divergence_marker)
             if plugin is not None
@@ -500,3 +430,11 @@ class DurableOrchestrationEngine:
         raise ResourceNotFoundError(
             detail_override=f"Workflow '{workflow_uri}' introuvable.", instance=instance
         )
+
+
+__all__ = [
+    "DurableOrchestrationEngine",
+    "JitStepHydrator",
+    "MemlogMarkerPluginProtocol",
+    "register_memlog_marker_plugin",
+]

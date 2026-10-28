@@ -244,8 +244,8 @@ class DbosSpikeRuntime:
         DBOS.launch()
         await self._ensure_spike_tables()
 
-    async def simulate_crash_and_relaunch(self) -> None:
-        """Simulate a sudden process crash (`SIGKILL`) and relaunch pending workflows."""
+    async def crash_and_relaunch(self) -> None:
+        """Stop runtime (`SIGKILL`) and relaunch pending workflows via `DBOS.launch()`."""
         global _ACTIVE_UOW
         if self.uow is not None:
             await self.uow.close()
@@ -258,7 +258,6 @@ class DbosSpikeRuntime:
         )
         _ACTIVE_UOW = self.uow
         DBOS.launch()
-        DBOS._recover_pending_workflows()
 
     async def stop(self) -> None:
         global _ACTIVE_UOW
@@ -330,7 +329,7 @@ class DbosSpikeRuntime:
         status_before = await handle.get_status()
         assert status_before.status == "PENDING"
 
-        await self.simulate_crash_and_relaunch()
+        await self.crash_and_relaunch()
         recovered_handle: WorkflowHandleAsync[str] = await DBOS.retrieve_workflow_async(wf_id)
         await DBOS.send_async(destination_id=wf_id, message=decision, topic=ARBITRATION_TOPIC)
         result: str = await recovered_handle.get_result()

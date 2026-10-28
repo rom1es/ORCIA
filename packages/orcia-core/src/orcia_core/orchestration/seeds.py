@@ -22,6 +22,12 @@ from orcia_core.permissions.models import UserIdentity
 
 
 def _load_bootstrap_orchestration_seeds() -> Any:
+    try:
+        sdlc_mod = importlib.import_module("orcia_pack_sdlc")
+        if hasattr(sdlc_mod, "activate_sdlc_pack"):
+            sdlc_mod.activate_sdlc_pack()
+    except Exception:
+        pass
     return importlib.import_module("orcia_core.bootstrap.orchestration_seeds")
 
 

@@ -116,7 +116,9 @@ class StepExecuteRequest(BaseModel):
     run_id: str = Field(..., min_length=1, max_length=128)
     step_key: str = Field(..., min_length=1, max_length=128)
     commit_immediately: bool = Field(default=True)
+    divergence_note: str | None = Field(default=None, max_length=512)
     simulated_divergence: str | None = Field(default=None, max_length=512)
+    human_decision: str | None = Field(default=None, max_length=512)
     cost_usd: float = Field(default=0.25, ge=0.0, le=500.0)
 
 
@@ -128,6 +130,14 @@ class StepExecuteResponse(BaseModel):
     step_execution: StepExecutionSchemaItem
     committed_snapshot: BlackboardSnapshotSchemaItem | None = None
     trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class StepHumanResumeRequest(BaseModel):
+    """Request payload for `POST /api/v1/orchestration/runs/{run_id}/steps/{step_key}/resume`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: str = Field(..., min_length=1, max_length=512)
 
 
 class BackgroundAuditRunRequest(BaseModel):
@@ -174,6 +184,7 @@ class RunBlackboardStateResponse(BaseModel):
 
     run_id: str
     root_run_id: str
+    run_status: str = "INITIALIZED"
     accumulated_root_cost_usd: float
     step_executions: list[StepExecutionSchemaItem]
     active_snapshots: list[BlackboardSnapshotSchemaItem]

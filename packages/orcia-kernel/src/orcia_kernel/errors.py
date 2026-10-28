@@ -104,6 +104,70 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Your RBAC role does not grant access to this scope or module.",
         ),
     },
+    "ERR_TRANSIENT_INFRA_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur d'infrastructure transitoire",
+            "Une défaillance réseau ou d'infrastructure temporaire est survenue ; "
+            "nouvel essai planifié.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Transient infrastructure error",
+            "A temporary network or infrastructure failure occurred; retry scheduled.",
+        ),
+    },
+    "ERR_RATE_LIMITED": {
+        "fr": LocalizedErrorCopy(
+            "Quota d'appels amont atteint (429)",
+            "Le connecteur externe a limité le débit d'appels ; "
+            "nouvel essai différé selon Retry-After.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Upstream rate limit exceeded (429)",
+            "The external connector rate-limited the request; retry delayed per Retry-After.",
+        ),
+    },
+    "ERR_UPSTREAM_TIMEOUT": {
+        "fr": LocalizedErrorCopy(
+            "Délai d'attente amont dépassé",
+            "Le service externe n'a pas répondu dans le délai imparti.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Upstream service timeout",
+            "The external service did not respond within the configured timeout.",
+        ),
+    },
+    "ERR_FUNCTIONAL_CONNECTOR_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur fonctionnelle du connecteur (non rejouable)",
+            "L'action externe a été rejetée pour un motif métier ; escalade vers arbitrage humain.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Functional connector error (non-retryable)",
+            "The external action was rejected for a business reason; "
+            "escalated to human arbitration.",
+        ),
+    },
+    "ERR_POLICY_DENIED": {
+        "fr": LocalizedErrorCopy(
+            "Action refusée par la politique de gouvernance",
+            "La politique de sécurité ou d'autorisation interdit cette invocation de connecteur.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Action denied by governance policy",
+            "Security or authorization policy forbids this connector invocation.",
+        ),
+    },
+    "ERR_PERMANENT_INFRA_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur d'infrastructure permanente ou disjoncteur ouvert",
+            "Le connecteur externe est indisponible de manière persistante ou "
+            "son disjoncteur est ouvert.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Permanent infrastructure error or open circuit breaker",
+            "The external connector is persistently unavailable or its circuit breaker is open.",
+        ),
+    },
 }
 
 
@@ -210,18 +274,81 @@ class ScopeAccessDeniedError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_SCOPE_ACCESS_DENIED", 403, "scope-access-denied"
 
 
+class TransientInfraError(OrciaDomainError):
+    """Retryable transient infrastructure error with optional `retry_after_s` (`AC-F3`)."""
+
+    error_code = "ERR_TRANSIENT_INFRA_ERROR"
+    http_status, type_slug = 503, "transient-infra-error"
+
+    def __init__(
+        self,
+        *,
+        retry_after_s: float = 0.0,
+        detail_override: str | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        super().__init__(
+            detail_override=detail_override,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
+        self.retry_after_s = max(0.0, float(retry_after_s))
+
+
+class RateLimitedError(TransientInfraError):
+    """Retryable HTTP 429 rate-limit error carrying `retry_after_s` (`AC-F3`, `AC-F4`)."""
+
+    error_code = "ERR_RATE_LIMITED"
+    http_status, type_slug = 429, "rate-limited"
+
+
+class UpstreamTimeoutError(TransientInfraError):
+    """Retryable upstream timeout error (`AC-F4`)."""
+
+    error_code = "ERR_UPSTREAM_TIMEOUT"
+    http_status, type_slug = 504, "upstream-timeout"
+
+
+class FunctionalConnectorError(OrciaDomainError):
+    """Non-retryable functional connector error escalating to human arbitration (`AC-F3`)."""
+
+    error_code = "ERR_FUNCTIONAL_CONNECTOR_ERROR"
+    http_status, type_slug = 422, "functional-connector-error"
+
+
+class PolicyDeniedError(OrciaDomainError):
+    """Non-retryable policy/governance denial error (`AC-F4`)."""
+
+    error_code = "ERR_POLICY_DENIED"
+    http_status, type_slug = 403, "policy-denied"
+
+
+class PermanentInfraError(OrciaDomainError):
+    """Non-retryable permanent infrastructure error or open circuit breaker (`AC-F3`, `AC-F4`)."""
+
+    error_code = "ERR_PERMANENT_INFRA_ERROR"
+    http_status, type_slug = 502, "permanent-infra-error"
+
+
 __all__ = [
     "DEFAULT_LOCALE",
     "ERROR_CATALOG",
+    "FunctionalConnectorError",
     "HumanAnchorRequiredError",
     "LocalizedErrorCopy",
     "ModelOrthogonalityViolationError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "PermanentInfraError",
+    "PolicyDeniedError",
+    "RateLimitedError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",
     "ScopeAccessDeniedError",
     "SupportedLocale",
+    "TransientInfraError",
+    "UpstreamTimeoutError",
     "ValidationDomainError",
     "get_localized_error_text",
     "register_domain_error_catalog",

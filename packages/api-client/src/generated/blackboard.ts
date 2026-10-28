@@ -14,6 +14,7 @@ export type RunBlackboardStateResponse = components["schemas"]["RunBlackboardSta
 export type StepExecuteRequest = components["schemas"]["StepExecuteRequest"];
 export type StepExecuteResponse = components["schemas"]["StepExecuteResponse"];
 export type StepExecutionSchemaItem = components["schemas"]["StepExecutionSchemaItem"];
+export type StepHumanResumeRequest = components["schemas"]["StepHumanResumeRequest"];
 export type StepHydrateRequest = components["schemas"]["StepHydrateRequest"];
 export type StepHydrateResponse = components["schemas"]["StepHydrateResponse"];
 export type StepMemlogSchemaItem = components["schemas"]["StepMemlogSchemaItem"];

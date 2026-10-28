@@ -22,7 +22,9 @@ TieBreakPolicy = Literal[
 ]
 # Open string supporting "standard" or pack-specific engineering modes (`AD-20`, `AC-E2`)
 WorkflowEngineeringMode = str
-WorkflowStepType = Literal["AGENT", "SKILL", "SUB_WORKFLOW", "POST_ACTION_VERIFICATION"]
+WorkflowStepType = Literal[
+    "AGENT", "SKILL", "SUB_WORKFLOW", "HUMAN_TASK", "HTTP_ACTION", "POST_ACTION_VERIFICATION"
+]
 WorkflowTriggerType = Literal["WEBHOOK", "LOG_SINK_ALERT", "CRON", "MANUAL_AUTONOMOUS"]
 WorkflowTriggerStatus = Literal["ACTIVE", "PAUSED", "CIRCUIT_OPEN"]
 WorkflowRunStatus = Literal[

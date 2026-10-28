@@ -1499,6 +1499,8 @@
               "AGENT",
               "SKILL",
               "SUB_WORKFLOW",
+              "HUMAN_TASK",
+              "HTTP_ACTION",
               "POST_ACTION_VERIFICATION"
             ],
             "title": "Step Type",
@@ -3820,6 +3822,11 @@
             "title": "Run Id",
             "type": "string"
           },
+          "run_status": {
+            "default": "INITIALIZED",
+            "title": "Run Status",
+            "type": "string"
+          },
           "step_executions": {
             "items": {
               "$ref": "#/components/schemas/StepExecutionSchemaItem"
@@ -4168,6 +4175,30 @@
             "title": "Cost Usd",
             "type": "number"
           },
+          "divergence_note": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Divergence Note"
+          },
+          "human_decision": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Decision"
+          },
           "run_id": {
             "maxLength": 128,
             "minLength": 1,
@@ -4354,6 +4385,8 @@
               "AGENT",
               "SKILL",
               "SUB_WORKFLOW",
+              "HUMAN_TASK",
+              "HTTP_ACTION",
               "POST_ACTION_VERIFICATION"
             ],
             "title": "Step Type",
@@ -4375,6 +4408,23 @@
           "cost_usd"
         ],
         "title": "StepExecutionSchemaItem",
+        "type": "object"
+      },
+      "StepHumanResumeRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/runs/{run_id}/steps/{step_key}/resume`.",
+        "properties": {
+          "decision": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Decision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "StepHumanResumeRequest",
         "type": "object"
       },
       "StepHydrateRequest": {
@@ -5981,6 +6031,8 @@
               "AGENT",
               "SKILL",
               "SUB_WORKFLOW",
+              "HUMAN_TASK",
+              "HTTP_ACTION",
               "POST_ACTION_VERIFICATION"
             ],
             "title": "Step Type",
@@ -9254,7 +9306,7 @@
     },
     "/api/v1/orchestration/runs/steps/execute": {
       "post": {
-        "description": "Execute a step, writing draft_artifact first and committing to blackboard_snapshots.",
+        "description": "Execute a step via `orcia.step_executors` and commit to `blackboard_snapshots`.",
         "operationId": "execute_workflow_step_api_v1_orchestration_runs_steps_execute_post",
         "parameters": [
           {
@@ -9342,7 +9394,7 @@
             "description": "Unprocessable Entity"
           }
         },
-        "summary": "Execute a durable workflow step (AGENT, SKILL, SUB_WORKFLOW, POST_ACTION)",
+        "summary": "Execute a durable workflow step (AGENT, SKILL, SUB_WORKFLOW, HUMAN_TASK, HTTP_ACTION)",
         "tags": [
           "durable-orchestration-blackboard"
         ]
@@ -9536,6 +9588,124 @@
           }
         },
         "summary": "Get durable step executions and append-only Blackboard snapshots for a Run",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/resume": {
+      "post": {
+        "description": "Resume a paused `HUMAN_TASK` step with an explicit human arbitration decision.",
+        "operationId": "resume_human_workflow_step_api_v1_orchestration_runs__run_id__steps__step_key__resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Step Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepHumanResumeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepExecuteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Resume a paused HUMAN_TASK or WAITING_FOR_HUMAN_ARBITRATION step (Story 3.2f, AC-F1)",
         "tags": [
           "durable-orchestration-blackboard"
         ]

@@ -128,6 +128,17 @@ class WorkflowOrchestrationSetupService:
     def triggers(self) -> tuple[WorkflowTriggerEntity, ...]:
         return tuple(self._triggers_by_id.values())
 
+    def set_run_status(self, run_id: str, status: str) -> WorkflowRunEntity:
+        """Update the lifecycle status of a registered `WorkflowRunEntity` (`Story 3.2f`)."""
+        from dataclasses import replace
+
+        existing = self._runs_by_id.get(run_id)
+        if existing is None:
+            raise ResourceNotFoundError(detail_override=f"Workflow Run '{run_id}' introuvable.")
+        updated = replace(existing, status=status)  # type: ignore[arg-type]
+        self._runs_by_id[run_id] = updated
+        return updated
+
     def _enforce_mutation_guard(
         self, user: UserIdentity, workspace_id: str | None, *, instance: str | None = None
     ) -> None:

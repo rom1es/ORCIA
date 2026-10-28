@@ -313,3 +313,107 @@ def list_registered_connector_schemes() -> frozenset[str]:
 def is_registered_connector_scheme(scheme: str) -> bool:
     """Return True if `scheme` is a registered connector scheme (`AD-20`)."""
     return scheme.strip().lower() in list_registered_connector_schemes()
+
+
+@dataclass(frozen=True, slots=True)
+class StepExecutorContext:
+    """Immutable execution context passed to a `StepExecutorPort` (`Story 3.2f`, `AC-F1`)."""
+
+    run_id: str
+    root_run_id: str
+    workspace_id: str
+    workflow_uri: str
+    step_key: str
+    step_title: str
+    step_type: str
+    execution_regime: str
+    directive: str
+    declared_input_uris: tuple[str, ...]
+    resolved_inputs: dict[str, Any]
+    datasources: tuple[str, ...] = ()
+    agent_uri: str | None = None
+    skill_uri: str | None = None
+    sub_workflow_uri: str | None = None
+    max_agent_retries: int = 3
+    budget_remaining_usd: float = 10.0
+    idempotency_key: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class StepExecutorResult:
+    """Execution result returned by a `StepExecutorPort` (`Story 3.2f`, `AC-F1`)."""
+
+    step_key: str
+    step_type: str
+    status: Literal[
+        "EXECUTED",
+        "WAITING_FOR_HUMAN_ARBITRATION",
+        "WAITING_FOR_HUMAN_GATE",
+        "FAILED",
+    ]
+    artifact_payload: dict[str, Any]
+    summary: str
+    details: str
+    cost_usd: float = 0.0
+    child_run_id: str | None = None
+
+
+@runtime_checkable
+class StepExecutorPort(Protocol):
+    """Universal step executor discovered via `entry_points(group='orcia.step_executors')`."""
+
+    @property
+    def step_type(self) -> str:
+        """Return the canonical `WorkflowStepType` handled by this executor."""
+        ...
+
+    def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
+        """Execute a step deterministically using real ports (`LLMPort`, `ConnectorInvoker`)."""
+        ...
+
+
+_STEP_EXECUTOR_LOCK = threading.Lock()
+_STEP_EXECUTOR_REGISTRY: dict[str, StepExecutorPort] = {}
+_STEP_EXECUTOR_EPS_LOADED: bool = False
+
+
+def register_step_executor(executor: StepExecutorPort) -> None:
+    """Register a `StepExecutorPort` instance into the dynamic step executor registry (`AC-F1`)."""
+    st = executor.step_type.strip().upper()
+    if not st:
+        raise ValueError("StepExecutorPort.step_type must be a non-empty string.")
+    with _STEP_EXECUTOR_LOCK:
+        _STEP_EXECUTOR_REGISTRY[st] = executor
+
+
+def _ensure_step_executor_entry_points_loaded() -> None:
+    global _STEP_EXECUTOR_EPS_LOADED
+    with _STEP_EXECUTOR_LOCK:
+        if _STEP_EXECUTOR_EPS_LOADED:
+            return
+        _STEP_EXECUTOR_EPS_LOADED = True
+    try:
+        eps = importlib.metadata.entry_points(group="orcia.step_executors")
+        for ep in eps:
+            loaded = ep.load()
+            instance = loaded() if callable(loaded) else loaded
+            if isinstance(instance, StepExecutorPort):
+                register_step_executor(instance)
+    except Exception:
+        pass
+
+
+def get_registered_step_executor(step_type: str) -> StepExecutorPort | None:
+    """Return the registered `StepExecutorPort` for `step_type` or `None` (`AC-F1`)."""
+    _ensure_step_executor_entry_points_loaded()
+    norm = step_type.strip().upper()
+    with _STEP_EXECUTOR_LOCK:
+        return _STEP_EXECUTOR_REGISTRY.get(norm)
+
+
+def list_registered_step_executor_types() -> frozenset[str]:
+    """Return all registered step executor types (`AC-F1`)."""
+    _ensure_step_executor_entry_points_loaded()
+    with _STEP_EXECUTOR_LOCK:
+        return frozenset(_STEP_EXECUTOR_REGISTRY.keys())

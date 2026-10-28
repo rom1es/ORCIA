@@ -250,7 +250,7 @@ export interface components {
       step_directive: string;
       step_key: string;
       step_title: string;
-      step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "POST_ACTION_VERIFICATION";
+      step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "HUMAN_TASK" | "HTTP_ACTION" | "POST_ACTION_VERIFICATION";
       undeclared_artifacts_leaked?: number;
     };
     InitDatasourceRequest: {
@@ -595,6 +595,7 @@ export interface components {
       active_snapshots: (components["schemas"]["BlackboardSnapshotSchemaItem"])[];
       root_run_id: string;
       run_id: string;
+      run_status?: string;
       step_executions: (components["schemas"]["StepExecutionSchemaItem"])[];
       trace_id: string;
     };
@@ -649,6 +650,8 @@ export interface components {
     StepExecuteRequest: {
       commit_immediately?: boolean;
       cost_usd?: number;
+      divergence_note?: string | null;
+      human_decision?: string | null;
       run_id: string;
       simulated_divergence?: string | null;
       step_key: string;
@@ -675,7 +678,10 @@ export interface components {
       step_index: number;
       step_key: string;
       step_memlog?: (components["schemas"]["StepMemlogSchemaItem"])[];
-      step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "POST_ACTION_VERIFICATION";
+      step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "HUMAN_TASK" | "HTTP_ACTION" | "POST_ACTION_VERIFICATION";
+    };
+    StepHumanResumeRequest: {
+      decision: string;
     };
     StepHydrateRequest: {
       run_id: string;
@@ -904,7 +910,7 @@ export interface components {
       reverse_doc_from_code: boolean;
       skill_uri?: string | null;
       step_key: string;
-      step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "POST_ACTION_VERIFICATION";
+      step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "HUMAN_TASK" | "HTTP_ACTION" | "POST_ACTION_VERIFICATION";
       sub_workflow_uri?: string | null;
       tags?: (string)[];
       template_key?: string | null;
@@ -1195,6 +1201,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/resume": {
+    post: {
+      responses: {
+        200: components["schemas"]["StepExecuteResponse"];
+      };
+    };
+  };
   "/api/v1/orchestration/state": {
     get: {
       responses: {
@@ -1350,6 +1363,7 @@ export type ShellNavigationResponse = components["schemas"]["ShellNavigationResp
 export type StepExecuteRequest = components["schemas"]["StepExecuteRequest"];
 export type StepExecuteResponse = components["schemas"]["StepExecuteResponse"];
 export type StepExecutionSchemaItem = components["schemas"]["StepExecutionSchemaItem"];
+export type StepHumanResumeRequest = components["schemas"]["StepHumanResumeRequest"];
 export type StepHydrateRequest = components["schemas"]["StepHydrateRequest"];
 export type StepHydrateResponse = components["schemas"]["StepHydrateResponse"];
 export type StepMemlogSchemaItem = components["schemas"]["StepMemlogSchemaItem"];

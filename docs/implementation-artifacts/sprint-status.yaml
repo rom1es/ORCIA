@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-28-2026 10:57
+last_updated: 10-28-2026 22:33
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -59,7 +59,7 @@ development_status:
   3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: done
   3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: done
   3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
-  3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: backlog
+  3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: backlog
@@ -403,7 +403,7 @@ action_items:
     ad_ref: "AD-4, AD-5, AD-14, AD-20"
     story_ref: "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d"
     owner: "Karim (Platform) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Risques K3 et K4 (P0-3, P0-4) et preuve transverse P2-2 de l'audit, écart EC-1 (AC C4 de 3.2b non satisfait) ; critère vérifiable : run réel de bout en bout via l'API (pause, redémarrage, reprise) conforme à PROC-01 et grep "simulated" dans orchestration/ = 0.
@@ -481,7 +481,7 @@ action_items:
     ad_ref: "AD-17"
     story_ref: "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d"
     owner: "Romain (PO) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Écart EC-2 de l'audit : les tests unitaires du moteur passaient sans qu'aucun run réel ne traverse l'API ; 3.2f en est la première application.

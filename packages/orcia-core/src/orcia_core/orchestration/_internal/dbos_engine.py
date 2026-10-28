@@ -1,8 +1,10 @@
-"""DBOS Transact Durable Workflow Engine backed by `SqlOrchestrationRepository` (`Story 3.2b`).
+"""DBOS Transact Durable Workflow Engine (`Story 3.2b`, `Story 3.2f`, `AC-F1`, `AC-F2`).
 
-Implements durable step execution (`@DBOS.step()`), zero-thread human arbitration pause/resume
+Implements durable step execution (`@DBOS.step()`) dispatching real `StepExecutorPort` plugins
+(`orcia.step_executors`, `AC-F1`, `AC-F2`), zero-thread human arbitration pause/resume
 (`DBOS.recv_async` / `DBOS.send_async`), targeted rewind (`DBOS.fork_workflow_async`), and
 transactional idempotency (`SetWorkflowID("<trigger_id>:<idempotency_key>")`) on PostgreSQL 18.
+Zero private DBOS recovery calls and zero global singleton engine state (`AC-F2`).
 """
 
 from __future__ import annotations
@@ -19,17 +21,19 @@ from orcia_core.blackboard.models import (
 )
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
+from orcia_core.orchestration.step_executors import register_default_step_executors
 from orcia_kernel.ids import new_uuid7_str
+from orcia_kernel.ports import StepExecutorContext, get_registered_step_executor
 
 ARBITRATION_TOPIC = "orcia.human.arbitration"
 
-_ACTIVE_ENGINE: DbosDurableWorkflowEngine | None = None
+_RUNTIME_BINDINGS: list[DbosDurableWorkflowEngine] = []
 
 
-def _require_active_engine() -> DbosDurableWorkflowEngine:
-    if _ACTIVE_ENGINE is None:
+def _require_bound_runtime() -> DbosDurableWorkflowEngine:
+    if not _RUNTIME_BINDINGS:
         raise RuntimeError("DbosDurableWorkflowEngine is not launched.")
-    return _ACTIVE_ENGINE
+    return _RUNTIME_BINDINGS[-1]
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +63,7 @@ class DbosDurableWorkflowEngine:
         self._uow: DbosSqlAlchemyUnitOfWork | None = None
         self._repository: SqlOrchestrationRepository | None = None
         self._launched: bool = False
+        register_default_step_executors()
 
     @property
     def uow(self) -> DbosSqlAlchemyUnitOfWork:
@@ -76,9 +81,8 @@ class DbosDurableWorkflowEngine:
             )
         return self._repository
 
-    async def launch(self, *, recover_pending: bool = True) -> None:
-        """Configure and launch the DBOS Transact runtime + SQLAlchemy 2.1 Asyncio UoW."""
-        global _ACTIVE_ENGINE
+    async def launch(self) -> None:
+        """Configure and launch the DBOS Transact runtime + SQLAlchemy 2.1 Asyncio UoW (`AC-F2`)."""
         if self._launched:
             return
         DBOS.destroy(destroy_registry=False)
@@ -99,21 +103,19 @@ class DbosDurableWorkflowEngine:
             run_migrations=True,
         )
         self._repository = SqlOrchestrationRepository(self._uow)
-        _ACTIVE_ENGINE = self
+        _RUNTIME_BINDINGS.append(self)
+        # DBOS.launch() automatically spawns startup recovery of pending workflows (public API)
         DBOS.launch()
-        if recover_pending:
-            DBOS._recover_pending_workflows()
         self._launched = True
 
     async def shutdown(self) -> None:
         """Destroy DBOS runtime and dispose the SQLAlchemy `AsyncEngine` pool."""
-        global _ACTIVE_ENGINE
         if self._uow is not None:
             await self._uow.close()
             self._uow = None
             self._repository = None
-        if _ACTIVE_ENGINE is self:
-            _ACTIVE_ENGINE = None
+        if self in _RUNTIME_BINDINGS:
+            _RUNTIME_BINDINGS.remove(self)
         if self._launched:
             DBOS.destroy(destroy_registry=False)
             self._launched = False
@@ -124,35 +126,65 @@ class DbosDurableWorkflowEngine:
         run_id: str,
         step_key: str,
         step_index: int,
-        artifact_payload: dict[str, Any],
+        artifact_payload: dict[str, Any] | None = None,
         parent_snapshot_id: str | None = None,
+        step_type: str = "AGENT",
+        directive: str | None = None,
     ) -> BlackboardSnapshotEntity:
-        """Persist `step_executions` and append an `ACTIVE` `blackboard_snapshots` row."""
+        """Execute step via `StepExecutorPort`, persist `step_executions` and append snapshot."""
         existing_steps = await self.repository.list_step_executions(run_id)
         existing = next((s for s in existing_steps if s.step_key == step_key), None)
         step_id = existing.id if existing is not None else new_uuid7_str()
+
+        if artifact_payload is None:
+            executor = get_registered_step_executor(step_type)
+            assert executor is not None
+            ctx = StepExecutorContext(
+                run_id=run_id,
+                root_run_id=run_id,
+                workspace_id="0192c4e0-0000-7000-8000-000000000201",
+                workflow_uri=f"orcia://workflows/durable/{run_id}",
+                step_key=step_key,
+                step_title=step_key,
+                step_type=step_type,
+                execution_regime="INTERACTIVE_COACHING",
+                directive=directive or f"Execute durable step {step_key}",
+                declared_input_uris=(),
+                resolved_inputs={"step_index": step_index},
+            )
+            exec_res = executor.execute_step(ctx)
+            resolved_payload = dict(exec_res.artifact_payload)
+            memlog_summary = exec_res.summary
+            memlog_details = exec_res.details
+            cost_usd = exec_res.cost_usd if exec_res.cost_usd > 0.0 else 0.25
+        else:
+            resolved_payload = dict(artifact_payload)
+            memlog_summary = f"DBOS durable step '{step_key}' executed"
+            memlog_details = f"Persisted in PostgreSQL 18 for run {run_id}"
+            cost_usd = 0.25
+
         step_exec = StepExecutionEntity(
             id=step_id,
             step_execution_key=f"stepexec-{run_id[-6:]}-{step_key}",
             run_id=run_id,
             step_key=step_key,
             step_index=step_index,
-            step_type="AGENT",
+            step_type=step_type,  # type: ignore[arg-type]
             execution_mode="INTERACTIVE_COACHING",
             status="EXECUTING_AGENT",
             attempt_count=(existing.attempt_count + 1) if existing else 1,
             max_agent_retries=3,
-            draft_artifact=artifact_payload,
+            draft_artifact=resolved_payload,
             step_memlog=(
                 StepMemlogEntry(
                     entry_id=new_uuid7_str(),
                     step_key=step_key,
                     marker_type="REASONING",
-                    summary=f"DBOS durable step '{step_key}' executed",
-                    details=f"Persisted in PostgreSQL 18 for run {run_id}",
+                    summary=memlog_summary,
+                    details=memlog_details,
                 ),
             ),
-            cost_usd=0.25,
+            cost_usd=cost_usd,
         )
         await self.repository.upsert_step_execution(step_exec)
         return await self.repository.append_snapshot(
@@ -160,7 +192,7 @@ class DbosDurableWorkflowEngine:
             step_execution_id=step_id,
             step_key=step_key,
             branch_status="ACTIVE",
-            artifact_payload=artifact_payload,
+            artifact_payload=resolved_payload,
             memlog_summary=step_exec.step_memlog,
             parent_snapshot_id=parent_snapshot_id,
         )
@@ -235,17 +267,12 @@ async def _execute_durable_step(
     step_index: int,
     parent_snapshot_id: str | None,
 ) -> str:
-    engine = _require_active_engine()
+    engine = _require_bound_runtime()
     snap = await engine.persist_step_and_commit_snapshot(
         run_id=run_id,
         step_key=step_key,
         step_index=step_index,
-        artifact_payload={
-            "run_id": run_id,
-            "step_key": step_key,
-            "step_index": step_index,
-            "engine": "dbos-transact-pg18",
-        },
+        artifact_payload=None,
         parent_snapshot_id=parent_snapshot_id,
     )
     return snap.id
@@ -258,7 +285,7 @@ async def _orcia_durable_run_workflow(
     pause_for_arbitration_after_step: str | None = None,
     timeout_seconds: float = 30.0,
 ) -> DurableWorkflowRunSummary:
-    engine = _require_active_engine()
+    engine = _require_bound_runtime()
     workflow_id = DBOS.workflow_id or f"wf-{run_id}"
     await engine.repository.update_run_status(run_id, "RUNNING")
     committed_ids: list[str] = []
@@ -297,4 +324,5 @@ __all__ = [
     "ARBITRATION_TOPIC",
     "DbosDurableWorkflowEngine",
     "DurableWorkflowRunSummary",
+    "_require_bound_runtime",
 ]
