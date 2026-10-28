@@ -1,22 +1,23 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ModuleWorkspaceView } from "../components/ModuleWorkspaceView";
 import { resolveModuleFromPathname, ShellContainer } from "../components/ShellContainer";
+import { buildCockpitWorkflowPreviewGraph } from "../features/cockpit";
 import { I18nProvider } from "../i18n";
 import { enDictionary } from "../i18n/locales/en";
 import { frDictionary } from "../i18n/locales/fr";
+import { createOrciaQueryClient, createOrciaRouter } from "../router";
+import { preloadModuleQueryData, validateOrciaRouteSearch } from "../routes/searchSchema";
 
 const mockPush = vi.fn();
-
-vi.mock("next/navigation", () => ({
-  usePathname: () => "/cockpit",
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}));
+if (typeof window !== "undefined") {
+  window.scrollTo = vi.fn();
+}
 
 function collectNestedKeys(obj: Record<string, unknown>, prefix = ""): string[] {
   const keys: string[] = [];
@@ -54,7 +55,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(frKeys).toEqual(enKeys);
   });
 
-  it("never uses raw hex colors inside apps/web/src", () => {
+  it("never uses raw hex colors or next/* imports inside apps/web/src", () => {
     const webSrcDir = path.resolve(__dirname, "..");
     const tsFiles = walkTsFiles(webSrcDir);
     const hexColorRegex = /#[0-9a-fA-F]{3,8}\b/;
@@ -64,6 +65,37 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
         hexColorRegex.test(content),
         `Found forbidden hex color in ${path.relative(webSrcDir, filePath)}`,
       ).toBe(false);
+      expect(content).not.toMatch(/from\s+["']next(\/|["'])/);
+    }
+  });
+
+  it("enforces feature-sliced boundary isolation across all 8 features/<domaine>/ modules (M11, AD-19)", () => {
+    const featuresDir = path.resolve(__dirname, "../features");
+    const domains = [
+      "cockpit",
+      "inbox",
+      "catalog",
+      "ontology",
+      "gates",
+      "finops",
+      "admin",
+      "workspaces",
+    ];
+    for (const domain of domains) {
+      const domainDir = path.join(featuresDir, domain);
+      expect(fs.existsSync(domainDir)).toBe(true);
+      const files = walkTsFiles(domainDir);
+      expect(files.length).toBeGreaterThan(0);
+      for (const filePath of files) {
+        const content = fs.readFileSync(filePath, "utf-8");
+        for (const other of domains) {
+          if (other === domain) continue;
+          const relPattern = new RegExp(`from\\s+["'](?:\\.\\./)+${other}(?:/|["'])`);
+          const aliasPattern = new RegExp(`from\\s+["']@/features/${other}(?:/|["'])`);
+          expect(relPattern.test(content)).toBe(false);
+          expect(aliasPattern.test(content)).toBe(false);
+        }
+      }
     }
   });
 
@@ -81,10 +113,51 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(resolveModuleFromPathname("/bootstrap")).toBe("bootstrap");
   });
 
+  it("validates typed URL search params, QueryClient route preloading, and @xyflow/react cockpit graph", async () => {
+    expect(validateOrciaRouteSearch({})).toEqual({});
+    expect(validateOrciaRouteSearch({ fixture: "test", q: "  pay-142  " })).toEqual({
+      fixture: "test",
+      q: "pay-142",
+    });
+
+    const queryClient = createOrciaQueryClient();
+    const preloaded = await preloadModuleQueryData(queryClient, "catalog", true);
+    expect(preloaded).toEqual({ moduleKey: "catalog", fixture: true });
+
+    const graph = buildCockpitWorkflowPreviewGraph();
+    expect(graph.nodes).toHaveLength(2);
+    expect(graph.edges).toHaveLength(1);
+  });
+
+  it("renders TanStack Router v1 SPA routeTree with QueryClient context across routes", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/cockpit?fixture=test"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("active-module-heading").textContent).toBe("Cockpit & Chat");
+
+    await act(async () => {
+      await router.navigate({ to: "/inbox", search: { fixture: "test" } });
+    });
+    expect(screen.getByTestId("inbox-feature-panel")).toBeDefined();
+
+    await act(async () => {
+      await router.navigate({ to: "/finops", search: { fixture: "test" } });
+    });
+    expect(screen.getByTestId("finops-feature-panel")).toBeDefined();
+  });
+
   it("starts empty of sample data by default (fixtureMode=false) and filters menu entries by scope", () => {
     render(
       <I18nProvider initialLocale="fr">
-        <ShellContainer>
+        <ShellContainer onNavigate={mockPush}>
           <ModuleWorkspaceView moduleKey="cockpit" />
         </ShellContainer>
       </I18nProvider>,
@@ -115,7 +188,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     mockPush.mockClear();
     render(
       <I18nProvider initialLocale="fr">
-        <ShellContainer fixtureMode={true}>
+        <ShellContainer fixtureMode={true} onNavigate={mockPush}>
           <ModuleWorkspaceView moduleKey="cockpit" />
         </ShellContainer>
       </I18nProvider>,
@@ -154,7 +227,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     fireEvent.click(screen.getByTestId("bmad-import-trigger-btn"));
     expect(screen.getByTestId("bmad-import-result").textContent).toContain("BMAD_PACK");
 
-    // Click module 4 (ontology) -> calls router.push and renders OntologyAndKbExplorerPanel (Epic 2)
+    // Click module 4 (ontology) -> calls onNavigate and renders OntologyAndKbExplorerPanel (Epic 2)
     fireEvent.click(screen.getByTestId("sidebar-nav-item-ontology"));
     expect(mockPush).toHaveBeenCalledWith("/ontology");
     expect(screen.getByTestId("active-module-heading").textContent).toBe("Ontology & KB");

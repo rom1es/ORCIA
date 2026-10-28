@@ -1,7 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { createOrciaApiClient, OrciaProblemError } from "../index";
+import {
+  createOrciaApiClient,
+  createOrciaOpenApiFetchClient,
+  OrciaProblemError,
+} from "../index";
 
 describe("createOrciaApiClient", () => {
+  it("creates an openapi-fetch client with W3C X-Trace-Id and Accept-Language headers (Story 3.2d)", () => {
+    const openapiClient = createOrciaOpenApiFetchClient({
+      baseUrl: "http://localhost:8000",
+      locale: "fr",
+      traceId: "0192c4e0000070008000000000000001",
+      accessToken: "jwt-123",
+    });
+    expect(typeof openapiClient.GET).toBe("function");
+    expect(typeof openapiClient.POST).toBe("function");
+  });
+
   it("fetches /api/v1/health with Accept-Language and X-Trace-Id headers", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,

@@ -24,9 +24,10 @@ describe("@orcia/ui Design System architectural isolation & Direction C token di
   const allSrcFiles = walkFiles(UI_SRC_DIR);
   const tsFiles = allSrcFiles.filter((f) => /\.(ts|tsx)$/.test(f));
 
-  it("never imports next/*, zustand, or @orcia/api-client inside packages/ui", () => {
+  it("never imports @tanstack/react-router, next/*, zustand, or @orcia/api-client inside packages/ui", () => {
     for (const filePath of tsFiles) {
       const content = fs.readFileSync(filePath, "utf-8");
+      expect(content).not.toMatch(/from\s+["']@tanstack\/react-router(\/|["'])/);
       expect(content).not.toMatch(/from\s+["']next(\/|["'])/);
       expect(content).not.toMatch(/from\s+["']zustand(\/|["'])/);
       expect(content).not.toMatch(/from\s+["']@orcia\/api-client(\/|["'])/);

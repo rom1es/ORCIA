@@ -1,8 +1,9 @@
-"""Deterministic OpenAPI 3.1 exporter and TypeScript schema generator (`0-diff` gate, AD-1).
+"""Deterministic OpenAPI 3.1 exporter and domain-sharded TypeScript schema generator (`0-diff`).
 
 Exports:
 - `packages/api-client/openapi.json`
 - `packages/api-client/src/generated/schema.ts`
+- `packages/api-client/src/generated/<domain>.ts` (domain-sharded TypeScript types)
 
 Supports `--check` mode to fail if committed artifacts drift from the live FastAPI schema.
 """
@@ -10,18 +11,39 @@ Supports `--check` mode to fail if committed artifacts drift from the live FastA
 from __future__ import annotations
 
 import argparse
+import importlib
+import inspect
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
+from pydantic import BaseModel
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-for rel_src in ("packages/orcia-core/src", "apps/api/src", "apps/worker/src"):
+for rel_src in (
+    "packages/orcia-kernel/src",
+    "packages/orcia-core/src",
+    "apps/api/src",
+    "apps/worker/src",
+):
     candidate = str(REPO_ROOT / rel_src)
     if candidate not in sys.path:
         sys.path.insert(0, candidate)
 
 from orcia_api.main import create_app  # noqa: E402
+
+SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
+    "auth_and_org",
+    "blackboard",
+    "bootstrap",
+    "catalog",
+    "ontology_and_rag",
+    "orchestration",
+    "permission_broker",
+    "problem_details",
+    "shell",
+)
 
 
 def _json_schema_to_ts(schema: dict[str, Any], indent: int = 4) -> str:
@@ -129,22 +151,57 @@ def render_typescript_schema(openapi_spec: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def generate_openapi_artifacts() -> tuple[str, str]:
-    """Return `(openapi_json_str, schema_ts_str)` deterministically."""
+def render_domain_shards(openapi_spec: dict[str, Any]) -> dict[str, str]:
+    """Render domain-sharded TypeScript files mapped from `orcia_api.schemas.<domain>`."""
+    schemas: dict[str, Any] = openapi_spec.get("components", {}).get("schemas", {})
+    shards: dict[str, str] = {}
+
+    for domain_mod in SCHEMA_DOMAIN_MODULES:
+        mod = importlib.import_module(f"orcia_api.schemas.{domain_mod}")
+        model_names = sorted(
+            name
+            for name, obj in inspect.getmembers(mod, inspect.isclass)
+            if issubclass(obj, BaseModel) and obj.__module__ == mod.__name__ and name in schemas
+        )
+        header = (
+            f" * AUTO-GENERATED DOMAIN SHARD (`{domain_mod}`) "
+            f"FROM `orcia_api.schemas.{domain_mod}` — DO NOT EDIT MANUALLY."
+        )
+        lines: list[str] = [
+            "/**",
+            header,
+            " * Regenerate via: `.venv/bin/python scripts/export_openapi.py`",
+            " */",
+            "",
+            'import type { components } from "./schema";',
+            "",
+        ]
+        for model_name in model_names:
+            lines.append(f'export type {model_name} = components["schemas"]["{model_name}"];')
+        lines.append("")
+        shards[f"{domain_mod}.ts"] = "\n".join(lines)
+
+    return shards
+
+
+def generate_openapi_artifacts() -> tuple[str, str, dict[str, str]]:
+    """Return `(openapi_json_str, schema_ts_str, domain_shards)` deterministically."""
     app = create_app()
     spec = app.openapi()
     openapi_json = json.dumps(spec, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     schema_ts = render_typescript_schema(spec)
-    return openapi_json, schema_ts
+    domain_shards = render_domain_shards(spec)
+    return openapi_json, schema_ts, domain_shards
 
 
 def export_or_check(*, check_only: bool = False, output_root: Path | None = None) -> int:
-    """Write or verify `openapi.json` and `src/generated/schema.ts`."""
+    """Write or verify `openapi.json`, `src/generated/schema.ts`, and domain shards."""
     base_dir = output_root or (REPO_ROOT / "packages" / "api-client")
     openapi_path = base_dir / "openapi.json"
-    schema_ts_path = base_dir / "src" / "generated" / "schema.ts"
+    generated_dir = base_dir / "src" / "generated"
+    schema_ts_path = generated_dir / "schema.ts"
 
-    expected_json, expected_ts = generate_openapi_artifacts()
+    expected_json, expected_ts, expected_shards = generate_openapi_artifacts()
 
     if check_only:
         if not openapi_path.exists() or not schema_ts_path.exists():
@@ -153,12 +210,20 @@ def export_or_check(*, check_only: bool = False, output_root: Path | None = None
         actual_ts = schema_ts_path.read_text(encoding="utf-8")
         if actual_json != expected_json or actual_ts != expected_ts:
             return 1
+        for filename, expected_shard_content in expected_shards.items():
+            shard_path = generated_dir / filename
+            if not shard_path.exists():
+                return 1
+            if shard_path.read_text(encoding="utf-8") != expected_shard_content:
+                return 1
         return 0
 
     openapi_path.parent.mkdir(parents=True, exist_ok=True)
-    schema_ts_path.parent.mkdir(parents=True, exist_ok=True)
+    generated_dir.mkdir(parents=True, exist_ok=True)
     openapi_path.write_text(expected_json, encoding="utf-8")
     schema_ts_path.write_text(expected_ts, encoding="utf-8")
+    for filename, shard_content in expected_shards.items():
+        (generated_dir / filename).write_text(shard_content, encoding="utf-8")
     return 0
 
 

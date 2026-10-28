@@ -21,30 +21,30 @@ if (fs.existsSync(rootEnvPath)) {
   }
 }
 
-const mode = process.argv[2] === "start" ? "start" : "dev";
-const extraArgs = process.argv.slice(3);
-const hasPortArg = extraArgs.some(
-  (arg) => arg === "-p" || arg === "--port" || arg.startsWith("--port=")
+const mode = process.argv[2] === "start" ? "preview" : "dev";
+const rawExtraArgs = process.argv.slice(3).map((arg) => (arg === "--hostname" ? "--host" : arg));
+const hasPortArg = rawExtraArgs.some(
+  (arg) => arg === "-p" || arg === "--port" || arg.startsWith("--port="),
 );
-const hasHostArg = extraArgs.some(
-  (arg) => arg === "-H" || arg === "--hostname" || arg.startsWith("--hostname=")
+const hasHostArg = rawExtraArgs.some(
+  (arg) => arg === "-H" || arg === "--host" || arg.startsWith("--host="),
 );
 
 const host = process.env.ORCIA_WEB_HOST ?? "127.0.0.1";
 const port = process.env.ORCIA_WEB_PORT ?? process.env.PORT ?? "3100";
 
-const nextArgs = [mode];
+const viteArgs = mode === "preview" ? ["preview"] : [];
 if (!hasHostArg) {
-  nextArgs.push("--hostname", host);
+  viteArgs.push("--host", host);
 }
 if (!hasPortArg) {
-  nextArgs.push("--port", port);
+  viteArgs.push("--port", port);
 }
-nextArgs.push(...extraArgs);
+viteArgs.push(...rawExtraArgs);
 
-const nextBin = path.resolve(scriptDir, "../node_modules/.bin/next");
-const child = spawn(nextBin, nextArgs, {
-  stdio: "inherit",
+const viteBin = path.resolve(scriptDir, "../node_modules/.bin/vite");
+const child = spawn(viteBin, viteArgs, {
+  stdio: ["ignore", "inherit", "inherit"],
   env: { ...process.env, PORT: port, ORCIA_WEB_PORT: port, ORCIA_WEB_HOST: host },
 });
 

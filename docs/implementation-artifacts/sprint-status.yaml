@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-27-2026 22:20
+last_updated: 10-28-2026 10:05
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -57,7 +57,9 @@ development_status:
   3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali: done
   3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: done
   3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: done
-  3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: ready-for-dev
+  3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: done
+  3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: backlog
+  3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: backlog
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: backlog
@@ -323,7 +325,7 @@ action_items:
     ad_ref: "AD-1, AD-15, AD-19"
     story_ref: "3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v"
     owner: "Sally (UX) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Décision OQ-02 issue du Deep Recon (score 4,70/5 vs 2,65/5 pour Next.js Client-First) : migrer vers Vite 6 + TanStack Router v1 dès la fin de Story 3.2a (en parallèle de 3.2b et 3.2c) et isoler chaque fonctionnalité frontend dans features/<domaine>/.
@@ -379,3 +381,107 @@ action_items:
     epic: epic-7
     description: >
       Piste M10 de l'analyse de modularité : permettre d'exécuter ORCIA selon trois éditions configurables (lite, standard, full) pilotées par le point d'assemblage et reflétées par /api/v1/shell.
+  - id: DEC-P0-CORE
+    title: "Avenant A2 — Séparation Core / pack SDLC (P0-1) et interface de connecteur unique ConnectorPort + registre orcia.connectors + table connector_schemes (P0-2)"
+    action: "Livrer la Story 3.2e : extraire le vocabulaire SDLC du Core vers packages/orcia-pack-sdlc, introduire ConnectorPort et le registre orcia.connectors, remplacer les 4 CHECK de schémas par la table connector_schemes (migrations 0013 Expand / 0014 Contract)"
+    priority: P0
+    depends_on:
+      - DEC-SEED-01
+    ad_ref: "AD-19, AD-20"
+    story_ref: "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Fuites L1-L6 et L11, risques K1, K2 et K6 (P0-1 + P0-2) de l'audit architecture-decoupling-audit-2026-10-28.md ; critère vérifiable : grep du vocabulaire SDLC dans packages/orcia-kernel et orchestration (référence 33 lignes / 7 fichiers) = 0 et lint-imports vert avec le contrat core-without-sdlc.
+  - id: DEC-P0-EXEC
+    title: "Avenant A2 — Exécution réelle des étapes orcia.step_executors (P0-3), taxonomie d'erreurs + ConnectorInvoker (P0-4), preuve vertical Finance (P2-2), clôture de l'écart EC-1 de 3.2b"
+    action: "Livrer la Story 3.2f : brancher DbosDurableWorkflowEngine sur l'API et le worker, supprimer le moteur simulé DurableOrchestrationEngine, introduire la taxonomie d'erreurs et ConnectorInvoker (relances, Retry-After, coupe-circuit), prouver un vertical Finance sans pack SDLC"
+    priority: P0
+    depends_on:
+      - DEC-P0-CORE
+    ad_ref: "AD-4, AD-5, AD-14, AD-20"
+    story_ref: "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d"
+    owner: "Karim (Platform) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Risques K3 et K4 (P0-3, P0-4) et preuve transverse P2-2 de l'audit, écart EC-1 (AC C4 de 3.2b non satisfait) ; critère vérifiable : run réel de bout en bout via l'API (pause, redémarrage, reprise) conforme à PROC-01 et grep "simulated" dans orchestration/ = 0.
+  - id: DEC-SEC-01
+    title: "Avenant A2 — SecretRef non sérialisable, SecretProviderPort, masquage structlog et test du secret témoin"
+    action: "Introduire SecretRef et SecretProviderPort, masquer les secrets dans structlog, appliquer une liste blanche à l'outbox et à l'audit, ajouter le test du secret témoin et supprimer la valeur par défaut api_key sk-orcia-local"
+    priority: P1
+    depends_on:
+      - DEC-P0-CORE
+      - DEC-P0-EXEC
+      - SEC-03
+    ad_ref: "AD-6, AD-12"
+    story_ref: "4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa"
+    owner: "Karim (Platform)"
+    status: open
+    epic: epic-4
+    description: >
+      Risque K5 / plan P1-1 de l'audit (NFR-SEC-4 étendu) ; le secret témoin ne doit apparaître ni dans dbos.*, audit_ledger, domain_events_outbox, step_executions ni dans les logs. SEC-03 fournit l'adaptateur Vault / Infisical.
+  - id: DEC-ACC-01
+    title: "Avenant A2 — AccessRequestChannelPort générique (Jira devient adaptateur du pack SDLC)"
+    action: "Remplacer jira_request_url par request_url générique (Expand + backfill SQL, puis Contract dans une révision ultérieure) et exposer AccessRequestChannelPort"
+    priority: P1
+    depends_on:
+      - DEC-P0-CORE
+    ad_ref: "AD-6, AD-20"
+    story_ref: "4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a"
+    owner: "Winston (Architect)"
+    status: open
+    epic: epic-4
+    description: >
+      Fuite L10, risque K6 / plan P1-2 de l'audit : canal de demande d'accès couplé à Jira dans le Core (permissions/broker.py:L202-209, migration 0004:L72).
+  - id: DEC-CONC-01
+    title: "Avenant A2 — ResourceLeasePort (bail PostgreSQL + jeton de fencing), files DBOS par classe de ressource"
+    action: "Introduire la table resource_leases et ResourceLeasePort, l'ordre d'acquisition canonique, les délais d'expiration et la détection des attentes cycliques parent-enfant"
+    priority: P1
+    depends_on:
+      - DEC-P0-EXEC
+    ad_ref: "AD-4"
+    story_ref: "5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch"
+    owner: "Karim (Platform)"
+    status: open
+    epic: epic-5
+    description: >
+      Risque K7 / plan P1-3 de l'audit : concurrence sur ressources partagées limitée au verrou de présence Redis.
+  - id: DEC-CTX-01
+    title: "Avenant A2 — ContextSourcePort, VectorStorePort et indexeurs en plugins orcia.indexers"
+    action: "Abstraire les sources de contexte (JSON, CAS, document) et le stockage vectoriel derrière des ports, et déclarer les régimes d'indexation via le point d'entrée orcia.indexers"
+    priority: P1
+    depends_on:
+      - DEC-P0-CORE
+    ad_ref: "AD-8, AD-20"
+    story_ref: "3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc"
+    owner: "Winston (Architect)"
+    status: open
+    epic: epic-3
+    description: >
+      Fuite L9, risques K8 et K6 / plan P1-4 de l'audit : contexte couplé aux régimes d'indexation SDLC (rag/models.py:L11-15, L57, L155).
+  - id: DEC-SEED-01
+    title: "Avenant A2 — Sortir les données de démonstration de rag/__init__.py et orchestration/seeds.py"
+    action: "Déplacer les données de démonstration vers bootstrap/seeder.py (upserts idempotents) ou tests/fixtures/ en Étape 0 de la Story 3.2e"
+    priority: P2
+    depends_on: []
+    ad_ref: "AD-20"
+    story_ref: "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co"
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Fuites L7 et L8, risque K9 / plan P2-1 de l'audit : données SDLC de démonstration codées en dur dans le Core (rag/__init__.py:L49-95, orchestration/seeds.py:L29-158).
+  - id: PROC-01
+    title: "Avenant A2 — Definition of Done renforcée : run réel de bout en bout via l'API pour toute story qui touche le moteur"
+    action: "Exiger pour toute story touchant le moteur un run réel via l'API (instanciation, exécution, pause, redémarrage, reprise, 0 contenu simulé) avant passage en review"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-17"
+    story_ref: "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d"
+    owner: "Romain (PO) / Amelia (Dev)"
+    status: open
+    epic: epic-3
+    description: >
+      Écart EC-2 de l'audit : les tests unitaires du moteur passaient sans qu'aucun run réel ne traverse l'API ; 3.2f en est la première application.

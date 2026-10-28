@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/run-next.mjs dev",
-    "build": "next build",
+    "build": "vite build",
     "start": "node scripts/run-next.mjs start",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && node scripts/check-feature-boundaries.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test"
@@ -15,21 +15,28 @@
   "dependencies": {
     "@orcia/api-client": "workspace:*",
     "@orcia/ui": "workspace:*",
-    "next": "^15.2.0",
+    "@tanstack/react-query": "^5.90.0",
+    "@tanstack/react-router": "^1.166.2",
+    "@xyflow/react": "^12.12.0",
+    "openapi-fetch": "^0.17.0",
     "pino": "^9.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "^1.52.0",
+    "@tanstack/router-plugin": "^1.166.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.5.2",
     "jsdom": "^26.0.0",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.0"
+    "vite": "^6.4.1",
+    "vitest": "^3.2.0"
   }
 }

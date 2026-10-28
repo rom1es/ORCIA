@@ -60,7 +60,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm next dev --hostname ${webHost} --port ${webPort}`,
+    command: `node scripts/run-next.mjs dev --host ${webHost} --port ${webPort}`,
     url: webBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
