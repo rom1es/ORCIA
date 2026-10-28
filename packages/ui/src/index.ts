@@ -15,6 +15,12 @@ export {
   type StatusBadgeProps,
   type StatusBadgeTone,
 } from "./primitives/StatusBadge";
+export {
+  UpstreamChallengeRewindModal,
+  type UpstreamChallengeModalLabels,
+  type UpstreamChallengeRewindModalProps,
+  type UpstreamChallengeWhatIfPreview,
+} from "./primitives/UpstreamChallengeRewindModal";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

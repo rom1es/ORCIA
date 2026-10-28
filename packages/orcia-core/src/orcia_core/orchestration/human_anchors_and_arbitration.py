@@ -185,9 +185,7 @@ class HumanAnchorAndArbitrationService:
     ) -> HumanAnchorSignatureEntity:
         """Sign a `human_authored_required: true` section (`>= 30` chars, rejects agent callers)."""
         run = self.engine._get_run(run_id, instance=instance)
-        self.engine.setup_service._enforce_mutation_guard(
-            user, run.workspace_id, instance=instance
-        )
+        self.engine.setup_service._enforce_mutation_guard(user, run.workspace_id, instance=instance)
         wf = self.engine._get_workflow(run.workflow_uri, instance=instance)
         self.engine.initialize_run_steps(run, wf)
         step_exec = self.engine.blackboard.get_step_execution(run.id, step_key)
@@ -301,9 +299,7 @@ class HumanAnchorAndArbitrationService:
     ) -> tuple[HumanArbitrationRequestEntity, StepExecutionEntity]:
         """Execute `request_human_arbitration(options_matrix)` according to `tie_break_policy`."""
         run = self.engine._get_run(run_id, instance=instance)
-        self.engine.setup_service._enforce_mutation_guard(
-            user, run.workspace_id, instance=instance
-        )
+        self.engine.setup_service._enforce_mutation_guard(user, run.workspace_id, instance=instance)
         wf = self.engine._get_workflow(run.workflow_uri, instance=instance)
         self.engine.initialize_run_steps(run, wf)
         step_exec = self.engine.blackboard.get_step_execution(run.id, step_key)
@@ -477,9 +473,7 @@ class HumanAnchorAndArbitrationService:
     ) -> tuple[HumanArbitrationRequestEntity, StepExecutionEntity, BlackboardSnapshotEntity | None]:
         """Resolve a `PENDING` human arbitration, record decision in Blackboard, and resume step."""
         run = self.engine._get_run(run_id, instance=instance)
-        self.engine.setup_service._enforce_mutation_guard(
-            user, run.workspace_id, instance=instance
-        )
+        self.engine.setup_service._enforce_mutation_guard(user, run.workspace_id, instance=instance)
         req = self._arbitrations_by_id.get(arbitration_id)
         if req is None or req.run_id != run.id or req.step_key != step_key:
             raise ResourceNotFoundError(
@@ -532,9 +526,7 @@ class HumanAnchorAndArbitrationService:
                 ),
             ),
         )
-        decision_summary = (
-            f"{chosen.option_key}: {just_clean}" if just_clean else chosen.option_key
-        )
+        decision_summary = f"{chosen.option_key}: {just_clean}" if just_clean else chosen.option_key
         resumed_step, snapshot = self.engine.resume_human_task(
             user,
             run_id=run.id,

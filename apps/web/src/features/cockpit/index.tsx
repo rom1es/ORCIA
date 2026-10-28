@@ -1,4 +1,8 @@
-import { ArbitrationTieBreakCard, HumanLedAnchorCard } from "@orcia/ui";
+import {
+  ArbitrationTieBreakCard,
+  HumanLedAnchorCard,
+  UpstreamChallengeRewindModal,
+} from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
 import React, { useState } from "react";
 import { useI18n } from "../../i18n";
@@ -27,6 +31,7 @@ export function buildCockpitWorkflowPreviewGraph(): {
 export function CockpitFeaturePanel() {
   const { dictionary } = useI18n();
   const [customAnchorText, setCustomAnchorText] = useState<string | null>(null);
+  const [isChallengeModalOpen, setIsChallengeModalOpen] = useState<boolean>(true);
   const anchorText = customAnchorText ?? dictionary.humanAnchor.defaultValue;
 
   return (
@@ -70,6 +75,35 @@ export function CockpitFeaturePanel() {
             },
           ]}
           labels={dictionary.arbitrationTieBreak}
+        />
+      </div>
+
+      <div className="orcia-bento-card">
+        <UpstreamChallengeRewindModal
+          isOpen={isChallengeModalOpen}
+          preview={{
+            runId: "run-checkout-001",
+            challengerStepKey: "delegate-sub-workflow",
+            targetUpstreamStepKey: "frame-architecture-intent",
+            challengedSectionKey: "fx_rate_guarantee_rule",
+            targetProfileArchetype: "PM_PO",
+            translatedSummary:
+              "[Traduction Ontologique -> PM_PO] L'exigence de garantie de taux 48h du PRD bloque l'API partenaire v3 (max 15 min). 1 étape amont préservée (0 token reconsommé).",
+            invalidatedDownstreamStepKeys: [
+              "frame-architecture-intent",
+              "delegate-sub-workflow",
+              "human-final-signoff",
+            ],
+            invalidatedArtifactSections: [
+              "frame-architecture-intent:fx_rate_guarantee_rule",
+              "delegate-sub-workflow:dependent_on_fx_rate_guarantee_rule",
+            ],
+            invalidatedOntologyAxiomKeys: ["axiom-l1-strategic-asset-immutable-schema"],
+            preservedUpstreamStepKeys: ["step-0-intake-validated"],
+            upstreamTokensSaved: 1250,
+          }}
+          labels={dictionary.upstreamChallengeModal}
+          onClose={() => setIsChallengeModalOpen(false)}
         />
       </div>
     </div>

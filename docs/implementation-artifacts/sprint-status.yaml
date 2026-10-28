@@ -50,7 +50,7 @@ development_status:
   2-4-graphe-tripartite-multi-sources-confluence-1-n-jira-1-n-git: done
   epic-2-retrospective: done
 
-  epic-3: in-progress
+  epic-3: done
   3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: done
   3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: done
   3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: done
@@ -62,7 +62,7 @@ development_status:
   3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: done
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done
-  3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: backlog
+  3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
   epic-3-retrospective: optional
 
   epic-4: backlog

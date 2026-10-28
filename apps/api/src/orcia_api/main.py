@@ -14,6 +14,7 @@ from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
+from orcia_api.routers.challenge_and_replay import router as challenge_and_replay_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
 from orcia_api.routers.orchestration import router as orchestration_router
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     application.include_router(ontology_and_rag_router)
     application.include_router(orchestration_router)
     application.include_router(blackboard_and_engine_router)
+    application.include_router(challenge_and_replay_router)
     application.include_router(assistant_router)
     return application
 

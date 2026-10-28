@@ -5387,6 +5387,134 @@
         "title": "StepMemlogSchemaItem",
         "type": "object"
       },
+      "StepReplayRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST .../runs/{run_id}/steps/{step_key}/replay` (`FR-16`, `FR-30`).",
+        "properties": {
+          "revised_section_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised Section Payload"
+          },
+          "sub_workflow_step_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Workflow Step Key"
+          }
+        },
+        "title": "StepReplayRequest",
+        "type": "object"
+      },
+      "StepReplayResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST .../runs/{run_id}/steps/{step_key}/replay`.",
+        "properties": {
+          "replay": {
+            "$ref": "#/components/schemas/StepReplayResultSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "replay",
+          "trace_id"
+        ],
+        "title": "StepReplayResponse",
+        "type": "object"
+      },
+      "StepReplayResultSchemaItem": {
+        "additionalProperties": false,
+        "description": "Replay execution summary proving 0 upstream re-execution (`FR-16`, `FR-30`, `AD-2`).",
+        "properties": {
+          "new_active_snapshot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "New Active Snapshot Ids",
+            "type": "array"
+          },
+          "replayed_from_step_key": {
+            "title": "Replayed From Step Key",
+            "type": "string"
+          },
+          "reused_upstream_snapshot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reused Upstream Snapshot Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_lock_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Run Lock Sha256",
+            "type": "string"
+          },
+          "sub_workflow_step_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Workflow Step Key"
+          },
+          "superseded_snapshot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Superseded Snapshot Ids",
+            "type": "array"
+          },
+          "upstream_steps_reexecuted_count": {
+            "minimum": 0.0,
+            "title": "Upstream Steps Reexecuted Count",
+            "type": "integer"
+          },
+          "upstream_tokens_consumed": {
+            "minimum": 0.0,
+            "title": "Upstream Tokens Consumed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "replayed_from_step_key",
+          "reused_upstream_snapshot_ids",
+          "superseded_snapshot_ids",
+          "new_active_snapshot_ids",
+          "upstream_steps_reexecuted_count",
+          "upstream_tokens_consumed",
+          "run_lock_sha256"
+        ],
+        "title": "StepReplayResultSchemaItem",
+        "type": "object"
+      },
       "SubWorkflowLockSchemaItem": {
         "additionalProperties": false,
         "description": "Recursive sub-workflow lock entry in `run-lock.json` (`FR-30`, `AD-18`).",
@@ -5769,6 +5897,374 @@
           "relation_type"
         ],
         "title": "TripartiteTraceEdgeSchemaItem",
+        "type": "object"
+      },
+      "UpstreamChallengePreviewRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST .../steps/{step_key}/challenge/preview` (`UX-DR7`, `AD-7`).",
+        "properties": {
+          "challenge_reason": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Challenge Reason",
+            "type": "string"
+          },
+          "challenged_section_key": {
+            "default": "business_rules",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Challenged Section Key",
+            "type": "string"
+          },
+          "target_profile_archetype": {
+            "default": "PM_BUSINESS",
+            "enum": [
+              "PM_BUSINESS",
+              "ARCHITECT",
+              "TECH_LEAD",
+              "DEVELOPER",
+              "SECOPS",
+              "EXECUTIVE"
+            ],
+            "title": "Target Profile Archetype",
+            "type": "string"
+          },
+          "target_upstream_step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Target Upstream Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_upstream_step_key",
+          "challenge_reason"
+        ],
+        "title": "UpstreamChallengePreviewRequest",
+        "type": "object"
+      },
+      "UpstreamChallengePreviewResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST .../steps/{step_key}/challenge/preview`.",
+        "properties": {
+          "preview": {
+            "$ref": "#/components/schemas/UpstreamChallengePreviewSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preview",
+          "trace_id"
+        ],
+        "title": "UpstreamChallengePreviewResponse",
+        "type": "object"
+      },
+      "UpstreamChallengePreviewSchemaItem": {
+        "additionalProperties": false,
+        "description": "What-If impact preview item returned for an upstream challenge (`AD-7`, `UX-DR7`).",
+        "properties": {
+          "challenge_reason": {
+            "title": "Challenge Reason",
+            "type": "string"
+          },
+          "challenged_section_key": {
+            "title": "Challenged Section Key",
+            "type": "string"
+          },
+          "challenger_step_key": {
+            "title": "Challenger Step Key",
+            "type": "string"
+          },
+          "invalidated_artifact_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Artifact Sections",
+            "type": "array"
+          },
+          "invalidated_downstream_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Downstream Step Keys",
+            "type": "array"
+          },
+          "invalidated_ontology_axiom_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Ontology Axiom Keys",
+            "type": "array"
+          },
+          "preserved_upstream_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preserved Upstream Step Keys",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "target_profile_archetype": {
+            "enum": [
+              "PM_BUSINESS",
+              "ARCHITECT",
+              "TECH_LEAD",
+              "DEVELOPER",
+              "SECOPS",
+              "EXECUTIVE"
+            ],
+            "title": "Target Profile Archetype",
+            "type": "string"
+          },
+          "target_upstream_step_key": {
+            "title": "Target Upstream Step Key",
+            "type": "string"
+          },
+          "translated_summary": {
+            "title": "Translated Summary",
+            "type": "string"
+          },
+          "upstream_tokens_saved": {
+            "minimum": 0.0,
+            "title": "Upstream Tokens Saved",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "challenger_step_key",
+          "target_upstream_step_key",
+          "challenged_section_key",
+          "challenge_reason",
+          "target_profile_archetype",
+          "translated_summary",
+          "invalidated_downstream_step_keys",
+          "invalidated_artifact_sections",
+          "invalidated_ontology_axiom_keys",
+          "preserved_upstream_step_keys",
+          "upstream_tokens_saved"
+        ],
+        "title": "UpstreamChallengePreviewSchemaItem",
+        "type": "object"
+      },
+      "UpstreamChallengeSchemaItem": {
+        "additionalProperties": false,
+        "description": "Persisted upstream challenge item (`FR-7`, `AD-7`).",
+        "properties": {
+          "challenge_key": {
+            "title": "Challenge Key",
+            "type": "string"
+          },
+          "challenge_reason": {
+            "title": "Challenge Reason",
+            "type": "string"
+          },
+          "challenged_section_key": {
+            "title": "Challenged Section Key",
+            "type": "string"
+          },
+          "challenger_step_key": {
+            "title": "Challenger Step Key",
+            "type": "string"
+          },
+          "created_by_user_id": {
+            "title": "Created By User Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "invalidated_artifact_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Artifact Sections",
+            "type": "array"
+          },
+          "invalidated_downstream_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Downstream Step Keys",
+            "type": "array"
+          },
+          "invalidated_ontology_axiom_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Ontology Axiom Keys",
+            "type": "array"
+          },
+          "outbox_event_id": {
+            "title": "Outbox Event Id",
+            "type": "string"
+          },
+          "preserved_upstream_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preserved Upstream Step Keys",
+            "type": "array"
+          },
+          "revised_artifact_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised Artifact Version"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "OPEN",
+              "RESOLVED_REVISED",
+              "REPLAYED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_profile_archetype": {
+            "enum": [
+              "PM_BUSINESS",
+              "ARCHITECT",
+              "TECH_LEAD",
+              "DEVELOPER",
+              "SECOPS",
+              "EXECUTIVE"
+            ],
+            "title": "Target Profile Archetype",
+            "type": "string"
+          },
+          "target_upstream_step_key": {
+            "title": "Target Upstream Step Key",
+            "type": "string"
+          },
+          "translated_summary": {
+            "title": "Translated Summary",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "challenge_key",
+          "workspace_id",
+          "run_id",
+          "challenger_step_key",
+          "target_upstream_step_key",
+          "challenged_section_key",
+          "challenge_reason",
+          "target_profile_archetype",
+          "translated_summary",
+          "invalidated_downstream_step_keys",
+          "invalidated_artifact_sections",
+          "invalidated_ontology_axiom_keys",
+          "preserved_upstream_step_keys",
+          "status",
+          "created_by_user_id",
+          "outbox_event_id"
+        ],
+        "title": "UpstreamChallengeSchemaItem",
+        "type": "object"
+      },
+      "UpstreamChallengeSubmitRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST .../steps/{step_key}/challenge` (`FR-7`, `UX-DR7`).",
+        "properties": {
+          "challenge_reason": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Challenge Reason",
+            "type": "string"
+          },
+          "challenged_section_key": {
+            "default": "business_rules",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Challenged Section Key",
+            "type": "string"
+          },
+          "proposed_upstream_revision": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Upstream Revision"
+          },
+          "target_profile_archetype": {
+            "default": "PM_BUSINESS",
+            "enum": [
+              "PM_BUSINESS",
+              "ARCHITECT",
+              "TECH_LEAD",
+              "DEVELOPER",
+              "SECOPS",
+              "EXECUTIVE"
+            ],
+            "title": "Target Profile Archetype",
+            "type": "string"
+          },
+          "target_upstream_step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Target Upstream Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_upstream_step_key",
+          "challenge_reason"
+        ],
+        "title": "UpstreamChallengeSubmitRequest",
+        "type": "object"
+      },
+      "UpstreamChallengeSubmitResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST .../steps/{step_key}/challenge`.",
+        "properties": {
+          "challenge": {
+            "$ref": "#/components/schemas/UpstreamChallengeSchemaItem"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/UpstreamChallengePreviewSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge",
+          "preview",
+          "trace_id"
+        ],
+        "title": "UpstreamChallengeSubmitResponse",
         "type": "object"
       },
       "UserMeResponse": {
@@ -11151,6 +11647,367 @@
         "summary": "Resolve a pending human arbitration decision and resume step execution (Story 3.4)",
         "tags": [
           "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/challenge": {
+      "post": {
+        "description": "Record an upstream challenge, translate for upstream profile, and emit Outbox event.",
+        "operationId": "submit_upstream_challenge_api_v1_orchestration_runs__run_id__steps__step_key__challenge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Step Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpstreamChallengeSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamChallengeSubmitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Submit an Inter-Step Upstream Challenge with Outbox notification (Story 3.5, FR-7)",
+        "tags": [
+          "Blackboard & Durable Engine"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/challenge/preview": {
+      "post": {
+        "description": "Compute DAG + Ontology `What-If Impact Preview` for challenging an upstream step (`UX-DR7`).",
+        "operationId": "preview_upstream_challenge_api_v1_orchestration_runs__run_id__steps__step_key__challenge_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Step Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpstreamChallengePreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamChallengePreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Compute What-If Impact Preview for an Inter-Step Upstream Challenge (Story 3.5)",
+        "tags": [
+          "Blackboard & Durable Engine"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/replay": {
+      "post": {
+        "description": "Replay from Step $N$ (or intra-sub-workflow Step $k$) reusing $1..N-1$ snapshots.",
+        "operationId": "replay_workflow_from_step_api_v1_orchestration_runs__run_id__steps__step_key__replay_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Step Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StepReplayRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepReplayResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Replay workflow from Step N or intra-sub-workflow Step k (Story 3.5, FR-16, FR-30)",
+        "tags": [
+          "Blackboard & Durable Engine"
         ]
       }
     },

@@ -15,6 +15,9 @@ from orcia_core.blackboard.models import (
     StepMemlogEntry,
 )
 from orcia_core.blackboard.store import AppendOnlyBlackboardStore
+from orcia_core.orchestration.challenge_and_replay import (
+    UpstreamChallengeAndReplayService,
+)
 from orcia_core.orchestration.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
@@ -61,6 +64,7 @@ class DurableOrchestrationEngine:
         self.blackboard = blackboard or AppendOnlyBlackboardStore(resolver=setup_service.resolver)
         self._run_seed_inputs: dict[str, dict[str, Any]] = {}
         self.anchors_and_arbitration = HumanAnchorAndArbitrationService(engine=self)
+        self.challenge_and_replay = UpstreamChallengeAndReplayService(engine=self)
         register_default_step_executors()
 
     def initialize_run_steps(

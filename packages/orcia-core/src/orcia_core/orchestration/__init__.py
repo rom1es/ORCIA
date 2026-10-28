@@ -27,6 +27,13 @@ from orcia_core.orchestration.assistant_harness import (
     PromptLayerBlock,
     resolve_profile_adaptation,
 )
+from orcia_core.orchestration.challenge_and_replay import (
+    ChallengeStatus,
+    StepReplayResult,
+    UpstreamChallengeAndReplayService,
+    UpstreamChallengeEntity,
+    UpstreamChallengeImpactPreview,
+)
 from orcia_core.orchestration.connector_invoker import (
     CircuitBreakerState,
     ConnectorCircuitBreaker,
@@ -123,6 +130,7 @@ __all__ = [
     "AssistantWorkflowProposal",
     "AuthorIdentityType",
     "CONSTITUTIONAL_LAYER_1_TEXT",
+    "ChallengeStatus",
     "CircuitBreakerState",
     "CompiledArtifactTemplate",
     "CompiledMarkdownChunk",
@@ -151,9 +159,13 @@ __all__ = [
     "RecursiveRunLockManifest",
     "SavedAndLaunchedWorkflowResult",
     "SkillStepExecutor",
+    "StepReplayResult",
     "SubWorkflowLockEntry",
     "SubWorkflowStepExecutor",
     "TieBreakPolicy",
+    "UpstreamChallengeAndReplayService",
+    "UpstreamChallengeEntity",
+    "UpstreamChallengeImpactPreview",
     "WorkflowAsCodeDefinition",
     "WorkflowAsCodeValidator",
     "WorkflowCriticality",

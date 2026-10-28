@@ -840,6 +840,25 @@ export interface components {
       step_key: string;
       summary: string;
     };
+    StepReplayRequest: {
+      revised_section_payload?: Record<string, unknown> | null;
+      sub_workflow_step_key?: string | null;
+    };
+    StepReplayResponse: {
+      replay: components["schemas"]["StepReplayResultSchemaItem"];
+      trace_id: string;
+    };
+    StepReplayResultSchemaItem: {
+      new_active_snapshot_ids: (string)[];
+      replayed_from_step_key: string;
+      reused_upstream_snapshot_ids: (string)[];
+      run_id: string;
+      run_lock_sha256: string;
+      sub_workflow_step_key?: string | null;
+      superseded_snapshot_ids: (string)[];
+      upstream_steps_reexecuted_count: number;
+      upstream_tokens_consumed: number;
+    };
     SubWorkflowLockSchemaItem: {
       applied_override_keys: (string)[];
       effective_workflow_sha256: string;
@@ -893,6 +912,62 @@ export interface components {
       target_node_type: "CONFLUENCE_PAGE" | "JIRA_ISSUE" | "GIT_SYMBOL" | "GIT_COMMIT" | "ONTOLOGY_CONCEPT";
       target_uri: string;
       workspace_id: string;
+    };
+    UpstreamChallengePreviewRequest: {
+      challenge_reason: string;
+      challenged_section_key?: string;
+      target_profile_archetype?: "PM_BUSINESS" | "ARCHITECT" | "TECH_LEAD" | "DEVELOPER" | "SECOPS" | "EXECUTIVE";
+      target_upstream_step_key: string;
+    };
+    UpstreamChallengePreviewResponse: {
+      preview: components["schemas"]["UpstreamChallengePreviewSchemaItem"];
+      trace_id: string;
+    };
+    UpstreamChallengePreviewSchemaItem: {
+      challenge_reason: string;
+      challenged_section_key: string;
+      challenger_step_key: string;
+      invalidated_artifact_sections: (string)[];
+      invalidated_downstream_step_keys: (string)[];
+      invalidated_ontology_axiom_keys: (string)[];
+      preserved_upstream_step_keys: (string)[];
+      run_id: string;
+      target_profile_archetype: "PM_BUSINESS" | "ARCHITECT" | "TECH_LEAD" | "DEVELOPER" | "SECOPS" | "EXECUTIVE";
+      target_upstream_step_key: string;
+      translated_summary: string;
+      upstream_tokens_saved: number;
+    };
+    UpstreamChallengeSchemaItem: {
+      challenge_key: string;
+      challenge_reason: string;
+      challenged_section_key: string;
+      challenger_step_key: string;
+      created_by_user_id: string;
+      id: string;
+      invalidated_artifact_sections: (string)[];
+      invalidated_downstream_step_keys: (string)[];
+      invalidated_ontology_axiom_keys: (string)[];
+      outbox_event_id: string;
+      preserved_upstream_step_keys: (string)[];
+      revised_artifact_version?: string | null;
+      run_id: string;
+      status: "OPEN" | "RESOLVED_REVISED" | "REPLAYED";
+      target_profile_archetype: "PM_BUSINESS" | "ARCHITECT" | "TECH_LEAD" | "DEVELOPER" | "SECOPS" | "EXECUTIVE";
+      target_upstream_step_key: string;
+      translated_summary: string;
+      workspace_id: string;
+    };
+    UpstreamChallengeSubmitRequest: {
+      challenge_reason: string;
+      challenged_section_key?: string;
+      proposed_upstream_revision?: string | null;
+      target_profile_archetype?: "PM_BUSINESS" | "ARCHITECT" | "TECH_LEAD" | "DEVELOPER" | "SECOPS" | "EXECUTIVE";
+      target_upstream_step_key: string;
+    };
+    UpstreamChallengeSubmitResponse: {
+      challenge: components["schemas"]["UpstreamChallengeSchemaItem"];
+      preview: components["schemas"]["UpstreamChallengePreviewSchemaItem"];
+      trace_id: string;
     };
     UserMeResponse: {
       auth_mode: "OIDC" | "LOCAL" | "HYBRID";
@@ -1398,6 +1473,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/challenge": {
+    post: {
+      responses: {
+        200: components["schemas"]["UpstreamChallengeSubmitResponse"];
+      };
+    };
+  };
+  "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/challenge/preview": {
+    post: {
+      responses: {
+        200: components["schemas"]["UpstreamChallengePreviewResponse"];
+      };
+    };
+  };
+  "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/replay": {
+    post: {
+      responses: {
+        200: components["schemas"]["StepReplayResponse"];
+      };
+    };
+  };
   "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/resume": {
     post: {
       responses: {
@@ -1580,11 +1676,20 @@ export type StepHumanResumeRequest = components["schemas"]["StepHumanResumeReque
 export type StepHydrateRequest = components["schemas"]["StepHydrateRequest"];
 export type StepHydrateResponse = components["schemas"]["StepHydrateResponse"];
 export type StepMemlogSchemaItem = components["schemas"]["StepMemlogSchemaItem"];
+export type StepReplayRequest = components["schemas"]["StepReplayRequest"];
+export type StepReplayResponse = components["schemas"]["StepReplayResponse"];
+export type StepReplayResultSchemaItem = components["schemas"]["StepReplayResultSchemaItem"];
 export type SubWorkflowLockSchemaItem = components["schemas"]["SubWorkflowLockSchemaItem"];
 export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
+export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
+export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];
+export type UpstreamChallengePreviewSchemaItem = components["schemas"]["UpstreamChallengePreviewSchemaItem"];
+export type UpstreamChallengeSchemaItem = components["schemas"]["UpstreamChallengeSchemaItem"];
+export type UpstreamChallengeSubmitRequest = components["schemas"]["UpstreamChallengeSubmitRequest"];
+export type UpstreamChallengeSubmitResponse = components["schemas"]["UpstreamChallengeSubmitResponse"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];

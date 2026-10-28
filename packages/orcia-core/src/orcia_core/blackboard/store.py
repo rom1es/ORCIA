@@ -153,6 +153,7 @@ class AppendOnlyBlackboardStore:
             current.status == "COMMITTED"
             and current.committed_snapshot_id
             and current.committed_snapshot_id in self._snapshots_by_id
+            and current.committed_snapshot_id not in self._superseded_ids
             and not superseded_snapshot_ids
         ):
             return self._snapshots_by_id[current.committed_snapshot_id]
@@ -227,3 +228,22 @@ class AppendOnlyBlackboardStore:
         """Return the latest active snapshot for `(run_id, step_key)` within `run_id`."""
         active = [s for s in self.get_active_snapshots(run_id) if s.step_key == step_key]
         return active[-1] if active else None
+
+    def supersede_snapshots(self, snapshot_ids: tuple[str, ...]) -> None:
+        """Mark `snapshot_ids` as superseded in the branch index without mutating stored rows."""
+        for sid in snapshot_ids:
+            self._superseded_ids.add(sid)
+
+    def get_effective_branch_status(self, snapshot_id: str) -> str:
+        """Return `'SUPERSEDED'` if `snapshot_id` was superseded by a replay, else `'ACTIVE'`."""
+        snap = self._snapshots_by_id.get(snapshot_id)
+        if snap is None:
+            raise ResourceNotFoundError(detail_override=f"Snapshot '{snapshot_id}' introuvable.")
+        if snapshot_id in self._superseded_ids or snap.branch_status == "SUPERSEDED":
+            return "SUPERSEDED"
+        return "ACTIVE"
+
+    def list_all_snapshots(self, run_id: str) -> tuple[BlackboardSnapshotEntity, ...]:
+        """Return all immutable snapshots ever appended for `run_id` in append order."""
+        snap_ids = self._snapshots_by_run.get(run_id, [])
+        return tuple(self._snapshots_by_id[sid] for sid in snap_ids)
