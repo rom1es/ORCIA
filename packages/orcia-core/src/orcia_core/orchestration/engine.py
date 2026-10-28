@@ -19,6 +19,10 @@ from orcia_core.orchestration.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
 )
+from orcia_core.orchestration.human_anchors_and_arbitration import (
+    AuthorIdentityType,
+    HumanAnchorAndArbitrationService,
+)
 from orcia_core.orchestration.jit_hydrator import (
     JitStepHydrator,
     MemlogMarkerPluginProtocol,
@@ -56,6 +60,7 @@ class DurableOrchestrationEngine:
         self.setup_service = setup_service
         self.blackboard = blackboard or AppendOnlyBlackboardStore(resolver=setup_service.resolver)
         self._run_seed_inputs: dict[str, dict[str, Any]] = {}
+        self.anchors_and_arbitration = HumanAnchorAndArbitrationService(engine=self)
         register_default_step_executors()
 
     def initialize_run_steps(
@@ -103,6 +108,8 @@ class DurableOrchestrationEngine:
         human_decision: str | None = None,
         executor_metadata: dict[str, Any] | None = None,
         cost_usd: float = 0.25,
+        require_human_anchor: bool = False,
+        author_type: AuthorIdentityType = "HUMAN",
         instance: str | None = None,
         **legacy_kwargs: Any,
     ) -> tuple[StepExecutionEntity, BlackboardSnapshotEntity | None]:
@@ -134,6 +141,14 @@ class DurableOrchestrationEngine:
             raise ResourceNotFoundError(
                 detail_override=f"Étape '{step_key}' introuvable.", instance=instance
             )
+
+        self.anchors_and_arbitration.enforce_step_anchor_if_required(
+            run,
+            step_spec,
+            require_human_anchor=require_human_anchor,
+            author_type=author_type,
+            instance=instance,
+        )
 
         hydrated = JitStepHydrator.hydrate_step(
             run=run,

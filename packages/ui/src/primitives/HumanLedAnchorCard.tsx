@@ -21,6 +21,7 @@ export interface HumanLedAnchorCardProps {
   signaturePlaceholder?: string;
   signatureTestId?: string;
   hideSubmitButton?: boolean;
+  minCharactersRequired?: number;
   onChange?: (nextValue: string) => void;
   onSignatureChange?: (nextSignature: string) => void;
   onSignAnchor?: (sectionKey: string, content: string) => void;
@@ -29,7 +30,7 @@ export interface HumanLedAnchorCardProps {
 /**
  * HumanLedAnchorCard — Exclusive consumer of `--color-human-led-violet` (DESIGN.md, AD-3, UX-DR3).
  * Represents a mandatory human-authored section (`human_authored_required: true`).
- * Never renders an AI auto-generation button.
+ * Never renders an AI auto-generation button and locks agent execution below 30 characters.
  */
 export function HumanLedAnchorCard({
   sectionKey,
@@ -45,14 +46,21 @@ export function HumanLedAnchorCard({
   signaturePlaceholder,
   signatureTestId,
   hideSubmitButton = false,
+  minCharactersRequired = 30,
   onChange,
   onSignatureChange,
   onSignAnchor,
 }: HumanLedAnchorCardProps) {
+  const charCount = value.trim().length;
+  const isLocked = charCount < minCharactersRequired;
+
   return (
     <section
       data-testid={testId ?? `human-anchor-card-${sectionKey}`}
       data-human-authored-required="true"
+      data-ai-generation-forbidden="true"
+      data-char-count={String(charCount)}
+      data-anchor-locked={isLocked ? "true" : "false"}
       style={{
         backgroundColor: "var(--color-human-led-bg)",
         border: "1px solid var(--color-human-led-violet)",
@@ -89,7 +97,7 @@ export function HumanLedAnchorCard({
             fontSize: "var(--font-size-mono)",
           }}
         >
-          {labels.authorLabel}: {authorName}
+          {labels.authorLabel}: {authorName} ({charCount}/{minCharactersRequired})
         </span>
       </header>
 
@@ -151,7 +159,13 @@ export function HumanLedAnchorCard({
         <div>
           <button
             type="button"
-            onClick={() => onSignAnchor?.(sectionKey, value)}
+            disabled={isLocked}
+            data-testid={`human-anchor-submit-${sectionKey}`}
+            onClick={() => {
+              if (!isLocked) {
+                onSignAnchor?.(sectionKey, value);
+              }
+            }}
             style={{
               backgroundColor: "var(--color-human-led-violet)",
               color: "var(--color-primary-foreground)",
@@ -159,7 +173,8 @@ export function HumanLedAnchorCard({
               borderRadius: "var(--radius-sm)",
               padding: "6px 12px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: isLocked ? "not-allowed" : "pointer",
+              opacity: isLocked ? 0.55 : 1,
             }}
           >
             {labels.submitLabel}

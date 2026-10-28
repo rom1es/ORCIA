@@ -1,4 +1,4 @@
-import { HumanLedAnchorCard } from "@orcia/ui";
+import { ArbitrationTieBreakCard, HumanLedAnchorCard } from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
 import React, { useState } from "react";
 import { useI18n } from "../../i18n";
@@ -30,15 +30,48 @@ export function CockpitFeaturePanel() {
   const anchorText = customAnchorText ?? dictionary.humanAnchor.defaultValue;
 
   return (
-    <div className="orcia-bento-card">
-      <HumanLedAnchorCard
-        sectionKey="architecture-intent"
-        sectionTitle={dictionary.humanAnchor.defaultSectionTitle}
-        authorName={dictionary.humanAnchor.defaultAuthorName}
-        value={anchorText}
-        labels={dictionary.humanAnchor}
-        onChange={setCustomAnchorText}
-      />
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="orcia-bento-card">
+        <HumanLedAnchorCard
+          sectionKey="architecture-intent"
+          sectionTitle={dictionary.humanAnchor.defaultSectionTitle}
+          authorName={dictionary.humanAnchor.defaultAuthorName}
+          value={anchorText}
+          labels={dictionary.humanAnchor}
+          onChange={setCustomAnchorText}
+        />
+      </div>
+
+      <div className="orcia-bento-card">
+        <ArbitrationTieBreakCard
+          arbitrationId="arb-fx-rate-001"
+          stepKey="frame-architecture-intent"
+          questionTitle={dictionary.arbitrationTieBreak.defaultQuestionTitle}
+          contextSummary={dictionary.arbitrationTieBreak.defaultContextSummary}
+          tieBreakPolicy="PAUSE_AND_ESCALATE"
+          options={[
+            {
+              optionKey: "OPT_A_SPOT_15M",
+              title: "Option A — Taux Spot garanti 15 min",
+              pros: ["Zéro couverture de change complexe", "Compatible API partenaire v3"],
+              cons: ["Fenêtre de validation client réduite à 15 min"],
+              siImpact: "1 microservice impacté",
+              finopsImpact: "0.02 USD / run",
+              recommended: true,
+            },
+            {
+              optionKey: "OPT_B_LOCK_48H",
+              title: "Option B — Garantie de taux bloquée 48h",
+              pros: ["Confort utilisateur maximal sur 48h"],
+              cons: ["Incompatible API partenaire v3", "Risque de change élevé"],
+              siImpact: "3 systèmes centraux impactés",
+              finopsImpact: "0.18 USD / run",
+              recommended: false,
+            },
+          ]}
+          labels={dictionary.arbitrationTieBreak}
+        />
+      </div>
     </div>
   );
 }

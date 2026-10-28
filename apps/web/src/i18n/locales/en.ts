@@ -60,6 +60,21 @@ export const enDictionary: TranslationDictionary = {
     defaultAuthorName: "System Architect / Tech Lead",
     defaultValue: "Strict hexagonal isolation and zero-drift OpenAPI 3.1 contract (0-diff).",
   },
+  arbitrationTieBreak: {
+    badgeTitle: "⚖️ HUMAN ARBITRATION REQUIRED (WAITING_FOR_HUMAN_ARBITRATION)",
+    policyPrefixLabel: "Tie-break policy",
+    recommendedBadgeLabel: "★ Recommended",
+    prosLabel: "Pros",
+    consLabel: "Cons",
+    siImpactLabel: "IT Impact",
+    finopsImpactLabel: "FinOps",
+    justificationPlaceholder: "Optional justification or additional guidance...",
+    selectOptionButtonLabel: "Select option",
+    resolvedBannerPrefix: "✅ Arbitration decision recorded in Blackboard",
+    defaultQuestionTitle: "Multi-currency FX rate guarantee: 15-min Spot Rate vs 48-hr Locked Rate",
+    defaultContextSummary:
+      "Two equivalent technical and business options identified by the Executor Agent (FR-5, UX-DR6).",
+  },
   workspaceTopology: {
     panelTitle: "OrgUnit Team Tree, Multi-Source Workspaces & 5 Dissociated Permissions",
     panelSubtitle:

@@ -11,7 +11,12 @@ from orcia_core.blackboard.models import (
     SnapshotBranchStatus,
     StepExecutionStatus,
 )
+from orcia_core.orchestration.human_anchors_and_arbitration import (
+    AuthorIdentityType,
+    HumanArbitrationStatus,
+)
 from orcia_core.orchestration.models import (
+    TieBreakPolicy,
     WorkflowExecutionRegime,
     WorkflowStepType,
 )
@@ -120,6 +125,8 @@ class StepExecuteRequest(BaseModel):
     simulated_divergence: str | None = Field(default=None, max_length=512)
     human_decision: str | None = Field(default=None, max_length=512)
     cost_usd: float = Field(default=0.25, ge=0.0, le=500.0)
+    require_human_anchor: bool = Field(default=False)
+    author_type: AuthorIdentityType = Field(default="HUMAN")
 
 
 class StepExecuteResponse(BaseModel):
@@ -138,6 +145,129 @@ class StepHumanResumeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     decision: str = Field(..., min_length=1, max_length=512)
+
+
+class HumanAnchorSignRequest(BaseModel):
+    """Request payload for `POST /api/v1/orchestration/runs/anchors/sign` (`Story 3.4`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str = Field(..., min_length=1, max_length=128)
+    step_key: str = Field(..., min_length=1, max_length=128)
+    section_key: str = Field(default="primary-anchor", min_length=1, max_length=128)
+    content_text: str = Field(..., max_length=8000)
+    signature_text: str = Field(default="Signature Humaine", max_length=255)
+    author_type: AuthorIdentityType = Field(default="HUMAN")
+
+
+class HumanAnchorSignatureSchemaItem(BaseModel):
+    """Signed `HumanAnchorSignatureEntity` record (`AD-3`, `UX-DR3`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    signature_key: str
+    workspace_id: str
+    run_id: str
+    step_execution_id: str
+    step_key: str
+    section_key: str
+    content_text: str
+    content_sha256: str = Field(..., min_length=64, max_length=64)
+    char_length: int = Field(..., ge=30)
+    authored_by_user_id: str
+    author_display_name: str
+    signature_hash: str
+
+
+class HumanAnchorSignResponse(BaseModel):
+    """Response payload for `POST /api/v1/orchestration/runs/anchors/sign`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    signature: HumanAnchorSignatureSchemaItem
+    step_execution: StepExecutionSchemaItem
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class ArbitrationOptionSchemaItem(BaseModel):
+    """Comparative option inside an `Arbitration Tie-Break Matrix` (`UX-DR6`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    option_key: str = Field(..., min_length=1, max_length=128)
+    title: str = Field(..., min_length=1, max_length=255)
+    pros: list[str] = Field(default_factory=list)
+    cons: list[str] = Field(default_factory=list)
+    si_impact: str = Field(..., min_length=1, max_length=512)
+    finops_impact: str = Field(..., min_length=1, max_length=512)
+    recommended: bool = Field(default=False)
+    ontology_concept_key: str | None = Field(default=None, max_length=160)
+
+
+class HumanArbitrationRequestSchemaItem(BaseModel):
+    """Durable `HumanArbitrationRequestEntity` (`AD-3`, `AD-18`, `UX-DR6`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    arbitration_key: str
+    workspace_id: str
+    run_id: str
+    step_execution_id: str
+    step_key: str
+    tie_break_policy: TieBreakPolicy
+    status: HumanArbitrationStatus
+    question_title: str
+    context_summary: str
+    options_matrix: list[ArbitrationOptionSchemaItem]
+    selected_option_key: str | None = None
+    human_justification: str | None = None
+    resolved_by_user_id: str | None = None
+    resolved_by_axiom_key: str | None = None
+    outbox_event_id: str | None = None
+
+
+class HumanArbitrationCreateRequest(BaseModel):
+    """Request payload for `POST .../steps/{step_key}/arbitration` (`Story 3.4`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question_title: str = Field(..., min_length=3, max_length=255)
+    context_summary: str = Field(default="", max_length=2000)
+    options_matrix: list[ArbitrationOptionSchemaItem] = Field(..., min_length=2, max_length=10)
+    tie_break_policy: TieBreakPolicy | None = None
+
+
+class HumanArbitrationCreateResponse(BaseModel):
+    """Response payload for `POST .../steps/{step_key}/arbitration` (`Story 3.4`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    arbitration: HumanArbitrationRequestSchemaItem
+    step_execution: StepExecutionSchemaItem
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class HumanArbitrationResolveRequest(BaseModel):
+    """Request payload for `POST .../steps/{step_key}/arbitration/resolve` (`Story 3.4`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    arbitration_id: str = Field(..., min_length=1, max_length=128)
+    selected_option_key: str = Field(..., min_length=1, max_length=128)
+    human_justification: str | None = Field(default=None, max_length=1000)
+
+
+class HumanArbitrationResolveResponse(BaseModel):
+    """Response payload for resolving a `HumanArbitrationRequestEntity` (`FR-5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    arbitration: HumanArbitrationRequestSchemaItem
+    step_execution: StepExecutionSchemaItem
+    committed_snapshot: BlackboardSnapshotSchemaItem | None = None
+    trace_id: str = Field(..., min_length=32, max_length=32)
 
 
 class BackgroundAuditRunRequest(BaseModel):

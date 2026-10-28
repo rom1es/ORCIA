@@ -5,6 +5,16 @@
 
 export interface components {
   schemas: {
+    ArbitrationOptionSchemaItem: {
+      cons?: (string)[];
+      finops_impact: string;
+      ontology_concept_key?: string | null;
+      option_key: string;
+      pros?: (string)[];
+      recommended?: boolean;
+      si_impact: string;
+      title: string;
+    };
     ArtifactTemplateCompileRequest: {
       template_key: string;
       variables?: Record<string, string>;
@@ -260,6 +270,74 @@ export interface components {
       status?: "ok";
       trace_id: string;
       version: string;
+    };
+    HumanAnchorSignRequest: {
+      author_type?: "HUMAN" | "AGENT";
+      content_text: string;
+      run_id: string;
+      section_key?: string;
+      signature_text?: string;
+      step_key: string;
+    };
+    HumanAnchorSignResponse: {
+      signature: components["schemas"]["HumanAnchorSignatureSchemaItem"];
+      step_execution: components["schemas"]["StepExecutionSchemaItem"];
+      trace_id: string;
+    };
+    HumanAnchorSignatureSchemaItem: {
+      author_display_name: string;
+      authored_by_user_id: string;
+      char_length: number;
+      content_sha256: string;
+      content_text: string;
+      id: string;
+      run_id: string;
+      section_key: string;
+      signature_hash: string;
+      signature_key: string;
+      step_execution_id: string;
+      step_key: string;
+      workspace_id: string;
+    };
+    HumanArbitrationCreateRequest: {
+      context_summary?: string;
+      options_matrix: (components["schemas"]["ArbitrationOptionSchemaItem"])[];
+      question_title: string;
+      tie_break_policy?: "ONTOLOGY_AXIOM_FIRST" | "DEFER_AND_CONTINUE_WITH_ASSUMPTION" | "PAUSE_AND_ESCALATE" | null;
+    };
+    HumanArbitrationCreateResponse: {
+      arbitration: components["schemas"]["HumanArbitrationRequestSchemaItem"];
+      step_execution: components["schemas"]["StepExecutionSchemaItem"];
+      trace_id: string;
+    };
+    HumanArbitrationRequestSchemaItem: {
+      arbitration_key: string;
+      context_summary: string;
+      human_justification?: string | null;
+      id: string;
+      options_matrix: (components["schemas"]["ArbitrationOptionSchemaItem"])[];
+      outbox_event_id?: string | null;
+      question_title: string;
+      resolved_by_axiom_key?: string | null;
+      resolved_by_user_id?: string | null;
+      run_id: string;
+      selected_option_key?: string | null;
+      status: "PENDING" | "RESOLVED_BY_HUMAN" | "RESOLVED_BY_AXIOM" | "DEFERRED_WITH_ASSUMPTION";
+      step_execution_id: string;
+      step_key: string;
+      tie_break_policy: "ONTOLOGY_AXIOM_FIRST" | "DEFER_AND_CONTINUE_WITH_ASSUMPTION" | "PAUSE_AND_ESCALATE";
+      workspace_id: string;
+    };
+    HumanArbitrationResolveRequest: {
+      arbitration_id: string;
+      human_justification?: string | null;
+      selected_option_key: string;
+    };
+    HumanArbitrationResolveResponse: {
+      arbitration: components["schemas"]["HumanArbitrationRequestSchemaItem"];
+      committed_snapshot?: components["schemas"]["BlackboardSnapshotSchemaItem"] | null;
+      step_execution: components["schemas"]["StepExecutionSchemaItem"];
+      trace_id: string;
     };
     HumanProfileBadge: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
@@ -709,10 +787,12 @@ export interface components {
       trace_id: string;
     };
     StepExecuteRequest: {
+      author_type?: "HUMAN" | "AGENT";
       commit_immediately?: boolean;
       cost_usd?: number;
       divergence_note?: string | null;
       human_decision?: string | null;
+      require_human_anchor?: boolean;
       run_id: string;
       simulated_divergence?: string | null;
       step_key: string;
@@ -1262,6 +1342,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/orchestration/runs/anchors/sign": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanAnchorSignResponse"];
+      };
+    };
+  };
   "/api/v1/orchestration/runs/fast-path-audit": {
     post: {
       responses: {
@@ -1294,6 +1381,20 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["RunBlackboardStateResponse"];
+      };
+    };
+  };
+  "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/arbitration": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanArbitrationCreateResponse"];
+      };
+    };
+  };
+  "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/arbitration/resolve": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanArbitrationResolveResponse"];
       };
     };
   };
@@ -1376,6 +1477,7 @@ export interface paths {
   };
 }
 
+export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];
 export type AssistantChatRequest = components["schemas"]["AssistantChatRequest"];
@@ -1410,6 +1512,14 @@ export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWo
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
+export type HumanAnchorSignRequest = components["schemas"]["HumanAnchorSignRequest"];
+export type HumanAnchorSignResponse = components["schemas"]["HumanAnchorSignResponse"];
+export type HumanAnchorSignatureSchemaItem = components["schemas"]["HumanAnchorSignatureSchemaItem"];
+export type HumanArbitrationCreateRequest = components["schemas"]["HumanArbitrationCreateRequest"];
+export type HumanArbitrationCreateResponse = components["schemas"]["HumanArbitrationCreateResponse"];
+export type HumanArbitrationRequestSchemaItem = components["schemas"]["HumanArbitrationRequestSchemaItem"];
+export type HumanArbitrationResolveRequest = components["schemas"]["HumanArbitrationResolveRequest"];
+export type HumanArbitrationResolveResponse = components["schemas"]["HumanArbitrationResolveResponse"];
 export type HumanProfileBadge = components["schemas"]["HumanProfileBadge"];
 export type HybridRagHitSchemaItem = components["schemas"]["HybridRagHitSchemaItem"];
 export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchRequest"];

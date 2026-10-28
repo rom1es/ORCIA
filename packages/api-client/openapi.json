@@ -1,6 +1,75 @@
 {
   "components": {
     "schemas": {
+      "ArbitrationOptionSchemaItem": {
+        "additionalProperties": false,
+        "description": "Comparative option inside an `Arbitration Tie-Break Matrix` (`UX-DR6`).",
+        "properties": {
+          "cons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cons",
+            "type": "array"
+          },
+          "finops_impact": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Finops Impact",
+            "type": "string"
+          },
+          "ontology_concept_key": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Concept Key"
+          },
+          "option_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Option Key",
+            "type": "string"
+          },
+          "pros": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pros",
+            "type": "array"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "si_impact": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Si Impact",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "option_key",
+          "title",
+          "si_impact",
+          "finops_impact"
+        ],
+        "title": "ArbitrationOptionSchemaItem",
+        "type": "object"
+      },
       "ArtifactTemplateCompileRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/orchestration/templates/compile`.",
@@ -1560,6 +1629,440 @@
           "trace_id"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "HumanAnchorSignRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/orchestration/runs/anchors/sign` (`Story 3.4`).",
+        "properties": {
+          "author_type": {
+            "default": "HUMAN",
+            "enum": [
+              "HUMAN",
+              "AGENT"
+            ],
+            "title": "Author Type",
+            "type": "string"
+          },
+          "content_text": {
+            "maxLength": 8000,
+            "title": "Content Text",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "section_key": {
+            "default": "primary-anchor",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Section Key",
+            "type": "string"
+          },
+          "signature_text": {
+            "default": "Signature Humaine",
+            "maxLength": 255,
+            "title": "Signature Text",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "step_key",
+          "content_text"
+        ],
+        "title": "HumanAnchorSignRequest",
+        "type": "object"
+      },
+      "HumanAnchorSignResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/orchestration/runs/anchors/sign`.",
+        "properties": {
+          "signature": {
+            "$ref": "#/components/schemas/HumanAnchorSignatureSchemaItem"
+          },
+          "step_execution": {
+            "$ref": "#/components/schemas/StepExecutionSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "signature",
+          "step_execution",
+          "trace_id"
+        ],
+        "title": "HumanAnchorSignResponse",
+        "type": "object"
+      },
+      "HumanAnchorSignatureSchemaItem": {
+        "additionalProperties": false,
+        "description": "Signed `HumanAnchorSignatureEntity` record (`AD-3`, `UX-DR3`).",
+        "properties": {
+          "author_display_name": {
+            "title": "Author Display Name",
+            "type": "string"
+          },
+          "authored_by_user_id": {
+            "title": "Authored By User Id",
+            "type": "string"
+          },
+          "char_length": {
+            "minimum": 30.0,
+            "title": "Char Length",
+            "type": "integer"
+          },
+          "content_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "content_text": {
+            "title": "Content Text",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "section_key": {
+            "title": "Section Key",
+            "type": "string"
+          },
+          "signature_hash": {
+            "title": "Signature Hash",
+            "type": "string"
+          },
+          "signature_key": {
+            "title": "Signature Key",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "signature_key",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "section_key",
+          "content_text",
+          "content_sha256",
+          "char_length",
+          "authored_by_user_id",
+          "author_display_name",
+          "signature_hash"
+        ],
+        "title": "HumanAnchorSignatureSchemaItem",
+        "type": "object"
+      },
+      "HumanArbitrationCreateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST .../steps/{step_key}/arbitration` (`Story 3.4`).",
+        "properties": {
+          "context_summary": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Context Summary",
+            "type": "string"
+          },
+          "options_matrix": {
+            "items": {
+              "$ref": "#/components/schemas/ArbitrationOptionSchemaItem"
+            },
+            "maxItems": 10,
+            "minItems": 2,
+            "title": "Options Matrix",
+            "type": "array"
+          },
+          "question_title": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Question Title",
+            "type": "string"
+          },
+          "tie_break_policy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ONTOLOGY_AXIOM_FIRST",
+                  "DEFER_AND_CONTINUE_WITH_ASSUMPTION",
+                  "PAUSE_AND_ESCALATE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tie Break Policy"
+          }
+        },
+        "required": [
+          "question_title",
+          "options_matrix"
+        ],
+        "title": "HumanArbitrationCreateRequest",
+        "type": "object"
+      },
+      "HumanArbitrationCreateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST .../steps/{step_key}/arbitration` (`Story 3.4`).",
+        "properties": {
+          "arbitration": {
+            "$ref": "#/components/schemas/HumanArbitrationRequestSchemaItem"
+          },
+          "step_execution": {
+            "$ref": "#/components/schemas/StepExecutionSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arbitration",
+          "step_execution",
+          "trace_id"
+        ],
+        "title": "HumanArbitrationCreateResponse",
+        "type": "object"
+      },
+      "HumanArbitrationRequestSchemaItem": {
+        "additionalProperties": false,
+        "description": "Durable `HumanArbitrationRequestEntity` (`AD-3`, `AD-18`, `UX-DR6`).",
+        "properties": {
+          "arbitration_key": {
+            "title": "Arbitration Key",
+            "type": "string"
+          },
+          "context_summary": {
+            "title": "Context Summary",
+            "type": "string"
+          },
+          "human_justification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Justification"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "options_matrix": {
+            "items": {
+              "$ref": "#/components/schemas/ArbitrationOptionSchemaItem"
+            },
+            "title": "Options Matrix",
+            "type": "array"
+          },
+          "outbox_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Id"
+          },
+          "question_title": {
+            "title": "Question Title",
+            "type": "string"
+          },
+          "resolved_by_axiom_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By Axiom Key"
+          },
+          "resolved_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By User Id"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "selected_option_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Option Key"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "RESOLVED_BY_HUMAN",
+              "RESOLVED_BY_AXIOM",
+              "DEFERRED_WITH_ASSUMPTION"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "tie_break_policy": {
+            "enum": [
+              "ONTOLOGY_AXIOM_FIRST",
+              "DEFER_AND_CONTINUE_WITH_ASSUMPTION",
+              "PAUSE_AND_ESCALATE"
+            ],
+            "title": "Tie Break Policy",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "arbitration_key",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "tie_break_policy",
+          "status",
+          "question_title",
+          "context_summary",
+          "options_matrix"
+        ],
+        "title": "HumanArbitrationRequestSchemaItem",
+        "type": "object"
+      },
+      "HumanArbitrationResolveRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST .../steps/{step_key}/arbitration/resolve` (`Story 3.4`).",
+        "properties": {
+          "arbitration_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Arbitration Id",
+            "type": "string"
+          },
+          "human_justification": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Justification"
+          },
+          "selected_option_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Selected Option Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arbitration_id",
+          "selected_option_key"
+        ],
+        "title": "HumanArbitrationResolveRequest",
+        "type": "object"
+      },
+      "HumanArbitrationResolveResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for resolving a `HumanArbitrationRequestEntity` (`FR-5`).",
+        "properties": {
+          "arbitration": {
+            "$ref": "#/components/schemas/HumanArbitrationRequestSchemaItem"
+          },
+          "committed_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlackboardSnapshotSchemaItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step_execution": {
+            "$ref": "#/components/schemas/StepExecutionSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arbitration",
+          "step_execution",
+          "trace_id"
+        ],
+        "title": "HumanArbitrationResolveResponse",
         "type": "object"
       },
       "HumanProfileBadge": {
@@ -4519,6 +5022,15 @@
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/orchestration/runs/steps/execute`.",
         "properties": {
+          "author_type": {
+            "default": "HUMAN",
+            "enum": [
+              "HUMAN",
+              "AGENT"
+            ],
+            "title": "Author Type",
+            "type": "string"
+          },
           "commit_immediately": {
             "default": true,
             "title": "Commit Immediately",
@@ -4554,6 +5066,11 @@
               }
             ],
             "title": "Human Decision"
+          },
+          "require_human_anchor": {
+            "default": false,
+            "title": "Require Human Anchor",
+            "type": "boolean"
           },
           "run_id": {
             "maxLength": 128,
@@ -9824,6 +10341,102 @@
         ]
       }
     },
+    "/api/v1/orchestration/runs/anchors/sign": {
+      "post": {
+        "description": "Sign a mandatory human-authored section (`>= 30` chars, rejects agent callers with 422).",
+        "operationId": "sign_human_anchor_api_v1_orchestration_runs_anchors_sign_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanAnchorSignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanAnchorSignResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Sign a mandatory Human-Led Anchor section (human_authored_required: true, Story 3.4)",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
     "/api/v1/orchestration/runs/fast-path-audit": {
       "post": {
         "description": "Run all steps in `BACKGROUND_FAST_PATH` mode, recording assumptions and divergences.",
@@ -10300,6 +10913,242 @@
           }
         },
         "summary": "Get durable step executions and append-only Blackboard snapshots for a Run",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/arbitration": {
+      "post": {
+        "description": "Evaluate `options_matrix` against `tie_break_policy` (`AD-3`, `AD-18`, `UX-DR6`).",
+        "operationId": "request_human_arbitration_api_v1_orchestration_runs__run_id__steps__step_key__arbitration_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Step Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanArbitrationCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanArbitrationCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Invoke request_human_arbitration(options_matrix) with tie_break_policy (Story 3.4)",
+        "tags": [
+          "durable-orchestration-blackboard"
+        ]
+      }
+    },
+    "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/arbitration/resolve": {
+      "post": {
+        "description": "Record human option selection in Blackboard and immediately resume the paused step.",
+        "operationId": "resolve_human_arbitration_api_v1_orchestration_runs__run_id__steps__step_key__arbitration_resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Step Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanArbitrationResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanArbitrationResolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Resolve a pending human arbitration decision and resume step execution (Story 3.4)",
         "tags": [
           "durable-orchestration-blackboard"
         ]

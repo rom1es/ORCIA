@@ -1,4 +1,5 @@
 import type {
+  ArbitrationTieBreakCardLabels,
   HumanLedAnchorCardLabels,
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
@@ -24,6 +25,10 @@ export interface TranslationDictionary {
     defaultSectionTitle: string;
     defaultAuthorName: string;
     defaultValue: string;
+  };
+  arbitrationTieBreak: ArbitrationTieBreakCardLabels & {
+    defaultQuestionTitle: string;
+    defaultContextSummary: string;
   };
   workspaceTopology: UiWorkspaceTopologyLabels;
   catalogExplorer: UiCatalogExplorerLabels;

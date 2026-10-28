@@ -40,6 +40,16 @@ from orcia_core.orchestration.engine import (
     MemlogMarkerPluginProtocol,
     register_memlog_marker_plugin,
 )
+from orcia_core.orchestration.human_anchors_and_arbitration import (
+    MIN_HUMAN_ANCHOR_CHARS,
+    ArbitrationOptionItem,
+    AuthorIdentityType,
+    HumanAnchorAndArbitrationService,
+    HumanAnchorSignatureEntity,
+    HumanArbitrationRequestEntity,
+    HumanArbitrationStatus,
+    validate_human_anchor_submission,
+)
 from orcia_core.orchestration.models import (
     MAX_SUB_WORKFLOW_NESTING_DEPTH,
     ArtifactTemplateDefinition,
@@ -97,7 +107,9 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "ASSISTANT_WORKFLOW_URI",
+    "MIN_HUMAN_ANCHOR_CHARS",
     "AgentStepExecutor",
+    "ArbitrationOptionItem",
     "ArtifactTemplateDefinition",
     "ArtifactTemplateSectionSpec",
     "AssembledAssistantPrompt",
@@ -109,6 +121,7 @@ __all__ = [
     "AssistantNodeTrace",
     "AssistantTurnResult",
     "AssistantWorkflowProposal",
+    "AuthorIdentityType",
     "CONSTITUTIONAL_LAYER_1_TEXT",
     "CircuitBreakerState",
     "CompiledArtifactTemplate",
@@ -122,6 +135,10 @@ __all__ = [
     "DOMAIN_NAME",
     "DurableOrchestrationEngine",
     "HttpActionStepExecutor",
+    "HumanAnchorAndArbitrationService",
+    "HumanAnchorSignatureEntity",
+    "HumanArbitrationRequestEntity",
+    "HumanArbitrationStatus",
     "HumanTaskStepExecutor",
     "JitStepHydrator",
     "MAX_SUB_WORKFLOW_NESTING_DEPTH",
@@ -161,4 +178,5 @@ __all__ = [
     "register_workflow_policy_plugin",
     "resolve_profile_adaptation",
     "scrub_connector_secrets",
+    "validate_human_anchor_submission",
 ]

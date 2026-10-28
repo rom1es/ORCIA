@@ -7,10 +7,19 @@ from fastapi import APIRouter, Path, Query, Request
 from orcia_api.dependencies import get_orchestration_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.blackboard import (
+    ArbitrationOptionSchemaItem,
     BackgroundAuditReportSchemaItem,
     BackgroundAuditRunRequest,
     BackgroundAuditRunResponse,
     BlackboardSnapshotSchemaItem,
+    HumanAnchorSignatureSchemaItem,
+    HumanAnchorSignRequest,
+    HumanAnchorSignResponse,
+    HumanArbitrationCreateRequest,
+    HumanArbitrationCreateResponse,
+    HumanArbitrationRequestSchemaItem,
+    HumanArbitrationResolveRequest,
+    HumanArbitrationResolveResponse,
     HydratedStepContextSchemaItem,
     RunBlackboardStateResponse,
     StepExecuteRequest,
@@ -29,7 +38,12 @@ from orcia_core.blackboard import (
     StepMemlogEntry,
 )
 from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.orchestration import JitStepHydrator
+from orcia_core.orchestration import (
+    ArbitrationOptionItem,
+    HumanAnchorSignatureEntity,
+    HumanArbitrationRequestEntity,
+    JitStepHydrator,
+)
 
 router = APIRouter(prefix="/api/v1/orchestration/runs", tags=["durable-orchestration-blackboard"])
 
@@ -118,6 +132,59 @@ def _serialize_audit_report(
     )
 
 
+def _serialize_anchor(sig: HumanAnchorSignatureEntity) -> HumanAnchorSignatureSchemaItem:
+    return HumanAnchorSignatureSchemaItem(
+        id=sig.id,
+        signature_key=sig.signature_key,
+        workspace_id=sig.workspace_id,
+        run_id=sig.run_id,
+        step_execution_id=sig.step_execution_id,
+        step_key=sig.step_key,
+        section_key=sig.section_key,
+        content_text=sig.content_text,
+        content_sha256=sig.content_sha256,
+        char_length=sig.char_length,
+        authored_by_user_id=sig.authored_by_user_id,
+        author_display_name=sig.author_display_name,
+        signature_hash=sig.signature_hash,
+    )
+
+
+def _serialize_arbitration(
+    arb: HumanArbitrationRequestEntity,
+) -> HumanArbitrationRequestSchemaItem:
+    return HumanArbitrationRequestSchemaItem(
+        id=arb.id,
+        arbitration_key=arb.arbitration_key,
+        workspace_id=arb.workspace_id,
+        run_id=arb.run_id,
+        step_execution_id=arb.step_execution_id,
+        step_key=arb.step_key,
+        tie_break_policy=arb.tie_break_policy,
+        status=arb.status,
+        question_title=arb.question_title,
+        context_summary=arb.context_summary,
+        options_matrix=[
+            ArbitrationOptionSchemaItem(
+                option_key=o.option_key,
+                title=o.title,
+                pros=list(o.pros),
+                cons=list(o.cons),
+                si_impact=o.si_impact,
+                finops_impact=o.finops_impact,
+                recommended=o.recommended,
+                ontology_concept_key=o.ontology_concept_key,
+            )
+            for o in arb.options_matrix
+        ],
+        selected_option_key=arb.selected_option_key,
+        human_justification=arb.human_justification,
+        resolved_by_user_id=arb.resolved_by_user_id,
+        resolved_by_axiom_key=arb.resolved_by_axiom_key,
+        outbox_event_id=arb.outbox_event_id,
+    )
+
+
 @router.get(
     "/{run_id}/blackboard",
     response_model=RunBlackboardStateResponse,
@@ -200,9 +267,122 @@ async def execute_workflow_step(
         divergence_note=payload.divergence_note or payload.simulated_divergence,
         human_decision=payload.human_decision,
         cost_usd=payload.cost_usd,
+        require_human_anchor=payload.require_human_anchor,
+        author_type=payload.author_type,
         instance=str(request.url.path),
     )
     return StepExecuteResponse(
+        step_execution=_serialize_step_exec(step_exec),
+        committed_snapshot=_serialize_snapshot(snap) if snap else None,
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/anchors/sign",
+    response_model=HumanAnchorSignResponse,
+    summary="Sign a mandatory Human-Led Anchor section (human_authored_required: true, Story 3.4)",
+    responses=PROBLEM_RESPONSES,
+)
+async def sign_human_anchor(
+    payload: HumanAnchorSignRequest,
+    request: Request,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> HumanAnchorSignResponse:
+    """Sign a mandatory human-authored section (`>= 30` chars, rejects agent callers with 422)."""
+    user = resolve_request_user(request, persona_key=persona_key)
+    svc = get_orchestration_service(request)
+    sig = svc.engine.anchors_and_arbitration.sign_human_anchor(
+        user,
+        run_id=payload.run_id,
+        step_key=payload.step_key,
+        section_key=payload.section_key,
+        content_text=payload.content_text,
+        signature_text=payload.signature_text,
+        author_type=payload.author_type,
+        instance=str(request.url.path),
+    )
+    step_exec = svc.engine.blackboard.get_step_execution(payload.run_id, payload.step_key)
+    return HumanAnchorSignResponse(
+        signature=_serialize_anchor(sig),
+        step_execution=_serialize_step_exec(step_exec),
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/{run_id}/steps/{step_key}/arbitration",
+    response_model=HumanArbitrationCreateResponse,
+    summary="Invoke request_human_arbitration(options_matrix) with tie_break_policy (Story 3.4)",
+    responses=PROBLEM_RESPONSES,
+)
+async def request_human_arbitration(
+    payload: HumanArbitrationCreateRequest,
+    request: Request,
+    run_id: str = Path(..., min_length=1, max_length=128),
+    step_key: str = Path(..., min_length=1, max_length=128),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> HumanArbitrationCreateResponse:
+    """Evaluate `options_matrix` against `tie_break_policy` (`AD-3`, `AD-18`, `UX-DR6`)."""
+    user = resolve_request_user(request, persona_key=persona_key)
+    svc = get_orchestration_service(request)
+    arb, step_exec = svc.engine.anchors_and_arbitration.request_human_arbitration(
+        user,
+        run_id=run_id,
+        step_key=step_key,
+        question_title=payload.question_title,
+        context_summary=payload.context_summary,
+        options_matrix=tuple(
+            ArbitrationOptionItem(
+                option_key=o.option_key,
+                title=o.title,
+                pros=tuple(o.pros),
+                cons=tuple(o.cons),
+                si_impact=o.si_impact,
+                finops_impact=o.finops_impact,
+                recommended=o.recommended,
+                ontology_concept_key=o.ontology_concept_key,
+            )
+            for o in payload.options_matrix
+        ),
+        tie_break_policy=payload.tie_break_policy,
+        trace_id=_trace(request),
+        instance=str(request.url.path),
+    )
+    return HumanArbitrationCreateResponse(
+        arbitration=_serialize_arbitration(arb),
+        step_execution=_serialize_step_exec(step_exec),
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/{run_id}/steps/{step_key}/arbitration/resolve",
+    response_model=HumanArbitrationResolveResponse,
+    summary="Resolve a pending human arbitration decision and resume step execution (Story 3.4)",
+    responses=PROBLEM_RESPONSES,
+)
+async def resolve_human_arbitration(
+    payload: HumanArbitrationResolveRequest,
+    request: Request,
+    run_id: str = Path(..., min_length=1, max_length=128),
+    step_key: str = Path(..., min_length=1, max_length=128),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> HumanArbitrationResolveResponse:
+    """Record human option selection in Blackboard and immediately resume the paused step."""
+    user = resolve_request_user(request, persona_key=persona_key)
+    svc = get_orchestration_service(request)
+    arb, step_exec, snap = svc.engine.anchors_and_arbitration.resolve_human_arbitration(
+        user,
+        run_id=run_id,
+        step_key=step_key,
+        arbitration_id=payload.arbitration_id,
+        selected_option_key=payload.selected_option_key,
+        human_justification=payload.human_justification,
+        instance=str(request.url.path),
+    )
+    return HumanArbitrationResolveResponse(
+        arbitration=_serialize_arbitration(arb),
         step_execution=_serialize_step_exec(step_exec),
         committed_snapshot=_serialize_snapshot(snap) if snap else None,
         trace_id=_trace(request),

@@ -60,6 +60,21 @@ export const frDictionary: TranslationDictionary = {
     defaultAuthorName: "Architecte / Tech Lead",
     defaultValue: "Isolation hexagonale stricte et contrat OpenAPI 3.1 sans dérive (0-diff).",
   },
+  arbitrationTieBreak: {
+    badgeTitle: "⚖️ ARBITRAGE HUMAIN REQUIS (WAITING_FOR_HUMAN_ARBITRATION)",
+    policyPrefixLabel: "Politique tie_break_policy",
+    recommendedBadgeLabel: "★ Recommandé",
+    prosLabel: "Avantages",
+    consLabel: "Inconvénients",
+    siImpactLabel: "Impact SI",
+    finopsImpactLabel: "FinOps",
+    justificationPlaceholder: "Justification ou orientation complémentaire (optionnel)...",
+    selectOptionButtonLabel: "Choisir cette option",
+    resolvedBannerPrefix: "✅ Décision d'arbitrage enregistrée dans le Blackboard",
+    defaultQuestionTitle: "Garantie de taux FX multi-devises : Taux Spot 15 min vs Taux Bloqué 48h",
+    defaultContextSummary:
+      "Deux options techniques et métier équivalentes détectées par l'Agent Exécuteur (FR-5, UX-DR6).",
+  },
   workspaceTopology: {
     panelTitle: "Arbre d'Équipes (OrgUnit), Workspaces Multi-Sources & 5 Permissions Dissociées",
     panelSubtitle:

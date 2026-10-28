@@ -1,4 +1,11 @@
 export {
+  ArbitrationTieBreakCard,
+  type ArbitrationTieBreakCardLabels,
+  type ArbitrationTieBreakCardProps,
+  type ArbitrationTieBreakOptionView,
+  type UiTieBreakPolicy,
+} from "./primitives/ArbitrationTieBreakCard";
+export {
   HumanLedAnchorCard,
   type HumanLedAnchorCardLabels,
   type HumanLedAnchorCardProps,
