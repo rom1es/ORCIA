@@ -19,5 +19,17 @@ dependencies = [
     "uuid-utils>=0.9.0",
 ]
 
+[project.entry-points."orcia.uri_resolvers"]
+git = "orcia_core.bootstrap.plugin_registry:resolve_git_scheme_plugin"
+jira = "orcia_core.bootstrap.plugin_registry:resolve_jira_scheme_plugin"
+confluence = "orcia_core.bootstrap.plugin_registry:resolve_confluence_scheme_plugin"
+db = "orcia_core.bootstrap.plugin_registry:resolve_db_scheme_plugin"
+nexus = "orcia_core.bootstrap.plugin_registry:resolve_nexus_scheme_plugin"
+orcia = "orcia_core.bootstrap.plugin_registry:resolve_orcia_scheme_plugin"
+
+[project.entry-points."orcia.llm_gateways"]
+litellm = "orcia_core.bootstrap.plugin_registry:build_litellm_gateway_plugin"
+cassette = "orcia_core.bootstrap.plugin_registry:build_cassette_gateway_plugin"
+
 [tool.setuptools.packages.find]
 where = ["src"]

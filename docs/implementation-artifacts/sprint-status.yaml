@@ -56,7 +56,7 @@ development_status:
   3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: done
   3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali: done
   3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: done
-  3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: ready-for-dev
+  3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: done
   3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: ready-for-dev
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
@@ -309,7 +309,7 @@ action_items:
     ad_ref: "AD-12, AD-19"
     story_ref: "3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction"
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Découpler orchestration/engine.py des effets secondaires non bloquants (FinOps, audit, extraction ontologique, SSE) avec garantie transactionnelle Outbox indépendante du moteur d'orchestration (OutboxRelayPort) et extensibilité par plugins entry_points.

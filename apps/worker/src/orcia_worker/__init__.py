@@ -17,17 +17,29 @@ from orcia_worker.docling_indexer import (
     docling_indexer_actor,
     execute_docling_index_job,
 )
+from orcia_worker.outbox_relay import (
+    DbosOutboxRelay,
+    DramatiqOutboxRelay,
+    OutboxEventBus,
+    dbos_outbox_relay_workflow,
+    outbox_relay_actor,
+)
 
 __all__ = [
+    "DbosOutboxRelay",
     "DoclingIndexExecutionResult",
+    "DramatiqOutboxRelay",
+    "OutboxEventBus",
     "ProcessedPingRegistry",
     "StepRunnerExecutionResult",
     "configure_broker",
+    "dbos_outbox_relay_workflow",
     "dbos_step_runner_workflow",
     "dispatch_durable_step",
     "docling_indexer_actor",
     "execute_docling_index_job",
     "execute_step_runner_job",
     "execute_system_ping",
+    "outbox_relay_actor",
     "system_ping_actor",
 ]

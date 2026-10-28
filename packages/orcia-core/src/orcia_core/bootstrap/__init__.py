@@ -33,6 +33,10 @@ from orcia_core.bootstrap.models import (
     UserOnboardingState,
     WorkspaceBootstrapInput,
 )
+from orcia_core.bootstrap.plugin_registry import (
+    PluginRegistryService,
+    UriSchemePluginDescriptor,
+)
 from orcia_core.bootstrap.seeder import (
     ASSISTANT_WORKFLOW_URI,
     DEFAULT_HUMAN_PROFILE_ARCHETYPES,
@@ -113,10 +117,12 @@ __all__ = [
     "ModelRouterService",
     "OntologyLayerLevel",
     "OntologyTermSpec",
+    "PluginRegistryService",
     "SystemBootstrapRunRecord",
     "SystemBootstrapWorkflowService",
     "SystemBootstrapWorkflowSpec",
     "UpsertSpec",
+    "UriSchemePluginDescriptor",
     "UserOnboardingState",
     "WorkspaceBootstrapInput",
     "build_default_system_bootstrap_service",

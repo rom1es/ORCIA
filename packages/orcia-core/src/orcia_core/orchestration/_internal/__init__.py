@@ -6,14 +6,20 @@ from orcia_core.orchestration._internal.dbos_engine import (
     DurableWorkflowRunSummary,
 )
 from orcia_core.orchestration._internal.dbos_spike import DbosSpikeRuntime
+from orcia_core.orchestration._internal.outbox_repository import (
+    AsyncSubscriberCallback,
+    SqlDomainEventsOutboxRepository,
+)
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
 
 __all__ = [
     "ARBITRATION_TOPIC",
+    "AsyncSubscriberCallback",
     "DbosDurableWorkflowEngine",
     "DbosSpikeRuntime",
     "DbosSqlAlchemyUnitOfWork",
     "DurableWorkflowRunSummary",
+    "SqlDomainEventsOutboxRepository",
     "SqlOrchestrationRepository",
 ]

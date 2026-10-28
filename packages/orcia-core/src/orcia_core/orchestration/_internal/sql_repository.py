@@ -21,9 +21,11 @@ from orcia_core.blackboard.models import (
     WorkflowExecutionRegime,
     WorkflowStepType,
 )
+from orcia_core.orchestration._internal.outbox_repository import SqlDomainEventsOutboxRepository
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
 from orcia_core.orchestration.errors import ResourceNotFoundError
 from orcia_core.orchestration.models import WorkflowRunStatus
+from orcia_kernel.events import DomainEvent
 from orcia_kernel.ids import new_uuid7_str
 
 
@@ -228,6 +230,7 @@ class SqlOrchestrationRepository:
         memlog_summary: tuple[StepMemlogEntry, ...] = (),
         parent_snapshot_id: str | None = None,
         superseded_snapshot_ids: tuple[str, ...] = (),
+        outbox_events: tuple[DomainEvent, ...] = (),
     ) -> BlackboardSnapshotEntity:
         """Append an immutable row to `blackboard_snapshots` (strictly INSERT-only)."""
         snap_id = new_uuid7_str()
@@ -284,6 +287,8 @@ class SqlOrchestrationRepository:
                     ),
                     {"snap_id": snap_id, "step_execution_id": step_execution_id},
                 )
+            for evt in outbox_events:
+                await SqlDomainEventsOutboxRepository.insert_event_in_session(session, evt)
 
         return BlackboardSnapshotEntity(
             id=snap_id,
