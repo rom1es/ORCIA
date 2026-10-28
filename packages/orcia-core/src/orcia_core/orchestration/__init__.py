@@ -5,6 +5,28 @@ from __future__ import annotations
 from typing import Any
 
 from orcia_core.orchestration import seeds as _seeds
+from orcia_core.orchestration.assistant_agent import (
+    ASSISTANT_WORKFLOW_URI,
+    AssistantAgentService,
+    AssistantNodeId,
+    AssistantNodeTrace,
+    AssistantTurnResult,
+    AssistantWorkflowProposal,
+    SavedAndLaunchedWorkflowResult,
+    XyFlowEdgeSpec,
+    XyFlowNodeSpec,
+)
+from orcia_core.orchestration.assistant_harness import (
+    CONSTITUTIONAL_LAYER_1_TEXT,
+    PROFILE_ADAPTATION_MAP,
+    AssembledAssistantPrompt,
+    AssistantHarness,
+    AssistantIntentKind,
+    AssistantLayerId,
+    ProfileAdaptationSpec,
+    PromptLayerBlock,
+    resolve_profile_adaptation,
+)
 from orcia_core.orchestration.connector_invoker import (
     CircuitBreakerState,
     ConnectorCircuitBreaker,
@@ -74,9 +96,20 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "ASSISTANT_WORKFLOW_URI",
     "AgentStepExecutor",
     "ArtifactTemplateDefinition",
     "ArtifactTemplateSectionSpec",
+    "AssembledAssistantPrompt",
+    "AssistantAgentService",
+    "AssistantHarness",
+    "AssistantIntentKind",
+    "AssistantLayerId",
+    "AssistantNodeId",
+    "AssistantNodeTrace",
+    "AssistantTurnResult",
+    "AssistantWorkflowProposal",
+    "CONSTITUTIONAL_LAYER_1_TEXT",
     "CircuitBreakerState",
     "CompiledArtifactTemplate",
     "CompiledMarkdownChunk",
@@ -94,8 +127,12 @@ __all__ = [
     "MAX_SUB_WORKFLOW_NESTING_DEPTH",
     "MemlogMarkerPluginProtocol",
     "MultiAudienceTemplateCompiler",
+    "PROFILE_ADAPTATION_MAP",
     "PostActionVerificationStepExecutor",
+    "ProfileAdaptationSpec",
+    "PromptLayerBlock",
     "RecursiveRunLockManifest",
+    "SavedAndLaunchedWorkflowResult",
     "SkillStepExecutor",
     "SubWorkflowLockEntry",
     "SubWorkflowStepExecutor",
@@ -116,9 +153,12 @@ __all__ = [
     "WorkflowTriggerType",
     "WorkflowValidationFinding",
     "WorkflowValidationReport",
+    "XyFlowEdgeSpec",
+    "XyFlowNodeSpec",
     "build_default_orchestration_setup_service",
     "register_default_step_executors",
     "register_memlog_marker_plugin",
     "register_workflow_policy_plugin",
+    "resolve_profile_adaptation",
     "scrub_connector_secrets",
 ]

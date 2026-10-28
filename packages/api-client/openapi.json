@@ -53,6 +53,330 @@
         "title": "ArtifactTemplateCompileResponse",
         "type": "object"
       },
+      "AssistantChatRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for a conversational turn with `orcia://system/workflows/assistant-agent`.",
+        "properties": {
+          "allowed_datasource_aliases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Datasource Aliases",
+            "type": "array"
+          },
+          "human_profile_archetype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Profile Archetype"
+          },
+          "user_prompt": {
+            "minLength": 1,
+            "title": "User Prompt",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "user_prompt"
+        ],
+        "title": "AssistantChatRequest",
+        "type": "object"
+      },
+      "AssistantChatResponse": {
+        "additionalProperties": false,
+        "description": "Response envelope for `POST /api/v1/assistant/chat` (`Story 3.3`).",
+        "properties": {
+          "cited_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cited Uris",
+            "type": "array"
+          },
+          "constitutional_sha256": {
+            "title": "Constitutional Sha256",
+            "type": "string"
+          },
+          "first_token_latency_ms": {
+            "title": "First Token Latency Ms",
+            "type": "number"
+          },
+          "highlighted_indicators": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Highlighted Indicators",
+            "type": "array"
+          },
+          "human_profile_archetype": {
+            "title": "Human Profile Archetype",
+            "type": "string"
+          },
+          "intent": {
+            "title": "Intent",
+            "type": "string"
+          },
+          "node_traces": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantNodeTraceSchemaItem"
+            },
+            "title": "Node Traces",
+            "type": "array"
+          },
+          "prompt_layers": {
+            "items": {
+              "$ref": "#/components/schemas/PromptLayerBlockSchemaItem"
+            },
+            "title": "Prompt Layers",
+            "type": "array"
+          },
+          "register_label": {
+            "title": "Register Label",
+            "type": "string"
+          },
+          "response_text": {
+            "title": "Response Text",
+            "type": "string"
+          },
+          "stale_warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stale Warnings",
+            "type": "array"
+          },
+          "turn_id": {
+            "title": "Turn Id",
+            "type": "string"
+          },
+          "vocabulary_tier": {
+            "title": "Vocabulary Tier",
+            "type": "string"
+          },
+          "workflow_proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssistantWorkflowProposalSchemaItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "turn_id",
+          "workflow_uri",
+          "workspace_id",
+          "human_profile_archetype",
+          "register_label",
+          "vocabulary_tier",
+          "highlighted_indicators",
+          "intent",
+          "response_text",
+          "first_token_latency_ms",
+          "constitutional_sha256",
+          "cited_uris",
+          "stale_warnings",
+          "node_traces",
+          "prompt_layers"
+        ],
+        "title": "AssistantChatResponse",
+        "type": "object"
+      },
+      "AssistantNodeTraceSchemaItem": {
+        "additionalProperties": false,
+        "description": "Telemetry item for one of the 5 nodes in the Assistant Agent DAG.",
+        "properties": {
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "node_id": {
+            "enum": [
+              "1_INTENT_ROUTER",
+              "2_QUERY_PLANNER_AND_ONTOLOGY_EXPANSION",
+              "3_PARALLEL_FAN_OUT",
+              "4_CRITICAL_TRIAGE_AND_AXIOM_VERIFICATION",
+              "5_PROFILE_ADAPTIVE_SYNTHESIZER"
+            ],
+            "title": "Node Id",
+            "type": "string"
+          },
+          "node_order": {
+            "title": "Node Order",
+            "type": "integer"
+          },
+          "output_metadata": {
+            "additionalProperties": true,
+            "title": "Output Metadata",
+            "type": "object"
+          },
+          "status": {
+            "const": "COMPLETED",
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "node_order",
+          "status",
+          "duration_ms",
+          "summary"
+        ],
+        "title": "AssistantNodeTraceSchemaItem",
+        "type": "object"
+      },
+      "AssistantSaveAndLaunchRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/workflows/save-and-launch` (`FR-11`).",
+        "properties": {
+          "manifest_yaml": {
+            "minLength": 10,
+            "title": "Manifest Yaml",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "manifest_yaml"
+        ],
+        "title": "AssistantSaveAndLaunchRequest",
+        "type": "object"
+      },
+      "AssistantSaveAndLaunchResponse": {
+        "additionalProperties": false,
+        "description": "Response envelope for `POST /api/v1/assistant/workflows/save-and-launch` (`FR-11`).",
+        "properties": {
+          "executed_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executed Step Keys",
+            "type": "array"
+          },
+          "execution_regime": {
+            "title": "Execution Regime",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "snapshot_count": {
+            "title": "Snapshot Count",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_uri",
+          "version",
+          "run_id",
+          "execution_regime",
+          "run_status",
+          "executed_step_keys",
+          "snapshot_count"
+        ],
+        "title": "AssistantSaveAndLaunchResponse",
+        "type": "object"
+      },
+      "AssistantWorkflowProposalSchemaItem": {
+        "additionalProperties": false,
+        "description": "Workflow proposal with `@xyflow/react` graph and YAML manifest (`UX-DR15`, `FR-11`).",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/XyFlowEdgeSchemaItem"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "execution_regime": {
+            "title": "Execution Regime",
+            "type": "string"
+          },
+          "manifest_yaml": {
+            "title": "Manifest Yaml",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/XyFlowNodeSchemaItem"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "workflow_uri",
+          "title",
+          "description",
+          "execution_regime",
+          "manifest_yaml",
+          "nodes",
+          "edges"
+        ],
+        "title": "AssistantWorkflowProposalSchemaItem",
+        "type": "object"
+      },
       "AuthTokenResponse": {
         "additionalProperties": false,
         "description": "Response payload for authentication and session refresh endpoints (AD-6).",
@@ -2032,11 +2356,6 @@
             "type": "string"
           },
           "indexing_regime": {
-            "enum": [
-              "DOC_PARENT_CHILD",
-              "CODE_AST_GRAPH",
-              "DB_DDL_ONLY"
-            ],
             "title": "Indexing Regime",
             "type": "string"
           },
@@ -3710,6 +4029,43 @@
           "trace_id"
         ],
         "title": "ProblemDetails",
+        "type": "object"
+      },
+      "PromptLayerBlockSchemaItem": {
+        "additionalProperties": false,
+        "description": "Metadata for one of the 5 prompt layers assembled by `AssistantHarness`.",
+        "properties": {
+          "content_sha256": {
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "immutable": {
+            "title": "Immutable",
+            "type": "boolean"
+          },
+          "layer_id": {
+            "enum": [
+              "1_CONSTITUTIONAL_IMMUTABLE",
+              "2_ONTOLOGY_AND_AXIOMS_L1_L4",
+              "3_HUMAN_PROFILE_ADAPTATION",
+              "4_FEDERATED_CONTEXT_FANOUT",
+              "5_CONVERSATIONAL_INTENT_AND_COMPOSER"
+            ],
+            "title": "Layer Id",
+            "type": "string"
+          },
+          "layer_order": {
+            "title": "Layer Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "layer_id",
+          "layer_order",
+          "immutable",
+          "content_sha256"
+        ],
+        "title": "PromptLayerBlockSchemaItem",
         "type": "object"
       },
       "RecursiveRunLockManifestSchemaItem": {
@@ -6382,6 +6738,76 @@
         ],
         "title": "WorkspacesListResponse",
         "type": "object"
+      },
+      "XyFlowEdgeSchemaItem": {
+        "additionalProperties": false,
+        "description": "`@xyflow/react` v12 edge schema item for Cockpit Canvas (`UX-DR15`).",
+        "properties": {
+          "animated": {
+            "default": true,
+            "title": "Animated",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target"
+        ],
+        "title": "XyFlowEdgeSchemaItem",
+        "type": "object"
+      },
+      "XyFlowNodeSchemaItem": {
+        "additionalProperties": false,
+        "description": "`@xyflow/react` v12 node schema item for Cockpit Canvas (`UX-DR15`).",
+        "properties": {
+          "human_authored_required": {
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "position_x": {
+            "title": "Position X",
+            "type": "number"
+          },
+          "position_y": {
+            "title": "Position Y",
+            "type": "number"
+          },
+          "step_type": {
+            "title": "Step Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position_x",
+          "position_y",
+          "label",
+          "step_type",
+          "human_authored_required"
+        ],
+        "title": "XyFlowNodeSchemaItem",
+        "type": "object"
       }
     }
   },
@@ -6392,6 +6818,292 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/assistant/chat": {
+      "post": {
+        "description": "Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`).",
+        "operationId": "assistant_chat_turn_api_v1_assistant_chat_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute a 5-node conversational turn with `orcia://system/workflows/assistant-agent`",
+        "tags": [
+          "assistant-agent"
+        ]
+      }
+    },
+    "/api/v1/assistant/chat/stream": {
+      "post": {
+        "description": "Stream SSE events (`node_trace`, `token`, `workflow_proposal`, `done`) (`NFR-PERF-1`).",
+        "operationId": "assistant_chat_stream_api_v1_assistant_chat_stream_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Stream a 5-node Assistant Agent conversational turn via SSE (`< 1.5 s` first token)",
+        "tags": [
+          "assistant-agent"
+        ]
+      }
+    },
+    "/api/v1/assistant/workflows/save-and-launch": {
+      "post": {
+        "description": "Register and execute a composed workflow via `orcia.step_executors` (`FR-11`, `UJ-10`).",
+        "operationId": "assistant_save_and_launch_workflow_api_v1_assistant_workflows_save_and_launch_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantSaveAndLaunchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantSaveAndLaunchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Save a composed Workflow-as-Code manifest in the Workspace and launch its real run",
+        "tags": [
+          "assistant-agent"
+        ]
+      }
+    },
     "/api/v1/auth/login/local": {
       "post": {
         "description": "Authenticate local user, issue 15-min JWT, and set HttpOnly refresh cookie.",

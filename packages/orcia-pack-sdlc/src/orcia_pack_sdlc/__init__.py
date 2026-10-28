@@ -17,6 +17,8 @@ from orcia_pack_sdlc.connectors import (
     register_all_sdlc_connectors,
 )
 from orcia_pack_sdlc.formats_and_indexers import (
+    SdlcDocVsCodeAuditAssistantTemplate,
+    create_sdlc_assistant_template_plugin,
     get_bmad_pack_format_adapter,
     get_git_code_ast_indexer,
     get_jira_hybrid_indexer,
@@ -37,10 +39,14 @@ __version__: str = "0.1.0"
 
 
 def activate_sdlc_pack() -> None:
-    """Idempotently register all SDLC connectors, workflow policies, and memlog markers."""
+    """Idempotently register all SDLC connectors, policies, markers, indexers & templates."""
     register_all_sdlc_connectors()
     create_sdlc_fr13_policy_plugin()
     create_sdlc_memlog_marker_plugin()
+    get_git_code_ast_indexer()
+    get_jira_hybrid_indexer()
+    get_tripartite_graph_indexer()
+    create_sdlc_assistant_template_plugin()
 
 
 # Activate when imported in composition root or tests
@@ -50,6 +56,7 @@ __all__ = [
     "SDLC_BUG_CODE_MARKER",
     "SDLC_DOC_OBSOLETE_MARKER",
     "SdlcConnectorAdapter",
+    "SdlcDocVsCodeAuditAssistantTemplate",
     "SdlcFr13WorkflowPolicyPlugin",
     "SdlcMemlogMarkerPlugin",
     "__version__",
@@ -58,6 +65,7 @@ __all__ = [
     "create_git_connector",
     "create_jira_connector",
     "create_nexus_connector",
+    "create_sdlc_assistant_template_plugin",
     "create_sdlc_fr13_policy_plugin",
     "create_sdlc_memlog_marker_plugin",
     "get_bmad_pack_format_adapter",

@@ -9,6 +9,7 @@ from orcia_api.middleware.trace_and_error import (
     TraceContextMiddleware,
     register_exception_handlers,
 )
+from orcia_api.routers.assistant import router as assistant_router
 from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     application.include_router(ontology_and_rag_router)
     application.include_router(orchestration_router)
     application.include_router(blackboard_and_engine_router)
+    application.include_router(assistant_router)
     return application
 
 

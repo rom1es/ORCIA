@@ -26,6 +26,7 @@ from orcia_core.ontology import (
     build_seeded_ontology_service,
 )
 from orcia_core.orchestration import (
+    AssistantAgentService,
     ConnectorInvoker,
     WorkflowOrchestrationSetupService,
     build_default_orchestration_setup_service,
@@ -38,7 +39,9 @@ from orcia_core.permissions import (
     build_default_permission_broker_service,
 )
 from orcia_core.rag import (
+    CatalogAndBlackboardContextSourceAdapter,
     HybridRagService,
+    HybridRagVectorStoreAdapter,
     TripartiteGraphAndFreshnessService,
     build_empty_rag_service,
     build_seeded_rag_service,
@@ -89,6 +92,23 @@ def initialize_app_services(app: FastAPI) -> None:
     if getattr(app.state, "orchestration_service", None) is None:
         app.state.orchestration_service = build_default_orchestration_setup_service(
             evaluator=auth_service.evaluator,
+        )
+
+    if getattr(app.state, "assistant_service", None) is None:
+        seeded_rag, _ = build_seeded_rag_service()
+        context_source = CatalogAndBlackboardContextSourceAdapter(
+            rag_service=seeded_rag,
+            catalog_items_provider=lambda _ws: catalog_service.workflows,
+            blackboard_snapshots_provider=lambda _ws: (),
+            permission_policies_provider=lambda _ws: permission_broker_service.list_policies(),
+        )
+        vector_store = HybridRagVectorStoreAdapter(seeded_rag)
+        app.state.assistant_service = AssistantAgentService(
+            context_source=context_source,
+            vector_store=vector_store,
+            llm_gateway=app.state.llm_gateway,
+            orchestration_setup=app.state.orchestration_service,
+            workflow_engine=app.state.orchestration_service.engine,
         )
 
 
@@ -151,6 +171,16 @@ def get_orchestration_service(request: Request) -> WorkflowOrchestrationSetupSer
     if svc is None:
         initialize_app_services(request.app)
         svc = request.app.state.orchestration_service
+    assert svc is not None
+    return svc
+
+
+def get_assistant_service(request: Request) -> AssistantAgentService:
+    """FastAPI `Depends` provider returning `AssistantAgentService` (`Story 3.3`)."""
+    svc: AssistantAgentService | None = getattr(request.app.state, "assistant_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.assistant_service
     assert svc is not None
     return svc
 

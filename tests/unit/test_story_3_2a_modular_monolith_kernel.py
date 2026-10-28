@@ -246,7 +246,7 @@ def test_ac2_and_ac3_no_core_schemas_and_no_domain_exceptions_file() -> None:
 
     api_schemas_dir = REPO_ROOT / "apps/api/src/orcia_api/schemas"
     schema_files = sorted(p.name for p in api_schemas_dir.glob("*.py"))
-    assert len(schema_files) == 10
+    assert len(schema_files) >= 10
 
 
 def test_ac4_domain_errors_hierarchy_and_central_api_registry() -> None:

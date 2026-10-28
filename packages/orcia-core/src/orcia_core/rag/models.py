@@ -8,9 +8,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-IndexingRegime = Literal["DOC_PARENT_CHILD", "CODE_AST_GRAPH", "DB_DDL_ONLY"]
+CoreIndexingRegime = Literal["DOC_PARENT_CHILD", "CODE_AST_GRAPH", "DB_DDL_ONLY"]
+IndexingRegime = str
 
-ChunkRole = Literal["PARENT", "CHILD", "UNIFIED_JIRA", "AST_SYMBOL", "DDL_SCHEMA"]
+CoreChunkRole = Literal[
+    "PARENT",
+    "CHILD",
+    "UNIFIED_RECORD",
+    "UNIFIED_JIRA",
+    "AST_SYMBOL",
+    "DDL_SCHEMA",
+]
+ChunkRole = str
 
 CodeGraphEdgeType = Literal[
     "DEFINES",
@@ -46,7 +55,7 @@ StaleAlertReason = Literal[
 
 @dataclass(frozen=True, slots=True)
 class KbDocumentEntity:
-    """Indexed multi-source document header (`confluence://`, `jira://`, `git://`, `db://`)."""
+    """Indexed multi-source document header (`orcia.indexers`, `DEC-CTX-01`)."""
 
     id: str
     doc_key: str

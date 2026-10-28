@@ -125,8 +125,8 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(preloaded).toEqual({ moduleKey: "catalog", fixture: true });
 
     const graph = buildCockpitWorkflowPreviewGraph();
-    expect(graph.nodes).toHaveLength(2);
-    expect(graph.edges).toHaveLength(1);
+    expect(graph.nodes).toHaveLength(5);
+    expect(graph.edges).toHaveLength(4);
   });
 
   it("renders TanStack Router v1 SPA routeTree with QueryClient context across routes", async () => {

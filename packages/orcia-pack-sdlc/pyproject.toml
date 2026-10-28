@@ -32,6 +32,9 @@ code_ast = "orcia_pack_sdlc.formats_and_indexers:get_git_code_ast_indexer"
 jira_hybrid = "orcia_pack_sdlc.formats_and_indexers:get_jira_hybrid_indexer"
 tripartite_graph = "orcia_pack_sdlc.formats_and_indexers:get_tripartite_graph_indexer"
 
+[project.entry-points."orcia.assistant_templates"]
+sdlc_doc_vs_code_audit = "orcia_pack_sdlc.formats_and_indexers:create_sdlc_assistant_template_plugin"
+
 [tool.setuptools.package-dir]
 orcia_pack_sdlc = "src/orcia_pack_sdlc"
 

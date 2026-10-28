@@ -14,6 +14,61 @@ export interface components {
       compiled_template: components["schemas"]["CompiledArtifactTemplateSchemaItem"];
       trace_id: string;
     };
+    AssistantChatRequest: {
+      allowed_datasource_aliases?: (string)[];
+      human_profile_archetype?: string | null;
+      user_prompt: string;
+      workspace_id: string;
+    };
+    AssistantChatResponse: {
+      cited_uris: (string)[];
+      constitutional_sha256: string;
+      first_token_latency_ms: number;
+      highlighted_indicators: (string)[];
+      human_profile_archetype: string;
+      intent: string;
+      node_traces: (components["schemas"]["AssistantNodeTraceSchemaItem"])[];
+      prompt_layers: (components["schemas"]["PromptLayerBlockSchemaItem"])[];
+      register_label: string;
+      response_text: string;
+      stale_warnings: (string)[];
+      turn_id: string;
+      vocabulary_tier: string;
+      workflow_proposal?: components["schemas"]["AssistantWorkflowProposalSchemaItem"] | null;
+      workflow_uri: string;
+      workspace_id: string;
+    };
+    AssistantNodeTraceSchemaItem: {
+      duration_ms: number;
+      node_id: "1_INTENT_ROUTER" | "2_QUERY_PLANNER_AND_ONTOLOGY_EXPANSION" | "3_PARALLEL_FAN_OUT" | "4_CRITICAL_TRIAGE_AND_AXIOM_VERIFICATION" | "5_PROFILE_ADAPTIVE_SYNTHESIZER";
+      node_order: number;
+      output_metadata?: Record<string, unknown>;
+      status: "COMPLETED";
+      summary: string;
+    };
+    AssistantSaveAndLaunchRequest: {
+      manifest_yaml: string;
+      workspace_id: string;
+    };
+    AssistantSaveAndLaunchResponse: {
+      executed_step_keys: (string)[];
+      execution_regime: string;
+      run_id: string;
+      run_status: string;
+      snapshot_count: number;
+      version: string;
+      workflow_uri: string;
+    };
+    AssistantWorkflowProposalSchemaItem: {
+      description: string;
+      edges: (components["schemas"]["XyFlowEdgeSchemaItem"])[];
+      execution_regime: string;
+      manifest_yaml: string;
+      nodes: (components["schemas"]["XyFlowNodeSchemaItem"])[];
+      proposal_id: string;
+      title: string;
+      workflow_uri: string;
+    };
     AuthTokenResponse: {
       access_token: string;
       display_name: string;
@@ -329,7 +384,7 @@ export interface components {
       doc_key: string;
       freshness_ttl_days: number;
       id: string;
-      indexing_regime: "DOC_PARENT_CHILD" | "CODE_AST_GRAPH" | "DB_DDL_ONLY";
+      indexing_regime: string;
       is_stale: boolean;
       revision_tag: string;
       source_scheme: string;
@@ -575,6 +630,12 @@ export interface components {
       title: string;
       trace_id: string;
       type?: string;
+    };
+    PromptLayerBlockSchemaItem: {
+      content_sha256: string;
+      immutable: boolean;
+      layer_id: "1_CONSTITUTIONAL_IMMUTABLE" | "2_ONTOLOGY_AND_AXIOMS_L1_L4" | "3_HUMAN_PROFILE_ADAPTATION" | "4_FEDERATED_CONTEXT_FANOUT" | "5_CONVERSATIONAL_INTENT_AND_COMPOSER";
+      layer_order: number;
     };
     RecursiveRunLockManifestSchemaItem: {
       applied_override_keys: (string)[];
@@ -959,10 +1020,45 @@ export interface components {
       trace_id: string;
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
     };
+    XyFlowEdgeSchemaItem: {
+      animated?: boolean;
+      id: string;
+      source: string;
+      target: string;
+    };
+    XyFlowNodeSchemaItem: {
+      human_authored_required: boolean;
+      id: string;
+      label: string;
+      position_x: number;
+      position_y: number;
+      step_type: string;
+    };
   };
 }
 
 export interface paths {
+  "/api/v1/assistant/chat": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantChatResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/chat/stream": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/assistant/workflows/save-and-launch": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantSaveAndLaunchResponse"];
+      };
+    };
+  };
   "/api/v1/auth/login/local": {
     post: {
       responses: {
@@ -1282,6 +1378,12 @@ export interface paths {
 
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];
+export type AssistantChatRequest = components["schemas"]["AssistantChatRequest"];
+export type AssistantChatResponse = components["schemas"]["AssistantChatResponse"];
+export type AssistantNodeTraceSchemaItem = components["schemas"]["AssistantNodeTraceSchemaItem"];
+export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
+export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
+export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
 export type BackgroundAuditRunRequest = components["schemas"]["BackgroundAuditRunRequest"];
@@ -1352,6 +1454,7 @@ export type PermissionPolicyImportMarkdownResponse = components["schemas"]["Perm
 export type PermissionTicketActionRequest = components["schemas"]["PermissionTicketActionRequest"];
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
+export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RunBlackboardStateResponse = components["schemas"]["RunBlackboardStateResponse"];
 export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
@@ -1392,3 +1495,5 @@ export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootst
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];
+export type XyFlowEdgeSchemaItem = components["schemas"]["XyFlowEdgeSchemaItem"];
+export type XyFlowNodeSchemaItem = components["schemas"]["XyFlowNodeSchemaItem"];

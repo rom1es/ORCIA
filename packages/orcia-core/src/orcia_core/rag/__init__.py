@@ -8,6 +8,10 @@ from __future__ import annotations
 
 import importlib
 
+from orcia_core.rag.context_adapters import (
+    CatalogAndBlackboardContextSourceAdapter,
+    HybridRagVectorStoreAdapter,
+)
 from orcia_core.rag.indexer_and_rrf import (
     ALLOWED_JIRA_REFERENCE_TYPES,
     EMBEDDING_DIM,
@@ -20,6 +24,8 @@ from orcia_core.rag.models import (
     ChunkRole,
     CodeGraphEdgeEntity,
     CodeGraphEdgeType,
+    CoreChunkRole,
+    CoreIndexingRegime,
     DocVsCodeAuditFinding,
     HybridRagHit,
     IndexingRegime,
@@ -59,14 +65,18 @@ def build_seeded_rag_service(
 
 __all__ = [
     "ALLOWED_JIRA_REFERENCE_TYPES",
+    "CatalogAndBlackboardContextSourceAdapter",
     "ChunkRole",
     "CodeGraphEdgeEntity",
     "CodeGraphEdgeType",
+    "CoreChunkRole",
+    "CoreIndexingRegime",
     "DifferentiatedIncrementalIndexer",
     "DocVsCodeAuditFinding",
     "EMBEDDING_DIM",
     "HybridRagHit",
     "HybridRagService",
+    "HybridRagVectorStoreAdapter",
     "IndexingRegime",
     "KbChunkEntity",
     "KbDocumentEntity",

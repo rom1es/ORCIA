@@ -60,7 +60,7 @@ development_status:
   3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: done
   3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
   3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
-  3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
+  3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: done
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: backlog
   epic-3-retrospective: optional
@@ -457,7 +457,7 @@ action_items:
     ad_ref: "AD-8, AD-20"
     story_ref: "3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc"
     owner: "Winston (Architect)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Fuite L9, risques K8 et K6 / plan P1-4 de l'audit : contexte couplé aux régimes d'indexation SDLC (rag/models.py:L11-15, L57, L155).
@@ -485,3 +485,17 @@ action_items:
     epic: epic-3
     description: >
       Écart EC-2 de l'audit : les tests unitaires du moteur passaient sans qu'aucun run réel ne traverse l'API ; 3.2f en est la première application.
+  - id: EPIC-08-CONFIG-HUB
+    title: "Créer l'Epic 8 — Administration, Hub de Configuration & Cycle de Vie des Extensions (paramétrage post-Jour 0)"
+    action: "Rédiger l'ADR AD-21 (stockage de config à 3 niveaux, AdminCapability, contrat SecretInput/SecretStatus, sémantique de propagation vers les runs DBOS, activation des packs par périmètre), puis ajouter l'Epic 8 et les Stories 8.0 à 8.7 dans epics.md et development_status"
+    priority: P1
+    depends_on:
+      - DEC-SEC-01
+      - SEC-02
+    ad_ref: "AD-6, AD-16, AD-19, AD-20"
+    story_ref: "docs/planning-artifacts/research/config-hub-spec-readiness-audit-2026-10-28.md"
+    owner: "Winston (Architect) / John (PM)"
+    status: open
+    epic: epic-8
+    description: >
+      Audit de préparation des specs du 28/10/2026 : aucune spec ne couvre le paramétrage après le Jour 0 (IdP OIDC, Service Principals, instances de datasources, registre de modèles et budgets hiérarchiques, activation des packs, politiques de relance, console outbox/audit). Stories proposées : 8.0 ADR, 8.1 socle settings versionnés + SecretField + layout /admin, 8.2 identité & accès, 8.3 hub d'intégration, 8.4 fournisseurs IA & budgets (MVP) ; 8.5 packs, 8.6 politiques d'exécution, 8.7 console gouvernance (V2). Frontières à respecter avec 3.3, 6.1, 6.2 et 7.1.
