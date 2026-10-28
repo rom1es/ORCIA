@@ -1,4 +1,4 @@
-"""FederatedUriResolver & Content-Addressable Storage (`cas/<sha256>`, `< 50 ms`, AD-5, NFR-PERF-3).
+"""FederatedUriResolver & Content-Addressable Storage (`cas/<sha256>`, `< 50 ms`, AD-5, AD-20).
 
 Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
 """
@@ -10,20 +10,28 @@ import json
 import re
 import threading
 import time
-from typing import Protocol, cast
+from typing import Protocol
 
 from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.catalog.models import (
     ArchiveFormat,
     CasObjectEntry,
     CasResolutionResult,
-    FederatedScheme,
     ParsedFederatedUri,
 )
+from orcia_kernel.ports import (
+    get_registered_connector,
+    is_registered_connector_scheme,
+    list_registered_connector_schemes,
+)
 
-ALLOWED_SCHEMES: frozenset[str] = frozenset({"git", "nexus", "db", "confluence", "jira", "orcia"})
 HEX_SHA_RE = re.compile(r"^[0-9a-f]{6,64}$")
 FULL_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def get_allowed_schemes() -> frozenset[str]:
+    """Return dynamic set of registered connector schemes (`orcia_kernel.ports`, `AD-20`)."""
+    return list_registered_connector_schemes()
 
 
 def compute_bytes_sha256(payload: bytes) -> str:
@@ -32,13 +40,13 @@ def compute_bytes_sha256(payload: bytes) -> str:
 
 
 def parse_federated_uri(raw_uri: str) -> ParsedFederatedUri:
-    """Parse and validate a federated URI (`git://`, `nexus://`, `db://`, etc.)."""
+    """Parse and validate a federated URI against the dynamic connector registry (`AD-5`)."""
     cleaned = raw_uri.strip()
     if "://" not in cleaned:
         raise ValidationDomainError(detail_override=f"Missing '://' in URI: {raw_uri!r}")
     scheme_raw, remainder = cleaned.split("://", 1)
     scheme_lower = scheme_raw.lower()
-    if scheme_lower not in ALLOWED_SCHEMES:
+    if not is_registered_connector_scheme(scheme_lower):
         raise ValidationDomainError(detail_override=f"Unsupported URI scheme {scheme_raw!r}")
     remainder = remainder.strip()
     if "/" not in remainder:
@@ -46,6 +54,13 @@ def parse_federated_uri(raw_uri: str) -> ParsedFederatedUri:
     authority, raw_path = [part.strip() for part in remainder.split("/", 1)]
     if not authority or not raw_path:
         raise ValidationDomainError(detail_override=f"Empty authority or path: {raw_uri!r}")
+
+    connector = get_registered_connector(scheme_lower)
+    resolution_mode = (
+        connector.capabilities().version_resolution_mode
+        if connector is not None
+        else "ref_or_latest"
+    )
 
     expected_sha256: str | None = None
     version_or_ref = "latest"
@@ -63,7 +78,7 @@ def parse_federated_uri(raw_uri: str) -> ParsedFederatedUri:
         if not path_part.strip() or not ref_clean:
             raise ValidationDomainError(detail_override=f"Empty path or version ref: {raw_uri!r}")
         version_or_ref = ref_clean
-    elif scheme_lower == "jira":
+    elif resolution_mode == "last_path_segment":
         segments = [seg for seg in path_part.split("/") if seg]
         version_or_ref = segments[-1] if segments else "latest"
 
@@ -77,7 +92,7 @@ def parse_federated_uri(raw_uri: str) -> ParsedFederatedUri:
     )
     return ParsedFederatedUri(
         raw_uri=cleaned,
-        scheme=cast(FederatedScheme, scheme_lower),
+        scheme=scheme_lower,
         authority=authority,
         path=path_clean,
         version_or_ref=version_or_ref,
@@ -182,7 +197,7 @@ def _matches_expected_sha(actual_sha256: str, expected_sha256: str | None) -> bo
 
 
 class FederatedUriResolver:
-    """On-the-fly Federated URI Resolver with immutable `cas/<sha256>` caching (`AD-5`)."""
+    """On-the-fly Federated URI Resolver with immutable `cas/<sha256>` caching (`AD-5`, `AD-20`)."""
 
     def __init__(self, cas_store: CasObjectStoreProtocol | None = None) -> None:
         self.cas_store: CasObjectStoreProtocol = cas_store or InMemoryCasObjectStore()
@@ -252,18 +267,24 @@ class FederatedUriResolver:
         if upstream is not None:
             payload_bytes, resolved_version = upstream
         else:
-            resolved_version = parsed.version_or_ref
-            payload_bytes = json.dumps(
-                {
-                    "authority": parsed.authority,
-                    "archive_format": parsed.archive_format,
-                    "path": parsed.path,
-                    "resolved_version": resolved_version,
-                    "scheme": parsed.scheme,
-                    "uri": parsed.raw_uri,
-                },
-                sort_keys=True,
-            ).encode("utf-8")
+            connector = get_registered_connector(parsed.scheme)
+            if connector is not None:
+                fetched = connector.fetch(parsed.raw_uri)
+                payload_bytes = fetched.content_bytes
+                resolved_version = fetched.resolved_version or parsed.version_or_ref
+            else:
+                resolved_version = parsed.version_or_ref
+                payload_bytes = json.dumps(
+                    {
+                        "authority": parsed.authority,
+                        "archive_format": parsed.archive_format,
+                        "path": parsed.path,
+                        "resolved_version": resolved_version,
+                        "scheme": parsed.scheme,
+                        "uri": parsed.raw_uri,
+                    },
+                    sort_keys=True,
+                ).encode("utf-8")
 
         actual_sha = compute_bytes_sha256(payload_bytes)
         if not _matches_expected_sha(actual_sha, effective_expected):

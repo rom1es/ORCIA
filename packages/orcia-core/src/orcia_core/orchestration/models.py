@@ -1,6 +1,7 @@
 """Pure domain models for Bounded Context 4: Workflow-as-Code, Templates & Recursive Run Lock.
 
-Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
+Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`) and zero SDLC
+vocabulary (`AD-19`, `AD-20`, `AC-E2`).
 """
 
 from __future__ import annotations
@@ -19,7 +20,8 @@ WorkflowExecutionRegime = Literal[
 TieBreakPolicy = Literal[
     "ONTOLOGY_AXIOM_FIRST", "DEFER_AND_CONTINUE_WITH_ASSUMPTION", "PAUSE_AND_ESCALATE"
 ]
-WorkflowEngineeringMode = Literal["standard", "brownfield_bootstrap"]
+# Open string supporting "standard" or pack-specific engineering modes (`AD-20`, `AC-E2`)
+WorkflowEngineeringMode = str
 WorkflowStepType = Literal["AGENT", "SKILL", "SUB_WORKFLOW", "POST_ACTION_VERIFICATION"]
 WorkflowTriggerType = Literal["WEBHOOK", "LOG_SINK_ALERT", "CRON", "MANUAL_AUTONOMOUS"]
 WorkflowTriggerStatus = Literal["ACTIVE", "PAUSED", "CIRCUIT_OPEN"]
@@ -50,7 +52,7 @@ class WorkflowValidationFinding:
 
 @dataclass(frozen=True, slots=True)
 class WorkflowStepSpec:
-    """Typed step node inside a validated Workflow-as-Code DAG (`FR-11`, `FR-13`, `FR-30`)."""
+    """Typed step node inside a validated Workflow-as-Code DAG (`FR-11`, `FR-30`, `AD-20`)."""
 
     step_key: str
     title: str
@@ -69,8 +71,9 @@ class WorkflowStepSpec:
     human_authored_required: bool = False
     requires_human_gate: bool = False
     declares_intention: bool = False
-    writes_code: bool = False
     reverse_doc_from_code: bool = False
+    tags: tuple[str, ...] = ()
+    policies: tuple[str, ...] = ()
     verification_window_seconds: int | None = None
     line_number: int = 1
 
@@ -97,6 +100,7 @@ class WorkflowAsCodeDefinition:
     facts: tuple[str, ...]
     steps: tuple[WorkflowStepSpec, ...]
     sha256: str
+    policies: tuple[str, ...] = ()
     max_nesting_depth: int = 0
 
 

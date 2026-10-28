@@ -11,7 +11,8 @@ from typing import Literal
 
 from orcia_core.permissions.models import CatalogVisibilityScope
 
-FederatedScheme = Literal["git", "nexus", "db", "confluence", "jira", "orcia"]
+# Dynamic connector scheme backed by `list_registered_connector_schemes()` (`AD-20`, `AC-E3`)
+FederatedScheme = str
 CatalogResourceType = Literal["workflow", "agent", "skill", "template", "datasource"]
 CatalogSourceFormat = Literal["ORCIA", "BMAD_PACK"]
 AdaptiveGatePolicy = Literal["STRICT", "STANDARD", "FAST_TRACK"]

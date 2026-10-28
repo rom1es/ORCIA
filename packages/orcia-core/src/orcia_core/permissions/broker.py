@@ -11,7 +11,6 @@ from typing import Literal
 from urllib.parse import quote
 
 from orcia_core.permissions.broker_models import (
-    ALLOWED_BROKER_SCHEMES,
     BrokerConnectorScheme,
     BrokerStepState,
     BrokerTicketAction,
@@ -23,6 +22,7 @@ from orcia_core.permissions.broker_models import (
     build_prefilled_jira_request_url,
     extract_connector_host,
     extract_connector_scheme,
+    get_allowed_broker_schemes,
     parse_permission_kb_markdown,
     reject_control_chars,
 )
@@ -268,9 +268,9 @@ def build_default_permission_broker_service(
 
 
 __all__ = [
-    "ALLOWED_BROKER_SCHEMES", "BrokerConnectorScheme", "BrokerStepState", "BrokerTicketAction",
+    "BrokerConnectorScheme", "BrokerStepState", "BrokerTicketAction",
     "BrokerTicketStatus", "PermissionBrokerPolicy", "PermissionBrokerService",
     "PermissionBrokerTicket", "PermissionCheckOutcome", "build_default_permission_broker_service",
     "build_jira_request_url", "build_prefilled_jira_request_url", "extract_connector_host",
-    "extract_connector_scheme", "parse_permission_kb_markdown",
+    "extract_connector_scheme", "get_allowed_broker_schemes", "parse_permission_kb_markdown",
 ]  # fmt: skip

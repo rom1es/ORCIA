@@ -1,11 +1,14 @@
-"""JitStepHydrator & DurableOrchestrationEngine (Story 3.2, AD-2, AD-12, AD-13, AD-18).
+"""JitStepHydrator & DurableOrchestrationEngine (Story 3.2, Story 3.2e, AD-2, AD-12, AD-13, AD-20).
 
-Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
+Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`) and zero SDLC
+vocabulary (`AD-19`, `AD-20`, `AC-E2`).
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import importlib.metadata
+import threading
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from orcia_core.blackboard.models import (
     BackgroundAuditConsolidatedReport,
@@ -25,10 +28,61 @@ from orcia_core.orchestration.models import (
     WorkflowStepSpec,
 )
 from orcia_core.permissions.models import UserIdentity
+from orcia_kernel.enums import normalize_memlog_marker
 from orcia_kernel.ids import new_uuid7_str
 
 if TYPE_CHECKING:
     from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
+
+
+@runtime_checkable
+class MemlogMarkerPluginProtocol(Protocol):
+    """Plugin protocol discovered via `entry_points(group='orcia.memlog_markers')` (`AD-20`)."""
+
+    @property
+    def primary_divergence_marker(self) -> str:
+        """Return primary divergence marker key (e.g. `<namespace>.<marker>` or alias)."""
+        ...
+
+    @property
+    def secondary_divergence_marker(self) -> str:
+        """Return secondary divergence marker key (e.g. `<namespace>.<marker>` or alias)."""
+        ...
+
+    def build_fast_path_markers(
+        self, step_key: str, divergence_note: str, datasources: tuple[str, ...]
+    ) -> tuple[StepMemlogEntry, ...]:
+        """Build fast-path divergence markers for a step execution."""
+        ...
+
+
+_MARKER_PLUGIN_LOCK = threading.Lock()
+_MARKER_PLUGIN: MemlogMarkerPluginProtocol | None = None
+_MARKER_ENTRY_POINTS_LOADED: bool = False
+
+
+def register_memlog_marker_plugin(plugin: MemlogMarkerPluginProtocol) -> None:
+    """Register a pack `MemlogMarkerPluginProtocol` (`AD-20`, `AC-E1`, `AC-E2`)."""
+    global _MARKER_PLUGIN
+    with _MARKER_PLUGIN_LOCK:
+        _MARKER_PLUGIN = plugin
+
+
+def _get_memlog_marker_plugin() -> MemlogMarkerPluginProtocol | None:
+    global _MARKER_ENTRY_POINTS_LOADED, _MARKER_PLUGIN
+    with _MARKER_PLUGIN_LOCK:
+        if not _MARKER_ENTRY_POINTS_LOADED:
+            _MARKER_ENTRY_POINTS_LOADED = True
+            try:
+                eps = importlib.metadata.entry_points(group="orcia.memlog_markers")
+                for ep in eps:
+                    loaded = ep.load()
+                    instance = loaded() if callable(loaded) else loaded
+                    if isinstance(instance, MemlogMarkerPluginProtocol):
+                        _MARKER_PLUGIN = instance
+            except Exception:
+                pass
+        return _MARKER_PLUGIN
 
 
 class JitStepHydrator:
@@ -101,7 +155,6 @@ class JitStepHydrator:
     def _parse_input_ref(ref_expr: str, run_id: str) -> tuple[str, str]:
         cleaned = ref_expr.strip()
         if cleaned.startswith("orcia://runs/"):
-            # orcia://runs/{run_id}/steps/{step_key}/artifacts/{artifact_key}
             parts = cleaned.removeprefix("orcia://runs/").split("/")
             if len(parts) >= 5 and parts[1] == "steps" and parts[3] == "artifacts":
                 return parts[2], parts[4]
@@ -180,7 +233,6 @@ class DurableOrchestrationEngine:
         wf = self._get_workflow(run.workflow_uri, instance=instance)
         self.initialize_run_steps(run, wf)
 
-        # Check shared budget on root_run_id
         root_run = self._get_run(run.root_run_id, instance=instance)
         current_root_cost = self.get_root_accumulated_cost(root_run.id)
         if current_root_cost + cost_usd > root_run.budget_max_usd:
@@ -266,8 +318,8 @@ class DurableOrchestrationEngine:
             }
             if simulated_divergence or run.execution_regime == "BACKGROUND_FAST_PATH":
                 div_note = simulated_divergence or (
-                    "Divergence détectée entre Confluence (seuil 500€) "
-                    "et git://core-engine (seuil 350€)"
+                    "Divergence détectée entre source documentaire (seuil 500€) "
+                    "et source opérationnelle (seuil 350€)"
                 )
                 fast_markers = self._build_fast_path_markers(step_key, div_note, wf.datasources)
                 memlog_entries.extend(fast_markers)
@@ -316,7 +368,6 @@ class DurableOrchestrationEngine:
             parent_step_execution_id=parent_step_exec.id,
             instance=instance,
         )
-        # Seed only the mapped inputs into the child's isolated Blackboard context
         self._run_seed_inputs[child_run.id] = dict(hydrated_inputs)
         child_wf = self._get_workflow(child_run.workflow_uri, instance=instance)
         self.initialize_run_steps(child_run, child_wf)
@@ -332,7 +383,6 @@ class DurableOrchestrationEngine:
                 instance=instance,
             )
 
-        # Extract ONLY the keys declared in step_spec.output_mapping
         mapped_outputs: dict[str, Any] = {}
         for out_alias, out_expr in sorted(step_spec.output_mapping.items()):
             target_child_step, target_field = JitStepHydrator._parse_input_ref(
@@ -349,6 +399,9 @@ class DurableOrchestrationEngine:
     def _build_fast_path_markers(
         step_key: str, divergence_note: str, datasources: tuple[str, ...]
     ) -> tuple[StepMemlogEntry, ...]:
+        plugin = _get_memlog_marker_plugin()
+        if plugin is not None:
+            return plugin.build_fast_path_markers(step_key, divergence_note, datasources)
         return (
             StepMemlogEntry(
                 entry_id=new_uuid7_str(),
@@ -361,16 +414,8 @@ class DurableOrchestrationEngine:
             StepMemlogEntry(
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
-                marker_type="BUG_CODE_SUSPECTED",
-                summary="[BUG_CODE_SUSPECTED] Écart d'implémentation détecté dans le code",
-                details=divergence_note,
-                source_uris=datasources,
-            ),
-            StepMemlogEntry(
-                entry_id=new_uuid7_str(),
-                step_key=step_key,
-                marker_type="DOC_OBSOLETE_SUSPECTED",
-                summary="[DOC_OBSOLETE_SUSPECTED] Spécification Confluence possiblement obsolète",
+                marker_type="core.divergence_suspected",
+                summary="[DIVERGENCE] Écart détecté entre sources fédérées",
                 details=divergence_note,
                 source_uris=datasources,
             ),
@@ -382,8 +427,8 @@ class DurableOrchestrationEngine:
         *,
         run_id: str,
         divergence_note: str = (
-            "Écart seuil d'exemption TRA : Confluence v12 indique 500€ "
-            "vs Codebase git:// indique 350€"
+            "Écart seuil d'exemption TRA : source documentaire v12 indique 500€ "
+            "vs source opérationnelle indique 350€"
         ),
         instance: str | None = None,
     ) -> BackgroundAuditConsolidatedReport:
@@ -404,16 +449,35 @@ class DurableOrchestrationEngine:
         all_memlogs = [
             entry for s in self.blackboard.list_step_executions(run.id) for entry in s.step_memlog
         ]
+        plugin = _get_memlog_marker_plugin()
+        primary_canonical = (
+            normalize_memlog_marker(plugin.primary_divergence_marker)
+            if plugin is not None
+            else "core.divergence_suspected"
+        )
+        secondary_canonical = (
+            normalize_memlog_marker(plugin.secondary_divergence_marker)
+            if plugin is not None
+            else "core.divergence_suspected"
+        )
         return BackgroundAuditConsolidatedReport(
             run_id=run.id,
             workflow_uri=run.workflow_uri,
             total_steps_committed=len(self.blackboard.get_active_snapshots(run.id)),
-            assumptions=tuple(m for m in all_memlogs if m.marker_type == "ASSUMPTION"),
+            assumptions=tuple(
+                m
+                for m in all_memlogs
+                if normalize_memlog_marker(m.marker_type) == "core.assumption"
+            ),
             suspected_code_bugs=tuple(
-                m for m in all_memlogs if m.marker_type == "BUG_CODE_SUSPECTED"
+                m
+                for m in all_memlogs
+                if normalize_memlog_marker(m.marker_type) == primary_canonical
             ),
             suspected_obsolete_docs=tuple(
-                m for m in all_memlogs if m.marker_type == "DOC_OBSOLETE_SUSPECTED"
+                m
+                for m in all_memlogs
+                if normalize_memlog_marker(m.marker_type) == secondary_canonical
             ),
             sse_event_topic=f"channel:workspace:{run.workspace_id}:background_audit.completed",
             sse_latency_ms=42.0,

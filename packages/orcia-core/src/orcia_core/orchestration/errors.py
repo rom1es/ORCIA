@@ -1,4 +1,4 @@
-"""Orchestration domain errors (`AD-19`, `Story 3.2a`)."""
+"""Orchestration domain errors (`AD-19`, `AD-20`, `Story 3.2a`, `Story 3.2e`)."""
 
 from __future__ import annotations
 
@@ -29,14 +29,26 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
     },
     "ERR_INTENTION_BEFORE_CODE_REQUIRED": {
         "fr": LocalizedErrorCopy(
-            "Discipline Intention -> Code obligatoire",
-            "Aucune étape d'écriture de code n'est autorisée sans étape amont de déclaration "
-            "d'intention validée (ou mode: brownfield_bootstrap pour la rétro-documentation).",
+            "Discipline d'intention amont obligatoire",
+            "Aucune étape d'implémentation cible n'est autorisée sans étape amont de déclaration "
+            "d'intention validée (ou politique explicite de rétro-documentation).",
         ),
         "en": LocalizedErrorCopy(
-            "Intention -> Code discipline required",
-            "Code modification steps require an upstream validated intention step (or explicit "
-            "mode: brownfield_bootstrap for reverse documentation).",
+            "Upstream intention discipline required",
+            "Target implementation steps require an upstream validated intention step (or explicit "
+            "reverse-documentation policy).",
+        ),
+    },
+    "ERR_UNKNOWN_WORKFLOW_POLICY": {
+        "fr": LocalizedErrorCopy(
+            "Politique de workflow inconnue",
+            "Le manifeste référence une politique dans 'policies' non enregistrée dans le "
+            "registre de plugins 'orcia.workflow_policies'.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Unknown workflow policy",
+            "The manifest references a policy in 'policies' that is not registered in the "
+            "'orcia.workflow_policies' plugin registry.",
         ),
     },
     "ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED": {
@@ -76,6 +88,11 @@ class IntentionBeforeCodeRequiredError(OrciaDomainError):
     http_status, type_slug = 422, "intention-before-code-required"
 
 
+class UnknownWorkflowPolicyError(OrciaDomainError):
+    error_code = "ERR_UNKNOWN_WORKFLOW_POLICY"
+    http_status, type_slug = 422, "unknown-workflow-policy"
+
+
 class SubWorkflowMaxDepthExceededError(OrciaDomainError):
     error_code = "ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED"
     http_status, type_slug = 422, "sub-workflow-max-depth-exceeded"
@@ -96,5 +113,6 @@ __all__ = [
     "ScopeAccessDeniedError",
     "SubWorkflowCycleDetectedError",
     "SubWorkflowMaxDepthExceededError",
+    "UnknownWorkflowPolicyError",
     "ValidationDomainError",
 ]

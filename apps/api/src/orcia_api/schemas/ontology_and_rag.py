@@ -186,7 +186,7 @@ class KbDocumentSchemaItem(BaseModel):
     datasource_id: str
     datasource_alias: str
     source_uri: str
-    source_scheme: Literal["confluence", "jira", "git", "db"]
+    source_scheme: str
     indexing_regime: IndexingRegime
     title: str
     revision_tag: str

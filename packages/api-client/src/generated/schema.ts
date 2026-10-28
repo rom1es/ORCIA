@@ -88,7 +88,7 @@ export interface components {
       id: string;
       resource_id: string;
       resource_type: "workflow" | "agent" | "skill" | "template" | "datasource";
-      scheme: "git" | "nexus" | "db" | "confluence" | "jira" | "orcia";
+      scheme: string;
       sha256: string;
       sha256_short: string;
       source_format: "ORCIA" | "BMAD_PACK";
@@ -136,7 +136,7 @@ export interface components {
       content_text: string;
       resolution_ms: number;
       resolved_version: string;
-      scheme: "git" | "nexus" | "db" | "confluence" | "jira" | "orcia";
+      scheme: string;
       sha256: string;
       trace_id: string;
       uri: string;
@@ -264,7 +264,7 @@ export interface components {
       jql_filter?: string | null;
       permission_broker_markdown: string;
       role: string;
-      scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      scheme: string;
       uri: string;
       visibility_scope?: "SHARED_WORKSPACE" | "SHARED_TEAM";
       workspace_id: string;
@@ -289,7 +289,7 @@ export interface components {
       trace_id: string;
     };
     InitUserPassthroughSecretItem: {
-      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      connector_scheme: string;
       plaintext_secret: string;
       target_host: string;
     };
@@ -332,7 +332,7 @@ export interface components {
       indexing_regime: "DOC_PARENT_CHILD" | "CODE_AST_GRAPH" | "DB_DDL_ONLY";
       is_stale: boolean;
       revision_tag: string;
-      source_scheme: "confluence" | "jira" | "git" | "db";
+      source_scheme: string;
       source_uri: string;
       title: string;
       workspace_id: string;
@@ -472,7 +472,7 @@ export interface components {
       unit_type: "ENTERPRISE" | "BU" | "TRIBE" | "TEAM" | "SUB_TEAM";
     };
     PassthroughSecretMetadataResponse: {
-      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      connector_scheme: string;
       encrypted_at_rest?: boolean;
       id: string;
       key_version: number;
@@ -481,14 +481,14 @@ export interface components {
       user_id: string;
     };
     PassthroughSecretStoreRequest: {
-      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      connector_scheme: string;
       plaintext_secret: string;
       target_host: string;
     };
     PermissionBrokerPolicyItem: {
       approved_by_admin_id?: string | null;
       approver_team: string;
-      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+      connector_scheme: string;
       freshness_ttl_days?: number;
       human_anchor_author_id?: string | null;
       human_anchor_signature?: string | null;
@@ -508,7 +508,7 @@ export interface components {
     };
     PermissionBrokerTicketItem: {
       approver_team: string;
-      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+      connector_scheme: string;
       execution_identity: "passthrough" | "service_principal";
       id: string;
       jira_request_url: string;
@@ -540,7 +540,7 @@ export interface components {
     };
     PermissionCheckResponse: {
       allowed: boolean;
-      connector_scheme: "git" | "jira" | "confluence" | "db" | "nexus" | "mcp";
+      connector_scheme: string;
       execution_identity: "passthrough" | "service_principal";
       permission_broker_hint?: string | null;
       policy: components["schemas"]["PermissionBrokerPolicyItem"];
@@ -612,7 +612,7 @@ export interface components {
       alias: string;
       cas_key: string;
       resolved_version: string;
-      scheme: "git" | "nexus" | "db" | "confluence" | "jira" | "orcia";
+      scheme: string;
       sha256: string;
       uri: string;
     };
@@ -688,7 +688,7 @@ export interface components {
     StepMemlogSchemaItem: {
       details: string;
       entry_id: string;
-      marker_type: "REASONING" | "ASSUMPTION" | "BUG_CODE_SUSPECTED" | "DOC_OBSOLETE_SUSPECTED" | "FEEDBACK_RETRY" | "SUB_WORKFLOW_OUTPUT";
+      marker_type: string;
       source_uris?: (string)[];
       step_key: string;
       summary: string;
@@ -769,7 +769,7 @@ export interface components {
       id: string;
       init_user_completed: boolean;
       invited_by_user_id?: string | null;
-      linked_connectors: ("git" | "jira" | "confluence" | "db" | "nexus")[];
+      linked_connectors: (string)[];
       org_unit_id: string;
       user_email: string;
       user_id?: string | null;
@@ -800,7 +800,7 @@ export interface components {
       id: string;
       max_cost_usd: number;
       max_nesting_depth: number;
-      mode: "standard" | "brownfield_bootstrap";
+      mode: string;
       rules: (string)[];
       scalars: Record<string, string | number | boolean>;
       sha256: string;
@@ -899,12 +899,14 @@ export interface components {
       line_number: number;
       max_agent_retries: number;
       output_mapping: Record<string, string>;
+      policies?: (string)[];
       requires_human_gate: boolean;
       reverse_doc_from_code: boolean;
       skill_uri?: string | null;
       step_key: string;
       step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "POST_ACTION_VERIFICATION";
       sub_workflow_uri?: string | null;
+      tags?: (string)[];
       template_key?: string | null;
       title: string;
       verification_window_seconds?: number | null;
@@ -930,7 +932,7 @@ export interface components {
       freshness_ttl_days: number;
       id: string;
       role: string;
-      scheme: "git" | "jira" | "confluence" | "db" | "nexus";
+      scheme: string;
       uri: string;
       workspace_id: string;
     };

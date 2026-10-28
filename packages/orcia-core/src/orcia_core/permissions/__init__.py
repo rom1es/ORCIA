@@ -91,7 +91,7 @@ def build_default_auth_and_org_service(
                 id=ds.id,
                 workspace_id=ds.workspace_id,
                 alias=ds.alias,
-                scheme=cast(DatasourceScheme, ds.scheme),
+                scheme=ds.scheme,
                 uri=ds.uri,
                 role=ds.role,
                 execution_identity=cast(ExecutionIdentityMode, ds.execution_identity),

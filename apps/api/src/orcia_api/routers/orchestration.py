@@ -78,9 +78,12 @@ def _serialize_workflow(wf: WorkflowAsCodeDefinition) -> WorkflowAsCodeDefinitio
                 kb_uris=list(s.kb_uris),
                 human_authored_required=s.human_authored_required,
                 requires_human_gate=s.requires_human_gate,
-                declares_intention=s.declares_intention,
-                writes_code=s.writes_code,
-                reverse_doc_from_code=s.reverse_doc_from_code,
+                declares_intention=s.declares_intention or ("sdlc.declares_intention" in s.tags),
+                writes_code="sdlc.writes_code" in s.tags,
+                reverse_doc_from_code=s.reverse_doc_from_code
+                or ("sdlc.reverse_doc_from_code" in s.tags),
+                tags=list(s.tags),
+                policies=list(s.policies),
                 verification_window_seconds=s.verification_window_seconds,
                 line_number=s.line_number,
             )

@@ -54,6 +54,8 @@ class WorkflowStepSpecSchemaItem(BaseModel):
     declares_intention: bool
     writes_code: bool
     reverse_doc_from_code: bool
+    tags: list[str] = Field(default_factory=list)
+    policies: list[str] = Field(default_factory=list)
     verification_window_seconds: int | None = None
     line_number: int = Field(..., ge=1)
 

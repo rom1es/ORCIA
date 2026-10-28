@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-28-2026 10:05
+last_updated: 10-28-2026 10:57
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -58,7 +58,7 @@ development_status:
   3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: done
   3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: done
   3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: done
-  3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: backlog
+  3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
   3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: backlog
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: backlog
   3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: backlog
@@ -390,7 +390,7 @@ action_items:
     ad_ref: "AD-19, AD-20"
     story_ref: "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co"
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Fuites L1-L6 et L11, risques K1, K2 et K6 (P0-1 + P0-2) de l'audit architecture-decoupling-audit-2026-10-28.md ; critère vérifiable : grep du vocabulaire SDLC dans packages/orcia-kernel et orchestration (référence 33 lignes / 7 fichiers) = 0 et lint-imports vert avec le contrat core-without-sdlc.
@@ -469,7 +469,7 @@ action_items:
     ad_ref: "AD-20"
     story_ref: "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co"
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-3
     description: >
       Fuites L7 et L8, risque K9 / plan P2-1 de l'audit : données SDLC de démonstration codées en dur dans le Core (rag/__init__.py:L49-95, orchestration/seeds.py:L29-158).

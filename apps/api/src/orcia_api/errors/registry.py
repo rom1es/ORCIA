@@ -20,6 +20,7 @@ from orcia_core.orchestration.errors import (
     IntentionBeforeCodeRequiredError,
     SubWorkflowCycleDetectedError,
     SubWorkflowMaxDepthExceededError,
+    UnknownWorkflowPolicyError,
 )
 from orcia_core.permissions.errors import (
     ConfusedDeputyBlockedError,
@@ -63,6 +64,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     SubWorkflowCycleDetectedError,
     CriticalWorkflowRequiresHumanGateError,
     IntentionBeforeCodeRequiredError,
+    UnknownWorkflowPolicyError,
     PermissionBrokerDeniedError,
     ConfusedDeputyBlockedError,
     ResourceNotFoundError,
@@ -131,6 +133,7 @@ __all__ = [
     "SubWorkflowCycleDetectedError",
     "SubWorkflowMaxDepthExceededError",
     "SupportedLocale",
+    "UnknownWorkflowPolicyError",
     "ValidationDomainError",
     "get_localized_error_text",
     "resolve_domain_error_mapping",

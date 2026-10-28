@@ -513,14 +513,6 @@
             "type": "string"
           },
           "scheme": {
-            "enum": [
-              "git",
-              "nexus",
-              "db",
-              "confluence",
-              "jira",
-              "orcia"
-            ],
             "title": "Scheme",
             "type": "string"
           },
@@ -843,14 +835,6 @@
             "type": "string"
           },
           "scheme": {
-            "enum": [
-              "git",
-              "nexus",
-              "db",
-              "confluence",
-              "jira",
-              "orcia"
-            ],
             "title": "Scheme",
             "type": "string"
           },
@@ -1627,13 +1611,6 @@
             "type": "string"
           },
           "scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus"
-            ],
             "title": "Scheme",
             "type": "string"
           },
@@ -1784,13 +1761,6 @@
         "description": "Passthrough secret item inside `InitUserRequest` (`AES-256-GCM`).",
         "properties": {
           "connector_scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus"
-            ],
             "title": "Connector Scheme",
             "type": "string"
           },
@@ -2077,12 +2047,6 @@
             "type": "string"
           },
           "source_scheme": {
-            "enum": [
-              "confluence",
-              "jira",
-              "git",
-              "db"
-            ],
             "title": "Source Scheme",
             "type": "string"
           },
@@ -3004,13 +2968,6 @@
         "description": "Metadata returned after storing an AES-256-GCM Passthrough credential.",
         "properties": {
           "connector_scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus"
-            ],
             "title": "Connector Scheme",
             "type": "string"
           },
@@ -3058,13 +3015,6 @@
         "description": "Request payload to encrypt and store a user Passthrough secret in AES-256-GCM.",
         "properties": {
           "connector_scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus"
-            ],
             "title": "Connector Scheme",
             "type": "string"
           },
@@ -3112,14 +3062,6 @@
             "type": "string"
           },
           "connector_scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus",
-              "mcp"
-            ],
             "title": "Connector Scheme",
             "type": "string"
           },
@@ -3259,14 +3201,6 @@
             "type": "string"
           },
           "connector_scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus",
-              "mcp"
-            ],
             "title": "Connector Scheme",
             "type": "string"
           },
@@ -3517,14 +3451,6 @@
             "type": "boolean"
           },
           "connector_scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus",
-              "mcp"
-            ],
             "title": "Connector Scheme",
             "type": "string"
           },
@@ -3998,14 +3924,6 @@
             "type": "string"
           },
           "scheme": {
-            "enum": [
-              "git",
-              "nexus",
-              "db",
-              "confluence",
-              "jira",
-              "orcia"
-            ],
             "title": "Scheme",
             "type": "string"
           },
@@ -4517,14 +4435,6 @@
             "type": "string"
           },
           "marker_type": {
-            "enum": [
-              "REASONING",
-              "ASSUMPTION",
-              "BUG_CODE_SUSPECTED",
-              "DOC_OBSOLETE_SUSPECTED",
-              "FEEDBACK_RETRY",
-              "SUB_WORKFLOW_OUTPUT"
-            ],
             "title": "Marker Type",
             "type": "string"
           },
@@ -5093,13 +5003,6 @@
           },
           "linked_connectors": {
             "items": {
-              "enum": [
-                "git",
-                "jira",
-                "confluence",
-                "db",
-                "nexus"
-              ],
               "type": "string"
             },
             "title": "Linked Connectors",
@@ -5306,10 +5209,6 @@
             "type": "integer"
           },
           "mode": {
-            "enum": [
-              "standard",
-              "brownfield_bootstrap"
-            ],
             "title": "Mode",
             "type": "string"
           },
@@ -6047,6 +5946,13 @@
             "title": "Output Mapping",
             "type": "object"
           },
+          "policies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
           "requires_human_gate": {
             "title": "Requires Human Gate",
             "type": "boolean"
@@ -6090,6 +5996,13 @@
               }
             ],
             "title": "Sub Workflow Uri"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "template_key": {
             "anyOf": [
@@ -6271,13 +6184,6 @@
             "type": "string"
           },
           "scheme": {
-            "enum": [
-              "git",
-              "jira",
-              "confluence",
-              "db",
-              "nexus"
-            ],
             "title": "Scheme",
             "type": "string"
           },
@@ -7609,14 +7515,6 @@
             "schema": {
               "anyOf": [
                 {
-                  "enum": [
-                    "git",
-                    "nexus",
-                    "db",
-                    "confluence",
-                    "jira",
-                    "orcia"
-                  ],
                   "type": "string"
                 },
                 {

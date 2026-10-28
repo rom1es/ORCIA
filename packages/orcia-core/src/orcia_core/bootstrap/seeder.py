@@ -1,4 +1,4 @@
-"""Idempotent reference data seeder foundation (`INSERT ... ON CONFLICT DO UPDATE`, AD-16)."""
+"""Idempotent reference data seeder (`INSERT ... ON CONFLICT DO UPDATE`, AD-16, AD-20)."""
 
 from __future__ import annotations
 
@@ -13,12 +13,19 @@ from orcia_core.bootstrap.catalog_seeds import (
     CustomizationOverrideSeed,
     WorkflowDefinitionSeed,
 )
+from orcia_core.bootstrap.orchestration_seeds import (
+    DEFAULT_ADR_TEMPLATE_SEED,
+    DEFAULT_CHILD_SUB_WORKFLOW_YAML,
+    DEFAULT_LEAF_SUB_WORKFLOW_YAML,
+    DEFAULT_ROOT_WORKFLOW_YAML,
+)
 from orcia_core.bootstrap.permission_broker_seeds import (
     DEFAULT_PERMISSION_BROKER_POLICY_SEEDS,
     DEFAULT_PERMISSION_BROKER_TICKET_SEEDS,
     PermissionBrokerPolicySeed,
     PermissionBrokerTicketSeed,
 )
+from orcia_core.bootstrap.rag_seeds import populate_rag_test_dataset
 from orcia_core.bootstrap.workflow_bootstrap_seeds import (
     DEFAULT_LLM_MODEL_ENDPOINT_SEEDS,
     DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS,
@@ -113,6 +120,9 @@ def build_postgres_upsert_sql(spec: UpsertSpec) -> str:
     )
 
 
+CONNECTOR_SCHEMES_UPSERT_SPEC = UpsertSpec(
+    "connector_schemes", ("scheme",), ("id", "display_name", "pack_name", "is_active")
+)
 ORG_UNITS_UPSERT_SPEC = UpsertSpec("org_units", ("slug",), ("id", "name", "unit_type", "parent_id"))
 WORKSPACES_UPSERT_SPEC = UpsertSpec(
     "workspaces", ("slug",),
@@ -156,14 +166,17 @@ USER_ONBOARDING_STATES_UPSERT_SPEC = UpsertSpec(
 )  # fmt: skip
 
 __all__ = [
-    "ASSISTANT_WORKFLOW_URI", "CATALOG_ITEMS_UPSERT_SPEC", "CUSTOMIZATION_OVERRIDES_UPSERT_SPEC",
-    "DEFAULT_CATALOG_ITEM_SEEDS", "DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS",
-    "DEFAULT_HUMAN_PROFILE_ARCHETYPES", "DEFAULT_LLM_MODEL_ENDPOINT_SEEDS",
+    "ASSISTANT_WORKFLOW_URI", "CATALOG_ITEMS_UPSERT_SPEC", "CONNECTOR_SCHEMES_UPSERT_SPEC",
+    "CUSTOMIZATION_OVERRIDES_UPSERT_SPEC", "DEFAULT_ADR_TEMPLATE_SEED",
+    "DEFAULT_CATALOG_ITEM_SEEDS", "DEFAULT_CHILD_SUB_WORKFLOW_YAML",
+    "DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS", "DEFAULT_HUMAN_PROFILE_ARCHETYPES",
+    "DEFAULT_LEAF_SUB_WORKFLOW_YAML", "DEFAULT_LLM_MODEL_ENDPOINT_SEEDS",
     "DEFAULT_ORG_UNIT_SEEDS", "DEFAULT_PERMISSION_BROKER_POLICY_SEEDS",
-    "DEFAULT_PERMISSION_BROKER_TICKET_SEEDS", "DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS",
-    "DEFAULT_SYSTEM_BOOTSTRAP_WORKFLOW_SEEDS", "DEFAULT_USER_ONBOARDING_STATE_SEEDS",
-    "DEFAULT_WORKFLOW_DEFINITION_SEEDS", "DEFAULT_WORKSPACE_DATASOURCE_SEEDS",
-    "DEFAULT_WORKSPACE_SEEDS", "LLM_MODEL_ENDPOINTS_UPSERT_SPEC", "ORG_UNITS_UPSERT_SPEC",
+    "DEFAULT_PERMISSION_BROKER_TICKET_SEEDS", "DEFAULT_ROOT_WORKFLOW_YAML",
+    "DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS", "DEFAULT_SYSTEM_BOOTSTRAP_WORKFLOW_SEEDS",
+    "DEFAULT_USER_ONBOARDING_STATE_SEEDS", "DEFAULT_WORKFLOW_DEFINITION_SEEDS",
+    "DEFAULT_WORKSPACE_DATASOURCE_SEEDS", "DEFAULT_WORKSPACE_SEEDS",
+    "LLM_MODEL_ENDPOINTS_UPSERT_SPEC", "ORG_UNITS_UPSERT_SPEC",
     "PERMISSION_BROKER_POLICIES_UPSERT_SPEC", "PERMISSION_BROKER_TICKETS_UPSERT_SPEC",
     "SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC", "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",
     "USER_ONBOARDING_STATES_UPSERT_SPEC", "WORKFLOW_DEFINITIONS_UPSERT_SPEC",
@@ -172,5 +185,5 @@ __all__ = [
     "OrgUnitSeed", "PermissionBrokerPolicySeed", "PermissionBrokerTicketSeed",
     "SystemBootstrapRunSeed", "SystemBootstrapWorkflowSeed", "UpsertSpec",
     "UserOnboardingStateSeed", "WorkflowDefinitionSeed", "WorkspaceDatasourceSeed",
-    "WorkspaceSeed", "build_postgres_upsert_sql",
+    "WorkspaceSeed", "build_postgres_upsert_sql", "populate_rag_test_dataset",
 ]  # fmt: skip

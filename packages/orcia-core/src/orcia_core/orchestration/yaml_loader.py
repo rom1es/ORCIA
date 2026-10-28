@@ -1,11 +1,14 @@
 """YAML/JSON line-tracking loader and step specification parser for Workflow-as-Code (Story 3.1).
 
-Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
+Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`) and zero SDLC
+vocabulary (`AD-19`, `AD-20`, `AC-E2`).
 """
 
 from __future__ import annotations
 
-from typing import Any
+import importlib.metadata
+import threading
+from typing import Any, Protocol, runtime_checkable
 
 import yaml  # type: ignore[import-untyped]
 
@@ -21,9 +24,101 @@ VALID_EXECUTION_REGIMES = frozenset(
 VALID_TIE_BREAK_POLICIES = frozenset(
     {"ONTOLOGY_AXIOM_FIRST", "DEFER_AND_CONTINUE_WITH_ASSUMPTION", "PAUSE_AND_ESCALATE"}
 )
-VALID_MODES = frozenset({"standard", "brownfield_bootstrap"})
 VALID_STEP_TYPES = frozenset({"AGENT", "SKILL", "SUB_WORKFLOW", "POST_ACTION_VERIFICATION"})
 VALID_GATE_POLICIES = frozenset({"STRICT", "STANDARD", "FAST_TRACK"})
+
+
+@runtime_checkable
+class WorkflowPolicyPluginProtocol(Protocol):
+    """Plugin protocol discovered via `entry_points(group='orcia.workflow_policies')` (`AD-20`)."""
+
+    @property
+    def policy_keys(self) -> tuple[str, ...]:
+        """Return namespaced policy keys handled by this plugin."""
+        ...
+
+    @property
+    def allowed_modes(self) -> tuple[str, ...]:
+        """Return additional workflow engineering modes registered by this plugin."""
+        ...
+
+    def normalize_raw_step(
+        self, raw_step: dict[str, Any]
+    ) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """Extract pack-specific step tags and policies from a raw step dict."""
+        ...
+
+    def validate_dag(
+        self,
+        parsed_steps: list[WorkflowStepSpec],
+        steps_by_key: dict[str, WorkflowStepSpec],
+        mode: str,
+        findings: list[WorkflowValidationFinding],
+    ) -> None:
+        """Validate pack-specific DAG policies and append findings if violated."""
+        ...
+
+
+_POLICY_LOCK = threading.Lock()
+_WORKFLOW_POLICY_PLUGINS: dict[str, WorkflowPolicyPluginProtocol] = {}
+_REGISTERED_POLICY_KEYS: set[str] = {
+    "core.standard",
+    "core.require_human_gate",
+}
+_REGISTERED_WORKFLOW_MODES: set[str] = {"standard"}
+_POLICY_ENTRY_POINTS_LOADED: bool = False
+
+
+def register_workflow_policy_plugin(plugin_id: str, plugin: WorkflowPolicyPluginProtocol) -> None:
+    """Register a `WorkflowPolicyPluginProtocol` instance (`AD-20`, `AC-E1`, `AC-E2`)."""
+    with _POLICY_LOCK:
+        _WORKFLOW_POLICY_PLUGINS[plugin_id] = plugin
+        for p_key in plugin.policy_keys:
+            _REGISTERED_POLICY_KEYS.add(p_key.strip())
+        for m_key in plugin.allowed_modes:
+            _REGISTERED_WORKFLOW_MODES.add(m_key.strip())
+
+
+def _ensure_policy_entry_points_loaded() -> None:
+    global _POLICY_ENTRY_POINTS_LOADED
+    with _POLICY_LOCK:
+        if _POLICY_ENTRY_POINTS_LOADED:
+            return
+        _POLICY_ENTRY_POINTS_LOADED = True
+    try:
+        eps = importlib.metadata.entry_points(group="orcia.workflow_policies")
+        for ep in eps:
+            loaded = ep.load()
+            instance = loaded() if callable(loaded) else loaded
+            if isinstance(instance, WorkflowPolicyPluginProtocol):
+                register_workflow_policy_plugin(ep.name, instance)
+    except Exception:
+        pass
+
+
+def get_workflow_policy_plugins() -> tuple[WorkflowPolicyPluginProtocol, ...]:
+    """Return all registered workflow policy plugins."""
+    _ensure_policy_entry_points_loaded()
+    with _POLICY_LOCK:
+        return tuple(_WORKFLOW_POLICY_PLUGINS.values())
+
+
+def is_registered_workflow_policy(policy_key: str) -> bool:
+    """Return True if `policy_key` is registered by Core or an installed pack (`AC-E2`)."""
+    _ensure_policy_entry_points_loaded()
+    with _POLICY_LOCK:
+        return policy_key.strip() in _REGISTERED_POLICY_KEYS
+
+
+def get_valid_workflow_modes() -> frozenset[str]:
+    """Return valid workflow engineering modes registered by Core and installed packs."""
+    _ensure_policy_entry_points_loaded()
+    with _POLICY_LOCK:
+        return frozenset(_REGISTERED_WORKFLOW_MODES)
+
+
+# Kept for import compatibility; dynamically includes modes from registered plugins
+VALID_MODES: frozenset[str] = frozenset({"standard"})
 
 
 class _LineTrackingLoader(yaml.SafeLoader):  # type: ignore[misc]
@@ -196,6 +291,43 @@ def parse_single_step_spec(
     kb_uris = tuple(str(u) for u in raw_kb if str(u).strip()) if isinstance(raw_kb, list) else ()
     ver_win = raw_step.get("verification_window_seconds")
 
+    raw_tags = raw_step.get("tags", [])
+    tag_list: list[str] = (
+        [str(t).strip() for t in raw_tags if str(t).strip()] if isinstance(raw_tags, list) else []
+    )
+    raw_policies = raw_step.get("policies", [])
+    policy_list: list[str] = (
+        [str(p).strip() for p in raw_policies if str(p).strip()]
+        if isinstance(raw_policies, list)
+        else []
+    )
+
+    declares_intention = bool(raw_step.get("declares_intention", False))
+    reverse_doc_from_code = bool(raw_step.get("reverse_doc_from_code", False))
+
+    for plugin in get_workflow_policy_plugins():
+        extra_tags, extra_policies = plugin.normalize_raw_step(raw_step)
+        for et in extra_tags:
+            if et not in tag_list:
+                tag_list.append(et)
+        for ep in extra_policies:
+            if ep not in policy_list:
+                policy_list.append(ep)
+
+    for p_key in policy_list:
+        if not is_registered_workflow_policy(p_key):
+            findings.append(
+                WorkflowValidationFinding(
+                    line=line_of(raw_step, "policies", s_line),
+                    rule_code="ERR_UNKNOWN_WORKFLOW_POLICY",
+                    field_path=f"steps.{step_key}.policies",
+                    message=(
+                        f"Ligne {line_of(raw_step, 'policies', s_line)}: Politique de workflow "
+                        f"inconnue '{p_key}' sur l'étape '{step_key}'."
+                    ),
+                )
+            )
+
     return WorkflowStepSpec(
         step_key=step_key,
         title=str(raw_step.get("title", step_key)).strip(),
@@ -219,9 +351,29 @@ def parse_single_step_spec(
         kb_uris=kb_uris,
         human_authored_required=bool(raw_step.get("human_authored_required", False)),
         requires_human_gate=bool(raw_step.get("requires_human_gate", False)),
-        declares_intention=bool(raw_step.get("declares_intention", False)),
-        writes_code=bool(raw_step.get("writes_code", False)),
-        reverse_doc_from_code=bool(raw_step.get("reverse_doc_from_code", False)),
+        declares_intention=declares_intention,
+        reverse_doc_from_code=reverse_doc_from_code,
+        tags=tuple(tag_list),
+        policies=tuple(policy_list),
         verification_window_seconds=int(ver_win) if isinstance(ver_win, int) else None,
         line_number=s_line,
     )
+
+
+__all__ = [
+    "VALID_CRITICALITIES",
+    "VALID_EXECUTION_REGIMES",
+    "VALID_GATE_POLICIES",
+    "VALID_MODES",
+    "VALID_STEP_TYPES",
+    "VALID_TIE_BREAK_POLICIES",
+    "WorkflowPolicyPluginProtocol",
+    "clean_str_dict",
+    "get_valid_workflow_modes",
+    "get_workflow_policy_plugins",
+    "is_registered_workflow_policy",
+    "line_of",
+    "parse_raw_yaml_or_json",
+    "parse_single_step_spec",
+    "register_workflow_policy_plugin",
+]

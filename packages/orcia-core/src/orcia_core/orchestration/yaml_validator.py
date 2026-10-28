@@ -1,6 +1,7 @@
-"""Workflow-as-Code YAML/JSON Parser & DAG Validator (Story 3.1, FR-11, FR-13, FR-29, FR-30).
+"""Workflow-as-Code YAML/JSON Parser & DAG Validator (Story 3.1, Story 3.2e, FR-11, FR-29, FR-30).
 
-Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
+Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`) and zero SDLC
+vocabulary (`AD-19`, `AD-20`, `AC-E2`).
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from orcia_core.orchestration.errors import (
     IntentionBeforeCodeRequiredError,
     SubWorkflowCycleDetectedError,
     SubWorkflowMaxDepthExceededError,
+    UnknownWorkflowPolicyError,
     ValidationDomainError,
 )
 from orcia_core.orchestration.models import (
@@ -29,8 +31,10 @@ from orcia_core.orchestration.yaml_loader import (
     VALID_CRITICALITIES,
     VALID_EXECUTION_REGIMES,
     VALID_GATE_POLICIES,
-    VALID_MODES,
     VALID_TIE_BREAK_POLICIES,
+    get_valid_workflow_modes,
+    get_workflow_policy_plugins,
+    is_registered_workflow_policy,
     line_of,
     parse_raw_yaml_or_json,
     parse_single_step_spec,
@@ -39,7 +43,7 @@ from orcia_kernel.ids import new_uuid7_str
 
 
 class WorkflowAsCodeValidator:
-    """Deterministic YAML/JSON parser & DAG validator for Workflow-as-Code (`FR-11`, `AD-18`)."""
+    """Deterministic YAML/JSON parser & DAG validator for Workflow-as-Code (`FR-11`, `AD-20`)."""
 
     @classmethod
     def parse_raw_manifest(
@@ -133,57 +137,20 @@ class WorkflowAsCodeValidator:
                 )
             )
 
-        cls._validate_intention_and_brownfield(parsed_steps, steps_by_key, mode, findings)
+        cls._validate_registered_policy_plugins(parsed_steps, steps_by_key, mode, findings)
         return tuple(parsed_steps), tuple(topo_order)
 
     @classmethod
-    def _validate_intention_and_brownfield(
+    def _validate_registered_policy_plugins(
         cls,
         parsed_steps: list[WorkflowStepSpec],
         steps_by_key: dict[str, WorkflowStepSpec],
         mode: WorkflowEngineeringMode,
         findings: list[WorkflowValidationFinding],
     ) -> None:
-        def _ancestors_of(key: str) -> set[str]:
-            visited: set[str] = set()
-            stack = list(steps_by_key[key].depends_on) if key in steps_by_key else []
-            while stack:
-                item = stack.pop()
-                if item not in visited and item in steps_by_key:
-                    visited.add(item)
-                    stack.extend(steps_by_key[item].depends_on)
-            return visited
-
-        for step in parsed_steps:
-            if step.writes_code:
-                ancestors = _ancestors_of(step.step_key)
-                has_prior_intent = any(steps_by_key[a].declares_intention for a in ancestors)
-                if not has_prior_intent and not step.declares_intention:
-                    findings.append(
-                        WorkflowValidationFinding(
-                            line=step.line_number,
-                            rule_code="ERR_INTENTION_BEFORE_CODE_REQUIRED",
-                            field_path=f"steps.{step.step_key}.writes_code",
-                            message=(
-                                f"Ligne {step.line_number}: L'étape '{step.step_key}' modifie du "
-                                "code ('writes_code: true') sans étape amont déclarant l'intention "
-                                "('declares_intention: true') (FR-13)."
-                            ),
-                        )
-                    )
-            if step.reverse_doc_from_code and mode != "brownfield_bootstrap":
-                findings.append(
-                    WorkflowValidationFinding(
-                        line=step.line_number,
-                        rule_code="ERR_INTENTION_BEFORE_CODE_REQUIRED",
-                        field_path=f"steps.{step.step_key}.reverse_doc_from_code",
-                        message=(
-                            f"Ligne {step.line_number}: L'étape '{step.step_key}' active "
-                            "'reverse_doc_from_code: true' uniquement autorisé en mode "
-                            "'brownfield_bootstrap' (FR-13)."
-                        ),
-                    )
-                )
+        """Delegate domain/pack policy checks to `entry_points(group='orcia.workflow_policies')`."""
+        for plugin in get_workflow_policy_plugins():
+            plugin.validate_dag(parsed_steps, steps_by_key, mode, findings)
 
     @classmethod
     def _validate_sub_workflow_hierarchy(
@@ -311,7 +278,8 @@ class WorkflowAsCodeValidator:
                 )
             )
         mode = str(root.get("mode", "standard")).strip()
-        if mode not in VALID_MODES:
+        valid_modes = get_valid_workflow_modes()
+        if mode not in valid_modes:
             findings.append(
                 WorkflowValidationFinding(
                     line=line_of(root, "mode", 1),
@@ -321,6 +289,23 @@ class WorkflowAsCodeValidator:
                 )
             )
             mode = "standard"
+
+        raw_root_policies = root.get("policies", [])
+        root_policies: tuple[str, ...] = (
+            tuple(str(p).strip() for p in raw_root_policies if str(p).strip())
+            if isinstance(raw_root_policies, list)
+            else ()
+        )
+        for rp in root_policies:
+            if not is_registered_workflow_policy(rp):
+                findings.append(
+                    WorkflowValidationFinding(
+                        line=line_of(root, "policies", 1),
+                        rule_code="ERR_UNKNOWN_WORKFLOW_POLICY",
+                        field_path="policies",
+                        message=f"Politique de workflow inconnue '{rp}'.",
+                    )
+                )
 
         gate_policy = str(root.get("adaptive_gate_policy", "STANDARD")).strip()
         if gate_policy not in VALID_GATE_POLICIES:
@@ -343,7 +328,7 @@ class WorkflowAsCodeValidator:
         steps, topo_order = cls._validate_steps_and_dag(
             root.get("steps"),
             steps_line=line_of(root, "steps", 1),
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             findings=findings,
         )
         if (
@@ -411,7 +396,7 @@ class WorkflowAsCodeValidator:
             criticality=criticality,  # type: ignore[arg-type]
             execution_regime=execution_regime,  # type: ignore[arg-type]
             tie_break_policy=tie_break_policy,  # type: ignore[arg-type]
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             adaptive_gate_policy=gate_policy,  # type: ignore[arg-type]
             max_cost_usd=float(root.get("max_cost_usd", 10.0)),
             scalars=scalars,
@@ -420,6 +405,7 @@ class WorkflowAsCodeValidator:
             facts=facts,
             steps=steps,
             sha256=compute_bytes_sha256(canonical_payload.encode("utf-8")),
+            policies=root_policies,
             max_nesting_depth=resolved_depth,
         )
         return WorkflowValidationReport(
@@ -442,6 +428,8 @@ class WorkflowAsCodeValidator:
             raise IntentionBeforeCodeRequiredError(
                 detail_override=finding.message, instance=instance
             )
+        if finding.rule_code == "ERR_UNKNOWN_WORKFLOW_POLICY":
+            raise UnknownWorkflowPolicyError(detail_override=finding.message, instance=instance)
         if finding.rule_code == "ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED":
             raise SubWorkflowMaxDepthExceededError(
                 detail_override=finding.message, instance=instance

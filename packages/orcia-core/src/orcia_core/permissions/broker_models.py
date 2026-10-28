@@ -6,21 +6,24 @@ Pure hexagonal domain module (Story 1.4, AD-6, FR-22, UX-DR11) — zero framewor
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal
 from urllib.parse import quote
 
 from orcia_core.permissions.errors import ValidationDomainError
 from orcia_core.permissions.models import ExecutionIdentityMode
 from orcia_kernel.ids import new_uuid7_str
+from orcia_kernel.ports import is_registered_connector_scheme, list_registered_connector_schemes
 
-BrokerConnectorScheme = Literal["git", "jira", "confluence", "db", "nexus", "mcp"]
+# Dynamic connector scheme backed by `list_registered_connector_schemes()` (`AD-20`, `AC-E3`)
+BrokerConnectorScheme = str
 BrokerStepState = Literal["PERMISSION_DENIED_STEP", "PAUSED", "REPLAYED", "GRANTED"]
 BrokerTicketStatus = Literal["WAITING_FOR_PERMISSION", "PAUSED", "REPLAYED", "GRANTED"]
 BrokerTicketAction = Literal["PAUSE", "REPLAY"]
 
-ALLOWED_BROKER_SCHEMES: frozenset[str] = frozenset(
-    {"git", "jira", "confluence", "db", "nexus", "mcp"}
-)
+
+def get_allowed_broker_schemes() -> frozenset[str]:
+    """Return dynamic set of registered connector schemes for the Permission Broker (`AD-20`)."""
+    return list_registered_connector_schemes()
 
 
 def reject_control_chars(value: str, field_name: str, *, instance: str | None = None) -> str:
@@ -36,7 +39,7 @@ def reject_control_chars(value: str, field_name: str, *, instance: str | None = 
 def extract_connector_scheme(
     uri_or_pattern: str, *, instance: str | None = None
 ) -> BrokerConnectorScheme:
-    """Extract and validate the connector scheme (`git`, `jira`, `confluence`, `db`, etc.)."""
+    """Extract and validate the connector scheme against the dynamic connector registry."""
     cleaned = reject_control_chars(uri_or_pattern, "uri", instance=instance)
     if "://" not in cleaned:
         raise ValidationDomainError(
@@ -44,11 +47,11 @@ def extract_connector_scheme(
         )
     scheme, remainder = cleaned.split("://", 1)
     scheme_lower = scheme.lower()
-    if scheme_lower not in ALLOWED_BROKER_SCHEMES or not remainder.strip():
+    if not is_registered_connector_scheme(scheme_lower) or not remainder.strip():
         raise ValidationDomainError(
             detail_override=f"Unsupported or empty connector URI: {cleaned!r}.", instance=instance
         )
-    return cast(BrokerConnectorScheme, scheme_lower)
+    return scheme_lower
 
 
 def extract_connector_host(uri: str, *, instance: str | None = None) -> str:

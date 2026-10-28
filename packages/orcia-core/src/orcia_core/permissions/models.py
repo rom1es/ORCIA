@@ -20,7 +20,8 @@ PlatformRole = Literal[
     "OBSERVER",
 ]
 WorkspaceVisibilityMode = Literal["STANDARD", "CONFIDENTIAL_RESTRICTED"]
-DatasourceScheme = Literal["git", "jira", "confluence", "db", "nexus"]
+# Dynamic connector scheme backed by `list_registered_connector_schemes()` (`AD-20`, `AC-E3`)
+DatasourceScheme = str
 ExecutionIdentityMode = Literal["passthrough", "service_principal"]
 AccessMode = Literal["CONTRIBUTOR_ACTION_REQUIRED", "READ_ONLY_OBSERVER"]
 CatalogVisibilityScope = Literal[
