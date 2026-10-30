@@ -15,8 +15,17 @@ from orcia_core.bootstrap.models import (
     ModelOrthogonalityReport,
     ModelRouterService,
 )
+from orcia_core.bootstrap.project_and_skill_bootstrap import (
+    InitExistingProjectInput,
+    InitExistingProjectOutcome,
+    InitSkillInput,
+    InitSkillOutcome,
+    execute_init_existing_project_workflow,
+    execute_init_skill_workflow,
+)
 from orcia_core.catalog.models import CatalogItemEntity, CustomizationOverrideEntity, ScalarValue
 from orcia_core.catalog.service import FederatedCatalogService
+from orcia_core.gates.deterministic import DeterministicGateService
 from orcia_core.permissions import models as pm
 from orcia_core.permissions.broker import PermissionBrokerService
 from orcia_core.permissions.broker_models import reject_control_chars as _clean
@@ -46,6 +55,7 @@ class SystemBootstrapWorkflowService:
     def __init__(
         self, *, auth_service: AuthAndOrganizationService, catalog_service: FederatedCatalogService,
         permission_broker_service: PermissionBrokerService, model_router: ModelRouterService | None = None,  # noqa: E501
+        gate_service: DeterministicGateService | None = None,
         workflows: tuple[bm.SystemBootstrapWorkflowSpec, ...] = (),
         runs: tuple[bm.SystemBootstrapRunRecord, ...] = (),
         onboarding_states: tuple[bm.UserOnboardingState, ...] = (),
@@ -55,6 +65,7 @@ class SystemBootstrapWorkflowService:
         self.model_router = model_router or ModelRouterService(
             tuple(bm.LlmModelEndpoint(**asdict(s)) for s in wbs.DEFAULT_LLM_MODEL_ENDPOINT_SEEDS)
         )
+        self.gate_service = gate_service or DeterministicGateService()
         self._workflows = {w.uri: w for w in workflows}
         self._runs, self._upstream_ontology = list(runs), dict(CANONICAL_UPSTREAM_ONTOLOGY)
         self._onboarding_by_email = {st.user_email.lower(): st for st in onboarding_states}
@@ -280,5 +291,37 @@ class SystemBootstrapWorkflowService:
         self._runs.append(run)
         return bm.InitUserOutcome(run, st, tuple(records))
 
+    def execute_init_existing_project(
+        self,
+        user: pm.UserIdentity,
+        payload: InitExistingProjectInput,
+        *,
+        instance: str | None = None,
+    ) -> InitExistingProjectOutcome:
+        return execute_init_existing_project_workflow(
+            self, self.gate_service, user, payload, instance=instance
+        )
 
-__all__ = ["CANONICAL_UPSTREAM_ONTOLOGY", "VALID_ARCHETYPES", "ModelOrthogonalityReport", "ModelRouterService", "SystemBootstrapWorkflowService"]  # noqa: E501  # fmt: skip
+    def execute_init_skill(
+        self,
+        user: pm.UserIdentity,
+        payload: InitSkillInput,
+        *,
+        instance: str | None = None,
+    ) -> InitSkillOutcome:
+        return execute_init_skill_workflow(
+            self, self.gate_service, user, payload, instance=instance
+        )
+
+
+__all__ = [
+    "CANONICAL_UPSTREAM_ONTOLOGY",
+    "VALID_ARCHETYPES",
+    "InitExistingProjectInput",
+    "InitExistingProjectOutcome",
+    "InitSkillInput",
+    "InitSkillOutcome",
+    "ModelOrthogonalityReport",
+    "ModelRouterService",
+    "SystemBootstrapWorkflowService",
+]

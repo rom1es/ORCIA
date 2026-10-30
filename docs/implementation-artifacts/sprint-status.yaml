@@ -65,8 +65,8 @@ development_status:
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: backlog
+  epic-4: in-progress
+  4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: done
   4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: backlog
   4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: backlog
   4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: backlog

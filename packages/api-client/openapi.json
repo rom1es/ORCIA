@@ -1409,6 +1409,155 @@
         "title": "DbDdlIndexRequest",
         "type": "object"
       },
+      "DeterministicGateEvaluateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/gates/deterministic/evaluate` (`AD-9`, `FR-17`).",
+        "properties": {
+          "allowed_dependencies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Dependencies"
+          },
+          "artifact_payload": {
+            "additionalProperties": true,
+            "title": "Artifact Payload",
+            "type": "object"
+          },
+          "max_memory_mb": {
+            "default": 256,
+            "maximum": 256.0,
+            "minimum": 16.0,
+            "title": "Max Memory Mb",
+            "type": "integer"
+          },
+          "ontology_axioms": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyAxiomRuleInputItem"
+            },
+            "title": "Ontology Axioms",
+            "type": "array"
+          },
+          "raise_on_failure": {
+            "default": false,
+            "title": "Raise On Failure",
+            "type": "boolean"
+          },
+          "required_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Sections",
+            "type": "array"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "simulate_fs_escape_path": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulate Fs Escape Path"
+          },
+          "simulate_memory_alloc_mb": {
+            "default": 0,
+            "maximum": 1024.0,
+            "minimum": 0.0,
+            "title": "Simulate Memory Alloc Mb",
+            "type": "integer"
+          },
+          "simulate_network_escape": {
+            "default": false,
+            "title": "Simulate Network Escape",
+            "type": "boolean"
+          },
+          "simulate_timeout_sleep_ms": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Simulate Timeout Sleep Ms",
+            "type": "integer"
+          },
+          "simulate_tmp_overflow_mb": {
+            "default": 0,
+            "maximum": 128.0,
+            "minimum": 0.0,
+            "title": "Simulate Tmp Overflow Mb",
+            "type": "integer"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "timeout_ms": {
+            "default": 5000,
+            "maximum": 5000.0,
+            "minimum": 50.0,
+            "title": "Timeout Ms",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key"
+        ],
+        "title": "DeterministicGateEvaluateRequest",
+        "type": "object"
+      },
+      "DeterministicGateEvaluateResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/gates/deterministic/evaluate`.",
+        "properties": {
+          "evaluation": {
+            "$ref": "#/components/schemas/GateEvaluationSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluation",
+          "trace_id"
+        ],
+        "title": "DeterministicGateEvaluateResponse",
+        "type": "object"
+      },
       "DocVsCodeAuditRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1599,6 +1748,175 @@
           "threshold"
         ],
         "title": "EvaluationLensItem",
+        "type": "object"
+      },
+      "GateEvaluationSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized `GateEvaluationEntity` (`gate_evaluations` table).",
+        "properties": {
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "evaluated_at": {
+            "title": "Evaluated At",
+            "type": "string"
+          },
+          "gate_type": {
+            "enum": [
+              "DETERMINISTIC",
+              "AGENTIC",
+              "HUMAN"
+            ],
+            "title": "Gate Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "missing_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Sections",
+            "type": "array"
+          },
+          "ontology_axioms_passed": {
+            "title": "Ontology Axioms Passed",
+            "type": "boolean"
+          },
+          "outbox_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Id"
+          },
+          "pattern_drift_findings": {
+            "items": {
+              "$ref": "#/components/schemas/PatternDriftFindingSchemaItem"
+            },
+            "title": "Pattern Drift Findings",
+            "type": "array"
+          },
+          "pattern_drift_passed": {
+            "title": "Pattern Drift Passed",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sandbox_exit_code": {
+            "default": 0,
+            "title": "Sandbox Exit Code",
+            "type": "integer"
+          },
+          "sandbox_stderr": {
+            "default": "",
+            "title": "Sandbox Stderr",
+            "type": "string"
+          },
+          "sandbox_tier": {
+            "enum": [
+              "TIER_1_WASM",
+              "TIER_2_CONTAINER",
+              "NONE"
+            ],
+            "title": "Sandbox Tier",
+            "type": "string"
+          },
+          "schema_validation_passed": {
+            "title": "Schema Validation Passed",
+            "type": "boolean"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "ERROR",
+              "PENDING_HUMAN_REVIEW"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "violated_axioms": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Violated Axioms",
+            "type": "array"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "gate_type",
+          "sandbox_tier",
+          "status",
+          "score",
+          "schema_validation_passed",
+          "ontology_axioms_passed",
+          "pattern_drift_passed",
+          "pattern_drift_findings",
+          "missing_sections",
+          "violated_axioms",
+          "duration_ms",
+          "evaluated_at"
+        ],
+        "title": "GateEvaluationSchemaItem",
+        "type": "object"
+      },
+      "GateEvaluationsListResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/gates/evaluations`.",
+        "properties": {
+          "evaluations": {
+            "items": {
+              "$ref": "#/components/schemas/GateEvaluationSchemaItem"
+            },
+            "title": "Evaluations",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluations",
+          "trace_id"
+        ],
+        "title": "GateEvaluationsListResponse",
         "type": "object"
       },
       "HealthResponse": {
@@ -2512,6 +2830,97 @@
         "title": "InitDatasourceResponse",
         "type": "object"
       },
+      "InitExistingProjectRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/init-existing-project` (`FR-28`, `AD-16`).",
+        "properties": {
+          "architecture_paradigm": {
+            "maxLength": 256,
+            "minLength": 3,
+            "title": "Architecture Paradigm",
+            "type": "string"
+          },
+          "detected_dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Detected Dependencies",
+            "type": "array"
+          },
+          "human_anchor_justification": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Human Anchor Justification",
+            "type": "string"
+          },
+          "human_anchor_signature": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Human Anchor Signature",
+            "type": "string"
+          },
+          "repository_uri": {
+            "maxLength": 512,
+            "minLength": 6,
+            "title": "Repository Uri",
+            "type": "string"
+          },
+          "spine_version": {
+            "default": "1.0.0",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Spine Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "repository_uri",
+          "detected_dependencies",
+          "architecture_paradigm",
+          "human_anchor_justification",
+          "human_anchor_signature"
+        ],
+        "title": "InitExistingProjectRequest",
+        "type": "object"
+      },
+      "InitExistingProjectResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/init-existing-project`.",
+        "properties": {
+          "catalog_item": {
+            "$ref": "#/components/schemas/CatalogItemResponse"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SystemBootstrapRunItem"
+          },
+          "spine_baseline": {
+            "$ref": "#/components/schemas/WorkspaceSpineBaselineSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "spine_baseline",
+          "catalog_item",
+          "trace_id"
+        ],
+        "title": "InitExistingProjectResponse",
+        "type": "object"
+      },
       "InitOrganizationRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/bootstrap/init-organization` (`AD-10`, `FR-28`).",
@@ -2583,6 +2992,153 @@
           "trace_id"
         ],
         "title": "InitOrganizationResponse",
+        "type": "object"
+      },
+      "InitSkillRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/init-skill` (`FR-28`, `AD-9`, `AD-16`).",
+        "properties": {
+          "description": {
+            "maxLength": 1024,
+            "minLength": 3,
+            "title": "Description",
+            "type": "string"
+          },
+          "max_memory_mb": {
+            "default": 256,
+            "maximum": 256.0,
+            "minimum": 16.0,
+            "title": "Max Memory Mb",
+            "type": "integer"
+          },
+          "required_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Sections",
+            "type": "array"
+          },
+          "simulate_fs_escape_path": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulate Fs Escape Path"
+          },
+          "simulate_memory_alloc_mb": {
+            "default": 0,
+            "maximum": 1024.0,
+            "minimum": 0.0,
+            "title": "Simulate Memory Alloc Mb",
+            "type": "integer"
+          },
+          "simulate_network_escape": {
+            "default": false,
+            "title": "Simulate Network Escape",
+            "type": "boolean"
+          },
+          "simulate_timeout_sleep_ms": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Simulate Timeout Sleep Ms",
+            "type": "integer"
+          },
+          "skill_key": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Skill Key",
+            "type": "string"
+          },
+          "skill_uri": {
+            "maxLength": 256,
+            "minLength": 8,
+            "title": "Skill Uri",
+            "type": "string"
+          },
+          "test_payload": {
+            "additionalProperties": true,
+            "title": "Test Payload",
+            "type": "object"
+          },
+          "timeout_ms": {
+            "default": 5000,
+            "maximum": 5000.0,
+            "minimum": 50.0,
+            "title": "Timeout Ms",
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 128,
+            "minLength": 2,
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": "v1.0.0",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          },
+          "visibility_scope": {
+            "default": "SHARED_WORKSPACE",
+            "enum": [
+              "SHARED_WORKSPACE",
+              "SHARED_TEAM"
+            ],
+            "title": "Visibility Scope",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "skill_key",
+          "skill_uri",
+          "title",
+          "description"
+        ],
+        "title": "InitSkillRequest",
+        "type": "object"
+      },
+      "InitSkillResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/init-skill`.",
+        "properties": {
+          "catalog_item": {
+            "$ref": "#/components/schemas/CatalogItemResponse"
+          },
+          "gate_evaluation": {
+            "$ref": "#/components/schemas/GateEvaluationSchemaItem"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SystemBootstrapRunItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "catalog_item",
+          "gate_evaluation",
+          "trace_id"
+        ],
+        "title": "InitSkillResponse",
         "type": "object"
       },
       "InitUserPassthroughSecretItem": {
@@ -3243,6 +3799,35 @@
         "title": "OntologyAndRagStateResponse",
         "type": "object"
       },
+      "OntologyAxiomRuleInputItem": {
+        "additionalProperties": false,
+        "description": "Formal ontology axiom rule checked inside the Tier 1 Sandbox (`AD-7`, `AD-9`).",
+        "properties": {
+          "axiom_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Axiom Key",
+            "type": "string"
+          },
+          "forbidden_term": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Forbidden Term",
+            "type": "string"
+          },
+          "required_term": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Required Term",
+            "type": "string"
+          }
+        },
+        "required": [
+          "axiom_key"
+        ],
+        "title": "OntologyAxiomRuleInputItem",
+        "type": "object"
+      },
       "OntologyConceptSchemaItem": {
         "additionalProperties": false,
         "properties": {
@@ -3861,6 +4446,36 @@
           "plaintext_secret"
         ],
         "title": "PassthroughSecretStoreRequest",
+        "type": "object"
+      },
+      "PatternDriftFindingSchemaItem": {
+        "additionalProperties": false,
+        "description": "Single Pattern Drift violation against `ARCHITECTURE-SPINE.md` (`FR-17`).",
+        "properties": {
+          "forbidden_symbol": {
+            "title": "Forbidden Symbol",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_id",
+          "forbidden_symbol",
+          "severity",
+          "message"
+        ],
+        "title": "PatternDriftFindingSchemaItem",
         "type": "object"
       },
       "PermissionBrokerPolicyItem": {
@@ -7630,6 +8245,60 @@
         "title": "WorkspaceDatasourceItem",
         "type": "object"
       },
+      "WorkspaceSpineBaselineSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized `WorkspaceSpineBaseline` (`[ADOPTED]`, `FR-28`, `AD-16`).",
+        "properties": {
+          "allowed_dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Dependencies",
+            "type": "array"
+          },
+          "content_sha256": {
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "human_anchor_signature": {
+            "title": "Human Anchor Signature",
+            "type": "string"
+          },
+          "signed_by_user_id": {
+            "title": "Signed By User Id",
+            "type": "string"
+          },
+          "spine_markdown": {
+            "title": "Spine Markdown",
+            "type": "string"
+          },
+          "spine_version": {
+            "title": "Spine Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "ADOPTED",
+            "title": "Status",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "spine_version",
+          "status",
+          "allowed_dependencies",
+          "spine_markdown",
+          "content_sha256",
+          "signed_by_user_id",
+          "human_anchor_signature"
+        ],
+        "title": "WorkspaceSpineBaselineSchemaItem",
+        "type": "object"
+      },
       "WorkspaceSummaryItem": {
         "additionalProperties": false,
         "description": "Solution Workspace summary with effective RBAC access and multi-source topology.",
@@ -8680,6 +9349,101 @@
         ]
       }
     },
+    "/api/v1/bootstrap/init-existing-project": {
+      "post": {
+        "operationId": "execute_init_existing_project_endpoint_api_v1_bootstrap_init_existing_project_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitExistingProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitExistingProjectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute governed `orcia://system/bootstrap/init-existing-project` (`FR-28`, `AD-16`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
     "/api/v1/bootstrap/init-organization": {
       "post": {
         "operationId": "execute_init_organization_api_v1_bootstrap_init_organization_post",
@@ -8772,6 +9536,101 @@
         "summary": "Execute Day-0 governed `orcia://system/bootstrap/init-organization` (`AD-10`)",
         "tags": [
           "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/init-skill": {
+      "post": {
+        "operationId": "execute_init_skill_endpoint_api_v1_bootstrap_init_skill_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitSkillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitSkillResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute governed `orcia://system/bootstrap/init-skill` with Tier 1 Sandbox certification",
+        "tags": [
+          "gates"
         ]
       }
     },
@@ -9914,6 +10773,204 @@
         "summary": "Merge 4 override layers (Base -> Team -> Workspace -> User) and generate run-lock",
         "tags": [
           "federated-catalog"
+        ]
+      }
+    },
+    "/api/v1/gates/deterministic/evaluate": {
+      "post": {
+        "operationId": "evaluate_deterministic_gate_endpoint_api_v1_gates_deterministic_evaluate_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeterministicGateEvaluateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeterministicGateEvaluateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Evaluate a Deterministic Gate in the out-of-process Tier 1 Sandbox (`AD-9`, `FR-17`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/evaluations": {
+      "get": {
+        "operationId": "list_gate_evaluations_endpoint_api_v1_gates_evaluations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateEvaluationsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List Deterministic, Agentic & Human Gate evaluations (`AD-9..11`)",
+        "tags": [
+          "gates"
         ]
       }
     },
@@ -11770,7 +12827,7 @@
     },
     "/api/v1/orchestration/runs/{run_id}/steps/{step_key}/challenge/preview": {
       "post": {
-        "description": "Compute DAG + Ontology `What-If Impact Preview` for challenging an upstream step (`UX-DR7`).",
+        "description": "Compute DAG + Ontology `What-If Impact Preview` for an upstream step (`UX-DR7`).",
         "operationId": "preview_upstream_challenge_api_v1_orchestration_runs__run_id__steps__step_key__challenge_preview_post",
         "parameters": [
           {

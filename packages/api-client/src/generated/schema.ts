@@ -233,6 +233,28 @@ export interface components {
       schema_version: string;
       workspace_id: string;
     };
+    DeterministicGateEvaluateRequest: {
+      allowed_dependencies?: (string)[] | null;
+      artifact_payload?: Record<string, unknown>;
+      max_memory_mb?: number;
+      ontology_axioms?: (components["schemas"]["OntologyAxiomRuleInputItem"])[];
+      raise_on_failure?: boolean;
+      required_sections?: (string)[];
+      run_id: string;
+      simulate_fs_escape_path?: string | null;
+      simulate_memory_alloc_mb?: number;
+      simulate_network_escape?: boolean;
+      simulate_timeout_sleep_ms?: number;
+      simulate_tmp_overflow_mb?: number;
+      step_execution_id: string;
+      step_key: string;
+      timeout_ms?: number;
+      workspace_id: string;
+    };
+    DeterministicGateEvaluateResponse: {
+      evaluation: components["schemas"]["GateEvaluationSchemaItem"];
+      trace_id: string;
+    };
     DocVsCodeAuditRequest: {
       code_rule_summary: string;
       confluence_uri: string;
@@ -265,6 +287,32 @@ export interface components {
       code: string;
       threshold: number;
       weight: number;
+    };
+    GateEvaluationSchemaItem: {
+      duration_ms: number;
+      evaluated_at: string;
+      gate_type: "DETERMINISTIC" | "AGENTIC" | "HUMAN";
+      id: string;
+      missing_sections: (string)[];
+      ontology_axioms_passed: boolean;
+      outbox_event_id?: string | null;
+      pattern_drift_findings: (components["schemas"]["PatternDriftFindingSchemaItem"])[];
+      pattern_drift_passed: boolean;
+      run_id: string;
+      sandbox_exit_code?: number;
+      sandbox_stderr?: string;
+      sandbox_tier: "TIER_1_WASM" | "TIER_2_CONTAINER" | "NONE";
+      schema_validation_passed: boolean;
+      score: number;
+      status: "PASS" | "FAIL" | "ERROR" | "PENDING_HUMAN_REVIEW";
+      step_execution_id: string;
+      step_key: string;
+      violated_axioms: (Record<string, string>)[];
+      workspace_id: string;
+    };
+    GateEvaluationsListResponse: {
+      evaluations: (components["schemas"]["GateEvaluationSchemaItem"])[];
+      trace_id: string;
     };
     HealthResponse: {
       status?: "ok";
@@ -409,6 +457,21 @@ export interface components {
       run: components["schemas"]["SystemBootstrapRunItem"];
       trace_id: string;
     };
+    InitExistingProjectRequest: {
+      architecture_paradigm: string;
+      detected_dependencies: (string)[];
+      human_anchor_justification: string;
+      human_anchor_signature: string;
+      repository_uri: string;
+      spine_version?: string;
+      workspace_id: string;
+    };
+    InitExistingProjectResponse: {
+      catalog_item: components["schemas"]["CatalogItemResponse"];
+      run: components["schemas"]["SystemBootstrapRunItem"];
+      spine_baseline: components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
+      trace_id: string;
+    };
     InitOrganizationRequest: {
       llm_endpoints: (components["schemas"]["LlmModelEndpointItem"])[];
       local_argon2id_enabled?: boolean;
@@ -418,6 +481,29 @@ export interface components {
     };
     InitOrganizationResponse: {
       orthogonal_families: (string)[];
+      run: components["schemas"]["SystemBootstrapRunItem"];
+      trace_id: string;
+    };
+    InitSkillRequest: {
+      description: string;
+      max_memory_mb?: number;
+      required_sections?: (string)[];
+      simulate_fs_escape_path?: string | null;
+      simulate_memory_alloc_mb?: number;
+      simulate_network_escape?: boolean;
+      simulate_timeout_sleep_ms?: number;
+      skill_key: string;
+      skill_uri: string;
+      test_payload?: Record<string, unknown>;
+      timeout_ms?: number;
+      title: string;
+      version?: string;
+      visibility_scope?: "SHARED_WORKSPACE" | "SHARED_TEAM";
+      workspace_id: string;
+    };
+    InitSkillResponse: {
+      catalog_item: components["schemas"]["CatalogItemResponse"];
+      gate_evaluation: components["schemas"]["GateEvaluationSchemaItem"];
       run: components["schemas"]["SystemBootstrapRunItem"];
       trace_id: string;
     };
@@ -520,6 +606,11 @@ export interface components {
       trace_id?: string | null;
       tripartite_edges: (components["schemas"]["TripartiteTraceEdgeSchemaItem"])[];
     };
+    OntologyAxiomRuleInputItem: {
+      axiom_key: string;
+      forbidden_term?: string;
+      required_term?: string;
+    };
     OntologyConceptSchemaItem: {
       banned_terms: (string)[];
       canonical_term: string;
@@ -617,6 +708,12 @@ export interface components {
       connector_scheme: string;
       plaintext_secret: string;
       target_host: string;
+    };
+    PatternDriftFindingSchemaItem: {
+      forbidden_symbol: string;
+      message: string;
+      rule_id: string;
+      severity: string;
     };
     PermissionBrokerPolicyItem: {
       approved_by_admin_id?: string | null;
@@ -1158,6 +1255,16 @@ export interface components {
       uri: string;
       workspace_id: string;
     };
+    WorkspaceSpineBaselineSchemaItem: {
+      allowed_dependencies: (string)[];
+      content_sha256: string;
+      human_anchor_signature: string;
+      signed_by_user_id: string;
+      spine_markdown: string;
+      spine_version: string;
+      status: "ADOPTED";
+      workspace_id: string;
+    };
     WorkspaceSummaryItem: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       access_origin: "DIRECT_TEAM" | "ROLLUP_PARENT" | "PARTNER_INVITE" | "GLOBAL_ADMIN";
@@ -1263,10 +1370,24 @@ export interface paths {
       };
     };
   };
+  "/api/v1/bootstrap/init-existing-project": {
+    post: {
+      responses: {
+        200: components["schemas"]["InitExistingProjectResponse"];
+      };
+    };
+  };
   "/api/v1/bootstrap/init-organization": {
     post: {
       responses: {
         200: components["schemas"]["InitOrganizationResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/init-skill": {
+    post: {
+      responses: {
+        200: components["schemas"]["InitSkillResponse"];
       };
     };
   };
@@ -1344,6 +1465,20 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["EffectiveWorkflowResolveResponse"];
+      };
+    };
+  };
+  "/api/v1/gates/deterministic/evaluate": {
+    post: {
+      responses: {
+        200: components["schemas"]["DeterministicGateEvaluateResponse"];
+      };
+    };
+  };
+  "/api/v1/gates/evaluations": {
+    get: {
+      responses: {
+        200: components["schemas"]["GateEvaluationsListResponse"];
       };
     };
   };
@@ -1602,11 +1737,15 @@ export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolve
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
+export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
+export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
 export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
 export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
+export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
+export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HumanAnchorSignRequest = components["schemas"]["HumanAnchorSignRequest"];
 export type HumanAnchorSignResponse = components["schemas"]["HumanAnchorSignResponse"];
@@ -1623,8 +1762,12 @@ export type HybridRagSearchResponse = components["schemas"]["HybridRagSearchResp
 export type HydratedStepContextSchemaItem = components["schemas"]["HydratedStepContextSchemaItem"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
 export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];
+export type InitExistingProjectRequest = components["schemas"]["InitExistingProjectRequest"];
+export type InitExistingProjectResponse = components["schemas"]["InitExistingProjectResponse"];
 export type InitOrganizationRequest = components["schemas"]["InitOrganizationRequest"];
 export type InitOrganizationResponse = components["schemas"]["InitOrganizationResponse"];
+export type InitSkillRequest = components["schemas"]["InitSkillRequest"];
+export type InitSkillResponse = components["schemas"]["InitSkillResponse"];
 export type InitUserPassthroughSecretItem = components["schemas"]["InitUserPassthroughSecretItem"];
 export type InitUserRequest = components["schemas"]["InitUserRequest"];
 export type InitUserResponse = components["schemas"]["InitUserResponse"];
@@ -1638,6 +1781,7 @@ export type LogoutResponse = components["schemas"]["LogoutResponse"];
 export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
 export type OntologyAndRagStateResponse = components["schemas"]["OntologyAndRagStateResponse"];
+export type OntologyAxiomRuleInputItem = components["schemas"]["OntologyAxiomRuleInputItem"];
 export type OntologyConceptSchemaItem = components["schemas"]["OntologyConceptSchemaItem"];
 export type OntologyPromoteRequest = components["schemas"]["OntologyPromoteRequest"];
 export type OntologyPromotionProposalSchemaItem = components["schemas"]["OntologyPromotionProposalSchemaItem"];
@@ -1650,6 +1794,7 @@ export type OrchestrationSetupStateResponse = components["schemas"]["Orchestrati
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
+export type PatternDriftFindingSchemaItem = components["schemas"]["PatternDriftFindingSchemaItem"];
 export type PermissionBrokerPolicyItem = components["schemas"]["PermissionBrokerPolicyItem"];
 export type PermissionBrokerStateResponse = components["schemas"]["PermissionBrokerStateResponse"];
 export type PermissionBrokerTicketItem = components["schemas"]["PermissionBrokerTicketItem"];
@@ -1708,6 +1853,7 @@ export type WorkflowStepSpecSchemaItem = components["schemas"]["WorkflowStepSpec
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
+export type WorkspaceSpineBaselineSchemaItem = components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];
 export type XyFlowEdgeSchemaItem = components["schemas"]["XyFlowEdgeSchemaItem"];
