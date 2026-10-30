@@ -73,11 +73,11 @@ development_status:
   4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: done
   epic-4-retrospective: optional
 
-  epic-5: backlog
-  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: backlog
-  5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: backlog
-  5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: backlog
-  5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: backlog
+  epic-5: done
+  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done
+  5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: done
+  5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: done
+  5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
   epic-5-retrospective: optional
 
   epic-6: backlog
@@ -483,7 +483,7 @@ action_items:
     ad_ref: "AD-4"
     story_ref: "5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch"
     owner: "Karim (Platform)"
-    status: open
+    status: done
     epic: epic-5
     description: >
       Risque K7 / plan P1-3 de l'audit : concurrence sur ressources partagées limitée au verrou de présence Redis.

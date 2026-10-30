@@ -15,9 +15,11 @@ from orcia_api.routers.blackboard_and_engine import router as blackboard_and_eng
 from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
 from orcia_api.routers.challenge_and_replay import router as challenge_and_replay_router
+from orcia_api.routers.control_center import router as control_center_router
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
+from orcia_api.routers.inbox_and_leases import router as inbox_and_leases_router
 from orcia_api.routers.jira_and_mcp import router as jira_and_mcp_router
 from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
 from orcia_api.routers.orchestration import router as orchestration_router
@@ -53,6 +55,8 @@ def create_app() -> FastAPI:
     application.include_router(permission_broker_router)
     application.include_router(gates_router)
     application.include_router(human_gates_router)
+    application.include_router(inbox_and_leases_router)
+    application.include_router(control_center_router)
     application.include_router(jira_and_mcp_router)
     application.include_router(bootstrap_router)
     application.include_router(ontology_and_rag_router)

@@ -5,6 +5,20 @@
 
 export interface components {
   schemas: {
+    AcquireResourceLeasesRequest: {
+      ancestor_run_ids?: (string)[];
+      holder_parent_run_id?: string | null;
+      holder_root_run_id: string;
+      holder_run_id: string;
+      holder_step_execution_id: string;
+      resource_uris: (string)[];
+      ttl_seconds?: number;
+    };
+    AcquireResourceLeasesResponse: {
+      canonical_order: (string)[];
+      leases: (components["schemas"]["ResourceLeaseItemResponse"])[];
+      trace_id: string;
+    };
     AgenticGateEvaluateRequest: {
       anonymize_pii_reversible?: boolean;
       candidate_artifact?: Record<string, unknown>;
@@ -257,6 +271,34 @@ export interface components {
       word_count?: number;
       workspace_id: string;
     };
+    ClaimTaskRequest: {
+      force?: boolean;
+      step_key?: string;
+      ttl_seconds?: number;
+      workspace_id?: string;
+    };
+    ClaimTaskResponse: {
+      lock_key?: string | null;
+      notification: components["schemas"]["TaskNotificationItemResponse"];
+      peer_presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
+      sse_event: components["schemas"]["SseEventEnvelopeResponse"];
+      trace_id: string;
+      viewer_presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
+    };
+    CommandPaletteEntryResponse: {
+      access_mode?: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER" | null;
+      category: "RUN" | "WORKSPACE" | "NAVIGATION" | "ONTOLOGY" | "CATALOG";
+      entry_id: string;
+      label_fr: string;
+      shortcut: string;
+      subtitle_fr: string;
+      target_route: string;
+    };
+    CommandPaletteSearchResponse: {
+      items: (components["schemas"]["CommandPaletteEntryResponse"])[];
+      query: string;
+      trace_id: string;
+    };
     CommitStagedJiraActionRequest: {
       gate_status: "PASS" | "FAIL" | "WAITING_HUMAN";
       run_lock_sha256: string;
@@ -284,6 +326,22 @@ export interface components {
       section_title: string;
       word_count: number;
     };
+    ControlCenterOverviewResponse: {
+      consolidated_finops_usd: number;
+      contributor_runs: (components["schemas"]["SupervisedRunItemResponse"])[];
+      datasources: (components["schemas"]["SupervisedDatasourceItemResponse"])[];
+      guidance_steps: (components["schemas"]["GuidanceStepItemResponse"])[];
+      observer_banner_fr?: string | null;
+      observer_runs: (components["schemas"]["SupervisedRunItemResponse"])[];
+      org_units: (components["schemas"]["OrgUnitSummaryResponse"])[];
+      scope_id: string;
+      scope_label: string;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      trace_id: string;
+      viewer_access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
+      workflow_overrides: (components["schemas"]["DeclarativeOverrideLayerResponse"])[];
+      workspaces_governance: (components["schemas"]["WorkspaceGovernanceItemResponse"])[];
+    };
     DbDdlIndexRequest: {
       datasource_alias: string;
       datasource_id: string;
@@ -292,6 +350,15 @@ export interface components {
       ontology_concepts?: (string)[];
       schema_version: string;
       workspace_id: string;
+    };
+    DeclarativeOverrideLayerResponse: {
+      base_layer: string;
+      spine_contract_ref: string;
+      team_override: string;
+      title: string;
+      user_override: string;
+      workflow_key: string;
+      workspace_override: string;
     };
     DeploymentRoleSchemaItem: {
       description: string;
@@ -386,6 +453,12 @@ export interface components {
     GateEvaluationsListResponse: {
       evaluations: (components["schemas"]["GateEvaluationSchemaItem"])[];
       trace_id: string;
+    };
+    GuidanceStepItemResponse: {
+      action_command: string;
+      description_fr: string;
+      step_number: number;
+      title_fr: string;
     };
     HealthResponse: {
       status?: "ok";
@@ -565,6 +638,13 @@ export interface components {
       step_title: string;
       step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "HUMAN_TASK" | "HTTP_ACTION" | "POST_ACTION_VERIFICATION";
       undeclared_artifacts_leaked?: number;
+    };
+    InboxNotificationListResponse: {
+      amber_badge_count: number;
+      items: (components["schemas"]["TaskNotificationItemResponse"])[];
+      trace_id: string;
+      viewer_user_id: string;
+      workspace_id: string;
     };
     InitDatasourceRequest: {
       alias: string;
@@ -881,6 +961,13 @@ export interface components {
       trace_id: string;
       workflows: (components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"])[];
     };
+    OrgUnitSummaryResponse: {
+      id: string;
+      name: string;
+      parent_id?: string | null;
+      slug: string;
+      unit_type: "ENTERPRISE" | "BU" | "TRIBE" | "TEAM" | "SUB_TEAM";
+    };
     OrgUnitTreeItem: {
       id: string;
       name: string;
@@ -1020,6 +1107,21 @@ export interface components {
       workflow_version: string;
       workspace_id: string;
     };
+    ReleaseTaskClaimRequest: {
+      force?: boolean;
+    };
+    ResourceLeaseItemResponse: {
+      acquired_at: string;
+      expires_at: string;
+      fencing_token: number;
+      holder_parent_run_id?: string | null;
+      holder_root_run_id: string;
+      holder_run_id: string;
+      holder_step_execution_id: string;
+      id: string;
+      resource_class: string;
+      resource_uri: string;
+    };
     RunBlackboardStateResponse: {
       accumulated_root_cost_usd: number;
       active_snapshots: (components["schemas"]["BlackboardSnapshotSchemaItem"])[];
@@ -1046,6 +1148,16 @@ export interface components {
       scheme: string;
       sha256: string;
       uri: string;
+    };
+    RunMutationGuardCheckRequest: {
+      action?: string;
+    };
+    RunMutationGuardCheckResponse: {
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
+      allowed?: boolean;
+      run_id: string;
+      step_execution_id: string;
+      trace_id: string;
     };
     ScopeMutationCheckResponse: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
@@ -1076,6 +1188,17 @@ export interface components {
       modules: (components["schemas"]["ShellModuleItem"])[];
       scopes: (components["schemas"]["ScopeNode"])[];
       trace_id: string;
+    };
+    SseEventEnvelopeResponse: {
+      channel: string;
+      dispatch_latency_ms: number;
+      event_id: string;
+      event_name: string;
+      payload?: Record<string, unknown>;
+      published_at_iso: string;
+      run_id: string;
+      step_execution_id: string;
+      workspace_id: string;
     };
     StageJiraActionRequest: {
       action_type: "create_issue" | "update_issue" | "add_comment" | "transition_issue";
@@ -1196,6 +1319,35 @@ export interface components {
       workflow_uri: string;
       workflow_version: string;
     };
+    SupervisedDatasourceItemResponse: {
+      alias: string;
+      execution_identity: string;
+      freshness_ttl_days: number;
+      id: string;
+      role: string;
+      scheme: string;
+      tripartite_status: "ALIGNED" | "STALE_WARNING" | "INDEXING";
+      uri: string;
+      workspace_id: string;
+      workspace_name: string;
+    };
+    SupervisedRunItemResponse: {
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
+      blackboard_payload_masked?: boolean;
+      blackboard_summary: string;
+      budget_consumed_usd: number;
+      claimed_by_display_name?: string | null;
+      claimed_by_user_id?: string | null;
+      current_step_id: string;
+      current_step_key: string;
+      execution_mode: "COACHING" | "FAST_PATH";
+      run_id: string;
+      status: "RUNNING" | "PAUSED_HUMAN_GATE" | "PAUSED_ARBITRATION" | "COMPLETED";
+      title: string;
+      workflow_key: string;
+      workspace_id: string;
+      workspace_name: string;
+    };
     SystemBootstrapRunItem: {
       execution_payload: Record<string, unknown>;
       gate_passed: boolean;
@@ -1227,6 +1379,28 @@ export interface components {
       sha256: string;
       title: string;
       uri: string;
+    };
+    TaskNotificationItemResponse: {
+      can_force_unclaim?: boolean;
+      claimed_at?: string | null;
+      claimed_by_display_name?: string | null;
+      claimed_by_user_id?: string | null;
+      created_at: string;
+      id: string;
+      lock_expires_at?: string | null;
+      notification_type: "HUMAN_GATE" | "HUMAN_ARBITRATION" | "HUMAN_ANCHOR" | "UPSTREAM_CHALLENGE" | "PERMISSION_ALERT" | "STALE_WARNING" | "AUTONOMOUS_ESCALATION" | "POST_HOC_AUDIT_SAMPLE";
+      peer_opacity?: number;
+      presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
+      run_id: string;
+      scope_kind: "PERSONAL" | "TEAM";
+      status: "OPEN" | "CLAIMED" | "RESOLVED";
+      step_execution_id: string;
+      step_key: string;
+      summary: string;
+      target_team_id?: string | null;
+      target_user_id?: string | null;
+      title: string;
+      workspace_id: string;
     };
     Tier2TddVerifyRequest: {
       buggy_files?: Record<string, string>;
@@ -1262,6 +1436,9 @@ export interface components {
       target_node_type: "CONFLUENCE_PAGE" | "JIRA_ISSUE" | "GIT_SYMBOL" | "GIT_COMMIT" | "ONTOLOGY_CONCEPT";
       target_uri: string;
       workspace_id: string;
+    };
+    UpdateWorkspaceLifecycleRequest: {
+      lifecycle_phase: "RUN" | "BUILD" | "MIGRATION";
     };
     UpstreamChallengePreviewRequest: {
       challenge_reason: string;
@@ -1346,6 +1523,19 @@ export interface components {
       user_email: string;
       user_id?: string | null;
       workspace_ids: (string)[];
+    };
+    ValidateFencedWriteRequest: {
+      fencing_token: number;
+      payload?: Record<string, unknown>;
+      resource_uri: string;
+    };
+    ValidateFencedWriteResponse: {
+      fencing_token: number;
+      payload?: Record<string, unknown>;
+      resource_class: string;
+      resource_uri: string;
+      status: "COMMITTED_FENCED";
+      trace_id: string;
     };
     WhatIfSimulationRequest: {
       concept_key: string;
@@ -1506,6 +1696,18 @@ export interface components {
       role: string;
       scheme: string;
       uri: string;
+      workspace_id: string;
+    };
+    WorkspaceGovernanceItemResponse: {
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
+      blackboard_payload_masked?: boolean;
+      finops_cost_usd?: number | null;
+      lifecycle_phase: "RUN" | "BUILD" | "MIGRATION";
+      name: string;
+      owner_org_unit_id: string;
+      slug: string;
+      suggested_workflows: (string)[];
+      visibility_mode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
       workspace_id: string;
     };
     WorkspaceSpineBaselineSchemaItem: {
@@ -1721,6 +1923,41 @@ export interface paths {
       };
     };
   };
+  "/api/v1/control-center/command-palette": {
+    get: {
+      responses: {
+        200: components["schemas"]["CommandPaletteSearchResponse"];
+      };
+    };
+  };
+  "/api/v1/control-center/overview": {
+    get: {
+      responses: {
+        200: components["schemas"]["ControlCenterOverviewResponse"];
+      };
+    };
+  };
+  "/api/v1/control-center/runs/{run_id}/steps/{step_id}/mutate-check": {
+    post: {
+      responses: {
+        200: components["schemas"]["RunMutationGuardCheckResponse"];
+      };
+    };
+  };
+  "/api/v1/control-center/workspaces/{workspace_id}/lifecycle": {
+    patch: {
+      responses: {
+        200: components["schemas"]["WorkspaceGovernanceItemResponse"];
+      };
+    };
+  };
+  "/api/v1/events/stream": {
+    get: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
   "/api/v1/gates/agentic/evaluate": {
     post: {
       responses: {
@@ -1788,6 +2025,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["HealthResponse"];
+      };
+    };
+  };
+  "/api/v1/inbox/notifications": {
+    get: {
+      responses: {
+        200: components["schemas"]["InboxNotificationListResponse"];
       };
     };
   };
@@ -2029,6 +2273,41 @@ export interface paths {
       };
     };
   };
+  "/api/v1/resource-leases/acquire": {
+    post: {
+      responses: {
+        200: components["schemas"]["AcquireResourceLeasesResponse"];
+      };
+    };
+  };
+  "/api/v1/resource-leases/fenced-write": {
+    post: {
+      responses: {
+        200: components["schemas"]["ValidateFencedWriteResponse"];
+      };
+    };
+  };
+  "/api/v1/runs/{run_id}/steps/{step_id}/claim": {
+    post: {
+      responses: {
+        200: components["schemas"]["ClaimTaskResponse"];
+      };
+    };
+  };
+  "/api/v1/tasks/{task_id}/claim": {
+    post: {
+      responses: {
+        200: components["schemas"]["ClaimTaskResponse"];
+      };
+    };
+  };
+  "/api/v1/tasks/{task_id}/release": {
+    post: {
+      responses: {
+        200: components["schemas"]["ClaimTaskResponse"];
+      };
+    };
+  };
   "/api/v1/webhooks/jira/issue-updated": {
     post: {
       responses: {
@@ -2052,6 +2331,8 @@ export interface paths {
   };
 }
 
+export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourceLeasesRequest"];
+export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
 export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
@@ -2081,11 +2362,17 @@ export type CatalogResourceSourceResponse = components["schemas"]["CatalogResour
 export type CatalogUriResolveRequest = components["schemas"]["CatalogUriResolveRequest"];
 export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolveResponse"];
 export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchemaItem"];
+export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
+export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
+export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteEntryResponse"];
+export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
 export type CommitStagedJiraActionRequest = components["schemas"]["CommitStagedJiraActionRequest"];
 export type CommitStagedJiraActionResponse = components["schemas"]["CommitStagedJiraActionResponse"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
+export type ControlCenterOverviewResponse = components["schemas"]["ControlCenterOverviewResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
+export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSchemaItem"];
 export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
@@ -2097,6 +2384,7 @@ export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveW
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
+export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HumanAnchorSignRequest = components["schemas"]["HumanAnchorSignRequest"];
 export type HumanAnchorSignResponse = components["schemas"]["HumanAnchorSignResponse"];
@@ -2118,6 +2406,7 @@ export type HybridRagHitSchemaItem = components["schemas"]["HybridRagHitSchemaIt
 export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchRequest"];
 export type HybridRagSearchResponse = components["schemas"]["HybridRagSearchResponse"];
 export type HydratedStepContextSchemaItem = components["schemas"]["HydratedStepContextSchemaItem"];
+export type InboxNotificationListResponse = components["schemas"]["InboxNotificationListResponse"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
 export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];
 export type InitExistingProjectRequest = components["schemas"]["InitExistingProjectRequest"];
@@ -2157,6 +2446,7 @@ export type OntologyResolveResponse = components["schemas"]["OntologyResolveResp
 export type OntologyTermInputItem = components["schemas"]["OntologyTermInputItem"];
 export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsertConceptRequest"];
 export type OrchestrationSetupStateResponse = components["schemas"]["OrchestrationSetupStateResponse"];
+export type OrgUnitSummaryResponse = components["schemas"]["OrgUnitSummaryResponse"];
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
@@ -2173,13 +2463,18 @@ export type PermissionTicketActionResponse = components["schemas"]["PermissionTi
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
+export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
+export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type RunBlackboardStateResponse = components["schemas"]["RunBlackboardStateResponse"];
 export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
 export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripletItem"];
+export type RunMutationGuardCheckRequest = components["schemas"]["RunMutationGuardCheckRequest"];
+export type RunMutationGuardCheckResponse = components["schemas"]["RunMutationGuardCheckResponse"];
 export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationCheckResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
+export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeResponse"];
 export type StageJiraActionRequest = components["schemas"]["StageJiraActionRequest"];
 export type StageJiraActionResponse = components["schemas"]["StageJiraActionResponse"];
 export type StagedJiraActionItemSchema = components["schemas"]["StagedJiraActionItemSchema"];
@@ -2194,12 +2489,16 @@ export type StepReplayRequest = components["schemas"]["StepReplayRequest"];
 export type StepReplayResponse = components["schemas"]["StepReplayResponse"];
 export type StepReplayResultSchemaItem = components["schemas"]["StepReplayResultSchemaItem"];
 export type SubWorkflowLockSchemaItem = components["schemas"]["SubWorkflowLockSchemaItem"];
+export type SupervisedDatasourceItemResponse = components["schemas"]["SupervisedDatasourceItemResponse"];
+export type SupervisedRunItemResponse = components["schemas"]["SupervisedRunItemResponse"];
 export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
+export type TaskNotificationItemResponse = components["schemas"]["TaskNotificationItemResponse"];
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
+export type UpdateWorkspaceLifecycleRequest = components["schemas"]["UpdateWorkspaceLifecycleRequest"];
 export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
 export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];
 export type UpstreamChallengePreviewSchemaItem = components["schemas"]["UpstreamChallengePreviewSchemaItem"];
@@ -2208,6 +2507,8 @@ export type UpstreamChallengeSubmitRequest = components["schemas"]["UpstreamChal
 export type UpstreamChallengeSubmitResponse = components["schemas"]["UpstreamChallengeSubmitResponse"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
+export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
+export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
 export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];
 export type WorkflowAsCodeDefinitionSchemaItem = components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"];
@@ -2224,6 +2525,7 @@ export type WorkflowStepSpecSchemaItem = components["schemas"]["WorkflowStepSpec
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
+export type WorkspaceGovernanceItemResponse = components["schemas"]["WorkspaceGovernanceItemResponse"];
 export type WorkspaceSpineBaselineSchemaItem = components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];

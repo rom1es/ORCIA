@@ -8,11 +8,13 @@ import { Route as finopsRoute } from "./routes/finops";
 import { Route as gatesRoute } from "./routes/gates";
 import { Route as inboxRoute } from "./routes/inbox";
 import { Route as indexRoute } from "./routes/index";
+import { Route as loginRoute } from "./routes/login";
 import { Route as ontologyRoute } from "./routes/ontology";
 import { Route as workspacesRoute } from "./routes/workspaces";
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
+  loginRoute,
   cockpitRoute,
   inboxRoute,
   catalogRoute,

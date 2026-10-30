@@ -1,6 +1,102 @@
 {
   "components": {
     "schemas": {
+      "AcquireResourceLeasesRequest": {
+        "additionalProperties": false,
+        "description": "Request body for acquiring shared resource leases in canonical order (`DEC-CONC-01`).",
+        "properties": {
+          "ancestor_run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ancestor Run Ids",
+            "type": "array"
+          },
+          "holder_parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Parent Run Id"
+          },
+          "holder_root_run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Holder Root Run Id",
+            "type": "string"
+          },
+          "holder_run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Holder Run Id",
+            "type": "string"
+          },
+          "holder_step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Holder Step Execution Id",
+            "type": "string"
+          },
+          "resource_uris": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Resource Uris",
+            "type": "array"
+          },
+          "ttl_seconds": {
+            "default": 120,
+            "maximum": 3600.0,
+            "minimum": 1.0,
+            "title": "Ttl Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resource_uris",
+          "holder_run_id",
+          "holder_root_run_id",
+          "holder_step_execution_id"
+        ],
+        "title": "AcquireResourceLeasesRequest",
+        "type": "object"
+      },
+      "AcquireResourceLeasesResponse": {
+        "additionalProperties": false,
+        "description": "Response returned after canonical acquisition of shared resource leases (`DEC-CONC-01`).",
+        "properties": {
+          "canonical_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Canonical Order",
+            "type": "array"
+          },
+          "leases": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceLeaseItemResponse"
+            },
+            "title": "Leases",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "leases",
+          "canonical_order",
+          "trace_id"
+        ],
+        "title": "AcquireResourceLeasesResponse",
+        "type": "object"
+      },
       "AgenticGateEvaluateRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`, `AD-10`, `FR-18`).",
@@ -1615,6 +1711,184 @@
         "title": "ChunkApprovalSchemaItem",
         "type": "object"
       },
+      "ClaimTaskRequest": {
+        "additionalProperties": false,
+        "description": "Request body for claiming a task notification or step execution (`AD-4`).",
+        "properties": {
+          "force": {
+            "default": false,
+            "title": "Force",
+            "type": "boolean"
+          },
+          "step_key": {
+            "default": "architecture-arbitration",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "ttl_seconds": {
+            "default": 900,
+            "maximum": 86400.0,
+            "minimum": 1.0,
+            "title": "Ttl Seconds",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "default": "0195f000-0000-7000-8000-000000000301",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "title": "ClaimTaskRequest",
+        "type": "object"
+      },
+      "ClaimTaskResponse": {
+        "additionalProperties": false,
+        "description": "Response returned after atomic `SET lock:step:{step_execution_id} NX EX 900` (`AD-4`).",
+        "properties": {
+          "lock_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lock Key"
+          },
+          "notification": {
+            "$ref": "#/components/schemas/TaskNotificationItemResponse"
+          },
+          "peer_presence_state": {
+            "enum": [
+              "UNCLAIMED",
+              "CLAIMED_BY_ME",
+              "CLAIMED_BY_PEER"
+            ],
+            "title": "Peer Presence State",
+            "type": "string"
+          },
+          "sse_event": {
+            "$ref": "#/components/schemas/SseEventEnvelopeResponse"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "viewer_presence_state": {
+            "enum": [
+              "UNCLAIMED",
+              "CLAIMED_BY_ME",
+              "CLAIMED_BY_PEER"
+            ],
+            "title": "Viewer Presence State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "notification",
+          "viewer_presence_state",
+          "peer_presence_state",
+          "sse_event",
+          "trace_id"
+        ],
+        "title": "ClaimTaskResponse",
+        "type": "object"
+      },
+      "CommandPaletteEntryResponse": {
+        "additionalProperties": false,
+        "description": "Universal `⌘K` Command Palette item (`UX-DR13`, `< 1 s`).",
+        "properties": {
+          "access_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "CONTRIBUTOR_ACTION_REQUIRED",
+                  "READ_ONLY_OBSERVER"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Mode"
+          },
+          "category": {
+            "enum": [
+              "RUN",
+              "WORKSPACE",
+              "NAVIGATION",
+              "ONTOLOGY",
+              "CATALOG"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "entry_id": {
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "label_fr": {
+            "title": "Label Fr",
+            "type": "string"
+          },
+          "shortcut": {
+            "title": "Shortcut",
+            "type": "string"
+          },
+          "subtitle_fr": {
+            "title": "Subtitle Fr",
+            "type": "string"
+          },
+          "target_route": {
+            "title": "Target Route",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "category",
+          "label_fr",
+          "subtitle_fr",
+          "shortcut",
+          "target_route"
+        ],
+        "title": "CommandPaletteEntryResponse",
+        "type": "object"
+      },
+      "CommandPaletteSearchResponse": {
+        "additionalProperties": false,
+        "description": "Universal `⌘K` Command Palette search response.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommandPaletteEntryResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "items",
+          "trace_id"
+        ],
+        "title": "CommandPaletteSearchResponse",
+        "type": "object"
+      },
       "CommitStagedJiraActionRequest": {
         "additionalProperties": false,
         "description": "Request payload to execute a staged Jira action on Gate pass (`AD-5`, `AD-11`).",
@@ -1771,6 +2045,123 @@
         "title": "CompiledMarkdownChunkSchemaItem",
         "type": "object"
       },
+      "ControlCenterOverviewResponse": {
+        "additionalProperties": false,
+        "description": "Consolidated 4-tab fractal payload (`GET /api/v1/control-center/overview`, `Story 5.2`).",
+        "properties": {
+          "consolidated_finops_usd": {
+            "title": "Consolidated Finops Usd",
+            "type": "number"
+          },
+          "contributor_runs": {
+            "items": {
+              "$ref": "#/components/schemas/SupervisedRunItemResponse"
+            },
+            "title": "Contributor Runs",
+            "type": "array"
+          },
+          "datasources": {
+            "items": {
+              "$ref": "#/components/schemas/SupervisedDatasourceItemResponse"
+            },
+            "title": "Datasources",
+            "type": "array"
+          },
+          "guidance_steps": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceStepItemResponse"
+            },
+            "title": "Guidance Steps",
+            "type": "array"
+          },
+          "observer_banner_fr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observer Banner Fr"
+          },
+          "observer_runs": {
+            "items": {
+              "$ref": "#/components/schemas/SupervisedRunItemResponse"
+            },
+            "title": "Observer Runs",
+            "type": "array"
+          },
+          "org_units": {
+            "items": {
+              "$ref": "#/components/schemas/OrgUnitSummaryResponse"
+            },
+            "title": "Org Units",
+            "type": "array"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_label": {
+            "title": "Scope Label",
+            "type": "string"
+          },
+          "scope_type": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "viewer_access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Viewer Access Mode",
+            "type": "string"
+          },
+          "workflow_overrides": {
+            "items": {
+              "$ref": "#/components/schemas/DeclarativeOverrideLayerResponse"
+            },
+            "title": "Workflow Overrides",
+            "type": "array"
+          },
+          "workspaces_governance": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceGovernanceItemResponse"
+            },
+            "title": "Workspaces Governance",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scope_type",
+          "scope_id",
+          "scope_label",
+          "viewer_access_mode",
+          "consolidated_finops_usd",
+          "contributor_runs",
+          "observer_runs",
+          "datasources",
+          "guidance_steps",
+          "workflow_overrides",
+          "org_units",
+          "workspaces_governance",
+          "trace_id"
+        ],
+        "title": "ControlCenterOverviewResponse",
+        "type": "object"
+      },
       "DbDdlIndexRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1815,6 +2206,51 @@
           "schema_version"
         ],
         "title": "DbDdlIndexRequest",
+        "type": "object"
+      },
+      "DeclarativeOverrideLayerResponse": {
+        "additionalProperties": false,
+        "description": "4-level override inspector item in Tab 3 (`WORKFLOWS_AND_OVERRIDES`).",
+        "properties": {
+          "base_layer": {
+            "title": "Base Layer",
+            "type": "string"
+          },
+          "spine_contract_ref": {
+            "title": "Spine Contract Ref",
+            "type": "string"
+          },
+          "team_override": {
+            "title": "Team Override",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "user_override": {
+            "title": "User Override",
+            "type": "string"
+          },
+          "workflow_key": {
+            "title": "Workflow Key",
+            "type": "string"
+          },
+          "workspace_override": {
+            "title": "Workspace Override",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_key",
+          "title",
+          "base_layer",
+          "team_override",
+          "workspace_override",
+          "user_override",
+          "spine_contract_ref"
+        ],
+        "title": "DeclarativeOverrideLayerResponse",
         "type": "object"
       },
       "DeploymentRoleSchemaItem": {
@@ -2407,6 +2843,36 @@
           "trace_id"
         ],
         "title": "GateEvaluationsListResponse",
+        "type": "object"
+      },
+      "GuidanceStepItemResponse": {
+        "additionalProperties": false,
+        "description": "Methodological guidance step in `<GuidanceDrawer />` (Tab 2).",
+        "properties": {
+          "action_command": {
+            "title": "Action Command",
+            "type": "string"
+          },
+          "description_fr": {
+            "title": "Description Fr",
+            "type": "string"
+          },
+          "step_number": {
+            "title": "Step Number",
+            "type": "integer"
+          },
+          "title_fr": {
+            "title": "Title Fr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_number",
+          "title_fr",
+          "description_fr",
+          "action_command"
+        ],
+        "title": "GuidanceStepItemResponse",
         "type": "object"
       },
       "HealthResponse": {
@@ -3543,6 +4009,45 @@
           "resolved_inputs"
         ],
         "title": "HydratedStepContextSchemaItem",
+        "type": "object"
+      },
+      "InboxNotificationListResponse": {
+        "additionalProperties": false,
+        "description": "Unified Inbox notification list with amber sidebar counter (`UX-DR2`, `UX-DR9`).",
+        "properties": {
+          "amber_badge_count": {
+            "minimum": 0.0,
+            "title": "Amber Badge Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskNotificationItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "viewer_user_id": {
+            "title": "Viewer User Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "viewer_user_id",
+          "amber_badge_count",
+          "items",
+          "trace_id"
+        ],
+        "title": "InboxNotificationListResponse",
         "type": "object"
       },
       "InitDatasourceRequest": {
@@ -5557,6 +6062,54 @@
         "title": "OrchestrationSetupStateResponse",
         "type": "object"
       },
+      "OrgUnitSummaryResponse": {
+        "additionalProperties": false,
+        "description": "Organization unit node in Tab 4 (`TEAMS_AND_GOVERNANCE`).",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "unit_type": {
+            "enum": [
+              "ENTERPRISE",
+              "BU",
+              "TRIBE",
+              "TEAM",
+              "SUB_TEAM"
+            ],
+            "title": "Unit Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "unit_type"
+        ],
+        "title": "OrgUnitSummaryResponse",
+        "type": "object"
+      },
       "OrgUnitTreeItem": {
         "additionalProperties": false,
         "description": "Organizational Unit node in the hierarchical team tree (`org_units`).",
@@ -6513,6 +7066,86 @@
         "title": "RecursiveRunLockManifestSchemaItem",
         "type": "object"
       },
+      "ReleaseTaskClaimRequest": {
+        "additionalProperties": false,
+        "description": "Request body for releasing or force-unclaiming a task notification (`UX-DR9`).",
+        "properties": {
+          "force": {
+            "default": false,
+            "title": "Force",
+            "type": "boolean"
+          }
+        },
+        "title": "ReleaseTaskClaimRequest",
+        "type": "object"
+      },
+      "ResourceLeaseItemResponse": {
+        "additionalProperties": false,
+        "description": "Active resource lease with monotonic `fencing_token` (`DEC-CONC-01`).",
+        "properties": {
+          "acquired_at": {
+            "title": "Acquired At",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "fencing_token": {
+            "minimum": 1.0,
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "holder_parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Parent Run Id"
+          },
+          "holder_root_run_id": {
+            "title": "Holder Root Run Id",
+            "type": "string"
+          },
+          "holder_run_id": {
+            "title": "Holder Run Id",
+            "type": "string"
+          },
+          "holder_step_execution_id": {
+            "title": "Holder Step Execution Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "resource_class": {
+            "title": "Resource Class",
+            "type": "string"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "resource_uri",
+          "resource_class",
+          "holder_run_id",
+          "holder_root_run_id",
+          "holder_step_execution_id",
+          "fencing_token",
+          "acquired_at",
+          "expires_at"
+        ],
+        "title": "ResourceLeaseItemResponse",
+        "type": "object"
+      },
       "RunBlackboardStateResponse": {
         "additionalProperties": false,
         "description": "Response payload for `GET /api/v1/orchestration/runs/{run_id}/blackboard`.",
@@ -6668,6 +7301,60 @@
           "cas_key"
         ],
         "title": "RunLockSourceTripletItem",
+        "type": "object"
+      },
+      "RunMutationGuardCheckRequest": {
+        "additionalProperties": false,
+        "description": "Request body for checking `RunAccessGuard` before mutating a step/artifact/Gate.",
+        "properties": {
+          "action": {
+            "default": "mutate_step",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "title": "RunMutationGuardCheckRequest",
+        "type": "object"
+      },
+      "RunMutationGuardCheckResponse": {
+        "additionalProperties": false,
+        "description": "Response confirming `RunAccessGuard` allowed the mutation.",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "allowed": {
+            "default": true,
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "step_execution_id",
+          "access_mode",
+          "trace_id"
+        ],
+        "title": "RunMutationGuardCheckResponse",
         "type": "object"
       },
       "ScopeMutationCheckResponse": {
@@ -6871,6 +7558,62 @@
           "trace_id"
         ],
         "title": "ShellNavigationResponse",
+        "type": "object"
+      },
+      "SseEventEnvelopeResponse": {
+        "additionalProperties": false,
+        "description": "SSE event envelope published to `channel:workspace:{ws_id}` (`AD-4`, `< 500 ms`).",
+        "properties": {
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "dispatch_latency_ms": {
+            "minimum": 0.0,
+            "title": "Dispatch Latency Ms",
+            "type": "number"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_name": {
+            "title": "Event Name",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "published_at_iso": {
+            "title": "Published At Iso",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_name",
+          "channel",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "published_at_iso",
+          "dispatch_latency_ms"
+        ],
+        "title": "SseEventEnvelopeResponse",
         "type": "object"
       },
       "StageJiraActionRequest": {
@@ -7689,6 +8432,182 @@
         "title": "SubWorkflowLockSchemaItem",
         "type": "object"
       },
+      "SupervisedDatasourceItemResponse": {
+        "additionalProperties": false,
+        "description": "Attached datasource item in Tab 2 (`DATASOURCES`).",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "execution_identity": {
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "freshness_ttl_days": {
+            "title": "Freshness Ttl Days",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "scheme": {
+            "title": "Scheme",
+            "type": "string"
+          },
+          "tripartite_status": {
+            "enum": [
+              "ALIGNED",
+              "STALE_WARNING",
+              "INDEXING"
+            ],
+            "title": "Tripartite Status",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_name": {
+            "title": "Workspace Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "workspace_name",
+          "alias",
+          "scheme",
+          "uri",
+          "role",
+          "execution_identity",
+          "freshness_ttl_days",
+          "tripartite_status"
+        ],
+        "title": "SupervisedDatasourceItemResponse",
+        "type": "object"
+      },
+      "SupervisedRunItemResponse": {
+        "additionalProperties": false,
+        "description": "Workflow Run item in Tab 1 (`RUNS_AND_ARTIFACTS`).",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "blackboard_payload_masked": {
+            "default": false,
+            "title": "Blackboard Payload Masked",
+            "type": "boolean"
+          },
+          "blackboard_summary": {
+            "title": "Blackboard Summary",
+            "type": "string"
+          },
+          "budget_consumed_usd": {
+            "title": "Budget Consumed Usd",
+            "type": "number"
+          },
+          "claimed_by_display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed By Display Name"
+          },
+          "claimed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed By User Id"
+          },
+          "current_step_id": {
+            "title": "Current Step Id",
+            "type": "string"
+          },
+          "current_step_key": {
+            "title": "Current Step Key",
+            "type": "string"
+          },
+          "execution_mode": {
+            "enum": [
+              "COACHING",
+              "FAST_PATH"
+            ],
+            "title": "Execution Mode",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "RUNNING",
+              "PAUSED_HUMAN_GATE",
+              "PAUSED_ARBITRATION",
+              "COMPLETED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workflow_key": {
+            "title": "Workflow Key",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_name": {
+            "title": "Workspace Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "workspace_name",
+          "workflow_key",
+          "title",
+          "status",
+          "current_step_id",
+          "current_step_key",
+          "execution_mode",
+          "access_mode",
+          "budget_consumed_usd",
+          "blackboard_summary"
+        ],
+        "title": "SupervisedRunItemResponse",
+        "type": "object"
+      },
       "SystemBootstrapRunItem": {
         "additionalProperties": false,
         "description": "Execution record of a system bootstrap workflow run (`FR-28`).",
@@ -7920,6 +8839,178 @@
           "sha256"
         ],
         "title": "SystemBootstrapWorkflowItem",
+        "type": "object"
+      },
+      "TaskNotificationItemResponse": {
+        "additionalProperties": false,
+        "description": "Unified notification item (`task_notifications`, `FR-2`, `UX-DR9`).",
+        "properties": {
+          "can_force_unclaim": {
+            "default": false,
+            "title": "Can Force Unclaim",
+            "type": "boolean"
+          },
+          "claimed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed At"
+          },
+          "claimed_by_display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed By Display Name"
+          },
+          "claimed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed By User Id"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lock_expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lock Expires At"
+          },
+          "notification_type": {
+            "enum": [
+              "HUMAN_GATE",
+              "HUMAN_ARBITRATION",
+              "HUMAN_ANCHOR",
+              "UPSTREAM_CHALLENGE",
+              "PERMISSION_ALERT",
+              "STALE_WARNING",
+              "AUTONOMOUS_ESCALATION",
+              "POST_HOC_AUDIT_SAMPLE"
+            ],
+            "title": "Notification Type",
+            "type": "string"
+          },
+          "peer_opacity": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Peer Opacity",
+            "type": "number"
+          },
+          "presence_state": {
+            "enum": [
+              "UNCLAIMED",
+              "CLAIMED_BY_ME",
+              "CLAIMED_BY_PEER"
+            ],
+            "title": "Presence State",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "OPEN",
+              "CLAIMED",
+              "RESOLVED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "title": "Step Key",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "target_team_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Team Id"
+          },
+          "target_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target User Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "notification_type",
+          "scope_kind",
+          "title",
+          "summary",
+          "status",
+          "presence_state",
+          "created_at"
+        ],
+        "title": "TaskNotificationItemResponse",
         "type": "object"
       },
       "Tier2TddVerifyRequest": {
@@ -8156,6 +9247,26 @@
           "relation_type"
         ],
         "title": "TripartiteTraceEdgeSchemaItem",
+        "type": "object"
+      },
+      "UpdateWorkspaceLifecycleRequest": {
+        "additionalProperties": false,
+        "description": "Request body for updating product lifecycle (`RUN | BUILD | MIGRATION`).",
+        "properties": {
+          "lifecycle_phase": {
+            "enum": [
+              "RUN",
+              "BUILD",
+              "MIGRATION"
+            ],
+            "title": "Lifecycle Phase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lifecycle_phase"
+        ],
+        "title": "UpdateWorkspaceLifecycleRequest",
         "type": "object"
       },
       "UpstreamChallengePreviewRequest": {
@@ -8729,6 +9840,74 @@
           "linked_connectors"
         ],
         "title": "UserOnboardingStateItem",
+        "type": "object"
+      },
+      "ValidateFencedWriteRequest": {
+        "additionalProperties": false,
+        "description": "Request body for validating a monotonic fencing token before write (`DEC-CONC-01`).",
+        "properties": {
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "resource_uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Resource Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_uri",
+          "fencing_token"
+        ],
+        "title": "ValidateFencedWriteRequest",
+        "type": "object"
+      },
+      "ValidateFencedWriteResponse": {
+        "additionalProperties": false,
+        "description": "Response returned when a fenced connector write is accepted (`DEC-CONC-01`).",
+        "properties": {
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "resource_class": {
+            "title": "Resource Class",
+            "type": "string"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "status": {
+            "const": "COMMITTED_FENCED",
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_uri",
+          "fencing_token",
+          "resource_class",
+          "status",
+          "trace_id"
+        ],
+        "title": "ValidateFencedWriteResponse",
         "type": "object"
       },
       "WhatIfSimulationRequest": {
@@ -9889,6 +11068,88 @@
         "title": "WorkspaceDatasourceItem",
         "type": "object"
       },
+      "WorkspaceGovernanceItemResponse": {
+        "additionalProperties": false,
+        "description": "Workspace product lifecycle & governance summary in Tab 4 (`TEAMS_AND_GOVERNANCE`).",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "blackboard_payload_masked": {
+            "default": false,
+            "title": "Blackboard Payload Masked",
+            "type": "boolean"
+          },
+          "finops_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finops Cost Usd"
+          },
+          "lifecycle_phase": {
+            "enum": [
+              "RUN",
+              "BUILD",
+              "MIGRATION"
+            ],
+            "title": "Lifecycle Phase",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_org_unit_id": {
+            "title": "Owner Org Unit Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "suggested_workflows": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested Workflows",
+            "type": "array"
+          },
+          "visibility_mode": {
+            "enum": [
+              "STANDARD",
+              "CONFIDENTIAL_RESTRICTED"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "slug",
+          "name",
+          "owner_org_unit_id",
+          "visibility_mode",
+          "lifecycle_phase",
+          "suggested_workflows",
+          "access_mode"
+        ],
+        "title": "WorkspaceGovernanceItemResponse",
+        "type": "object"
+      },
       "WorkspaceSpineBaselineSchemaItem": {
         "additionalProperties": false,
         "description": "Serialized `WorkspaceSpineBaseline` (`[ADOPTED]`, `FR-28`, `AD-16`).",
@@ -10279,6 +11540,11 @@
             "content": {
               "application/json": {
                 "schema": {}
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "object"
+                }
               }
             },
             "description": "Successful Response"
@@ -12420,6 +13686,569 @@
         ]
       }
     },
+    "/api/v1/control-center/command-palette": {
+      "get": {
+        "operationId": "search_command_palette_api_v1_control_center_command_palette_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 128,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandPaletteSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Universal `⌘K` Command Palette search across Runs, Workspaces & shortcuts (`< 1 s`)",
+        "tags": [
+          "control-center"
+        ]
+      }
+    },
+    "/api/v1/control-center/overview": {
+      "get": {
+        "operationId": "get_control_center_overview_api_v1_control_center_overview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope_type",
+            "required": false,
+            "schema": {
+              "default": "GLOBAL",
+              "enum": [
+                "GLOBAL",
+                "BU",
+                "TEAM",
+                "WORKSPACE"
+              ],
+              "title": "Scope Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "default": "0192c4e0-0000-7000-8000-000000000101",
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Scope Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlCenterOverviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Consolidated 4-tab fractal Workspace Control Center overview (`Story 5.2`, `AD-14`)",
+        "tags": [
+          "control-center"
+        ]
+      }
+    },
+    "/api/v1/control-center/runs/{run_id}/steps/{step_id}/mutate-check": {
+      "post": {
+        "operationId": "check_run_step_mutation_guard_api_v1_control_center_runs__run_id__steps__step_id__mutate_check_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_id",
+            "required": true,
+            "schema": {
+              "title": "Step Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunMutationGuardCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunMutationGuardCheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Enforce `RunAccessGuard` ($O(1)$ observer `403` + peer claim `409`) on step mutation",
+        "tags": [
+          "control-center"
+        ]
+      }
+    },
+    "/api/v1/control-center/workspaces/{workspace_id}/lifecycle": {
+      "patch": {
+        "operationId": "update_workspace_lifecycle_api_v1_control_center_workspaces__workspace_id__lifecycle_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkspaceLifecycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceGovernanceItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Update product lifecycle phase (`RUN | BUILD | MIGRATION`) on a Workspace",
+        "tags": [
+          "control-center"
+        ]
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "operationId": "stream_workspace_events_api_v1_events_stream_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": "0195f000-0000-7000-8000-000000000301",
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Unified Server-Sent Events stream (`channel:workspace:{ws_id}`, `< 500 ms`, `AD-4`)",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
     "/api/v1/gates/agentic/evaluate": {
       "post": {
         "operationId": "evaluate_agentic_gate_endpoint_api_v1_gates_agentic_evaluate_post",
@@ -13340,6 +15169,155 @@
         "summary": "Check ORCIA API health and propagate W3C trace_id",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/inbox/notifications": {
+      "get": {
+        "operationId": "list_inbox_notifications_api_v1_inbox_notifications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": "0195f000-0000-7000-8000-000000000301",
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_filter",
+            "required": false,
+            "schema": {
+              "default": "ALL",
+              "enum": [
+                "ALL",
+                "PERSONAL",
+                "TEAM"
+              ],
+              "title": "Scope Filter",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "notification_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "HUMAN_GATE",
+                    "HUMAN_ARBITRATION",
+                    "HUMAN_ANCHOR",
+                    "UPSTREAM_CHALLENGE",
+                    "PERMISSION_ALERT",
+                    "STALE_WARNING",
+                    "AUTONOMOUS_ESCALATION",
+                    "POST_HOC_AUDIT_SAMPLE"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notification Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxNotificationListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List unified personal & team notifications with presence lock state (`Story 5.1`)",
+        "tags": [
+          "inbox"
         ]
       }
     },
@@ -16755,6 +18733,572 @@
         "summary": "Pause or replay a blocked Permission Broker step (`Replay Step N`, FR-22)",
         "tags": [
           "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/resource-leases/acquire": {
+      "post": {
+        "operationId": "acquire_resource_leases_api_v1_resource_leases_acquire_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcquireResourceLeasesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcquireResourceLeasesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Acquire shared resource leases in canonical order with fencing (`DEC-CONC-01`)",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
+    "/api/v1/resource-leases/fenced-write": {
+      "post": {
+        "operationId": "execute_fenced_resource_write_api_v1_resource_leases_fenced_write_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateFencedWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateFencedWriteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Validate monotonic fencing token before shared resource write (`DEC-CONC-01`)",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/steps/{step_id}/claim": {
+      "post": {
+        "operationId": "claim_step_execution_api_v1_runs__run_id__steps__step_id__claim_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_id",
+            "required": true,
+            "schema": {
+              "title": "Step Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Atomically claim a step execution (`SET lock:step:{step_id} NX EX 900`, `AD-4`)",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/claim": {
+      "post": {
+        "operationId": "claim_task_notification_api_v1_tasks__task_id__claim_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Atomically claim a notification (`SET lock:step:{step_id} NX EX 900`, `AD-4`)",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/release": {
+      "post": {
+        "operationId": "release_task_notification_claim_api_v1_tasks__task_id__release_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseTaskClaimRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Release or Force-Unclaim (after 15m inactivity) a task notification (`UX-DR9`)",
+        "tags": [
+          "inbox"
         ]
       }
     },

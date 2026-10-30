@@ -28,6 +28,9 @@ from orcia_core.ontology import (
 from orcia_core.orchestration import (
     AssistantAgentService,
     ConnectorInvoker,
+    ControlCenterOverviewService,
+    ResourceLeaseService,
+    UnifiedNotificationAndClaimService,
     WorkflowOrchestrationSetupService,
     build_default_orchestration_setup_service,
     register_default_step_executors,
@@ -92,6 +95,26 @@ def initialize_app_services(app: FastAPI) -> None:
     if getattr(app.state, "orchestration_service", None) is None:
         app.state.orchestration_service = build_default_orchestration_setup_service(
             evaluator=auth_service.evaluator,
+        )
+
+    if getattr(app.state, "notification_service", None) is None:
+        notif_svc = UnifiedNotificationAndClaimService()
+        notif_svc.seed_default_notifications(
+            workspace_id="0195f000-0000-7000-8000-000000000301",
+            team_id="0195f000-0000-7000-8000-000000000103",
+            user_id="0195f000-0000-7000-8000-000000000203",
+            run_id="0195f000-0000-7000-8000-000000000701",
+            step_execution_id="0195f000-0000-7000-8000-000000000801",
+        )
+        app.state.notification_service = notif_svc
+
+    if getattr(app.state, "resource_lease_service", None) is None:
+        app.state.resource_lease_service = ResourceLeaseService()
+
+    if getattr(app.state, "control_center_service", None) is None:
+        app.state.control_center_service = ControlCenterOverviewService(
+            evaluator=auth_service.evaluator,
+            notification_service=app.state.notification_service,
         )
 
     if getattr(app.state, "assistant_service", None) is None:
@@ -171,6 +194,40 @@ def get_orchestration_service(request: Request) -> WorkflowOrchestrationSetupSer
     if svc is None:
         initialize_app_services(request.app)
         svc = request.app.state.orchestration_service
+    assert svc is not None
+    return svc
+
+
+def get_notification_service(request: Request) -> UnifiedNotificationAndClaimService:
+    """FastAPI `Depends` provider returning `UnifiedNotificationAndClaimService` (`Story 5.1`)."""
+    svc: UnifiedNotificationAndClaimService | None = getattr(
+        request.app.state, "notification_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.notification_service
+    assert svc is not None
+    return svc
+
+
+def get_resource_lease_service(request: Request) -> ResourceLeaseService:
+    """FastAPI `Depends` provider returning `ResourceLeaseService` (`DEC-CONC-01`)."""
+    svc: ResourceLeaseService | None = getattr(request.app.state, "resource_lease_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.resource_lease_service
+    assert svc is not None
+    return svc
+
+
+def get_control_center_service(request: Request) -> ControlCenterOverviewService:
+    """FastAPI `Depends` provider returning `ControlCenterOverviewService` (`Story 5.2`)."""
+    svc: ControlCenterOverviewService | None = getattr(
+        request.app.state, "control_center_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.control_center_service
     assert svc is not None
     return svc
 

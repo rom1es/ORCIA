@@ -204,6 +204,49 @@ def get_access_request_channel() -> AccessRequestChannelPort | None:
         return _ACCESS_REQUEST_CHANNEL
 
 
+@dataclass(frozen=True, slots=True)
+class ResourceLeaseRecord:
+    """Immutable shared resource lease with monotonic fencing token (`DEC-CONC-01`, `AD-4`)."""
+
+    id: str
+    resource_uri: str
+    resource_class: str
+    holder_run_id: str
+    holder_root_run_id: str
+    holder_parent_run_id: str | None
+    holder_step_execution_id: str
+    fencing_token: int
+    acquired_at: str
+    expires_at: str
+
+
+@runtime_checkable
+class ResourceLeasePort(Protocol):
+    """Port for shared resource leases with monotonic fencing & deadlock protection (`AD-4`)."""
+
+    def acquire_leases(
+        self,
+        *,
+        resource_uris: tuple[str, ...],
+        holder_run_id: str,
+        holder_root_run_id: str,
+        holder_step_execution_id: str,
+        holder_parent_run_id: str | None = None,
+        ancestor_run_ids: tuple[str, ...] = (),
+        ttl_seconds: int = 120,
+    ) -> tuple[ResourceLeaseRecord, ...]:
+        """Acquire leases in canonical order (`sorted(set(resource_uris))`) or raise conflict."""
+        ...
+
+    def validate_fencing_token(self, *, resource_uri: str, fencing_token: int) -> None:
+        """Verify that `fencing_token` is >= the highest issued token for `resource_uri`."""
+        ...
+
+    def release_leases(self, *, holder_run_id: str, holder_step_execution_id: str) -> int:
+        """Release all active leases held by `(holder_run_id, holder_step_execution_id)`."""
+        ...
+
+
 __all__ = [
     "AccessRequestChannelPort",
     "ConnectorCapabilities",
@@ -212,6 +255,8 @@ __all__ = [
     "ConnectorHealthStatus",
     "ConnectorInvokeResult",
     "ConnectorPort",
+    "ResourceLeasePort",
+    "ResourceLeaseRecord",
     "get_access_request_channel",
     "get_registered_connector",
     "is_registered_connector_scheme",

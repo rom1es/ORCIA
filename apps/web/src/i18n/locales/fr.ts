@@ -1,6 +1,8 @@
 import type { TranslationDictionary } from "../types";
+import { EPIC5_FR_LABELS } from "./epic5_labels";
 
 export const frDictionary: TranslationDictionary = {
+  ...EPIC5_FR_LABELS,
   locale: "fr",
   shell: {
     brandTitle: "ORCIA",
@@ -343,6 +345,25 @@ export const frDictionary: TranslationDictionary = {
         "Je confirme avoir vérifié les hypothèses retenues et les sections critiques",
       guardConfirmButtonLabel: "Confirmer et enregistrer l'approbation",
       guardCancelButtonLabel: "Reprendre la lecture",
+    },
+  },
+  inboxAndClaims: {
+    filterAllLabel: "Toutes les notifications",
+    filterPersonalLabel: "À moi (Personnel)",
+    filterTeamLabel: "À mon équipe (Partagé)",
+    amberCounterPrefix: "Actions en attente :",
+    contributorSectionTitle: "Actions Requises (CONTRIBUTOR_ACTION_REQUIRED)",
+    observerSectionTitle: "En Suivi — Consultation Seule (READ_ONLY_OBSERVER)",
+    observerBannerText:
+      "👁️ Mode Consultation Seule — Vous suivez ce Workflow Run en tant qu'Observateur",
+    presencePill: {
+      claimActionLabel: "Prendre (Claim)",
+      claimedByMeBadge: "🔒 Pris par vous",
+      claimedByPeerPrefix: "🔒 En cours :",
+      releaseActionLabel: "Relâcher",
+      forceUnclaimActionLabel: "Forcer la reprise (15m)",
+      readOnlyObserverNotice: "Consultation seule (403)",
+      sseLatencyPrefix: "SSE :",
     },
   },
 };

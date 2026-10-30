@@ -73,6 +73,64 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
             "A direct or indirect cycle was detected in step transitions or SUB_WORKFLOW calls.",
         ),
     },
+    "ERR_STEP_ALREADY_CLAIMED_BY_PEER": {
+        "fr": LocalizedErrorCopy(
+            "Étape déjà prise en charge par un pair",
+            "Cette étape ou notification d'équipe est déjà verrouillée par un autre coéquipier "
+            "(verrou de présence actif < 15 min).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Step already claimed by peer",
+            "This step or team notification is already locked by another teammate "
+            "(active presence lock < 15 min).",
+        ),
+    },
+    "ERR_STEP_CLAIM_NOT_HELD": {
+        "fr": LocalizedErrorCopy(
+            "Verrou de prise en charge d'étape non détenu",
+            "Vous devez détenir le verrou de présence sur cette étape avant d'effectuer "
+            "cette modification.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Step presence claim lock not held",
+            "You must hold the presence claim lock on this step before performing this mutation.",
+        ),
+    },
+    "ERR_STALE_FENCING_TOKEN": {
+        "fr": LocalizedErrorCopy(
+            "Jeton de fencing de bail périmé",
+            "L'écriture sur la ressource partagée a été rejetée car son jeton de fencing "
+            "est inférieur au bail actif.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Stale resource lease fencing token",
+            "The write to the shared resource was rejected because its fencing token is older "
+            "than the active lease.",
+        ),
+    },
+    "ERR_RESOURCE_LEASE_HELD_BY_OTHER_RUN": {
+        "fr": LocalizedErrorCopy(
+            "Ressource partagée déjà verrouillée par un autre Run",
+            "La ressource cible est actuellement détenue par un bail actif "
+            "d'un autre Workflow Run.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Shared resource already leased by another Run",
+            "The target resource is currently held by an active lease of another Workflow Run.",
+        ),
+    },
+    "ERR_CYCLIC_RESOURCE_WAIT_DETECTED": {
+        "fr": LocalizedErrorCopy(
+            "Attente cyclique parent-enfant sur ressource partagée détectée",
+            "Un sous-workflow enfant tente d'acquérir un bail détenu par son workflow parent "
+            "en attente (deadlock hiérarchique SUB_WORKFLOW).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Parent-child cyclic resource wait detected",
+            "A child sub-workflow attempted to acquire a lease held by its waiting parent "
+            "workflow (SUB_WORKFLOW hierarchical deadlock).",
+        ),
+    },
 }
 
 register_domain_error_catalog(ORCHESTRATION_ERROR_CATALOG)
@@ -103,14 +161,44 @@ class SubWorkflowCycleDetectedError(OrciaDomainError):
     http_status, type_slug = 422, "sub-workflow-cycle-detected"
 
 
+class StepAlreadyClaimedByPeerError(OrciaDomainError):
+    error_code = "ERR_STEP_ALREADY_CLAIMED_BY_PEER"
+    http_status, type_slug = 409, "step-already-claimed-by-peer"
+
+
+class StepClaimNotHeldError(OrciaDomainError):
+    error_code = "ERR_STEP_CLAIM_NOT_HELD"
+    http_status, type_slug = 403, "step-claim-not-held"
+
+
+class StaleFencingTokenError(OrciaDomainError):
+    error_code = "ERR_STALE_FENCING_TOKEN"
+    http_status, type_slug = 409, "stale-fencing-token"
+
+
+class ResourceLeaseHeldByOtherRunError(OrciaDomainError):
+    error_code = "ERR_RESOURCE_LEASE_HELD_BY_OTHER_RUN"
+    http_status, type_slug = 409, "resource-lease-held-by-other-run"
+
+
+class CyclicResourceWaitDetectedError(OrciaDomainError):
+    error_code = "ERR_CYCLIC_RESOURCE_WAIT_DETECTED"
+    http_status, type_slug = 409, "cyclic-resource-wait-detected"
+
+
 __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
+    "CyclicResourceWaitDetectedError",
     "HumanAnchorRequiredError",
     "IntentionBeforeCodeRequiredError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "ResourceLeaseHeldByOtherRunError",
     "ResourceNotFoundError",
     "ScopeAccessDeniedError",
+    "StaleFencingTokenError",
+    "StepAlreadyClaimedByPeerError",
+    "StepClaimNotHeldError",
     "SubWorkflowCycleDetectedError",
     "SubWorkflowMaxDepthExceededError",
     "UnknownWorkflowPolicyError",

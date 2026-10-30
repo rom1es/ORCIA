@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Literal, TypeVar
 
 from dbos import AsyncSQLAlchemyDatasource
+from dbos._dbos import _get_or_create_dbos_registry
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -50,6 +51,9 @@ class DbosSqlAlchemyUnitOfWork:
         schema: str = "dbos",
         run_migrations: bool = True,
     ) -> DbosSqlAlchemyUnitOfWork:
+        reg = _get_or_create_dbos_registry()
+        if reg.dbos is not None and not getattr(reg.dbos, "_initialized", True):
+            reg.dbos = None
         resolved_engine = (
             engine
             if engine is not None

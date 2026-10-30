@@ -1,6 +1,8 @@
 import type { TranslationDictionary } from "../types";
+import { EPIC5_EN_LABELS } from "./epic5_labels";
 
 export const enDictionary: TranslationDictionary = {
+  ...EPIC5_EN_LABELS,
   locale: "en",
   shell: {
     brandTitle: "ORCIA",
@@ -343,6 +345,25 @@ export const enDictionary: TranslationDictionary = {
         "I confirm I have reviewed the retained hypotheses and critical sections",
       guardConfirmButtonLabel: "Confirm and record approval",
       guardCancelButtonLabel: "Resume reading",
+    },
+  },
+  inboxAndClaims: {
+    filterAllLabel: "All notifications",
+    filterPersonalLabel: "Assigned to me (Personal)",
+    filterTeamLabel: "Assigned to my team (Shared)",
+    amberCounterPrefix: "Pending actions:",
+    contributorSectionTitle: "Actions Required (CONTRIBUTOR_ACTION_REQUIRED)",
+    observerSectionTitle: "Following — Read-Only (READ_ONLY_OBSERVER)",
+    observerBannerText:
+      "👁️ Read-Only Mode — You are following this Workflow Run as an Observer",
+    presencePill: {
+      claimActionLabel: "Claim task",
+      claimedByMeBadge: "🔒 Claimed by you",
+      claimedByPeerPrefix: "🔒 In progress:",
+      releaseActionLabel: "Release",
+      forceUnclaimActionLabel: "Force unclaim (15m)",
+      readOnlyObserverNotice: "Read-only observer (403)",
+      sseLatencyPrefix: "SSE:",
     },
   },
 };

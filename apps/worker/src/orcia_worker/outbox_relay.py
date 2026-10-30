@@ -30,11 +30,13 @@ class OutboxEventBus:
     _delivered_keys: set[tuple[str, str]] = field(default_factory=set)
     audit_finops_ledger: list[DomainEvent] = field(default_factory=list)
     ontology_extraction_queue: list[DomainEvent] = field(default_factory=list)
+    notifications_queue: list[DomainEvent] = field(default_factory=list)
     sse_published_messages: list[tuple[str, DomainEvent]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.subscribe("*", "audit_finops", self._on_audit_finops)
         self.subscribe("ArtifactProduced", "ontology", self._on_ontology_l4)
+        self.subscribe("*", "notifications", self._on_notifications)
         self.subscribe("*", "sse", self._on_sse_broadcast)
 
     def subscribe(
@@ -71,6 +73,9 @@ class OutboxEventBus:
 
     def _on_ontology_l4(self, event: DomainEvent) -> None:
         self.ontology_extraction_queue.append(event)
+
+    def _on_notifications(self, event: DomainEvent) -> None:
+        self.notifications_queue.append(event)
 
     def _on_sse_broadcast(self, event: DomainEvent) -> None:
         ws_id = event.workspace_id or "global"

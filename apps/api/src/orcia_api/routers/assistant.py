@@ -128,7 +128,10 @@ async def assistant_chat_turn(
 @router.post(
     "/chat/stream",
     summary="Stream a 5-node Assistant Agent conversational turn via SSE (`< 1.5 s` first token)",
-    responses=PROBLEM_RESPONSES,
+    responses={
+        **PROBLEM_RESPONSES,
+        200: {"content": {"text/event-stream": {"schema": {"type": "object"}}}},
+    },
 )
 async def assistant_chat_stream(
     payload: AssistantChatRequest,

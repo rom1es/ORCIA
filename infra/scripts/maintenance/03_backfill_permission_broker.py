@@ -179,7 +179,7 @@ async def backfill_permission_broker(
                             "required_role": tkt.required_role,
                             "approver_team": tkt.approver_team,
                             "sla_hours": tkt.sla_hours,
-                            "jira_request_url": tkt.jira_request_url,
+                            "request_url": tkt.request_url,
                             "permission_broker_hint": tkt.permission_broker_hint,
                             "procedure_markdown": tkt.procedure_markdown,
                         },

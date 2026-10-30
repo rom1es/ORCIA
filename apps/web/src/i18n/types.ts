@@ -3,6 +3,7 @@ import type {
   ChunkValidationCardLabels,
   CognitiveReviewBriefingLabels,
   HumanLedAnchorCardLabels,
+  PresenceClaimPillLabels,
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
   UiModuleKey,
@@ -21,7 +22,20 @@ export interface ModulePageCopy {
   uriBadgeExample: string;
 }
 
-export interface TranslationDictionary {
+export interface InboxAndClaimsCopy {
+  filterAllLabel: string;
+  filterPersonalLabel: string;
+  filterTeamLabel: string;
+  amberCounterPrefix: string;
+  contributorSectionTitle: string;
+  observerSectionTitle: string;
+  observerBannerText: string;
+  presencePill: PresenceClaimPillLabels;
+}
+
+import type { Epic5DictionarySection } from "./locales/epic5_labels";
+
+export interface TranslationDictionary extends Epic5DictionarySection {
   locale: SupportedWebLocale;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
@@ -38,6 +52,7 @@ export interface TranslationDictionary {
     briefing: CognitiveReviewBriefingLabels;
     chunkValidation: ChunkValidationCardLabels;
   };
+  inboxAndClaims: InboxAndClaimsCopy;
   workspaceTopology: UiWorkspaceTopologyLabels;
   catalogExplorer: UiCatalogExplorerLabels;
   permissionBroker: UiPermissionBrokerLabels;
