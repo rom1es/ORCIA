@@ -14,6 +14,7 @@ from orcia_core.gates.agentic import (
     AgenticGateService,
 )
 from orcia_core.gates.errors import PatternDriftDetectedError
+from orcia_core.gates.human import AdaptiveHumanGateService
 from orcia_core.gates.models import (
     CANONICAL_FORBIDDEN_DRIFT_PATTERNS,
     CANONICAL_SPINE_ALLOWED_DEPENDENCIES,
@@ -76,6 +77,7 @@ class DeterministicGateService:
         self.agentic_service: AgenticGateService = agentic_service or AgenticGateService(
             outbox_relay=outbox_relay
         )
+        self.human_service: AdaptiveHumanGateService = AdaptiveHumanGateService()
         self._outbox_relay = outbox_relay
         self._evaluations: dict[str, GateEvaluationEntity] = {}
         self._outbox_events: list[GateEvaluated] = []

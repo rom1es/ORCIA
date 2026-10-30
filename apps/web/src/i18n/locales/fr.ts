@@ -316,4 +316,33 @@ export const frDictionary: TranslationDictionary = {
     challengeSubmittedFeedback: "Challenge Amont transmis via domain_events_outbox ✓",
     replayTriggeredFeedback: "Replay ciblé Step N exécuté (branche ACTIVE créée, anciens snapshots SUPERSEDED) ✓",
   },
+  humanGates: {
+    briefing: {
+      gridTitle: "Briefing de Revue Cognitive (4 Blocs — UX-DR4)",
+      block1Title: "1. Résumé Exécutif",
+      block2Title: "2. Éléments Clés & Contrôle Transverse",
+      block3Title: "3. Décisions Prises",
+      block4Title: "4. Hypothèses Retenues",
+      inspectHypothesesButtonLabel: "Marquer les hypothèses comme inspectées",
+      hypothesesInspectedBadgeLabel: "Bloc 4 inspecté",
+      hypothesesPendingBadgeLabel: "Inspection requise (Bloc 4)",
+    },
+    chunkValidation: {
+      sectionListTitle: "Validation par Découpage (UX-DR5 — Zéro bouton Tout Approuver)",
+      keyboardNavHint: "Navigation clavier : Alt + ↑ / ↓",
+      approveSectionLabel: "Valider la section",
+      coEditSectionLabel: "Co-éditer (SHA-256)",
+      challengeSectionLabel: "Challenger / Rewind amont",
+      finalizeGateButtonLabel: "Approuver la Gate Humaine",
+      pendingSectionsNotice:
+        "Chaque section obligatoire et le Bloc 4 (Hypothèses Retenues) doivent être validés individuellement.",
+      guardModalTitle: "Garde-fou Anti-Rubber-Stamping (< 15 s — UX-DR10)",
+      guardModalDescription:
+        "Approbation soumise en moins de 15 secondes sur un artefact > 1 000 mots. Confirmez explicitement les hypothèses retenues (fast_approval_warning: true).",
+      guardConfirmCheckboxLabel:
+        "Je confirme avoir vérifié les hypothèses retenues et les sections critiques",
+      guardConfirmButtonLabel: "Confirmer et enregistrer l'approbation",
+      guardCancelButtonLabel: "Reprendre la lecture",
+    },
+  },
 };

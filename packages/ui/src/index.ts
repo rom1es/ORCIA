@@ -6,6 +6,20 @@ export {
   type UiTieBreakPolicy,
 } from "./primitives/ArbitrationTieBreakCard";
 export {
+  ChunkValidationCard,
+  type ChunkValidationCardLabels,
+  type ChunkValidationCardProps,
+  type UiChunkDecisionAction,
+  type UiChunkStatus,
+  type UiChunkValidationItem,
+  type UiHumanGatePolicy,
+} from "./primitives/ChunkValidationCard";
+export {
+  CognitiveReviewBriefingGrid,
+  type CognitiveReviewBriefingGridProps,
+  type CognitiveReviewBriefingLabels,
+} from "./primitives/CognitiveReviewBriefingGrid";
+export {
   HumanLedAnchorCard,
   type HumanLedAnchorCardLabels,
   type HumanLedAnchorCardProps,

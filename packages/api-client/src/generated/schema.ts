@@ -238,6 +238,25 @@ export interface components {
       trace_id: string;
       uri: string;
     };
+    ChunkApprovalSchemaItem: {
+      challenge_reason?: string | null;
+      chunk_key: string;
+      content_markdown?: string;
+      gate_evaluation_id: string;
+      human_anchor_sha256?: string | null;
+      human_anchor_signature_id?: string | null;
+      human_authored_required?: boolean;
+      id: string;
+      reviewed_at?: string | null;
+      reviewer_user_id?: string | null;
+      run_id: string;
+      section_index?: number;
+      section_title: string;
+      status?: "PENDING" | "APPROVED" | "CO_EDITED" | "CHALLENGED";
+      step_execution_id: string;
+      word_count?: number;
+      workspace_id: string;
+    };
     CompiledArtifactTemplateSchemaItem: {
       agent_json_schema: Record<string, unknown>;
       bound_ontology_terms: (string)[];
@@ -430,6 +449,65 @@ export interface components {
       arbitration: components["schemas"]["HumanArbitrationRequestSchemaItem"];
       committed_snapshot?: components["schemas"]["BlackboardSnapshotSchemaItem"] | null;
       step_execution: components["schemas"]["StepExecutionSchemaItem"];
+      trace_id: string;
+    };
+    HumanGateChunkDecideRequest: {
+      action: "APPROVE" | "CO_EDIT" | "CHALLENGE";
+      challenge_reason?: string | null;
+      co_edited_content?: string | null;
+    };
+    HumanGateChunkDecideResponse: {
+      chunk: components["schemas"]["ChunkApprovalSchemaItem"];
+      evaluation: components["schemas"]["HumanGateEvaluationSchemaItem"];
+      trace_id: string;
+    };
+    HumanGateEvaluateRequest: {
+      agentic_score?: number;
+      artifact_payload?: Record<string, unknown>;
+      briefing_4blocks_jsonb?: Record<string, unknown> | null;
+      deterministic_status?: string;
+      ontology_conflicts?: number;
+      policy?: "mandatory_full" | "risk_or_exception_based" | "sampling";
+      run_id: string;
+      sampling_override?: boolean | null;
+      stale_warnings?: number;
+      step_execution_id: string;
+      step_key: string;
+      workspace_id: string;
+    };
+    HumanGateEvaluateResponse: {
+      evaluation: components["schemas"]["HumanGateEvaluationSchemaItem"];
+      trace_id: string;
+    };
+    HumanGateEvaluationSchemaItem: {
+      agentic_score: number;
+      auto_passed: boolean;
+      briefing_4blocks_jsonb: Record<string, unknown>;
+      chunks: (components["schemas"]["ChunkApprovalSchemaItem"])[];
+      deterministic_status: string;
+      evaluated_at: string;
+      fast_approval_warning: boolean;
+      hypotheses_block_inspected: boolean;
+      id: string;
+      ontology_conflicts: number;
+      outbox_event_id?: string | null;
+      policy: "mandatory_full" | "risk_or_exception_based" | "sampling";
+      review_duration_ms: number;
+      reviewer_user_id?: string | null;
+      run_id: string;
+      stale_warnings: number;
+      status: "PASS" | "FAIL" | "PENDING_HUMAN_REVIEW";
+      step_execution_id: string;
+      step_key: string;
+      total_word_count: number;
+      workspace_id: string;
+    };
+    HumanGateFinalizeRequest: {
+      explicit_hypotheses_confirmation?: boolean;
+      review_duration_ms: number;
+    };
+    HumanGateFinalizeResponse: {
+      evaluation: components["schemas"]["HumanGateEvaluationSchemaItem"];
       trace_id: string;
     };
     HumanProfileBadge: {
@@ -1558,6 +1636,34 @@ export interface paths {
       };
     };
   };
+  "/api/v1/gates/human/evaluate": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanGateEvaluateResponse"];
+      };
+    };
+  };
+  "/api/v1/gates/human/{gate_evaluation_id}/chunks/{chunk_key}/decide": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanGateChunkDecideResponse"];
+      };
+    };
+  };
+  "/api/v1/gates/human/{gate_evaluation_id}/finalize": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanGateFinalizeResponse"];
+      };
+    };
+  };
+  "/api/v1/gates/human/{gate_evaluation_id}/inspect-hypotheses": {
+    post: {
+      responses: {
+        200: components["schemas"]["HumanGateEvaluateResponse"];
+      };
+    };
+  };
   "/api/v1/gates/sandbox/deployment-roles": {
     get: {
       responses: {
@@ -1826,6 +1932,7 @@ export type CatalogResourceInspectionResponse = components["schemas"]["CatalogRe
 export type CatalogResourceSourceResponse = components["schemas"]["CatalogResourceSourceResponse"];
 export type CatalogUriResolveRequest = components["schemas"]["CatalogUriResolveRequest"];
 export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolveResponse"];
+export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchemaItem"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
@@ -1849,6 +1956,13 @@ export type HumanArbitrationCreateResponse = components["schemas"]["HumanArbitra
 export type HumanArbitrationRequestSchemaItem = components["schemas"]["HumanArbitrationRequestSchemaItem"];
 export type HumanArbitrationResolveRequest = components["schemas"]["HumanArbitrationResolveRequest"];
 export type HumanArbitrationResolveResponse = components["schemas"]["HumanArbitrationResolveResponse"];
+export type HumanGateChunkDecideRequest = components["schemas"]["HumanGateChunkDecideRequest"];
+export type HumanGateChunkDecideResponse = components["schemas"]["HumanGateChunkDecideResponse"];
+export type HumanGateEvaluateRequest = components["schemas"]["HumanGateEvaluateRequest"];
+export type HumanGateEvaluateResponse = components["schemas"]["HumanGateEvaluateResponse"];
+export type HumanGateEvaluationSchemaItem = components["schemas"]["HumanGateEvaluationSchemaItem"];
+export type HumanGateFinalizeRequest = components["schemas"]["HumanGateFinalizeRequest"];
+export type HumanGateFinalizeResponse = components["schemas"]["HumanGateFinalizeResponse"];
 export type HumanProfileBadge = components["schemas"]["HumanProfileBadge"];
 export type HybridRagHitSchemaItem = components["schemas"]["HybridRagHitSchemaItem"];
 export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchRequest"];

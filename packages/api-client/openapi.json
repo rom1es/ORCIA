@@ -1467,6 +1467,154 @@
         "title": "CatalogUriResolveResponse",
         "type": "object"
       },
+      "ChunkApprovalSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized `ChunkApprovalRecord` (`chunk_approvals` table, `UX-DR5`).",
+        "properties": {
+          "challenge_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Reason"
+          },
+          "chunk_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Chunk Key",
+            "type": "string"
+          },
+          "content_markdown": {
+            "default": "",
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "gate_evaluation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Gate Evaluation Id",
+            "type": "string"
+          },
+          "human_anchor_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Anchor Sha256"
+          },
+          "human_anchor_signature_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Anchor Signature Id"
+          },
+          "human_authored_required": {
+            "default": false,
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer User Id"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "section_index": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Section Index",
+            "type": "integer"
+          },
+          "section_title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Section Title",
+            "type": "string"
+          },
+          "status": {
+            "default": "PENDING",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "CO_EDITED",
+              "CHALLENGED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "word_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Word Count",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "gate_evaluation_id",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "chunk_key",
+          "section_title"
+        ],
+        "title": "ChunkApprovalSchemaItem",
+        "type": "object"
+      },
       "CompiledArtifactTemplateSchemaItem": {
         "additionalProperties": false,
         "description": "Dual-compiled Multi-Audience Artifact Template (`FR-12`).",
@@ -2668,6 +2816,389 @@
           "trace_id"
         ],
         "title": "HumanArbitrationResolveResponse",
+        "type": "object"
+      },
+      "HumanGateChunkDecideRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for chunk decision endpoint (`UX-DR5`, `Story 4.3`).",
+        "properties": {
+          "action": {
+            "enum": [
+              "APPROVE",
+              "CO_EDIT",
+              "CHALLENGE"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "challenge_reason": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Reason"
+          },
+          "co_edited_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Co Edited Content"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "HumanGateChunkDecideRequest",
+        "type": "object"
+      },
+      "HumanGateChunkDecideResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/gates/human/{gate_evaluation_id}/chunks/{chunk_key}/decide`.",
+        "properties": {
+          "chunk": {
+            "$ref": "#/components/schemas/ChunkApprovalSchemaItem"
+          },
+          "evaluation": {
+            "$ref": "#/components/schemas/HumanGateEvaluationSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk",
+          "evaluation",
+          "trace_id"
+        ],
+        "title": "HumanGateChunkDecideResponse",
+        "type": "object"
+      },
+      "HumanGateEvaluateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/gates/human/evaluate` (`Story 4.3`, `AD-11`).",
+        "properties": {
+          "agentic_score": {
+            "default": 0.92,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Agentic Score",
+            "type": "number"
+          },
+          "artifact_payload": {
+            "additionalProperties": true,
+            "title": "Artifact Payload",
+            "type": "object"
+          },
+          "briefing_4blocks_jsonb": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Briefing 4Blocks Jsonb"
+          },
+          "deterministic_status": {
+            "default": "PASS",
+            "title": "Deterministic Status",
+            "type": "string"
+          },
+          "ontology_conflicts": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Ontology Conflicts",
+            "type": "integer"
+          },
+          "policy": {
+            "default": "risk_or_exception_based",
+            "enum": [
+              "mandatory_full",
+              "risk_or_exception_based",
+              "sampling"
+            ],
+            "title": "Policy",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sampling_override": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling Override"
+          },
+          "stale_warnings": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Stale Warnings",
+            "type": "integer"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key"
+        ],
+        "title": "HumanGateEvaluateRequest",
+        "type": "object"
+      },
+      "HumanGateEvaluateResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/gates/human/evaluate` (`Story 4.3`).",
+        "properties": {
+          "evaluation": {
+            "$ref": "#/components/schemas/HumanGateEvaluationSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluation",
+          "trace_id"
+        ],
+        "title": "HumanGateEvaluateResponse",
+        "type": "object"
+      },
+      "HumanGateEvaluationSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized `HumanGateEvaluationRecord` (`Story 4.3`, `AD-11`).",
+        "properties": {
+          "agentic_score": {
+            "title": "Agentic Score",
+            "type": "number"
+          },
+          "auto_passed": {
+            "title": "Auto Passed",
+            "type": "boolean"
+          },
+          "briefing_4blocks_jsonb": {
+            "additionalProperties": true,
+            "title": "Briefing 4Blocks Jsonb",
+            "type": "object"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkApprovalSchemaItem"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "deterministic_status": {
+            "title": "Deterministic Status",
+            "type": "string"
+          },
+          "evaluated_at": {
+            "format": "date-time",
+            "title": "Evaluated At",
+            "type": "string"
+          },
+          "fast_approval_warning": {
+            "title": "Fast Approval Warning",
+            "type": "boolean"
+          },
+          "hypotheses_block_inspected": {
+            "title": "Hypotheses Block Inspected",
+            "type": "boolean"
+          },
+          "id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "ontology_conflicts": {
+            "title": "Ontology Conflicts",
+            "type": "integer"
+          },
+          "outbox_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Id"
+          },
+          "policy": {
+            "enum": [
+              "mandatory_full",
+              "risk_or_exception_based",
+              "sampling"
+            ],
+            "title": "Policy",
+            "type": "string"
+          },
+          "review_duration_ms": {
+            "title": "Review Duration Ms",
+            "type": "integer"
+          },
+          "reviewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer User Id"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "stale_warnings": {
+            "title": "Stale Warnings",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "PENDING_HUMAN_REVIEW"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "total_word_count": {
+            "title": "Total Word Count",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "policy",
+          "status",
+          "auto_passed",
+          "deterministic_status",
+          "agentic_score",
+          "ontology_conflicts",
+          "stale_warnings",
+          "total_word_count",
+          "briefing_4blocks_jsonb",
+          "hypotheses_block_inspected",
+          "chunks",
+          "review_duration_ms",
+          "fast_approval_warning",
+          "evaluated_at"
+        ],
+        "title": "HumanGateEvaluationSchemaItem",
+        "type": "object"
+      },
+      "HumanGateFinalizeRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/gates/human/{gate_evaluation_id}/finalize` (`AD-11`).",
+        "properties": {
+          "explicit_hypotheses_confirmation": {
+            "default": false,
+            "title": "Explicit Hypotheses Confirmation",
+            "type": "boolean"
+          },
+          "review_duration_ms": {
+            "minimum": 0.0,
+            "title": "Review Duration Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "review_duration_ms"
+        ],
+        "title": "HumanGateFinalizeRequest",
+        "type": "object"
+      },
+      "HumanGateFinalizeResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/gates/human/{gate_evaluation_id}/finalize` (`AD-11`).",
+        "properties": {
+          "evaluation": {
+            "$ref": "#/components/schemas/HumanGateEvaluationSchemaItem"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluation",
+          "trace_id"
+        ],
+        "title": "HumanGateFinalizeResponse",
         "type": "object"
       },
       "HumanProfileBadge": {
@@ -11505,6 +12036,412 @@
           }
         },
         "summary": "List Deterministic, Agentic & Human Gate evaluations (`AD-9..11`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/human/evaluate": {
+      "post": {
+        "operationId": "evaluate_human_gate_endpoint_api_v1_gates_human_evaluate_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanGateEvaluateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateEvaluateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Evaluate an Adaptive Human Gate (`mandatory_full`, `risk_or_exception_based`, `sampling`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/human/{gate_evaluation_id}/chunks/{chunk_key}/decide": {
+      "post": {
+        "operationId": "decide_human_gate_chunk_endpoint_api_v1_gates_human__gate_evaluation_id__chunks__chunk_key__decide_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_evaluation_id",
+            "required": true,
+            "schema": {
+              "title": "Gate Evaluation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_key",
+            "required": true,
+            "schema": {
+              "title": "Chunk Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanGateChunkDecideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateChunkDecideResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Approve, co-edit (with SHA-256 signature), or challenge a section chunk (`UX-DR5`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/human/{gate_evaluation_id}/finalize": {
+      "post": {
+        "operationId": "finalize_human_gate_endpoint_api_v1_gates_human__gate_evaluation_id__finalize_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_evaluation_id",
+            "required": true,
+            "schema": {
+              "title": "Gate Evaluation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanGateFinalizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateFinalizeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Finalize Human Gate approval after checking chunks and <15s Anti-Rubber-Stamping Guard",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/human/{gate_evaluation_id}/inspect-hypotheses": {
+      "post": {
+        "operationId": "inspect_human_gate_hypotheses_endpoint_api_v1_gates_human__gate_evaluation_id__inspect_hypotheses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_evaluation_id",
+            "required": true,
+            "schema": {
+              "title": "Gate Evaluation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateEvaluateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Mark Block 4 (`Hypothèses Retenues`) of the 4-Block Review Briefing as inspected",
         "tags": [
           "gates"
         ]

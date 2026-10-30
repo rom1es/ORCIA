@@ -1,5 +1,7 @@
 import type {
   ArbitrationTieBreakCardLabels,
+  ChunkValidationCardLabels,
+  CognitiveReviewBriefingLabels,
   HumanLedAnchorCardLabels,
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
@@ -32,6 +34,10 @@ export interface TranslationDictionary {
     defaultContextSummary: string;
   };
   upstreamChallengeModal: UpstreamChallengeModalLabels;
+  humanGates: {
+    briefing: CognitiveReviewBriefingLabels;
+    chunkValidation: ChunkValidationCardLabels;
+  };
   workspaceTopology: UiWorkspaceTopologyLabels;
   catalogExplorer: UiCatalogExplorerLabels;
   permissionBroker: UiPermissionBrokerLabels;

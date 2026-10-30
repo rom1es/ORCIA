@@ -316,4 +316,33 @@ export const enDictionary: TranslationDictionary = {
     challengeSubmittedFeedback: "Upstream Challenge dispatched via domain_events_outbox ✓",
     replayTriggeredFeedback: "Targeted Step N Replay executed (new ACTIVE branch, old snapshots SUPERSEDED) ✓",
   },
+  humanGates: {
+    briefing: {
+      gridTitle: "Cognitive Review Briefing (4 Blocks — UX-DR4)",
+      block1Title: "1. Executive Summary",
+      block2Title: "2. Key Elements & Transverse Check",
+      block3Title: "3. Decisions Taken",
+      block4Title: "4. Retained Hypotheses",
+      inspectHypothesesButtonLabel: "Mark hypotheses as inspected",
+      hypothesesInspectedBadgeLabel: "Block 4 inspected",
+      hypothesesPendingBadgeLabel: "Inspection required (Block 4)",
+    },
+    chunkValidation: {
+      sectionListTitle: "Chunked Validation (UX-DR5 — Zero 1-Click Approve All)",
+      keyboardNavHint: "Keyboard navigation: Alt + ↑ / ↓",
+      approveSectionLabel: "Approve section",
+      coEditSectionLabel: "Co-edit (SHA-256)",
+      challengeSectionLabel: "Challenge / Upstream Rewind",
+      finalizeGateButtonLabel: "Approve Human Gate",
+      pendingSectionsNotice:
+        "Every required section and Block 4 (Retained Hypotheses) must be validated individually.",
+      guardModalTitle: "Anti-Rubber-Stamping Guard (< 15 s — UX-DR10)",
+      guardModalDescription:
+        "Approval submitted in under 15 seconds on an artifact > 1,000 words. Explicitly confirm retained hypotheses (fast_approval_warning: true).",
+      guardConfirmCheckboxLabel:
+        "I confirm I have reviewed the retained hypotheses and critical sections",
+      guardConfirmButtonLabel: "Confirm and record approval",
+      guardCancelButtonLabel: "Resume reading",
+    },
+  },
 };
