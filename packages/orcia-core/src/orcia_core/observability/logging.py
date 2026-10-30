@@ -147,13 +147,92 @@ def get_current_trace_id() -> str:
     return get_current_trace_context().trace_id
 
 
+_SENSITIVE_KEY_RE = re.compile(
+    r"(secret|access_token|refresh_token|auth_token|api_token|bearer_token|^token$|password|api_key|apikey|authorization|bearer|private_key|vault_ref|canary)",
+    re.IGNORECASE,
+)
+
+_INLINE_SECRET_RE = re.compile(
+    r"(Bearer\s+[A-Za-z0-9._\-]+|sk-[A-Za-z0-9_\-]{6,}|CANARY_SECRET_[A-Za-z0-9_\-]+)"
+)
+_REGISTERED_SECRET_VALUES: set[str] = set()
+
+
+def register_sensitive_secret_value(secret_value: str) -> None:
+    """Register a resolved secret value so `structlog` and scrubbers redact it (`DEC-SEC-01`)."""
+    cleaned = secret_value.strip()
+    if len(cleaned) >= 4:
+        _REGISTERED_SECRET_VALUES.add(cleaned)
+
+
+def clear_sensitive_secret_values() -> None:
+    """Clear registered sensitive secret values (used in isolated tests)."""
+    _REGISTERED_SECRET_VALUES.clear()
+
+
+def scrub_sensitive_text(text: str) -> str:
+    """Replace inline `Bearer`, `sk-*`, or registered secret values with `[REDACTED_SECRET]`."""
+    redacted = _INLINE_SECRET_RE.sub("[REDACTED_SECRET]", text)
+    for secret_val in tuple(_REGISTERED_SECRET_VALUES):
+        if secret_val and secret_val in redacted:
+            redacted = redacted.replace(secret_val, "[REDACTED_SECRET]")
+    return redacted
+
+
+def scrub_sensitive_dict(
+    payload: dict[str, object],
+    *,
+    allowed_keys: frozenset[str] | None = None,
+) -> dict[str, object]:
+    """Scrub secret keys/values and optionally enforce an allowlist (`DEC-SEC-01`, `NFR-SEC-4`)."""
+    sanitized: dict[str, object] = {}
+    for key, val in payload.items():
+        if allowed_keys is not None and key not in allowed_keys:
+            continue
+        if _SENSITIVE_KEY_RE.search(str(key)):
+            sanitized[key] = "[REDACTED_SECRET]"
+        elif isinstance(val, dict):
+            sanitized[key] = scrub_sensitive_dict(val)
+        elif isinstance(val, (list, tuple)):
+            sanitized[key] = [
+                scrub_sensitive_dict(item)
+                if isinstance(item, dict)
+                else (scrub_sensitive_text(item) if isinstance(item, str) else item)
+                for item in val
+            ]
+        elif isinstance(val, str):
+            sanitized[key] = scrub_sensitive_text(val)
+        else:
+            sanitized[key] = val
+    return sanitized
+
+
+def mask_secrets_processor(
+    _logger: object,
+    _method_name: str,
+    event_dict: structlog.typing.EventDict,
+) -> structlog.typing.EventDict:
+    """Structlog processor masking secrets and canary tokens before rendering (`DEC-SEC-01`)."""
+    for key, val in list(event_dict.items()):
+        if key not in ("event", "level", "timestamp", "trace_id", "span_id") and (
+            _SENSITIVE_KEY_RE.search(str(key))
+        ):
+            event_dict[key] = "[REDACTED_SECRET]"
+        elif isinstance(val, str):
+            event_dict[key] = scrub_sensitive_text(val)
+        elif isinstance(val, dict):
+            event_dict[key] = scrub_sensitive_dict(val)
+    return event_dict
+
+
 def configure_structlog() -> None:
-    """Configure `structlog` for deterministic JSON structured logging with contextvars."""
+    """Configure `structlog` for deterministic JSON structured logging with secret masking."""
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
             structlog.processors.TimeStamper(fmt="iso", utc=True),
+            mask_secrets_processor,
             structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(20),

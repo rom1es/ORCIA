@@ -2,6 +2,17 @@
 
 from __future__ import annotations
 
+from orcia_core.gates.agentic import (
+    INDEPENDENT_LENS_IDS,
+    AgenticGateEvaluationResult,
+    AgenticGateInput,
+    AgenticGateService,
+    AgenticLensFinding,
+    AgenticLensId,
+    AtomicFactAssertion,
+    CognitiveReviewBriefing4Blocks,
+    OntologyDataClassification,
+)
 from orcia_core.gates.deterministic import DeterministicGateService
 from orcia_core.gates.errors import (
     DeterministicGateFailedError,
@@ -25,6 +36,12 @@ from orcia_core.gates.models import (
     SandboxTierLiteral,
     WorkspaceSpineBaseline,
 )
+from orcia_core.gates.pii_scrubber import (
+    PiiReversibleScrubber,
+    PiiScrubResult,
+    PiiTokenVaultBackendPort,
+    purge_executor_chain_of_thought,
+)
 from orcia_core.gates.sandbox import (
     SubprocessTier1SandboxAdapter,
     classify_sandbox_failure,
@@ -45,7 +62,15 @@ __all__ = [
     "CANONICAL_FORBIDDEN_DRIFT_PATTERNS",
     "CANONICAL_SPINE_ALLOWED_DEPENDENCIES",
     "DOMAIN_NAME",
+    "INDEPENDENT_LENS_IDS",
+    "AgenticGateEvaluationResult",
+    "AgenticGateInput",
+    "AgenticGateService",
+    "AgenticLensFinding",
+    "AgenticLensId",
+    "AtomicFactAssertion",
     "BimodalSandboxAdapter",
+    "CognitiveReviewBriefing4Blocks",
     "ContainerRuntimeType",
     "ContainerSandboxRunner",
     "ContainerSandboxSpec",
@@ -58,9 +83,13 @@ __all__ = [
     "GateType",
     "ModelOrthogonalityViolationError",
     "OntologyAxiomCheckRule",
+    "OntologyDataClassification",
     "OrciaDomainError",
     "PatternDriftDetectedError",
     "PatternDriftFinding",
+    "PiiReversibleScrubber",
+    "PiiScrubResult",
+    "PiiTokenVaultBackendPort",
     "PolicyDeniedError",
     "SandboxTierLiteral",
     "SubprocessTier1SandboxAdapter",
@@ -71,4 +100,5 @@ __all__ = [
     "WorkspaceSpineBaseline",
     "build_tier2_container_cli_args",
     "classify_sandbox_failure",
+    "purge_executor_chain_of_thought",
 ]

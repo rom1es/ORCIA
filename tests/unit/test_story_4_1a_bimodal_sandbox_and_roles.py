@@ -53,9 +53,7 @@ def test_story_4_1a_container_spec_and_bimodal_tdd_red_green() -> None:
     assert "--pids-limit=64" in podman_args
     assert "/var/orcia/cas/sha256_abc:/workspace/cas:ro" in podman_args
 
-    gvisor_args = build_tier2_container_cli_args(
-        ContainerSandboxSpec(runtime="gvisor_runsc")
-    )
+    gvisor_args = build_tier2_container_cli_args(ContainerSandboxSpec(runtime="gvisor_runsc"))
     assert "--runtime=runsc" in gvisor_args
     assert "--network=none" in gvisor_args
 

@@ -68,7 +68,7 @@ development_status:
   epic-4: in-progress
   4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: done
   4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: done
-  4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: backlog
+  4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: done
   4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: backlog
   4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: backlog
   epic-4-retrospective: optional
@@ -91,7 +91,45 @@ development_status:
   7-3-boucle-fermée-d-auto-remédiation-uj-12-diagnostic-0-90-repro: backlog
   7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: backlog
   epic-7-retrospective: optional
+
+  # Epic 8 — Settings Hub, Enterprise Governance & Cognitive Routing (in-design)
+  # Étude : docs/planning-artifacts/research/epic-8-settings-hub-study.md
+  epic-8: in-design
+  8-1-modele-habilitations-rbac-abac-actions-hierarchie: planned
+  8-2-abstraction-llm-tiers-routage-auto: planned
+  8-3-coquille-settings-tanstack-router-permission-guards: planned
+  8-4-hub-connecteurs-et-gestion-des-secrets: planned # pragma: allowlist secret
+  8-5-studio-workflows-et-registre-des-packs: planned
+  8-6-parcours-initialisation-wizards-durables: planned
+  epic-8-retrospective: optional
 action_items:
+  - id: ACTION_ITEM-8.1
+    title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
+    status: open
+    epic: epic-8
+    story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
+    priority: P2
+    description: >
+      Extension post-MVP du moteur d'habilitation : DENY l'emporte sur tout ALLOW hérité
+      et INHERITANCE_BLOCK rompt l'héritage additif sur une sous-entité.
+  - id: ACTION_ITEM-8.2
+    title: "Granularité contextuelle du verbe execute (env == 'staging', plafond de tokens par run)"
+    status: open
+    epic: epic-8
+    story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
+    priority: P2
+    description: >
+      Conditions ABAC sur execute : restriction par environnement et plafond de budget
+      tokens/run, évaluées par le broker de permissions.
+  - id: ACTION_ITEM-8.3
+    title: "Attribut d'opacité hidden_when_unauthorized pour objets sensibles (coffres-forts, bases confidentielles)"
+    status: open
+    epic: epic-8
+    story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
+    priority: P2
+    description: >
+      Masquage total (pas de cadenas ni de découverte passive) de certains types d'objets
+      pour les utilisateurs non habilités.
   - id: SEC-01
     title: "Chiffrement GitOps des secrets d'équipe via Mozilla SOPS + age (.env.secrets.enc)"
     status: open
@@ -118,7 +156,7 @@ action_items:
   - id: SEC-03
     title: "Adaptateur KMS / Secret Manager externe (Infisical / HashiCorp Vault /
       Cloud KMS) & Enveloppe DEK/KEK"
-    status: open
+    status: done
     epic: epic-6
     description: >
       Introduire un port hexagonal `SecretProviderPort` dans `packages/orcia-kernel/ports.py`
@@ -418,7 +456,7 @@ action_items:
     ad_ref: "AD-6, AD-12"
     story_ref: "4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa"
     owner: "Karim (Platform)"
-    status: open
+    status: done
     epic: epic-4
     description: >
       Risque K5 / plan P1-1 de l'audit (NFR-SEC-4 étendu) ; le secret témoin ne doit apparaître ni dans dbos.*, audit_ledger, domain_events_outbox, step_executions ni dans les logs. SEC-03 fournit l'adaptateur Vault / Infisical.

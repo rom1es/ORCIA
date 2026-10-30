@@ -1,6 +1,211 @@
 {
   "components": {
     "schemas": {
+      "AgenticGateEvaluateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`, `AD-10`, `FR-18`).",
+        "properties": {
+          "anonymize_pii_reversible": {
+            "default": true,
+            "title": "Anonymize Pii Reversible",
+            "type": "boolean"
+          },
+          "candidate_artifact": {
+            "additionalProperties": true,
+            "title": "Candidate Artifact",
+            "type": "object"
+          },
+          "custom_pii_entities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Custom Pii Entities",
+            "type": "array"
+          },
+          "data_classification": {
+            "default": "INTERNAL",
+            "enum": [
+              "PUBLIC",
+              "INTERNAL",
+              "SENSITIVE",
+              "RESTRICTED"
+            ],
+            "title": "Data Classification",
+            "type": "string"
+          },
+          "evaluator_model_family": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Evaluator Model Family",
+            "type": "string"
+          },
+          "evaluator_model_id": {
+            "default": "google/gemini-2.5-pro",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Evaluator Model Id",
+            "type": "string"
+          },
+          "executor_model_family": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Executor Model Family",
+            "type": "string"
+          },
+          "fact_confidence_threshold": {
+            "default": 0.8,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Fact Confidence Threshold",
+            "type": "number"
+          },
+          "ontology_facts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Ontology Facts",
+            "type": "object"
+          },
+          "pass_score_threshold": {
+            "default": 0.85,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Pass Score Threshold",
+            "type": "number"
+          },
+          "pinned_kb_facts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Pinned Kb Facts",
+            "type": "object"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step1_prd_invariants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Step1 Prd Invariants",
+            "type": "array"
+          },
+          "step2_arch_invariants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Step2 Arch Invariants",
+            "type": "array"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "step_memlog_markers": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Step Memlog Markers",
+            "type": "array"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "step_key",
+          "executor_model_family",
+          "evaluator_model_family"
+        ],
+        "title": "AgenticGateEvaluateRequest",
+        "type": "object"
+      },
+      "AgenticGateEvaluateResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`).",
+        "properties": {
+          "briefing_4blocks": {
+            "additionalProperties": true,
+            "title": "Briefing 4Blocks",
+            "type": "object"
+          },
+          "cot_items_purged": {
+            "title": "Cot Items Purged",
+            "type": "integer"
+          },
+          "evaluation": {
+            "$ref": "#/components/schemas/GateEvaluationSchemaItem"
+          },
+          "lens_results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Lens Results",
+            "type": "array"
+          },
+          "pii_tokens_redacted": {
+            "title": "Pii Tokens Redacted",
+            "type": "integer"
+          },
+          "rehydrated_summary": {
+            "title": "Rehydrated Summary",
+            "type": "string"
+          },
+          "routed_model_family": {
+            "title": "Routed Model Family",
+            "type": "string"
+          },
+          "routed_model_id": {
+            "title": "Routed Model Id",
+            "type": "string"
+          },
+          "routed_to_local_sovereign_model": {
+            "title": "Routed To Local Sovereign Model",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluation",
+          "routed_model_family",
+          "routed_model_id",
+          "routed_to_local_sovereign_model",
+          "cot_items_purged",
+          "pii_tokens_redacted",
+          "rehydrated_summary",
+          "lens_results",
+          "briefing_4blocks",
+          "trace_id"
+        ],
+        "title": "AgenticGateEvaluateResponse",
+        "type": "object"
+      },
       "ArbitrationOptionSchemaItem": {
         "additionalProperties": false,
         "description": "Comparative option inside an `Arbitration Tie-Break Matrix` (`UX-DR6`).",
@@ -11009,6 +11214,101 @@
         "summary": "Merge 4 override layers (Base -> Team -> Workspace -> User) and generate run-lock",
         "tags": [
           "federated-catalog"
+        ]
+      }
+    },
+    "/api/v1/gates/agentic/evaluate": {
+      "post": {
+        "operationId": "evaluate_agentic_gate_endpoint_api_v1_gates_agentic_evaluate_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgenticGateEvaluateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgenticGateEvaluateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Evaluate an Agentic Gate via the 5-Lens DAG with Model Orthogonality & PII Scrubbing",
+        "tags": [
+          "gates"
         ]
       }
     },

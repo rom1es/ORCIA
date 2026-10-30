@@ -340,9 +340,7 @@ def test_story_4_1_init_existing_project_and_init_skill_api_and_skill_executor()
     assert skill_bad.json()["error_code"] == "ERR_POLICY_DENIED"
 
     # 5. List gate evaluations via GET /api/v1/gates/evaluations
-    list_res = client.get(
-        f"/api/v1/gates/evaluations?run_id={RUN_ID}&persona_key=marc"
-    )
+    list_res = client.get(f"/api/v1/gates/evaluations?run_id={RUN_ID}&persona_key=marc")
     assert list_res.status_code == 200
     assert len(list_res.json()["evaluations"]) >= 1
 

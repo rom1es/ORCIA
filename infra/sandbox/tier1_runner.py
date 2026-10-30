@@ -195,9 +195,7 @@ def _evaluate_deterministic_checks(payload: dict[str, Any], max_memory_mb: int) 
     pattern_drift_passed = len(pattern_drift_findings) == 0
     passed = schema_validation_passed and ontology_axioms_passed and pattern_drift_passed
     checks_Passed_count = (
-        int(schema_validation_passed)
-        + int(ontology_axioms_passed)
-        + int(pattern_drift_passed)
+        int(schema_validation_passed) + int(ontology_axioms_passed) + int(pattern_drift_passed)
     )
     score = round(checks_Passed_count / 3.0, 4)
 

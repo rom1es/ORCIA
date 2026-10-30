@@ -11,6 +11,8 @@ from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.bootstrap import SystemBootstrapRunItem
 from orcia_api.schemas.catalog import CatalogItemResponse
 from orcia_api.schemas.gates import (
+    AgenticGateEvaluateRequest,
+    AgenticGateEvaluateResponse,
     DeploymentRoleSchemaItem,
     DeploymentRolesListResponse,
     DeterministicGateEvaluateRequest,
@@ -28,6 +30,7 @@ from orcia_api.schemas.gates import (
 )
 from orcia_core.bootstrap import InitExistingProjectInput, InitSkillInput
 from orcia_core.catalog.models import CatalogItemEntity
+from orcia_core.gates.agentic import AgenticGateInput
 from orcia_core.gates.models import (
     DeterministicGateInput,
     GateEvaluationEntity,
@@ -329,5 +332,59 @@ async def list_deployment_roles_endpoint(
             )
             for r in roles
         ],
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/api/v1/gates/agentic/evaluate",
+    response_model=AgenticGateEvaluateResponse,
+    summary=(
+        "Evaluate an Agentic Gate via the 5-Lens DAG with Model Orthogonality & PII Scrubbing"
+    ),
+    responses=PROBLEM_RESPONSES,
+)
+async def evaluate_agentic_gate_endpoint(
+    payload: AgenticGateEvaluateRequest,
+    request: Request,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> AgenticGateEvaluateResponse:
+    user = resolve_request_user(request, persona_key=persona_key)
+    bootstrap_svc = get_bootstrap_service(request)
+    bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
+        user, payload.workspace_id, instance=str(request.url.path)
+    )
+    res = bootstrap_svc.gate_service.evaluate_agentic_gate(
+        AgenticGateInput(
+            workspace_id=payload.workspace_id,
+            run_id=payload.run_id,
+            step_execution_id=payload.step_execution_id,
+            step_key=payload.step_key,
+            executor_model_family=payload.executor_model_family,
+            evaluator_model_family=payload.evaluator_model_family,
+            evaluator_model_id=payload.evaluator_model_id,
+            data_classification=payload.data_classification,
+            anonymize_pii_reversible=payload.anonymize_pii_reversible,
+            custom_pii_entities=tuple(payload.custom_pii_entities),
+            candidate_artifact=dict(payload.candidate_artifact),
+            step1_prd_invariants=tuple(payload.step1_prd_invariants),
+            step2_arch_invariants=tuple(payload.step2_arch_invariants),
+            ontology_facts=dict(payload.ontology_facts),
+            pinned_kb_facts=dict(payload.pinned_kb_facts),
+            step_memlog_markers=tuple(dict(m) for m in payload.step_memlog_markers),
+            fact_confidence_threshold=payload.fact_confidence_threshold,
+            pass_score_threshold=payload.pass_score_threshold,
+        )
+    )
+    return AgenticGateEvaluateResponse(
+        evaluation=_serialize_gate_evaluation(res.evaluation),
+        routed_model_family=res.routed_model_family,
+        routed_model_id=res.routed_model_id,
+        routed_to_local_sovereign_model=res.routed_to_local_sovereign_model,
+        cot_items_purged=res.cot_items_purged,
+        pii_tokens_redacted=res.pii_tokens_redacted,
+        rehydrated_summary=res.rehydrated_summary,
+        lens_results=[f.to_dict() for f in res.lens_results],
+        briefing_4blocks=res.briefing_4blocks.to_dict(),
         trace_id=_trace(request),
     )

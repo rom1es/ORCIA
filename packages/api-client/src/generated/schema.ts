@@ -5,6 +5,38 @@
 
 export interface components {
   schemas: {
+    AgenticGateEvaluateRequest: {
+      anonymize_pii_reversible?: boolean;
+      candidate_artifact?: Record<string, unknown>;
+      custom_pii_entities?: (string)[];
+      data_classification?: "PUBLIC" | "INTERNAL" | "SENSITIVE" | "RESTRICTED";
+      evaluator_model_family: string;
+      evaluator_model_id?: string;
+      executor_model_family: string;
+      fact_confidence_threshold?: number;
+      ontology_facts?: Record<string, string>;
+      pass_score_threshold?: number;
+      pinned_kb_facts?: Record<string, string>;
+      run_id: string;
+      step1_prd_invariants?: (string)[];
+      step2_arch_invariants?: (string)[];
+      step_execution_id: string;
+      step_key: string;
+      step_memlog_markers?: (Record<string, string>)[];
+      workspace_id: string;
+    };
+    AgenticGateEvaluateResponse: {
+      briefing_4blocks: Record<string, unknown>;
+      cot_items_purged: number;
+      evaluation: components["schemas"]["GateEvaluationSchemaItem"];
+      lens_results: (Record<string, unknown>)[];
+      pii_tokens_redacted: number;
+      rehydrated_summary: string;
+      routed_model_family: string;
+      routed_model_id: string;
+      routed_to_local_sovereign_model: boolean;
+      trace_id: string;
+    };
     ArbitrationOptionSchemaItem: {
       cons?: (string)[];
       finops_impact: string;
@@ -1505,6 +1537,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/gates/agentic/evaluate": {
+    post: {
+      responses: {
+        200: components["schemas"]["AgenticGateEvaluateResponse"];
+      };
+    };
+  };
   "/api/v1/gates/deterministic/evaluate": {
     post: {
       responses: {
@@ -1759,6 +1798,8 @@ export interface paths {
   };
 }
 
+export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
+export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];

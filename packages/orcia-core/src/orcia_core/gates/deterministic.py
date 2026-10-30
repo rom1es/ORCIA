@@ -8,6 +8,11 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+from orcia_core.gates.agentic import (
+    AgenticGateEvaluationResult,
+    AgenticGateInput,
+    AgenticGateService,
+)
 from orcia_core.gates.errors import PatternDriftDetectedError
 from orcia_core.gates.models import (
     CANONICAL_FORBIDDEN_DRIFT_PATTERNS,
@@ -53,19 +58,23 @@ def _run_sandbox_sync(
 
 
 class DeterministicGateService:
-    """Evaluates Deterministic Gates across Tier 1 WASM & Tier 2 Container Sandboxes (`AD-9`)."""
+    """Evaluates Deterministic & Agentic Gates across Tier 1/2 Sandboxes & 5-Lens DAG."""
 
     def __init__(
         self,
         *,
         sandbox_port: SandboxPort | None = None,
         outbox_relay: OutboxRelayPort | None = None,
+        agentic_service: AgenticGateService | None = None,
     ) -> None:
         self.sandbox_port: SandboxPort = sandbox_port or BimodalSandboxAdapter()
         self.tier2_runner: ContainerSandboxRunner = (
             sandbox_port.tier2_runner
             if isinstance(sandbox_port, BimodalSandboxAdapter)
             else ContainerSandboxRunner()
+        )
+        self.agentic_service: AgenticGateService = agentic_service or AgenticGateService(
+            outbox_relay=outbox_relay
         )
         self._outbox_relay = outbox_relay
         self._evaluations: dict[str, GateEvaluationEntity] = {}
@@ -179,12 +188,8 @@ class DeterministicGateService:
                 )
                 for item in (parsed_stdout.get("pattern_drift_findings") or [])
             )
-            missing_sections = tuple(
-                str(s) for s in (parsed_stdout.get("missing_sections") or [])
-            )
-            violated_axioms = tuple(
-                dict(ax) for ax in (parsed_stdout.get("violated_axioms") or [])
-            )
+            missing_sections = tuple(str(s) for s in (parsed_stdout.get("missing_sections") or []))
+            violated_axioms = tuple(dict(ax) for ax in (parsed_stdout.get("violated_axioms") or []))
 
         eval_id = new_uuid7_str()
         outbox_evt = GateEvaluated.create(
@@ -280,4 +285,13 @@ class DeterministicGateService:
             sandbox_stderr=result.sandbox_stderr,
         )
         self._evaluations[entity.id] = entity
+        return result
+
+    def evaluate_agentic_gate(self, gate_input: AgenticGateInput) -> AgenticGateEvaluationResult:
+        """Evaluate the 5-lens Agentic Gate (`Story 4.2`, `AD-10`, `FR-18`)."""
+        result = self.agentic_service.evaluate_agentic_gate(gate_input)
+        self._evaluations[result.evaluation.id] = result.evaluation
+        for evt in self.agentic_service.list_outbox_events():
+            if evt not in self._outbox_events:
+                self._outbox_events.append(evt)
         return result

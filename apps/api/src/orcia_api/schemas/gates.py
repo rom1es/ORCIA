@@ -151,15 +151,11 @@ class InitSkillRequest(BaseModel):
     title: str = Field(..., min_length=2, max_length=128)
     description: str = Field(..., min_length=3, max_length=1024)
     version: str = Field(default="v1.0.0", min_length=1, max_length=32)
-    test_payload: dict[str, Any] = Field(
-        default_factory=lambda: {"artifact": "skill-self-test"}
-    )
+    test_payload: dict[str, Any] = Field(default_factory=lambda: {"artifact": "skill-self-test"})
     required_sections: list[str] = Field(default_factory=lambda: ["artifact"])
     timeout_ms: int = Field(default=5000, ge=50, le=5000)
     max_memory_mb: int = Field(default=256, ge=16, le=256)
-    visibility_scope: Literal["SHARED_WORKSPACE", "SHARED_TEAM"] = Field(
-        default="SHARED_WORKSPACE"
-    )
+    visibility_scope: Literal["SHARED_WORKSPACE", "SHARED_TEAM"] = Field(default="SHARED_WORKSPACE")
     simulate_timeout_sleep_ms: int = Field(default=0, ge=0, le=10000)
     simulate_network_escape: bool = Field(default=False)
     simulate_fs_escape_path: str | None = Field(default=None, max_length=256)
@@ -231,4 +227,48 @@ class DeploymentRolesListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     roles: list[DeploymentRoleSchemaItem]
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class AgenticGateEvaluateRequest(BaseModel):
+    """Request payload for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`, `AD-10`, `FR-18`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    workspace_id: str = Field(..., min_length=1, max_length=128)
+    run_id: str = Field(..., min_length=1, max_length=128)
+    step_execution_id: str = Field(..., min_length=1, max_length=128)
+    step_key: str = Field(..., min_length=1, max_length=128)
+    executor_model_family: str = Field(..., min_length=1, max_length=64)
+    evaluator_model_family: str = Field(..., min_length=1, max_length=64)
+    evaluator_model_id: str = Field(default="google/gemini-2.5-pro", min_length=1, max_length=128)
+    data_classification: Literal["PUBLIC", "INTERNAL", "SENSITIVE", "RESTRICTED"] = Field(
+        default="INTERNAL"
+    )
+    anonymize_pii_reversible: bool = Field(default=True)
+    custom_pii_entities: list[str] = Field(default_factory=list)
+    candidate_artifact: dict[str, Any] = Field(default_factory=dict)
+    step1_prd_invariants: list[str] = Field(default_factory=list)
+    step2_arch_invariants: list[str] = Field(default_factory=list)
+    ontology_facts: dict[str, str] = Field(default_factory=dict)
+    pinned_kb_facts: dict[str, str] = Field(default_factory=dict)
+    step_memlog_markers: list[dict[str, str]] = Field(default_factory=list)
+    fact_confidence_threshold: float = Field(default=0.80, ge=0.0, le=1.0)
+    pass_score_threshold: float = Field(default=0.85, ge=0.0, le=1.0)
+
+
+class AgenticGateEvaluateResponse(BaseModel):
+    """Response for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    evaluation: GateEvaluationSchemaItem
+    routed_model_family: str
+    routed_model_id: str
+    routed_to_local_sovereign_model: bool
+    cot_items_purged: int
+    pii_tokens_redacted: int
+    rehydrated_summary: str
+    lens_results: list[dict[str, Any]]
+    briefing_4blocks: dict[str, Any]
     trace_id: str = Field(..., min_length=32, max_length=32)
