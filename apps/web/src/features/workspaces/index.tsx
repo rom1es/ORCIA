@@ -2,91 +2,164 @@ import {
   CommandPaletteModal,
   type ControlCenterScopeType,
   type ProductLifecyclePhaseType,
+  type UiDatasourceScheme,
   WorkspaceControlCenter,
   WorkspaceTopologyPanel,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import { usePersonaContext } from "../../components/ShellContainer";
-import {
-  computePersonaTopology,
-  DEFAULT_CATALOG_RESOURCES,
-} from "../../components/workspaceFixtures";
+import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useI18n } from "../../i18n";
 
 export function WorkspacesFeaturePanel() {
-  const { dictionary } = useI18n();
-  const { fixtureMode, activePersona, setActivePersona } = usePersonaContext();
+  const { dictionary, locale } = useI18n();
+  const isFr = locale === "fr";
+  const {
+    workspaces,
+    datasources,
+    runs,
+    workflowOverrides,
+    createWorkspace,
+    updateWorkspacePhase,
+  } = usePlatformSetup();
+
   const [scopeType, setScopeType] = useState<ControlCenterScopeType>("GLOBAL");
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [phases, setPhases] = useState<Record<string, ProductLifecyclePhaseType>>({
-    "ws-1": "BUILD",
-    "ws-2": "MIGRATION",
-  });
 
-  const topologyData = fixtureMode
-    ? computePersonaTopology(activePersona)
-    : { workspaces: [], finopsTotal: 0 };
+  // Create Workspace form state (starts 100% empty)
+  const [wsName, setWsName] = useState("");
+  const [wsSlug, setWsSlug] = useState("");
+  const [wsVisibility, setWsVisibility] = useState<
+    "STANDARD" | "CONFIDENTIAL_RESTRICTED"
+  >("STANDARD");
+  const [wsPhase, setWsPhase] = useState<ProductLifecyclePhaseType>("BUILD");
 
-  const isObserver = activePersona === "claire";
+  const handleCreateWorkspace = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wsName.trim()) return;
+    createWorkspace({
+      name: wsName.trim(),
+      slug: wsSlug.trim() || wsName.trim().toLowerCase().replace(/\s+/g, "-"),
+      visibilityMode: wsVisibility,
+      lifecyclePhase: wsPhase,
+    });
+    setWsName("");
+    setWsSlug("");
+  };
+
+  const consolidatedFinopsUsd = workspaces.reduce(
+    (sum, ws) => sum + (ws.finopsCostUsd ?? 0),
+    0,
+  );
+
+  const inputStyle: React.CSSProperties = {
+    padding: "7px 10px",
+    borderRadius: "var(--radius-sm)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-surface-card)",
+    color: "var(--color-foreground)",
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <section
+        data-testid="create-workspace-panel"
+        className="orcia-bento-card"
+        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      >
+        <div>
+          <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
+            {isFr
+              ? "Initialiser un Nouvel Espace de Travail (Workspace)"
+              : "Initialize a New Solution Workspace"}
+          </h2>
+          <p
+            style={{
+              margin: "4px 0 0 0",
+              fontSize: "13px",
+              color: "var(--color-muted-foreground)",
+            }}
+          >
+            {isFr
+              ? "Créez un Espace de Travail pour déverrouiller le sélecteur de périmètre (⌘W), rattacher des sources documentaires et lancer des Runs."
+              : "Create a Workspace to unlock the scope switcher (⌘W), attach knowledge sources, and launch Runs."}
+          </p>
+        </div>
+
+        <form
+          data-testid="create-workspace-form"
+          onSubmit={handleCreateWorkspace}
+          style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
+        >
+          <input
+            type="text"
+            data-testid="workspace-name-input"
+            value={wsName}
+            onChange={(e) => setWsName(e.target.value)}
+            placeholder={
+              isFr ? "Nom de l'Espace de Travail..." : "Workspace name..."
+            }
+            style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
+          />
+          <input
+            type="text"
+            data-testid="workspace-slug-input"
+            value={wsSlug}
+            onChange={(e) => setWsSlug(e.target.value)}
+            placeholder={isFr ? "Identifiant / Slug..." : "Slug..."}
+            style={inputStyle}
+          />
+          <select
+            data-testid="workspace-visibility-select"
+            value={wsVisibility}
+            onChange={(e) =>
+              setWsVisibility(
+                e.target.value as "STANDARD" | "CONFIDENTIAL_RESTRICTED",
+              )
+            }
+            style={inputStyle}
+          >
+            <option value="STANDARD">STANDARD</option>
+            <option value="CONFIDENTIAL_RESTRICTED">CONFIDENTIAL_RESTRICTED</option>
+          </select>
+          <select
+            data-testid="workspace-phase-select"
+            value={wsPhase}
+            onChange={(e) =>
+              setWsPhase(e.target.value as ProductLifecyclePhaseType)
+            }
+            style={inputStyle}
+          >
+            <option value="BUILD">BUILD</option>
+            <option value="RUN">RUN</option>
+            <option value="MIGRATION">MIGRATION</option>
+          </select>
+          <button
+            type="submit"
+            data-testid="create-workspace-submit-btn"
+            style={{
+              padding: "7px 14px",
+              borderRadius: "var(--radius-sm)",
+              border: "none",
+              backgroundColor: "var(--color-primary-cobalt)",
+              color: "var(--color-primary-foreground)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {isFr ? "+ Créer le Workspace" : "+ Create Workspace"}
+          </button>
+        </form>
+      </section>
+
       <div className="orcia-bento-card">
         <WorkspaceControlCenter
           scopeType={scopeType}
           scopeLabel={`Périmètre ${scopeType}`}
-          isReadOnlyObserver={isObserver}
-          consolidatedFinopsUsd={topologyData.finopsTotal || 13.15}
-          contributorRuns={[
-            {
-              runId: "run-701",
-              workspaceId: "ws-1",
-              workspaceName: "Workspace 1 — Paiements & Checkout Web",
-              title: "Run 701 — Arbitrage Topologie Paiements v2",
-              status: "PAUSED_ARBITRATION",
-              currentStepKey: "architecture-arbitration",
-              executionMode: "COACHING",
-              accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-              budgetConsumedUsd: 4.25,
-              blackboardSummary: "Synthèse d'architecture prête pour arbitrage humain.",
-            },
-          ]}
-          observerRuns={[
-            {
-              runId: "run-702",
-              workspaceId: "ws-2",
-              workspaceName: "Workspace 2 — Core Banking & Ledger",
-              title: "Run 702 — Audit Bascule Core Ledger",
-              status: "PAUSED_HUMAN_GATE",
-              currentStepKey: "ledger-human-gate",
-              executionMode: "FAST_PATH",
-              accessMode: "READ_ONLY_OBSERVER",
-              budgetConsumedUsd: 8.9,
-              blackboardSummary: "Rapport de conformité Core Ledger généré.",
-            },
-          ]}
-          datasources={[
-            {
-              id: "ds-1",
-              workspaceName: "Workspace 1 — Paiements & Checkout Web",
-              alias: "repo-checkout",
-              scheme: "git",
-              uri: "git://gitlab.entreprise.io/payments/checkout-web",
-              executionIdentity: "passthrough",
-              freshnessTtlDays: 90,
-              tripartiteStatus: "ALIGNED",
-            },
-            {
-              id: "ds-2",
-              workspaceName: "Workspace 1 — Paiements & Checkout Web",
-              alias: "wiki-archi",
-              scheme: "confluence",
-              uri: "confluence://ARCHI/payments-adr",
-              executionIdentity: "passthrough",
-              freshnessTtlDays: 14,
-              tripartiteStatus: "STALE_WARNING",
-            },
-          ]}
+          isReadOnlyObserver={false}
+          consolidatedFinopsUsd={consolidatedFinopsUsd}
+          contributorRuns={runs}
+          observerRuns={[]}
+          datasources={datasources}
           guidanceSteps={[
             {
               stepNumber: 1,
@@ -97,7 +170,7 @@ export function WorkspacesFeaturePanel() {
             {
               stepNumber: 2,
               title: "2. Rattacher les sources dédiées et partagées",
-              description: "Connecter les dépôts documentaires et bases.",
+              description: "Connecter les dépôts documentaires et bases dans /settings.",
               actionCommand: "init-datasource",
             },
             {
@@ -119,51 +192,11 @@ export function WorkspacesFeaturePanel() {
               actionCommand: "launch-supervised-run",
             },
           ]}
-          workflowOverrides={[
-            {
-              workflowKey: "architecture-arbitration-flow",
-              title: "Arbitrage Topologie & Gates Adaptatives",
-              baseLayer: "v1.0.0 (Socle Plateforme)",
-              teamOverride: "seuil_gate_agentique=0.85",
-              workspaceOverride: "human_authored_required=true",
-              userOverride: "mode_execution=COACHING",
-              spineContractRef: "ARCHITECTURE-SPINE.md (AD-2)",
-            },
-          ]}
-          workspacesGovernance={[
-            {
-              workspaceId: "ws-1",
-              name: "Workspace 1 — Paiements & Checkout Web",
-              visibilityMode: "STANDARD",
-              lifecyclePhase: phases["ws-1"] ?? "BUILD",
-              suggestedWorkflows: [
-                "conception-architecture-cible",
-                "livraison-incrementale-gouvernee",
-              ],
-              accessMode: isObserver
-                ? "READ_ONLY_OBSERVER"
-                : "CONTRIBUTOR_ACTION_REQUIRED",
-              finopsCostUsd: 4.25,
-            },
-            {
-              workspaceId: "ws-2",
-              name: "Workspace 2 — Core Banking & Ledger",
-              visibilityMode: "CONFIDENTIAL_RESTRICTED",
-              lifecyclePhase: phases["ws-2"] ?? "MIGRATION",
-              suggestedWorkflows: [
-                "cartographie-dependances-existant",
-                "plan-bascule-sans-interruption",
-              ],
-              accessMode: "READ_ONLY_OBSERVER",
-              finopsCostUsd: 8.9,
-              payloadMasked: true,
-            },
-          ]}
+          workflowOverrides={workflowOverrides}
+          workspacesGovernance={workspaces}
           labels={dictionary.controlCenter}
           onChangeScopeType={setScopeType}
-          onSelectPhase={(wsId, phase) =>
-            setPhases((prev) => ({ ...prev, [wsId]: phase }))
-          }
+          onSelectPhase={updateWorkspacePhase}
           onOpenCommandPalette={() => setPaletteOpen(true)}
         />
       </div>
@@ -180,14 +213,22 @@ export function WorkspacesFeaturePanel() {
             targetRoute: "/cockpit",
           },
           {
-            entryId: "run-701",
-            category: "RUN",
-            label: "Run 701 — Arbitrage Topologie Paiements v2",
-            subtitle: "Workspace 1 • architecture-arbitration",
-            shortcut: "Alt + ↑/↓",
-            targetRoute: "/cockpit?runId=run-701",
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+            entryId: "nav-settings",
+            category: "NAVIGATION",
+            label: "Ouvrir le Hub de Paramétrage (/settings)",
+            subtitle: "IAM, Modèles IA, Connecteurs, Packs, Studio",
+            shortcut: "g s",
+            targetRoute: "/settings",
           },
+          ...runs.map((r) => ({
+            entryId: r.runId,
+            category: "RUN" as const,
+            label: r.title,
+            subtitle: `${r.workspaceName} • ${r.currentStepKey}`,
+            shortcut: "Alt + ↑/↓",
+            targetRoute: `/cockpit?runId=${r.runId}`,
+            accessMode: r.accessMode,
+          })),
         ]}
         labels={dictionary.commandPalette}
         onClose={() => setPaletteOpen(false)}
@@ -195,13 +236,31 @@ export function WorkspacesFeaturePanel() {
 
       <div className="orcia-bento-card">
         <WorkspaceTopologyPanel
-          activePersona={activePersona}
-          workspaces={topologyData.workspaces}
-          consolidatedFinopsUsd={topologyData.finopsTotal}
-          catalogResources={fixtureMode ? DEFAULT_CATALOG_RESOURCES : []}
+          activePersona="marc"
+          workspaces={workspaces.map((ws) => ({
+            id: ws.workspaceId,
+            name: ws.name,
+            ownerOrgUnitName: "Plateforme Globale ORCIA",
+            visibilityMode: ws.visibilityMode,
+            effectiveRole: "PLATFORM_ADMIN",
+            accessMode: ws.accessMode,
+            accessOrigin: "GLOBAL_ADMIN",
+            finopsCostUsd: ws.finopsCostUsd,
+            datasources: datasources
+              .filter((d) => d.workspaceName === ws.name)
+              .map((d) => ({
+                id: d.id,
+                alias: d.alias,
+                scheme: d.scheme as UiDatasourceScheme,
+                uri: d.uri,
+                role: d.executionIdentity,
+              })),
+          }))}
+          consolidatedFinopsUsd={consolidatedFinopsUsd}
+          catalogResources={[]}
           labels={dictionary.workspaceTopology}
-          showPersonaSimulator={fixtureMode}
-          onSelectPersona={setActivePersona}
+          showPersonaSimulator={false}
+          onSelectPersona={() => undefined}
         />
       </div>
     </div>

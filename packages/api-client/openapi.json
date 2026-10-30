@@ -1799,6 +1799,91 @@
         "title": "ClaimTaskResponse",
         "type": "object"
       },
+      "CognitiveRoutingOutcomeResponse": {
+        "additionalProperties": false,
+        "description": "Cognitive routing outcome response (`Story 8.2`).",
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/InferenceAttemptResponse"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
+          "effort": {
+            "enum": [
+              "default",
+              "fast",
+              "balanced",
+              "deep"
+            ],
+            "title": "Effort",
+            "type": "string"
+          },
+          "final_resolved_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex"
+            ],
+            "title": "Final Resolved Tier",
+            "type": "string"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "paused_budget_exceeded": {
+            "title": "Paused Budget Exceeded",
+            "type": "boolean"
+          },
+          "requested_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Requested Tier",
+            "type": "string"
+          },
+          "response_content": {
+            "title": "Response Content",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "total_cost_usd": {
+            "title": "Total Cost Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "run_id",
+          "step_execution_id",
+          "requested_tier",
+          "final_resolved_tier",
+          "effort",
+          "response_content",
+          "model_family",
+          "model_name",
+          "attempts",
+          "total_cost_usd",
+          "paused_budget_exceeded"
+        ],
+        "title": "CognitiveRoutingOutcomeResponse",
+        "type": "object"
+      },
       "CommandPaletteEntryResponse": {
         "additionalProperties": false,
         "description": "Universal `⌘K` Command Palette item (`UX-DR13`, `< 1 s`).",
@@ -2045,6 +2130,61 @@
         "title": "CompiledMarkdownChunkSchemaItem",
         "type": "object"
       },
+      "ConnectorTestConnectionResponse": {
+        "additionalProperties": false,
+        "description": "Fail-fast DBOS connector healthcheck response (`< 5 s`, `Story 8.4`).",
+        "properties": {
+          "connector_id": {
+            "title": "Connector Id",
+            "type": "string"
+          },
+          "diagnostic_message": {
+            "title": "Diagnostic Message",
+            "type": "string"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "scheme": {
+            "title": "Scheme",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "HEALTHY",
+              "DEGRADED",
+              "UNREACHABLE"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tested_at_iso": {
+            "title": "Tested At Iso",
+            "type": "string"
+          },
+          "timeout_budget_ms": {
+            "title": "Timeout Budget Ms",
+            "type": "integer"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_id",
+          "scheme",
+          "uri",
+          "status",
+          "latency_ms",
+          "timeout_budget_ms",
+          "diagnostic_message",
+          "tested_at_iso"
+        ],
+        "title": "ConnectorTestConnectionResponse",
+        "type": "object"
+      },
       "ControlCenterOverviewResponse": {
         "additionalProperties": false,
         "description": "Consolidated 4-tab fractal payload (`GET /api/v1/control-center/overview`, `Story 5.2`).",
@@ -2251,6 +2391,141 @@
           "spine_contract_ref"
         ],
         "title": "DeclarativeOverrideLayerResponse",
+        "type": "object"
+      },
+      "DelegateGrantRequest": {
+        "additionalProperties": false,
+        "description": "Request to delegate a subset of held permissions (`grant` confinement, `Story 8.1`).",
+        "properties": {
+          "actor_persona": {
+            "default": "marc",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "conditions": {
+            "additionalProperties": true,
+            "title": "Conditions",
+            "type": "object"
+          },
+          "effect": {
+            "default": "ALLOW",
+            "enum": [
+              "ALLOW",
+              "DENY"
+            ],
+            "title": "Effect",
+            "type": "string"
+          },
+          "hidden_when_unauthorized": {
+            "default": false,
+            "title": "Hidden When Unauthorized",
+            "type": "boolean"
+          },
+          "inheritance_block": {
+            "default": false,
+            "title": "Inheritance Block",
+            "type": "boolean"
+          },
+          "scope_path": {
+            "default": "org/orcia/bu/claims/team/alpha",
+            "minLength": 3,
+            "title": "Scope Path",
+            "type": "string"
+          },
+          "subject_id": {
+            "default": "0195f000-0000-7000-8000-000000000204",
+            "minLength": 1,
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "default": "USER",
+            "enum": [
+              "USER",
+              "ROLE",
+              "SERVICE_PRINCIPAL"
+            ],
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "verbs": {
+            "items": {
+              "enum": [
+                "create",
+                "read",
+                "update",
+                "delete",
+                "execute",
+                "grant"
+              ],
+              "type": "string"
+            },
+            "title": "Verbs",
+            "type": "array"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "title": "DelegateGrantRequest",
+        "type": "object"
+      },
+      "DemoWorkspaceProvisionResponse": {
+        "additionalProperties": false,
+        "description": "Zero Empty-State Demo Workspace provision response (`Story 8.6`).",
+        "properties": {
+          "kb_documents_indexed": {
+            "title": "Kb Documents Indexed",
+            "type": "integer"
+          },
+          "ontology_concepts_seeded": {
+            "title": "Ontology Concepts Seeded",
+            "type": "integer"
+          },
+          "plaintext_secrets_count": {
+            "title": "Plaintext Secrets Count",
+            "type": "integer"
+          },
+          "published_workflow_uri": {
+            "title": "Published Workflow Uri",
+            "type": "string"
+          },
+          "rag_reciprocity_verified": {
+            "title": "Rag Reciprocity Verified",
+            "type": "boolean"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_name": {
+            "title": "Workspace Name",
+            "type": "string"
+          },
+          "workspace_slug": {
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workspace_slug",
+          "workspace_name",
+          "ontology_concepts_seeded",
+          "kb_documents_indexed",
+          "published_workflow_uri",
+          "rag_reciprocity_verified",
+          "plaintext_secrets_count"
+        ],
+        "title": "DemoWorkspaceProvisionResponse",
         "type": "object"
       },
       "DeploymentRoleSchemaItem": {
@@ -2590,6 +2865,165 @@
         "title": "DocVsCodeAuditResponse",
         "type": "object"
       },
+      "DocumentIngestionRequest": {
+        "additionalProperties": false,
+        "description": "Guarded document ingestion request (`C0-C3`, `0 char` OCR, PII arbitration, `Story 8.4`).",
+        "properties": {
+          "actor_persona": {
+            "default": "marc",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "classification": {
+            "default": "C0_C2_STANDARD",
+            "enum": [
+              "C0_C2_STANDARD",
+              "C3_CONFIDENTIAL_RESTRICTED"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
+          "pii_decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PSEUDONYMIZE",
+                  "INDEX_AS_IS_AUDITED",
+                  "CANCEL_IMPORT"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pii Decision"
+          },
+          "raw_extracted_text": {
+            "default": "Spécification complète d'architecture modulaire.",
+            "title": "Raw Extracted Text",
+            "type": "string"
+          },
+          "title": {
+            "default": "Architecture Spec",
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "default": "confluence://ORCIA/pages/architecture-spec",
+            "title": "Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "default": "0195f000-0000-7000-8000-000000000301",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "title": "DocumentIngestionRequest",
+        "type": "object"
+      },
+      "DocumentIngestionResponse": {
+        "additionalProperties": false,
+        "description": "Guarded document ingestion report (`Story 8.4`).",
+        "properties": {
+          "arbitration_options": {
+            "items": {
+              "enum": [
+                "PSEUDONYMIZE",
+                "INDEX_AS_IS_AUDITED",
+                "CANCEL_IMPORT"
+              ],
+              "type": "string"
+            },
+            "title": "Arbitration Options",
+            "type": "array"
+          },
+          "audit_derogation_recorded": {
+            "title": "Audit Derogation Recorded",
+            "type": "boolean"
+          },
+          "classification": {
+            "enum": [
+              "C0_C2_STANDARD",
+              "C3_CONFIDENTIAL_RESTRICTED"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "extracted_char_count": {
+            "title": "Extracted Char Count",
+            "type": "integer"
+          },
+          "indexed_chunk_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indexed Chunk Id"
+          },
+          "pii_categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pii Categories",
+            "type": "array"
+          },
+          "pii_detected": {
+            "title": "Pii Detected",
+            "type": "boolean"
+          },
+          "pseudonymized": {
+            "title": "Pseudonymized",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "INDEXED",
+              "WAITING_FOR_PII_ARBITRATION",
+              "CANCELLED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id",
+          "workspace_id",
+          "uri",
+          "title",
+          "classification",
+          "status",
+          "extracted_char_count",
+          "pii_detected",
+          "pii_categories",
+          "arbitration_options",
+          "pseudonymized",
+          "audit_derogation_recorded"
+        ],
+        "title": "DocumentIngestionResponse",
+        "type": "object"
+      },
       "EffectiveWorkflowResolveRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/catalog/workflows/resolve-effective`.",
@@ -2651,6 +3085,61 @@
         "title": "EffectiveWorkflowResolveResponse",
         "type": "object"
       },
+      "EvaluateResourceAccessRequest": {
+        "additionalProperties": false,
+        "description": "Evaluate 6-verb RBAC/ABAC access on a resource (`Story 8.1`).",
+        "properties": {
+          "context": {
+            "additionalProperties": true,
+            "title": "Context",
+            "type": "object"
+          },
+          "require_execute": {
+            "default": false,
+            "title": "Require Execute",
+            "type": "boolean"
+          },
+          "require_secret_read": {
+            "default": false,
+            "title": "Require Secret Read",
+            "type": "boolean"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "scope_path": {
+            "default": "org/orcia/bu/claims/team/alpha/workspace/ws-1/resource/res-1",
+            "title": "Scope Path",
+            "type": "string"
+          },
+          "subject_id": {
+            "default": "0195f000-0000-7000-8000-000000000204",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "default": "USER",
+            "enum": [
+              "USER",
+              "ROLE",
+              "SERVICE_PRINCIPAL"
+            ],
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "title": {
+            "default": "Connecteur Cible",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "title": "EvaluateResourceAccessRequest",
+        "type": "object"
+      },
       "EvaluationLensItem": {
         "additionalProperties": false,
         "description": "Evaluation lens item in a workflow definition.",
@@ -2674,6 +3163,77 @@
           "threshold"
         ],
         "title": "EvaluationLensItem",
+        "type": "object"
+      },
+      "ExecuteTierRoutingRequest": {
+        "additionalProperties": false,
+        "description": "Execute an LLM call or `auto` tier escalation (`Story 8.2`).",
+        "properties": {
+          "effort": {
+            "default": "balanced",
+            "enum": [
+              "default",
+              "fast",
+              "balanced",
+              "deep"
+            ],
+            "title": "Effort",
+            "type": "string"
+          },
+          "evaluator_model_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluator Model Family"
+          },
+          "fail_simple_tier_gate": {
+            "default": false,
+            "title": "Fail Simple Tier Gate",
+            "type": "boolean"
+          },
+          "inference_tier": {
+            "default": "auto",
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Inference Tier",
+            "type": "string"
+          },
+          "run_id": {
+            "default": "0195f000-0000-7000-8000-000000000701",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "scope_id": {
+            "default": "0195f000-0000-7000-8000-000000000301",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "default": "0195f000-0000-7000-8000-000000000801",
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "system_prompt": {
+            "default": "You are ORCIA.",
+            "title": "System Prompt",
+            "type": "string"
+          },
+          "user_prompt": {
+            "default": "Analyze architecture.",
+            "title": "User Prompt",
+            "type": "string"
+          }
+        },
+        "title": "ExecuteTierRoutingRequest",
         "type": "object"
       },
       "GateEvaluationSchemaItem": {
@@ -4050,6 +4610,88 @@
         "title": "InboxNotificationListResponse",
         "type": "object"
       },
+      "InferenceAttemptResponse": {
+        "additionalProperties": false,
+        "description": "Recorded DBOS inference attempt (`Story 8.2`).",
+        "properties": {
+          "attempt_index": {
+            "title": "Attempt Index",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "deterministic_gate_passed": {
+            "title": "Deterministic Gate Passed",
+            "type": "boolean"
+          },
+          "effort": {
+            "enum": [
+              "default",
+              "fast",
+              "balanced",
+              "deep"
+            ],
+            "title": "Effort",
+            "type": "string"
+          },
+          "failure_reason": {
+            "title": "Failure Reason",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "requested_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Requested Tier",
+            "type": "string"
+          },
+          "resolved_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex"
+            ],
+            "title": "Resolved Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "attempt_index",
+          "requested_tier",
+          "resolved_tier",
+          "effort",
+          "model_family",
+          "model_name",
+          "deterministic_gate_passed",
+          "failure_reason",
+          "cost_usd",
+          "idempotency_key"
+        ],
+        "title": "InferenceAttemptResponse",
+        "type": "object"
+      },
       "InitDatasourceRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/bootstrap/init-datasource` (`UX-DR3`, `FR-28`, `AD-16`).",
@@ -5178,6 +5820,98 @@
         "title": "LlmModelEndpointItem",
         "type": "object"
       },
+      "LlmTierMappingResponse": {
+        "additionalProperties": false,
+        "description": "Workspace cognitive tier mapping response (`Story 8.2`).",
+        "properties": {
+          "draining": {
+            "title": "Draining",
+            "type": "boolean"
+          },
+          "effort": {
+            "enum": [
+              "default",
+              "fast",
+              "balanced",
+              "deep"
+            ],
+            "title": "Effort",
+            "type": "string"
+          },
+          "fallback_order": {
+            "title": "Fallback Order",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inference_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex"
+            ],
+            "title": "Inference Tier",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "max_cost_usd": {
+            "title": "Max Cost Usd",
+            "type": "number"
+          },
+          "max_tokens_budget": {
+            "title": "Max Tokens Budget",
+            "type": "integer"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "provider_slug": {
+            "title": "Provider Slug",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "scope_level",
+          "scope_id",
+          "inference_tier",
+          "effort",
+          "provider_slug",
+          "model_family",
+          "model_name",
+          "max_tokens_budget",
+          "max_cost_usd",
+          "fallback_order",
+          "is_active",
+          "draining"
+        ],
+        "title": "LlmTierMappingResponse",
+        "type": "object"
+      },
       "LocalLoginRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/auth/login/local` (Argon2id + optional TOTP MFA).",
@@ -6158,6 +6892,81 @@
         "title": "OrgUnitTreeItem",
         "type": "object"
       },
+      "OutboxReplayRequest": {
+        "additionalProperties": false,
+        "description": "Bounded Outbox replay request (`<= 500` events, `dry_run: true` default, `Story 8.3`).",
+        "properties": {
+          "actor_persona": {
+            "default": "karim",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "consumer_name": {
+            "default": "audit_finops",
+            "title": "Consumer Name",
+            "type": "string"
+          },
+          "dry_run": {
+            "default": true,
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Event Ids",
+            "type": "array"
+          },
+          "max_events": {
+            "default": 100,
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Max Events",
+            "type": "integer"
+          }
+        },
+        "title": "OutboxReplayRequest",
+        "type": "object"
+      },
+      "OutboxReplayResponse": {
+        "additionalProperties": false,
+        "description": "Bounded Outbox replay result (`Story 8.3`).",
+        "properties": {
+          "consumer_name": {
+            "title": "Consumer Name",
+            "type": "string"
+          },
+          "dry_run": {
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Event Ids",
+            "type": "array"
+          },
+          "replayed_count": {
+            "title": "Replayed Count",
+            "type": "integer"
+          },
+          "scanned_count": {
+            "title": "Scanned Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "consumer_name",
+          "dry_run",
+          "scanned_count",
+          "replayed_count",
+          "event_ids"
+        ],
+        "title": "OutboxReplayResponse",
+        "type": "object"
+      },
       "PassthroughSecretMetadataResponse": {
         "additionalProperties": false,
         "description": "Metadata returned after storing an AES-256-GCM Passthrough credential.",
@@ -6232,6 +7041,68 @@
           "plaintext_secret"
         ],
         "title": "PassthroughSecretStoreRequest",
+        "type": "object"
+      },
+      "PatchPlatformSettingRequest": {
+        "additionalProperties": false,
+        "description": "Mutate a versioned platform setting with write-only `SecretInput` (`Story 8.3`).",
+        "properties": {
+          "actor_persona": {
+            "default": "karim",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "category": {
+            "default": "ai-models",
+            "enum": [
+              "iam",
+              "connectors",
+              "ai-models",
+              "packs",
+              "workflows",
+              "audit"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "key": {
+            "default": "default_routing_policy",
+            "title": "Key",
+            "type": "string"
+          },
+          "scope_id": {
+            "default": "0195f000-0000-7000-8000-000000000301",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "default": "WORKSPACE",
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "secret_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretInputPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value_jsonb": {
+            "additionalProperties": true,
+            "title": "Value Jsonb",
+            "type": "object"
+          }
+        },
+        "title": "PatchPlatformSettingRequest",
         "type": "object"
       },
       "PatternDriftFindingSchemaItem": {
@@ -6868,6 +7739,85 @@
         "title": "PermissionTicketActionResponse",
         "type": "object"
       },
+      "PlatformSettingResponse": {
+        "additionalProperties": false,
+        "description": "Versioned platform setting response with `ETag` and `SecretStatus` (`Story 8.3`).",
+        "properties": {
+          "category": {
+            "enum": [
+              "iam",
+              "connectors",
+              "ai-models",
+              "packs",
+              "workflows",
+              "audit"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "etag": {
+            "title": "Etag",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "secret_status": {
+            "$ref": "#/components/schemas/SecretStatusResponse"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "updated_by": {
+            "title": "Updated By",
+            "type": "string"
+          },
+          "value_jsonb": {
+            "additionalProperties": true,
+            "title": "Value Jsonb",
+            "type": "object"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "scope_level",
+          "scope_id",
+          "category",
+          "key",
+          "value_jsonb",
+          "secret_status",
+          "version",
+          "etag",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "PlatformSettingResponse",
+        "type": "object"
+      },
       "ProblemDetails": {
         "additionalProperties": false,
         "description": "RFC 9457 Problem Details envelope returned on all ORCIA API errors.",
@@ -6979,6 +7929,51 @@
         "title": "PromptLayerBlockSchemaItem",
         "type": "object"
       },
+      "RagReciprocityResponse": {
+        "additionalProperties": false,
+        "description": "1-click RAG reciprocity check response (`Story 8.4`).",
+        "properties": {
+          "cited_chunk_id": {
+            "title": "Cited Chunk Id",
+            "type": "string"
+          },
+          "cited_uri": {
+            "title": "Cited Uri",
+            "type": "string"
+          },
+          "control_query": {
+            "title": "Control Query",
+            "type": "string"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "response_markdown": {
+            "title": "Response Markdown",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id",
+          "uri",
+          "passed",
+          "control_query",
+          "response_markdown",
+          "cited_uri",
+          "cited_chunk_id"
+        ],
+        "title": "RagReciprocityResponse",
+        "type": "object"
+      },
       "RecursiveRunLockManifestSchemaItem": {
         "additionalProperties": false,
         "description": "Extended `run-lock.json` pinning sources, overrides, KB hash, and sub-workflows.",
@@ -7079,6 +8074,68 @@
         "title": "ReleaseTaskClaimRequest",
         "type": "object"
       },
+      "ResourceDiscoveryResponse": {
+        "additionalProperties": false,
+        "description": "Evaluated resource access & passive-discovery lock state (`Story 8.1`).",
+        "properties": {
+          "allowed_verbs": {
+            "items": {
+              "enum": [
+                "create",
+                "read",
+                "update",
+                "delete",
+                "execute",
+                "grant"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Verbs",
+            "type": "array"
+          },
+          "can_request_access": {
+            "title": "Can Request Access",
+            "type": "boolean"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "scope_path": {
+            "title": "Scope Path",
+            "type": "string"
+          },
+          "secret_config_visible": {
+            "title": "Secret Config Visible",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_path",
+          "title",
+          "allowed_verbs",
+          "locked",
+          "can_request_access",
+          "secret_config_visible"
+        ],
+        "title": "ResourceDiscoveryResponse",
+        "type": "object"
+      },
       "ResourceLeaseItemResponse": {
         "additionalProperties": false,
         "description": "Active resource lease with monotonic `fencing_token` (`DEC-CONC-01`).",
@@ -7144,6 +8201,95 @@
           "expires_at"
         ],
         "title": "ResourceLeaseItemResponse",
+        "type": "object"
+      },
+      "RolePermissionGrantResponse": {
+        "additionalProperties": false,
+        "description": "6-verb RBAC/ABAC grant representation (`Story 8.1`).",
+        "properties": {
+          "conditions": {
+            "additionalProperties": true,
+            "title": "Conditions",
+            "type": "object"
+          },
+          "created_at_iso": {
+            "title": "Created At Iso",
+            "type": "string"
+          },
+          "effect": {
+            "enum": [
+              "ALLOW",
+              "DENY"
+            ],
+            "title": "Effect",
+            "type": "string"
+          },
+          "granted_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted By User Id"
+          },
+          "hidden_when_unauthorized": {
+            "title": "Hidden When Unauthorized",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inheritance_block": {
+            "title": "Inheritance Block",
+            "type": "boolean"
+          },
+          "scope_path": {
+            "title": "Scope Path",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "enum": [
+              "USER",
+              "ROLE",
+              "SERVICE_PRINCIPAL"
+            ],
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "verb": {
+            "enum": [
+              "create",
+              "read",
+              "update",
+              "delete",
+              "execute",
+              "grant"
+            ],
+            "title": "Verb",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "subject_type",
+          "subject_id",
+          "scope_path",
+          "verb",
+          "effect",
+          "inheritance_block",
+          "conditions",
+          "hidden_when_unauthorized",
+          "created_at_iso"
+        ],
+        "title": "RolePermissionGrantResponse",
         "type": "object"
       },
       "RunBlackboardStateResponse": {
@@ -7456,6 +8602,72 @@
           "name"
         ],
         "title": "ScopeNode",
+        "type": "object"
+      },
+      "SecretInputPayload": {
+        "additionalProperties": false,
+        "description": "Discriminated write-only secret mutation input (`keep | set | clear`, `Story 8.3`).",
+        "properties": {
+          "action": {
+            "default": "keep",
+            "enum": [
+              "keep",
+              "set",
+              "clear"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "plaintext_value": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plaintext Value"
+          }
+        },
+        "title": "SecretInputPayload",
+        "type": "object"
+      },
+      "SecretStatusResponse": {
+        "additionalProperties": false,
+        "description": "Read-only secret status metadata (`configured` + salted `sha256:<8-hex>`, `Story 8.3`).",
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "updated_by": {
+            "title": "Updated By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "configured",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "SecretStatusResponse",
         "type": "object"
       },
       "ShellModuleItem": {
@@ -8361,6 +9573,89 @@
           "run_lock_sha256"
         ],
         "title": "StepReplayResultSchemaItem",
+        "type": "object"
+      },
+      "StudioDryRunRequest": {
+        "additionalProperties": false,
+        "description": "Isolated Studio *What-If* dry-run request (`▷ Tester`, `Story 8.5`).",
+        "properties": {
+          "input_values": {
+            "additionalProperties": true,
+            "title": "Input Values",
+            "type": "object"
+          },
+          "preview_markdown_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Markdown Output"
+          }
+        },
+        "title": "StudioDryRunRequest",
+        "type": "object"
+      },
+      "StudioDryRunResponse": {
+        "additionalProperties": false,
+        "description": "Isolated Studio *What-If* dry-run outcome (`Story 8.5`).",
+        "properties": {
+          "deterministic_structure_gate_passed": {
+            "title": "Deterministic Structure Gate Passed",
+            "type": "boolean"
+          },
+          "executed_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executed Steps",
+            "type": "array"
+          },
+          "external_writes_count": {
+            "title": "External Writes Count",
+            "type": "integer"
+          },
+          "missing_markdown_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Markdown Sections",
+            "type": "array"
+          },
+          "revision_id": {
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "skipped_layers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped Layers",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id",
+          "workflow_uri",
+          "version",
+          "executed_steps",
+          "skipped_layers",
+          "deterministic_structure_gate_passed",
+          "missing_markdown_sections",
+          "external_writes_count"
+        ],
+        "title": "StudioDryRunResponse",
         "type": "object"
       },
       "SubWorkflowLockSchemaItem": {
@@ -10001,6 +11296,148 @@
         "title": "WhatIfSimulationResponse",
         "type": "object"
       },
+      "WizardAdvanceStepRequest": {
+        "additionalProperties": false,
+        "description": "Save and advance a step in a durable DBOS wizard (`Story 8.6`).",
+        "properties": {
+          "actor_persona": {
+            "default": "marc",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "secret_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretInputPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step_index": {
+            "default": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Step Index",
+            "type": "integer"
+          },
+          "step_payload": {
+            "additionalProperties": true,
+            "title": "Step Payload",
+            "type": "object"
+          }
+        },
+        "title": "WizardAdvanceStepRequest",
+        "type": "object"
+      },
+      "WizardSessionRequest": {
+        "additionalProperties": false,
+        "description": "Start or resume a 5-step durable DBOS wizard (`Story 8.6`).",
+        "properties": {
+          "actor_persona": {
+            "default": "marc",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "scope_id": {
+            "default": "0195f000-0000-7000-8000-000000000301",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "wizard_type": {
+            "default": "sdlc_tech_lead",
+            "enum": [
+              "sdlc_tech_lead",
+              "ops_manager",
+              "secops_admin"
+            ],
+            "title": "Wizard Type",
+            "type": "string"
+          }
+        },
+        "title": "WizardSessionRequest",
+        "type": "object"
+      },
+      "WizardSessionResponse": {
+        "additionalProperties": false,
+        "description": "Durable DBOS onboarding wizard session state (`Story 8.6`).",
+        "properties": {
+          "completed_steps": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Completed Steps",
+            "type": "array"
+          },
+          "current_step_index": {
+            "title": "Current Step Index",
+            "type": "integer"
+          },
+          "dbos_workflow_id": {
+            "title": "Dbos Workflow Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "rag_reciprocity_verified": {
+            "title": "Rag Reciprocity Verified",
+            "type": "boolean"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "state_jsonb": {
+            "additionalProperties": true,
+            "title": "State Jsonb",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "IN_PROGRESS",
+              "COMPLETED",
+              "ABANDONED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total_steps": {
+            "title": "Total Steps",
+            "type": "integer"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "wizard_type": {
+            "enum": [
+              "sdlc_tech_lead",
+              "ops_manager",
+              "secops_admin"
+            ],
+            "title": "Wizard Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "wizard_type",
+          "user_id",
+          "scope_id",
+          "current_step_index",
+          "total_steps",
+          "dbos_workflow_id",
+          "status",
+          "completed_steps",
+          "rag_reciprocity_verified",
+          "state_jsonb"
+        ],
+        "title": "WizardSessionResponse",
+        "type": "object"
+      },
       "WorkflowAsCodeDefinitionSchemaItem": {
         "additionalProperties": false,
         "description": "Serialized Workflow-as-Code DAG supporting `SUB_WORKFLOW <= 3` and criticality.",
@@ -11405,6 +12842,126 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/outbox/replays": {
+      "post": {
+        "description": "Trigger bounded Outbox replay (`<= 500` events, `dry_run: true` default, `Story 8.3`).",
+        "operationId": "replay_outbox_events_api_v1_admin_outbox_replays_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboxReplayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboxReplayResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Replay Outbox Events",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
     "/api/v1/assistant/chat": {
       "post": {
         "description": "Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`).",
@@ -19072,6 +20629,1387 @@
         ]
       }
     },
+    "/api/v1/settings/ai-models/mappings": {
+      "get": {
+        "description": "List workspace cognitive tier mappings (`Story 8.2`).",
+        "operationId": "list_llm_tier_mappings_api_v1_settings_ai_models_mappings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LlmTierMappingResponse"
+                  },
+                  "title": "Response List Llm Tier Mappings Api V1 Settings Ai Models Mappings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Llm Tier Mappings",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/mappings/{mapping_id}": {
+      "delete": {
+        "description": "Delete or drain an LLM tier mapping (`409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS`).",
+        "operationId": "delete_or_drain_llm_mapping_api_v1_settings_ai_models_mappings__mapping_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_id",
+            "required": true,
+            "schema": {
+              "title": "Mapping Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "reject",
+              "enum": [
+                "reject",
+                "drain",
+                "force"
+              ],
+              "title": "Mode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_role",
+            "required": false,
+            "schema": {
+              "default": "PLATFORM_ADMIN",
+              "title": "Actor Role",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Delete Or Drain Llm Mapping Api V1 Settings Ai Models Mappings  Mapping Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Delete Or Drain Llm Mapping",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/route": {
+      "post": {
+        "description": "Execute cognitive tier routing and `auto` escalation (`Story 8.2`).",
+        "operationId": "execute_cognitive_tier_route_api_v1_settings_ai_models_route_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteTierRoutingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CognitiveRoutingOutcomeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Execute Cognitive Tier Route",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/connectors/documents/{document_id}/verify-reciprocity": {
+      "post": {
+        "description": "1-click RAG reciprocity check (`Vérifier qu'il répond`, `Story 8.4`).",
+        "operationId": "verify_rag_reciprocity_endpoint_api_v1_settings_connectors_documents__document_id__verify_reciprocity_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagReciprocityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Verify Rag Reciprocity Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/connectors/ingest": {
+      "post": {
+        "description": "Run guarded document ingestion (`C0-C3`, `0 char` OCR, PII arbitration, `Story 8.4`).",
+        "operationId": "ingest_document_endpoint_api_v1_settings_connectors_ingest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentIngestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentIngestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Ingest Document Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/connectors/{connector_id}/test-connection": {
+      "post": {
+        "description": "Fail-fast DBOS connector connection test (`< 5 s`, `Story 8.4`).",
+        "operationId": "test_connector_connection_endpoint_api_v1_settings_connectors__connector_id__test_connection_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connector_id",
+            "required": true,
+            "schema": {
+              "title": "Connector Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "default": "marc",
+              "title": "Actor Persona",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorTestConnectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Test Connector Connection Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/entries": {
+      "get": {
+        "description": "List versioned platform settings with `ETag` and `SecretStatus` (`Story 8.3`).",
+        "operationId": "list_platform_settings_api_v1_settings_entries_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlatformSettingResponse"
+                  },
+                  "title": "Response List Platform Settings Api V1 Settings Entries Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Platform Settings",
+        "tags": [
+          "settings-and-studio"
+        ]
+      },
+      "patch": {
+        "description": "Mutate a versioned platform setting enforcing `If-Match` (`428`/`412`, `Story 8.3`).",
+        "operationId": "patch_platform_setting_api_v1_settings_entries_patch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPlatformSettingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSettingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Patch Platform Setting",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/iam/evaluate": {
+      "post": {
+        "description": "Evaluate 6-verb RBAC/ABAC access on a resource (`Story 8.1`).",
+        "operationId": "evaluate_rbac_resource_api_v1_settings_iam_evaluate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateResourceAccessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Evaluate Rbac Resource",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/iam/grants": {
+      "post": {
+        "description": "Delegate a subset of held permissions (`grant` confinement, `Story 8.1`).",
+        "operationId": "delegate_rbac_grants_api_v1_settings_iam_grants_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegateGrantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RolePermissionGrantResponse"
+                  },
+                  "title": "Response Delegate Rbac Grants Api V1 Settings Iam Grants Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Delegate Rbac Grants",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/studio/revisions/{revision_id}/dry-run": {
+      "post": {
+        "description": "Execute isolated Studio *What-If* dry-run (`▷ Tester`, `Story 8.5`).",
+        "operationId": "studio_what_if_dry_run_endpoint_api_v1_studio_revisions__revision_id__dry_run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "revision_id",
+            "required": true,
+            "schema": {
+              "title": "Revision Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudioDryRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioDryRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Studio What If Dry Run Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
     "/api/v1/tasks/{task_id}/claim": {
       "post": {
         "operationId": "claim_task_notification_api_v1_tasks__task_id__claim_post",
@@ -19375,6 +22313,385 @@
         "summary": "Receive `jira:issue_updated` webhook and wake up paused run in < 500ms (`FR-16`)",
         "tags": [
           "jira-and-mcp"
+        ]
+      }
+    },
+    "/api/v1/wizards/demo-workspace": {
+      "post": {
+        "description": "Provision the Zero Empty-State Demo Workspace (`0` plaintext secrets, `Story 8.6`).",
+        "operationId": "provision_demo_workspace_endpoint_api_v1_wizards_demo_workspace_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "default": "marc",
+              "enum": [
+                "karim",
+                "claire",
+                "marc",
+                "nadia"
+              ],
+              "title": "Actor Persona",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoWorkspaceProvisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Provision Demo Workspace Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/wizards/sessions": {
+      "post": {
+        "description": "Start or resume a 5-step durable DBOS onboarding wizard (`Story 8.6`).",
+        "operationId": "start_or_resume_wizard_endpoint_api_v1_wizards_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WizardSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Start Or Resume Wizard Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/wizards/sessions/{session_id}/steps": {
+      "post": {
+        "description": "Save step state (`SecretRef` only) and advance step in durable DBOS wizard (`Story 8.6`).",
+        "operationId": "save_wizard_step_endpoint_api_v1_wizards_sessions__session_id__steps_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WizardAdvanceStepRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Save Wizard Step Endpoint",
+        "tags": [
+          "settings-and-studio"
         ]
       }
     },

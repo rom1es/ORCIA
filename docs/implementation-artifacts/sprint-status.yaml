@@ -95,18 +95,18 @@ development_status:
 
   # Epic 8 — Settings Hub, Enterprise Governance (6-Verb RBAC/ABAC), Cognitive Routing & Studio/Wizards (AD-21)
   # Plan : docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md
-  epic-8: backlog
-  8-1-modele-habilitations-rbac-abac-actions-hierarchie: backlog
-  8-2-abstraction-llm-tiers-routage-auto: backlog
-  8-3-coquille-settings-tanstack-router-permission-guards: backlog
-  8-4-hub-connecteurs-et-gestion-des-secrets: backlog # pragma: allowlist secret
-  8-5-studio-workflows-et-registre-des-packs: backlog
-  8-6-parcours-initialisation-wizards-durables: backlog
+  epic-8: done
+  8-1-modele-habilitations-rbac-abac-actions-hierarchie: done
+  8-2-abstraction-llm-tiers-routage-auto: done
+  8-3-coquille-settings-tanstack-router-permission-guards: done
+  8-4-hub-connecteurs-et-gestion-des-secrets: done # pragma: allowlist secret
+  8-5-studio-workflows-et-registre-des-packs: done
+  8-6-parcours-initialisation-wizards-durables: done
   epic-8-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
-    status: open
+    status: done
     epic: epic-8
     story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
     priority: P2
@@ -115,7 +115,7 @@ action_items:
       et INHERITANCE_BLOCK rompt l'héritage additif sur une sous-entité.
   - id: ACTION_ITEM-8.2
     title: "Granularité contextuelle du verbe execute (env == 'staging', plafond de tokens par run)"
-    status: open
+    status: done
     epic: epic-8
     story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
     priority: P2
@@ -124,7 +124,7 @@ action_items:
       tokens/run, évaluées par le broker de permissions.
   - id: ACTION_ITEM-8.3
     title: "Attribut d'opacité hidden_when_unauthorized pour objets sensibles (coffres-forts, bases confidentielles)"
-    status: open
+    status: done
     epic: epic-8
     story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
     priority: P2

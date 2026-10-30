@@ -164,6 +164,26 @@ USER_ONBOARDING_STATES_UPSERT_SPEC = UpsertSpec(
     "user_onboarding_states", ("user_email",),
     ("id", "user_id", "invited_by_user_id", "org_unit_id", "human_profile_archetype", "assigned_role", "workspace_ids_jsonb", "init_user_completed", "linked_connectors_jsonb"),  # noqa: E501
 )  # fmt: skip
+ROLE_PERMISSION_GRANTS_UPSERT_SPEC = UpsertSpec(
+    "role_permission_grants",
+    ("subject_type", "subject_id", "scope_path", "verb", "effect"),
+    ("id", "inheritance_block", "conditions_jsonb", "hidden_when_unauthorized", "granted_by_user_id"),  # noqa: E501
+)  # fmt: skip
+WORKSPACE_LLM_TIER_MAPPINGS_UPSERT_SPEC = UpsertSpec(
+    "workspace_llm_tier_mappings",
+    ("scope_id", "inference_tier", "effort", "fallback_order"),
+    ("id", "scope_level", "provider_slug", "model_family", "model_name", "secret_ref", "max_tokens_budget", "max_cost_usd", "is_active", "draining"),  # noqa: E501
+)  # fmt: skip
+PLATFORM_SETTINGS_UPSERT_SPEC = UpsertSpec(
+    "platform_settings",
+    ("scope_level", "scope_id", "category", "key"),
+    ("id", "value_jsonb", "secret_ref", "secret_fingerprint", "version", "etag", "updated_by"),
+)  # fmt: skip
+WIZARD_SESSIONS_UPSERT_SPEC = UpsertSpec(
+    "wizard_sessions",
+    ("dbos_workflow_id",),
+    ("id", "wizard_type", "user_id", "scope_id", "current_step_index", "state_jsonb", "status"),
+)  # fmt: skip
 
 __all__ = [
     "ASSISTANT_WORKFLOW_URI", "CATALOG_ITEMS_UPSERT_SPEC", "CONNECTOR_SCHEMES_UPSERT_SPEC",
@@ -178,12 +198,15 @@ __all__ = [
     "DEFAULT_WORKSPACE_DATASOURCE_SEEDS", "DEFAULT_WORKSPACE_SEEDS",
     "LLM_MODEL_ENDPOINTS_UPSERT_SPEC", "ORG_UNITS_UPSERT_SPEC",
     "PERMISSION_BROKER_POLICIES_UPSERT_SPEC", "PERMISSION_BROKER_TICKETS_UPSERT_SPEC",
+    "PLATFORM_SETTINGS_UPSERT_SPEC", "ROLE_PERMISSION_GRANTS_UPSERT_SPEC",
     "SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC", "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",
-    "USER_ONBOARDING_STATES_UPSERT_SPEC", "WORKFLOW_DEFINITIONS_UPSERT_SPEC",
-    "WORKSPACES_UPSERT_SPEC", "WORKSPACE_DATASOURCES_UPSERT_SPEC", "CatalogItemSeed",
-    "CustomizationOverrideSeed", "HumanProfileArchetypeSeed", "LlmModelEndpointSeed",
-    "OrgUnitSeed", "PermissionBrokerPolicySeed", "PermissionBrokerTicketSeed",
-    "SystemBootstrapRunSeed", "SystemBootstrapWorkflowSeed", "UpsertSpec",
-    "UserOnboardingStateSeed", "WorkflowDefinitionSeed", "WorkspaceDatasourceSeed",
-    "WorkspaceSeed", "build_postgres_upsert_sql", "populate_rag_test_dataset",
+    "USER_ONBOARDING_STATES_UPSERT_SPEC", "WIZARD_SESSIONS_UPSERT_SPEC",
+    "WORKFLOW_DEFINITIONS_UPSERT_SPEC", "WORKSPACES_UPSERT_SPEC",
+    "WORKSPACE_DATASOURCES_UPSERT_SPEC", "WORKSPACE_LLM_TIER_MAPPINGS_UPSERT_SPEC",
+    "CatalogItemSeed", "CustomizationOverrideSeed", "HumanProfileArchetypeSeed",
+    "LlmModelEndpointSeed", "OrgUnitSeed", "PermissionBrokerPolicySeed",
+    "PermissionBrokerTicketSeed", "SystemBootstrapRunSeed", "SystemBootstrapWorkflowSeed",
+    "UpsertSpec", "UserOnboardingStateSeed", "WorkflowDefinitionSeed",
+    "WorkspaceDatasourceSeed", "WorkspaceSeed", "build_postgres_upsert_sql",
+    "populate_rag_test_dataset",
 ]  # fmt: skip

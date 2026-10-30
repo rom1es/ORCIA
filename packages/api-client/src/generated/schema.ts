@@ -285,6 +285,19 @@ export interface components {
       trace_id: string;
       viewer_presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
     };
+    CognitiveRoutingOutcomeResponse: {
+      attempts: (components["schemas"]["InferenceAttemptResponse"])[];
+      effort: "default" | "fast" | "balanced" | "deep";
+      final_resolved_tier: "simple" | "medium" | "complex";
+      model_family: string;
+      model_name: string;
+      paused_budget_exceeded: boolean;
+      requested_tier: "simple" | "medium" | "complex" | "auto";
+      response_content: string;
+      run_id: string;
+      step_execution_id: string;
+      total_cost_usd: number;
+    };
     CommandPaletteEntryResponse: {
       access_mode?: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER" | null;
       category: "RUN" | "WORKSPACE" | "NAVIGATION" | "ONTOLOGY" | "CATALOG";
@@ -326,6 +339,16 @@ export interface components {
       section_title: string;
       word_count: number;
     };
+    ConnectorTestConnectionResponse: {
+      connector_id: string;
+      diagnostic_message: string;
+      latency_ms: number;
+      scheme: string;
+      status: "HEALTHY" | "DEGRADED" | "UNREACHABLE";
+      tested_at_iso: string;
+      timeout_budget_ms: number;
+      uri: string;
+    };
     ControlCenterOverviewResponse: {
       consolidated_finops_usd: number;
       contributor_runs: (components["schemas"]["SupervisedRunItemResponse"])[];
@@ -359,6 +382,28 @@ export interface components {
       user_override: string;
       workflow_key: string;
       workspace_override: string;
+    };
+    DelegateGrantRequest: {
+      actor_persona?: string;
+      conditions?: Record<string, unknown>;
+      effect?: "ALLOW" | "DENY";
+      hidden_when_unauthorized?: boolean;
+      inheritance_block?: boolean;
+      scope_path?: string;
+      subject_id?: string;
+      subject_type?: "USER" | "ROLE" | "SERVICE_PRINCIPAL";
+      verbs?: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
+      workspace_id?: string | null;
+    };
+    DemoWorkspaceProvisionResponse: {
+      kb_documents_indexed: number;
+      ontology_concepts_seeded: number;
+      plaintext_secrets_count: number;
+      published_workflow_uri: string;
+      rag_reciprocity_verified: boolean;
+      workspace_id: string;
+      workspace_name: string;
+      workspace_slug: string;
     };
     DeploymentRoleSchemaItem: {
       description: string;
@@ -412,6 +457,30 @@ export interface components {
       qualification_marker: "[DOC_OBSOLETE_SUSPECTED]" | "[BUG_CODE_SUSPECTED]" | "[ALIGNED]";
       trace_id?: string | null;
     };
+    DocumentIngestionRequest: {
+      actor_persona?: string;
+      classification?: "C0_C2_STANDARD" | "C3_CONFIDENTIAL_RESTRICTED";
+      pii_decision?: "PSEUDONYMIZE" | "INDEX_AS_IS_AUDITED" | "CANCEL_IMPORT" | null;
+      raw_extracted_text?: string;
+      title?: string;
+      uri?: string;
+      workspace_id?: string;
+    };
+    DocumentIngestionResponse: {
+      arbitration_options: ("PSEUDONYMIZE" | "INDEX_AS_IS_AUDITED" | "CANCEL_IMPORT")[];
+      audit_derogation_recorded: boolean;
+      classification: "C0_C2_STANDARD" | "C3_CONFIDENTIAL_RESTRICTED";
+      document_id: string;
+      extracted_char_count: number;
+      indexed_chunk_id?: string | null;
+      pii_categories: (string)[];
+      pii_detected: boolean;
+      pseudonymized: boolean;
+      status: "INDEXED" | "WAITING_FOR_PII_ARBITRATION" | "CANCELLED";
+      title: string;
+      uri: string;
+      workspace_id: string;
+    };
     EffectiveWorkflowResolveRequest: {
       workflow_uri: string;
       workspace_id: string;
@@ -423,10 +492,31 @@ export interface components {
       run_lock: components["schemas"]["RunLockManifestItem"];
       trace_id: string;
     };
+    EvaluateResourceAccessRequest: {
+      context?: Record<string, unknown>;
+      require_execute?: boolean;
+      require_secret_read?: boolean;
+      roles?: (string)[];
+      scope_path?: string;
+      subject_id?: string;
+      subject_type?: "USER" | "ROLE" | "SERVICE_PRINCIPAL";
+      title?: string;
+    };
     EvaluationLensItem: {
       code: string;
       threshold: number;
       weight: number;
+    };
+    ExecuteTierRoutingRequest: {
+      effort?: "default" | "fast" | "balanced" | "deep";
+      evaluator_model_family?: string | null;
+      fail_simple_tier_gate?: boolean;
+      inference_tier?: "simple" | "medium" | "complex" | "auto";
+      run_id?: string;
+      scope_id?: string;
+      step_execution_id?: string;
+      system_prompt?: string;
+      user_prompt?: string;
     };
     GateEvaluationSchemaItem: {
       duration_ms: number;
@@ -646,6 +736,19 @@ export interface components {
       viewer_user_id: string;
       workspace_id: string;
     };
+    InferenceAttemptResponse: {
+      attempt_index: number;
+      cost_usd: number;
+      deterministic_gate_passed: boolean;
+      effort: "default" | "fast" | "balanced" | "deep";
+      failure_reason: string;
+      id: string;
+      idempotency_key: string;
+      model_family: string;
+      model_name: string;
+      requested_tier: "simple" | "medium" | "complex" | "auto";
+      resolved_tier: "simple" | "medium" | "complex";
+    };
     InitDatasourceRequest: {
       alias: string;
       cql_filter?: string | null;
@@ -824,6 +927,21 @@ export interface components {
       model_name: string;
       provider_slug: string;
     };
+    LlmTierMappingResponse: {
+      draining: boolean;
+      effort: "default" | "fast" | "balanced" | "deep";
+      fallback_order: number;
+      id: string;
+      inference_tier: "simple" | "medium" | "complex";
+      is_active: boolean;
+      max_cost_usd: number;
+      max_tokens_budget: number;
+      model_family: string;
+      model_name: string;
+      provider_slug: string;
+      scope_id: string;
+      scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+    };
     LocalLoginRequest: {
       email: string;
       password: string;
@@ -975,6 +1093,20 @@ export interface components {
       slug: string;
       unit_type: "ENTERPRISE" | "BU" | "TRIBE" | "TEAM" | "SUB_TEAM";
     };
+    OutboxReplayRequest: {
+      actor_persona?: string;
+      consumer_name?: string;
+      dry_run?: boolean;
+      event_ids?: (string)[];
+      max_events?: number;
+    };
+    OutboxReplayResponse: {
+      consumer_name: string;
+      dry_run: boolean;
+      event_ids: (string)[];
+      replayed_count: number;
+      scanned_count: number;
+    };
     PassthroughSecretMetadataResponse: {
       connector_scheme: string;
       encrypted_at_rest?: boolean;
@@ -988,6 +1120,15 @@ export interface components {
       connector_scheme: string;
       plaintext_secret: string;
       target_host: string;
+    };
+    PatchPlatformSettingRequest: {
+      actor_persona?: string;
+      category?: "iam" | "connectors" | "ai-models" | "packs" | "workflows" | "audit";
+      key?: string;
+      scope_id?: string;
+      scope_level?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      value_jsonb?: Record<string, unknown>;
     };
     PatternDriftFindingSchemaItem: {
       forbidden_symbol: string;
@@ -1077,6 +1218,19 @@ export interface components {
       ticket: components["schemas"]["PermissionBrokerTicketItem"];
       trace_id: string;
     };
+    PlatformSettingResponse: {
+      category: "iam" | "connectors" | "ai-models" | "packs" | "workflows" | "audit";
+      etag: string;
+      id: string;
+      key: string;
+      scope_id: string;
+      scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      secret_status: components["schemas"]["SecretStatusResponse"];
+      updated_at: string;
+      updated_by: string;
+      value_jsonb: Record<string, unknown>;
+      version: number;
+    };
     ProblemDetails: {
       detail: string;
       error_code: string;
@@ -1092,6 +1246,15 @@ export interface components {
       immutable: boolean;
       layer_id: "1_CONSTITUTIONAL_IMMUTABLE" | "2_ONTOLOGY_AND_AXIOMS_L1_L4" | "3_HUMAN_PROFILE_ADAPTATION" | "4_FEDERATED_CONTEXT_FANOUT" | "5_CONVERSATIONAL_INTENT_AND_COMPOSER";
       layer_order: number;
+    };
+    RagReciprocityResponse: {
+      cited_chunk_id: string;
+      cited_uri: string;
+      control_query: string;
+      document_id: string;
+      passed: boolean;
+      response_markdown: string;
+      uri: string;
     };
     RecursiveRunLockManifestSchemaItem: {
       applied_override_keys: (string)[];
@@ -1110,6 +1273,15 @@ export interface components {
     ReleaseTaskClaimRequest: {
       force?: boolean;
     };
+    ResourceDiscoveryResponse: {
+      allowed_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
+      can_request_access: boolean;
+      locked: boolean;
+      reason?: string | null;
+      scope_path: string;
+      secret_config_visible: boolean;
+      title: string;
+    };
     ResourceLeaseItemResponse: {
       acquired_at: string;
       expires_at: string;
@@ -1121,6 +1293,19 @@ export interface components {
       id: string;
       resource_class: string;
       resource_uri: string;
+    };
+    RolePermissionGrantResponse: {
+      conditions: Record<string, unknown>;
+      created_at_iso: string;
+      effect: "ALLOW" | "DENY";
+      granted_by_user_id?: string | null;
+      hidden_when_unauthorized: boolean;
+      id: string;
+      inheritance_block: boolean;
+      scope_path: string;
+      subject_id: string;
+      subject_type: "USER" | "ROLE" | "SERVICE_PRINCIPAL";
+      verb: "create" | "read" | "update" | "delete" | "execute" | "grant";
     };
     RunBlackboardStateResponse: {
       accumulated_root_cost_usd: number;
@@ -1172,6 +1357,16 @@ export interface components {
       level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       name: string;
       parent_id?: string | null;
+    };
+    SecretInputPayload: {
+      action?: "keep" | "set" | "clear";
+      plaintext_value?: string | null;
+    };
+    SecretStatusResponse: {
+      configured: boolean;
+      fingerprint?: string | null;
+      updated_at: string;
+      updated_by: string;
     };
     ShellModuleItem: {
       contributor_badge_count?: number;
@@ -1307,6 +1502,20 @@ export interface components {
       superseded_snapshot_ids: (string)[];
       upstream_steps_reexecuted_count: number;
       upstream_tokens_consumed: number;
+    };
+    StudioDryRunRequest: {
+      input_values?: Record<string, unknown>;
+      preview_markdown_output?: string | null;
+    };
+    StudioDryRunResponse: {
+      deterministic_structure_gate_passed: boolean;
+      executed_steps: (string)[];
+      external_writes_count: number;
+      missing_markdown_sections: (string)[];
+      revision_id: string;
+      skipped_layers: (string)[];
+      version: string;
+      workflow_uri: string;
     };
     SubWorkflowLockSchemaItem: {
       applied_override_keys: (string)[];
@@ -1552,6 +1761,30 @@ export interface components {
       trace_id?: string | null;
       transitively_affected_concepts: (string)[];
     };
+    WizardAdvanceStepRequest: {
+      actor_persona?: string;
+      secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      step_index?: number;
+      step_payload?: Record<string, unknown>;
+    };
+    WizardSessionRequest: {
+      actor_persona?: string;
+      scope_id?: string;
+      wizard_type?: "sdlc_tech_lead" | "ops_manager" | "secops_admin";
+    };
+    WizardSessionResponse: {
+      completed_steps: (number)[];
+      current_step_index: number;
+      dbos_workflow_id: string;
+      id: string;
+      rag_reciprocity_verified: boolean;
+      scope_id: string;
+      state_jsonb: Record<string, unknown>;
+      status: "IN_PROGRESS" | "COMPLETED" | "ABANDONED";
+      total_steps: number;
+      user_id: string;
+      wizard_type: "sdlc_tech_lead" | "ops_manager" | "secops_admin";
+    };
     WorkflowAsCodeDefinitionSchemaItem: {
       adaptive_gate_policy: "STRICT" | "STANDARD" | "FAST_TRACK";
       criticality: "LOW_NON_CRITICAL" | "STANDARD" | "HIGH_CRITICAL";
@@ -1755,6 +1988,13 @@ export interface components {
 }
 
 export interface paths {
+  "/api/v1/admin/outbox/replays": {
+    post: {
+      responses: {
+        200: components["schemas"]["OutboxReplayResponse"];
+      };
+    };
+  };
   "/api/v1/assistant/chat": {
     post: {
       responses: {
@@ -2294,6 +2534,81 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/ai-models/mappings": {
+    get: {
+      responses: {
+        200: (components["schemas"]["LlmTierMappingResponse"])[];
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/mappings/{mapping_id}": {
+    delete: {
+      responses: {
+        200: Record<string, string>;
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/route": {
+    post: {
+      responses: {
+        200: components["schemas"]["CognitiveRoutingOutcomeResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/connectors/documents/{document_id}/verify-reciprocity": {
+    post: {
+      responses: {
+        200: components["schemas"]["RagReciprocityResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/connectors/ingest": {
+    post: {
+      responses: {
+        200: components["schemas"]["DocumentIngestionResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/connectors/{connector_id}/test-connection": {
+    post: {
+      responses: {
+        200: components["schemas"]["ConnectorTestConnectionResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/entries": {
+    get: {
+      responses: {
+        200: (components["schemas"]["PlatformSettingResponse"])[];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["PlatformSettingResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/iam/evaluate": {
+    post: {
+      responses: {
+        200: components["schemas"]["ResourceDiscoveryResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/iam/grants": {
+    post: {
+      responses: {
+        200: (components["schemas"]["RolePermissionGrantResponse"])[];
+      };
+    };
+  };
+  "/api/v1/studio/revisions/{revision_id}/dry-run": {
+    post: {
+      responses: {
+        200: components["schemas"]["StudioDryRunResponse"];
+      };
+    };
+  };
   "/api/v1/tasks/{task_id}/claim": {
     post: {
       responses: {
@@ -2312,6 +2627,27 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["JiraIssueUpdatedWebhookResponse"];
+      };
+    };
+  };
+  "/api/v1/wizards/demo-workspace": {
+    post: {
+      responses: {
+        200: components["schemas"]["DemoWorkspaceProvisionResponse"];
+      };
+    };
+  };
+  "/api/v1/wizards/sessions": {
+    post: {
+      responses: {
+        200: components["schemas"]["WizardSessionResponse"];
+      };
+    };
+  };
+  "/api/v1/wizards/sessions/{session_id}/steps": {
+    post: {
+      responses: {
+        200: components["schemas"]["WizardSessionResponse"];
       };
     };
   };
@@ -2364,24 +2700,32 @@ export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolve
 export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchemaItem"];
 export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
 export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
+export type CognitiveRoutingOutcomeResponse = components["schemas"]["CognitiveRoutingOutcomeResponse"];
 export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteEntryResponse"];
 export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
 export type CommitStagedJiraActionRequest = components["schemas"]["CommitStagedJiraActionRequest"];
 export type CommitStagedJiraActionResponse = components["schemas"]["CommitStagedJiraActionResponse"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
+export type ConnectorTestConnectionResponse = components["schemas"]["ConnectorTestConnectionResponse"];
 export type ControlCenterOverviewResponse = components["schemas"]["ControlCenterOverviewResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
+export type DelegateGrantRequest = components["schemas"]["DelegateGrantRequest"];
+export type DemoWorkspaceProvisionResponse = components["schemas"]["DemoWorkspaceProvisionResponse"];
 export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSchemaItem"];
 export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
 export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
 export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
+export type DocumentIngestionRequest = components["schemas"]["DocumentIngestionRequest"];
+export type DocumentIngestionResponse = components["schemas"]["DocumentIngestionResponse"];
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
+export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResourceAccessRequest"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
+export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
@@ -2407,6 +2751,7 @@ export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchReque
 export type HybridRagSearchResponse = components["schemas"]["HybridRagSearchResponse"];
 export type HydratedStepContextSchemaItem = components["schemas"]["HydratedStepContextSchemaItem"];
 export type InboxNotificationListResponse = components["schemas"]["InboxNotificationListResponse"];
+export type InferenceAttemptResponse = components["schemas"]["InferenceAttemptResponse"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
 export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];
 export type InitExistingProjectRequest = components["schemas"]["InitExistingProjectRequest"];
@@ -2427,6 +2772,7 @@ export type JiraJqlSearchResponse = components["schemas"]["JiraJqlSearchResponse
 export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"];
 export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
+export type LlmTierMappingResponse = components["schemas"]["LlmTierMappingResponse"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
 export type McpToolCallRequest = components["schemas"]["McpToolCallRequest"];
@@ -2448,8 +2794,11 @@ export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsert
 export type OrchestrationSetupStateResponse = components["schemas"]["OrchestrationSetupStateResponse"];
 export type OrgUnitSummaryResponse = components["schemas"]["OrgUnitSummaryResponse"];
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
+export type OutboxReplayRequest = components["schemas"]["OutboxReplayRequest"];
+export type OutboxReplayResponse = components["schemas"]["OutboxReplayResponse"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
+export type PatchPlatformSettingRequest = components["schemas"]["PatchPlatformSettingRequest"];
 export type PatternDriftFindingSchemaItem = components["schemas"]["PatternDriftFindingSchemaItem"];
 export type PermissionBrokerPolicyItem = components["schemas"]["PermissionBrokerPolicyItem"];
 export type PermissionBrokerStateResponse = components["schemas"]["PermissionBrokerStateResponse"];
@@ -2460,11 +2809,15 @@ export type PermissionPolicyImportMarkdownRequest = components["schemas"]["Permi
 export type PermissionPolicyImportMarkdownResponse = components["schemas"]["PermissionPolicyImportMarkdownResponse"];
 export type PermissionTicketActionRequest = components["schemas"]["PermissionTicketActionRequest"];
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
+export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
+export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
+export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
+export type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
 export type RunBlackboardStateResponse = components["schemas"]["RunBlackboardStateResponse"];
 export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
 export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripletItem"];
@@ -2472,6 +2825,8 @@ export type RunMutationGuardCheckRequest = components["schemas"]["RunMutationGua
 export type RunMutationGuardCheckResponse = components["schemas"]["RunMutationGuardCheckResponse"];
 export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationCheckResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
+export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
+export type SecretStatusResponse = components["schemas"]["SecretStatusResponse"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
 export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeResponse"];
@@ -2488,6 +2843,8 @@ export type StepMemlogSchemaItem = components["schemas"]["StepMemlogSchemaItem"]
 export type StepReplayRequest = components["schemas"]["StepReplayRequest"];
 export type StepReplayResponse = components["schemas"]["StepReplayResponse"];
 export type StepReplayResultSchemaItem = components["schemas"]["StepReplayResultSchemaItem"];
+export type StudioDryRunRequest = components["schemas"]["StudioDryRunRequest"];
+export type StudioDryRunResponse = components["schemas"]["StudioDryRunResponse"];
 export type SubWorkflowLockSchemaItem = components["schemas"]["SubWorkflowLockSchemaItem"];
 export type SupervisedDatasourceItemResponse = components["schemas"]["SupervisedDatasourceItemResponse"];
 export type SupervisedRunItemResponse = components["schemas"]["SupervisedRunItemResponse"];
@@ -2511,6 +2868,9 @@ export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWr
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
 export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];
+export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepRequest"];
+export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"];
+export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];
 export type WorkflowAsCodeDefinitionSchemaItem = components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"];
 export type WorkflowDefinitionResponseItem = components["schemas"]["WorkflowDefinitionResponseItem"];
 export type WorkflowManifestRegisterRequest = components["schemas"]["WorkflowManifestRegisterRequest"];

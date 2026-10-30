@@ -10,6 +10,8 @@ import { Route as inboxRoute } from "./routes/inbox";
 import { Route as indexRoute } from "./routes/index";
 import { Route as loginRoute } from "./routes/login";
 import { Route as ontologyRoute } from "./routes/ontology";
+import { Route as settingsRoute } from "./routes/settings";
+import { Route as wizardsRoute } from "./routes/wizards";
 import { Route as workspacesRoute } from "./routes/workspaces";
 
 export const routeTree = rootRoute.addChildren([
@@ -23,6 +25,8 @@ export const routeTree = rootRoute.addChildren([
   finopsRoute,
   workspacesRoute,
   bootstrapRoute,
+  settingsRoute,
+  wizardsRoute,
 ]);
 
 export function createOrciaQueryClient(): QueryClient {

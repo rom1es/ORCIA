@@ -26,6 +26,18 @@ RAG_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "forbids indexing transactional rows.",
         ),
     },
+    "ERR_EMPTY_OR_UNREADABLE_DOCUMENT": {
+        "fr": LocalizedErrorCopy(
+            "Document vide ou PDF scanné illisible (0 caractère exploitable)",
+            "L'extraction texte du document a produit 0 caractère exploitable. Le fichier est "
+            "rejeté avant toute vectorisation (AD-21).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Empty or unreadable scanned document (0 usable characters)",
+            "Text extraction produced 0 usable characters. The document was rejected before "
+            "any vectorization (AD-21).",
+        ),
+    },
 }
 
 register_domain_error_catalog(RAG_ERROR_CATALOG)
@@ -36,8 +48,14 @@ class DdlOnlyTransactionalDataError(OrciaDomainError):
     http_status, type_slug = 422, "ddl-only-transactional-data-forbidden"
 
 
+class EmptyOrUnreadableDocumentError(OrciaDomainError):
+    error_code = "ERR_EMPTY_OR_UNREADABLE_DOCUMENT"
+    http_status, type_slug = 422, "empty-or-unreadable-document"
+
+
 __all__ = [
     "DdlOnlyTransactionalDataError",
+    "EmptyOrUnreadableDocumentError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
     "ResourceNotFoundError",

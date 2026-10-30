@@ -6,6 +6,15 @@ import json
 from typing import cast
 
 from orcia_core.bootstrap import workflow_bootstrap_seeds as wbs
+from orcia_core.bootstrap.durable_wizards import (
+    WIZARD_STEPS_BY_TYPE,
+    DemoWorkspaceProvisionResult,
+    DurableOnboardingWizardService,
+    WizardSessionRecord,
+    WizardSessionStatus,
+    WizardStepDescriptor,
+    WizardType,
+)
 from orcia_core.bootstrap.engine import (
     CANONICAL_UPSTREAM_ONTOLOGY,
     VALID_ARCHETYPES,
@@ -104,8 +113,11 @@ __all__ = [
     "DEFAULT_HUMAN_PROFILE_ARCHETYPES",
     "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",
     "VALID_ARCHETYPES",
+    "WIZARD_STEPS_BY_TYPE",
     "BootstrapRunStatus",
     "BootstrapScopeLevel",
+    "DemoWorkspaceProvisionResult",
+    "DurableOnboardingWizardService",
     "HumanProfileArchetypeSeed",
     "InitDatasourceInput",
     "InitDatasourceOutcome",
@@ -132,6 +144,10 @@ __all__ = [
     "UpsertSpec",
     "UriSchemePluginDescriptor",
     "UserOnboardingState",
+    "WizardSessionRecord",
+    "WizardSessionStatus",
+    "WizardStepDescriptor",
+    "WizardType",
     "WorkspaceBootstrapInput",
     "build_default_system_bootstrap_service",
     "build_postgres_upsert_sql",

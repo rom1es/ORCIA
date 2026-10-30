@@ -131,6 +131,19 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
             "workflow (SUB_WORKFLOW hierarchical deadlock).",
         ),
     },
+    "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS": {
+        "fr": LocalizedErrorCopy(
+            "Ressource épinglée par des Workflow Runs actifs",
+            "Impossible de supprimer ou désactiver immédiatement ce modèle ou pack car il est "
+            "épinglé dans le run-lock.json de runs actifs. Utilisez le mode Drainer ou Forcer "
+            "(AD-21).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Resource pinned by active Workflow Runs",
+            "Cannot immediately delete or deactivate this model or pack because it is pinned "
+            "in the run-lock.json of active runs. Use Drain or Force mode (AD-21).",
+        ),
+    },
 }
 
 register_domain_error_catalog(ORCHESTRATION_ERROR_CATALOG)
@@ -186,6 +199,11 @@ class CyclicResourceWaitDetectedError(OrciaDomainError):
     http_status, type_slug = 409, "cyclic-resource-wait-detected"
 
 
+class ResourcePinnedByActiveRunsError(OrciaDomainError):
+    error_code = "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
+    http_status, type_slug = 409, "resource-pinned-by-active-runs"
+
+
 __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "CyclicResourceWaitDetectedError",
@@ -195,6 +213,7 @@ __all__ = [
     "OrciaDomainError",
     "ResourceLeaseHeldByOtherRunError",
     "ResourceNotFoundError",
+    "ResourcePinnedByActiveRunsError",
     "ScopeAccessDeniedError",
     "StaleFencingTokenError",
     "StepAlreadyClaimedByPeerError",

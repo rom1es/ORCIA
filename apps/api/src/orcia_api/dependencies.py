@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
 from orcia_core.bootstrap import (
+    DurableOnboardingWizardService,
     SystemBootstrapWorkflowService,
     build_default_system_bootstrap_service,
 )
@@ -27,22 +28,28 @@ from orcia_core.ontology import (
 )
 from orcia_core.orchestration import (
     AssistantAgentService,
+    CognitiveModelRouterService,
     ConnectorInvoker,
     ControlCenterOverviewService,
     ResourceLeaseService,
     UnifiedNotificationAndClaimService,
     WorkflowOrchestrationSetupService,
+    WorkflowStudioAndPackService,
     build_default_orchestration_setup_service,
     register_default_step_executors,
 )
 from orcia_core.permissions import (
     AuthAndOrganizationService,
+    HierarchicalRbacService,
     PermissionBrokerService,
+    PlatformSettingsService,
+    RolePermissionGrant,
     build_default_auth_and_org_service,
     build_default_permission_broker_service,
 )
 from orcia_core.rag import (
     CatalogAndBlackboardContextSourceAdapter,
+    ConnectorHubAndIngestionService,
     HybridRagService,
     HybridRagVectorStoreAdapter,
     TripartiteGraphAndFreshnessService,
@@ -116,6 +123,65 @@ def initialize_app_services(app: FastAPI) -> None:
             evaluator=auth_service.evaluator,
             notification_service=app.state.notification_service,
         )
+
+    if getattr(app.state, "hierarchical_rbac_service", None) is None:
+        app.state.hierarchical_rbac_service = HierarchicalRbacService(
+            initial_grants=(
+                RolePermissionGrant(
+                    id="0195f000-0000-7000-8000-000000008101",
+                    subject_type="ROLE",
+                    subject_id="TEAM_LEAD",
+                    scope_path="org/orcia/bu/claims/team/alpha",
+                    verb="grant",
+                ),
+                RolePermissionGrant(
+                    id="0195f000-0000-7000-8000-000000008102",
+                    subject_type="ROLE",
+                    subject_id="TEAM_LEAD",
+                    scope_path="org/orcia/bu/claims/team/alpha",
+                    verb="read",
+                ),
+                RolePermissionGrant(
+                    id="0195f000-0000-7000-8000-000000008103",
+                    subject_type="ROLE",
+                    subject_id="TEAM_LEAD",
+                    scope_path="org/orcia/bu/claims/team/alpha",
+                    verb="execute",
+                ),
+                RolePermissionGrant(
+                    id="0195f000-0000-7000-8000-000000008104",
+                    subject_type="ROLE",
+                    subject_id="TEAM_LEAD",
+                    scope_path="org/orcia/bu/claims/team/alpha",
+                    verb="update",
+                ),
+            )
+        )
+
+    if getattr(app.state, "platform_settings_service", None) is None:
+        settings_svc = PlatformSettingsService()
+        settings_svc.upsert_initial_setting(
+            scope_level="WORKSPACE",
+            scope_id="0195f000-0000-7000-8000-000000000301",
+            category="ai-models",
+            key="default_routing_policy",
+            value_jsonb={"default_tier": "medium", "default_effort": "balanced"},
+        )
+        app.state.platform_settings_service = settings_svc
+
+    if getattr(app.state, "cognitive_router_service", None) is None:
+        app.state.cognitive_router_service = CognitiveModelRouterService(
+            llm_gateway=app.state.llm_gateway
+        )
+
+    if getattr(app.state, "connector_hub_service", None) is None:
+        app.state.connector_hub_service = ConnectorHubAndIngestionService()
+
+    if getattr(app.state, "studio_and_pack_service", None) is None:
+        app.state.studio_and_pack_service = WorkflowStudioAndPackService()
+
+    if getattr(app.state, "durable_wizard_service", None) is None:
+        app.state.durable_wizard_service = DurableOnboardingWizardService()
 
     if getattr(app.state, "assistant_service", None) is None:
         seeded_rag, _ = build_seeded_rag_service()
@@ -280,3 +346,75 @@ def get_epic2_services(
         runtime = (gov, rag, trip)
         request.app.state.epic2_runtime_bundle = runtime
     return runtime
+
+
+def get_hierarchical_rbac_service(request: Request) -> HierarchicalRbacService:
+    """FastAPI `Depends` provider returning `HierarchicalRbacService` (`Story 8.1`)."""
+    svc: HierarchicalRbacService | None = getattr(
+        request.app.state, "hierarchical_rbac_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.hierarchical_rbac_service
+    assert svc is not None
+    return svc
+
+
+def get_platform_settings_service(request: Request) -> PlatformSettingsService:
+    """FastAPI `Depends` provider returning `PlatformSettingsService` (`Story 8.3`)."""
+    svc: PlatformSettingsService | None = getattr(
+        request.app.state, "platform_settings_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.platform_settings_service
+    assert svc is not None
+    return svc
+
+
+def get_cognitive_router_service(request: Request) -> CognitiveModelRouterService:
+    """FastAPI `Depends` provider returning `CognitiveModelRouterService` (`Story 8.2`)."""
+    svc: CognitiveModelRouterService | None = getattr(
+        request.app.state, "cognitive_router_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.cognitive_router_service
+    assert svc is not None
+    return svc
+
+
+def get_connector_hub_service(request: Request) -> ConnectorHubAndIngestionService:
+    """FastAPI `Depends` provider returning `ConnectorHubAndIngestionService` (`Story 8.4`)."""
+    svc: ConnectorHubAndIngestionService | None = getattr(
+        request.app.state, "connector_hub_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.connector_hub_service
+    assert svc is not None
+    return svc
+
+
+def get_studio_and_pack_service(request: Request) -> WorkflowStudioAndPackService:
+    """FastAPI `Depends` provider returning `WorkflowStudioAndPackService` (`Story 8.5`)."""
+    svc: WorkflowStudioAndPackService | None = getattr(
+        request.app.state, "studio_and_pack_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.studio_and_pack_service
+    assert svc is not None
+    return svc
+
+
+def get_durable_wizard_service(request: Request) -> DurableOnboardingWizardService:
+    """FastAPI `Depends` provider returning `DurableOnboardingWizardService` (`Story 8.6`)."""
+    svc: DurableOnboardingWizardService | None = getattr(
+        request.app.state, "durable_wizard_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.durable_wizard_service
+    assert svc is not None
+    return svc

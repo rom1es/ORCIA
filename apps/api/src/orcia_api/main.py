@@ -25,6 +25,7 @@ from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
 from orcia_api.routers.orchestration import router as orchestration_router
 from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
 from orcia_api.routers.permission_broker import router as permission_broker_router
+from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
     application.include_router(human_gates_router)
     application.include_router(inbox_and_leases_router)
     application.include_router(control_center_router)
+    application.include_router(settings_and_studio_router)
     application.include_router(jira_and_mcp_router)
     application.include_router(bootstrap_router)
     application.include_router(ontology_and_rag_router)

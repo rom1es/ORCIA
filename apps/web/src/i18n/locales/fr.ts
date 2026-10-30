@@ -1,8 +1,10 @@
 import type { TranslationDictionary } from "../types";
 import { EPIC5_FR_LABELS } from "./epic5_labels";
+import { EPIC8_FR_LABELS } from "./epic8_labels";
 
 export const frDictionary: TranslationDictionary = {
   ...EPIC5_FR_LABELS,
+  ...EPIC8_FR_LABELS,
   locale: "fr",
   shell: {
     brandTitle: "ORCIA",

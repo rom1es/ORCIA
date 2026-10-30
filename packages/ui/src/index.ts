@@ -107,6 +107,48 @@ export {
   type WorkspaceControlCenterLabels,
   type WorkspaceControlCenterProps,
 } from "./primitives/WorkspaceControlCenter";
+export {
+  PermissionGuard,
+  type PermissionGuardLabels,
+  type PermissionGuardProps,
+  type UiPermissionFallbackMode,
+  type UiPermissionVerb,
+} from "./primitives/PermissionGuard";
+export {
+  SecretField,
+  type SecretFieldLabels,
+  type SecretFieldProps,
+  type UiSecretAction,
+  type UiSecretInputValue,
+  type UiSecretStatus,
+} from "./primitives/SecretField";
+export {
+  EffortSelector,
+  InferenceTierBadge,
+  type EffortSelectorProps,
+  type InferenceTierAndEffortLabels,
+  type InferenceTierBadgeProps,
+  type UiInferenceEffort,
+  type UiInferenceTier,
+} from "./primitives/InferenceTierAndEffortSelector";
+export {
+  WorkflowTopGovernanceBar,
+  type StudioLifecycleTabCount,
+  type StudioLifecycleTabKey,
+  type WorkflowTopGovernanceBarProps,
+} from "./primitives/WorkflowTopGovernanceBar";
+export {
+  LayersInspectorPopover,
+  type LayersInspectorPopoverProps,
+  type SubWorkflowLayerViewItem,
+  type SubWorkflowLayerZoneKey,
+} from "./primitives/LayersInspectorPopover";
+export {
+  DurableWizardRunnerView,
+  type DurableWizardProfileType,
+  type DurableWizardRunnerViewProps,
+  type DurableWizardStepDescriptor,
+} from "./primitives/DurableWizardRunnerView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

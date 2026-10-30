@@ -14,9 +14,6 @@ function RootLayoutComponent() {
   const location = useLocation();
   const router = useRouter();
 
-  const fixtureFromSearch =
-    new URLSearchParams(location.searchStr ?? "").get("fixture") === "test";
-
   return (
     <I18nProvider initialLocale="fr">
       <OrciaNavigationProvider
@@ -27,7 +24,7 @@ function RootLayoutComponent() {
           },
         }}
       >
-        <ShellContainer fixtureMode={fixtureFromSearch}>
+        <ShellContainer>
           <Outlet />
         </ShellContainer>
       </OrciaNavigationProvider>

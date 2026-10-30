@@ -9,11 +9,11 @@ import { InboxFeaturePanel } from "../features/inbox";
 import { OntologyFeaturePanel } from "../features/ontology";
 import { WorkspacesFeaturePanel } from "../features/workspaces";
 import { useI18n } from "../i18n";
-import { usePersonaContext } from "./ShellContainer";
+import { useShellNavigation } from "./ShellContainer";
 
 export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
   const { dictionary } = useI18n();
-  const { activeModuleKey } = usePersonaContext();
+  const { activeModuleKey } = useShellNavigation();
 
   const currentModule = activeModuleKey ?? moduleKey;
   const pageCopy = dictionary.modulePages[currentModule];

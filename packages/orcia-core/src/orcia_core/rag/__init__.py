@@ -8,6 +8,18 @@ from __future__ import annotations
 
 import importlib
 
+from orcia_core.rag.connector_hub_and_ingestion import (
+    ConnectorConnectionTestResult,
+    ConnectorHealthKind,
+    ConnectorHubAndIngestionService,
+    ConnectorInstanceRecord,
+    DataSecurityClassification,
+    DocumentIngestionReport,
+    PiiArbitrationDecision,
+    RagReciprocityVerificationResult,
+    detect_pii_categories,
+    scrub_pii_reversibly,
+)
 from orcia_core.rag.context_adapters import (
     CatalogAndBlackboardContextSourceAdapter,
     HybridRagVectorStoreAdapter,
@@ -69,10 +81,16 @@ __all__ = [
     "ChunkRole",
     "CodeGraphEdgeEntity",
     "CodeGraphEdgeType",
+    "ConnectorConnectionTestResult",
+    "ConnectorHealthKind",
+    "ConnectorHubAndIngestionService",
+    "ConnectorInstanceRecord",
     "CoreChunkRole",
     "CoreIndexingRegime",
+    "DataSecurityClassification",
     "DifferentiatedIncrementalIndexer",
     "DocVsCodeAuditFinding",
+    "DocumentIngestionReport",
     "EMBEDDING_DIM",
     "HybridRagHit",
     "HybridRagService",
@@ -81,6 +99,8 @@ __all__ = [
     "KbChunkEntity",
     "KbDocumentEntity",
     "KbStaleAlertEntity",
+    "PiiArbitrationDecision",
+    "RagReciprocityVerificationResult",
     "StaleAlertReason",
     "TripartiteGraphAndFreshnessService",
     "TripartiteNodeType",
@@ -91,5 +111,7 @@ __all__ = [
     "build_seeded_rag_service",
     "compute_deterministic_halfvec_1024",
     "cosine_similarity",
+    "detect_pii_categories",
     "extract_jira_issue_keys",
+    "scrub_pii_reversibly",
 ]

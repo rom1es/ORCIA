@@ -60,11 +60,15 @@ from orcia_kernel.errors import (
     resolve_locale,
 )
 from orcia_kernel.events import (
+    AccessRequested,
     ArtifactProduced,
     DomainEvent,
     GateEvaluated,
     HumanArbitrationRequested,
+    PermissionGranted,
+    PermissionRevoked,
     RunTerminated,
+    SettingsChanged,
     StepCompleted,
 )
 from orcia_kernel.ids import (
@@ -112,6 +116,7 @@ from orcia_kernel.ports import (
 __version__: str = "0.1.0"
 
 __all__ = [
+    "AccessRequested",
     "ArtifactProduced",
     "AssistantWorkflowBlueprint",
     "AssistantWorkflowTemplatePort",
@@ -151,6 +156,8 @@ __all__ = [
     "OutboxEventStatus",
     "OutboxRelayPort",
     "PermanentInfraError",
+    "PermissionGranted",
+    "PermissionRevoked",
     "PolicyDeniedError",
     "RateLimitedError",
     "ReadSourceDeniedError",
@@ -161,6 +168,7 @@ __all__ = [
     "SandboxExecutionTier",
     "SandboxPort",
     "ScopeAccessDeniedError",
+    "SettingsChanged",
     "SnapshotBranchStatus",
     "StepCompleted",
     "StepExecutionState",

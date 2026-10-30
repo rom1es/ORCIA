@@ -48,14 +48,14 @@ function walkTsFiles(dir: string): string[] {
   return files;
 }
 
-describe("@orcia/web i18n dictionary parity, French default, and 7-module shell integration", () => {
+describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () => {
   it("enforces 100% recursive key parity between fr.ts and en.ts", () => {
     const frKeys = collectNestedKeys(frDictionary as unknown as Record<string, unknown>);
     const enKeys = collectNestedKeys(enDictionary as unknown as Record<string, unknown>);
     expect(frKeys).toEqual(enKeys);
   });
 
-  it("never uses raw hex colors or next/* imports inside apps/web/src", () => {
+  it("never uses raw hex colors, next/* imports, or workspaceFixtures in apps/web/src", () => {
     const webSrcDir = path.resolve(__dirname, "..");
     const tsFiles = walkTsFiles(webSrcDir);
     const hexColorRegex = /#[0-9a-fA-F]{3,8}\b/;
@@ -66,6 +66,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
         `Found forbidden hex color in ${path.relative(webSrcDir, filePath)}`,
       ).toBe(false);
       expect(content).not.toMatch(/from\s+["']next(\/|["'])/);
+      expect(content).not.toMatch(/workspaceFixtures/);
     }
   });
 
@@ -99,7 +100,7 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     }
   });
 
-  it("resolves all 8 module routes accurately via resolveModuleFromPathname", () => {
+  it("resolves all module routes including /settings and /wizards via resolveModuleFromPathname", () => {
     expect(resolveModuleFromPathname(null)).toBe("cockpit");
     expect(resolveModuleFromPathname("/")).toBe("cockpit");
     expect(resolveModuleFromPathname("/cockpit")).toBe("cockpit");
@@ -111,50 +112,26 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     expect(resolveModuleFromPathname("/workspaces")).toBe("admin");
     expect(resolveModuleFromPathname("/admin")).toBe("admin");
     expect(resolveModuleFromPathname("/bootstrap")).toBe("bootstrap");
+    expect(resolveModuleFromPathname("/settings")).toBe("bootstrap");
+    expect(resolveModuleFromPathname("/wizards")).toBe("bootstrap");
   });
 
   it("validates typed URL search params, QueryClient route preloading, and @xyflow/react cockpit graph", async () => {
     expect(validateOrciaRouteSearch({})).toEqual({});
-    expect(validateOrciaRouteSearch({ fixture: "test", q: "  pay-142  " })).toEqual({
-      fixture: "test",
+    expect(validateOrciaRouteSearch({ q: "  pay-142  " })).toEqual({
       q: "pay-142",
     });
 
     const queryClient = createOrciaQueryClient();
-    const preloaded = await preloadModuleQueryData(queryClient, "catalog", true);
-    expect(preloaded).toEqual({ moduleKey: "catalog", fixture: true });
+    const preloaded = await preloadModuleQueryData(queryClient, "catalog", false);
+    expect(preloaded).toEqual({ moduleKey: "catalog", fixture: false });
 
     const graph = buildCockpitWorkflowPreviewGraph();
     expect(graph.nodes).toHaveLength(5);
     expect(graph.edges).toHaveLength(4);
   });
 
-  it("renders TanStack Router v1 SPA routeTree with QueryClient context across routes", async () => {
-    const queryClient = createOrciaQueryClient();
-    const history = createMemoryHistory({ initialEntries: ["/cockpit?fixture=test"] });
-    const router = createOrciaRouter({ queryClient, history });
-    await router.load();
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>,
-    );
-
-    expect(screen.getByTestId("active-module-heading").textContent).toBe("Cockpit & Chat");
-
-    await act(async () => {
-      await router.navigate({ to: "/inbox", search: { fixture: "test" } });
-    });
-    expect(screen.getByTestId("inbox-feature-panel")).toBeDefined();
-
-    await act(async () => {
-      await router.navigate({ to: "/finops", search: { fixture: "test" } });
-    });
-    expect(screen.getByTestId("finops-feature-panel")).toBeDefined();
-  });
-
-  it("starts empty of sample data by default (fixtureMode=false) and filters menu entries by scope", () => {
+  it("starts 100% empty of sample data by default and displays the 0/5 Platform Onboarding Checklist", () => {
     render(
       <I18nProvider initialLocale="fr">
         <ShellContainer onNavigate={mockPush}>
@@ -162,6 +139,10 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
         </ShellContainer>
       </I18nProvider>,
     );
+
+    // 0/5 onboarding progress at blank start
+    expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("0/5");
+    expect(screen.getByTestId("cockpit-no-workspace-empty-state")).toBeDefined();
 
     // Only scope-applicable entries are visible when no Workspace exists yet
     expect(screen.getByTestId("sidebar-nav-item-cockpit")).toBeDefined();
@@ -176,180 +157,107 @@ describe("@orcia/web i18n dictionary parity, French default, and 7-module shell 
     // Navigate to Catalog -> Empty state, zero sample items
     fireEvent.click(screen.getByTestId("sidebar-nav-item-catalog"));
     expect(screen.getByTestId("catalog-explorer-empty-state")).toBeDefined();
-    expect(screen.queryByTestId("uri-badge-res-blackbox-security-agent")).toBeNull();
+    expect(screen.getByTestId("catalog-setup-guidance-card")).toBeDefined();
+  });
 
-    // Navigate to Admin -> Empty state, zero sample workspaces and no persona simulator bar
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-admin"));
+  it("guides workspace creation from /workspaces and dynamically unlocks workspace-scoped modules and runs", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/workspaces"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // Initially empty topology
     expect(screen.getByTestId("workspace-topology-empty-state")).toBeDefined();
-    expect(screen.queryByTestId("persona-switch-marc")).toBeNull();
+
+    // Create a Workspace via the setup form
+    fireEvent.change(screen.getByTestId("workspace-name-input"), {
+      target: { value: "Mon Premier Espace" },
+    });
+    fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+
+    // Workspace-scoped modules are now unlocked in the sidebar!
+    expect(screen.getByTestId("sidebar-nav-item-inbox")).toBeDefined();
+    expect(screen.getByTestId("sidebar-nav-item-ontology")).toBeDefined();
+    expect(screen.getByTestId("sidebar-nav-item-gates")).toBeDefined();
+    expect(screen.getByTestId("sidebar-nav-item-finops")).toBeDefined();
+
+    // Navigate to /cockpit -> Onboarding progress is 1/5 and Run launcher is unlocked
+    await act(async () => {
+      await router.navigate({ to: "/cockpit" });
+    });
+    expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("1/5");
+    expect(screen.getByTestId("cockpit-launch-run-form")).toBeDefined();
   });
 
-  it("renders French by default, switches dynamically to English, navigates modules, and validates Story 1.2 & Story 1.3 Catalog Explorer with automated test dataset", () => {
-    mockPush.mockClear();
+  it("initializes entities across the 6 dedicated /settings tabs and records Outbox audit events", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
     render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer fixtureMode={true} onNavigate={mockPush}>
-          <ModuleWorkspaceView moduleKey="cockpit" />
-        </ShellContainer>
-      </I18nProvider>,
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId("active-module-heading").textContent).toBe("Cockpit & Chat");
-    expect(screen.getByTestId("sidebar-nav-item-inbox").textContent).toContain(
-      "Boîte & Mes Runs",
-    );
-
-    const anchorCard = screen.getByTestId("human-anchor-card-architecture-intent");
-    const anchorTextarea = anchorCard.querySelector("textarea") as HTMLTextAreaElement;
-    expect(anchorTextarea.value).toBe(frDictionary.humanAnchor.defaultValue);
-
-    // Toggle locale to English -> sidebar and untouched HumanLedAnchorCard default text update
-    fireEvent.click(screen.getByTestId("locale-switcher-button"));
-    expect(screen.getByTestId("sidebar-nav-item-inbox").textContent).toContain(
-      "Inbox & My Runs",
-    );
-    expect(anchorTextarea.value).toBe(enDictionary.humanAnchor.defaultValue);
-
-    // Story 1.3: Navigate to Catalog module -> Verify CatalogExplorerPanel (single theme in central panel)
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-catalog"));
-    expect(mockPush).toHaveBeenCalledWith("/catalog");
-    expect(screen.getByTestId("catalog-explorer-panel")).toBeDefined();
-    expect(screen.getByTestId("uri-badge-res-blackbox-security-agent").getAttribute("data-uri-scheme")).toBe("git");
-    expect(screen.getByTestId("uri-badge-res-nexus-bmad-architecture-pack").getAttribute("data-uri-scheme")).toBe("nexus");
-    expect(screen.getByTestId("uri-badge-res-payment-delivery-workflow").getAttribute("data-uri-scheme")).toBe("db");
-    expect(screen.getByTestId("run-lock-manifest-preview")).toBeDefined();
-
-    fireEvent.click(screen.getByTestId("resolve-cas-btn-res-open-checkout-skill"));
-    expect(
-      screen.getByTestId("resolve-cas-result-res-open-checkout-skill").textContent,
-    ).toContain("cas/4b72d9a1c30e");
-
-    fireEvent.click(screen.getByTestId("bmad-import-trigger-btn"));
-    expect(screen.getByTestId("bmad-import-result").textContent).toContain("BMAD_PACK");
-
-    // Click module 4 (ontology) -> calls onNavigate and renders OntologyAndKbExplorerPanel (Epic 2)
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-ontology"));
-    expect(mockPush).toHaveBeenCalledWith("/ontology");
-    expect(screen.getByTestId("active-module-heading").textContent).toBe("Ontology & KB");
-    expect(screen.getByTestId("ontology-kb-explorer-panel")).toBeDefined();
-    expect(screen.getByTestId("ontology-columns-grid")).toBeDefined();
-    expect(screen.getByTestId("tripartite-graph-section")).toBeDefined();
-    expect(screen.getByTestId("stale-alerts-section")).toBeDefined();
-    fireEvent.click(screen.getByTestId("what-if-btn-concept-l1-strategic-asset"));
-    expect(screen.getByTestId("ontology-action-banner").textContent).toContain(
-      "ERR_ONTOLOGY_CONFLICT",
-    );
-    fireEvent.click(screen.getByTestId("what-if-btn-concept-l3-ws-idempotency-key"));
-    expect(screen.getByTestId("ontology-action-banner").textContent).toContain(
-      "Clé d'Idempotence Paiement",
-    );
-    fireEvent.click(screen.getByTestId("promote-btn-concept-l4-3ds-frictionless-exemption"));
-    expect(screen.getByTestId("ontology-action-banner").textContent).toContain(
-      "Exemption 3DS Frictionless TRA -> 3_WORKSPACE",
-    );
-    fireEvent.change(screen.getByTestId("ontology-profile-selector"), {
-      target: { value: "EXECUTIVE" },
+    // Tab 1: IAM (starts empty, create Org Unit)
+    expect(screen.getByTestId("iam-org-units-empty-state")).toBeDefined();
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Technique" },
     });
-    expect(
-      screen.getByTestId("ontology-translation-concept-l1-strategic-asset").textContent,
-    ).toContain("ROI & Risque Réglementaire");
-    fireEvent.change(screen.getByTestId("hybrid-rag-search-input"), {
-      target: { value: "calculate_reserve" },
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain("Direction Technique");
+
+    // Tab 2: AI Models (starts empty, bind tier)
+    fireEvent.click(screen.getByTestId("settings-tab-ai-models"));
+    expect(screen.getByTestId("llm-tiers-empty-state")).toBeDefined();
+    fireEvent.change(screen.getByTestId("llm-primary-model-input"), {
+      target: { value: "model-primary-v1" },
     });
-    expect(screen.getByTestId("tripartite-edge-trace-git-jira-pay-142")).toBeDefined();
-    expect(screen.queryByTestId("tripartite-edge-trace-doc-jira-pay-142")).toBeNull();
+    fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
+    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("model-primary-v1");
 
-    // Open ScopeSwitcher (Ctrl+W) and select scope-global -> updates access mode badge to READ_ONLY_OBSERVER
-    fireEvent.keyDown(window, { key: "w", ctrlKey: true });
-    fireEvent.click(screen.getByTestId("scope-option-scope-global"));
-    expect(screen.getByTestId("sidebar-access-mode-badge").textContent).toBe(
-      enDictionary.shell.accessModes.READ_ONLY_OBSERVER,
-    );
+    // Tab 3: Connectors (starts empty, register connector)
+    fireEvent.click(screen.getByTestId("settings-tab-connectors"));
+    expect(screen.getByTestId("connectors-empty-state")).toBeDefined();
+    fireEvent.change(screen.getByTestId("connector-alias-input"), {
+      target: { value: "git-principal" },
+    });
+    fireEvent.change(screen.getByTestId("connector-uri-input"), {
+      target: { value: "git://entreprise.local/core" },
+    });
+    fireEvent.click(screen.getByTestId("save-connector-btn"));
+    expect(screen.getByTestId("connector-row-ds-1").textContent).toContain("git-principal");
 
-    // Navigate to Admin module -> Verify WorkspaceTopologyPanel and masked source inspection
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-admin"));
-    expect(screen.getByTestId("workspace-topology-panel")).toBeDefined();
-    fireEvent.click(screen.getByTestId("inspect-source-btn-res-blackbox-security-agent"));
-    expect(
-      screen.getByTestId("inspect-source-result-res-blackbox-security-agent").textContent,
-    ).toContain("ERR_READ_SOURCE_DENIED");
-
-    // Switch persona to Nadia (CONTRIBUTOR) -> Admin, Bootstrap, and FinOps entries are hidden in GlobalSidebar
-    fireEvent.click(screen.getByTestId("persona-switch-nadia"));
-    expect(screen.queryByTestId("sidebar-nav-item-admin")).toBeNull();
-    expect(screen.queryByTestId("sidebar-nav-item-bootstrap")).toBeNull();
-    expect(screen.queryByTestId("sidebar-nav-item-finops")).toBeNull();
-
-    // Story 1.4: Navigate to Gates & Permissions -> collapse dock with ']', then trigger 403 Confluence -> dock auto-opens
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-gates"));
-    fireEvent.keyDown(window, { key: "w", ctrlKey: true });
-    fireEvent.click(screen.getByTestId("scope-option-scope-ws-orcia"));
-    fireEvent.keyDown(window, { key: "]" });
-    expect(screen.getByTestId("assistant-dock").getAttribute("data-collapsed")).toBe("true");
-
-    fireEvent.click(screen.getByTestId("simulate-permission-denied-confluence-btn"));
-    expect(screen.getByTestId("assistant-dock").getAttribute("data-collapsed")).toBe("false");
-    expect(screen.getByTestId("permission-broker-required-role").textContent).toBe(
-      "CONFLUENCE_PAY_ADR_READER",
-    );
-
-    fireEvent.click(screen.getByTestId("permission-broker-pause-btn"));
-    expect(screen.getByTestId("permission-broker-card").getAttribute("data-ticket-status")).toBe(
-      "PAUSED",
-    );
-
-    fireEvent.click(screen.getByTestId("permission-broker-replay-btn"));
-    expect(screen.getByTestId("permission-broker-card").getAttribute("data-ticket-status")).toBe(
-      "REPLAYED",
-    );
-
-    fireEvent.click(screen.getByTestId("simulate-confused-deputy-btn"));
-    expect(screen.getByTestId("permission-broker-action-banner").textContent).toContain(
-      "ERR_CONFUSED_DEPUTY_BLOCKED",
-    );
+    // Tab 6: Audit shows the recorded configuration events
+    fireEvent.click(screen.getByTestId("settings-tab-audit"));
+    expect(screen.getByTestId("audit-event-row-evt-1")).toBeDefined();
   });
 
-  it("renders Admin WorkspaceTopologyPanel and BootstrapOnboardingPanel as dedicated menu entries", () => {
+  it("runs the step-by-step Guided Onboarding Wizard (/wizards) starting at step 1/5", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/wizards"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
     render(
-      <I18nProvider initialLocale="en">
-        <ShellContainer fixtureMode={true}>
-          <ModuleWorkspaceView moduleKey="admin" />
-        </ShellContainer>
-      </I18nProvider>,
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
     );
 
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-admin"));
-    expect(screen.getByTestId("workspace-topology-panel")).toBeDefined();
-
-    // Switch persona to Claire (BU_DIRECTOR) -> WS 3 (CONFIDENTIAL_RESTRICTED) is excluded from roll-up
-    fireEvent.click(screen.getByTestId("persona-switch-claire"));
-    expect(screen.queryByTestId("workspace-card-ws-projet-confidentiel")).toBeNull();
-    fireEvent.click(screen.getByTestId("mutation-guard-btn-ws-solution-paiement"));
-    expect(screen.getByTestId("mutation-guard-result-ws-solution-paiement").textContent).toContain(
-      "ERR_OBSERVER_MODE_READ_ONLY",
-    );
-
-    // Switch to Marc and select the dedicated Bootstrap entry in the left sidebar
-    fireEvent.click(screen.getByTestId("persona-switch-marc"));
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-bootstrap"));
-    expect(screen.getByTestId("bootstrap-onboarding-panel")).toBeDefined();
-    expect(
-      screen.getByTestId("human-led-anchor-card").getAttribute("data-human-authored-required"),
-    ).toBe("true");
-    fireEvent.click(screen.getByTestId("simulate-single-llm-family-btn"));
-    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
-      "ERR_MODEL_ORTHOGONALITY_VIOLATION",
-    );
-    fireEvent.click(screen.getByTestId("simulate-dual-llm-family-btn"));
-    fireEvent.click(screen.getByTestId("execute-init-workspace-btn"));
-    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
-      "2 Solution Workspaces",
-    );
-    fireEvent.click(screen.getByTestId("execute-init-datasource-btn"));
-    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain(
-      "signed Human Anchor",
-    );
-    fireEvent.click(screen.getByTestId("execute-init-user-btn"));
-    expect(screen.getByTestId("bootstrap-feedback-banner").textContent).toContain("AES-256-GCM");
+    expect(screen.getByTestId("wizard-step-form-1")).toBeDefined();
+    fireEvent.change(screen.getByTestId("wizard-input-org-unit"), {
+      target: { value: "Équipe Plateforme" },
+    });
+    fireEvent.click(screen.getByTestId("wizard-complete-step-btn"));
+    expect(screen.getByTestId("wizard-step-form-2")).toBeDefined();
   });
 });

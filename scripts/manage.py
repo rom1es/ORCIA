@@ -448,7 +448,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "action",
-        choices=("start", "stop", "restart", "status", "logs", "init-secrets"),
+        choices=("start", "stop", "restart", "status", "logs", "init-secrets", "seed-uat"),
         help="Action à exécuter sur la cible.",
     )
     parser.add_argument(
@@ -471,6 +471,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=False,
         help="Forcer la rotation des secrets applicatifs dans .env (pour 'init-secrets').",
     )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        default=False,
+        help="Appliquer réellement le peuplement UAT en base (pour 'seed-uat', sinon --dry-run).",
+    )
     return parser
 
 
@@ -488,6 +494,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"🔐 {key}: {state}")
         return 0
+
+    if args.action == "seed-uat":
+        script_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "08_seed_uat_dataset.py"
+        cmd = [sys.executable, str(script_path)]
+        if args.apply:
+            cmd.append("--apply")
+        else:
+            cmd.append("--dry-run")
+        completed = subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
+        return completed.returncode
 
     components = resolve_targets(args.target)
 

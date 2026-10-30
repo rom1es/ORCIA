@@ -33,6 +33,15 @@ from orcia_core.permissions.evaluator import (
     ROLLUP_SUPERVISOR_ROLES,
     MatrixPermissionEvaluator,
 )
+from orcia_core.permissions.hierarchical_rbac import (
+    ALL_PERMISSION_VERBS,
+    HierarchicalRbacService,
+    PermissionEffect,
+    PermissionVerb,
+    ResourceDiscoveryOutcome,
+    RolePermissionGrant,
+    SubjectType,
+)
 from orcia_core.permissions.models import (
     AccessMode,
     AuthMode,
@@ -52,6 +61,19 @@ from orcia_core.permissions.models import (
     WorkspaceEntity,
     WorkspaceMembershipEntity,
     WorkspaceVisibilityMode,
+)
+from orcia_core.permissions.platform_settings import (
+    REGISTERED_IDEMPOTENT_OUTBOX_CONSUMERS,
+    DefaultMemorySecretProvider,
+    OutboxReplayOutcome,
+    PlatformSettingRecord,
+    PlatformSettingsService,
+    SecretAction,
+    SecretInputSpec,
+    SecretStatusView,
+    SettingCategory,
+    SettingScopeLevel,
+    compute_salted_secret_fingerprint,
 )
 from orcia_core.permissions.seeds import (
     DEFAULT_ORG_UNIT_SEEDS,
@@ -239,10 +261,27 @@ def build_default_auth_and_org_service(
 __all__ = [
     "ACCESS_TOKEN_TTL_SECONDS",
     "ADMIN_MODULE_ALLOWED_ROLES",
+    "ALL_PERMISSION_VERBS",
     "DEFAULT_TOTP_SECRET_KARIM",
     "DOMAIN_NAME",
+    "DefaultMemorySecretProvider",
+    "HierarchicalRbacService",
+    "OutboxReplayOutcome",
+    "PermissionEffect",
+    "PermissionVerb",
+    "PlatformSettingRecord",
+    "PlatformSettingsService",
     "REFRESH_TOKEN_TTL_SECONDS",
+    "REGISTERED_IDEMPOTENT_OUTBOX_CONSUMERS",
     "ROLLUP_SUPERVISOR_ROLES",
+    "ResourceDiscoveryOutcome",
+    "RolePermissionGrant",
+    "SecretAction",
+    "SecretInputSpec",
+    "SecretStatusView",
+    "SettingCategory",
+    "SettingScopeLevel",
+    "SubjectType",
     "AccessMode",
     "Argon2idPasswordHasher",
     "AuthAndOrganizationService",
@@ -283,6 +322,7 @@ __all__ = [
     "build_default_auth_and_org_service",
     "build_default_permission_broker_service",
     "build_prefilled_jira_request_url",
+    "compute_salted_secret_fingerprint",
     "extract_connector_scheme",
     "parse_permission_kb_markdown",
 ]
