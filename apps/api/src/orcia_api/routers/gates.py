@@ -11,6 +11,8 @@ from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.bootstrap import SystemBootstrapRunItem
 from orcia_api.schemas.catalog import CatalogItemResponse
 from orcia_api.schemas.gates import (
+    DeploymentRoleSchemaItem,
+    DeploymentRolesListResponse,
     DeterministicGateEvaluateRequest,
     DeterministicGateEvaluateResponse,
     GateEvaluationSchemaItem,
@@ -20,6 +22,8 @@ from orcia_api.schemas.gates import (
     InitSkillRequest,
     InitSkillResponse,
     PatternDriftFindingSchemaItem,
+    Tier2TddVerifyRequest,
+    Tier2TddVerifyResponse,
     WorkspaceSpineBaselineSchemaItem,
 )
 from orcia_core.bootstrap import InitExistingProjectInput, InitSkillInput
@@ -28,6 +32,10 @@ from orcia_core.gates.models import (
     DeterministicGateInput,
     GateEvaluationEntity,
     OntologyAxiomCheckRule,
+)
+from orcia_core.gates.tier2_sandbox import (
+    TddRemediationCheckInput,
+    list_deployment_role_specs,
 )
 from orcia_core.observability.logging import get_current_trace_id
 
@@ -248,5 +256,78 @@ async def execute_init_skill_endpoint(
         run=SystemBootstrapRunItem(**asdict(outcome.run)),
         catalog_item=_serialize_catalog_item(outcome.catalog_item),
         gate_evaluation=_serialize_gate_evaluation(outcome.gate_evaluation),
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/api/v1/gates/sandbox/tier2/tdd-verify",
+    response_model=Tier2TddVerifyResponse,
+    summary="Execute a closed-loop TDD `Red -> Green` check in Tier 2 Sandbox (`Story 4.1a`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def verify_tier2_tdd_endpoint(
+    payload: Tier2TddVerifyRequest,
+    request: Request,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> Tier2TddVerifyResponse:
+    user = resolve_request_user(request, persona_key=persona_key)
+    bootstrap_svc = get_bootstrap_service(request)
+    bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
+        user, payload.workspace_id, instance=str(request.url.path)
+    )
+    res = bootstrap_svc.gate_service.verify_tdd_red_green(
+        TddRemediationCheckInput(
+            workspace_id=payload.workspace_id,
+            run_id=payload.run_id,
+            step_key=payload.step_key,
+            buggy_files=dict(payload.buggy_files),
+            patched_files=dict(payload.patched_files),
+            test_files=dict(payload.test_files),
+            tools=tuple(payload.tools),
+            cas_readonly_dir=payload.cas_readonly_dir,
+            timeout_ms=payload.timeout_ms,
+            max_memory_mb=payload.max_memory_mb,
+        ),
+        raise_on_failure=payload.raise_on_failure,
+    )
+    return Tier2TddVerifyResponse(
+        passed=res.passed,
+        red_reproduced=res.red_reproduced,
+        red_exit_code=res.red_exit_code,
+        red_stdout=res.red_stdout,
+        green_verified=res.green_verified,
+        green_tool_runs=list(res.green_tool_runs),
+        container_cli_args=list(res.container_cli_args),
+        duration_ms=res.duration_ms,
+        trace_id=_trace(request),
+    )
+
+
+@router.get(
+    "/api/v1/gates/sandbox/deployment-roles",
+    response_model=DeploymentRolesListResponse,
+    summary="List the 5 operational deployment roles isolating Docling (`Story 4.1a`, `M9`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def list_deployment_roles_endpoint(
+    request: Request,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> DeploymentRolesListResponse:
+    resolve_request_user(request, persona_key=persona_key)
+    roles = list_deployment_role_specs()
+    return DeploymentRolesListResponse(
+        roles=[
+            DeploymentRoleSchemaItem(
+                role=r.role,
+                description=r.description,
+                entrypoint_command=list(r.entrypoint_command),
+                required_extras=list(r.required_extras),
+                loads_docling=r.loads_docling,
+                forbidden_modules_in_process=list(r.forbidden_modules_in_process),
+                supported_sandbox_tiers=list(r.supported_sandbox_tiers),
+            )
+            for r in roles
+        ],
         trace_id=_trace(request),
     )

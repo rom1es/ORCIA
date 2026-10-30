@@ -1409,6 +1409,88 @@
         "title": "DbDdlIndexRequest",
         "type": "object"
       },
+      "DeploymentRoleSchemaItem": {
+        "additionalProperties": false,
+        "description": "Serialized `DeploymentRoleSpec` (`Story 4.1a`, `M9`, `AD-19`).",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "entrypoint_command": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Entrypoint Command",
+            "type": "array"
+          },
+          "forbidden_modules_in_process": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Forbidden Modules In Process",
+            "type": "array"
+          },
+          "loads_docling": {
+            "title": "Loads Docling",
+            "type": "boolean"
+          },
+          "required_extras": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Extras",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "supported_sandbox_tiers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supported Sandbox Tiers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "role",
+          "description",
+          "entrypoint_command",
+          "required_extras",
+          "loads_docling",
+          "forbidden_modules_in_process",
+          "supported_sandbox_tiers"
+        ],
+        "title": "DeploymentRoleSchemaItem",
+        "type": "object"
+      },
+      "DeploymentRolesListResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/gates/sandbox/deployment-roles` (`Story 4.1a`).",
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/DeploymentRoleSchemaItem"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "roles",
+          "trace_id"
+        ],
+        "title": "DeploymentRolesListResponse",
+        "type": "object"
+      },
       "DeterministicGateEvaluateRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/gates/deterministic/evaluate` (`AD-9`, `FR-17`).",
@@ -6432,6 +6514,160 @@
         "title": "SystemBootstrapWorkflowItem",
         "type": "object"
       },
+      "Tier2TddVerifyRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/gates/sandbox/tier2/tdd-verify` (`Story 4.1a`, `UJ-12`).",
+        "properties": {
+          "buggy_files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Buggy Files",
+            "type": "object"
+          },
+          "cas_readonly_dir": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas Readonly Dir"
+          },
+          "max_memory_mb": {
+            "default": 1024,
+            "maximum": 1024.0,
+            "minimum": 64.0,
+            "title": "Max Memory Mb",
+            "type": "integer"
+          },
+          "patched_files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Patched Files",
+            "type": "object"
+          },
+          "raise_on_failure": {
+            "default": false,
+            "title": "Raise On Failure",
+            "type": "boolean"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Key",
+            "type": "string"
+          },
+          "test_files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Test Files",
+            "type": "object"
+          },
+          "timeout_ms": {
+            "default": 60000,
+            "maximum": 60000.0,
+            "minimum": 100.0,
+            "title": "Timeout Ms",
+            "type": "integer"
+          },
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "run_id",
+          "step_key"
+        ],
+        "title": "Tier2TddVerifyRequest",
+        "type": "object"
+      },
+      "Tier2TddVerifyResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/gates/sandbox/tier2/tdd-verify` (`Story 4.1a`).",
+        "properties": {
+          "container_cli_args": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Container Cli Args",
+            "type": "array"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "green_tool_runs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Green Tool Runs",
+            "type": "array"
+          },
+          "green_verified": {
+            "title": "Green Verified",
+            "type": "boolean"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "red_exit_code": {
+            "title": "Red Exit Code",
+            "type": "integer"
+          },
+          "red_reproduced": {
+            "title": "Red Reproduced",
+            "type": "boolean"
+          },
+          "red_stdout": {
+            "title": "Red Stdout",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "passed",
+          "red_reproduced",
+          "red_exit_code",
+          "red_stdout",
+          "green_verified",
+          "green_tool_runs",
+          "container_cli_args",
+          "duration_ms",
+          "trace_id"
+        ],
+        "title": "Tier2TddVerifyResponse",
+        "type": "object"
+      },
       "TripartiteTraceEdgeSchemaItem": {
         "additionalProperties": false,
         "properties": {
@@ -10969,6 +11205,186 @@
           }
         },
         "summary": "List Deterministic, Agentic & Human Gate evaluations (`AD-9..11`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/sandbox/deployment-roles": {
+      "get": {
+        "operationId": "list_deployment_roles_endpoint_api_v1_gates_sandbox_deployment_roles_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentRolesListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List the 5 operational deployment roles isolating Docling (`Story 4.1a`, `M9`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/sandbox/tier2/tdd-verify": {
+      "post": {
+        "operationId": "verify_tier2_tdd_endpoint_api_v1_gates_sandbox_tier2_tdd_verify_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Tier2TddVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tier2TddVerifyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute a closed-loop TDD `Red -> Green` check in Tier 2 Sandbox (`Story 4.1a`)",
         "tags": [
           "gates"
         ]

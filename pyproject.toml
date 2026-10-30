@@ -158,6 +158,20 @@ forbidden_modules = [
     "orcia_pack_sdlc",
 ]
 
+[[tool.importlinter.contracts]]
+name = "AD-19 Contract 5: API and Orchestration never import docling (Story 4.1a)"
+type = "forbidden"
+source_modules = [
+    "orcia_api",
+    "orcia_core.orchestration",
+    "orcia_worker.dbos_workflow_runner",
+    "orcia_worker.outbox_relay",
+]
+forbidden_modules = [
+    "docling",
+    "orcia_worker.docling_indexer",
+]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100

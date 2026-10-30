@@ -14,5 +14,11 @@ dependencies = [
     "redis>=5.2.0",
 ]
 
+[project.optional-dependencies]
+indexing = [
+    "docling>=2.91.0",
+    "tree-sitter>=0.24.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]

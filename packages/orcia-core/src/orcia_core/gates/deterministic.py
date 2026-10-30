@@ -19,6 +19,12 @@ from orcia_core.gates.models import (
     WorkspaceSpineBaseline,
 )
 from orcia_core.gates.sandbox import SubprocessTier1SandboxAdapter, classify_sandbox_failure
+from orcia_core.gates.tier2_sandbox import (
+    BimodalSandboxAdapter,
+    ContainerSandboxRunner,
+    TddRemediationCheckInput,
+    TddRemediationCheckResult,
+)
 from orcia_kernel.events import GateEvaluated
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import (
@@ -33,7 +39,10 @@ def _run_sandbox_sync(
     sandbox_port: SandboxPort, request: SandboxExecutionRequest
 ) -> SandboxExecutionResult:
     """Invoke `sandbox_port.execute(request)` safely from sync or async contexts."""
-    if isinstance(sandbox_port, SubprocessTier1SandboxAdapter):
+    if isinstance(
+        sandbox_port,
+        (SubprocessTier1SandboxAdapter, ContainerSandboxRunner, BimodalSandboxAdapter),
+    ):
         return sandbox_port.execute_sync(request)
     try:
         asyncio.get_running_loop()
@@ -44,7 +53,7 @@ def _run_sandbox_sync(
 
 
 class DeterministicGateService:
-    """Evaluates Deterministic Gates in the out-of-process Tier 1 Sandbox (`AD-9`, `FR-17`)."""
+    """Evaluates Deterministic Gates across Tier 1 WASM & Tier 2 Container Sandboxes (`AD-9`)."""
 
     def __init__(
         self,
@@ -52,7 +61,12 @@ class DeterministicGateService:
         sandbox_port: SandboxPort | None = None,
         outbox_relay: OutboxRelayPort | None = None,
     ) -> None:
-        self.sandbox_port: SandboxPort = sandbox_port or SubprocessTier1SandboxAdapter()
+        self.sandbox_port: SandboxPort = sandbox_port or BimodalSandboxAdapter()
+        self.tier2_runner: ContainerSandboxRunner = (
+            sandbox_port.tier2_runner
+            if isinstance(sandbox_port, BimodalSandboxAdapter)
+            else ContainerSandboxRunner()
+        )
         self._outbox_relay = outbox_relay
         self._evaluations: dict[str, GateEvaluationEntity] = {}
         self._outbox_events: list[GateEvaluated] = []
@@ -223,3 +237,47 @@ class DeterministicGateService:
             raise classify_sandbox_failure(res)
 
         return entity
+
+    def verify_tdd_red_green(
+        self,
+        check_input: TddRemediationCheckInput,
+        *,
+        raise_on_failure: bool = False,
+    ) -> TddRemediationCheckResult:
+        """Execute a closed-loop TDD `Red -> Green` verification in the Tier 2 Sandbox (`UJ-12`)."""
+        result = self.tier2_runner.verify_tdd_red_green(
+            check_input, raise_on_failure=raise_on_failure
+        )
+        eval_id = new_uuid7_str()
+        outbox_evt = GateEvaluated.create(
+            gate_evaluation_id=eval_id,
+            run_id=check_input.run_id,
+            workspace_id=check_input.workspace_id,
+            gate_type="DETERMINISTIC",
+            passed=result.passed,
+            score=1.0 if result.passed else 0.0,
+        )
+        self._outbox_events.append(outbox_evt)
+        if self._outbox_relay is not None:
+            self._outbox_relay.enqueue_in_transaction(outbox_evt)
+        entity = GateEvaluationEntity(
+            id=eval_id,
+            workspace_id=check_input.workspace_id,
+            run_id=check_input.run_id,
+            step_execution_id=check_input.step_key,
+            step_key=check_input.step_key,
+            gate_type="DETERMINISTIC",
+            sandbox_tier="TIER_2_CONTAINER",
+            status="PASS" if result.passed else "FAIL",
+            score=1.0 if result.passed else 0.0,
+            schema_validation_passed=result.passed,
+            ontology_axioms_passed=True,
+            pattern_drift_passed=True,
+            duration_ms=result.duration_ms,
+            outbox_event_id=outbox_evt.event_id,
+            evaluated_at=datetime.now(UTC).isoformat(),
+            sandbox_exit_code=result.sandbox_exit_code,
+            sandbox_stderr=result.sandbox_stderr,
+        )
+        self._evaluations[entity.id] = entity
+        return result

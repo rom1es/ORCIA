@@ -233,6 +233,19 @@ export interface components {
       schema_version: string;
       workspace_id: string;
     };
+    DeploymentRoleSchemaItem: {
+      description: string;
+      entrypoint_command: (string)[];
+      forbidden_modules_in_process: (string)[];
+      loads_docling: boolean;
+      required_extras: (string)[];
+      role: string;
+      supported_sandbox_tiers: (string)[];
+    };
+    DeploymentRolesListResponse: {
+      roles: (components["schemas"]["DeploymentRoleSchemaItem"])[];
+      trace_id: string;
+    };
     DeterministicGateEvaluateRequest: {
       allowed_dependencies?: (string)[] | null;
       artifact_payload?: Record<string, unknown>;
@@ -999,6 +1012,30 @@ export interface components {
       title: string;
       uri: string;
     };
+    Tier2TddVerifyRequest: {
+      buggy_files?: Record<string, string>;
+      cas_readonly_dir?: string | null;
+      max_memory_mb?: number;
+      patched_files?: Record<string, string>;
+      raise_on_failure?: boolean;
+      run_id: string;
+      step_key: string;
+      test_files?: Record<string, string>;
+      timeout_ms?: number;
+      tools?: (string)[];
+      workspace_id: string;
+    };
+    Tier2TddVerifyResponse: {
+      container_cli_args: (string)[];
+      duration_ms: number;
+      green_tool_runs: (Record<string, unknown>)[];
+      green_verified: boolean;
+      passed: boolean;
+      red_exit_code: number;
+      red_reproduced: boolean;
+      red_stdout: string;
+      trace_id: string;
+    };
     TripartiteTraceEdgeSchemaItem: {
       edge_key: string;
       id: string;
@@ -1482,6 +1519,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/gates/sandbox/deployment-roles": {
+    get: {
+      responses: {
+        200: components["schemas"]["DeploymentRolesListResponse"];
+      };
+    };
+  };
+  "/api/v1/gates/sandbox/tier2/tdd-verify": {
+    post: {
+      responses: {
+        200: components["schemas"]["Tier2TddVerifyResponse"];
+      };
+    };
+  };
   "/api/v1/health": {
     get: {
       responses: {
@@ -1737,6 +1788,8 @@ export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolve
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
+export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSchemaItem"];
+export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
 export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
@@ -1828,6 +1881,8 @@ export type SubWorkflowLockSchemaItem = components["schemas"]["SubWorkflowLockSc
 export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
+export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
+export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
 export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];

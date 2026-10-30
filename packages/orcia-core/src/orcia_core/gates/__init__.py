@@ -29,6 +29,15 @@ from orcia_core.gates.sandbox import (
     SubprocessTier1SandboxAdapter,
     classify_sandbox_failure,
 )
+from orcia_core.gates.tier2_sandbox import (
+    BimodalSandboxAdapter,
+    ContainerRuntimeType,
+    ContainerSandboxRunner,
+    ContainerSandboxSpec,
+    TddRemediationCheckInput,
+    TddRemediationCheckResult,
+    build_tier2_container_cli_args,
+)
 
 DOMAIN_NAME: str = "gates"
 
@@ -36,6 +45,10 @@ __all__ = [
     "CANONICAL_FORBIDDEN_DRIFT_PATTERNS",
     "CANONICAL_SPINE_ALLOWED_DEPENDENCIES",
     "DOMAIN_NAME",
+    "BimodalSandboxAdapter",
+    "ContainerRuntimeType",
+    "ContainerSandboxRunner",
+    "ContainerSandboxSpec",
     "DeterministicGateFailedError",
     "DeterministicGateInput",
     "DeterministicGateService",
@@ -51,8 +64,11 @@ __all__ = [
     "PolicyDeniedError",
     "SandboxTierLiteral",
     "SubprocessTier1SandboxAdapter",
+    "TddRemediationCheckInput",
+    "TddRemediationCheckResult",
     "UpstreamTimeoutError",
     "ValidationDomainError",
     "WorkspaceSpineBaseline",
+    "build_tier2_container_cli_args",
     "classify_sandbox_failure",
 ]

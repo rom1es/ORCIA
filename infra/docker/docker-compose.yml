@@ -59,6 +59,83 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    image: orcia-backend:latest
+    container_name: orcia-api
+    profiles: ["app-roles"]
+    env_file:
+      - ../../.env
+    environment:
+      ORCIA_DEPLOYMENT_ROLE: "api"
+      ORCIA_DOCLING_ENABLED: "false"
+    command: ["uvicorn", "orcia_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - postgres
+      - redis
+      - seaweedfs
+
+  worker-orchestration:
+    image: orcia-backend:latest
+    container_name: orcia-worker-orchestration
+    profiles: ["app-roles"]
+    env_file:
+      - ../../.env
+    environment:
+      ORCIA_DEPLOYMENT_ROLE: "worker-orchestration"
+      ORCIA_DOCLING_ENABLED: "false"
+    command: ["python", "-m", "orcia_worker.roles", "--role", "worker-orchestration"]
+    depends_on:
+      - postgres
+      - redis
+      - seaweedfs
+
+  worker-indexing:
+    image: orcia-backend:latest
+    container_name: orcia-worker-indexing
+    profiles: ["app-roles"]
+    env_file:
+      - ../../.env
+    environment:
+      ORCIA_DEPLOYMENT_ROLE: "worker-indexing"
+      ORCIA_DOCLING_ENABLED: "true"
+      ORCIA_WORKER_EXTRA: "orcia-worker[indexing]"
+    command: ["dramatiq", "orcia_worker.docling_indexer", "--queues", "indexing"]
+    depends_on:
+      - postgres
+      - redis
+      - seaweedfs
+
+  trigger-dispatcher:
+    image: orcia-backend:latest
+    container_name: orcia-trigger-dispatcher
+    profiles: ["app-roles"]
+    env_file:
+      - ../../.env
+    environment:
+      ORCIA_DEPLOYMENT_ROLE: "trigger-dispatcher"
+      ORCIA_DOCLING_ENABLED: "false"
+    command: ["python", "-m", "orcia_worker.roles", "--role", "trigger-dispatcher"]
+    depends_on:
+      - postgres
+      - redis
+
+  sandbox-runner:
+    image: orcia-backend:latest
+    container_name: orcia-sandbox-runner
+    profiles: ["app-roles"]
+    env_file:
+      - ../../.env
+    environment:
+      ORCIA_DEPLOYMENT_ROLE: "sandbox-runner"
+      ORCIA_DOCLING_ENABLED: "false"
+      ORCIA_SANDBOX_TIERS: "TIER_1_WASM,TIER_2_CONTAINER"
+    command: ["python", "-m", "orcia_worker.roles", "--role", "sandbox-runner"]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+
 volumes:
   orcia_pg_data:
   orcia_redis_data:

@@ -175,3 +175,60 @@ class InitSkillResponse(BaseModel):
     catalog_item: CatalogItemResponse
     gate_evaluation: GateEvaluationSchemaItem
     trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class Tier2TddVerifyRequest(BaseModel):
+    """Request payload for `POST /api/v1/gates/sandbox/tier2/tdd-verify` (`Story 4.1a`, `UJ-12`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    workspace_id: str = Field(..., min_length=1, max_length=128)
+    run_id: str = Field(..., min_length=1, max_length=128)
+    step_key: str = Field(..., min_length=1, max_length=128)
+    buggy_files: dict[str, str] = Field(default_factory=dict)
+    patched_files: dict[str, str] = Field(default_factory=dict)
+    test_files: dict[str, str] = Field(default_factory=dict)
+    tools: list[str] = Field(default_factory=lambda: ["pytest", "ruff"])
+    cas_readonly_dir: str | None = Field(default=None, max_length=512)
+    timeout_ms: int = Field(default=60000, ge=100, le=60000)
+    max_memory_mb: int = Field(default=1024, ge=64, le=1024)
+    raise_on_failure: bool = Field(default=False)
+
+
+class Tier2TddVerifyResponse(BaseModel):
+    """Response for `POST /api/v1/gates/sandbox/tier2/tdd-verify` (`Story 4.1a`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    passed: bool
+    red_reproduced: bool
+    red_exit_code: int
+    red_stdout: str
+    green_verified: bool
+    green_tool_runs: list[dict[str, Any]]
+    container_cli_args: list[str]
+    duration_ms: int
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class DeploymentRoleSchemaItem(BaseModel):
+    """Serialized `DeploymentRoleSpec` (`Story 4.1a`, `M9`, `AD-19`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    role: str
+    description: str
+    entrypoint_command: list[str]
+    required_extras: list[str]
+    loads_docling: bool
+    forbidden_modules_in_process: list[str]
+    supported_sandbox_tiers: list[str]
+
+
+class DeploymentRolesListResponse(BaseModel):
+    """Response for `GET /api/v1/gates/sandbox/deployment-roles` (`Story 4.1a`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    roles: list[DeploymentRoleSchemaItem]
+    trace_id: str = Field(..., min_length=32, max_length=32)
