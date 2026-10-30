@@ -180,15 +180,18 @@ class SandboxPort(Protocol):
 
 
 from orcia_kernel.connector_ports import (  # noqa: E402
+    AccessRequestChannelPort,
     ConnectorCapabilities,
     ConnectorFetchResult,
     ConnectorHealthState,
     ConnectorHealthStatus,
     ConnectorInvokeResult,
     ConnectorPort,
+    get_access_request_channel,
     get_registered_connector,
     is_registered_connector_scheme,
     list_registered_connector_schemes,
+    register_access_request_channel,
     register_connector,
     unregister_connector,
 )
@@ -322,6 +325,7 @@ from orcia_kernel.context_ports import (  # noqa: E402
 )
 
 __all__ = [
+    "AccessRequestChannelPort",
     "AssistantWorkflowBlueprint",
     "AssistantWorkflowTemplatePort",
     "BlackboardPort",
@@ -358,6 +362,7 @@ __all__ = [
     "WorkspaceEnvelopeKeyRecord",
     "assert_model_orthogonality",
     "compute_prompt_sha256",
+    "get_access_request_channel",
     "get_registered_connector",
     "get_registered_indexer_regime",
     "get_registered_step_executor",
@@ -366,6 +371,7 @@ __all__ = [
     "list_registered_connector_schemes",
     "list_registered_indexer_regimes",
     "list_registered_step_executor_types",
+    "register_access_request_channel",
     "register_assistant_template",
     "register_connector",
     "register_indexer_regime",

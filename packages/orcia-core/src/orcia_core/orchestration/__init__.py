@@ -57,6 +57,13 @@ from orcia_core.orchestration.human_anchors_and_arbitration import (
     HumanArbitrationStatus,
     validate_human_anchor_submission,
 )
+from orcia_core.orchestration.mcp_server import (
+    GOVERNED_MCP_TOOLS,
+    GovernedMcpServerService,
+    McpToolCallResult,
+    McpToolDescriptor,
+    McpToolName,
+)
 from orcia_core.orchestration.models import (
     MAX_SUB_WORKFLOW_NESTING_DEPTH,
     ArtifactTemplateDefinition,
@@ -114,6 +121,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "ASSISTANT_WORKFLOW_URI",
+    "GOVERNED_MCP_TOOLS",
     "MIN_HUMAN_ANCHOR_CHARS",
     "AgentStepExecutor",
     "ArbitrationOptionItem",
@@ -142,6 +150,7 @@ __all__ = [
     "DEFAULT_ROOT_WORKFLOW_YAML",
     "DOMAIN_NAME",
     "DurableOrchestrationEngine",
+    "GovernedMcpServerService",
     "HttpActionStepExecutor",
     "HumanAnchorAndArbitrationService",
     "HumanAnchorSignatureEntity",
@@ -150,6 +159,9 @@ __all__ = [
     "HumanTaskStepExecutor",
     "JitStepHydrator",
     "MAX_SUB_WORKFLOW_NESTING_DEPTH",
+    "McpToolCallResult",
+    "McpToolDescriptor",
+    "McpToolName",
     "MemlogMarkerPluginProtocol",
     "MultiAudienceTemplateCompiler",
     "PROFILE_ADAPTATION_MAP",

@@ -65,12 +65,12 @@ development_status:
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
   epic-3-retrospective: optional
 
-  epic-4: in-progress
+  epic-4: done
   4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: done
   4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: done
   4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: done
   4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: done
-  4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: backlog
+  4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: done
   epic-4-retrospective: optional
 
   epic-5: backlog
@@ -469,7 +469,7 @@ action_items:
     ad_ref: "AD-6, AD-20"
     story_ref: "4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a"
     owner: "Winston (Architect)"
-    status: open
+    status: done
     epic: epic-4
     description: >
       Fuite L10, risque K6 / plan P1-2 de l'audit : canal de demande d'accès couplé à Jira dans le Core (permissions/broker.py:L202-209, migration 0004:L72).

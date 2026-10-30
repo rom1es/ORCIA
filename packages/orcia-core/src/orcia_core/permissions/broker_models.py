@@ -12,7 +12,12 @@ from urllib.parse import quote
 from orcia_core.permissions.errors import ValidationDomainError
 from orcia_core.permissions.models import ExecutionIdentityMode
 from orcia_kernel.ids import new_uuid7_str
-from orcia_kernel.ports import is_registered_connector_scheme, list_registered_connector_schemes
+from orcia_kernel.ports import (
+    AccessRequestChannelPort,
+    get_access_request_channel,
+    is_registered_connector_scheme,
+    list_registered_connector_schemes,
+)
 
 # Dynamic connector scheme backed by `list_registered_connector_schemes()` (`AD-20`, `AC-E3`)
 BrokerConnectorScheme = str
@@ -88,7 +93,7 @@ class PermissionBrokerPolicy:
 
 @dataclass(frozen=True, slots=True)
 class PermissionBrokerTicket:
-    """Blocked step ticket tracked by the Permission Broker (`UX-DR11`, `FR-22`)."""
+    """Blocked step ticket tracked by the Permission Broker (`UX-DR11`, `FR-22`, `DEC-ACC-01`)."""
 
     id: str
     ticket_key: str
@@ -109,6 +114,13 @@ class PermissionBrokerTicket:
     jira_request_url: str
     permission_broker_hint: str
     procedure_markdown: str = ""
+    request_url: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.request_url and self.jira_request_url:
+            object.__setattr__(self, "request_url", self.jira_request_url)
+        elif not self.jira_request_url and self.request_url:
+            object.__setattr__(self, "jira_request_url", self.request_url)
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,6 +234,71 @@ def parse_permission_kb_markdown(
     )
 
 
+class DefaultAccessRequestChannel(AccessRequestChannelPort):
+    """Generic fallback `AccessRequestChannelPort` when no vertical pack overrides it."""
+
+    @property
+    def channel_name(self) -> str:
+        return "default"
+
+    def build_access_request_url(
+        self,
+        template: str,
+        *,
+        target_uri: str,
+        required_role: str,
+        approver_team: str,
+        requester_email: str,
+        step_key: str,
+        execution_identity: str,
+    ) -> str:
+        summary_raw = f"[ORCIA Permission Broker] {required_role} sur {target_uri}"
+        desc_raw = (
+            f"Demande d'accès ({execution_identity}) pour l'étape {step_key} "
+            f"par {requester_email} — Approbateur: {approver_team}"
+        )
+        tokens = {
+            "{summary}": quote(summary_raw, safe=""),
+            "{description}": quote(desc_raw, safe=""),
+            "{target_uri}": quote(target_uri, safe=""),
+            "{required_role}": quote(required_role, safe=""),
+            "{approver_team}": quote(approver_team, safe=""),
+            "{requester_email}": quote(requester_email, safe=""),
+            "{step_key}": quote(step_key, safe=""),
+        }
+        rendered, replaced_any = template, False
+        for placeholder, encoded_val in tokens.items():
+            if placeholder in rendered:
+                rendered, replaced_any = rendered.replace(placeholder, encoded_val), True
+        if not replaced_any:
+            sep = "&" if "?" in rendered else "?"
+            rendered = (
+                f"{rendered}{sep}summary={tokens['{summary}']}"
+                f"&description={tokens['{description}']}"
+            )
+        return rendered
+
+    def build_access_request_hint(
+        self,
+        *,
+        target_uri: str,
+        required_role: str,
+        approver_team: str,
+        sla_hours: int,
+    ) -> str:
+        req_q, uri_q = quote(required_role, safe=""), quote(target_uri, safe="")
+        app_q = quote(approver_team, safe="")
+        return f"orcia://iam/{req_q}?target={uri_q}&approver={app_q}&sla_hours={sla_hours}"
+
+
+_DEFAULT_ACCESS_CHANNEL = DefaultAccessRequestChannel()
+
+
+def resolve_active_access_request_channel() -> AccessRequestChannelPort:
+    """Return the registered `AccessRequestChannelPort` or the generic fallback (`DEC-ACC-01`)."""
+    return get_access_request_channel() or _DEFAULT_ACCESS_CHANNEL
+
+
 def build_prefilled_jira_request_url(
     template: str,
     *,
@@ -232,31 +309,16 @@ def build_prefilled_jira_request_url(
     step_key: str,
     execution_identity: str,
 ) -> str:
-    """Build URL-encoded pre-filled Atlassian Jira access request link (`UX-DR11`, `FR-22`)."""
-    summary_raw = f"[ORCIA Permission Broker] {required_role} sur {target_uri}"
-    desc_raw = (
-        f"Demande d'accès ({execution_identity}) pour l'étape {step_key} "
-        f"par {requester_email} — Approbateur: {approver_team}"
+    """Build URL-encoded pre-filled access request link via `AccessRequestChannelPort`."""
+    return resolve_active_access_request_channel().build_access_request_url(
+        template,
+        target_uri=target_uri,
+        required_role=required_role,
+        approver_team=approver_team,
+        requester_email=requester_email,
+        step_key=step_key,
+        execution_identity=execution_identity,
     )
-    tokens = {
-        "{summary}": quote(summary_raw, safe=""),
-        "{description}": quote(desc_raw, safe=""),
-        "{target_uri}": quote(target_uri, safe=""),
-        "{required_role}": quote(required_role, safe=""),
-        "{approver_team}": quote(approver_team, safe=""),
-        "{requester_email}": quote(requester_email, safe=""),
-        "{step_key}": quote(step_key, safe=""),
-    }
-    rendered, replaced_any = template, False
-    for placeholder, encoded_val in tokens.items():
-        if placeholder in rendered:
-            rendered, replaced_any = rendered.replace(placeholder, encoded_val), True
-    if not replaced_any:
-        sep = "&" if "?" in rendered else "?"
-        rendered = (
-            f"{rendered}{sep}summary={tokens['{summary}']}&description={tokens['{description}']}"
-        )
-    return rendered
 
 
 build_jira_request_url = build_prefilled_jira_request_url

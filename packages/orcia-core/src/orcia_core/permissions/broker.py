@@ -8,7 +8,6 @@ from __future__ import annotations
 import fnmatch
 from dataclasses import asdict, replace
 from typing import Literal
-from urllib.parse import quote
 
 from orcia_core.permissions.broker_models import (
     BrokerConnectorScheme,
@@ -25,6 +24,7 @@ from orcia_core.permissions.broker_models import (
     get_allowed_broker_schemes,
     parse_permission_kb_markdown,
     reject_control_chars,
+    resolve_active_access_request_channel,
 )
 from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_core.permissions.errors import (
@@ -46,10 +46,11 @@ from orcia_core.permissions.seeds import (
     DEFAULT_PERMISSION_BROKER_TICKET_SEEDS,
 )
 from orcia_kernel.ids import new_uuid7_str
+from orcia_kernel.ports import AccessRequestChannelPort
 
 
 class PermissionBrokerService:
-    """Domain service enforcing `passthrough` default and brokering `401/403` denials via Jira."""
+    """Domain service enforcing `passthrough` default and brokering `401/403` denials."""
 
     def __init__(
         self, *, policies: tuple[PermissionBrokerPolicy, ...],
@@ -57,10 +58,12 @@ class PermissionBrokerService:
         evaluator: MatrixPermissionEvaluator | None = None,
         passthrough_credentials: tuple[PassthroughCredentialRecord, ...] = (),
         vault_cipher: PassthroughVaultCipher | None = None,
+        access_channel: AccessRequestChannelPort | None = None,
     ) -> None:  # fmt: skip
         self._policies: dict[str, PermissionBrokerPolicy] = {p.policy_key: p for p in policies}
         self._tickets: dict[str, PermissionBrokerTicket] = {t.id: t for t in tickets}
         self._evaluator, self._vault_cipher = evaluator, vault_cipher
+        self._access_channel = access_channel
         self._passthrough_credentials: dict[tuple[str, str, str], PassthroughCredentialRecord] = {
             (c.user_id, c.connector_scheme.lower(), c.target_host.lower()): c
             for c in passthrough_credentials
@@ -199,21 +202,25 @@ class PermissionBrokerService:
                 True, "GRANTED", execution_identity, cleaned_uri, policy.connector_scheme, policy
             )
 
-        jira_url = build_prefilled_jira_request_url(
+        channel = self._access_channel or resolve_active_access_request_channel()
+        req_url = channel.build_access_request_url(
             policy.request_url_template, target_uri=cleaned_uri, required_role=policy.required_role,
             approver_team=policy.approver_team, requester_email=user.email, step_key=clean_step,
             execution_identity=execution_identity,
         )  # fmt: skip
-        req_q, uri_q = quote(policy.required_role, safe=""), quote(cleaned_uri, safe="")
-        app_q = quote(policy.approver_team, safe="")
-        hint = f"jira://IAM/{req_q}?target={uri_q}&approver={app_q}&sla_hours={policy.sla_hours}"
+        hint = channel.build_access_request_hint(
+            target_uri=cleaned_uri,
+            required_role=policy.required_role,
+            approver_team=policy.approver_team,
+            sla_hours=policy.sla_hours,
+        )
         ticket_id = new_uuid7_str()
         ticket = PermissionBrokerTicket(
             ticket_id, f"tkt-{clean_step}-{ticket_id[-6:]}", workspace_id, user.id, policy.id,
             clean_step, step_number, "PERMISSION_DENIED_STEP", "WAITING_FOR_PERMISSION",
             cleaned_uri, policy.connector_scheme, execution_identity, denied_status,
-            policy.required_role, policy.approver_team, policy.sla_hours, jira_url, hint,
-            policy.procedure_markdown,
+            policy.required_role, policy.approver_team, policy.sla_hours, req_url, hint,
+            policy.procedure_markdown, req_url,
         )  # fmt: skip
         self._tickets[ticket.id] = ticket
         if raise_on_denied:

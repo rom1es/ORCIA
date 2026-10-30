@@ -147,6 +147,13 @@ class PermissionBrokerTicketSeed:
     jira_request_url: str
     permission_broker_hint: str
     procedure_markdown: str = ""
+    request_url: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.request_url and self.jira_request_url:
+            object.__setattr__(self, "request_url", self.jira_request_url)
+        elif not self.jira_request_url and self.request_url:
+            object.__setattr__(self, "jira_request_url", self.request_url)
 
 
 DEFAULT_PERMISSION_BROKER_POLICY_SEEDS: tuple[PermissionBrokerPolicySeed, ...] = (

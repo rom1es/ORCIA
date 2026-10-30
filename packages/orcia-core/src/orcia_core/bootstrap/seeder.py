@@ -150,7 +150,7 @@ PERMISSION_BROKER_POLICIES_UPSERT_SPEC = UpsertSpec(
 )  # fmt: skip
 PERMISSION_BROKER_TICKETS_UPSERT_SPEC = UpsertSpec(
     "permission_broker_tickets", ("ticket_key",),
-    ("id", "workspace_id", "requester_user_id", "policy_id", "step_key", "step_number", "step_state", "status", "target_uri", "connector_scheme", "execution_identity", "upstream_http_status", "required_role", "approver_team", "sla_hours", "jira_request_url", "permission_broker_hint", "procedure_markdown"),  # noqa: E501
+    ("id", "workspace_id", "requester_user_id", "policy_id", "step_key", "step_number", "step_state", "status", "target_uri", "connector_scheme", "execution_identity", "upstream_http_status", "required_role", "approver_team", "sla_hours", "request_url", "permission_broker_hint", "procedure_markdown"),  # noqa: E501
 )  # fmt: skip
 LLM_MODEL_ENDPOINTS_UPSERT_SPEC = UpsertSpec(
     "llm_model_endpoints", ("endpoint_key",),

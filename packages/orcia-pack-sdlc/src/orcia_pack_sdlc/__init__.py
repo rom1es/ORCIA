@@ -24,6 +24,14 @@ from orcia_pack_sdlc.formats_and_indexers import (
     get_jira_hybrid_indexer,
     get_tripartite_graph_indexer,
 )
+from orcia_pack_sdlc.jira_actions import (
+    JiraAccessRequestChannelAdapter,
+    JiraTransitionSpec,
+    JiraWebhookReplayNotification,
+    MultiProjectJiraStagedActionService,
+    StagedJiraActionItem,
+    register_jira_access_request_channel,
+)
 from orcia_pack_sdlc.markers import (
     SDLC_BUG_CODE_MARKER,
     SDLC_DOC_OBSOLETE_MARKER,
@@ -41,6 +49,7 @@ __version__: str = "0.1.0"
 def activate_sdlc_pack() -> None:
     """Idempotently register all SDLC connectors, policies, markers, indexers & templates."""
     register_all_sdlc_connectors()
+    register_jira_access_request_channel()
     create_sdlc_fr13_policy_plugin()
     create_sdlc_memlog_marker_plugin()
     get_git_code_ast_indexer()
@@ -53,12 +62,17 @@ def activate_sdlc_pack() -> None:
 activate_sdlc_pack()
 
 __all__ = [
+    "JiraAccessRequestChannelAdapter",
+    "JiraTransitionSpec",
+    "JiraWebhookReplayNotification",
+    "MultiProjectJiraStagedActionService",
     "SDLC_BUG_CODE_MARKER",
     "SDLC_DOC_OBSOLETE_MARKER",
     "SdlcConnectorAdapter",
     "SdlcDocVsCodeAuditAssistantTemplate",
     "SdlcFr13WorkflowPolicyPlugin",
     "SdlcMemlogMarkerPlugin",
+    "StagedJiraActionItem",
     "__version__",
     "activate_sdlc_pack",
     "create_confluence_connector",
@@ -73,4 +87,5 @@ __all__ = [
     "get_jira_hybrid_indexer",
     "get_tripartite_graph_indexer",
     "register_all_sdlc_connectors",
+    "register_jira_access_request_channel",
 ]

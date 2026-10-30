@@ -151,16 +151,72 @@ def is_registered_connector_scheme(scheme: str) -> bool:
     return scheme.strip().lower() in list_registered_connector_schemes()
 
 
+@runtime_checkable
+class AccessRequestChannelPort(Protocol):
+    """Port abstracting access request URL & hint generation (`DEC-ACC-01`, `AD-20`)."""
+
+    @property
+    def channel_name(self) -> str:
+        """Return canonical channel identifier (e.g. `itsm`, `default`)."""
+        ...
+
+    def build_access_request_url(
+        self,
+        template: str,
+        *,
+        target_uri: str,
+        required_role: str,
+        approver_team: str,
+        requester_email: str,
+        step_key: str,
+        execution_identity: str,
+    ) -> str:
+        """Render a URL-encoded pre-filled access request URL from `template`."""
+        ...
+
+    def build_access_request_hint(
+        self,
+        *,
+        target_uri: str,
+        required_role: str,
+        approver_team: str,
+        sla_hours: int,
+    ) -> str:
+        """Render a deterministic RFC 9457 `permission_broker_hint` URI."""
+        ...
+
+
+_ACCESS_CHANNEL_LOCK = threading.Lock()
+_ACCESS_REQUEST_CHANNEL: AccessRequestChannelPort | None = None
+
+
+def register_access_request_channel(channel: AccessRequestChannelPort) -> None:
+    """Register the active `AccessRequestChannelPort` adapter (`DEC-ACC-01`)."""
+    global _ACCESS_REQUEST_CHANNEL
+    with _ACCESS_CHANNEL_LOCK:
+        _ACCESS_REQUEST_CHANNEL = channel
+
+
+def get_access_request_channel() -> AccessRequestChannelPort | None:
+    """Return the currently registered `AccessRequestChannelPort` adapter or `None`."""
+    _ensure_entry_points_loaded()
+    with _ACCESS_CHANNEL_LOCK:
+        return _ACCESS_REQUEST_CHANNEL
+
+
 __all__ = [
+    "AccessRequestChannelPort",
     "ConnectorCapabilities",
     "ConnectorFetchResult",
     "ConnectorHealthState",
     "ConnectorHealthStatus",
     "ConnectorInvokeResult",
     "ConnectorPort",
+    "get_access_request_channel",
     "get_registered_connector",
     "is_registered_connector_scheme",
     "list_registered_connector_schemes",
+    "register_access_request_channel",
     "register_connector",
     "unregister_connector",
 ]

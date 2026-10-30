@@ -67,6 +67,7 @@ def _serialize_ticket(ticket: PermissionBrokerTicket) -> PermissionBrokerTicketI
         required_role=ticket.required_role,
         approver_team=ticket.approver_team,
         sla_hours=ticket.sla_hours,
+        request_url=ticket.request_url,
         jira_request_url=ticket.jira_request_url,
         permission_broker_hint=ticket.permission_broker_hint,
         procedure_markdown=ticket.procedure_markdown,

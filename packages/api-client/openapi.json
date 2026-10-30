@@ -1615,6 +1615,61 @@
         "title": "ChunkApprovalSchemaItem",
         "type": "object"
       },
+      "CommitStagedJiraActionRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to execute a staged Jira action on Gate pass (`AD-5`, `AD-11`).",
+        "properties": {
+          "gate_status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "WAITING_HUMAN"
+            ],
+            "title": "Gate Status",
+            "type": "string"
+          },
+          "run_lock_sha256": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Run Lock Sha256",
+            "type": "string"
+          },
+          "staged_action_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Staged Action Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "staged_action_id",
+          "gate_status",
+          "run_lock_sha256"
+        ],
+        "title": "CommitStagedJiraActionRequest",
+        "type": "object"
+      },
+      "CommitStagedJiraActionResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after executing a staged Jira action with `run-lock.json` provenance.",
+        "properties": {
+          "executed_action": {
+            "$ref": "#/components/schemas/StagedJiraActionItemSchema"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executed_action",
+          "trace_id"
+        ],
+        "title": "CommitStagedJiraActionResponse",
+        "type": "object"
+      },
       "CompiledArtifactTemplateSchemaItem": {
         "additionalProperties": false,
         "description": "Dual-compiled Multi-Audience Artifact Template (`FR-12`).",
@@ -4201,6 +4256,209 @@
         "title": "InitWorkspaceResponse",
         "type": "object"
       },
+      "JiraIssueUpdatedWebhookRequest": {
+        "additionalProperties": false,
+        "description": "Incoming `jira:issue_updated` webhook payload (`FR-16`).",
+        "properties": {
+          "issue_key": {
+            "maxLength": 64,
+            "minLength": 3,
+            "title": "Issue Key",
+            "type": "string"
+          },
+          "new_status": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "New Status",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "webhook_event": {
+            "default": "jira:issue_updated",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Webhook Event",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_key",
+          "new_status",
+          "workspace_id",
+          "run_id",
+          "step_execution_id"
+        ],
+        "title": "JiraIssueUpdatedWebhookRequest",
+        "type": "object"
+      },
+      "JiraIssueUpdatedWebhookResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after handling `jira:issue_updated` (`< 500 ms`, `FR-16`).",
+        "properties": {
+          "issue_key": {
+            "title": "Issue Key",
+            "type": "string"
+          },
+          "new_status": {
+            "title": "New Status",
+            "type": "string"
+          },
+          "outbox_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Id"
+          },
+          "processing_ms": {
+            "title": "Processing Ms",
+            "type": "number"
+          },
+          "project_key": {
+            "title": "Project Key",
+            "type": "string"
+          },
+          "replay_triggered": {
+            "title": "Replay Triggered",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sse_channel": {
+            "title": "Sse Channel",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "webhook_event": {
+            "title": "Webhook Event",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "webhook_event",
+          "issue_key",
+          "project_key",
+          "new_status",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "replay_triggered",
+          "outbox_event_id",
+          "sse_channel",
+          "processing_ms",
+          "trace_id"
+        ],
+        "title": "JiraIssueUpdatedWebhookResponse",
+        "type": "object"
+      },
+      "JiraJqlSearchRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for real-time JQL search across workspace Jira projects (`FR-24`).",
+        "properties": {
+          "jql": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Jql",
+            "type": "string"
+          },
+          "project_alias": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Project Alias",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "project_alias",
+          "jql"
+        ],
+        "title": "JiraJqlSearchRequest",
+        "type": "object"
+      },
+      "JiraJqlSearchResponse": {
+        "additionalProperties": false,
+        "description": "Response payload returning matching Jira issues for the selected workspace project.",
+        "properties": {
+          "issues": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "project_alias": {
+            "title": "Project Alias",
+            "type": "string"
+          },
+          "project_key": {
+            "title": "Project Key",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "project_alias",
+          "project_key",
+          "issues",
+          "trace_id"
+        ],
+        "title": "JiraJqlSearchResponse",
+        "type": "object"
+      },
       "KbDocumentSchemaItem": {
         "additionalProperties": false,
         "properties": {
@@ -4472,6 +4730,163 @@
           "trace_id"
         ],
         "title": "LogoutResponse",
+        "type": "object"
+      },
+      "McpToolCallRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for calling a governed MCP tool (`/api/v1/mcp/call`, `FR-24`, `AR-7`).",
+        "properties": {
+          "arguments": {
+            "additionalProperties": true,
+            "title": "Arguments",
+            "type": "object"
+          },
+          "execution_identity": {
+            "default": "passthrough",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "ide_client": {
+            "default": "vscode",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Ide Client",
+            "type": "string"
+          },
+          "tool_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name",
+          "workspace_id"
+        ],
+        "title": "McpToolCallRequest",
+        "type": "object"
+      },
+      "McpToolCallResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for a governed MCP tool call.",
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "execution_identity": {
+            "const": "passthrough",
+            "title": "Execution Identity",
+            "type": "string"
+          },
+          "ide_client": {
+            "title": "Ide Client",
+            "type": "string"
+          },
+          "status": {
+            "const": "OK",
+            "title": "Status",
+            "type": "string"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name",
+          "ide_client",
+          "execution_identity",
+          "workspace_id",
+          "status",
+          "data",
+          "trace_id"
+        ],
+        "title": "McpToolCallResponse",
+        "type": "object"
+      },
+      "McpToolDescriptorSchema": {
+        "additionalProperties": false,
+        "description": "Serialized MCP tool descriptor (`AR-7`).",
+        "properties": {
+          "blocks_human_authored_sections": {
+            "title": "Blocks Human Authored Sections",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "READ_ONLY",
+              "GOVERNED_DRAFT_WRITE"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passthrough_required": {
+            "title": "Passthrough Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "mode",
+          "passthrough_required",
+          "blocks_human_authored_sections"
+        ],
+        "title": "McpToolDescriptorSchema",
+        "type": "object"
+      },
+      "McpToolsListResponse": {
+        "additionalProperties": false,
+        "description": "Response payload listing governed MCP tools (`/api/v1/mcp/tools`, `AR-7`).",
+        "properties": {
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/McpToolDescriptorSchema"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tools",
+          "trace_id"
+        ],
+        "title": "McpToolsListResponse",
         "type": "object"
       },
       "MemberInvitationInputItem": {
@@ -5499,6 +5914,12 @@
             "title": "Procedure Markdown",
             "type": "string"
           },
+          "request_url": {
+            "maxLength": 4096,
+            "minLength": 8,
+            "title": "Request Url",
+            "type": "string"
+          },
           "requester_user_id": {
             "maxLength": 128,
             "minLength": 1,
@@ -5598,6 +6019,7 @@
           "required_role",
           "approver_team",
           "sla_hours",
+          "request_url",
           "jira_request_url",
           "permission_broker_hint"
         ],
@@ -6449,6 +6871,256 @@
           "trace_id"
         ],
         "title": "ShellNavigationResponse",
+        "type": "object"
+      },
+      "StageJiraActionRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to stage a multi-project Jira operation (`AD-5`, `FR-24`).",
+        "properties": {
+          "action_type": {
+            "enum": [
+              "create_issue",
+              "update_issue",
+              "add_comment",
+              "transition_issue"
+            ],
+            "title": "Action Type",
+            "type": "string"
+          },
+          "fields_payload": {
+            "additionalProperties": true,
+            "title": "Fields Payload",
+            "type": "object"
+          },
+          "issue_key": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue Key"
+          },
+          "project_alias": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Project Alias",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "target_transition": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Transition"
+          },
+          "workspace_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "project_alias",
+          "action_type",
+          "summary"
+        ],
+        "title": "StageJiraActionRequest",
+        "type": "object"
+      },
+      "StageJiraActionResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after staging a Jira action in `step_executions.draft_artifact_jsonb`.",
+        "properties": {
+          "draft_artifact_jsonb": {
+            "additionalProperties": true,
+            "title": "Draft Artifact Jsonb",
+            "type": "object"
+          },
+          "staged_action": {
+            "$ref": "#/components/schemas/StagedJiraActionItemSchema"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "staged_action",
+          "draft_artifact_jsonb",
+          "trace_id"
+        ],
+        "title": "StageJiraActionResponse",
+        "type": "object"
+      },
+      "StagedJiraActionItemSchema": {
+        "additionalProperties": false,
+        "description": "Serialized staged or executed Jira action.",
+        "properties": {
+          "action_type": {
+            "enum": [
+              "create_issue",
+              "update_issue",
+              "add_comment",
+              "transition_issue"
+            ],
+            "title": "Action Type",
+            "type": "string"
+          },
+          "executed_issue_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executed Issue Key"
+          },
+          "fields_payload": {
+            "additionalProperties": true,
+            "title": "Fields Payload",
+            "type": "object"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "issue_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue Key"
+          },
+          "project_alias": {
+            "title": "Project Alias",
+            "type": "string"
+          },
+          "project_key": {
+            "title": "Project Key",
+            "type": "string"
+          },
+          "provenance_run_lock_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Run Lock Sha256"
+          },
+          "provenance_run_lock_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Run Lock Uri"
+          },
+          "replayed_from_cache": {
+            "default": false,
+            "title": "Replayed From Cache",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "staged_action_id": {
+            "title": "Staged Action Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "STAGED",
+              "EXECUTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_execution_id": {
+            "title": "Step Execution Id",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "target_transition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Transition"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "staged_action_id",
+          "workspace_id",
+          "run_id",
+          "step_execution_id",
+          "project_alias",
+          "project_key",
+          "action_type",
+          "issue_key",
+          "summary",
+          "target_transition",
+          "fields_payload",
+          "status",
+          "idempotency_key"
+        ],
+        "title": "StagedJiraActionItemSchema",
         "type": "object"
       },
       "StepExecuteRequest": {
@@ -12671,6 +13343,476 @@
         ]
       }
     },
+    "/api/v1/jira/actions/commit": {
+      "post": {
+        "description": "Execute staged Jira operation via `ConnectorPort.invoke` only when Gate status is `PASS`.",
+        "operationId": "commit_staged_jira_action_api_v1_jira_actions_commit_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommitStagedJiraActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitStagedJiraActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute a staged Jira action on Gate pass with `run-lock.json` provenance (`AD-5`)",
+        "tags": [
+          "jira-and-mcp"
+        ]
+      }
+    },
+    "/api/v1/jira/actions/stage": {
+      "post": {
+        "description": "Validate `GET /rest/api/3/issue/{key}/transitions` and stage Jira action before Gate.",
+        "operationId": "stage_jira_workflow_action_api_v1_jira_actions_stage_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StageJiraActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StageJiraActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Pre-validate Jira transitions and stage action in draft_artifact_jsonb (`AD-5`)",
+        "tags": [
+          "jira-and-mcp"
+        ]
+      }
+    },
+    "/api/v1/jira/jql/search": {
+      "post": {
+        "description": "Query Jira issues on the selected workspace project alias (`jira:product`, `jira:secops`).",
+        "operationId": "search_workspace_jira_jql_api_v1_jira_jql_search_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JiraJqlSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JiraJqlSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Search workspace Jira projects in real time via JQL (`FR-24`)",
+        "tags": [
+          "jira-and-mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/call": {
+      "post": {
+        "description": "Execute an MCP tool call while materially blocking `human_authored_required: true` writes.",
+        "operationId": "call_governed_mcp_tool_api_v1_mcp_call_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpToolCallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpToolCallResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Invoke a governed MCP tool in `passthrough` mode (`/api/v1/mcp`, `FR-24`, `AD-3`)",
+        "tags": [
+          "jira-and-mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/tools": {
+      "get": {
+        "description": "Return MCP tools available in `passthrough` mode for VS Code / Cursor / Claude Code / AGY.",
+        "operationId": "list_governed_mcp_tools_api_v1_mcp_tools_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpToolsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List governed MCP tools exposed to external IDEs (`/api/v1/mcp`, `AR-7`)",
+        "tags": [
+          "jira-and-mcp"
+        ]
+      }
+    },
     "/api/v1/navigation/shell": {
       "get": {
         "description": "Return the 7-module Direction C navigation shell and 4-level scope switcher state.",
@@ -15613,6 +16755,82 @@
         "summary": "Pause or replay a blocked Permission Broker step (`Replay Step N`, FR-22)",
         "tags": [
           "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/webhooks/jira/issue-updated": {
+      "post": {
+        "description": "Process `jira:issue_updated` (`Done`) and publish Replay event to `domain_events_outbox`.",
+        "operationId": "handle_jira_issue_updated_webhook_route_api_v1_webhooks_jira_issue_updated_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JiraIssueUpdatedWebhookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JiraIssueUpdatedWebhookResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Receive `jira:issue_updated` webhook and wake up paused run in < 500ms (`FR-16`)",
+        "tags": [
+          "jira-and-mcp"
         ]
       }
     },

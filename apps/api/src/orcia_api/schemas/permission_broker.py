@@ -57,6 +57,7 @@ class PermissionBrokerTicketItem(BaseModel):
     required_role: str = Field(..., min_length=1, max_length=128)
     approver_team: str = Field(..., min_length=1, max_length=128)
     sla_hours: int = Field(..., ge=1, le=720)
+    request_url: str = Field(..., min_length=8, max_length=4096)
     jira_request_url: str = Field(..., min_length=8, max_length=4096)
     permission_broker_hint: str = Field(..., min_length=8, max_length=2048)
     procedure_markdown: str = Field(default="", max_length=16384)

@@ -257,6 +257,15 @@ export interface components {
       word_count?: number;
       workspace_id: string;
     };
+    CommitStagedJiraActionRequest: {
+      gate_status: "PASS" | "FAIL" | "WAITING_HUMAN";
+      run_lock_sha256: string;
+      staged_action_id: string;
+    };
+    CommitStagedJiraActionResponse: {
+      executed_action: components["schemas"]["StagedJiraActionItemSchema"];
+      trace_id: string;
+    };
     CompiledArtifactTemplateSchemaItem: {
       agent_json_schema: Record<string, unknown>;
       bound_ontology_terms: (string)[];
@@ -663,6 +672,40 @@ export interface components {
       trace_id: string;
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
     };
+    JiraIssueUpdatedWebhookRequest: {
+      issue_key: string;
+      new_status: string;
+      run_id: string;
+      step_execution_id: string;
+      webhook_event?: string;
+      workspace_id: string;
+    };
+    JiraIssueUpdatedWebhookResponse: {
+      issue_key: string;
+      new_status: string;
+      outbox_event_id: string | null;
+      processing_ms: number;
+      project_key: string;
+      replay_triggered: boolean;
+      run_id: string;
+      sse_channel: string;
+      step_execution_id: string;
+      trace_id: string;
+      webhook_event: string;
+      workspace_id: string;
+    };
+    JiraJqlSearchRequest: {
+      jql: string;
+      project_alias: string;
+      workspace_id: string;
+    };
+    JiraJqlSearchResponse: {
+      issues: (Record<string, unknown>)[];
+      project_alias: string;
+      project_key: string;
+      trace_id: string;
+      workspace_id: string;
+    };
     KbDocumentSchemaItem: {
       age_days: number;
       content_sha256: string;
@@ -708,6 +751,33 @@ export interface components {
     };
     LogoutResponse: {
       revoked?: boolean;
+      trace_id: string;
+    };
+    McpToolCallRequest: {
+      arguments?: Record<string, unknown>;
+      execution_identity?: string;
+      ide_client?: string;
+      tool_name: string;
+      workspace_id: string;
+    };
+    McpToolCallResponse: {
+      data: Record<string, unknown>;
+      execution_identity: "passthrough";
+      ide_client: string;
+      status: "OK";
+      tool_name: string;
+      trace_id: string;
+      workspace_id: string;
+    };
+    McpToolDescriptorSchema: {
+      blocks_human_authored_sections: boolean;
+      description: string;
+      mode: "READ_ONLY" | "GOVERNED_DRAFT_WRITE";
+      name: string;
+      passthrough_required: boolean;
+    };
+    McpToolsListResponse: {
+      tools: (components["schemas"]["McpToolDescriptorSchema"])[];
       trace_id: string;
     };
     MemberInvitationInputItem: {
@@ -868,6 +938,7 @@ export interface components {
       permission_broker_hint: string;
       policy_id: string;
       procedure_markdown?: string;
+      request_url: string;
       requester_user_id: string;
       required_role: string;
       sla_hours: number;
@@ -1005,6 +1076,41 @@ export interface components {
       modules: (components["schemas"]["ShellModuleItem"])[];
       scopes: (components["schemas"]["ScopeNode"])[];
       trace_id: string;
+    };
+    StageJiraActionRequest: {
+      action_type: "create_issue" | "update_issue" | "add_comment" | "transition_issue";
+      fields_payload?: Record<string, unknown>;
+      issue_key?: string | null;
+      project_alias: string;
+      run_id: string;
+      step_execution_id: string;
+      summary: string;
+      target_transition?: string | null;
+      workspace_id: string;
+    };
+    StageJiraActionResponse: {
+      draft_artifact_jsonb: Record<string, unknown>;
+      staged_action: components["schemas"]["StagedJiraActionItemSchema"];
+      trace_id: string;
+    };
+    StagedJiraActionItemSchema: {
+      action_type: "create_issue" | "update_issue" | "add_comment" | "transition_issue";
+      executed_issue_key?: string | null;
+      fields_payload: Record<string, unknown>;
+      idempotency_key: string;
+      issue_key: string | null;
+      project_alias: string;
+      project_key: string;
+      provenance_run_lock_sha256?: string | null;
+      provenance_run_lock_uri?: string | null;
+      replayed_from_cache?: boolean;
+      run_id: string;
+      staged_action_id: string;
+      status: "STAGED" | "EXECUTED";
+      step_execution_id: string;
+      summary: string;
+      target_transition: string | null;
+      workspace_id: string;
     };
     StepExecuteRequest: {
       author_type?: "HUMAN" | "AGENT";
@@ -1685,6 +1791,41 @@ export interface paths {
       };
     };
   };
+  "/api/v1/jira/actions/commit": {
+    post: {
+      responses: {
+        200: components["schemas"]["CommitStagedJiraActionResponse"];
+      };
+    };
+  };
+  "/api/v1/jira/actions/stage": {
+    post: {
+      responses: {
+        200: components["schemas"]["StageJiraActionResponse"];
+      };
+    };
+  };
+  "/api/v1/jira/jql/search": {
+    post: {
+      responses: {
+        200: components["schemas"]["JiraJqlSearchResponse"];
+      };
+    };
+  };
+  "/api/v1/mcp/call": {
+    post: {
+      responses: {
+        200: components["schemas"]["McpToolCallResponse"];
+      };
+    };
+  };
+  "/api/v1/mcp/tools": {
+    get: {
+      responses: {
+        200: components["schemas"]["McpToolsListResponse"];
+      };
+    };
+  };
   "/api/v1/navigation/shell": {
     get: {
       responses: {
@@ -1888,6 +2029,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/webhooks/jira/issue-updated": {
+    post: {
+      responses: {
+        200: components["schemas"]["JiraIssueUpdatedWebhookResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces": {
     get: {
       responses: {
@@ -1933,6 +2081,8 @@ export type CatalogResourceSourceResponse = components["schemas"]["CatalogResour
 export type CatalogUriResolveRequest = components["schemas"]["CatalogUriResolveRequest"];
 export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolveResponse"];
 export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchemaItem"];
+export type CommitStagedJiraActionRequest = components["schemas"]["CommitStagedJiraActionRequest"];
+export type CommitStagedJiraActionResponse = components["schemas"]["CommitStagedJiraActionResponse"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
@@ -1981,11 +2131,19 @@ export type InitUserRequest = components["schemas"]["InitUserRequest"];
 export type InitUserResponse = components["schemas"]["InitUserResponse"];
 export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"];
 export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
+export type JiraIssueUpdatedWebhookRequest = components["schemas"]["JiraIssueUpdatedWebhookRequest"];
+export type JiraIssueUpdatedWebhookResponse = components["schemas"]["JiraIssueUpdatedWebhookResponse"];
+export type JiraJqlSearchRequest = components["schemas"]["JiraJqlSearchRequest"];
+export type JiraJqlSearchResponse = components["schemas"]["JiraJqlSearchResponse"];
 export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"];
 export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
+export type McpToolCallRequest = components["schemas"]["McpToolCallRequest"];
+export type McpToolCallResponse = components["schemas"]["McpToolCallResponse"];
+export type McpToolDescriptorSchema = components["schemas"]["McpToolDescriptorSchema"];
+export type McpToolsListResponse = components["schemas"]["McpToolsListResponse"];
 export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
 export type OntologyAndRagStateResponse = components["schemas"]["OntologyAndRagStateResponse"];
@@ -2022,6 +2180,9 @@ export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationChe
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
+export type StageJiraActionRequest = components["schemas"]["StageJiraActionRequest"];
+export type StageJiraActionResponse = components["schemas"]["StageJiraActionResponse"];
+export type StagedJiraActionItemSchema = components["schemas"]["StagedJiraActionItemSchema"];
 export type StepExecuteRequest = components["schemas"]["StepExecuteRequest"];
 export type StepExecuteResponse = components["schemas"]["StepExecuteResponse"];
 export type StepExecutionSchemaItem = components["schemas"]["StepExecutionSchemaItem"];
