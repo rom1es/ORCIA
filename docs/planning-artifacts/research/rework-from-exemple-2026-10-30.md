@@ -68,7 +68,7 @@ Format de sortie attendu :
 brief des écrans et un descriptif d'une opportunité pour améliorer ORCIA suite partage des screens shots d'un exemple de plateforme agentique
 
 
-# Brief Écran 1 : Accueil & Dashboard KORE
+# Brief Écran 1 : Accueil & Dashboard EXEMPLE
 
 ## 1. Synthèse de l'Écran
 * **Rôle principal :** Hub d'atterrissage (*Landing Page*) personnalisé combinant un point d'entrée conversationnel IA et un widget de suivi opérationnel de l'itération en cours[cite: 5].
@@ -93,7 +93,7 @@ brief des écrans et un descriptif d'une opportunité pour améliorer ORCIA suit
 * **Widget Opérationnel (*Sprint en cours*) :**
   * Indicateur d'itération SAFe / Agile (`IRCO - PI12_IT2 - Il reste 1 jour`)[cite: 5].
   * Métriques de suivi : progression globale (jauge circulaire à 0%), volume de tickets (`0/1 terminé`, `1 restant`) et vélocité[cite: 5].
-  * Appel à l'action IA proactif : bouton `Analyser ce sprint avec Kore ↗`[cite: 5].
+  * Appel à l'action IA proactif : bouton `Analyser ce sprint avec EXEMPLE ↗`[cite: 5].
 * **Accès Rapides (*Vos Espaces*) :**
   * Cartes de redirection directe vers les `Documents` (base documentaire indexée) et les `Workflows` (automatisations)[cite: 5].
 
@@ -119,7 +119,7 @@ brief des écrans et un descriptif d'une opportunité pour améliorer ORCIA suit
 meme demande en format markdown avec l'image suivante
 
 Markdown
-# Brief Écran 2 : Sidebar Repliée & Mode Compact KORE
+# Brief Écran 2 : Sidebar Repliée & Mode Compact EXEMPLE
 
 ## 1. Synthèse de l'Écran
 * **Rôle principal :** Déclinaison de l'interface en mode rétracté (*Collapsed Sidebar / Focus Mode*) visant à maximiser la surface utile du panneau principal tout en maintenant l'accès aux fonctionnalités clés via des repères iconographiques[cite: 6].
@@ -130,7 +130,7 @@ Markdown
 ## 2. Décomposition de l'Interface
 
 ### Sidebar Rétractée (Rail Iconographique Gauche)
-* **Logo / Identité :** Icône compacte de la marque KORE en en-tête[cite: 6].
+* **Logo / Identité :** Icône compacte de la marque EXEMPLE en en-tête[cite: 6].
 * **Contrôle d'expansion :** Bouton chevron interactif avec infobulle explicite `Déployer` permettant de restaurer la sidebar complète[cite: 6].
 * **Avatar & Compte :** Badge compact de l'équipe active (`MC`)[cite: 6].
 * **Actions et sections sous forme d'icônes :**
@@ -175,7 +175,7 @@ Markdown
 * Reste déployée avec l'élément `Documents` actif sous la section `MON ESPACE`[cite: 7].
 
 ### Zone Principale (Gestion Documentaire)
-* **En-tête contextuel :** Titre `Documents Mon Compte` avec sous-titre explicite (*« Tout ce qui alimente les réponses de Kore pour cette équipe »*)[cite: 7].
+* **En-tête contextuel :** Titre `Documents Mon Compte` avec sous-titre explicite (*« Tout ce qui alimente les réponses de EXEMPLE pour cette équipe »*)[cite: 7].
 * **Zone de dépôt (Dropzone) :** Bouton/zone pour téléverser divers formats (PDF, Word, PowerPoint, Excel, texte, image, max 50 Mo)[cite: 7].
 * **Compteurs de statut :**
   * `FICHIERS INDEXÉS : 0`[cite: 7]
@@ -193,7 +193,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Intégration Native d'une Gate de Confidentialité / RGPD (Story 3.5 & Core)
-* **Constat :** KORE met l'ingestion en attente d'une décision humaine si des données sensibles ou des secrets sont détectés[cite: 7].
+* **Constat :** EXEMPLE met l'ingestion en attente d'une décision humaine si des données sensibles ou des secrets sont détectés[cite: 7].
 * **Opportunité ORCIA :** Rendre ce mécanisme complètement agnostique au sein d'ORCIA Core via le pipeline de **Gates déterministes** (Story 3.5)[cite: 2]. Lors de l'ingestion d'une source (Confluence, documents ou artefacts de spec), une règle de conformité PII/Secrets suspend l'indexation et génère une **Anchor Card** d'arbitrage (Story 3.4) pour valider la pseudonymisation ou le rejet avant persistance dans PostgreSQL/DBOS[cite: 1, 2, 7].
 
 ### B. Gouvernance par Portée et Niveau de Classification (C0 à C3)
@@ -280,7 +280,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Cycle de Vie Formel des Workflows-as-Code (Story 3.1 & Core)
-* **Constat :** KORE formalise une frontière nette entre la conception (brouillon éditable) et la mise à disposition (publié / invocable)[cite: 9].
+* **Constat :** EXEMPLE formalise une frontière nette entre la conception (brouillon éditable) et la mise à disposition (publié / invocable)[cite: 9].
 * **Opportunité ORCIA :** Dans le registre des workflows d'ORCIA, matérialiser ce cycle de vie avec versioning sémantique immuable (`Draft` $\rightarrow$ `Validated (What-If)` $\rightarrow$ `Published vX.Y.Z`)[cite: 1, 2]. Un workflow ne devient exécutable par le moteur DBOS en environnement nominal que s'il a passé avec succès une validation syntaxique et ontologique complète (Story 3.5)[cite: 1, 2].
 
 ### B. Métriques Opérationnelles & Supervision DBOS en Direct
@@ -326,7 +326,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Rendu Visuel des Pipeline Gates sur la Carte de Workflow
-* **Constat :** KORE affiche le nombre d'étapes (`7 étapes`) et une miniature du graphe[cite: 10].
+* **Constat :** EXEMPLE affiche le nombre d'étapes (`7 étapes`) et une miniature du graphe[cite: 10].
 * **Opportunité ORCIA :** Enrichir cette carte avec la décomposition des types d'étapes propres à ORCIA (Story 3.2f) :
   * Décompte explicite : *X steps déterministes*, *Y steps agents LLM*, *Z gates de validation* (Story 3.5)[cite: 2].
   * Affichage d'un badge indiquant la posture de contrôle : par exemple `Gates : Mode Strict (Blind Hunter actif)` ou `Mode Permissif`[cite: 1, 2].
@@ -387,7 +387,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Représentation Graphique Bimodale : Déterministe vs Probabiliste (Story 3.2f)
-* **Constat :** KORE mélange visuellement les artefacts conceptuels (`EPIC`, `User story`) et les opérations concrètes de connecteurs (`GitLab`, `Jira`) dans des styles de nœuds très proches[cite: 11].
+* **Constat :** EXEMPLE mélange visuellement les artefacts conceptuels (`EPIC`, `User story`) et les opérations concrètes de connecteurs (`GitLab`, `Jira`) dans des styles de nœuds très proches[cite: 11].
 * **Opportunité ORCIA :** Dans le canvas TanStack Router / React Flow d'ORCIA, formaliser une distinction visuelle stricte entre :
   * Les **Steps Déterministes** (`Program Executor` : icône d'outils, couleur solide, coût token nul)[cite: 2].
   * Les **Steps Probabilistes** (`Agent Executor` : badge de modèle LLM, jauge d'effort/budget tokens)[cite: 2].
@@ -483,7 +483,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Formalisation des Paliers d'Effort dans le Schéma Workflow-as-Code (Story 3.1 & 3.2f)
-* **Constat :** KORE propose une abstraction intuitive (`Rapide`, `Équilibré`, `Approfondi`) plutôt que d'exposer des paramètres bruts et techniques (comme `temperature` ou `max_thinking_tokens`)[cite: 11].
+* **Constat :** EXEMPLE propose une abstraction intuitive (`Rapide`, `Équilibré`, `Approfondi`) plutôt que d'exposer des paramètres bruts et techniques (comme `temperature` ou `max_thinking_tokens`)[cite: 11].
 * **Opportunité ORCIA :** Normaliser ces niveaux dans le descripteur YAML d'un workflow (`effort: low | medium | high | reasoning_max`)[cite: 1, 2, 11]. Dans ORCIA, ces profils traduisent automatiquement les directives pour DBOS et l'exécuteur d'agent (`Agent Executor`) :
   * `Rapide` : température basse, absence de chaîne de pensée lourde, timeout DBOS court[cite: 1, 2, 11].
   * `Approfondi` : activation du mode réflexion multi-passes, temps d'exécution élargi avec checkpoints intermédiaires sous DBOS[cite: 1, 2, 11].
@@ -524,7 +524,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Injection Déclarative des Instructions dans le Workflow-as-Code (Story 3.1 & 3.2f)
-* **Constat :** KORE propose un champ texte libre pour consigner des instructions ad-hoc au niveau du nœud[cite: 12].
+* **Constat :** EXEMPLE propose un champ texte libre pour consigner des instructions ad-hoc au niveau du nœud[cite: 12].
 * **Opportunité ORCIA :** Dans ORCIA, standardiser cette configuration sous forme de directives déclaratives :
   * Possibilité de saisir soit un prompt textuel inline, soit une référence vers un fichier Markdown versionné (ex. `prompt_ref: "prompts/features/spec_generator.md"`).
   * Cette approche respecte le principe *Documentation-as-Code* tout en maintenant la modale accessible pour l'édition rapide.
@@ -571,7 +571,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Représentation de la Hiérarchie et Composition des Sous-Étapes (Story 3.2f)
-* **Constat :** KORE permet d'empiler plusieurs opérations et artefacts au sein d'un même conteneur visuel pour éviter de surcharger le graphe principal[cite: 13].
+* **Constat :** EXEMPLE permet d'empiler plusieurs opérations et artefacts au sein d'un même conteneur visuel pour éviter de surcharger le graphe principal[cite: 13].
 * **Opportunité ORCIA :** Adopter ce concept pour modéliser des **Macro-Steps (Sous-Workflows)** dans le moteur DBOS[cite: 1, 2] :
   * Un conteneur d'étape unique dans le canvas visuel peut encapsuler un pipeline complet (ex. *Récupération Jira $\rightarrow$ Analyse d'impact $\rightarrow$ Rédaction Spec Markdown*).
   * L'inspecteur de couches permet de visualiser et réordonner les micro-tâches internes sans éclater le graphe parent en dizaines de nœuds complexes.
@@ -612,7 +612,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Désactivation Conditionnelle et « Bypass » d'une Étape dans DBOS (Story 3.2f)
-* **Constat :** KORE propose un commutateur direct (œil barré) pour neutraliser une opération sans devoir la détruire et la recréer[cite: 14].
+* **Constat :** EXEMPLE propose un commutateur direct (œil barré) pour neutraliser une opération sans devoir la détruire et la recréer[cite: 14].
 * **Opportunité ORCIA :** Transposer ce comportement dans la modélisation déclarative du workflow (`enabled: false` ou `condition: when_needed`) :
   * Permet d'ignorer temporairement un connecteur déterministe (par exemple une recherche Jira ou un crawl externe) lors des phases de prototypage ou de tests locaux, évitant ainsi des appels réseaux superflus.
   * Dans l'ordonnanceur DBOS, l'étape désactivée est logguée comme `SKIPPED` dans l'historique d'exécution tout en préservant l'intégrité de la séquence.
@@ -657,7 +657,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Principe du Moindre Privilège par Étape (Story 1.4 & Permission Broker)
-* **Constat :** KORE propose une séparation explicite entre droits de consultation (`Lire`) et droits de modification (`Écrire`) sur chaque connecteur tiers pour limiter le champ d'action de l'agent[cite: 15].
+* **Constat :** EXEMPLE propose une séparation explicite entre droits de consultation (`Lire`) et droits de modification (`Écrire`) sur chaque connecteur tiers pour limiter le champ d'action de l'agent[cite: 15].
 * **Opportunité ORCIA :** Aligner cette configuration sur le **Permission Broker** d'ORCIA[cite: 2] :
   * Définir pour chaque `Agent Executor` (step probabiliste) un token de portée éphémère (*scoped execution token*)[cite: 2].
   * Si l'étape est paramétrée en lecture seule sur Jira/GitLab, toute tentative d'émission d'une mutation ou d'un appel d'API destructif est interceptée et bloquée par le moteur avant d'atteindre le réseau[cite: 1, 2].
@@ -696,7 +696,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Modularité et « System Prompt as Code » (Story 3.1 & 3.2f)
-* **Constat :** KORE propose une saisie textuelle libre globale dans une boîte modale simple[cite: 18].
+* **Constat :** EXEMPLE propose une saisie textuelle libre globale dans une boîte modale simple[cite: 18].
 * **Opportunité ORCIA :** Dans ORCIA, découpler et structurer cette injection système au sein du manifeste déclaratif (`Workflow-as-Code`) :
   * Permettre l'injection de directives par composition : consignes transverses d'entreprise (ex. règles RGPD, ton neutre, politique de sécurité interne) combinées à des consignes propres au workflow (ex. gabarit de spec technique ou d'arbitrage)[cite: 7].
   * Supporter le référencement direct d'un fichier Markdown versionné dans le dépôt (ex. `system_prompt_ref: "prompts/system/enterprise_guidelines.md"`) pour respecter la démarche *Documentation as Code*.
@@ -751,13 +751,13 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Formalisation de Schémas Stricts d'I/O (Pydantic / JSON Schema) (Story 3.1)
-* **Constat :** KORE structure les paramètres en entrée et impose les sections du livrable de sortie sous forme de titres Markdown[cite: 19].
+* **Constat :** EXEMPLE structure les paramètres en entrée et impose les sections du livrable de sortie sous forme de titres Markdown[cite: 19].
 * **Opportunité ORCIA :** Dans ORCIA, adosser ce contrat à des schémas Pydantic / JSON Schema stricts dans le `Workflow-as-Code`[cite: 1, 2] :
   * Déclarer les inputs avec types, contraintes de validation et descriptions (ex. `feature_id: str`, `target_version: SemVer`).
   * Définir le gabarit de sortie comme un artefact ontologique ou un template Spec-Kit (OpenSpec) versionné dans le dépôt, garantissant l'intégrité des données avant injection dans la base PostgreSQL[cite: 1, 2].
 
 ### B. Contrôle d'Intégrité par Gate Déterministe au Runtime (Story 3.5)
-* **Constat :** KORE signale si une section obligatoire manque de matière sans la supprimer[cite: 19].
+* **Constat :** EXEMPLE signale si une section obligatoire manque de matière sans la supprimer[cite: 19].
 * **Opportunité ORCIA :** Transformer cette vérification en une **Gate Déterministe de Conformité de Gabarit**[cite: 2] :
   * Si l'agent LLM omet une section obligatoire (ex. `## Risques` ou `## Décisions attendues`)[cite: 19], la Gate l'intercepte immédiatement.
   * Selon la sévérité configurée, le moteur déclenche soit un retry automatique avec consigne de correction, soit une suspension dans DBOS via une **Anchor Card** pour arbitrage humain (Story 3.4)[cite: 1, 2].
@@ -798,7 +798,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Typage Enrichi & Validation Stricte d'Ontologie (Story 3.1 & Core)
-* **Constat :** KORE propose un typage textuel générique (`Texte`)[cite: 20].
+* **Constat :** EXEMPLE propose un typage textuel générique (`Texte`)[cite: 20].
 * **Opportunité ORCIA :** Dans ORCIA, élargir le sélecteur de types aux primitives du Core et de l'Ontologie du SI[cite: 1, 2] :
   * Types scalaires standards : `String`, `Integer`, `Boolean`, `Enum`[cite: 20].
   * **Types ontologiques natifs :** `FeatureId`, `EpicKey`, `GitBranch`, `RepoRef`, `ServicePrincipal`[cite: 1, 2].
@@ -850,7 +850,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Déclencheurs Événementiels pilotés par la Table Outbox (Story 3.2c)
-* **Constat :** KORE propose deux déclencheurs génériques liés à la base documentaire (`Nouveau document indexé`, `Source synchronisée`)[cite: 21].
+* **Constat :** EXEMPLE propose deux déclencheurs génériques liés à la base documentaire (`Nouveau document indexé`, `Source synchronisée`)[cite: 21].
 * **Opportunité ORCIA :** Dans ORCIA, coupler directement ces déclencheurs à l'**Outbox transactionnelle** et aux événements du domaine :
   * Déclencheurs liés au catalogue fédéré : `spec:created`, `spec:updated`, `jira:sprint_started`, `git:pr_opened`[cite: 1, 2].
   * Dès qu'un événement métier est validé dans PostgreSQL, le scheduler DBOS instancie de manière durable le workflow associé sans nécessiter de polling récurrent consommateur de ressources[cite: 1, 2].
@@ -894,7 +894,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Exécution Éphémère dans le Bac à Sable « What-If » (Story 3.5 & DBOS)
-* **Constat :** KORE enregistre directement le brouillon courant et lance un test sans expliciter l'environnement d'isolation[cite: 22].
+* **Constat :** EXEMPLE enregistre directement le brouillon courant et lance un test sans expliciter l'environnement d'isolation[cite: 22].
 * **Opportunité ORCIA :** Coupler ce bouton de test au **moteur de simulation What-If** d'ORCIA[cite: 2] :
   * L'exécution s'opère dans un bac à sable transactionnel éphémère (*What-If Sandbox*) sous DBOS[cite: 2].
   * Tous les appels vers les connecteurs tiers (Jira, Git, Confluence) sont interceptés ou simulés en mode lecture stricte[cite: 1, 2, 15].
@@ -1005,7 +1005,7 @@ Markdown
 ## 3. Opportunités d'Amélioration & Transposition pour ORCIA
 
 ### A. Découplage Multi-Packs & Espaces Métier (Story 1.3 & Core)
-* **Constat :** KORE associe des « Produits » logiciels à l'équipe avec un typage de cycle de vie (`RUN`, `BUILD`, `MIGRATION`)[cite: 24, 26].
+* **Constat :** EXEMPLE associe des « Produits » logiciels à l'équipe avec un typage de cycle de vie (`RUN`, `BUILD`, `MIGRATION`)[cite: 24, 26].
 * **Opportunité ORCIA :** Dans ORCIA, faire converger cette vue avec le **Registre des Packs & Contextes Métier** (Epic 8, `/settings/packs`)[cite: 1, 2] :
   * Un produit peut être rattaché au **Pack SDLC** (dépôts Git, backlog Jira, spécifications Spec-Kit)[cite: 1, 2], mais le même catalogue doit accueillir des contextes verticaux alternatifs (ex. initiatives du Pack RH ou applications du Pack MCO)[cite: 1, 2].
   * Le statut (`RUN`, `BUILD`, `MIGRATION`)[cite: 24, 26] doit conditionner dynamiquement les agents activés dans le graphe (ex. agents de refactorisation et tests de parité en mode *Migration*, agents de revue d'US et linting en mode *Run/Build*)[cite: 26, 27].

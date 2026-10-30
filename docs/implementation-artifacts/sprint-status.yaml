@@ -77,6 +77,7 @@ development_status:
   5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: backlog
   5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: backlog
   5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: backlog
+  5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: backlog
   epic-5-retrospective: optional
 
   epic-6: backlog
@@ -92,15 +93,15 @@ development_status:
   7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: backlog
   epic-7-retrospective: optional
 
-  # Epic 8 — Settings Hub, Enterprise Governance & Cognitive Routing (in-design)
-  # Étude : docs/planning-artifacts/research/epic-8-settings-hub-study.md
-  epic-8: in-design
-  8-1-modele-habilitations-rbac-abac-actions-hierarchie: planned
-  8-2-abstraction-llm-tiers-routage-auto: planned
-  8-3-coquille-settings-tanstack-router-permission-guards: planned
-  8-4-hub-connecteurs-et-gestion-des-secrets: planned # pragma: allowlist secret
-  8-5-studio-workflows-et-registre-des-packs: planned
-  8-6-parcours-initialisation-wizards-durables: planned
+  # Epic 8 — Settings Hub, Enterprise Governance (6-Verb RBAC/ABAC), Cognitive Routing & Studio/Wizards (AD-21)
+  # Plan : docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md
+  epic-8: backlog
+  8-1-modele-habilitations-rbac-abac-actions-hierarchie: backlog
+  8-2-abstraction-llm-tiers-routage-auto: backlog
+  8-3-coquille-settings-tanstack-router-permission-guards: backlog
+  8-4-hub-connecteurs-et-gestion-des-secrets: backlog # pragma: allowlist secret
+  8-5-studio-workflows-et-registre-des-packs: backlog
+  8-6-parcours-initialisation-wizards-durables: backlog
   epic-8-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -525,15 +526,17 @@ action_items:
       Écart EC-2 de l'audit : les tests unitaires du moteur passaient sans qu'aucun run réel ne traverse l'API ; 3.2f en est la première application.
   - id: EPIC-08-CONFIG-HUB
     title: "Créer l'Epic 8 — Administration, Hub de Configuration & Cycle de Vie des Extensions (paramétrage post-Jour 0)"
-    action: "Rédiger l'ADR AD-21 (stockage de config à 3 niveaux, AdminCapability, contrat SecretInput/SecretStatus, sémantique de propagation vers les runs DBOS, activation des packs par périmètre), puis ajouter l'Epic 8 et les Stories 8.0 à 8.7 dans epics.md et development_status"
+    action: "Rédiger l'ADR AD-21 (stockage de config à 3 niveaux, 6 verbes RBAC/ABAC, contrat SecretInput/SecretStatus, sémantique de propagation vers les runs DBOS, activation des packs par périmètre), puis ajouter l'Epic 8 et les Stories 8.1 à 8.6 (ainsi que Story 5.4) dans epics.md et development_status"
     priority: P1
     depends_on:
       - DEC-SEC-01
       - SEC-02
-    ad_ref: "AD-6, AD-16, AD-19, AD-20"
-    story_ref: "docs/planning-artifacts/research/config-hub-spec-readiness-audit-2026-10-28.md"
+    ad_ref: "AD-6, AD-16, AD-19, AD-20, AD-21"
+    story_ref: "docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md"
     owner: "Winston (Architect) / John (PM)"
-    status: open
+    status: done
     epic: epic-8
     description: >
-      Audit de préparation des specs du 28/10/2026 : aucune spec ne couvre le paramétrage après le Jour 0 (IdP OIDC, Service Principals, instances de datasources, registre de modèles et budgets hiérarchiques, activation des packs, politiques de relance, console outbox/audit). Stories proposées : 8.0 ADR, 8.1 socle settings versionnés + SecretField + layout /admin, 8.2 identité & accès, 8.3 hub d'intégration, 8.4 fournisseurs IA & budgets (MVP) ; 8.5 packs, 8.6 politiques d'exécution, 8.7 console gouvernance (V2). Frontières à respecter avec 3.3, 6.1, 6.2 et 7.1.
+      Formalisé le 30/10/2026 via AD-21 dans ARCHITECTURE-SPINE.md, mise à jour de DESIGN.md / EXPERIENCE.md,
+      plan directeur docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md et
+      ajout de l'Epic 8 complète (Stories 8.1 à 8.6) + Story 5.4 dans docs/planning-artifacts/epics.md.

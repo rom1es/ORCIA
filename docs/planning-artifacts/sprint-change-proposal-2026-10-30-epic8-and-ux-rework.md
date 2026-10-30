@@ -1,5 +1,5 @@
 ---
-title: "Proposition d'Ajustement Multi-Epics & Plan Directeur Architecture / UX-UI — Epic 8 (Settings Hub, Gouvernance 6 Verbes, Routage Cognitif) & Refonte Ergonomique Inspirée de KORE"
+title: "Proposition d'Ajustement Multi-Epics & Plan Directeur Architecture / UX-UI — Epic 8 (Settings Hub, Gouvernance 6 Verbes, Routage Cognitif) & Refonte Ergonomique Inspirée de EXEMPLE"
 date: 2026-10-30
 status: approved
 authors:
@@ -24,7 +24,7 @@ related:
 
 À l'issue de la livraison complète des **Epics 1 à 4** (socle du monolithe modulaire `AD-19`, séparation Core/Pack `AD-20`, moteur durable `DBOS Transact` sur PostgreSQL 18, bus transactionnel `domain_events_outbox`, sandbox bimodale `Wasmtime`/`gVisor`, Gates Agentiques/Humaines et connecteur Jira Staged/MCP), trois études complémentaires ont mis en évidence des besoins structurants pour la suite du plan de livraison :
 
-1. **Analyse comparative KORE (`rework-from-exemple-2026-10-30.md` — 20 écrans de référence)** :
+1. **Analyse comparative EXEMPLE (`rework-from-exemple-2026-10-30.md` — 20 écrans de référence)** :
    - **Coquille Globale & Accueil Anti-Empty-State (Écrans 1, 2, 20)** : mire `/login` hybride bi-mode (SSO OIDC primaire + repli local admin), Header unifié (sélecteur Workspace/Pack couplé au Sprint/PI actif, pastilles de santé `DBOS`/`PG18`/`Outbox`), Sidebar gauche repliable en **Mode Rail (`68px`)**, page d'accueil guidée par un **Prompt scopé aux sources RAG autorisées** et un **Widget Sprint Actif** avec CTA d'audit IA en 1 clic, et cartes **Produits / Espaces** qualifiées par cycle de vie (`RUN`, `BUILD`, `MIGRATION`).
    - **Sources & Garde-fous d'Ingestion Documentaire (Écrans 3, 4)** : panneau latéral méthodologique `<GuidanceDrawer />` en 5 étapes, classification de sécurité `C0–C2` vs `C3`, détection automatique de PII avec modale d'arbitrage humain (*Pseudonymiser* via `PiiReversibleScrubber` / *Indexer tel quel* / *Annuler*), linter anti-PDF scanné vide (`0 char` fail-fast) et **Test de Réciprocité RAG en 1 clic** (*« Vérifier qu'il répond »* avec citation obligatoire).
    - **Studio Visuel de Workflows & Gouvernance du Cycle de Vie (Écrans 5 à 19)** :
@@ -77,7 +77,7 @@ apps/web/src/routes/
 
 ### 2.2 Wireframes Structurels ASCII des Surfaces Clés
 
-#### A. Mire `/login` Hybride Bi-Mode (KORE Écran 1)
+#### A. Mire `/login` Hybride Bi-Mode (EXEMPLE Écran 1)
 ```text
 +--------------------------------------------------------------------------------------------------+
 |  [Logo ORCIA]  ORCIA — Orchestration Human-Led, Agent-Accelerated          [🌐 FR/EN] [🌙 Thème] |
@@ -102,7 +102,7 @@ apps/web/src/routes/
 +--------------------------------------------------------------------------------------------------+
 ```
 
-#### B. Coquille Globale Direction C Enrichie & Accueil Anti-Empty-State (KORE Écrans 2 & 20)
+#### B. Coquille Globale Direction C Enrichie & Accueil Anti-Empty-State (EXEMPLE Écrans 2 & 20)
 ```text
 +--------------------------------------------------------------------------------------------------+
 | [ORCIA] | 🗂️ Périmètre (⌘W): [BU Paiement ▾] > [WS Core-Ledger (BUILD) ▾] | 🏃 Sprint 42 (J-4)   |
@@ -124,7 +124,7 @@ apps/web/src/routes/
 +---------+----------------------------------------------------------------------------------------+
 ```
 
-#### C. Studio Visuel de Workflows : Top Governance Bar & Inspecteur `COUCHES · N` (KORE Écrans 5 à 19)
+#### C. Studio Visuel de Workflows : Top Governance Bar & Inspecteur `COUCHES · N` (EXEMPLE Écrans 5 à 19)
 ```text
 +--------------------------------------------------------------------------------------------------+
 | ← Studio Workflows / Conception & Validation Technique (v1.2.0-draft)  [Badge: BROUILLON ÉDITABLE]|
@@ -160,31 +160,31 @@ apps/web/src/routes/
 
 Conformément aux règles d'isolation d'`@orcia/ui` (zéro import de routeur ou de client HTTP, styles via `tokens.css` Direction C uniquement, `i18n` FR/EN injecté par props, maximum 2 typographies `Inter`/`Geist Sans` + `JetBrains Mono`), les composants suivants sont normalisés :
 
-| Composant `@orcia/ui` | Sous-package | Responsabilité & Invariants UX/UI |
-| :--- | :--- | :--- |
-| **`<PermissionGuard />`** | `packages/ui/src/primitives/` | Enveloppe déclarative acceptant `verb: "create" \| "read" \| "update" \| "delete" \| "execute" \| "grant"`, `fallbackMode: "passive-lock" \| "disabled" \| "hidden"`. En mode `"passive-lock"` (défaut), affiche le badge `🔒 Non habilité` et déclenche la modale de demande d'accès (`AccessRequested` Outbox) sans jamais exposer le secret sous-jacent. |
-| **`<SecretField />`** | `packages/ui/src/primitives/` | Champ de saisie write-only adossé au contrat `SecretInput` (`keep \| set \| clear`) et `SecretStatus` (`configured`, `fingerprint: "sha256:8-hex"`, `updated_at`). Ne pré-remplit **jamais** la valeur ni un masque factice soumis par erreur ; affiche l'empreinte monospace et les boutons explicites *Remplacer le secret* / *Effacer*. |
-| **`<CollapsibleAppRail />`** | `packages/ui/src/shell/` | Évolution de `GlobalSidebar` supportant le **Mode Rail (`68px`, raccourci `[`)** persisté par utilisateur, affichant en pied le badge du **Pack Métier actif** (`orcia-pack-sdlc`) et les pastilles temps réel (compteur ambre d'actions requises, point de santé Outbox). |
-| **`<GuidanceDrawer />`** | `packages/ui/src/shell/` | Panneau latéral méthodologique repliable en **5 étapes numérotées** (*1. À quoi sert cet écran, 2. Prérequis, 3. Étapes recommandées, 4. Garde-fous de sécurité, 5. Vérification*) accompagnant les écrans de configuration (Sources, Connecteurs, Studio, IAM). |
-| **`<ScopedPromptBox />` & `<SprintContextWidget />`** | `packages/ui/src/cockpit/` | Briques d'accueil Anti-Empty-State : zone de prompt avec sélecteur explicite du périmètre documentaire RAG + sélecteur rapide de Tier LLM, et carte du Sprint/Lot actif avec bouton d'audit IA en 1 clic. |
-| **`<ProductLifecycleCard />`** | `packages/ui/src/workspaces/` | Carte d'espace/produit affichant le badge sémantique de phase **`RUN`** (émeraude), **`BUILD`** (cobalt) ou **`MIGRATION`** (ambre), les sources rattachées et les workflows recommandés. |
-| **`<WorkflowTopGovernanceBar />`** | `packages/ui/src/studio/` | Barre d'outils supérieure du Studio regroupant `Bibliothèque`, `Pré-prompt IA` (avec badge `sha256`), `Contrat du workflow` (`{pi}` + sections attendues), `Déclencheurs`, `▷ Tester` (dry-run *What-If*) et `Publier` (fork immuable `vX.Y.Z-draft`). |
-| **`<LayersInspectorPopover />`** | `packages/ui/src/studio/` | Popover `COUCHES · N` sur les nœuds composites (`SUB_WORKFLOW`), organisant les sous-étapes en 3 zones (*Entrées*, *Capacités*, *Livrables*) avec switch de visibilité `👁️` (`enabled: false -> SKIPPED`), suppression et réordonnancement. |
-| **`<InferenceTierBadge />` & `<EffortSelector />`** | `packages/ui/src/primitives/` | Sélecteurs et badges standardisés pour les tiers cognitifs (`Simple €`, `Medium €€`, `Complex €€€`, `Auto ⚡`) et les niveaux d'effort (`Par défaut`, `Rapide`, `Équilibré`, `Approfondi`). |
+| Composant `@orcia/ui`                                 | Sous-package                  | Responsabilité & Invariants UX/UI                                                                                                                                                                                                                                                                                                                          |
+| :---------------------------------------------------- | :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`<PermissionGuard />`**                             | `packages/ui/src/primitives/` | Enveloppe déclarative acceptant `verb: "create" \| "read" \| "update" \| "delete" \| "execute" \| "grant"`, `fallbackMode: "passive-lock" \| "disabled" \| "hidden"`. En mode `"passive-lock"` (défaut), affiche le badge `🔒 Non habilité` et déclenche la modale de demande d'accès (`AccessRequested` Outbox) sans jamais exposer le secret sous-jacent. |
+| **`<SecretField />`**                                 | `packages/ui/src/primitives/` | Champ de saisie write-only adossé au contrat `SecretInput` (`keep \| set \| clear`) et `SecretStatus` (`configured`, `fingerprint: "sha256:8-hex"`, `updated_at`). Ne pré-remplit **jamais** la valeur ni un masque factice soumis par erreur ; affiche l'empreinte monospace et les boutons explicites *Remplacer le secret* / *Effacer*.                 |
+| **`<CollapsibleAppRail />`**                          | `packages/ui/src/shell/`      | Évolution de `GlobalSidebar` supportant le **Mode Rail (`68px`, raccourci `[`)** persisté par utilisateur, affichant en pied le badge du **Pack Métier actif** (`orcia-pack-sdlc`) et les pastilles temps réel (compteur ambre d'actions requises, point de santé Outbox).                                                                                 |
+| **`<GuidanceDrawer />`**                              | `packages/ui/src/shell/`      | Panneau latéral méthodologique repliable en **5 étapes numérotées** (*1. À quoi sert cet écran, 2. Prérequis, 3. Étapes recommandées, 4. Garde-fous de sécurité, 5. Vérification*) accompagnant les écrans de configuration (Sources, Connecteurs, Studio, IAM).                                                                                           |
+| **`<ScopedPromptBox />` & `<SprintContextWidget />`** | `packages/ui/src/cockpit/`    | Briques d'accueil Anti-Empty-State : zone de prompt avec sélecteur explicite du périmètre documentaire RAG + sélecteur rapide de Tier LLM, et carte du Sprint/Lot actif avec bouton d'audit IA en 1 clic.                                                                                                                                                  |
+| **`<ProductLifecycleCard />`**                        | `packages/ui/src/workspaces/` | Carte d'espace/produit affichant le badge sémantique de phase **`RUN`** (émeraude), **`BUILD`** (cobalt) ou **`MIGRATION`** (ambre), les sources rattachées et les workflows recommandés.                                                                                                                                                                  |
+| **`<WorkflowTopGovernanceBar />`**                    | `packages/ui/src/studio/`     | Barre d'outils supérieure du Studio regroupant `Bibliothèque`, `Pré-prompt IA` (avec badge `sha256`), `Contrat du workflow` (`{pi}` + sections attendues), `Déclencheurs`, `▷ Tester` (dry-run *What-If*) et `Publier` (fork immuable `vX.Y.Z-draft`).                                                                                                     |
+| **`<LayersInspectorPopover />`**                      | `packages/ui/src/studio/`     | Popover `COUCHES · N` sur les nœuds composites (`SUB_WORKFLOW`), organisant les sous-étapes en 3 zones (*Entrées*, *Capacités*, *Livrables*) avec switch de visibilité `👁️` (`enabled: false -> SKIPPED`), suppression et réordonnancement.                                                                                                                 |
+| **`<InferenceTierBadge />` & `<EffortSelector />`**   | `packages/ui/src/primitives/` | Sélecteurs et badges standardisés pour les tiers cognitifs (`Simple €`, `Medium €€`, `Complex €€€`, `Auto ⚡`) et les niveaux d'effort (`Par défaut`, `Rapide`, `Équilibré`, `Approfondi`).                                                                                                                                                                 |
 
 ---
 
 ## 4. Stratégie d'Ajustement Multi-Epics (Epics 5, 6, 7 & Epic 8)
 
-Plutôt que de rouvrir les **Epics 1 à 4** déjà terminées et validées (`done`), les évolutions issues de l'analyse KORE et de l'audit Config Hub sont réparties proprement entre les **Epics 5, 6 et 7** (encore en `backlog`) et la nouvelle **Epic 8** :
+Plutôt que de rouvrir les **Epics 1 à 4** déjà terminées et validées (`done`), les évolutions issues de l'analyse EXEMPLE et de l'audit Config Hub sont réparties proprement entre les **Epics 5, 6 et 7** (encore en `backlog`) et la nouvelle **Epic 8** :
 
 ### 4.1 Ajustements dans l'Epic 5 (Notifications, Supervision Multi-Runs, `/workspaces` & Coquille Globale)
 - **`Story 5.2` (enrichie)** :
-  - Intègre dans `/workspaces` la qualification des Workspaces/Produits par phase de cycle de vie (**`RUN | BUILD | MIGRATION`** via `<ProductLifecycleCard />`, KORE Écran 20) et le panneau méthodologique **`<GuidanceDrawer />`** en 5 étapes sur l'onglet *2. Sources Dédiées & Partagées* (KORE Écrans 3–4).
+  - Intègre dans `/workspaces` la qualification des Workspaces/Produits par phase de cycle de vie (**`RUN | BUILD | MIGRATION`** via `<ProductLifecycleCard />`, EXEMPLE Écran 20) et le panneau méthodologique **`<GuidanceDrawer />`** en 5 étapes sur l'onglet *2. Sources Dédiées & Partagées* (EXEMPLE Écrans 3–4).
 - **Nouvelle `Story 5.4` : Coquille Globale Direction C Enrichie (Mire `/login` Bi-Mode, Mode Rail Collapsible, Header Santé DBOS/Outbox & Accueil Anti-Empty-State Scopé)** :
-  - Livre la route dédiée **`/login`** (SSO OIDC primaire + accordéon replié d'administration locale Argon2id/TOTP, états d'erreur typés RFC 9457, KORE Écran 1).
+  - Livre la route dédiée **`/login`** (SSO OIDC primaire + accordéon replié d'administration locale Argon2id/TOTP, états d'erreur typés RFC 9457, EXEMPLE Écran 1).
   - Livre le **Mode Rail (`68px`, `<CollapsibleAppRail />`)** de la Sidebar gauche avec badge du Pack actif, ainsi que les indicateurs de santé système temps réel dans la Top Bar (`DBOS/PG18`, `Outbox DLQ`, environnement `PROD/STAGING`).
-  - Livre la page d'accueil **Anti-Empty-State (`/`)** combinant le **`<SprintContextWidget />`** (avec CTA 1-clic *"Auditer les risques du sprint / lot"*) et la **`<ScopedPromptBox />`** (sélecteur explicite de sources RAG filtré par le Permission Broker, KORE Écran 2).
+  - Livre la page d'accueil **Anti-Empty-State (`/`)** combinant le **`<SprintContextWidget />`** (avec CTA 1-clic *"Auditer les risques du sprint / lot"*) et la **`<ScopedPromptBox />`** (sélecteur explicite de sources RAG filtré par le Permission Broker, EXEMPLE Écran 2).
 
 ### 4.2 Ajustements dans l'Epic 6 (Audit Immuable, FinOps & Gouvernance Exécutive)
 - **`Story 6.1` (enrichie)** :
@@ -202,14 +202,14 @@ Plutôt que de rouvrir les **Epics 1 à 4** déjà terminées et validées (`don
 
 L'**Epic 8** fusionne de manière sans couture les 6 stories de `epic-8-settings-hub-study.md`, les exigences d'architecture `AD-21` de `config-hub-spec-readiness-audit-2026-10-28.md` (`EPIC-08-CONFIG-HUB`) et les 20 écrans de `rework-from-exemple-2026-10-30.md` :
 
-| Story | Titre & Périmètre | Couverture KORE & Audit Config Hub (`AD-21`) |
-| :--- | :--- | :--- |
-| **`Story 8.1`** | **Modèle d'Habilitations Hiérarchique RBAC/ABAC à 6 Verbes (`create, read, update, delete, execute, grant`), Délégation Bornée & Invariants Anti-Verrouillage** | Arbre `Org -> BU -> Team -> Workspace -> Pack -> Resource -> Action` ; confinement de délégation (`grant`) ; découverte passive (`🔒 Non habilité` + `AccessRequested`) ; colonnes préparatoires `ACTION_ITEM-8.1..8.3` ; invariants anti-lockout (`ERR_ADMIN_LOCKOUT_PREVENTED`). |
-| **`Story 8.2`** | **Abstraction Cognitive des Modèles LLM (`simple, medium, complex, auto`), Niveaux d'Effort (`default, fast, balanced, deep`), Budgets Hiérarchiques & Escalade Déterministe DBOS** | Écran `/settings/ai-models` ; mapping par Workspace ; routeur `auto` à escalade sur échec de Gate Déterministe tracé dans `inference_attempts` ; garde `409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS` (Drainer/Forcer) ; soumis à `PROC-01`. |
-| **`Story 8.3`** | **Socle Settings Versionnés (`platform_settings`, `ETag`/`If-Match` `412`), Contrat Secret Write-Only (`SecretInput`/`SecretStatus`), Coquille `/settings/*` & Primitives `<PermissionGuard>` / `<SecretField>`** | Table `platform_settings` ; événement `SettingsChanged` ; 6 sous-routes `/settings/{iam,connectors,ai-models,packs,workflows,audit}` ; test du secret témoin (`0` fuite) ; console `/settings/audit` avec rejeu Outbox borné (`dry_run: true`). |
-| **`Story 8.4`** | **Hub des Connecteurs (`/settings/connectors`), Test de Connexion Fail-Fast DBOS, Garde-fous d'Ingestion (Classification `C0–C3`, Arbitrage PII, Linter OCR `0 char`) & Test de Réciprocité RAG** | KORE Écrans 3 & 4 : CRUD instances `workspace_datasources` ; `SecretField` ; classification `C0-C2` vs `C3` ; détection PII + modale d'arbitrage (`Pseudonymiser` / `Indexer` / `Annuler`) ; rejet PDF scanné vide ; bouton *"Vérifier qu'il répond"* avec citation obligatoire. |
-| **`Story 8.5`** | **Studio Visuel de Workflows Enrichi (5 Onglets de Cycle de Vie, Barre de Gouvernance `Pré-prompt`/`Contrat`/`Déclencheurs`/`Tester`, Inspecteur `COUCHES · N`, Moindre Privilège Connecteur) & Registre des Packs (`/settings/packs`)** | KORE Écrans 5 à 19 : 5 onglets Studio ; fork immuable `vX.Y.Z-draft` ; Contrat typé `{pi}` + sections Markdown vérifiées par Gate ; inspecteur `COUCHES · N` (`enabled: false -> SKIPPED`) ; token connecteur `Lire` vs `Écrire` par étape ; activation des Packs par scope + JSON Schema. |
-| **`Story 8.6`** | **Parcours d'Initialisation Guidés par Profil (3 Wizards Durables DBOS `wizard_sessions`), Espace Démo Pré-rempli (*Zero Empty-State*) & Validation Bout-en-Bout** | 3 Wizards adaptés au Profil Humain (*Tech Lead SDLC*, *Business/Ops Manager*, *Platform/SecOps Admin*) persistés dans `wizard_sessions` ; bouton de test fail-fast à chaque étape ; Workspace de démonstration pré-câblé. |
+| Story           | Titre & Périmètre                                                                                                                                                                                                                        | Couverture EXEMPLE & Audit Config Hub (`AD-21`)                                                                                                                                                                                                                                               |
+| :-------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`Story 8.1`** | **Modèle d'Habilitations Hiérarchique RBAC/ABAC à 6 Verbes (`create, read, update, delete, execute, grant`), Délégation Bornée & Invariants Anti-Verrouillage**                                                                          | Arbre `Org -> BU -> Team -> Workspace -> Pack -> Resource -> Action` ; confinement de délégation (`grant`) ; découverte passive (`🔒 Non habilité` + `AccessRequested`) ; colonnes préparatoires `ACTION_ITEM-8.1..8.3` ; invariants anti-lockout (`ERR_ADMIN_LOCKOUT_PREVENTED`).             |
+| **`Story 8.2`** | **Abstraction Cognitive des Modèles LLM (`simple, medium, complex, auto`), Niveaux d'Effort (`default, fast, balanced, deep`), Budgets Hiérarchiques & Escalade Déterministe DBOS**                                                      | Écran `/settings/ai-models` ; mapping par Workspace ; routeur `auto` à escalade sur échec de Gate Déterministe tracé dans `inference_attempts` ; garde `409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS` (Drainer/Forcer) ; soumis à `PROC-01`.                                                        |
+| **`Story 8.3`** | **Socle Settings Versionnés (`platform_settings`, `ETag`/`If-Match` `412`), Contrat Secret Write-Only (`SecretInput`/`SecretStatus`), Coquille `/settings/*` & Primitives `<PermissionGuard>` / `<SecretField>`**                        | Table `platform_settings` ; événement `SettingsChanged` ; 6 sous-routes `/settings/{iam,connectors,ai-models,packs,workflows,audit}` ; test du secret témoin (`0` fuite) ; console `/settings/audit` avec rejeu Outbox borné (`dry_run: true`).                                               |
+| **`Story 8.4`** | **Hub des Connecteurs (`/settings/connectors`), Test de Connexion Fail-Fast DBOS, Garde-fous d'Ingestion (Classification `C0–C3`, Arbitrage PII, Linter OCR `0 char`) & Test de Réciprocité RAG**                                        | EXEMPLE Écrans 3 & 4 : CRUD instances `workspace_datasources` ; `SecretField` ; classification `C0-C2` vs `C3` ; détection PII + modale d'arbitrage (`Pseudonymiser` / `Indexer` / `Annuler`) ; rejet PDF scanné vide ; bouton *"Vérifier qu'il répond"* avec citation obligatoire.           |
+| **`Story 8.5`** | **Studio Visuel de Workflows Enrichi (5 Onglets de Cycle de Vie, Barre de Gouvernance `Pré-prompt`/`Contrat`/`Déclencheurs`/`Tester`, Inspecteur `COUCHES · N`, Moindre Privilège Connecteur) & Registre des Packs (`/settings/packs`)** | EXEMPLE Écrans 5 à 19 : 5 onglets Studio ; fork immuable `vX.Y.Z-draft` ; Contrat typé `{pi}` + sections Markdown vérifiées par Gate ; inspecteur `COUCHES · N` (`enabled: false -> SKIPPED`) ; token connecteur `Lire` vs `Écrire` par étape ; activation des Packs par scope + JSON Schema. |
+| **`Story 8.6`** | **Parcours d'Initialisation Guidés par Profil (3 Wizards Durables DBOS `wizard_sessions`), Espace Démo Pré-rempli (*Zero Empty-State*) & Validation Bout-en-Bout**                                                                       | 3 Wizards adaptés au Profil Humain (*Tech Lead SDLC*, *Business/Ops Manager*, *Platform/SecOps Admin*) persistés dans `wizard_sessions` ; bouton de test fail-fast à chaque étape ; Workspace de démonstration pré-câblé.                                                                     |
 
 ---
 
