@@ -43,6 +43,9 @@ from orcia_core.orchestration import (
 from orcia_core.orchestration.assistant_governance import (
     AssistantFourLevelGovernanceService,
 )
+from orcia_core.orchestration.assistant_three_speed_router import (
+    AssistantThreeSpeedRouterService,
+)
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
@@ -488,4 +491,18 @@ def get_assistant_governance_service(
     if svc is None:
         svc = AssistantFourLevelGovernanceService()
         request.app.state.assistant_governance_service = svc
+    return svc
+
+
+def get_assistant_three_speed_router_service(
+    request: Request,
+) -> AssistantThreeSpeedRouterService:
+    """FastAPI `Depends` provider returning `AssistantThreeSpeedRouterService` (`Story 10.2`)."""
+    svc: AssistantThreeSpeedRouterService | None = getattr(
+        request.app.state, "assistant_three_speed_router_service", None
+    )
+    if svc is None:
+        gov = get_assistant_governance_service(request)
+        svc = AssistantThreeSpeedRouterService(governance_service=gov)
+        request.app.state.assistant_three_speed_router_service = svc
     return svc

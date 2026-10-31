@@ -209,6 +209,13 @@ export {
   type UiAssistantResponseTone,
   type UiAssistantStudioNode,
 } from "./primitives/AssistantGovernanceModalAndStudio";
+export {
+  AssistantSpeedSelectorAndStreamView,
+  type AssistantSpeedSelectorAndStreamViewLabels,
+  type AssistantSpeedSelectorAndStreamViewProps,
+  type UiAssistantSpeedMode,
+  type UiThreeSpeedStepProgress,
+} from "./primitives/AssistantSpeedSelectorAndStreamView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

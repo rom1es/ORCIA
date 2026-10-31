@@ -951,6 +951,17 @@ export interface components {
       trace_id: string;
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
     };
+    InvalidatePromptCacheRequest: {
+      reason?: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
+      user_id?: string | null;
+      workspace_id: string;
+    };
+    InvalidatePromptCacheResponse: {
+      invalidated_keys_count: number;
+      outbox_event_id: string;
+      reason: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
+      workspace_id: string;
+    };
     JiraIssueUpdatedWebhookRequest: {
       issue_key: string;
       new_status: string;
@@ -1758,6 +1769,38 @@ export interface components {
       title: string;
       workspace_id: string;
     };
+    ThreeSpeedStepProgressSchemaItem: {
+      connector_or_lens?: string | null;
+      duration_ms: number;
+      label: string;
+      status?: "COMPLETED" | "RUNNING";
+      step_code: string;
+    };
+    ThreeSpeedTurnRequest: {
+      deep_audit_pill_active?: boolean;
+      hat?: string | null;
+      requested_speed?: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT" | null;
+      user_prompt: string;
+      workspace_id: string;
+    };
+    ThreeSpeedTurnResponse: {
+      assembled_prompt_sha256: string;
+      cache_hit: boolean;
+      cache_key: string;
+      cache_lookup_ms: number;
+      deep_audit_lenses?: (string)[];
+      hat: string;
+      intermediate_llm_calls: number;
+      invoked_targets: (string)[];
+      nodes_1_to_4_deterministic_ms: number;
+      response_text: string;
+      speed_mode: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT";
+      step_progress: (components["schemas"]["ThreeSpeedStepProgressSchemaItem"])[];
+      ttft_ms: number;
+      turn_id: string;
+      user_id: string;
+      workspace_id: string;
+    };
     Tier2TddVerifyRequest: {
       buggy_files?: Record<string, string>;
       cas_readonly_dir?: string | null;
@@ -2294,6 +2337,27 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/three-speed/invalidate-cache": {
+    post: {
+      responses: {
+        200: components["schemas"]["InvalidatePromptCacheResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/three-speed/stream": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/assistant/three-speed/turn": {
+    post: {
+      responses: {
+        200: components["schemas"]["ThreeSpeedTurnResponse"];
       };
     };
   };
@@ -3143,6 +3207,8 @@ export type InitUserRequest = components["schemas"]["InitUserRequest"];
 export type InitUserResponse = components["schemas"]["InitUserResponse"];
 export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"];
 export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
+export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
+export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
 export type JiraIssueUpdatedWebhookRequest = components["schemas"]["JiraIssueUpdatedWebhookRequest"];
 export type JiraIssueUpdatedWebhookResponse = components["schemas"]["JiraIssueUpdatedWebhookResponse"];
 export type JiraJqlSearchRequest = components["schemas"]["JiraJqlSearchRequest"];
@@ -3237,6 +3303,9 @@ export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunIt
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
 export type TaskNotificationItemResponse = components["schemas"]["TaskNotificationItemResponse"];
+export type ThreeSpeedStepProgressSchemaItem = components["schemas"]["ThreeSpeedStepProgressSchemaItem"];
+export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
+export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];

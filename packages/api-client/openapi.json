@@ -6036,6 +6036,78 @@
         "title": "InitWorkspaceResponse",
         "type": "object"
       },
+      "InvalidatePromptCacheRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`).",
+        "properties": {
+          "reason": {
+            "default": "SETTINGS_CHANGED",
+            "enum": [
+              "SETTINGS_CHANGED",
+              "OVERRIDE_UPDATED",
+              "GLOSSARY_PROMOTED"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "InvalidatePromptCacheRequest",
+        "type": "object"
+      },
+      "InvalidatePromptCacheResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`).",
+        "properties": {
+          "invalidated_keys_count": {
+            "title": "Invalidated Keys Count",
+            "type": "integer"
+          },
+          "outbox_event_id": {
+            "title": "Outbox Event Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "SETTINGS_CHANGED",
+              "OVERRIDE_UPDATED",
+              "GLOSSARY_PROMOTED"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "reason",
+          "invalidated_keys_count",
+          "outbox_event_id"
+        ],
+        "title": "InvalidatePromptCacheResponse",
+        "type": "object"
+      },
       "JiraIssueUpdatedWebhookRequest": {
         "additionalProperties": false,
         "description": "Incoming `jira:issue_updated` webhook payload (`FR-16`).",
@@ -11276,6 +11348,208 @@
         "title": "TaskNotificationItemResponse",
         "type": "object"
       },
+      "ThreeSpeedStepProgressSchemaItem": {
+        "additionalProperties": false,
+        "description": "Real-time step progress item in 3-Speed routing (`Story 10.2`).",
+        "properties": {
+          "connector_or_lens": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Or Lens"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "status": {
+            "default": "COMPLETED",
+            "enum": [
+              "COMPLETED",
+              "RUNNING"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_code": {
+            "title": "Step Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_code",
+          "label",
+          "duration_ms"
+        ],
+        "title": "ThreeSpeedStepProgressSchemaItem",
+        "type": "object"
+      },
+      "ThreeSpeedTurnRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`).",
+        "properties": {
+          "deep_audit_pill_active": {
+            "default": false,
+            "title": "Deep Audit Pill Active",
+            "type": "boolean"
+          },
+          "hat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hat"
+          },
+          "requested_speed": {
+            "anyOf": [
+              {
+                "enum": [
+                  "SPEED_1_FAST",
+                  "SPEED_2_AGENT_TOOLS",
+                  "SPEED_3_DEEP_AUDIT"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Speed"
+          },
+          "user_prompt": {
+            "minLength": 1,
+            "title": "User Prompt",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "user_prompt"
+        ],
+        "title": "ThreeSpeedTurnRequest",
+        "type": "object"
+      },
+      "ThreeSpeedTurnResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`).",
+        "properties": {
+          "assembled_prompt_sha256": {
+            "title": "Assembled Prompt Sha256",
+            "type": "string"
+          },
+          "cache_hit": {
+            "title": "Cache Hit",
+            "type": "boolean"
+          },
+          "cache_key": {
+            "title": "Cache Key",
+            "type": "string"
+          },
+          "cache_lookup_ms": {
+            "title": "Cache Lookup Ms",
+            "type": "number"
+          },
+          "deep_audit_lenses": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Deep Audit Lenses",
+            "type": "array"
+          },
+          "hat": {
+            "title": "Hat",
+            "type": "string"
+          },
+          "intermediate_llm_calls": {
+            "title": "Intermediate Llm Calls",
+            "type": "integer"
+          },
+          "invoked_targets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invoked Targets",
+            "type": "array"
+          },
+          "nodes_1_to_4_deterministic_ms": {
+            "title": "Nodes 1 To 4 Deterministic Ms",
+            "type": "number"
+          },
+          "response_text": {
+            "title": "Response Text",
+            "type": "string"
+          },
+          "speed_mode": {
+            "enum": [
+              "SPEED_1_FAST",
+              "SPEED_2_AGENT_TOOLS",
+              "SPEED_3_DEEP_AUDIT"
+            ],
+            "title": "Speed Mode",
+            "type": "string"
+          },
+          "step_progress": {
+            "items": {
+              "$ref": "#/components/schemas/ThreeSpeedStepProgressSchemaItem"
+            },
+            "title": "Step Progress",
+            "type": "array"
+          },
+          "ttft_ms": {
+            "title": "Ttft Ms",
+            "type": "number"
+          },
+          "turn_id": {
+            "title": "Turn Id",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "turn_id",
+          "workspace_id",
+          "user_id",
+          "hat",
+          "speed_mode",
+          "cache_key",
+          "cache_hit",
+          "cache_lookup_ms",
+          "nodes_1_to_4_deterministic_ms",
+          "ttft_ms",
+          "intermediate_llm_calls",
+          "invoked_targets",
+          "step_progress",
+          "response_text",
+          "assembled_prompt_sha256"
+        ],
+        "title": "ThreeSpeedTurnResponse",
+        "type": "object"
+      },
       "Tier2TddVerifyRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/gates/sandbox/tier2/tdd-verify` (`Story 4.1a`, `UJ-12`).",
@@ -15151,6 +15425,184 @@
           }
         },
         "summary": "Save Assistant Studio Graph Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/three-speed/invalidate-cache": {
+      "post": {
+        "description": "Invalidate Redis 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`).",
+        "operationId": "invalidate_prompt_cache_endpoint_api_v1_assistant_three_speed_invalidate_cache_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvalidatePromptCacheRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidatePromptCacheResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Invalidate Prompt Cache Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/three-speed/stream": {
+      "post": {
+        "description": "Stream SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`).",
+        "operationId": "stream_three_speed_turn_endpoint_api_v1_assistant_three_speed_stream_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThreeSpeedTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream Three Speed Turn Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/three-speed/turn": {
+      "post": {
+        "description": "Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`).",
+        "operationId": "execute_three_speed_turn_endpoint_api_v1_assistant_three_speed_turn_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThreeSpeedTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreeSpeedTurnResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execute Three Speed Turn Endpoint",
         "tags": [
           "assistant-epic10"
         ]

@@ -10,19 +10,30 @@ Exposes:
 
 from __future__ import annotations
 
+import json
+from collections.abc import Iterator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 
-from orcia_api.dependencies import get_assistant_governance_service
+from orcia_api.dependencies import (
+    get_assistant_governance_service,
+    get_assistant_three_speed_router_service,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
     AssembledLayerPreviewSchemaItem,
     AssistantGovernanceViewResponse,
     AssistantStudioGraphStateSchemaItem,
     AssistantStudioNodeSchemaItem,
+    InvalidatePromptCacheRequest,
+    InvalidatePromptCacheResponse,
     ResetAssistantStudioGraphRequest,
     SaveAssistantStudioGraphRequest,
+    ThreeSpeedStepProgressSchemaItem,
+    ThreeSpeedTurnRequest,
+    ThreeSpeedTurnResponse,
     UpdateUserLayerPreferencesRequest,
     UpdateWorkspaceLayerSettingsRequest,
     UserLayerPreferencesSchemaItem,
@@ -35,6 +46,9 @@ from orcia_core.orchestration.assistant_governance import (
     UserLayerPreferences,
     WorkspaceLayerSettings,
 )
+from orcia_core.orchestration.assistant_three_speed_router import (
+    AssistantThreeSpeedRouterService,
+)
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["assistant-epic10"])
@@ -42,6 +56,9 @@ router = APIRouter(prefix="/api/v1/assistant", tags=["assistant-epic10"])
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 GovernanceServiceDep = Annotated[
     AssistantFourLevelGovernanceService, Depends(get_assistant_governance_service)
+]
+ThreeSpeedRouterDep = Annotated[
+    AssistantThreeSpeedRouterService, Depends(get_assistant_three_speed_router_service)
 ]
 
 
@@ -140,6 +157,7 @@ def update_user_layer_preferences_endpoint(
     payload: UpdateUserLayerPreferencesRequest,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
+    router_svc: ThreeSpeedRouterDep,
 ) -> UserLayerPreferencesSchemaItem:
     """Update Tab 1 (`👤 Mes préférences — Couche 5 USER`) (`Story 10.1`)."""
     updated = svc.update_user_preferences(
@@ -150,6 +168,11 @@ def update_user_layer_preferences_endpoint(
         default_hat=payload.default_hat,
         personal_instructions=payload.personal_instructions,
     )
+    router_svc.invalidate_prompt_cache(
+        workspace_id=payload.workspace_id,
+        reason="OVERRIDE_UPDATED",
+        user_id=user.id,
+    )
     return _to_user_prefs_schema(updated)
 
 
@@ -158,6 +181,7 @@ def update_workspace_layer_settings_endpoint(
     payload: UpdateWorkspaceLayerSettingsRequest,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
+    router_svc: ThreeSpeedRouterDep,
 ) -> WorkspaceLayerSettingsSchemaItem:
     """Update Tab 2 (`📦 Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`)."""
     updated = svc.update_workspace_settings(
@@ -172,6 +196,10 @@ def update_workspace_layer_settings_endpoint(
         ),
         mcp_expose_assistant=payload.mcp_expose_assistant,
     )
+    router_svc.invalidate_prompt_cache(
+        workspace_id=payload.workspace_id,
+        reason="SETTINGS_CHANGED",
+    )
     return _to_workspace_settings_schema(updated)
 
 
@@ -180,6 +208,7 @@ def save_assistant_studio_graph_endpoint(
     payload: SaveAssistantStudioGraphRequest,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
+    router_svc: ThreeSpeedRouterDep,
 ) -> AssistantStudioGraphStateSchemaItem:
     """Save Mode B Studio graph override (`TEAM` or `WORKSPACE`) (`🔒 AssistantHarness`)."""
     saved = svc.save_studio_graph_override(
@@ -202,6 +231,10 @@ def save_assistant_studio_graph_endpoint(
             for n in payload.nodes
         ),
     )
+    router_svc.invalidate_prompt_cache(
+        workspace_id=payload.scope_id,
+        reason="OVERRIDE_UPDATED",
+    )
     return _to_studio_graph_schema(saved)
 
 
@@ -210,6 +243,7 @@ def reset_assistant_studio_graph_endpoint(
     payload: ResetAssistantStudioGraphRequest,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
+    router_svc: ThreeSpeedRouterDep,
 ) -> AssistantStudioGraphStateSchemaItem:
     """Reset Mode B Studio override in 1 click (`↺ Réinitialiser`) (`Story 10.1`)."""
     restored = svc.reset_studio_graph_override(
@@ -217,4 +251,96 @@ def reset_assistant_studio_graph_endpoint(
         scope_level=payload.scope_level,
         scope_id=payload.scope_id,
     )
+    router_svc.invalidate_prompt_cache(
+        workspace_id=payload.scope_id,
+        reason="OVERRIDE_UPDATED",
+    )
     return _to_studio_graph_schema(restored)
+
+
+@router.post("/three-speed/turn", response_model=ThreeSpeedTurnResponse)
+def execute_three_speed_turn_endpoint(
+    payload: ThreeSpeedTurnRequest,
+    user: CurrentUserDep,
+    router_svc: ThreeSpeedRouterDep,
+) -> ThreeSpeedTurnResponse:
+    """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
+    turn = router_svc.execute_three_speed_turn(
+        user,
+        workspace_id=payload.workspace_id,
+        user_prompt=payload.user_prompt,
+        hat=payload.hat,
+        requested_speed=payload.requested_speed,
+        deep_audit_pill_active=payload.deep_audit_pill_active,
+    )
+    return ThreeSpeedTurnResponse(
+        turn_id=turn.turn_id,
+        workspace_id=turn.workspace_id,
+        user_id=turn.user_id,
+        hat=turn.hat,
+        speed_mode=turn.speed_mode,
+        cache_key=turn.cache_key,
+        cache_hit=turn.cache_hit,
+        cache_lookup_ms=turn.cache_lookup_ms,
+        nodes_1_to_4_deterministic_ms=turn.nodes_1_to_4_deterministic_ms,
+        ttft_ms=turn.ttft_ms,
+        intermediate_llm_calls=turn.intermediate_llm_calls,
+        invoked_targets=list(turn.invoked_targets),
+        step_progress=[
+            ThreeSpeedStepProgressSchemaItem(
+                step_code=st.step_code,
+                label=st.label,
+                duration_ms=st.duration_ms,
+                status=st.status,
+                connector_or_lens=st.connector_or_lens,
+            )
+            for st in turn.step_progress
+        ],
+        response_text=turn.response_text,
+        assembled_prompt_sha256=turn.assembled_prompt_sha256,
+        deep_audit_lenses=list(turn.deep_audit_lenses),
+    )
+
+
+@router.post("/three-speed/stream")
+def stream_three_speed_turn_endpoint(
+    payload: ThreeSpeedTurnRequest,
+    user: CurrentUserDep,
+    router_svc: ThreeSpeedRouterDep,
+) -> StreamingResponse:
+    """Stream SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`)."""
+
+    def _generate() -> Iterator[str]:
+        for evt in router_svc.stream_three_speed_turn_sse(
+            user,
+            workspace_id=payload.workspace_id,
+            user_prompt=payload.user_prompt,
+            hat=payload.hat,
+            requested_speed=payload.requested_speed,
+            deep_audit_pill_active=payload.deep_audit_pill_active,
+        ):
+            event_name = evt["event"]
+            data_json = json.dumps(evt["data"], ensure_ascii=False)
+            yield f"event: {event_name}\ndata: {data_json}\n\n"
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
+
+
+@router.post("/three-speed/invalidate-cache", response_model=InvalidatePromptCacheResponse)
+def invalidate_prompt_cache_endpoint(
+    payload: InvalidatePromptCacheRequest,
+    user: CurrentUserDep,
+    router_svc: ThreeSpeedRouterDep,
+) -> InvalidatePromptCacheResponse:
+    """Invalidate Redis 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`)."""
+    outcome = router_svc.invalidate_prompt_cache(
+        workspace_id=payload.workspace_id,
+        reason=payload.reason,
+        user_id=payload.user_id,
+    )
+    return InvalidatePromptCacheResponse(
+        workspace_id=outcome.workspace_id,
+        reason=outcome.reason,
+        invalidated_keys_count=outcome.invalidated_keys_count,
+        outbox_event_id=outcome.outbox_event_id,
+    )

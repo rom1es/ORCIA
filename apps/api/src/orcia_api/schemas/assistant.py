@@ -285,3 +285,75 @@ class AssistantGovernanceViewResponse(BaseModel):
     workspace_settings: WorkspaceLayerSettingsSchemaItem
     assembled_layers: list[AssembledLayerPreviewSchemaItem]
     studio_graph: AssistantStudioGraphStateSchemaItem
+
+
+class ThreeSpeedStepProgressSchemaItem(BaseModel):
+    """Real-time step progress item in 3-Speed routing (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    step_code: str
+    label: str
+    duration_ms: float
+    status: Literal["COMPLETED", "RUNNING"] = "COMPLETED"
+    connector_or_lens: str | None = None
+
+
+class ThreeSpeedTurnRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str = Field(..., min_length=1)
+    user_prompt: str = Field(..., min_length=1)
+    hat: str | None = None
+    requested_speed: Literal["SPEED_1_FAST", "SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT"] | None = (
+        None
+    )
+    deep_audit_pill_active: bool = False
+
+
+class ThreeSpeedTurnResponse(BaseModel):
+    """Response payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    turn_id: str
+    workspace_id: str
+    user_id: str
+    hat: str
+    speed_mode: Literal["SPEED_1_FAST", "SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT"]
+    cache_key: str
+    cache_hit: bool
+    cache_lookup_ms: float
+    nodes_1_to_4_deterministic_ms: float
+    ttft_ms: float
+    intermediate_llm_calls: int
+    invoked_targets: list[str]
+    step_progress: list[ThreeSpeedStepProgressSchemaItem]
+    response_text: str
+    assembled_prompt_sha256: str
+    deep_audit_lenses: list[str] = Field(default_factory=list)
+
+
+class InvalidatePromptCacheRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str = Field(..., min_length=1)
+    reason: Literal["SETTINGS_CHANGED", "OVERRIDE_UPDATED", "GLOSSARY_PROMOTED"] = (
+        "SETTINGS_CHANGED"
+    )
+    user_id: str | None = None
+
+
+class InvalidatePromptCacheResponse(BaseModel):
+    """Response payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str
+    reason: Literal["SETTINGS_CHANGED", "OVERRIDE_UPDATED", "GLOSSARY_PROMOTED"]
+    invalidated_keys_count: int
+    outbox_event_id: str

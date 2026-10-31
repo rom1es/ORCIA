@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
+  AssistantSpeedSelectorAndStreamView,
+  type AssistantSpeedSelectorAndStreamViewLabels,
 } from "../index";
 
 const GOV_LABELS: AssistantGovernanceModalAndStudioLabels = {
@@ -191,5 +193,72 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     fireEvent.click(screen.getByTestId("studio-reset-default-btn"));
     expect(onResetStudioOverride).toHaveBeenCalledWith("WORKSPACE");
     expect(screen.getByTestId("studio-reset-restored-banner")).toBeDefined();
+  });
+
+  it("Story 10.2 — renders 3-Speed Conversational Selector (⚡ Rapide, @Agent / /Skill, 🧠 Approfondi), Redis cache badge, and real-time step progress", () => {
+    const onSendTurn = vi.fn();
+    const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      headerTitle: "Routage Conversationnel à 3 Vitesses & Cache Redis 5 Couches",
+      speed1PillLabel: "⚡ Vitesse 1 — Rapide (TTFT < 1,2 s)",
+      speed2PillLabel: "🛠️ Vitesse 2 — @Agent / /Skill (TTFT < 2,5 s)",
+      speed3DeepAuditPillLabel: "🧠 Approfondi (Audit multi-facettes AD-10)",
+      cacheHitBadge: "⚡ Cache Redis HIT",
+      cacheMissBadge: "🔄 Cache Redis MISS",
+      nodesDeterministicLabel: "Nœuds 1–4 déterministes",
+      ttftBadgePrefix: "TTFT",
+      inputPlaceholder: "Posez votre question, mentionnez @Agent ou /Skill...",
+      sendPromptCta: "Envoyer",
+    };
+
+    render(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-claims-alpha"
+        userId="u-claire-01"
+        hat="PM"
+        cacheHit={true}
+        cacheLookupMs={1.2}
+        nodes1To4DeterministicMs={15.7}
+        ttftMs={395.7}
+        stepProgress={[
+          {
+            stepCode: "CONNECTOR_INTERROGATION",
+            label: "🔍 Interrogation de Jira...",
+            durationMs: 520,
+            status: "COMPLETED",
+            connectorOrLens: "@jira-triage",
+          },
+        ]}
+        streamedText="Réponse vérifiée [S1]"
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    expect(screen.getByTestId("assistant-prompt-cache-badge").textContent).toContain(
+      "assistant:prompt:ws-claims-alpha:u-claire-01:PM",
+    );
+    expect(screen.getByTestId("assistant-step-progress-list").textContent).toContain(
+      "🔍 Interrogation de Jira...",
+    );
+
+    // Typing @jira-triage switches to SPEED_2_AGENT_TOOLS automatically
+    fireEvent.change(screen.getByTestId("assistant-three-speed-input"), {
+      target: { value: "Vérifie @jira-triage sur le backlog" },
+    });
+    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+    expect(onSendTurn).toHaveBeenCalledWith({
+      userPrompt: "Vérifie @jira-triage sur le backlog",
+      requestedSpeed: "SPEED_2_AGENT_TOOLS",
+      deepAuditPillActive: false,
+    });
+
+    // Clicking 🧠 Approfondi toggles SPEED_3_DEEP_AUDIT
+    fireEvent.click(screen.getByTestId("assistant-deep-audit-pill-toggle"));
+    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+    expect(onSendTurn).toHaveBeenLastCalledWith({
+      userPrompt: "Vérifie @jira-triage sur le backlog",
+      requestedSpeed: "SPEED_3_DEEP_AUDIT",
+      deepAuditPillActive: true,
+    });
   });
 });
