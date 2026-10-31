@@ -1665,6 +1665,32 @@ export interface components {
       target_uri: string;
       workspace_id: string;
     };
+    TwoSpeedSearchHitSchemaItem: {
+      badge?: string | null;
+      deep_link_uri: string;
+      family: "FOLDERS_DISCUSSIONS" | "PROCESSES_EXECUTIONS" | "DELIVERABLES_ARTIFACTS" | "SOURCES_SNIPPETS" | "GLOSSARY_RULES" | "AGENTS_SKILLS" | "HELP_ACTIONS";
+      highlight_duration_ms?: number;
+      item_id: string;
+      locked_top: boolean;
+      opens_contextual_help_column?: boolean;
+      score: number;
+      screen_route: string;
+      snippet: string;
+      speed_tier: 1 | 2;
+      title: string;
+      workspace_id: string;
+    };
+    TwoSpeedSearchResponse: {
+      hits: (components["schemas"]["TwoSpeedSearchHitSchemaItem"])[];
+      query: string;
+      scope: "SCREEN" | "WORKSPACE" | "ALL_WORKSPACES";
+      speed1_llm_cost_usd: number;
+      speed2_cache_hit: boolean;
+      speed2_cache_ttl_seconds?: number;
+      speed2_executed: boolean;
+      speed2_redis_key?: string | null;
+      trace_id?: string | null;
+    };
     UpdateWorkspaceLifecycleRequest: {
       lifecycle_phase: "RUN" | "BUILD" | "MIGRATION";
     };
@@ -2590,6 +2616,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/search": {
+    get: {
+      responses: {
+        200: components["schemas"]["TwoSpeedSearchResponse"];
+      };
+    };
+  };
   "/api/v1/settings/ai-models/mappings": {
     get: {
       responses: {
@@ -2913,6 +2946,8 @@ export type TaskNotificationItemResponse = components["schemas"]["TaskNotificati
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
+export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
+export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateWorkspaceLifecycleRequest = components["schemas"]["UpdateWorkspaceLifecycleRequest"];
 export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
 export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];

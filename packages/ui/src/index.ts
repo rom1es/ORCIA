@@ -173,6 +173,15 @@ export {
   type UiAccostageMilestoneItem,
   type UiProgressiveLlmTierMode,
 } from "./primitives/ProgressiveDay0AccostageBanner";
+export {
+  TopHeaderSearchCommand,
+  type DeepLinkResolutionPayload,
+  type TopHeaderSearchCommandLabels,
+  type TopHeaderSearchCommandProps,
+  type TopSearchFamilyKey,
+  type TopSearchHitItem,
+  type TopSearchScopeMode,
+} from "./primitives/TopHeaderSearchCommand";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

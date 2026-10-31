@@ -2,12 +2,14 @@ import type {
   FourZoneDirectionCShellLabels,
   ProgressiveDay0AccostageLabels,
   StreamlinedCockpitLabels,
+  TopHeaderSearchCommandLabels,
 } from "@orcia/ui";
 
 export interface Epic9DictionarySection {
   readonly fourZoneShell: FourZoneDirectionCShellLabels;
   readonly streamlinedCockpit: StreamlinedCockpitLabels;
   readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
+  readonly topHeaderSearch: TopHeaderSearchCommandLabels;
 }
 
 export const EPIC9_FR_LABELS: Epic9DictionarySection = {
@@ -86,6 +88,31 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     assistantTrialReadyBadge:
       "🚀 Mode Essai Rapide actif : Mon Assistant & Cockpit débloqués",
   },
+  topHeaderSearch: {
+    modalTitle: "Recherche Fédérée & Contextuelle à 2 Vitesses (⌘K)",
+    inputPlaceholder: "Rechercher dossiers, processus, sources, ontologie ou aide...",
+    scopeScreenLabel: "📍 Cet écran",
+    scopeWorkspaceLabel: "📦 Cet Espace",
+    scopeAllWorkspacesLabel: "🌐 Tous mes Espaces",
+    speed1SectionTitle: "Vitesse 1 — Résultats lexicaux immédiats (< 30 ms · 0 $)",
+    speed2SectionTitle: "Vitesse 2 — Passages proches sémantiques (Pause 450 ms)",
+    semanticCloseMatchBadge: "✨ Passage proche",
+    emptyResultsLabel: "Aucun résultat trouvé dans cette portée.",
+    previewPaneTitle: "Aperçu rapide (⌘+Entrée)",
+    deepLinkActionLabel: "Ouvrir ↵",
+    openHelpColumnActionLabel: "Ouvrir ❓ Aide",
+    askAssistantFooterPrefix: "💬 Poser la question",
+    askAssistantFooterSuffix: "à Mon Assistant →",
+    familyLabels: {
+      FOLDERS_DISCUSSIONS: "Dossiers & Discussions",
+      PROCESSES_EXECUTIONS: "Processus & Exécutions",
+      AGENTS_TOOLS: "Agents & Outils",
+      DELIVERABLES_ARTIFACTS: "Livrables & Artefacts",
+      SOURCES_SNIPPETS: "Sources & Passages",
+      ONTOLOGY_GLOSSARY: "Ontologie & Glossaire",
+      HELP_ACTIONS: "Aide & Actions",
+    },
+  },
 };
 
 export const EPIC9_EN_LABELS: Epic9DictionarySection = {
@@ -163,5 +190,30 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
       "✅ ≥ 2 orthogonal families active — AD-10 Agentic Gates unlocked",
     assistantTrialReadyBadge:
       "🚀 Quick Trial Mode active: My Assistant & Cockpit unlocked",
+  },
+  topHeaderSearch: {
+    modalTitle: "Two-Speed Federated & Contextual Search (⌘K)",
+    inputPlaceholder: "Search folders, processes, sources, ontology, or help...",
+    scopeScreenLabel: "📍 This screen",
+    scopeWorkspaceLabel: "📦 This Space",
+    scopeAllWorkspacesLabel: "🌐 All my Spaces",
+    speed1SectionTitle: "Speed 1 — Immediate lexical hits (< 30 ms · 0 $)",
+    speed2SectionTitle: "Speed 2 — Semantic close passages (450 ms pause)",
+    semanticCloseMatchBadge: "✨ Passage proche",
+    emptyResultsLabel: "No results found in this scope.",
+    previewPaneTitle: "Quick preview (⌘+Enter)",
+    deepLinkActionLabel: "Open ↵",
+    openHelpColumnActionLabel: "Open ❓ Help",
+    askAssistantFooterPrefix: "💬 Ask",
+    askAssistantFooterSuffix: "to My Assistant →",
+    familyLabels: {
+      FOLDERS_DISCUSSIONS: "Folders & Discussions",
+      PROCESSES_EXECUTIONS: "Processes & Executions",
+      AGENTS_TOOLS: "Agents & Tools",
+      DELIVERABLES_ARTIFACTS: "Deliverables & Artifacts",
+      SOURCES_SNIPPETS: "Sources & Snippets",
+      ONTOLOGY_GLOSSARY: "Ontology & Glossary",
+      HELP_ACTIONS: "Help & Actions",
+    },
   },
 };

@@ -54,6 +54,7 @@ from orcia_core.rag import (
     HybridRagService,
     HybridRagVectorStoreAdapter,
     TripartiteGraphAndFreshnessService,
+    TwoSpeedFederatedSearchService,
     build_empty_rag_service,
     build_seeded_rag_service,
 )
@@ -432,4 +433,15 @@ def get_accostage_service(request: Request) -> ProgressiveDay0AccostageService:
             expected_bootstrap_token="orcia-day0-bootstrap-token",
         )
         request.app.state.accostage_service = svc
+    return svc
+
+
+def get_two_speed_search_service(request: Request) -> TwoSpeedFederatedSearchService:
+    """FastAPI `Depends` provider returning `TwoSpeedFederatedSearchService` (`Story 9.3`)."""
+    svc: TwoSpeedFederatedSearchService | None = getattr(
+        request.app.state, "two_speed_search_service", None
+    )
+    if svc is None:
+        svc = TwoSpeedFederatedSearchService()
+        request.app.state.two_speed_search_service = svc
     return svc

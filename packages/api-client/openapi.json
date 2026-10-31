@@ -10675,6 +10675,175 @@
         "title": "TripartiteTraceEdgeSchemaItem",
         "type": "object"
       },
+      "TwoSpeedSearchHitSchemaItem": {
+        "additionalProperties": false,
+        "description": "Single hit item returned by `GET /api/v1/search` (`Story 9.3`).",
+        "properties": {
+          "badge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge"
+          },
+          "deep_link_uri": {
+            "title": "Deep Link Uri",
+            "type": "string"
+          },
+          "family": {
+            "enum": [
+              "FOLDERS_DISCUSSIONS",
+              "PROCESSES_EXECUTIONS",
+              "DELIVERABLES_ARTIFACTS",
+              "SOURCES_SNIPPETS",
+              "GLOSSARY_RULES",
+              "AGENTS_SKILLS",
+              "HELP_ACTIONS"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "highlight_duration_ms": {
+            "default": 2000,
+            "title": "Highlight Duration Ms",
+            "type": "integer"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "locked_top": {
+            "title": "Locked Top",
+            "type": "boolean"
+          },
+          "opens_contextual_help_column": {
+            "default": false,
+            "title": "Opens Contextual Help Column",
+            "type": "boolean"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "screen_route": {
+            "title": "Screen Route",
+            "type": "string"
+          },
+          "snippet": {
+            "title": "Snippet",
+            "type": "string"
+          },
+          "speed_tier": {
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Speed Tier",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "family",
+          "title",
+          "snippet",
+          "workspace_id",
+          "screen_route",
+          "deep_link_uri",
+          "speed_tier",
+          "locked_top",
+          "score"
+        ],
+        "title": "TwoSpeedSearchHitSchemaItem",
+        "type": "object"
+      },
+      "TwoSpeedSearchResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/search` (`Story 9.3`).",
+        "properties": {
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/TwoSpeedSearchHitSchemaItem"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "SCREEN",
+              "WORKSPACE",
+              "ALL_WORKSPACES"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "speed1_llm_cost_usd": {
+            "title": "Speed1 Llm Cost Usd",
+            "type": "number"
+          },
+          "speed2_cache_hit": {
+            "title": "Speed2 Cache Hit",
+            "type": "boolean"
+          },
+          "speed2_cache_ttl_seconds": {
+            "default": 300,
+            "title": "Speed2 Cache Ttl Seconds",
+            "type": "integer"
+          },
+          "speed2_executed": {
+            "title": "Speed2 Executed",
+            "type": "boolean"
+          },
+          "speed2_redis_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed2 Redis Key"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "query",
+          "scope",
+          "hits",
+          "speed1_llm_cost_usd",
+          "speed2_executed",
+          "speed2_cache_hit"
+        ],
+        "title": "TwoSpeedSearchResponse",
+        "type": "object"
+      },
       "UpdateWorkspaceLifecycleRequest": {
         "additionalProperties": false,
         "description": "Request body for updating product lifecycle (`RUN | BUILD | MIGRATION`).",
@@ -21080,6 +21249,161 @@
         "summary": "Atomically claim a step execution (`SET lock:step:{step_id} NX EX 900`, `AD-4`)",
         "tags": [
           "inbox"
+        ]
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "operationId": "execute_two_speed_federated_search_api_v1_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 256,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "default": "WORKSPACE",
+              "enum": [
+                "SCREEN",
+                "WORKSPACE",
+                "ALL_WORKSPACES"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": "ws-claims-alpha",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "screen_route",
+            "required": false,
+            "schema": {
+              "default": "/cockpit",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Screen Route",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_speed2",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Speed2",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "force_semantic",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Force Semantic",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoSpeedSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute 2-Speed Federated & Contextual Search (`⌘K`, Zero Layout Shift, `Story 9.3`)",
+        "tags": [
+          "portal-epic9"
         ]
       }
     },

@@ -10,6 +10,8 @@ import {
   type ProgressiveDay0AccostageLabels,
   StreamlinedCockpitView,
   type StreamlinedCockpitLabels,
+  TopHeaderSearchCommand,
+  type TopHeaderSearchCommandLabels,
 } from "../index";
 
 const SHELL_LABELS: FourZoneDirectionCShellLabels = {
@@ -316,6 +318,153 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(screen.queryByTestId("accostage-single-family-amber-badge")).toBeNull();
     expect(screen.getByTestId("accostage-dual-family-ad10-badge").textContent).toContain(
       "AD-10",
+    );
+  });
+
+  it("Story 9.3 — executes Two-Speed Federated Search (⌘K) with Zero Layout Shift, 3 scopes, 7 families, and 2s Deep-Linking", () => {
+    const searchLabels: TopHeaderSearchCommandLabels = {
+      modalTitle: "Recherche Fédérée & Contextuelle à 2 Vitesses (⌘K)",
+      inputPlaceholder: "Rechercher...",
+      scopeScreenLabel: "📍 Cet écran",
+      scopeWorkspaceLabel: "📦 Cet Espace",
+      scopeAllWorkspacesLabel: "🌐 Tous mes Espaces",
+      speed1SectionTitle: "Vitesse 1 — Résultats lexicaux immédiats (< 30 ms · 0 $)",
+      speed2SectionTitle: "Vitesse 2 — Passages proches sémantiques (Pause 450 ms)",
+      semanticCloseMatchBadge: "✨ Passage proche",
+      emptyResultsLabel: "Aucun résultat trouvé.",
+      previewPaneTitle: "Aperçu rapide (⌘+Entrée)",
+      deepLinkActionLabel: "Ouvrir ↵",
+      openHelpColumnActionLabel: "Ouvrir ❓ Aide",
+      askAssistantFooterPrefix: "💬 Poser la question",
+      askAssistantFooterSuffix: "à Mon Assistant →",
+      familyLabels: {
+        FOLDERS_DISCUSSIONS: "Dossiers & Discussions",
+        PROCESSES_EXECUTIONS: "Processus & Exécutions",
+        AGENTS_TOOLS: "Agents & Outils",
+        DELIVERABLES_ARTIFACTS: "Livrables & Artefacts",
+        SOURCES_SNIPPETS: "Sources & Passages",
+        ONTOLOGY_GLOSSARY: "Ontologie & Glossaire",
+        HELP_ACTIONS: "Aide & Actions",
+      },
+    };
+
+    const onSelectDeepLink = vi.fn();
+    const onAskAssistant = vi.fn();
+
+    const speed1Hits = [
+      {
+        itemId: "hit-speed1-1",
+        family: "FOLDERS_DISCUSSIONS" as const,
+        title: "Dossier Architecture Paiement",
+        snippet: "Synthèse avec citations [S1].",
+        workspaceId: "ws-claims-alpha",
+        screenRoute: "/cockpit",
+        deepLinkUri: "/assistant?folder=hit-speed1-1#focus-hit-speed1-1",
+        speedTier: 1 as const,
+        lockedTop: true,
+        score: 1.2,
+        badge: null,
+        highlightDurationMs: 2000,
+        opensContextualHelpColumn: false,
+      },
+      {
+        itemId: "hit-speed1-help",
+        family: "HELP_ACTIONS" as const,
+        title: "Guide : Arbitrer un Tie-Break",
+        snippet: "Comment trancher en 1 clic.",
+        workspaceId: "ws-claims-alpha",
+        screenRoute: "/cockpit",
+        deepLinkUri: "help://cockpit/overview",
+        speedTier: 1 as const,
+        lockedTop: true,
+        score: 1.1,
+        badge: null,
+        highlightDurationMs: 2000,
+        opensContextualHelpColumn: true,
+      },
+    ];
+
+    const speed2Hits = [
+      {
+        itemId: "hit-speed2-sem",
+        family: "SOURCES_SNIPPETS" as const,
+        title: "Mécanisme de compensation interbancaire",
+        snippet: "Règlement continu sur le grand livre.",
+        workspaceId: "ws-claims-alpha",
+        screenRoute: "/cockpit",
+        deepLinkUri: "/spaces#focus-hit-speed2-sem",
+        speedTier: 2 as const,
+        lockedTop: false,
+        score: 0.89,
+        badge: "✨ Passage proche",
+        highlightDurationMs: 2000,
+        opensContextualHelpColumn: false,
+      },
+    ];
+
+    const { rerender } = render(
+      <TopHeaderSearchCommand
+        labels={searchLabels}
+        initialQuery="architecture paiement contrat"
+        speed1Hits={speed1Hits}
+        speed2Hits={[]}
+        onSelectDeepLink={onSelectDeepLink}
+        onAskAssistant={onAskAssistant}
+      />,
+    );
+
+    // Move selection to index 1 (second Speed 1 item)
+    const dialog = screen.getByTestId("top-header-search-command");
+    fireEvent.keyDown(dialog, { key: "ArrowDown" });
+    expect(
+      screen.getByTestId("cmdk-results-list").getAttribute("data-selected-index"),
+    ).toBe("1");
+
+    // Append Speed 2 hits -> Zero Layout Shift: selected index remains 1 and Speed 1 stays on top!
+    rerender(
+      <TopHeaderSearchCommand
+        labels={searchLabels}
+        initialQuery="architecture paiement contrat"
+        speed1Hits={speed1Hits}
+        speed2Hits={speed2Hits}
+        onSelectDeepLink={onSelectDeepLink}
+        onAskAssistant={onAskAssistant}
+      />,
+    );
+    expect(
+      screen.getByTestId("cmdk-results-list").getAttribute("data-selected-index"),
+    ).toBe("1");
+    expect(
+      screen.getByTestId("cmdk-semantic-badge-hit-speed2-sem").textContent,
+    ).toBe("✨ Passage proche");
+
+    // Tab cycles scope WORKSPACE -> ALL_WORKSPACES
+    fireEvent.keyDown(dialog, { key: "Tab" });
+    expect(
+      screen.getByTestId("cmdk-scope-ALL_WORKSPACES").getAttribute("aria-selected"),
+    ).toBe("true");
+
+    // Clicking open on first Speed 1 hit triggers 2000ms auto-focus deep link
+    fireEvent.click(screen.getByTestId("cmdk-open-btn-hit-speed1-1"));
+    expect(onSelectDeepLink).toHaveBeenCalledWith({
+      itemId: "hit-speed1-1",
+      deepLinkUri: "/assistant?folder=hit-speed1-1#focus-hit-speed1-1",
+      highlightDurationMs: 2000,
+      opensContextualHelpColumn: false,
+    });
+    expect(
+      screen.getByTestId("cmdk-deeplink-highlight-banner").textContent,
+    ).toContain("2000 ms");
+
+    // Clicking preview button opens right-side preview pane (⌘+Enter)
+    fireEvent.click(screen.getByTestId("cmdk-preview-btn-hit-speed1-1"));
+    expect(screen.getByTestId("cmdk-preview-pane")).toBeDefined();
+
+    // Footer CTA asks Mon Assistant with pre-filled query & active scope
+    fireEvent.click(screen.getByTestId("cmdk-ask-assistant-cta"));
+    expect(onAskAssistant).toHaveBeenCalledWith(
+      "architecture paiement contrat",
+      "ALL_WORKSPACES",
     );
   });
 });

@@ -54,6 +54,16 @@ from orcia_core.rag.tripartite_and_freshness import (
     TripartiteGraphAndFreshnessService,
     extract_jira_issue_keys,
 )
+from orcia_core.rag.two_speed_search import (
+    SEVEN_SEARCH_FAMILIES,
+    FederatedSearchCandidate,
+    FederatedSearchHit,
+    SearchFamilyKey,
+    SearchScopeMode,
+    TwoSpeedFederatedSearchService,
+    TwoSpeedSearchReport,
+    build_speed2_redis_cache_key,
+)
 
 DOMAIN_NAME: str = "rag"
 
@@ -101,14 +111,22 @@ __all__ = [
     "KbStaleAlertEntity",
     "PiiArbitrationDecision",
     "RagReciprocityVerificationResult",
+    "SEVEN_SEARCH_FAMILIES",
+    "SearchFamilyKey",
+    "SearchScopeMode",
     "StaleAlertReason",
     "TripartiteGraphAndFreshnessService",
     "TripartiteNodeType",
     "TripartiteRelationType",
     "TripartiteTraceEdgeEntity",
+    "TwoSpeedFederatedSearchService",
+    "TwoSpeedSearchReport",
+    "FederatedSearchCandidate",
+    "FederatedSearchHit",
     "build_contextual_header",
     "build_empty_rag_service",
     "build_seeded_rag_service",
+    "build_speed2_redis_cache_key",
     "compute_deterministic_halfvec_1024",
     "cosine_similarity",
     "detect_pii_categories",

@@ -22,5 +22,7 @@ export type OntologyResolveRequest = components["schemas"]["OntologyResolveReque
 export type OntologyResolveResponse = components["schemas"]["OntologyResolveResponse"];
 export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsertConceptRequest"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
+export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
+export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
 export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];
