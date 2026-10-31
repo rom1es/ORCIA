@@ -242,6 +242,13 @@ export {
   type WorkspaceSourceItem,
   type WorkspaceSubTabKey,
 } from "./primitives/WorkspaceFiveTabsAndExternalRebaseView";
+export {
+  DnaStarlarkCompilerAndGlossaryLifecycleView,
+  type DnaStarlarkAndGlossaryLabels,
+  type DnaStarlarkCompilerAndGlossaryLifecycleViewProps,
+  type UiCompiledStarlarkMechanism,
+  type UiGlossaryCandidateItem,
+} from "./primitives/DnaStarlarkCompilerAndGlossaryLifecycleView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

@@ -2733,6 +2733,92 @@
         "title": "CommitStagedJiraActionResponse",
         "type": "object"
       },
+      "CompileStarlarkMechanismRequest": {
+        "additionalProperties": false,
+        "description": "Request to compile a French norm into a self-tested `.star` mechanism (`Story 11.2`).",
+        "properties": {
+          "directive_title": {
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Directive Title",
+            "type": "string"
+          },
+          "failing_test_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failing Test Payload"
+          },
+          "natural_language_rule_fr": {
+            "maxLength": 2000,
+            "minLength": 5,
+            "title": "Natural Language Rule Fr",
+            "type": "string"
+          },
+          "norm_title": {
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Norm Title",
+            "type": "string"
+          },
+          "passing_test_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passing Test Payload"
+          },
+          "regex_pattern": {
+            "default": "^[A-Z0-9_-]{3,64}$",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Regex Pattern",
+            "type": "string"
+          },
+          "required_field": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Required Field",
+            "type": "string"
+          },
+          "rule_id": {
+            "maxLength": 128,
+            "minLength": 2,
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "simulate_initial_bad_regex": {
+            "default": false,
+            "title": "Simulate Initial Bad Regex",
+            "type": "boolean"
+          },
+          "target_json_schema": {
+            "additionalProperties": true,
+            "title": "Target Json Schema",
+            "type": "object"
+          }
+        },
+        "required": [
+          "rule_id",
+          "directive_title",
+          "norm_title",
+          "natural_language_rule_fr",
+          "required_field"
+        ],
+        "title": "CompileStarlarkMechanismRequest",
+        "type": "object"
+      },
       "CompiledArtifactTemplateSchemaItem": {
         "additionalProperties": false,
         "description": "Dual-compiled Multi-Audience Artifact Template (`FR-12`).",
@@ -4287,6 +4373,22 @@
         "title": "EvaluateResourceAccessRequest",
         "type": "object"
       },
+      "EvaluateStarlarkMechanismRequest": {
+        "additionalProperties": false,
+        "description": "Request to execute a `.star` mechanism at Run-Time (`< 2 ms`, `0` LLM tokens).",
+        "properties": {
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "payload"
+        ],
+        "title": "EvaluateStarlarkMechanismRequest",
+        "type": "object"
+      },
       "EvaluationLensItem": {
         "additionalProperties": false,
         "description": "Evaluation lens item in a workflow definition.",
@@ -4897,6 +4999,178 @@
           "trace_id"
         ],
         "title": "GateEvaluationsListResponse",
+        "type": "object"
+      },
+      "GeneratedStarlarkMechanismResponse": {
+        "additionalProperties": false,
+        "description": "Response representing a compiled and self-tested `.star` mechanism.",
+        "properties": {
+          "causal_breadcrumb": {
+            "title": "Causal Breadcrumb",
+            "type": "string"
+          },
+          "compile_elapsed_ms": {
+            "title": "Compile Elapsed Ms",
+            "type": "number"
+          },
+          "directive_title": {
+            "title": "Directive Title",
+            "type": "string"
+          },
+          "explanation_fr": {
+            "title": "Explanation Fr",
+            "type": "string"
+          },
+          "failing_test_payload": {
+            "additionalProperties": true,
+            "title": "Failing Test Payload",
+            "type": "object"
+          },
+          "mechanism_id": {
+            "format": "uuid",
+            "title": "Mechanism Id",
+            "type": "string"
+          },
+          "norm_title": {
+            "title": "Norm Title",
+            "type": "string"
+          },
+          "passing_test_payload": {
+            "additionalProperties": true,
+            "title": "Passing Test Payload",
+            "type": "object"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "script_name": {
+            "title": "Script Name",
+            "type": "string"
+          },
+          "self_corrected": {
+            "title": "Self Corrected",
+            "type": "boolean"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "signed_and_active": {
+            "title": "Signed And Active",
+            "type": "boolean"
+          },
+          "starlark_code": {
+            "title": "Starlark Code",
+            "type": "string"
+          },
+          "verified_badge_fr": {
+            "title": "Verified Badge Fr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mechanism_id",
+          "rule_id",
+          "directive_title",
+          "norm_title",
+          "script_name",
+          "starlark_code",
+          "sha256",
+          "passing_test_payload",
+          "failing_test_payload",
+          "explanation_fr",
+          "self_corrected",
+          "compile_elapsed_ms",
+          "verified_badge_fr",
+          "causal_breadcrumb",
+          "signed_and_active"
+        ],
+        "title": "GeneratedStarlarkMechanismResponse",
+        "type": "object"
+      },
+      "GlossaryCandidateSchema": {
+        "additionalProperties": false,
+        "description": "Candidate term in the `✨ À valider (N <= 15)` FIFO queue.",
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "confidence_score": {
+            "title": "Confidence Score",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "definition_fr": {
+            "title": "Definition Fr",
+            "type": "string"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "3_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "ontology_conflict_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Conflict Warning"
+          },
+          "pre_checked_for_in_flow_promotion": {
+            "title": "Pre Checked For In Flow Promotion",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "PENDING_VALIDATION",
+              "ACTIVE",
+              "REJECTED_CANDIDATE"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "workspace_id",
+          "canonical_term",
+          "fingerprint",
+          "definition_fr",
+          "confidence_score",
+          "level",
+          "status",
+          "ontology_conflict_warning",
+          "pre_checked_for_in_flow_promotion",
+          "created_at"
+        ],
+        "title": "GlossaryCandidateSchema",
         "type": "object"
       },
       "GuidanceStepItemResponse": {
@@ -6216,6 +6490,75 @@
           "resolved_inputs"
         ],
         "title": "HydratedStepContextSchemaItem",
+        "type": "object"
+      },
+      "InFlowPromotionRequest": {
+        "additionalProperties": false,
+        "description": "Request to promote or reject L4 glossary candidates *In-Flow* (`Verrou V4`).",
+        "properties": {
+          "promote_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Promote Candidate Ids",
+            "type": "array"
+          },
+          "reject_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Reject Candidate Ids",
+            "type": "array"
+          }
+        },
+        "title": "InFlowPromotionRequest",
+        "type": "object"
+      },
+      "InFlowPromotionResponse": {
+        "additionalProperties": false,
+        "description": "Response from *In-Flow* glossary promotion (`Verrou V4`).",
+        "properties": {
+          "assistant_prompt_cache_invalidated": {
+            "title": "Assistant Prompt Cache Invalidated",
+            "type": "boolean"
+          },
+          "promoted_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Promoted Terms",
+            "type": "array"
+          },
+          "rejected_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rejected Terms",
+            "type": "array"
+          },
+          "what_if_impact_warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "What If Impact Warnings",
+            "type": "array"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "promoted_terms",
+          "rejected_terms",
+          "what_if_impact_warnings",
+          "assistant_prompt_cache_invalidated"
+        ],
+        "title": "InFlowPromotionResponse",
         "type": "object"
       },
       "InboxNotificationListResponse": {
@@ -10091,6 +10434,37 @@
         "title": "RagReciprocityResponse",
         "type": "object"
       },
+      "RawGlossaryCandidateInput": {
+        "additionalProperties": false,
+        "description": "Input candidate term for 2-pass extraction.",
+        "properties": {
+          "canonical_term": {
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "confidence_score": {
+            "default": 0.9,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence Score",
+            "type": "number"
+          },
+          "definition_fr": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Definition Fr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonical_term",
+          "definition_fr"
+        ],
+        "title": "RawGlossaryCandidateInput",
+        "type": "object"
+      },
       "RawGlossaryCandidateSchemaItem": {
         "additionalProperties": false,
         "description": "Input glossary / axiom candidate (`Story 10.3`).",
@@ -11827,6 +12201,112 @@
         "title": "StagedJiraActionItemSchema",
         "type": "object"
       },
+      "StarlarkEvaluationResponse": {
+        "additionalProperties": false,
+        "description": "Response from `StarlarkMechanismSandbox.evaluate_script()`.",
+        "properties": {
+          "elapsed_ms": {
+            "title": "Elapsed Ms",
+            "type": "number"
+          },
+          "llm_tokens_consumed": {
+            "title": "Llm Tokens Consumed",
+            "type": "integer"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "staged_effects": {
+            "items": {
+              "$ref": "#/components/schemas/StarlarkStagedEffectSchema"
+            },
+            "title": "Staged Effects",
+            "type": "array"
+          },
+          "steps_executed": {
+            "title": "Steps Executed",
+            "type": "integer"
+          },
+          "verdicts": {
+            "items": {
+              "$ref": "#/components/schemas/StarlarkVerdictSchema"
+            },
+            "title": "Verdicts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "passed",
+          "verdicts",
+          "staged_effects",
+          "steps_executed",
+          "elapsed_ms",
+          "llm_tokens_consumed"
+        ],
+        "title": "StarlarkEvaluationResponse",
+        "type": "object"
+      },
+      "StarlarkStagedEffectSchema": {
+        "additionalProperties": false,
+        "description": "Staged side-effect emitted by `orcia_sys.emit_effect` (`AD-3`).",
+        "properties": {
+          "action_type": {
+            "title": "Action Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "staged_only": {
+            "title": "Staged Only",
+            "type": "boolean"
+          },
+          "target_uri": {
+            "title": "Target Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_type",
+          "target_uri",
+          "payload",
+          "staged_only"
+        ],
+        "title": "StarlarkStagedEffectSchema",
+        "type": "object"
+      },
+      "StarlarkVerdictSchema": {
+        "additionalProperties": false,
+        "description": "Single rule verdict emitted by `orcia_sys.emit_verdict`.",
+        "properties": {
+          "message_fr": {
+            "title": "Message Fr",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_id",
+          "status",
+          "message_fr"
+        ],
+        "title": "StarlarkVerdictSchema",
+        "type": "object"
+      },
       "StepExecuteRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/orchestration/runs/steps/execute`.",
@@ -13493,6 +13973,98 @@
           "relation_type"
         ],
         "title": "TripartiteTraceEdgeSchemaItem",
+        "type": "object"
+      },
+      "TwoPassExtractionRequest": {
+        "additionalProperties": false,
+        "description": "Request to run the 2-pass `OntologyExtractor` (`Story 11.2`, `Verrou V4`).",
+        "properties": {
+          "existing_enterprise_terms": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Existing Enterprise Terms",
+            "type": "object"
+          },
+          "raw_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RawGlossaryCandidateInput"
+            },
+            "title": "Raw Candidates",
+            "type": "array"
+          },
+          "trigger_type": {
+            "enum": [
+              "git_push",
+              "mr_pr",
+              "manual_sync",
+              "human_gate"
+            ],
+            "title": "Trigger Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trigger_type"
+        ],
+        "title": "TwoPassExtractionRequest",
+        "type": "object"
+      },
+      "TwoPassExtractionResponse": {
+        "additionalProperties": false,
+        "description": "Response from the 2-pass `OntologyExtractor` (`Verrou V4`).",
+        "properties": {
+          "active_queue_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/GlossaryCandidateSchema"
+            },
+            "title": "Active Queue Candidates",
+            "type": "array"
+          },
+          "llm_calls_count": {
+            "title": "Llm Calls Count",
+            "type": "integer"
+          },
+          "pass_1_deterministic_executed": {
+            "title": "Pass 1 Deterministic Executed",
+            "type": "boolean"
+          },
+          "pass_2_llm_batch_executed": {
+            "title": "Pass 2 Llm Batch Executed",
+            "type": "boolean"
+          },
+          "purged_expired_ephemeral_count": {
+            "title": "Purged Expired Ephemeral Count",
+            "type": "integer"
+          },
+          "top3_in_flow_prechecked": {
+            "items": {
+              "$ref": "#/components/schemas/GlossaryCandidateSchema"
+            },
+            "title": "Top3 In Flow Prechecked",
+            "type": "array"
+          },
+          "trigger_type": {
+            "enum": [
+              "git_push",
+              "mr_pr",
+              "manual_sync",
+              "human_gate"
+            ],
+            "title": "Trigger Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trigger_type",
+          "pass_1_deterministic_executed",
+          "pass_2_llm_batch_executed",
+          "llm_calls_count",
+          "purged_expired_ephemeral_count",
+          "active_queue_candidates",
+          "top3_in_flow_prechecked"
+        ],
+        "title": "TwoPassExtractionResponse",
         "type": "object"
       },
       "TwoSpeedSearchHitSchemaItem": {
@@ -29000,6 +29572,156 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/dna-mechanisms/compile": {
+      "post": {
+        "description": "Compile a French norm into a `.star` mechanism and prove PASS/FAIL on test payloads.",
+        "operationId": "compile_dna_starlark_mechanism_api_v1_workspaces__workspace_id__dna_mechanisms_compile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompileStarlarkMechanismRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedStarlarkMechanismResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compile a French norm into a self-tested Starlark mechanism (< 5 ms, Story 11.2)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/dna-mechanisms/{mechanism_id}/evaluate": {
+      "post": {
+        "description": "Evaluate a compiled `.star` mechanism in `< 2 ms` with `0` LLM tokens.",
+        "operationId": "evaluate_dna_starlark_mechanism_api_v1_workspaces__workspace_id__dna_mechanisms__mechanism_id__evaluate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mechanism_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Mechanism Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateStarlarkMechanismRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StarlarkEvaluationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execute a compiled Starlark mechanism at Run-Time (< 2 ms, 0 LLM tokens)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/exception-waivers": {
       "post": {
         "description": "Persist an exception waiver or reject `1_ENTERPRISE` inviolable directives with HTTP 403.",
@@ -29215,6 +29937,146 @@
           }
         },
         "summary": "Configure workspace 5 sub-tabs, sources, and default destination (Story 11.1)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/glossary/extract-two-pass": {
+      "post": {
+        "description": "Execute 2-Pass extraction (`0 $` on `git_push`, FIFO `<= 15` & `Top-3` `Verrou V4`).",
+        "operationId": "extract_workspace_glossary_two_pass_api_v1_workspaces__workspace_id__glossary_extract_two_pass_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoPassExtractionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoPassExtractionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run 2-Pass OntologyExtractor (0 $ on git_push, <= 15 FIFO & Top-3 pre-checked V4)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/glossary/promote-in-flow": {
+      "post": {
+        "description": "Promote checked L4 terms to `3_WORKSPACE` `ACTIVE` and invalidate Redis prompt cache.",
+        "operationId": "promote_workspace_glossary_in_flow_api_v1_workspaces__workspace_id__glossary_promote_in_flow_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InFlowPromotionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InFlowPromotionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote or reject L4 glossary candidates In-Flow and invalidate prompt cache (V4)",
         "tags": [
           "workspaces"
         ]

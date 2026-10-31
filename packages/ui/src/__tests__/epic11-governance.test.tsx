@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
+  DnaStarlarkCompilerAndGlossaryLifecycleView,
+  type DnaStarlarkAndGlossaryLabels,
+} from "../primitives/DnaStarlarkCompilerAndGlossaryLifecycleView";
+import {
   WorkspaceFiveTabsAndExternalRebaseView,
   type WorkspaceFiveTabsLabels,
 } from "../primitives/WorkspaceFiveTabsAndExternalRebaseView";
@@ -24,6 +28,18 @@ const LABELS_FR: WorkspaceFiveTabsLabels = {
   humanAmendedBadge: "🔒 HUMAN_AMENDED_EXTERNAL",
   supersededMemlogNotice: "[SUPERSEDED_BY_HUMAN_COMMIT]",
   registerWaiverCta: "Acquitter l'écart",
+};
+
+const DNA_LABELS_FR: DnaStarlarkAndGlossaryLabels = {
+  heading: "Chaîne Causale ADN & Glossaire (Verrou V4)",
+  generateStarlarkCta: "⚡ Générer le Mécanisme de Gate (Starlark)",
+  signAndActivateCta: "✍️ Signer & Activer la Gate",
+  runtimeZeroTokenBadge: "< 2 ms · 0 token LLM",
+  queueSectionTitle: "✨ À valider",
+  inFlowBriefingTitle: "Promotion In-Flow (Top-3 >= 0.85)",
+  promoteInFlowCheckboxLabel: "Promouvoir au Glossaire de l'Espace",
+  promoteSelectedCta: "Promouvoir la sélection",
+  rejectCandidateCta: "Écarter",
 };
 
 describe("Story 11.1 — WorkspaceFiveTabsAndExternalRebaseView", () => {
@@ -92,5 +108,59 @@ describe("Story 11.1 — WorkspaceFiveTabsAndExternalRebaseView", () => {
       "confluence://SPACE/RGPD-2026",
       "RULE_FRESHNESS_DRIFT"
     );
+  });
+});
+
+describe("Story 11.2 — DnaStarlarkCompilerAndGlossaryLifecycleView", () => {
+  it("renders causal DNA breadcrumb, Starlark self-test badge, and Top-3 In-Flow promotion", () => {
+    const onPromoteInFlow = vi.fn();
+    render(
+      <DnaStarlarkCompilerAndGlossaryLifecycleView
+        mechanism={{
+          mechanismId: "mech-1",
+          ruleId: "RULE_IBAN_MASK",
+          scriptName: "rule-iban-mask.star",
+          starlarkCode: "def evaluate(doc):\n    pass",
+          sha256: "sha256_mechanism_01",
+          explanationFr: "Vérifie le masquage IBAN.",
+          verifiedBadgeFr: "✓ Vérifié sur cas de test (PASS/FAIL en < 5 ms)",
+          causalBreadcrumb:
+            "🛡️ [RGPD Art.32] ➔ 📏 [Masquage IBAN] ➔ ⚙️ Vérifié par : rule-iban-mask.star",
+          selfCorrected: false,
+          signedAndActive: true,
+        }}
+        pendingQueueCandidates={[
+          {
+            candidateId: "cand-1",
+            canonicalTerm: "Franchise Contractuelle",
+            definitionFr: "Montant restant à la charge de l'assuré.",
+            confidenceScore: 0.94,
+            ontologyConflictWarning: null,
+            preCheckedForInFlowPromotion: true,
+          },
+        ]}
+        top3PrecheckedCandidates={[
+          {
+            candidateId: "cand-1",
+            canonicalTerm: "Franchise Contractuelle",
+            definitionFr: "Montant restant à la charge de l'assuré.",
+            confidenceScore: 0.94,
+            ontologyConflictWarning: null,
+            preCheckedForInFlowPromotion: true,
+          },
+        ]}
+        labels={DNA_LABELS_FR}
+        onPromoteInFlow={onPromoteInFlow}
+      />
+    );
+
+    expect(screen.getByTestId("dna-causal-breadcrumb").textContent).toContain(
+      "rule-iban-mask.star"
+    );
+    expect(screen.getByTestId("starlark-verified-badge").textContent).toContain(
+      "PASS/FAIL en < 5 ms"
+    );
+    fireEvent.click(screen.getByTestId("promote-in-flow-btn"));
+    expect(onPromoteInFlow).toHaveBeenCalledWith(["cand-1"]);
   });
 });

@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+from orcia_core.gates._internal.starlark_sandbox import (
+    StarlarkEvaluationResult,
+    StarlarkMechanismSandbox,
+    StarlarkSandboxError,
+    StarlarkStagedEffect,
+    StarlarkVerdictItem,
+)
 from orcia_core.gates.agentic import (
     INDEPENDENT_LENS_IDS,
     AgenticGateEvaluationResult,
@@ -121,6 +128,11 @@ __all__ = [
     "PolicyDeniedError",
     "RubberStampingGuardTriggeredError",
     "SandboxTierLiteral",
+    "StarlarkEvaluationResult",
+    "StarlarkMechanismSandbox",
+    "StarlarkSandboxError",
+    "StarlarkStagedEffect",
+    "StarlarkVerdictItem",
     "SubprocessTier1SandboxAdapter",
     "TddRemediationCheckInput",
     "TddRemediationCheckResult",

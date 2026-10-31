@@ -128,7 +128,7 @@ development_status:
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, M.4, Sections 3 & 4)
   epic-11: in-progress
   11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: done
-  11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: backlog
+  11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: done
   11-3-déclaration-services-mcp-agents-distants-a2a-banc-de-test-à-c: backlog
   11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i: backlog
   11-5-processus-5-generate-and-attach-help-validateur-validate_help: backlog

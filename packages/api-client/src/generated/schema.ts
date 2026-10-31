@@ -429,6 +429,18 @@ export interface components {
       executed_action: components["schemas"]["StagedJiraActionItemSchema"];
       trace_id: string;
     };
+    CompileStarlarkMechanismRequest: {
+      directive_title: string;
+      failing_test_payload?: Record<string, unknown> | null;
+      natural_language_rule_fr: string;
+      norm_title: string;
+      passing_test_payload?: Record<string, unknown> | null;
+      regex_pattern?: string;
+      required_field: string;
+      rule_id: string;
+      simulate_initial_bad_regex?: boolean;
+      target_json_schema?: Record<string, unknown>;
+    };
     CompiledArtifactTemplateSchemaItem: {
       agent_json_schema: Record<string, unknown>;
       bound_ontology_terms: (string)[];
@@ -676,6 +688,9 @@ export interface components {
       subject_type?: "USER" | "ROLE" | "SERVICE_PRINCIPAL";
       title?: string;
     };
+    EvaluateStarlarkMechanismRequest: {
+      payload: Record<string, unknown>;
+    };
     EvaluationLensItem: {
       code: string;
       threshold: number;
@@ -775,6 +790,36 @@ export interface components {
     GateEvaluationsListResponse: {
       evaluations: (components["schemas"]["GateEvaluationSchemaItem"])[];
       trace_id: string;
+    };
+    GeneratedStarlarkMechanismResponse: {
+      causal_breadcrumb: string;
+      compile_elapsed_ms: number;
+      directive_title: string;
+      explanation_fr: string;
+      failing_test_payload: Record<string, unknown>;
+      mechanism_id: string;
+      norm_title: string;
+      passing_test_payload: Record<string, unknown>;
+      rule_id: string;
+      script_name: string;
+      self_corrected: boolean;
+      sha256: string;
+      signed_and_active: boolean;
+      starlark_code: string;
+      verified_badge_fr: string;
+    };
+    GlossaryCandidateSchema: {
+      candidate_id: string;
+      canonical_term: string;
+      confidence_score: number;
+      created_at: string;
+      definition_fr: string;
+      fingerprint: string;
+      level: "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      ontology_conflict_warning: string | null;
+      pre_checked_for_in_flow_promotion: boolean;
+      status: "PENDING_VALIDATION" | "ACTIVE" | "REJECTED_CANDIDATE";
+      workspace_id: string;
     };
     GuidanceStepItemResponse: {
       action_command: string;
@@ -983,6 +1028,17 @@ export interface components {
       step_title: string;
       step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "HUMAN_TASK" | "HTTP_ACTION" | "POST_ACTION_VERIFICATION";
       undeclared_artifacts_leaked?: number;
+    };
+    InFlowPromotionRequest: {
+      promote_candidate_ids?: (string)[];
+      reject_candidate_ids?: (string)[];
+    };
+    InFlowPromotionResponse: {
+      assistant_prompt_cache_invalidated: boolean;
+      promoted_terms: (string)[];
+      rejected_terms: (string)[];
+      what_if_impact_warnings: (string)[];
+      workspace_id: string;
     };
     InboxNotificationListResponse: {
       amber_badge_count: number;
@@ -1586,6 +1642,11 @@ export interface components {
       response_markdown: string;
       uri: string;
     };
+    RawGlossaryCandidateInput: {
+      canonical_term: string;
+      confidence_score?: number;
+      definition_fr: string;
+    };
     RawGlossaryCandidateSchemaItem: {
       definition: string;
       label: string;
@@ -1862,6 +1923,25 @@ export interface components {
       target_transition: string | null;
       workspace_id: string;
     };
+    StarlarkEvaluationResponse: {
+      elapsed_ms: number;
+      llm_tokens_consumed: number;
+      passed: boolean;
+      staged_effects: (components["schemas"]["StarlarkStagedEffectSchema"])[];
+      steps_executed: number;
+      verdicts: (components["schemas"]["StarlarkVerdictSchema"])[];
+    };
+    StarlarkStagedEffectSchema: {
+      action_type: string;
+      payload: Record<string, unknown>;
+      staged_only: boolean;
+      target_uri: string;
+    };
+    StarlarkVerdictSchema: {
+      message_fr: string;
+      rule_id: string;
+      status: "PASS" | "FAIL";
+    };
     StepExecuteRequest: {
       author_type?: "HUMAN" | "AGENT";
       commit_immediately?: boolean;
@@ -2109,6 +2189,20 @@ export interface components {
       target_node_type: "CONFLUENCE_PAGE" | "JIRA_ISSUE" | "GIT_SYMBOL" | "GIT_COMMIT" | "ONTOLOGY_CONCEPT";
       target_uri: string;
       workspace_id: string;
+    };
+    TwoPassExtractionRequest: {
+      existing_enterprise_terms?: Record<string, string>;
+      raw_candidates?: (components["schemas"]["RawGlossaryCandidateInput"])[];
+      trigger_type: "git_push" | "mr_pr" | "manual_sync" | "human_gate";
+    };
+    TwoPassExtractionResponse: {
+      active_queue_candidates: (components["schemas"]["GlossaryCandidateSchema"])[];
+      llm_calls_count: number;
+      pass_1_deterministic_executed: boolean;
+      pass_2_llm_batch_executed: boolean;
+      purged_expired_ephemeral_count: number;
+      top3_in_flow_prechecked: (components["schemas"]["GlossaryCandidateSchema"])[];
+      trigger_type: "git_push" | "mr_pr" | "manual_sync" | "human_gate";
     };
     TwoSpeedSearchHitSchemaItem: {
       badge?: string | null;
@@ -3472,6 +3566,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/dna-mechanisms/compile": {
+    post: {
+      responses: {
+        200: components["schemas"]["GeneratedStarlarkMechanismResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/dna-mechanisms/{mechanism_id}/evaluate": {
+    post: {
+      responses: {
+        200: components["schemas"]["StarlarkEvaluationResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/exception-waivers": {
     post: {
       responses: {
@@ -3488,6 +3596,20 @@ export interface paths {
     put: {
       responses: {
         200: components["schemas"]["WorkspaceFiveTabsStateResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/glossary/extract-two-pass": {
+    post: {
+      responses: {
+        200: components["schemas"]["TwoPassExtractionResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/glossary/promote-in-flow": {
+    post: {
+      responses: {
+        200: components["schemas"]["InFlowPromotionResponse"];
       };
     };
   };
@@ -3556,6 +3678,7 @@ export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteE
 export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
 export type CommitStagedJiraActionRequest = components["schemas"]["CommitStagedJiraActionRequest"];
 export type CommitStagedJiraActionResponse = components["schemas"]["CommitStagedJiraActionResponse"];
+export type CompileStarlarkMechanismRequest = components["schemas"]["CompileStarlarkMechanismRequest"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type ConfigureFolderSharingRequest = components["schemas"]["ConfigureFolderSharingRequest"];
@@ -3584,6 +3707,7 @@ export type DocumentIngestionResponse = components["schemas"]["DocumentIngestion
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResourceAccessRequest"];
+export type EvaluateStarlarkMechanismRequest = components["schemas"]["EvaluateStarlarkMechanismRequest"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["EvidenceGlossaryCitationSchemaItem"];
 export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
@@ -3594,6 +3718,8 @@ export type ExternalRebaseResponse = components["schemas"]["ExternalRebaseRespon
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
+export type GeneratedStarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
+export type GlossaryCandidateSchema = components["schemas"]["GlossaryCandidateSchema"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
 export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
@@ -3618,6 +3744,8 @@ export type HybridRagHitSchemaItem = components["schemas"]["HybridRagHitSchemaIt
 export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchRequest"];
 export type HybridRagSearchResponse = components["schemas"]["HybridRagSearchResponse"];
 export type HydratedStepContextSchemaItem = components["schemas"]["HydratedStepContextSchemaItem"];
+export type InFlowPromotionRequest = components["schemas"]["InFlowPromotionRequest"];
+export type InFlowPromotionResponse = components["schemas"]["InFlowPromotionResponse"];
 export type InboxNotificationListResponse = components["schemas"]["InboxNotificationListResponse"];
 export type InferenceAttemptResponse = components["schemas"]["InferenceAttemptResponse"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
@@ -3691,6 +3819,7 @@ export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
+export type RawGlossaryCandidateInput = components["schemas"]["RawGlossaryCandidateInput"];
 export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
 export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];
 export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
@@ -3724,6 +3853,9 @@ export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeRe
 export type StageJiraActionRequest = components["schemas"]["StageJiraActionRequest"];
 export type StageJiraActionResponse = components["schemas"]["StageJiraActionResponse"];
 export type StagedJiraActionItemSchema = components["schemas"]["StagedJiraActionItemSchema"];
+export type StarlarkEvaluationResponse = components["schemas"]["StarlarkEvaluationResponse"];
+export type StarlarkStagedEffectSchema = components["schemas"]["StarlarkStagedEffectSchema"];
+export type StarlarkVerdictSchema = components["schemas"]["StarlarkVerdictSchema"];
 export type StepExecuteRequest = components["schemas"]["StepExecuteRequest"];
 export type StepExecuteResponse = components["schemas"]["StepExecuteResponse"];
 export type StepExecutionSchemaItem = components["schemas"]["StepExecutionSchemaItem"];
@@ -3749,6 +3881,8 @@ export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnRespon
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
+export type TwoPassExtractionRequest = components["schemas"]["TwoPassExtractionRequest"];
+export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtractionResponse"];
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
