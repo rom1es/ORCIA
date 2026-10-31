@@ -35,10 +35,12 @@ export interface InboxAndClaimsCopy {
 
 import type { Epic5DictionarySection } from "./locales/epic5_labels";
 import type { Epic8DictionarySection } from "./locales/epic8_labels";
+import type { Epic9DictionarySection } from "./locales/epic9_labels";
 
 export interface TranslationDictionary
   extends Epic5DictionarySection,
-    Epic8DictionarySection {
+    Epic8DictionarySection,
+    Epic9DictionarySection {
   locale: SupportedWebLocale;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {

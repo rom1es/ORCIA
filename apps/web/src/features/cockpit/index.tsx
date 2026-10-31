@@ -1,9 +1,10 @@
-import { ScopedPromptBox, StatusBadge } from "@orcia/ui";
+import { ScopedPromptBox, StatusBadge, StreamlinedCockpitView } from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { PlatformOnboardingChecklistCard } from "./PlatformOnboardingChecklistCard";
 
 export function buildCockpitWorkflowPreviewGraph(): {
   nodes: Node[];
@@ -143,143 +144,26 @@ export function CockpitFeaturePanel() {
       data-testid="cockpit-empty-first-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
-      <section
-        data-testid="platform-onboarding-checklist"
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "8px",
-          }}
-        >
-          <div>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
-              {isFr
-                ? "Parcours d'Initialisation de la Plateforme (Jour 0 → Jour 1)"
-                : "Platform Onboarding & Entity Setup (Day 0 → Day 1)"}
-            </h2>
-            <p
-              style={{
-                margin: "4px 0 0 0",
-                fontSize: "var(--font-size-body)",
-                color: "var(--color-muted-foreground)",
-              }}
-            >
-              {isFr
-                ? "La plateforme démarre à vide. Configurez chaque entité via les écrans de paramétrage dédiés ou via l'assistant guidé pas-à-pas."
-                : "The platform starts empty. Configure each entity via dedicated settings screens or the step-by-step wizard."}
-            </p>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <StatusBadge
-              testId="onboarding-progress-badge"
-              label={`${completedSetupStepsCount}/5`}
-              tone={completedSetupStepsCount === 5 ? "emerald" : "cobalt"}
-              monospace
-            />
-            <button
-              type="button"
-              data-testid="open-guided-wizards-btn"
-              onClick={() => navigateToRoute("/wizards")}
-              style={{
-                padding: "7px 12px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-primary-cobalt)",
-                backgroundColor: "var(--color-primary-cobalt)",
-                color: "var(--color-primary-foreground)",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {isFr ? "Assistants Guidés (/wizards)" : "Guided Wizards (/wizards)"}
-            </button>
-          </div>
-        </div>
+      <StreamlinedCockpitView
+        decisions={runs.map((r) => ({
+          decisionId: `dec-${r.runId}`,
+          kind: "REVIEW_BRIEFING" as const,
+          runId: r.runId,
+          stepExecutionId: r.currentStepKey,
+          title: r.title,
+          summary: `${r.workspaceName} · ${r.currentStepKey}`,
+        }))}
+        currentUserId="local-operator"
+        labels={dictionary.streamlinedCockpit}
+        onNavigateModule={(href) => navigateToRoute(href)}
+      />
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "12px",
-          }}
-        >
-          {checklistSteps.map((step) => (
-            <div
-              key={step.id}
-              data-testid={`setup-step-card-${step.id}`}
-              style={{
-                padding: "12px 14px",
-                borderRadius: "var(--radius-md)",
-                border: "1px solid var(--color-border)",
-                backgroundColor: "var(--color-surface-bg)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <strong style={{ fontSize: "13.5px" }}>{step.title}</strong>
-                  <StatusBadge
-                    label={
-                      step.done
-                        ? isFr
-                          ? "Configuré"
-                          : "Configured"
-                        : isFr
-                          ? "À initialiser"
-                          : "To configure"
-                    }
-                    tone={step.done ? "emerald" : "amber"}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--font-size-mono)",
-                    color: "var(--color-muted-foreground)",
-                  }}
-                >
-                  {step.countLabel}
-                </span>
-              </div>
-
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  data-testid={`setup-cta-${step.id}`}
-                  onClick={() => navigateToRoute(step.settingsHref)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--color-border)",
-                    backgroundColor: "var(--color-surface-card)",
-                    color: "var(--color-foreground)",
-                    fontSize: "12.5px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {step.ctaLabel}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <PlatformOnboardingChecklistCard
+        isFr={isFr}
+        completedSetupStepsCount={completedSetupStepsCount}
+        checklistSteps={checklistSteps}
+        onNavigateToRoute={navigateToRoute}
+      />
 
       <section
         data-testid="cockpit-prompt-and-runs-section"

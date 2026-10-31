@@ -107,8 +107,8 @@ development_status:
 
   # Epic 9 — Coquille Ergonomique 4 Zones (Portals/KORE), Recherche ⌘K 2 Vitesses, Compte UserSettingsModal, Accostage 1/6 & Aide Contextuelle Hybride ?
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes A, A.2, A.3, C, D, D.4, E, F, G, Section 2)
-  epic-9: backlog
-  9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép: backlog
+  epic-9: in-progress
+  9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép: done
   9-2-parcours-d-accostage-progressif-jour-0-accostage-1-6-protecti: backlog
   9-3-recherche-fédérée-contextuelle-cmd-k-à-2-vitesses-zero-layout: backlog
   9-4-menu-déroulant-login-useraccountdropdown-modale-usersettingsm: backlog
@@ -646,3 +646,29 @@ action_items:
     epic: epic-11
     description: >
       Workflow de référence Semaine 1 du pilote SDLC : Ticket Jira + 1 Ancrage Humain -> Traversée Graphe Tripartite & Arbitrage -> Spécification Technique & Impact AST Git (0 hallucination de symbole) -> Briefing 4 blocs & Publication Staged Jira/Git.
+  - id: POESIS-STARLARK-T1B
+    title: "Palier 1b Sandbox — Moteur de Règles Starlark Natif (starlark-pyo3 + google-re2 O(n) < 2 ms) & Compilateur Design-Time Text-to-Starlark"
+    action: "Implémenter StarlarkMechanismSandbox (packages/orcia-core/src/orcia_core/gates/_internal/starlark_sandbox.py) exposant orcia_sys (avec re_fullmatch/re_search sous google-re2 max_mem=8MB garantissant un temps linéaire O(n) anti-ReDoS et emit_effect en Action Staged) ainsi que TextToStarlarkCompilerService (validation JSON Schema préalable des vecteurs passing_test_payload/failing_test_payload + auto-test < 5 ms avec 1 retry automatique)"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-1, AD-9, AD-19"
+    story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
+    owner: "Winston (Architect) / Sally (UX)"
+    status: open
+    epic: epic-11
+    description: >
+      Emprunt ciblé à sie-operator (Poesis) sans dette JVM : permet aux Packs Métiers et aux Stewards d'écrire ou de générer en français des règles de Gate déterministes qui s'exécutent en < 2 ms et 0 $ LLM au Run-Time, sans compiler de WASI.
+  - id: POESIS-DNA-CHAIN
+    title: "Chaîne Causale ADN (DIRECTIVE ➔ NORME ➔ MÉCANISME) dans l'Ontologie N1–N3, Fil d'Ariane Causal & Gouvernance RBAC des Waivers (Verrou V1)"
+    action: "Enrichir ontology_concepts/ontology_axioms (dna_stereotype, mechanism_payload_jsonb) et ontology_relations (OPERATIONALIZES_DIRECTIVE, IMPLEMENTS_NORM) avec la CTE récursive dna_chain (< 3 ms), amorcer les Directives/Normes socles (ANSSI, RGPD, ISO 25010) dans bootstrap/seeder.py, afficher le fil d'Ariane causal sur 1 ligne dans CognitiveReviewBriefing et bloquer tout acquittement local (Verrou V1) sur une Directive 1_ENTERPRISE inviolable"
+    priority: P1
+    depends_on:
+      - REDTEAM-V1
+      - POESIS-STARLARK-T1B
+    ad_ref: "AD-7, AD-11"
+    story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
+    owner: "Winston (Architect) / Sally (UX)"
+    status: open
+    epic: epic-11
+    description: >
+      Emprunt ciblé à gsm-ontology (Poesis) sur PostgreSQL 18 sans Neo4j : relie chaque verdict de Gate Starlark/Wasm à sa Norme et à sa Directive stratégique, et empêche un TEAM_LEAD de contourner une Directive d'Entreprise inviolable.

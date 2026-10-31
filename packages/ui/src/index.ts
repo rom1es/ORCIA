@@ -149,6 +149,23 @@ export {
   type DurableWizardRunnerViewProps,
   type DurableWizardStepDescriptor,
 } from "./primitives/DurableWizardRunnerView";
+export {
+  computeDefaultHelpColumnOpen,
+  DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
+  FourZoneDirectionCShell,
+  type EightFixedMenuEntrySpec,
+  type EightFixedMenuKey,
+  type FourZoneDirectionCShellLabels,
+  type FourZoneDirectionCShellProps,
+} from "./primitives/FourZoneDirectionCShell";
+export {
+  StreamlinedCockpitView,
+  type CockpitDecisionKind,
+  type CockpitPendingDecisionItem,
+  type FocusReviewWorkshopLeaseInfo,
+  type StreamlinedCockpitLabels,
+  type StreamlinedCockpitViewProps,
+} from "./primitives/StreamlinedCockpitView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {
