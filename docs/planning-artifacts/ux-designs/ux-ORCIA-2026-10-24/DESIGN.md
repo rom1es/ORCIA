@@ -1,10 +1,10 @@
 ---
 name: ORCIA
 title: ORCIA — Visual Identity & Design System (Direction C : Enterprise Adaptive Hybrid)
-status: final
+status: draft
 created: 2026-10-24
-updated: 2026-10-24
-description: Plateforme d'exécution de processus d'entreprise et personnels "Human-Led, Agent-Accelerated". Basée sur shadcn/ui (Radix + Tailwind CSS) avec l'architecture visuelle Direction C (Menu Latéral Sombre Explicite + Espace Central Haut-Contraste + Dock Agent Assistant Persistant).
+updated: 2026-10-30
+description: Plateforme d'exécution de processus d'entreprise et personnels "Human-Led, Agent-Accelerated". Basée sur shadcn/ui (Radix + Tailwind CSS) avec l'architecture visuelle Direction C Sobriété (Sidebar Gauche à Double Sélecteur Organigramme + TopHeaderBar Contextualisée avec Fil d'Ariane & Recherche + Espace Central Épuré + Colonne d'Aide Contextuelle Intégrée à Droite).
 colors:
   sidebar-bg: '#FFFFFF'
   sidebar-foreground: '#0F172A'
@@ -52,7 +52,7 @@ rounded:
 spacing:
   sidebar-expanded: 240px
   sidebar-collapsed: 72px
-  dock-width: 360px
+  dock-width: 340px
 components:
   sidebar-nav-item-active:
     background: '{colors.sidebar-active-bg}'
@@ -79,15 +79,33 @@ components:
 
 ## Brand & Style
 
-**ORCIA** incarne la posture **"Human-Led, Agent-Accelerated"** à travers la **Direction C Épurée (Clarté SaaS & Grille Bento)**. Inspirée des références [`imports/reference-layout-insidebox.png`](file:///home/romain/Documents/Projects/ORCIA/docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/imports/reference-layout-insidebox.png) et [`imports/reference-dropdown-menus.png`](file:///home/romain/Documents/Projects/ORCIA/docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/imports/reference-dropdown-menus.png), son identité visuelle combine quatre piliers :
-1. **Panneau Latéral Gauche Clair & Respirant (`#FFFFFF`)** : Logo géométrique bleu + marque **ORCIA** cliquable en haut à gauche (retour à l'accueil), barre de recherche rapide intégrée (`🔍 Rechercher...`), et les **7 Modules Globaux** présentés avec une capsule active bleu tendre (`#EFF6FF` / texte `#2563EB`) et des pastilles rondes ambre (`#D97706`) pour les actions en attente.
-2. **Barre Supérieure (Top Header Bar `#FFFFFF`) avec Icônes & Menu Déroulant Profil Riche** :
-   - À gauche : navigation rapide par filtres de vue séparés par `|` (`Vue d'ensemble | Ancrage & Cockpit | Catalogue Fédéré | Workspaces & Équipes | Initialisation & Gates`).
-   - À droite : icônes d'action directe (`💬` Agent Assistant, `🗂️` Périmètre `⌘W`, `🔔` Notifications, `🌐` Langue `FR/EN`) et **Avatar Utilisateur avec pastille de présence en ligne (`🟢`)** ouvrant un **Menu Déroulant Riche (`UserProfileDropdown`)** comportant le rôle/unité, les liens de gouvernance avec chevrons `›` et badges de raccourcis clavier (`⌘W`, `]`), le sélecteur rapide de Persona, le switch `🌙 Mode Sombre`, et une **jauge de consommation FinOps** avec barre de progression.
-3. **Large Panneau Central avec Bandeau Hero & Grille Bento (`#EAF2FB` / Cartes `#FFFFFF`)** :
-   - Un bandeau d'accueil personnalisé (*« Bonjour, {Prénom} ! »*) accompagné de **grands compteurs KPIs illustrés** (`Workflows Système`, `Workspaces Actifs`, `Budget FinOps`).
-   - Une **Grille Bento 2 colonnes** sur fond doux bleuté (`#EAF2FB`) où chaque carte blanche (`#FFFFFF`, rayon `14px`, ombre légère) isole clairement un domaine métier.
-4. **Co-présence Intelligente à la Demande (Tiroir Agent Assistant `#FFFFFF`)** : Accessible à droite (`360px`) via l'icône `💬` de la Top Bar ou le raccourci `]`, et s'ouvrant automatiquement en cas d'interception `403` par le **Permission Broker**.
+**ORCIA** incarne la posture **"Human-Led, Agent-Accelerated"** à travers la **Direction C Sobriété (Architecture 4 Zones inspirée de EXEMPLE & Portals)**. Son identité visuelle repose sur quatre piliers complémentaires qui éliminent toute surcharge cognitive et tout jargon d'infrastructure :
+1. **Colonne Gauche — Sidebar d'Organigramme & Menu Global (`240px` dépliée / `72px` repliée)** :
+   - **En haut** : Marque **ORCIA** cliquable + **Double Sélecteur d'Organigramme Empilé** :
+     - Sélecteur **`Équipe / BU`** (positionnement dans l'organisation)
+     - Sélecteur **`Espace`** juste en dessous (périmètre opérationnel courant).
+     - **Au centre** : Les **8 Entrées du Menu Principal** (*sans numérotation devant les libellés, et sans bouton « Nouvelle discussion » dans la sidebar, celui-ci résidant dans `Mon Assistant`*) :
+     - **`Cockpit`** (Pilotage du périmètre actif, accostage à vide `1/6`, décisions attendues — maximum 3 blocs à l'écran)
+     - **`Mon Assistant`** (Espace conversationnel IA avec boutons `+ Nouvelle discussion` et `⚙ Réglages de l'assistant`, 3 onglets `💬 Discussion active | 📁 Dossiers (N) | 🕘 Historique & Recherche`, citations vérifiées `[S1]`/`[G1]`/`[O1]` et sélecteur de vitesse `⚡ Standard / 🧠 Approfondi`)
+     - **`Mes Processus`** (Workflows `Publiés | Brouillons | Exécutions & Décisions` en Vue Fokus de Revue + Studio)
+     - **`Mes Agents`** (Carte n°1 `🤖 Assistant de l'Espace`, Agents interpellables au `@`, Skills de l'agent, Outils & Casquettes)
+     - **`Mes Espaces`** (Structuré en 5 sous-onglets : `Accostage` | `Documents & Sources` | `Livrables & Artefacts` | `Glossaire` | `Membres & Paramètres de l'espace`)
+     - **`FinOps`** (Visibilité et barre de portée `Cet Espace` | `Cette Équipe / BU` | `Socle Plateforme` strictement filtrées selon l'habilitation de l'utilisateur)
+     - **`Configuration`** (Barre de portée : `Cet Espace` | `Cette Équipe / BU` | `Socle Plateforme` selon l'habilitation de l'utilisateur, avec badges d'héritage `Socle` et `Équipe`)
+     - **`Aide`** (Centre d'aide par intention *« Que voulez-vous faire ? »* en $N$ gestes).
+2. **Barre Supérieure (`TopHeaderBar` `#FFFFFF`, hauteur `56px`) Ultra-Sobre & Contextualisée** :
+   - **À gauche** : **Fil d'Ariane cliquable (`Breadcrumb`)** situant en permanence l'utilisateur dans son organigramme et son écran (*ex. `BU Grand Public › Équipe Mon Compte › Espace Portail › Cockpit`*).
+   - **À droite** : **Zone d'input de Recherche Contextuelle (`🔍 Rechercher dans ce périmètre...`)** permettant de retrouver instantanément tous les éléments accessibles à l'utilisateur, suivie des icônes sobres **`🔔 Notifications`** (*Ce qui a avancé*), **`❓ Aide contextuelle`** (ouvre/ferme la colonne d'aide à droite) et **`👤 Mon Profil`** (Compte/MFA, jetons personnels `Passthrough` et clés MCP IDE).
+3. **Espace Central Épuré (Sobriété & Divulgation Progressive)** :
+   - **Sur l'écran principal (`Cockpit`)** : **Maximum 3 blocs** (au démarrage à vide : la carte unique d'**Accostage guidé `1/6`** avec compteurs `0/0/0` masqués ; en régime actif : 3 compteurs sobres + la carte prioritaire du moment + les accès rapides).
+   - **Sur les écrans métiers (`Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`, `Configuration`)** : Gabarit unifié **En-tête avec 1 phrase d'intention en langage courant + 3 à 4 compteurs KPI sobres (masqués tant que `total == 0`) + Filtres pilules + Tableau ou État vide pédagogique en 1 phrase**. Les formulaires de création ne sont jamais empilés en permanence sur l'écran : ils s'ouvrent dans une **Modale dédiée** au clic sur le bouton primaire (`+ Nouvel espace`, `+ Nouveau processus`, `+ Nouvel agent`...).
+4. **Colonne Droite — Panneau d'Aide Contextuelle Intégré (`340px`, Ouvert par défaut tant que `total == 0`, Repliable via `❓`)** :
+   - Ouverte automatiquement tant qu'un écran est vide afin d'accompagner l'initialisation (et repliée par défaut sur `< 1440px` dès que `total >= 1`), puis ouvrable/repliable à tout moment via le bouton `❓` de la `TopHeaderBar`.
+   - Structurée invariablement en **4 sections pédagogiques** :
+     - **Ce qui est attendu ici** (objectif de l'écran, temps estimé, rôle concerné)
+     - **`EN N GESTES`** (étapes numérotées claires expliquant comment agir)
+     - **`UN EXEMPLE RÉEL`** (encadré ambre concret illustrant un cas d'usage réel)
+     - **`CE QUI COINCE SOUVENT`** (diagnostics immédiats des erreurs fréquentes).
 
 ### Les Règles Fondamentales de l'UI (Interface Utilisateur — 5 Piliers Invariants)
 
@@ -97,8 +115,8 @@ L'UI traduit l'UX en éléments visuels tangibles, esthétiques et fonctionnels.
 2. **Limitation des typographies (Maximum 2)** : Se restreindre strictement à **deux familles typographiques** pour conserver une lecture harmonieuse :
    - **Primaire (`Inter` / `Geist Sans`)** pour toute l'interface, les titres (`display`) et la lecture documentaire ;
    - **Secondaire (`JetBrains Mono` / `Geist Mono`)** réservée aux identifiants techniques, URI fédérées, hashes `SHA-256` et extraits de code.
-3. **Cohérence graphique** : Utiliser un système de composants unifié dans `@orcia/ui` (boutons, cartes Bento `#FFFFFF`, badges, menus déroulants et modales au design strictement identique pour une même famille d'action à travers les 7 modules).
-4. **Gestion des grilles (Grids)** : Structurer chaque page et panneau à l'aide de colonnes (`Bento Grid 2x2` responsive), de gouttières (`gap` sur échelle de `8px`/`16px`/`24px`) et de marges régulières pour aligner proprement tous les éléments.
+3. **Cohérence graphique** : Utiliser un système de composants unifié dans `@orcia/ui` (boutons, cartes `#FFFFFF`, badges, menus déroulants et modales au design strictement identique pour une même famille d'action à travers les 8 entrées du menu).
+4. **Gestion des grilles (Grids)** : Structurer chaque page et panneau à l'aide de colonnes régulières, de gouttières (`gap` sur échelle de `8px`/`16px`/`24px`) et de marges régulières pour aligner proprement tous les éléments.
 5. **Contrastes et accessibilité (WCAG 2.2 AA)** : Garantir que toutes les combinaisons de couleurs de texte et de fond respectent les ratios de contraste normatifs (`>= 4.5:1` texte normal, `>= 3:1` grands titres et composants UI) pour être lisibles par tous, en mode clair comme en mode sombre.
 
 ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce document spécifie uniquement la couche identitaire et les composants cognitifs propres à ORCIA.
@@ -107,73 +125,75 @@ ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce docu
 
 Chaque couleur sémantique d'ORCIA possède une signification stricte liée à la gouvernance humano-agentique — aucune couleur d'accent n'est utilisée à titre purement décoratif :
 
-- **Sidebar Crisp White (`#FFFFFF` / Bordure `#E2E8F0` / Capsule Active `#EFF6FF`)** : Fond clair et aéré du menu de navigation global à 7 modules, isolant visuellement la navigation de la surface de travail.
-- **Bento Canvas Soft Sky (`#EAF2FB` Light / `#0B0F17` Dark)** : Fond doux du panneau central mettant en relief les cartes blanches `#FFFFFF`.
-- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, module actif dans la Sidebar, bordure de focus du menu déroulant profil et indicateur de présence de l'**Agent Assistant**.
+- **Sidebar Crisp White (`#FFFFFF` / Bordure `#E2E8F0` / Capsule Active `#EFF6FF`)** : Fond clair et aéré de la Sidebar d'organigramme et de navigation globale à 8 entrées, isolant visuellement la navigation de la surface de travail.
+- **Canvas Background (`#EAF2FB` / `#F8FAFC` Light / `#0B0F17` Dark)** : Fond doux du panneau central mettant en relief les cartes blanches `#FFFFFF`.
+- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, entrée active dans la Sidebar, sélecteur de portée actif et indicateur de présence de **`Mon Assistant`**.
 - **Human-Led Violet (`#6D28D9` / Fond `#F5F3FF`)** : Réservé exclusivement aux **Ancrages Humains Obligatoires** (`human_authored_required: true`). Dès que l'utilisateur voit une bordure violette, il sait que l'IA a l'interdiction de rédiger cette zone à sa place et que sa réflexion d'expert (*Think*) est attendue.
-- **Arbitration & Challenge Amber (`#D97706` / Fond `#FFFBEB`)** : Indique une suspension du **Workflow Run** requérant une décision humaine : **Arbitrage Humain** sur options équivalentes, pastille de notification dans la Sidebar, ou suspicion de *Rubber-Stamping*.
-- **Gate Pass Emerald (`#059669` / Fond `#ECFDF5`)** : Indique une **Gate** (Déterministe, Agentique Cross-Model ou Humaine) franchie avec succès, la pastille de présence en ligne sur l'avatar (`🟢`), un verrou de présence pris en charge (*Claimed*), ou un cache `SHA-256` vérifié.
-- **Ontology Cyan (`#0284C7` / Fond `#F0F9FF`)** : Identifie les concepts de l'**Ontologie Dynamique Multi-Niveaux** (badges de niveau 1 à 4, promotions sémantiques, traductions par **Profil Humain**).
-- **Stale / Blocker Crimson (`#DC2626` / Fond `#FEF2F2`)** : Alerte d'obsolescence documentaire (`[STALE_WARNING]` sur une **Base de Connaissances**), échec de **Gate Déterministe** ou blocage d'habilitation intercepté par le **Permission Broker**.
+- **Arbitration & Challenge Amber (`#D97706` / Fond `#FFFBEB`)** : Indique une suspension du **Workflow Run** requérant une décision humaine (**Arbitrage Humain**, suspicion de *Rubber-Stamping*, encadré *« Un exemple réel »* de l'aide contextuelle ou source expirée `[STALE_WARNING]`).
+- **Gate Pass Emerald (`#059669` / Fond `#ECFDF5`)** : Indique une **Gate** (Déterministe, Agentique Cross-Model ou Humaine) franchie avec succès, une source **`RÉFÉRENCE`** vérifiée, un verrou de présence pris en charge (*Claimed*), ou un cache `SHA-256` valide.
+- **Ontology Cyan (`#0284C7` / Fond `#F0F9FF`)** : Identifie les concepts et règles métiers du **Glossaire / Ontologie Dynamique Multi-Niveaux** (`[G1]`, badges d'origine `Socle`, `Équipe`, `Espace`, et badge `AutonomousExecutionBadge`).
+- **Stale / Blocker Crimson (`#DC2626` / Fond `#FEF2F2`)** : Contradiction critique d'ontologie (`ONTOLOGY_CONFLICT`), coupe-circuit ouvert (`CIRCUIT_OPEN`), échec de **Gate Déterministe** ou blocage d'habilitation.
 
 ## Typography
 
 Conformément à la règle fondamentale de **limitation à maximum deux typographies** :
 - **Typographie Primaire — Interface, Titres & Lecture (`Inter` / `Geist Sans`)** :
-  - Corps & Conversation (`13.5px`–`14px`, `line-height: 1.5`) : densité calibrée pour afficher côte à côte le menu, le **Canvas** et le **Dock Agent Assistant** sans troncature.
-  - Titres de Modules, Salutation Hero & Compteurs KPI (`display`, `22px`–`28px`, `font-weight: 700`, `line-height: 1.25`, `letter-spacing: -0.02em`) : hiérarchie visuelle assurée par l'échelle typographique, la graisse et l'espacement (sans troisième police serif).
-- **Typographie Secondaire — Provenance, URI & Code (`JetBrains Mono` / `Geist Mono`, `12px`)** : Obligatoire pour toutes les URI du **Catalogue Fédéré** (`db://`, `git://`, `nexus://`), les empreintes `SHA-256`, les pastilles de raccourcis clavier (`⌘W`, `⌘K`, `[`, `]`), les codes d'erreur RFC 9457 et les logs de **Sandbox**.
+  - Corps & Conversation (`13.5px`–`14px`, `line-height: 1.5`) : densité calibrée pour afficher côte à côte la Sidebar, l'Espace Central et la Colonne d'Aide Contextuelle `❓` sans troncature.
+  - Titres d'Écrans & Compteurs KPI (`display`, `22px`–`28px`, `font-weight: 700`, `line-height: 1.25`, `letter-spacing: -0.02em`) : hiérarchie visuelle assurée par l'échelle typographique, la graisse et l'espacement (sans troisième police serif).
+- **Typographie Secondaire — Provenance, URI & Code (`JetBrains Mono` / `Geist Mono`, `12px`)** : Obligatoire pour toutes les URI des Sources et du Coffre (`git://`, `confluence://`, `jira://`, `db://`, `orcia://`), les pastilles de citation (`[S1]`, `[G1]`, `[O1]`), les empreintes `SHA-256`, les pastilles de raccourcis clavier (`⌘W`, `⌘K`, `[`, `]`) et les codes d'erreur RFC 9457.
 
 ## Layout & Spacing
 
-L'architecture spatiale Desktop repose sur une structure épurée inspirée d'*InsideBox* :
-1. **Colonne Gauche — Sidebar du Menu Global (`240px` dépliée / `72px` repliée en icônes, `#FFFFFF`)** : Contient en haut le logo cliquable **ORCIA**, la barre de recherche rapide (`🔍 Search`), les 7 entrées du menu d'ORCIA avec capsules actives `#EFF6FF` et pastilles ambre, ainsi qu'un pied de barre compact.
-2. **Zone Centrale Pleine Largeur (`1fr`, min `640px`)** composée de :
-   - **Barre Supérieure (`Top Header Bar`, `#FFFFFF`, `64px`)** : Liens contextuels séparés par `|` à gauche ; barre d'icônes (`💬`, `🗂️`, `🔔`, `🌐`) et **Avatar Utilisateur + Menu Déroulant Riche (`UserProfileDropdown`)** à droite.
-   - **Bandeau d'Accueil (`Hero Welcome Strip`, `#FFFFFF`)** : Message d'accueil personnalisé (*« Bonjour, Marc ! »*) à gauche et **grands compteurs KPIs** avec icônes à droite.
-   - **Grille Bento Principale (`#EAF2FB`, padding `24px`, grille 2 colonnes `gap: 20px`)** : Cartes blanches `#FFFFFF` (`border-radius: 14px`) filtrables par onglet ou affichées en vue d'ensemble 2×2.
-3. **Colonne Droite — Tiroir Agent Assistant & Permission Broker (`360px`, repliable via `💬` ou `]`)** : Permet de dialoguer avec l'Agent Assistant ou de traiter un ticket `PermissionBrokerCard` (ouverture automatique sur `PERMISSION_DENIED_STEP`).
+L'architecture spatiale Desktop repose sur la **Coquille 4 Zones (Direction C Sobriété — EXEMPLE + Portals)** :
+1. **Zone 1 — Colonne Gauche (`240px` dépliée / `72px` repliée en icônes via `[`, `#FFFFFF`)** : Contient en haut la marque cliquable **ORCIA**, le **Double Sélecteur d'Organigramme Empilé** (`Équipe / BU` puis `Espace`), et les **8 entrées non numérotées du menu** (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`, `Configuration`, `Aide`).
+2. **Zone 2 — Barre Supérieure (`TopHeaderBar`, `#FFFFFF`, hauteur `56px`)** : **Fil d'Ariane cliquable (`Breadcrumb`)** à gauche ; **Barre de Recherche Fédérée & Contextuelle (`🔍 Rechercher dans <Écran> ou partout (⌘K)...`, panneau flottant `680px × max 480px` à 3 portées et 7 familles d'éléments)**, **`🔔 Notifications`**, **`❓ Aide contextuelle`** et **`👤 Mon Profil`** à droite.
+3. **Zone 3 — Espace Central Épuré (`1fr`, min `680px`, padding `24px`)** : Maximum 3 blocs sur le `Cockpit` ; gabarit unifié sur les écrans métiers (En-tête avec 1 phrase d'intention + 3–4 compteurs KPI masqués si `total == 0` + Filtres pilules + Liste ou État vide en 1 phrase + Création par Modale).
+4. **Zone 4 — Colonne Droite d'Aide Contextuelle Intégrée (`340px`, `#FFFFFF`, repliable via `❓` ou `]`)** : Ouverte automatiquement tant que `total == 0` (et repliée par défaut sur `< 1440px` dès que `total >= 1`), structurée en 4 blocs (*Ce qui est attendu ici*, *En N gestes*, *Un exemple réel*, *Ce qui coince souvent*).
 
-Sur **Mobile Companion (`< 768px`)**, la grille à 3 colonnes cède la place à une vue mono-colonne pilotée par une barre d'onglets inférieure à 3 entrées (`🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`).
+Sur **Mobile Companion (`< 768px`)**, la grille cède la place à une vue mono-colonne pilotée par une barre d'onglets inférieure à 3 entrées (`🧭 Cockpit`, `💬 Mon Assistant / Arbitrage`, `☍ Décisions`).
 
 ## Elevation & Depth
 
-- Pas d'ombres portées lourdes sur la structure : la séparation entre la Sidebar (`#0F172A`), l'Espace Central (`#F8FAFC`) et le Dock IA (`#FFFFFF`) repose sur le contraste de surface et des bordures fines de `1px solid #E2E8F0` (`#1E293B` en mode sombre).
-- Les cartes interactives (**Briefing de Revue**, cartes du **Catalogue Fédéré**, sections de **Validation par Découpage**) utilisent une élévation subtile `0 1px 3px rgba(15, 23, 42, 0.04)`.
+- Pas d'ombres portées lourdes sur la structure : la séparation entre la Sidebar (`#FFFFFF`), la `TopHeaderBar` (`#FFFFFF`), l'Espace Central (`#F8FAFC`/`#EAF2FB`) et la Colonne d'Aide Contextuelle (`#FFFFFF`) repose sur le contraste de surface et des bordures fines de `1px solid #E2E8F0` (`#1E293B` en mode sombre).
+- Les cartes interactives (**Briefing de Revue**, cartes de **Sources**, de **Livrables** et de **Validation par Découpage**) utilisent une élévation subtile `0 1px 3px rgba(15, 23, 42, 0.04)`.
 
 ## Shapes
 
-- Rayons nets et professionnels : `rounded-sm` (`5px`) pour les badges d'URI (`git://`, `nexus://`, `db://`) et les boutons d'action rapide ; `rounded-md` (`8px`) pour les cartes d'**Ancrage Humain Obligatoire**, d'**Arbitrage Humain** et de **Découpage** ; `rounded-full` réservé aux pastilles de compteur de notifications et aux verrous de présence temps réel.
+- Rayons nets et professionnels : `rounded-sm` (`6px`) pour les pastilles de citation (`[S1]`, `[G1]`, `[O1]`), les badges d'origine (`Socle`, `Équipe`, `Pack`) et les badges d'URI ; `rounded-md` (`10px`) et `rounded-lg` (`14px`) pour les cartes d'**Ancrage Humain Obligatoire**, d'**Arbitrage Humain** et de **Découpage** ; `rounded-full` réservé aux pilules de filtre et aux verrous de présence temps réel.
 
 ## Components
 
-Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `Tabs`, `Sheet`, `Command`, `Dialog`, `Toast`, `Tooltip`), ORCIA définit **7 composants identitaires** :
+Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `Tabs`, `Sheet`, `Command`, `Dialog`, `Toast`, `Tooltip`), ORCIA définit **19 composants identitaires** dans `@orcia/ui` :
 
-1. **Global Sidebar Navigation (`sidebar-nav-item`)** : Affiche les 7 modules avec icône, libellé explicite et pastilles d'état temps réel (compteur ambre pour les actions requises en *Contributeur*, pastille rouge `!` pour une alerte `[STALE_WARNING]` sur l'**Ontologie**/KB).
+1. **Stacked Org & Workspace Selector + Sidebar Navigation (`sidebar-nav-item`)** : Double sélecteur empilé (`Équipe / BU` + `Espace`) et 8 entrées de menu non numérotées avec mode Rail (`72px`, raccourci `[`).
 2. **Human-Led Anchor Card (`human-led-anchor-card`)** : Conteneur à bordure gauche violette (`4px solid #6D28D9`) avec en-tête explicite `✍️ ANCRAGE HUMAIN OBLIGATOIRE (human_authored_required: true)` et mention de l'auteur humain. Aucun bouton "Générer avec l'IA" n'est autorisé dans ce composant.
-3. **Cognitive Review Briefing (`review-briefing-grid`)** : Grille $2 \times 2$ en tête de tout **Artefact** volumineux présentant immuablement : *1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, et *4. Hypothèses Retenues (Assumptions)* (avec bordure ambre sur le bloc 4 tant que les hypothèses n'ont pas été inspectées).
-4. **Chunked Validation Card (`chunk-validation-card`)** : Carte représentant une section du **Gabarit d'Artefact** avec 3 actions directes : *Valider la section*, *Co-éditer*, ou *Challenger / Rewind amont*.
-5. **Arbitration Tie-Break Matrix (`arbitration-tiebreak-card`)** : Carte ambre affichée dans le Chat et le Canvas lorsque l'**Agent Exécuteur** suspend son exécution face à des options équivalentes, présentant côte à côte chaque option, ses impacts SI/Métier et le bouton de décision.
-6. **Federated URI & RBAC Badge (`uri-badge`)** : Composant monospace distinguant visuellement la source de vérité d'une ressource : ambre pour `git://`, bleu cobalt pour `nexus://`, vert émeraude pour `db://`, accompagné des droits effectifs (`DISCOVER`, `EXECUTE`, ` 🔒 Source masquée`) et du hash `SHA-256` tronqué.
-7. **Presence & Claim Pill (`presence-claim-pill`)** : Indicateur temps réel sur les notifications d'équipe affichant soit le bouton d'action `Prendre (Claim)`, soit l'état verrouillé `🔒 En cours : [Prénom]`.
-8. **Autonomous Execution Badge & Kill-Switch Bar (`autonomous-execution-badge`, `UX-DR17`)** : Badge distinctif en **Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`)** — *sans jamais utiliser le Violet `#6D28D9` réservé exclusivement aux Ancrages Humains* — affichant `🤖 Exécuté sous Contrat d'Autonomie #{contract_id} — Déclencheur : {MANUAL | WEBHOOK | LOG_SINK_ALERT | CRON} — 0 intervention humaine en cours de run`, accompagné des sorties de secours explicites `🛑 Kill-Switch (Suspendre le Trigger & les Runs actifs)` et `⏪ Invalider & Rollback`.
-9. **Declarative Permission Guard (`permission-guard`, `AD-21`)** : Enveloppe déclarative `@orcia/ui` (`verb: "create" | "read" | "update" | "delete" | "execute" | "grant"`, `fallbackMode: "passive-lock" | "disabled" | "hidden"`). En mode découverte passive (défaut), affiche le badge `🔒 Non habilité` et le bouton *Demander l'accès* (`AccessRequested` Outbox) sans jamais exposer la configuration secrète sous-jacente.
-10. **Write-Only Secret Field (`secret-field`, `AD-21`)** : Champ de saisie de secret adossé au contrat `SecretInput` (`keep | set | clear`) et `SecretStatus` (`configured`, `fingerprint: "sha256:8-hex"`, `updated_at`). Ne pré-remplit jamais de valeur masquée (`••••••••`) afin d'empêcher tout écrasement accidentel par aller-retour du formulaire ; expose uniquement l'empreinte monospace et les actions explicites *Remplacer le secret* / *Effacer*.
-11. **Collapsible App Rail & Pack Indicator (`collapsible-app-rail`)** : Évolution de la Sidebar globale permettant le repli en **Mode Rail (`72px`, raccourci `[`)** persisté par utilisateur, affichant en pied le badge du **Pack Métier actif** (`orcia-pack-sdlc`) et en temps réel les pastilles d'actions requises et de santé Outbox.
-12. **Methodological Guidance Drawer (`guidance-drawer`)** : Panneau latéral contextuel repliable en **5 étapes numérotées** (*1. À quoi sert cet écran, 2. Prérequis, 3. Étapes recommandées, 4. Garde-fous de sécurité, 5. Vérification*) accompagnant les écrans de configuration (Sources RAG, Connecteurs, Studio Workflows, IAM).
-13. **Scoped Prompt Box & Sprint Context Widget (`scoped-prompt-box`, `sprint-context-widget`)** : Composants d'accueil *Anti-Empty-State* couplant un sélecteur explicite de périmètre documentaire RAG (filtré par le Permission Broker) et de Tier cognitif (`Simple €`, `Medium €€`, `Complex €€€`, `Auto ⚡`) avec une carte du Sprint/Lot actif dotée d'un CTA d'audit IA en 1 clic.
-14. **Product Lifecycle Card (`product-lifecycle-card`)** : Carte d'espace/produit affichant le badge sémantique de phase **`RUN`** (`{colors.gate-pass}`), **`BUILD`** (`{colors.primary}`) ou **`MIGRATION`** (`{colors.arbitration-amber}`), ajustant dynamiquement les workflows et agents suggérés.
-15. **Workflow Studio Top Governance Bar & Layers Inspector (`workflow-top-governance-bar`, `layers-inspector-popover`, `AD-21`)** : Barre d'outils supérieure du Studio (`Bibliothèque`, `Pré-prompt IA` versionné `SHA-256`, `Contrat du workflow` à paramètres typés `p_1..p_n` et sections Markdown obligatoires, `Déclencheurs`, `▷ Tester` *What-If*, `Publier` avec fork immuable `vX.Y.Z-draft`) et inspecteur **`COUCHES · N`** sur les macro-étapes (`SUB_WORKFLOW`) organisant les sous-couches en 3 zones (*Entrées*, *Capacités*, *Livrables*) avec bascule `👁️` (`enabled: false -> SKIPPED`).
+3. **Cognitive Review Briefing (`review-briefing-grid`)** : Grille $2 \times 2$ en tête de tout **Artefact** volumineux dans la Vue Fokus de Revue (`Mes Processus › Exécutions & Décisions`) présentant : *1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, et *4. Hypothèses Retenues*.
+4. **Chunked Validation Card (`chunk-validation-card`)** : Carte représentant une section du **Gabarit d'Artefact** (ou une **Action Externe Staged** avec son chemin cible et son `diff`) avec 3 actions directes : *Valider la section*, *Co-éditer*, ou *Challenger / Rewind amont*.
+5. **Arbitration Tie-Break Matrix (`arbitration-tiebreak-card`)** : Carte ambre affichée sur la Carte Prioritaire du `Cockpit` et dans `Mes Processus › Exécutions & Décisions` lorsque l'exécution rencontre des options équivalentes.
+6. **Federated URI & Access Mode Badge (`uri-badge`)** : Composant monospace affichant l'URI ou l'alias (`orcia://workspaces/<ws>/artifacts/<type>/<slug>@v<N>`), le rôle (`RÉFÉRENCE` vs `ACTIF`), le mode d'accès (`Lecture seule` vs `Lecture & Écriture`) et l'empreinte `SHA-256` tronquée.
+7. **Presence & Claim Pill (`presence-claim-pill`)** : Indicateur temps réel (`AD-4`) affichant soit `Prendre en charge & Ouvrir la revue →`, soit l'état verrouillé `🔒 En cours : [Prénom]`.
+8. **Autonomous Execution Badge & Kill-Switch Bar (`autonomous-execution-badge`, `UX-DR17`)** : Badge distinctif en **Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`)** — *sans jamais utiliser le Violet `#6D28D9`* — accompagné des sorties de secours `🛑 Kill-Switch` et `⏪ Invalider & Rollback`.
+9. **Declarative Permission Guard (`permission-guard`, `AD-21`)** : Enveloppe déclarative `@orcia/ui` (`verb: "create" | "read" | "update" | "delete" | "execute" | "grant"`, `fallbackMode: "passive-lock" | "disabled" | "hidden"`). Affiche `🔒 Non habilité` et le bouton *Demander l'accès* sans exposer la configuration secrète.
+10. **Write-Only Secret Field (`secret-field`, `AD-21`)** : Champ de saisie de secret adossé à `SecretInput` (`keep | set | clear`) et `SecretStatus` (`configured`, `fingerprint: "sha256:8-hex"`), sans jamais pré-remplir de masque `••••••••`.
+11. **Contextual Help Panel (`contextual-help-panel`)** : Colonne latérale droite (`340px`, ouverte automatiquement tant que `total == 0`, repliable via `❓`) structurée en 4 sections : *Ce qui est attendu ici*, *`EN N GESTES`*, *`UN EXEMPLE RÉEL`*, *`CE QUI COINCE SOUVENT`*.
+12. **Scope Selector Bar & Inheritance Badge (`scope-selector-bar`)** : Barre de portée explicite en en-tête de `Configuration` et `FinOps` (`📦 Cet Espace` | `👥 Cette Équipe / BU` | `🌐 Socle Plateforme`) accompagnée des badges d'héritage `Socle` et `Équipe` (`lecture seule` / `🔒 Gelé`).
+13. **Inline Deterministic Citation Pill & Source Preview Popover (`inline-citation-pill`, `Principe K.5`)** : Pastille interactive temps réel (`[S1 · Fichier:L120 · RÉFÉRENCE]`, `[G1 · Glossaire]`, `[O1 · Outil]`, ou `[S1 · 🔒 Source restreinte — Demander l'accès]` si le lecteur n'a pas `READ_SOURCE`) ouvrant au survol/clic l'extrait exact surligné et son statut de fraîcheur.
+14. **Thematic Assistant Folder & Collaborative Share Modal (`assistant-folder-card`, `Principe K.6`)** : Carte de `📁 Dossier` dans `Mon Assistant` regroupant discussions, notes épinglées et brouillons avec sélecteur de visibilité (`🔒 Privé`, `👥 Collègues choisis` en lecture ou co-contribution sous `Passthrough` `AD-6`, `📦 Tout l'Espace`) et bouton `☍ Lancer un Processus à partir de ce dossier`.
+15. **Glossary Candidate Card & What-If Impact Banner (`glossary-candidate-card`, `Principe L`)** : Carte de proposition dans `Mes Espaces › Glossaire › ✨ À valider (N)` affichant l'extrait source d'origine, le compteur d'occurrences, l'encadré de prévisualisation `ImpactSimulatorService` (`AD-7`) et les actions `✓ Accepter`, `✏️ Ajuster`, `✕ Écarter` et `↑ Proposer à l'équipe / BU`.
+16. **Workflow Studio Top Governance Bar & Layers Inspector (`workflow-top-governance-bar`, `layers-inspector-popover`, `AD-21`)** : Barre d'outils supérieure du Studio (`Pré-prompt`, `Contrat`, `⚡ Déclencheurs`, `▷ Tester`, `Publier`) et inspecteur **`COUCHES · N`** (y compris sur les 5 nœuds de `Mon Assistant` entre les bornes `🔒 AssistantHarness` `AD-15`).
+17. **Federated Contextual Search Popover (`top-header-search-command`, `Principe A.2`)** : Palette de recherche fédérée et d'accès rapide à 2 vitesses (`⌘K` / `Ctrl+K`, `680px × max 480px`) ancrée dans la `TopHeaderBar`, avec 3 pilules de portée (`📍 Cet écran` | `📦 Cet Espace` | `🌐 Tous mes Espaces`), recherche lexicale `< 30 ms` (`0 $`) verrouillée en tête et enrichissement sémantique `pgvector` à `450 ms` inséré en dessous sans saut visuel (*Zero Layout Shift*), pilules sur les 7 familles d'éléments et action de secours `💬 Poser la question à Mon Assistant →`.
+18. **User Account Dropdown & Personal Settings Modal (`user-account-dropdown`, `user-settings-modal`, `Principe A.3`)** : Menu déroulant rapide (`280px`) au clic sur le login de la `TopHeaderBar` (identité, bascules 1-clic `🌓 Clair/Sombre` et `🌐 FR/EN` persistées en `0 ms` dans `localStorage` + sync API, bouton `🚪 Se déconnecter`) et modale dédiée **`⚙️ Paramètres de mon compte` (`720px`, 4 onglets sans doublon avec `Mon Assistant` : `🎨 Préférences & Affichage` avec lien croisé vers `⚙ Réglages de l'assistant`, `👤 Profil & Sécurité`, `🔗 Accès aux sources Passthrough`, `💻 Clés IDE & MCP`)** qui s'ouvre en fermant automatiquement le menu déroulant.
+19. **Remote Service / Agent Test & Discovery Bench (`remote-service-test-bench`, `Principe M`)** : Banc de diagnostic isolé (`timeout 5 s`, `1 Mo` max, tracé `ADMIN_CONNECTION_TEST`) en 4 étapes intégré aux modales de déclaration des Serveurs MCP, Connecteurs et Agents distants (`1. Réseau/TLS/Anti-SSRF`, `2. Auth <SecretField /> ou état 🟠 En attente de jeton utilisateur Passthrough non bloquant`, `3. Découverte tools/list ou Agent Card avec écriture forcée en Action Staged`, `4. 💬 Essai rapide à chaud Dry-Run avec détection de la télémétrie FinOps _meta.usage`).
 
 ## Do's and Don'ts
 
-| Do | Don't |
-| :--- | :--- |
-| Conserver les 7 entrées du Menu Global visibles dans la Sidebar gauche (avec filtrage RBAC et Mode Rail `[`) | Cacher la navigation globale uniquement derrière des commandes texte dans le chat |
-| Utiliser le violet `{colors.human-led}` exclusivement pour les **Ancrages Humains Obligatoires** | Pré-remplir par IA un champ marqué `human_authored_required: true` ou y ajouter un bouton d'auto-complétion IA |
-| Signaler tout livrable produit en mode `AUTONOMOUS_CONTRACT` par le badge Cyan/Cobalt `AutonomousExecutionBadge` avec `🛑 Kill-Switch` et `⏪ Invalider & Rollback` | Faire passer un artefact généré sans humain pour un artefact relu par un expert humain ou utiliser le violet `human-led` sur un badge autonome |
-| Afficher systématiquement le **Briefing de Revue (4 blocs)** en haut du Canvas avant un **Artefact** volumineux | Afficher un document brut de 30 pages avec un unique bouton "Tout Approuver" en bas de page |
-| Séparer visuellement les **Workflow Runs** en mode *Contributeur (Actions requises)* et *Consultation seule (Observateur)* | Laisser un utilisateur en mode *Consultation seule* cliquer sur des boutons d'édition qui échouent ensuite |
-| Utiliser exclusivement `<SecretField />` (`SecretInput: keep \| set \| clear` + `SecretStatus` fingerprint) pour tout credential ou clé API | Renvoyer un secret masqué `••••••••` dans un `input` contrôlé qui risquerait d'écraser le secret réel en base au `PATCH` |
-| Sélectionner un **Tier Cognitif abstrait (`Simple €`, `Medium €€`, `Complex €€€`, `Auto ⚡`)** et un niveau d'**Effort** dans le Studio | Coder en dur des noms commerciaux de modèles LLM (`gpt-4o`, `claude-3-7-sonnet`) dans les nœuds d'un workflow |
-| Garder le **Dock Agent Assistant & Permission Broker** et le **`<GuidanceDrawer />`** accessibles à droite | Forcer l'utilisateur à quitter le Catalogue, l'Ontologie ou `/settings/*` pour comprendre la méthodologie ou demander un accès |
+| Do                                                                                                                                                                                                                                       | Don't                                                                                                                                                                                              |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Conserver les **8 entrées non numérotées** visibles dans la Sidebar gauche (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`, `Configuration`, `Aide`) et utiliser exclusivement le terme **`Espace`** | Numéroter les entrées du menu, utiliser le terme « Produit » dans la navigation ou cacher le menu derrière des commandes chat                                                                      |
+| Masquer automatiquement les compteurs KPI `0 / 0 / 0` et les pilules de filtre tant qu'un écran est vide (`total == 0`) et ouvrir par défaut la Colonne d'Aide `❓` à droite                                                              | Afficher une rangée de compteurs `0 / 0 / 0 / 0` sur un espace neuf ou empiler un formulaire de création en plein écran au lieu d'une **Modale**                                                   |
+| Utiliser le violet `{colors.human-led}` (`#6D28D9`) exclusivement pour les **Ancrages Humains Obligatoires** (`human_authored_required: true`)                                                                                           | Pré-remplir par IA un champ marqué `human_authored_required: true` ou utiliser le violet sur un badge d'exécution autonome                                                                         |
+| Ouvrir les revues de livrables (Briefing 4 blocs, découpage, Actions Staged) dans la **Vue Fokus de Revue (`Mes Processus › Exécutions & Décisions › Run #ID`)** sous verrou Redis (`AD-4`)                                              | Empiler un document de 30 pages directement à l'intérieur des 3 blocs du `Cockpit`                                                                                                                 |
+| Résoudre chaque citation `[S1]`/`[G1]`/`[O1]` via la `citation_map` SSE et masquer l'extrait (`🔒 Source restreinte`) si le lecteur d'un `📁 Dossier` partagé n'a pas le droit `READ_SOURCE`                                               | Demander au LLM de recopier des URL brutes ou exposer un `snippet` d'une source restreinte à un co-lecteur non habilité                                                                            |
+| Utiliser exclusivement `<SecretField />` (`SecretInput: keep \| set \| clear` + `SecretStatus` fingerprint) pour tout secret ou jeton `Passthrough`                                                                                      | Renvoyer un secret masqué `••••••••` dans un `input` contrôlé qui risquerait d'écraser le secret réel en base                                                                                      |
+| Sélectionner un **Palier de modèle abstrait (`Rapide`, `Équilibré`, `Approfondi`)** dans le Studio et un mode de vitesse (`⚡ Standard` / `🧠 Approfondi`) dans `Mon Assistant`                                                            | Coder en dur des noms commerciaux de modèles LLM (`gpt-4o`, `claude-3-7-sonnet`) dans les nœuds d'un processus                                                                                     |
+| Dans **`📊 FinOps`** (`AD-12`), distinguer le **Coût interne vérifié** du **Coût externe déclaré MCP** (borné par `RemoteUsageSanitizer`) et séparer les compteurs de **Tokens LLM** et d'**Appels / Unités MCP**                         | Additionner artificiellement des unités métiers externes (`pages OCR`, `crédits API`) avec des `tokens LLM` ou laisser un `_meta.usage` externe non borné bloquer les modèles internes de l'Espace |

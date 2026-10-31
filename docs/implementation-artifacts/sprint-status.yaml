@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-28-2026 22:33
+last_updated: 10-31-2026 01:30
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -84,6 +84,7 @@ development_status:
   6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: backlog
   6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: backlog
   6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: backlog
+  6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu: backlog
   epic-6-retrospective: optional
 
   epic-7: backlog
@@ -103,6 +104,35 @@ development_status:
   8-5-studio-workflows-et-registre-des-packs: done
   8-6-parcours-initialisation-wizards-durables: done
   epic-8-retrospective: optional
+
+  # Epic 9 — Coquille Ergonomique 4 Zones (Portals/KORE), Recherche ⌘K 2 Vitesses, Compte UserSettingsModal, Accostage 1/6 & Aide Contextuelle Hybride ?
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes A, A.2, A.3, C, D, D.4, E, F, G, Section 2)
+  epic-9: backlog
+  9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép: backlog
+  9-2-parcours-d-accostage-progressif-jour-0-accostage-1-6-protecti: backlog
+  9-3-recherche-fédérée-contextuelle-cmd-k-à-2-vitesses-zero-layout: backlog
+  9-4-menu-déroulant-login-useraccountdropdown-modale-usersettingsm: backlog
+  9-5-système-d-aide-contextuelle-hybride-helparticle-catalog_items: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10 — Mon Assistant Tout-en-Un (Style KORE) : Gouvernance 4 Niveaux (Mode A & Mode B), Routage 3 Vitesses (TTFT < 1,2s), Citations Déterministes [S1]/[G1]/[O1] & Dossiers Collaboratifs
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes B, H, K, K.4, K.5, K.6)
+  epic-10: backlog
+  10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m: backlog
+  10-2-garantie-de-latence-ttft-1-2s-cache-redis-prompt-assemblé-3-v: backlog
+  10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage: backlog
+  10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Banc de Test MCP/A2A 🔌 & Atelier orcia-pack-builder
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, Sections 3 & 4)
+  epic-11: backlog
+  11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: backlog
+  11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: backlog
+  11-3-déclaration-services-mcp-agents-distants-a2a-banc-de-test-à-c: backlog
+  11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i: backlog
+  11-5-processus-5-generate-and-attach-help-validateur-validate_help: backlog
+  epic-11-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"

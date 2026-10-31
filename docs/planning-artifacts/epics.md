@@ -12,6 +12,8 @@ inputDocuments:
   - 'docs/planning-artifacts/research/technical-frontend-spa-nextjs-vs-vite-tanstack-rou-2026-10-27/report.md'
   - 'docs/planning-artifacts/sprint-change-proposal-2026-10-27.md'
   - 'docs/planning-artifacts/research/architecture-decoupling-audit-2026-10-28.md'
+  - 'docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md'
+  - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md'
 ---
 
 # ORCIA - Epic Breakdown
@@ -158,13 +160,29 @@ Les Tech Leads, SecOps, Développeurs et Auditeurs (`Yanis UJ-3`, `Marc UJ-5`, `
 Les Administrateurs Plateforme (`Karim UJ-9`), Directeurs de BU (`Claire UJ-8`), Chefs d'Équipe (`Marc UJ-5`) et Contributeurs multi-projets (`Nadia UJ-4`) trient leurs notifications personnelles et d'équipe dans **🔔 2. Boîte & Mes Runs**, prennent en charge (*Claim*) atomiquement une notification d'équipe avec verrou de présence temps réel (`< 500ms` via SSE), supervisent simultanément plusieurs **Workflow Runs** avec séparation stricte entre **Consultation seule (`READ_ONLY_OBSERVER`)** et **Contributeur (`CONTRIBUTOR_ACTION_REQUIRED`)**, pilotent et administrent de manière consolidée (*Roll-up* & *Drill-down* via le sélecteur de périmètre **`⌘W`**) l'ensemble des **Workspaces, Instances de Workflow Runs, Sources (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), Agents/Workflows/Surcharges et Équipes** depuis le **Centre de Pilotage Unifié Multi-Niveaux (`/workspaces` & `/workspaces/[workspaceId]` à 4 onglets)**, pilotent l'interface au clavier (`⌘K`, `⌘W`, `g c`..`g w`, `Alt + ↑/↓`), et traitent leurs arbitrages et validations urgentes en déplacement grâce à l'interface **Mobile Companion** à 3 onglets.
 **FRs covered:** `FR-2`, `FR-3`
 
-### Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Complet (Setup + Run) & Réversibilité Humaine
-Les Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) pilotent dans **📊 6. FinOps & Audit** l'équation économique complète de leurs processus (**Coût de Setup + Coût de Run vs gain de TTM**) protégée par des coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), inspectent et exportent la **Provenance Auditable** immuable de chaque Step et Gate (`audit_ledger`), et suivent les contre-métriques de gouvernance cognitive (**Ratio Cadrage Actif $\ge 40\%$**, **Taux de Rubber-Stamping $< 5\%$**, **Indice de Pattern Drift / Réversibilité Humaine $0\%$**, **Taux d'Escalade Autonome `SM-A1`**, **Taux d'Invalidation Post-Hoc `SM-A2`** et **Coût Moyen par Run Autonome `SM-A3`**) avec recommandations automatiques d'ajustement des Gates.
-**FRs covered:** `FR-25`, `FR-26`, `FR-27`
+### Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Consolidé (LLM Internes + Télémétrie MCP/Agents Distants) & Réversibilité Humaine
+Les Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) pilotent dans **📊 FinOps** l'équation économique consolidée de leurs processus (**Coût de Setup + Coût de Run interne vérifié + Coût externe déclaré MCP/A2A vs gain de TTM**) protégée par le validateur **`RemoteUsageSanitizer`** (`_meta.usage` / `X-Orcia-Usage`), les coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`) et les coupe-circuits isolés par connecteur (`CIRCUIT_OPEN`, `AD-12`), inspectent et exportent la **Provenance Auditable** immuable de chaque Step, Gate et test de connexion à chaud (`audit_ledger`, `ADMIN_CONNECTION_TEST`), et suivent les contre-métriques de gouvernance cognitive (**Ratio Cadrage Actif $\ge 40\%$**, **Taux de Rubber-Stamping $< 5\%$**, **Indice de Pattern Drift / Réversibilité Humaine $0\%$**, **Taux d'Escalade Autonome `SM-A1`**, **Taux d'Invalidation Post-Hoc `SM-A2`** et **Coût Moyen par Run Autonome `SM-A3`**) avec recommandations automatiques d'ajustement des Gates.
+**FRs covered:** `FR-25`, `FR-26`, `FR-27` (`AD-12`, `Principe M.3`)
 
-### Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Boucle d'Auto-Remédiation & Gouvernance Post-Hoc
-Les Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) configurent et signent des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), déclenchent de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11` : génération autonome de rapports analytiques multi-sources complexes)** ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et supervisent ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
-**FRs covered:** `FR-5`, `FR-13`, `FR-14`, `FR-19`, `FR-22`, `FR-24`, `FR-26`, `FR-27`, `FR-29`, `FR-30`
+### Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Auto-Remédiation, Génération Automatique d'Aide & Gouvernance Post-Hoc
+Les Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) configurent et signent des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), déclenchent de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11`)**, par **Événement Outbox de publication de Pack/Processus (exécutant automatiquement `generate-and-attach-help` sous contrat d'autonomie `AD-18`)**, ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et supervisent ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+**FRs covered:** `FR-5`, `FR-13`, `FR-14`, `FR-19`, `FR-22`, `FR-24`, `FR-26`, `FR-27`, `FR-29`, `FR-30` (`AD-18`, `Principe D.4`)
+
+### Epic 8: Hub de Paramétrage Post-Jour 0 (`/settings/*`), Gouvernance d'Entreprise à 6 Verbes (`RBAC/ABAC`), Routage Cognitif Abstrait (`simple|medium|complex|auto` & Effort), Studio Visuel Avancé (`Couches`, `Contrat`, `Pré-prompt`) & Wizards d'Initialisation Durables
+Les Administrateurs Plateforme (`Karim UJ-9`), Ingénieurs SecOps (`Sophie UJ-6`), Directeurs de BU (`Claire UJ-8`) et Chefs d'Équipe / Tech Leads (`Marc UJ-5`, `Yanis UJ-3`) administrent ORCIA après le Jour 0 sans redéploiement via le **Hub de Paramétrage (`/settings/{iam,connectors,ai-models,packs,workflows,audit}`)** protégé par concurrence optimiste (`ETag`/`If-Match` `412`) et contrat de secret en écriture seule (`SecretInput`/`SecretStatus`), appliquent un modèle d'habilitations hiérarchique **RBAC/ABAC à 6 verbes (`create, read, update, delete, execute, grant`)**, abstraient les modèles LLM en **Tiers Cognitifs (`simple €, medium €€, complex €€€, auto ⚡`)** et **niveaux d'Effort** avec escalade déterministe rejouable sous DBOS, enrichissent le **Studio Visuel de Workflows** (5 onglets de cycle de vie, immutabilité des versions publiées, `Pré-prompt IA`, `Contrat du workflow`, `Déclencheurs`, `▷ Tester`, inspecteur **`COUCHES · N`** et moindre privilège connecteur par étape), et embarquent toute nouvelle équipe grâce à **3 Wizards d'Initialisation Durables DBOS (`/wizards/*`)**.
+**FRs covered:** `FR-1`, `FR-10`, `FR-11`, `FR-14`, `FR-16`, `FR-17`, `FR-19`, `FR-24`, `FR-26`, `FR-27`, `FR-28`, `FR-30` (`AD-21`)
+
+### Epic 9: Coquille Ergonomique 4 Zones (Style Portals / EXEMPLE), Recherche Fédérée `⌘K` à 2 Vitesses (*Zero Layout Shift*), Compte Utilisateur (`UserSettingsModal`), Accostage Jour 0 (`Accostage 1/6`) & Aide Contextuelle Hybride (`❓`)
+Tous les utilisateurs d'ORCIA bénéficient dès la première seconde d'une **Coquille Globale à 4 Zones** auto-descriptive (`TopHeaderBar 52px`, `Sidebar 240px/68px` aux **8 menus fixes non numérotés** `Cockpit | Mon Assistant | Mes Processus | Mes Agents | Mes Espaces | FinOps | Configuration | Aide` avec terminologie invariante **`Espace`**, `Zone Centrale 1fr` et `Colonne d'Aide Contextuelle ? 340px` auto-repliée sur `< 1440px`), d'un **Cockpit épuré** (extinction automatique des compteurs `0/0/0/0` quand `total == 0` et séparation entre décisions courtes `Tie-Break` et **Vue Fokus de Revue `Run #ID`** avec verrou Redis `AD-4`), d'un **Parcours d'Accostage Progressif Jour 0 (`Accostage 1/6`)** protégé contre le *First-User Takeover* (`LOCK TABLE users` + `ORCIA_BOOTSTRAP_TOKEN`) et débloquant l'essai dès `1 modèle LLM` ($\rightarrow \ge 2$ familles `AD-10`), d'une **Recherche Fédérée & Contextuelle `⌘K` à 2 vitesses sans saut visuel** (3 portées, 7 familles, lexical `< 30 ms` `0 $` en tête + vectoriel HNSW sur pause `450 ms` en bas avec *Deep-Linking Auto-Focus*), d'un **Menu Login (`UserAccountDropdown`) & Modale « Paramètres de mon compte » (`UserSettingsModal` à 4 onglets)** à double persistance `0 ms` anti-FOUC, et d'un **Système d'Aide Hybride (`HelpArticle` factorisé dans `catalog_items` + `cas/<sha256>`)** servi en `< 10 ms` via Redis.
+**Principes UX/Architecture couverts:** `Principes A, A.2, A.3, C, D, D.4, E, F, G`, `Section 2`, `AD-4`, `AD-5`, `AD-6`, `AD-8`, `AD-10`, `AD-14`, `AD-16`, `AD-21`
+
+### Epic 10: `Mon Assistant` Tout-en-Un (Style EXEMPLE) — Personnalisation à 4 Niveaux (Mode A & Mode B), Routage à 3 Vitesses (`TTFT < 1,2 s`), Citations Déterministes (`[S1]/[G1]/[O1]`) & Dossiers Thématiques Collaboratifs (`📁 Dossiers`)
+Les équipes métiers et techniques disposent dans **`Mon Assistant`** d'un espace de travail conversationnel complet : personnalisable à 4 niveaux (`USER`, `WORKSPACE`, `TEAM`, `PLATFORM`) soit en **Mode A (Formulaire Rapide à 3 onglets)** soit en **Mode B (Studio Graphique `@xyflow/react`)** à l'intérieur des bornes inaltérables `🔒 AssistantHarness` (`AD-15`), garantissant un **`TTFT < 1,2 s`** grâce au cache Redis du prompt assemblé à 5 couches et au **Routage à 3 Vitesses (`⚡ Rapide`, `🔍 Agent & Outils MCP`, `🧠 Approfondi`)**, ancrant chaque affirmation par des **Citations Déterministes (`[S1]`, `[G1]`, `[O1]`)** résolues via `citation_map` SSE avec filtrage `READ_SOURCE` par lecteur (`AD-21`) et garde-fou anti-citation fantôme `< 5 ms`, et structurant le travail au long cours dans des **Dossiers Thématiques (`📁 Dossiers`)** dotés d'une continuité mémoire en Couche 5, d'un partage collaboratif à 3 niveaux (`🔒 Privé | 👥 Partagé | 📦 Espace`), d'un verrou de tour Redis léger (`SET NX EX 60`) et d'une identité `Passthrough` individuelle par message (`AD-6`).
+**Principes UX/Architecture couverts:** `Principes B, H, K, K.4, K.5, K.6`, `AD-5`, `AD-6`, `AD-8`, `AD-14`, `AD-15`, `AD-21`
+
+### Epic 11: Gouvernance Métier de l'Espace (`Mes Espaces` à 5 Onglets, Cycle de Vie du Glossaire `✨ À valider`, Routage des Artefacts à 4 Niveaux), Banc de Test MCP/A2A `🔌` & Atelier `orcia-pack-builder`
+Les Responsables d'Espace (`TEAM_LEAD`), Stewards Métier (`ONTOLOGY_STEWARD_L3`) et Concepteurs de Packs pilotent leurs espaces dans **`Mes Espaces` structuré en 5 sous-onglets** (`Vue d'ensemble`, `Documents & Sources`, `Livrables & Artefacts`, `Glossaire & Règles métier`, `Membres & Équipe`), gouvernent la localisation et la publication des livrables produits selon une **Cascade à 4 Niveaux** (avec confinement `local://`, bail `ResourceLeasePort` `AD-4` et alias `orcia://workspaces/<ws>/artifacts/<type>/<slug>@v<N>`), alimentent leur **Glossaire métier (`✨ À valider`)** grâce à une extraction en 2 passes à coût maîtrisé (`0 $` déterministe + batch `Top-15`), sélection multiple et simulation *What-If* (`AD-7`), déclarent et testent à chaud des **Services/Serveurs MCP et `@Agents Distants (MCP / A2A)`** via un **Banc de Test en 4 Étapes (`🔌`)** supportant le mode `Passthrough`, et conçoivent/font évoluer/documentent des Packs Métier via le pack système **`packages/orcia-pack-builder`** (5 processus gouvernés dont `generate-and-attach-help` validé par `validate_help_article` en Sandbox Palier 1 `< 5 s`).
+**Principes UX/Architecture couverts:** `Principes D.4, I, J, L, M.1, M.2`, `Sections 3 & 4`, `AD-4`, `AD-5`, `AD-6`, `AD-7`, `AD-8`, `AD-9`, `AD-14`, `AD-18`, `AD-20`, `AD-21`
 
 ## Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
 
@@ -759,24 +777,24 @@ So that la prise en main quotidienne soit immédiate sans page blanche ni surcha
 **Then** il affiche le **`<SprintContextWidget />`** du Sprint/Lot actif doté du CTA 1-clic *« Auditer les risques du sprint / lot avec l'IA »* ainsi que la **`<ScopedPromptBox />`** permettant de choisir explicitement le périmètre de sources RAG (filtré par le *Permission Broker*) et le Tier cognitif avant d'envoyer une requête à l'Agent Assistant
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`Vitest` sur `<CollapsibleAppRail />`, `<SprintContextWidget />`, `<ScopedPromptBox />` et `/login`) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
 
-## Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Complet (Setup + Run) & Réversibilité Humaine
+## Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Consolidé (LLM Internes + Télémétrie MCP/Agents Distants) & Réversibilité Humaine
 
-Permettre aux Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) de piloter dans **📊 6. FinOps & Audit** l'équation économique complète de leurs processus (*Coût de Setup + Coût de Run vs gain de TTM*) protégée par des coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), d'inspecter et d'exporter la *Provenance Auditable* immuable de chaque Step et Gate (`audit_ledger`), et de suivre les 3 contre-métriques de gouvernance cognitive (*Ratio Cadrage Actif $\ge 40\%$*, *Taux de Rubber-Stamping $< 5\%$*, *Indice de Pattern Drift / Réversibilité Humaine $0\%$*) avec recommandations automatiques d'ajustement des Gates.
+Permettre aux Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) de piloter dans **📊 FinOps** l'équation économique consolidée de leurs processus (*Coût de Setup + Coût de Run interne vérifié + Coût externe déclaré MCP/A2A vs gain de TTM*) protégée par le validateur **`RemoteUsageSanitizer`** (`_meta.usage` / `X-Orcia-Usage`), les coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`) et les coupe-circuits isolés par connecteur (`CIRCUIT_OPEN`, `AD-12`), d'inspecter et d'exporter la *Provenance Auditable* immuable de chaque Step, Gate et test de connexion à chaud (`audit_ledger`, `ADMIN_CONNECTION_TEST`), et de suivre les 3 contre-métriques de gouvernance cognitive (*Ratio Cadrage Actif $\ge 40\%$*, *Taux de Rubber-Stamping $< 5\%$*, *Indice de Pattern Drift / Réversibilité Humaine $0\%$*) avec recommandations automatiques d'ajustement des Gates.
 
-### Story 6.1: Registre de Provenance Auditable Immuable (`audit_ledger` Append-Only) & Export de Conformité JSON/Markdown
+### Story 6.1: Registre de Provenance Auditable Immuable (`audit_ledger` Append-Only), Traçabilité des Tests à Chaud (`ADMIN_CONNECTION_TEST`) & Export de Conformité JSON/Markdown
 
 As a Ingénieur SecOps ou Auditeur Interne (`Sophie UJ-6`, `Claire UJ-8`),
-I want enregistrer de manière immuable dans `audit_ledger` la provenance complète de chaque Step et Gate (URI/hashes `SHA-256`, modèle/paramètres, prompt assemblé, chunks KB injectés, appels Skills/MCP/mutations Jira, coûts/tokens, signatures et durées de revue humaines) et l'exporter en JSON/Markdown,
-So that nous puissions prouver réglementairement à 100% quelles ressources exactes, quels modèles et quels experts humains ont produit et validé chaque livrable (`FR-25`, `AD-12`, `AD-19`, `NFR-SEC-3`).
+I want enregistrer de manière immuable dans `audit_ledger` la provenance complète de chaque Step, Gate, appel MCP/Agent distant (avec la nature des métriques déclarées) et essai à chaud du banc de test (`ADMIN_CONNECTION_TEST`), et l'exporter en JSON/Markdown,
+So that nous puissions prouver réglementairement à 100% quelles ressources exactes, quels modèles internes ou services distants et quels experts humains ont produit et validé chaque livrable sans polluer les runs de production (`FR-25`, `AD-12`, `AD-19`, `NFR-SEC-3`, `Principe M.2`).
 
 **Acceptance Criteria:**
 
 **Given** la migration Alembic créant la table `audit_ledger` protégée par un trigger PostgreSQL `BEFORE UPDATE OR DELETE RAISE EXCEPTION` (`NFR-SEC-3`) et l'abonné Outbox idempotent de `packages/orcia-core/audit_finops` (`AD-19`)
-**When** un appel LLM, une exécution de *Skill*/*MCP*, une mutation *Jira*, un passage de *Gate*, une action humaine ou une modification de paramètre système (`SettingsChanged`, `AD-21`) se produit
-**Then** `packages/orcia-core/audit_finops` consomme les événements de `domain_events_outbox` (`StepCompleted`, `GateEvaluated`, `ArtifactProduced`, `RunTerminated`, `SettingsChanged`) sans couplage entrant depuis `orchestration/engine.py` et écrit sans doublon (idempotence par `event_id`) une entrée horodatée UTC ISO-8601 contenant `run_id`, `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `inference_tier`, `effort`, `input_tokens`, `output_tokens`, `cost_usd`, `latency_ms`, `trace_id`, `run_lock_sha256`, les hashes `SHA-256` du *Pré-prompt IA* et du *Contrat du workflow*, et les références CAS (`SeaweedFS`) des prompts/chunks KB injectés (`FR-25`, `AD-12`, `AD-19`, `AD-21`)
+**When** un appel LLM, une exécution de *Skill*/*MCP*/*Agent distant A2A*, un essai à chaud du banc de test (`actor_type: ADMIN_CONNECTION_TEST`, isolé hors run de production), une mutation *Jira*, un passage de *Gate*, une action humaine ou une modification de paramètre système (`SettingsChanged`, `AD-21`) se produit
+**Then** `packages/orcia-core/audit_finops` consomme les événements de `domain_events_outbox` (`StepCompleted`, `GateEvaluated`, `ArtifactProduced`, `RunTerminated`, `SettingsChanged`) sans couplage entrant depuis `orchestration/engine.py` et écrit sans doublon (idempotence par `event_id`) une entrée horodatée UTC ISO-8601 contenant `run_id` (nullable pour `ADMIN_CONNECTION_TEST`), `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `inference_tier`, `effort`, `input_tokens`, `output_tokens`, `cost_usd`, `native_metric_type`, `native_metric_value`, `reported_by_remote`, `latency_ms`, `trace_id`, `run_lock_sha256`, les hashes `SHA-256` du *Pré-prompt IA* et du *Contrat du workflow*, et les références CAS (`SeaweedFS`) des prompts/chunks KB injectés (`FR-25`, `AD-12`, `AD-19`, `AD-21`)
 **And** toute tentative de `UPDATE` ou `DELETE` sur `audit_ledger` lève une exception PostgreSQL immédiate.
 
-**Given** un auditeur habilité dans **📊 6. FinOps & Audit** (`g a`, `apps/web/src/features/finops/`)
+**Given** un auditeur habilité dans **📊 FinOps** (`g f`, `apps/web/src/features/finops/`)
 **When** il inspecte un *Workflow Run* ou appelle `GET /api/v1/audit/ledger/{run_id}/export?format=json|md`
 **Then** le système génère le dossier complet de **Provenance Auditable** attestant qu'aucune étape n'a consommé une ressource absente de `run-lock.json`
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`) et d'intégration (`testcontainers` PG18 vérifiant le trigger append-only + SeaweedFS) couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
@@ -793,7 +811,7 @@ So that nous mesurions la réduction de $\ge 25\%$ du coût complet (`SM-1`) tou
 **When** un Step accumule des appels LLM (y compris les escalades du routeur `auto` enregistrées dans `inference_attempts`) ou des boucles de correction suite à un rejet de Gate
 **Then** le coupe-circuit vérifie à chaque appel LLM coûteux et à chaque transition les seuils du Run et du périmètre : s'ils sont atteints, il suspend immédiatement l'étape en statut `PAUSED_BUDGET_EXCEEDED` ou `PAUSED_MAX_RETRIES`, émet une alerte SSE via `domain_events_outbox` au responsable du Run, et exige un arbitrage humain ou une extension explicite (`POST /api/v1/runs/{run_id}/budget-override`) pour reprendre (`FR-26`, `AD-12`, `AD-19`, `AD-21`).
 
-**Given** une Directrice de BU (`Claire, UJ-8`) qui consulte **📊 6. FinOps & Audit** ou interroge l'Agent Assistant
+**Given** une Directrice de BU (`Claire, UJ-8`) qui consulte **📊 FinOps** ou interroge `Mon Assistant`
 **When** le tableau de bord FinOps est affiché
 **Then** il ventile par *Step*, par *Tier cognitif (`simple | medium | complex | auto`)* et *niveau d'Effort (`default | fast | balanced | deep`)*, par *Workflow Run*, par *Workflow* et par *Équipe/BU* le **Coût de Setup** (temps de conception/maintenance du workflow), le **Coût de Run** (tokens LLM en `numeric(12, 6)` USD + temps humain valorisé) et l'écart de **Time-to-Market (TTM)** par rapport à la baseline (`SM-1`, `SM-5`, `AD-21`)
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`hypothesis` sur les calculs de coûts et coupe-circuits) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du service FinOps (`AD-17`, `AD-19`).
@@ -807,7 +825,7 @@ So that l'accélération par l'IA ne transforme jamais nos experts humains en si
 **Acceptance Criteria:**
 
 **Given** les données agrégées depuis `human_anchor_signatures`, `human_arbitration_requests`, `gate_evaluations` (`review_duration_ms`, `fast_approval_warning`) et `audit_ledger`
-**When** l'utilisateur ouvre l'onglet Gouvernance & Réversibilité de **📊 6. FinOps & Audit** (`g a`, `apps/web/src/features/finops/`)
+**When** l'utilisateur ouvre l'onglet Gouvernance & Réversibilité de **📊 FinOps** (`g f`, `apps/web/src/features/finops/`)
 **Then** le système calcule et affiche par *Workflow*, *Équipe* et *BU* les **3 indicateurs de maîtrise humaine (`FR-27`)** :
 1. **Ratio Cadrage Actif ("Human-Led Think") vs Simple Relecture (`SM-C2`)** : $\frac{\text{Temps Ancrages Humains} + \text{Arbitrages} + \text{Challenges}}{\text{Temps Humain Total}}$ (alerte ambre si $< 40\%$).
 2. **Taux de Validation Aveugle / Rubber-Stamping (`SM-C1`)** : pourcentage d'approbations aux Gates Humaines avec `fast_approval_warning: true` ou sans ouverture du *Briefing de Revue* (alerte rouge si $\ge 5\%$).
@@ -818,25 +836,48 @@ So that l'accélération par l'IA ne transforme jamais nos experts humains en si
 **Then** il génère une alerte et une recommandation actionnable proposant soit de basculer la *Gate* en politique `risk_or_exception_based` / `sampling`, soit de renforcer les *Ancrages Humains Obligatoires* (`FR-27`)
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'évaluation (`orcia-evals`) et E2E (`Playwright`) couvrent $\ge 90\%$ du tableau de bord et des règles d'alerte (`AD-17`, `AD-19`).
 
-## Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Boucle d'Auto-Remédiation & Gouvernance Post-Hoc
+### Story 6.4: Télémétrie FinOps Multi-Métriques des Services MCP & Agents Distants (`_meta.usage` / `X-Orcia-Usage`), `RemoteUsageSanitizer`, Onglet `🌐 Par Service MCP & Agent Distant` & Coupe-Circuit Isolé par Connecteur (`AD-12`, Principe M.3)
 
-Permettre aux Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) de configurer et signer des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), de déclencher de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11` : génération autonome de rapports analytiques multi-sources complexes)** ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox Palier 2, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et de superviser ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+As a Directrice de BU, Administrateur Plateforme ou Chef d'Équipe (`Claire UJ-8`, `Karim UJ-9`, `Marc UJ-5`),
+I want collecter et normaliser les métriques de consommation retournées par les serveurs MCP et agents distants (`Tokens LLM distants`, `Coût monétaire €/$`, `Unités/Crédits métiers` + barème de conversion en fallback), les protéger contre toute donnée corrompue via `RemoteUsageSanitizer`, ventiler clairement le coût interne vérifié et le coût externe déclaré dans `📊 FinOps`, et isoler le coupe-circuit de chaque connecteur,
+So that nous suivions le coût consolidé réel sans jamais additionner des choux et des carottes ni laisser un serveur MCP tiers bogué épuiser le budget global ou bloquer les LLM internes (`FR-26`, `AD-12`, `AD-19`, `Principe M.3`).
+
+**Acceptance Criteria:**
+
+**Given** un appel exécuté via `ConnectorInvoker` vers un serveur MCP ou un agent distant A2A retournant un bloc `CallToolResult._meta.usage` ou un en-tête `X-Orcia-Usage` (ou ne retournant aucune métrique)
+**When** le **`RemoteUsageSanitizer`** (`packages/orcia-core/audit_finops`) inspecte la télémétrie reçue avant publication dans `domain_events_outbox` (`StepCompleted`)
+**Then** :
+1. Il extrait les 3 formats de métriques (`input_tokens`/`output_tokens` distants, `cost`/`currency`, ou `units`/`unit_name` tels que `pages_ocr`, `recherches_api`, `minutes_gpu`) ou applique le **barème de conversion par défaut** configuré sur le connecteur (`coût fixe par appel` ou `coût par unité × taux de change €`) ;
+2. Il rejette toute valeur négative (`< 0`), `NaN` ou `Infinity`, applique le plafond de sécurité par appel **`max_reported_cost_per_call`** (défaut `5,00 €`) en écrêtant la valeur au-delà et en émettant `REMOTE_USAGE_ANOMALY_CAPPED`, et convertit `native_currency` vers le pivot `numeric(12, 6)` USD en base (`AD-12`) pour un affichage unifié en `€` ;
+3. Si un service distant dépasse son sous-plafond mensuel ou journalier dédié (ex. `max 50 € / mois` ou `500 appels / jour`), seul le coupe-circuit de ce connecteur passe à **`CIRCUIT_OPEN`** dans `ConnectorInvoker` (`AD-12`), sans bloquer les modèles LLM internes de l'Espace.
+
+**Given** l'écran **`📊 FinOps`** (`apps/web/src/features/finops/`)
+**When** l'utilisateur consulte les **4 compteurs KPI d'en-tête** et l'onglet **`🌐 Par Service MCP & Agent Distant`**
+**Then** :
+1. Le compteur 1 (**`COÛT CONSOLIDÉ (€)`**) affiche le total en `€` en distinguant visuellement **`Coût interne vérifié : X €`** et **`Coût externe déclaré (MCP) : Y €`** ;
+2. Le compteur 2 (**`TOKENS LLM (INTERNES & DISTANTS)`**) additionne uniquement de vrais tokens LLM, tandis que le compteur 3 (**`APPELS & UNITÉS EXTERNES (MCP)`**) affiche séparément le nombre d'appels et les unités métiers (`pages OCR`, `requêtes API`, `crédits`) ;
+3. L'onglet **`🌐 Par Service MCP & Agent Distant`** affiche la table détaillée (*Service / Agent*, *Type*, *Appels*, *Métrique native consommée*, *Mode de valorisation `🟢 Temps réel (_meta.usage)` vs `🔵 Barème fixe`*, *Coût consolidé (€)* et *Quota / Plafond*)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest` + `hypothesis` sur `RemoteUsageSanitizer` avec valeurs négatives/`NaN`/overflow, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
+
+## Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Auto-Remédiation, Génération Automatique d'Aide & Gouvernance Post-Hoc
+
+Permettre aux Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) de configurer et signer des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), de déclencher de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11`)**, par **Événement Outbox de publication de Pack/Processus (exécutant automatiquement `generate-and-attach-help` sous contrat d'autonomie `AD-18`)**, ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox Palier 2, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et de superviser ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
 
 ### Story 7.1: Contrat d'Autonomie Signé, Identité Service-Principal Scopée & Régime d'Exécution `AUTONOMOUS_CONTRACT`
 
 As a Chef d'Équipe ou Ingénieur SecOps (`Marc UJ-5`, `Sophie UJ-6`),
 I want déclarer et signer un Contrat d'Autonomie sur un Workflow éligible (`LOW_NON_CRITICAL` ou `STANDARD`), lui attacher un `service_principal` à privilèges minimaux et activer le régime `AUTONOMOUS_CONTRACT`,
-So that les processus répétitifs ou analytiques (`UJ-11`) puissent s'exécuter de bout en bout sans intervention humaine synchrone tout en bloquant formellement toute autonomie non supervisée sur les processus `HIGH_CRITICAL` (`FR-5`, `FR-22`, `FR-29`, `AD-3`, `AD-6`, `AD-18`, `AD-19`).
+So that les processus répétitifs, analytiques (`UJ-11`) ou documentaires (`generate-and-attach-help` classé `LOW_NON_CRITICAL`) puissent s'exécuter de bout en bout sans intervention humaine synchrone tout en bloquant formellement toute autonomie non supervisée sur les processus `HIGH_CRITICAL` (`FR-5`, `FR-22`, `FR-29`, `AD-3`, `AD-6`, `AD-18`, `AD-19`, `Principe D.4`).
 
 **Acceptance Criteria:**
 
 **Given** un *Workflow* enregistré dans le Catalogue
 **When** un `TEAM_LEAD` tente d'activer `execution_regime: AUTONOMOUS_CONTRACT` sur un workflow de criticité `HIGH_CRITICAL`
 **Then** l'API rejette la requête avec `HTTP 422 ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE` (`AD-18`, `FR-29`)
-**And** sur un workflow `LOW_NON_CRITICAL` ou `STANDARD`, l'activation requiert la signature d'un **Contrat d'Autonomie** dans `human_anchor_signatures` (co-signé par un `SECOPS` si une identité `service_principal` est utilisée), définissant les sources autorisées en lecture seule, la liste blanche des *Actions Staged*, les plafonds budgétaires et la `tie_break_policy`.
+**And** sur un workflow `LOW_NON_CRITICAL` (tel que `orcia://pack-builder/workflows/generate-and-attach-help`) ou `STANDARD`, l'activation requiert la signature d'un **Contrat d'Autonomie** dans `human_anchor_signatures` (co-signé par un `SECOPS` si une identité `service_principal` est utilisée), définissant les sources autorisées en lecture seule, la liste blanche des *Actions Staged* (ex. publication d'une fiche `HELP_ARTICLE` dans `catalog_items` + `cas/<sha256>` + export `.md` Git), les plafonds budgétaires et la `tie_break_policy`.
 
-**Given** un *Workflow Run* s'exécutant sous `AUTONOMOUS_CONTRACT` (`UJ-11`)
-**When** toutes les *Gates Déterministes* (`PASS`) et *Gates Agentiques* (`agentic_score >= 0.85`, `fact_verification >= 0.90`, `0` conflit d'ontologie, `0` `[STALE_WARNING]`) sont franchies
+**Given** un *Workflow Run* s'exécutant sous `AUTONOMOUS_CONTRACT` (`UJ-11` ou `generate-and-attach-help`)
+**When** toutes les *Gates Déterministes* (`PASS`, y compris `validate_help_article` en Sandbox Palier 1) et *Gates Agentiques* (`agentic_score >= 0.85`, `fact_verification >= 0.90`, `0` conflit d'ontologie, `0` `[STALE_WARNING]`) sont franchies
 **Then** le Run finalise son livrable et exécute les seules *Actions Staged* autorisées par le contrat avec le statut `COMMITTED_AUTONOMOUS`
 **And** si un seuil de Gate n'est pas atteint ou qu'un conflit survient, le Run suspend immédiatement l'action d'écriture et escalade vers l'équipe propriétaire (`PAUSED_AUTONOMOUS_ESCALATION`) via `domain_events_outbox`
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest` + `hypothesis`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du module (`AD-17`, `AD-19`).
@@ -845,19 +886,19 @@ So that les processus répétitifs ou analytiques (`UJ-11`) puissent s'exécuter
 **When** un *Run* `AUTONOMOUS_CONTRACT` exécute une étape ou une *Action Staged* autorisée par le contrat
 **Then** l'action passe par le `ConnectorInvoker` (coupe-circuit par connecteur, `idempotency_key`, relances passagères seulement), l'identité `service_principal` est évaluée selon le verbe **`execute`** (avec respect du moindre privilège par étape `Lire` vs `Écrire` déclaré dans le Studio) et n'utilise que des `SecretRef` résolues par `SecretProviderPort` (`NFR-SEC-4`, `AD-21`).
 
-### Story 7.2: Déclencheurs Événementiels Idempotents (`WEBHOOK`, `LOG-SINK-ALERT`, `CRON`, `MANUAL_AUTONOMOUS`), Déduplication & Protection Anti-Boucle (*Self-Trigger Guard*)
+### Story 7.2: Déclencheurs Événementiels Idempotents (`WEBHOOK`, `LOG-SINK-ALERT`, `CRON`, `OUTBOX_EVENT`, `MANUAL_AUTONOMOUS`), Déduplication & Protection Anti-Boucle (*Self-Trigger Guard*)
 
 As a Ingénieur Plateforme / SRE ou Directrice de BU (`Karim UJ-9/UJ-12`, `Claire UJ-11`),
-I want enregistrer des déclencheurs autonomes planifiés (`CRON`) ou événementiels (`WEBHOOK` Jira/Git/Confluence, `LOG_SINK_ALERT` depuis le puits de logs) exécutés par le rôle `trigger-dispatcher` et dotés d'une clé d'idempotence stricte (`DBOS SetWorkflowID`), d'une fenêtre de cooldown et d'un garde-fou anti-auto-déclenchement,
-So that les rapports analytiques périodiques (`UJ-11`) et les diagnostics d'erreurs de logs (`UJ-12`) se lancent automatiquement sans jamais créer de doublons lors des ré-essais ni provoquer de tempête de boucles infinies (`FR-24`, `FR-26`, `FR-29`, `AD-12`, `AD-18`, `AD-19`).
+I want enregistrer des déclencheurs autonomes planifiés (`CRON`) ou événementiels (`WEBHOOK` Jira/Git/Confluence, `LOG_SINK_ALERT` depuis le puits de logs, ou événement interne `domain_events_outbox` tel que la publication d'un Pack ou d'un Processus déclenchant `generate-and-attach-help`) exécutés par le rôle `trigger-dispatcher` et dotés d'une clé d'idempotence stricte (`DBOS SetWorkflowID`), d'une fenêtre de cooldown et d'un garde-fou anti-auto-déclenchement,
+So that les rapports analytiques périodiques (`UJ-11`), la mise à jour automatique des fiches d'aide (`Principe D.4`) et les diagnostics d'erreurs de logs (`UJ-12`) se lancent automatiquement sans jamais créer de doublons lors des ré-essais ni provoquer de tempête de boucles infinies (`FR-24`, `FR-26`, `FR-29`, `AD-12`, `AD-18`, `AD-19`).
 
 **Acceptance Criteria:**
 
 **Given** un déclencheur actif dans `workflow_triggers` (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON` via `@DBOS.scheduled`, écouteur d'événement `domain_events_outbox` ou `MANUAL_AUTONOMOUS`) configuré depuis la modale **`⚡ Déclencheurs`** du Studio (`Story 8.5`) et géré par le rôle `trigger-dispatcher` (`M9`, `AD-19`, `AD-21`)
-**When** deux événements identiques (même `X-Webhook-Delivery-Id`, même `error_fingerprint_sha256` dans la fenêtre `cooldown_window_seconds`, ou même fenêtre `CRON`) ou un ré-essai se présentent simultanément
+**When** deux événements identiques (même `X-Webhook-Delivery-Id`, même `error_fingerprint_sha256` dans la fenêtre `cooldown_window_seconds`, même publication de version `@vX.Y.Z`, ou même fenêtre `CRON`) ou un ré-essai se présentent simultanément
 **Then** `DBOS SetWorkflowID("<trigger_id>:<idempotency_key>")`, le verrou atomique Redis `SET lock:trigger:{trigger_id}:{idempotency_key} NX EX 86400` et la contrainte PostgreSQL `UNIQUE (trigger_id, trigger_idempotency_key)` garantissent qu'un seul `workflow_run` est créé (`AD-18`).
 
-**Given** un événement Webhook ou de puits de logs dont l'émetteur est le `service_principal` d'ORCIA ou qui contient le marqueur `x-orcia-origin-run-id`
+**Given** un événement Webhook, Outbox ou de puits de logs dont l'émetteur est le `service_principal` d'ORCIA ou qui contient le marqueur `x-orcia-origin-run-id`
 **When** le récepteur de triggers inspecte l'événement
 **Then** le **Self-Trigger Guard** ignore l'événement et publie la prévention de boucle dans `domain_events_outbox` vers `audit_ledger`
 **And** si le déclencheur dépasse `max_runs_per_hour`, `max_daily_cost_usd` ou `max_consecutive_failures` (défaut `3`), son statut passe automatiquement à `CIRCUIT_OPEN` avec alerte SSE `< 500 ms`
@@ -892,16 +933,16 @@ So that les incidents récurrents à cause racine claire soient résolus en quel
 ### Story 7.4: Supervision UX des Runs Autonomes (`AutonomousExecutionBadge`, `UX-DR17`), Sorties de Secours (`Kill-Switch` & `Rollback`), Échantillonnage Post-Hoc & Métriques `SM-A1..A3`
 
 As a Directrice de BU, Chef d'Équipe ou Auditeur SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Sophie UJ-6`),
-I want distinguer visuellement tout run ou livrable exécuté sans humain (`AutonomousExecutionBadge`), disposer d'un filtre regroupé par déclencheur dans la Boîte de Notifications, auditer par échantillonnage post-hoc une fraction des runs autonomes, actionner en 1 clic le `Kill-Switch` ou l'invalidation/Rollback, et suivre les indicateurs `SM-A1`, `SM-A2`, `SM-A3` séparément des indicateurs `SM-C1`/`SM-C2`,
-So that l'ouverture aux workflows autonomes préserve la lisibilité cognitive du portail (Loi de Hick), la transparence d'audit et le contrôle humain immédiat (`FR-27`, `FR-29`, `AD-19`, `UX-DR17`, `SM-C1`, `SM-C2`, `SM-A1`, `SM-A2`, `SM-A3`).
+I want distinguer visuellement tout run ou livrable exécuté sans humain (`AutonomousExecutionBadge`), disposer d'un filtre regroupé par déclencheur dans le tiroir `🔔 Notifications` et `Mes Processus › Exécutions & Décisions`, auditer par échantillonnage post-hoc une fraction des runs autonomes, actionner en 1 clic le `Kill-Switch` ou l'invalidation/Rollback (y compris le retour à `@v(N-1)` d'une fiche `HelpArticle` rattachée automatiquement), et suivre les indicateurs `SM-A1`, `SM-A2`, `SM-A3` séparément des indicateurs `SM-C1`/`SM-C2`,
+So that l'ouverture aux workflows autonomes préserve la lisibilité cognitive du portail (Loi de Hick), la transparence d'audit et le contrôle humain immédiat (`FR-27`, `FR-29`, `AD-19`, `UX-DR17`, `Principe D.4`, `SM-C1`, `SM-C2`, `SM-A1`, `SM-A2`, `SM-A3`).
 
 **Acceptance Criteria:**
 
-**Given** un *Workflow Run* ou un *Artefact* produit sous `AUTONOMOUS_CONTRACT`
-**When** il est affiché dans le Cockpit, **🔔 2. Boîte & Mes Runs** ou le Centre de Pilotage `/workspaces`
-**Then** le composant **`AutonomousExecutionBadge` (`UX-DR17` dans `@orcia/ui`)** est rendu en Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`, **jamais** en Violet `#6D28D9` réservé à `HumanLedAnchorCard`) avec la mention du contrat et du déclencheur, les runs autonomes nominaux sont regroupés par déclencheur dans un tiroir replié de l'Inbox (seules les escalades, ouvertures `CIRCUIT_OPEN` et tirages `POST_HOC_AUDIT_SAMPLE` remontant en priorité), et les boutons **`🛑 Kill-Switch`** et **`⏪ Invalider & Rollback`** sont immédiatement accessibles.
+**Given** un *Workflow Run* ou un *Artefact* (y compris une fiche `HelpArticle` dans la Colonne `❓`) produit sous `AUTONOMOUS_CONTRACT`
+**When** il est affiché dans le Cockpit, le tiroir `🔔 Notifications`, `Mes Processus › Exécutions & Décisions`, la Colonne `❓` ou `Mes Espaces`
+**Then** le composant **`AutonomousExecutionBadge` (`UX-DR17` dans `@orcia/ui`)** est rendu en Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`, **jamais** en Violet `#6D28D9` réservé à `HumanLedAnchorCard`) avec la mention du contrat et du déclencheur, les runs autonomes nominaux sont regroupés par déclencheur dans un tiroir replié (seules les escalades, ouvertures `CIRCUIT_OPEN` et tirages `POST_HOC_AUDIT_SAMPLE` remontant en priorité), et les boutons **`🛑 Kill-Switch`** et **`⏪ Invalider & Rollback`** (restaurant instantanément `@v(N-1)` dans `catalog_items` et invalidant le cache Redis `< 10 ms` pour les fiches d'aide) sont immédiatement accessibles.
 
-**Given** le module **📊 6. FinOps & Audit** (`g a`, `apps/web/src/features/finops/`)
+**Given** le module **📊 FinOps** (`g f`, `apps/web/src/features/finops/`)
 **When** les indicateurs de gouvernance sont calculés
 **Then** `SM-C1` et `SM-C2` sont calculés sur le périmètre des runs interactifs et des Gates Humaines sans être faussés par les runs autonomes, tandis que les 3 nouveaux indicateurs **`SM-A1` (Taux d'Escalade Autonome)**, **`SM-A2` (Taux d'Invalidation Post-Hoc / Rollback, cible $< 1\%$)** et **`SM-A3` (Coût Moyen & Gain TTM par Run Autonome)** sont affichés avec alerte automatique si `SM-A2 >= 1%`
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'intégration (`testcontainers` PG18) et E2E (`Playwright`) couvrent $\ge 90\%$ des composants `UX-DR17`, du `Kill-Switch` et des métriques `SM-A1..A3` (`AD-17`, `AD-19`).
@@ -1026,3 +1067,286 @@ So that n'importe quelle équipe puisse configurer ses sources, ses tiers IA, se
 **When** le seeder idempotent (`packages/orcia-core/bootstrap/seeder.py`) provisionne l'espace de démonstration
 **Then** l'utilisateur accède immédiatement à un Workspace pré-câblé avec une ontologie de référence, un corpus documentaire indexé, un workflow publié prêt à être testé dans le Studio ou le Cockpit, et `0` secret en clair
 **And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`), d'intégration (`testcontainers` PG18 + Redis + SeaweedFS avec test de reprise après interruption du Wizard) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`, `AD-21`).
+
+## Epic 9: Coquille Ergonomique 4 Zones (Style Portals / KORE), Recherche Fédérée `⌘K` à 2 Vitesses (*Zero Layout Shift*), Compte Utilisateur (`UserSettingsModal`), Accostage Jour 0 (`Accostage 1/6`) & Aide Contextuelle Hybride (`❓`)
+
+Permettre à tous les utilisateurs d'ORCIA de bénéficier dès la première seconde d'une **Coquille Globale à 4 Zones** auto-descriptive (`TopHeaderBar 52px`, `Sidebar 240px/68px` aux **8 menus fixes non numérotés** `Cockpit | Mon Assistant | Mes Processus | Mes Agents | Mes Espaces | FinOps | Configuration | Aide` avec terminologie invariante **`Espace`**, `Zone Centrale 1fr` et `Colonne d'Aide Contextuelle ? 340px` auto-repliée sur `< 1440px`), d'un **Cockpit épuré** (extinction automatique des compteurs `0/0/0/0` quand `total == 0` et séparation entre décisions courtes `Tie-Break` et **Vue Fokus de Revue `Run #ID`** avec verrou Redis `AD-4`), d'un **Parcours d'Accostage Progressif Jour 0 (`Accostage 1/6`)** protégé contre le *First-User Takeover* (`LOCK TABLE users` + `ORCIA_BOOTSTRAP_TOKEN`) et débloquant l'essai dès `1 modèle LLM` ($\rightarrow \ge 2$ familles `AD-10`), d'une **Recherche Fédérée & Contextuelle `⌘K` à 2 vitesses sans saut visuel** (3 portées, 7 familles, lexical `< 30 ms` `0 $` en tête + vectoriel HNSW sur pause `450 ms` en bas avec *Deep-Linking Auto-Focus*), d'un **Menu Login (`UserAccountDropdown`) & Modale « Paramètres de mon compte » (`UserSettingsModal` à 4 onglets)** à double persistance `0 ms` anti-FOUC, et d'un **Système d'Aide Hybride (`HelpArticle` factorisé dans `catalog_items` + `cas/<sha256>`)** servi en `< 10 ms` via Redis (`Principes A, A.2, A.3, C, D, D.4, E, F, G`, `Section 2`).
+
+### Story 9.1: Coquille 4 Zones Direction C (8 Menus Non Numérotés, Terminologie Fixe `Espace`, Cockpit Épuré avec Extinction `0/0/0/0` & Séparation Cockpit vs Vue Fokus de Revue `Run #ID`)
+
+As a Utilisateur Métier, Chef d'Équipe ou Administrateur (`Hélène UJ-1`, `Marc UJ-5`, `Karim UJ-9`),
+I want naviguer dans une coquille à 4 zones dotée de 8 entrées fixes non numérotées (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`, `Configuration`, `Aide`), d'une terminologie invariante `Espace`, d'un Cockpit qui masque automatiquement les compteurs vides `0/0/0/0` et distingue les décisions courtes (`Tie-Break`) de la Vue Fokus de Revue (`Run #ID`),
+So that l'interface reste immédiatement lisible sans surcharge visuelle (Loi de Hick) et que les revues d'artefacts complexes disposent de tout l'espace central et d'un verrou de présence exclusif (`Principes A, C, E, F, G`, `AD-4`, `AD-19`, `UX-DR1`, `UX-DR2`).
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur connecté sur Desktop (`>= 1280px`) ou Laptop (`768px - 1279px`)
+**When** la coquille applicative `AppShell` est affichée
+**Then** elle structure l'écran en **4 zones strictes** : (1) `TopHeaderBar` (`52px`) contenant le sélecteur fixe **`Espace : [Nom] ⌄`** (`⌘W`), la barre de recherche fédérée `⌘K`, le bouton `? Aide`, le tiroir `🔔 Notifications` (`420px`) et le bouton `👤 Login` avec badge de Casquette métier ; (2) `Sidebar` (`240px` / `68px` Rail via `[`) présentant exactement les **8 entrées non numérotées** (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`, `Configuration`, `Aide`) avec en pied le sélecteur de Pack Métier ; (3) `Zone Centrale` (`1fr`) ; et (4) `Colonne d'Aide Contextuelle ?` (`340px` à droite, qui se replie automatiquement par défaut sur les écrans `< 1440px` dès que `total >= 1` décision est en attente).
+
+**Given** l'écran d'accueil **`Cockpit`** (`/`)
+**When** le nombre total d'actions requises (`Ancrages Humains + Arbitrages + Revues + Alertes`) vaut `total == 0` **OU** `total >= 1`
+**Then** :
+1. Si `total == 0`, les 4 compteurs KPI (`0/0/0/0`) et la barre de filtres sont **automatiquement masqués** au profit d'une bannière sobre `✅ Aucune décision en attente` suivie de l'Accès Rapide à `Mon Assistant` et des 3 cartes d'orientation ;
+2. Si `total >= 1`, les décisions courtes (**`Arbitrage Tie-Break`** à 2–3 options) se tranchent directement sur place en 1 clic dans le `Cockpit`, tandis que les actions lourdes (**`Ancrage Humain Violet`**, **`Briefing de Revue 4 blocs`**, **`Validation par Découpage`** et **`Challenge Amont What-If`**) affichent un résumé compact et un bouton **`Ouvrir l'atelier de revue →`** qui bascule vers la **Vue Fokus de Revue (`Mes Processus › Exécutions & Décisions › Run #ID`)** en acquérant automatiquement le verrou de présence Redis (`SET lock:step:<step_execution_id> <user_id> NX EX 900`, `AD-4`)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`Vitest`) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 9.2: Parcours d'Accostage Progressif Jour 0 (`Accostage 1/6`), Protection Anti-*First-User Takeover* & Palier Progressif `1 Modèle → ≥ 2 Familles AD-10`
+
+As a Administrateur Plateforme ou Premier Utilisateur au Jour 0 (`Karim UJ-9`, `Marc UJ-5`),
+I want initialiser une instance vierge d'ORCIA sans risque de prise de contrôle concurrente (*First-User Takeover*), débloquer l'essai de `Mon Assistant` dès le 1er modèle LLM configuré puis les Gates Agentiques dès la 2e famille orthogonale, et suivre ma progression via le bandeau interactif `Accostage 1/6`,
+So that l'installation initiale soit à la fois sécurisée cryptographiquement et praticable en moins de 5 minutes sans blocage bureaucratique (`Section 2`, `AD-10`, `AD-16`, `AD-19`).
+
+**Acceptance Criteria:**
+
+**Given** une base PostgreSQL 18 vierge (`COUNT(*) FROM users == 0`) lors du premier accès à `/welcome-setup`
+**When** la création du premier compte `PLATFORM_ADMIN` est soumise
+**Then** la transaction acquiert `LOCK TABLE users IN EXCLUSIVE MODE` (garantissant qu'un seul premier administrateur peut être créé même sous requêtes concurrentes) et, pour tout `ORCIA_ENV != "local"`, exige la validation du jeton d'amorçage **`ORCIA_BOOTSTRAP_TOKEN`** généré au démarrage (rejet `HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN` sinon).
+
+**Given** l'**Assistant de Bienvenue en 3 étapes** et le bandeau de progression **`Accostage 1/6`** dans le `Cockpit`
+**When** l'administrateur configure un **seul modèle LLM** (ex. `Ollama local` ou `OpenAI`) à l'étape 2
+**Then** le système active immédiatement le **Mode Essai Rapide** (`Mon Assistant` et le `Cockpit` deviennent utilisables avec un badge ambre non bloquant `⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans Configuration › Modèles IA pour activer les Gates Agentiques AD-10`), et déverrouille automatiquement les Gates Agentiques dès qu'une **2e famille de modèles distincte** est validée
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration sous concurrence (`testcontainers` PG18 vérifiant le `LOCK TABLE users`) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 9.3: Recherche Fédérée & Contextuelle `⌘K` à 2 Vitesses (*Zero Layout Shift*, 3 Portées, 7 Familles & Deep-Linking Auto-Focus)
+
+As a Utilisateur Métier, Architecte ou Tech Lead (`Hélène UJ-1`, `Antoine UJ-2`, `Yanis UJ-3`),
+I want rechercher instantanément depuis la barre supérieure (`⌘K`) n'importe quel dossier, discussion, processus, livrable, source, terme du glossaire, agent ou fiche d'aide selon 3 portées (`📍 Cet écran`, `📦 Cet Espace`, `🌐 Tous mes Espaces`) avec un affichage en 2 vitesses sans aucun saut visuel (*Zero Layout Shift*) et une ouverture profonde au clic,
+So that je retrouve n'importe quelle connaissance ou action en moins d'une seconde sans que la liste ne saute sous mon curseur ni que les coûts d'embeddings n'explosent à la frappe (`Principe A.2`, `AD-8`, `AD-19`, `AD-21`, Composant 17 `top-header-search-command`).
+
+**Acceptance Criteria:**
+
+**Given** le composant `@orcia/ui` **`top-header-search-command`** (`680px × max 480px`) ouvert via `⌘K` / `Ctrl+K` et l'endpoint `GET /api/v1/search` filtré par `PermissionGuard` (`AD-21`)
+**When** l'utilisateur saisit une requête et choisit l'une des **3 pilules de portée** (`📍 Cet écran` | `📦 Cet Espace` par défaut | `🌐 Tous mes Espaces`)
+**Then** :
+1. **Vitesse 1 (`As-You-Type`, `< 30 ms`, `0 $` d'appel LLM)** : à chaque frappe (`debounce 80 ms`), une requête SQL unique (`UNION ALL` sur `PostgreSQL tsvector` + trigrammes `pg_trgm`) retourne les résultats exacts/préfixes groupés parmi les **7 familles** (`📁 Dossiers & 💬 Discussions`, `☍ Processus & ▶ Exécutions`, `📄 Livrables & Artefacts`, `🗄️ Sources & Extraits`, `📖 Glossaire & Règles Métier`, `🤖 Agents & Compétences`, `❓ Fiches d'Aide & Actions`) et **verrouille leur position en tête** de chaque catégorie ;
+2. **Vitesse 2 (`Pause de frappe 450 ms`, uniquement si $\ge 3$ mots ou clic sur `✨ Recherche sémantique`)** : la recherche vectorielle `pgvector halfvec(1024)` HNSW + `RRF` (`AD-8`, cachée 5 min dans Redis par `(workspace_id, sha256(query_norm))`) ajoute ses trouvailles **exclusivement en bas** de chaque catégorie avec le badge `✨ Passage proche`, sans jamais déplacer la ligne actuellement sélectionnée au clavier (`↑`/`↓`).
+
+**Given** un résultat sélectionné dans `top-header-search-command`
+**When** l'utilisateur appuie sur `Entrée ↵` (ou `⌘+Entrée` / `Ctrl+Entrée`, ou clique sur le pied de liste `💬 Poser la question « ... » à Mon Assistant →`)
+**Then** `Entrée ↵` exécute le **Deep-Linking + Auto-Focus** vers l'élément exact (avec surlignage temporaire Ambre/Cobalt `2 s`, ou ouverture directe de la Colonne `❓` sans quitter l'écran pour une fiche d'aide), `⌘+Entrée` ouvre l'aperçu dans le panneau latéral droit sans quitter l'écran courant, et le bouton de pied bascule vers `Mon Assistant` en pré-attachant les meilleurs extraits trouvés
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du moteur de recherche à 2 vitesses (`AD-17`, `AD-19`).
+
+### Story 9.4: Menu Déroulant du Login (`UserAccountDropdown`), Modale « Paramètres de mon compte » (`UserSettingsModal` à 4 Onglets) & Double Persistance `0 ms` Anti-FOUC
+
+As a Utilisateur Connecté (`Hélène UJ-1`, `Yanis UJ-3`, `Lucas UJ-7`),
+I want ouvrir au clic sur mon login dans la `TopHeaderBar` un menu rapide (`UserAccountDropdown`) permettant de basculer en 1 clic le thème ou la langue et de me déconnecter, ou d'ouvrir la modale `⚙️ Paramètres de mon compte` (`UserSettingsModal` à 4 onglets) en fermant automatiquement le menu rapide,
+So that je gère mes préférences d'affichage sans clignotement (`0 ms` anti-FOUC), ma sécurité (`Argon2id`/`TOTP`), mes jetons personnels `Passthrough` et mes clés IDE MCP dans un espace personnel clairement séparé de la configuration d'entreprise (`Principe A.3`, `AD-6`, `AD-19`, `AD-21`, Composant 18).
+
+**Acceptance Criteria:**
+
+**Given** le bouton **`👤 Login · [Casquette]`** à l'extrême droite de la `TopHeaderBar`
+**When** l'utilisateur clique sur son login, actionne un switch rapide (`🌓 Apparence` ou `🌐 Langue`) ou clique sur **`🚪 Se déconnecter`**
+**Then** :
+1. Le menu déroulant **`UserAccountDropdown` (`280px`)** s'ouvre avec l'identité/rôle, le sélecteur de Casquette métier, les 2 bascules 1-clic (`☀️ Clair / 🌙 Sombre`, `FR / EN`), les entrées `⚙️ Paramètres de mon compte...` (`g u`) et `🔗 Mes accès aux sources...`, et le bouton **`🚪 Se déconnecter`** ;
+2. Tout changement de thème ou de langue est écrit **instantanément (`0 ms`) dans `localStorage`** (`orcia_theme`, `orcia_locale`, lu dès `index.html` avant le premier rendu React pour garantir **zéro FOUC**) ET synchronisé en arrière-plan via `PATCH /api/v1/users/me/preferences` ;
+3. Le clic sur **`🚪 Se déconnecter`** appelle `POST /api/v1/auth/logout`, révoque immédiatement le JWT et le Refresh Token `HttpOnly` dans Redis (`AD-6`), purge les caches sensibles du navigateur et redirige vers `/login`.
+
+**Given** le menu `UserAccountDropdown` ouvert
+**When** l'utilisateur clique sur **`⚙️ Paramètres de mon compte...`** (ou tape `g u`)
+**Then** `UserAccountDropdown` **se ferme automatiquement** et la modale centrée **`UserSettingsModal` (`720px × max 600px`)** s'ouvre sur ses **4 onglets** :
+1. **`🎨 Préférences & Affichage`** : Mode Clair/Sombre/Auto, Langue FR/EN, Casquette métier par défaut, ouverture auto de l'Aide `❓`, notifications `🔔`, et lien de renvoi `💬 Personnaliser le comportement de Mon Assistant →` (sans dupliquer la zone de saisie Couche 5) ;
+2. **`👤 Profil & Sécurité`** : Identité, changement de mot de passe local `Argon2id`, `MFA TOTP`, révocation des sessions actives ;
+3. **`🔗 Accès aux sources (Passthrough)`** : gestion par `<SecretField />` write-only des jetons personnels Git/Jira/Confluence/Notion chiffrés `AES-256-GCM` (`user_passthrough_credentials`, `AD-6`) avec bouton `🔌 Tester mon jeton` ;
+4. **`💻 Clés IDE & MCP`** : génération/révocation des jetons personnels pour `/api/v1/mcp` et extrait JSON prêt à copier
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et E2E (`Playwright`) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 9.5: Système d'Aide Contextuelle Hybride (`HelpArticle` dans `catalog_items` + `cas/<sha256>`), Colonne `❓` (`340px`), Menu `Aide` & Seeder Git-Seeded
+
+As a Utilisateur Métier ou Administrateur (`Hélène UJ-1`, `Karim UJ-9`),
+I want consulter à tout moment dans la Colonne `❓` (`340px`) ou dans le menu `Aide` une documentation contextuelle bilingue (`fr`/`en`) liée dynamiquement à l'écran actif, servie en `< 10 ms` depuis la base PostgreSQL (`catalog_items`), le stockage CAS S3 (`cas/<sha256>`) et Redis, et initialisée automatiquement au démarrage depuis Git,
+So that chaque écran d'ORCIA soit auto-documenté en langage clair et que de nouvelles fiches d'aide puissent être rattachées à chaud ou restaurées (`⏪ Rollback`) sans créer de 19e table SQL ni redéployer l'application (`Principes D & D.4`, `AD-5`, `AD-14`, `AD-19`).
+
+**Acceptance Criteria:**
+
+**Given** la table existante `catalog_items` (`AD-5`), une migration Alembic ajoutant l'index GIN `idx_catalog_help_routes` sur `(metadata_jsonb->'bound_routes') WHERE item_type = 'HELP_ARTICLE'`, le stockage CAS `SeaweedFS` (`cas/<sha256>`) et `workspace_customization_overrides` (`AD-14`)
+**When** le seeder de démarrage (`packages/orcia-core/bootstrap/seeder.py`) s'exécute
+**Then** il charge par `INSERT ... ON CONFLICT DO UPDATE` idempotent toutes les fiches Markdown à frontmatter YAML déclaratif situées dans `docs/help/{fr,en}/` et `packages/orcia-pack-*/help/{fr,en}/` sous `item_type = "HELP_ARTICLE"`, stocke leur corps Markdown dans `cas/<sha256>`, et ne écrase jamais une version `@v(N+1)` plus récente publiée à chaud.
+
+**Given** un utilisateur qui navigue vers une route TanStack Router (ex. `/mes-espaces/$id/sources`) avec la **Colonne d'Aide Contextuelle `❓` (`340px`)** ouverte ou qui consulte le menu **`Aide`**
+**When** l'interface appelle `GET /api/v1/help/resolve?route=/mes-espaces/$id/sources&pack=orcia-pack-sdlc&lang=fr`
+**Then** le service résout en `< 10 ms` (via le cache Redis `help:route:<route>:<pack>:<lang>`) la fiche active en appliquant la fusion à 4 niveaux (`Base -> Pack -> Team/Workspace -> User`, `AD-14`), affiche dans la Colonne `❓` le résumé *« À quoi sert cet écran ? »*, les accordéons *Pas-à-pas*, *Termes clés* et *Questions fréquentes*, ainsi que le bouton **`Poser une question à l'assistant sur cet écran →`**, et permet à un administrateur d'effectuer un **`⏪ Rollback` en 1 clic** vers `@v(N-1)`
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis + SeaweedFS) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+## Epic 10: `Mon Assistant` Tout-en-Un (Style KORE) — Personnalisation à 4 Niveaux (Mode A & Mode B), Routage à 3 Vitesses (`TTFT < 1,2 s`), Citations Déterministes (`[S1]/[G1]/[O1]`) & Dossiers Thématiques Collaboratifs (`📁 Dossiers`)
+
+Permettre aux équipes métiers et techniques de disposer dans **`Mon Assistant`** d'un espace de travail conversationnel complet : personnalisable à 4 niveaux (`USER`, `WORKSPACE`, `TEAM`, `PLATFORM`) soit en **Mode A (Formulaire Rapide à 3 onglets)** soit en **Mode B (Studio Graphique `@xyflow/react`)** à l'intérieur des bornes inaltérables `🔒 AssistantHarness` (`AD-15`), garantissant un **`TTFT < 1,2 s`** grâce au cache Redis du prompt assemblé à 5 couches et au **Routage à 3 Vitesses (`⚡ Rapide`, `🔍 Agent & Outils MCP`, `🧠 Approfondi`)**, ancrant chaque affirmation par des **Citations Déterministes (`[S1]`, `[G1]`, `[O1]`)** résolues via `citation_map` SSE avec filtrage `READ_SOURCE` par lecteur (`AD-21`) et garde-fou anti-citation fantôme `< 5 ms`, et structurant le travail au long cours dans des **Dossiers Thématiques (`📁 Dossiers`)** dotés d'une continuité mémoire en Couche 5, d'un partage collaboratif à 3 niveaux (`🔒 Privé | 👥 Partagé | 📦 Espace`), d'un verrou de tour Redis léger (`SET NX EX 60`) et d'une identité `Passthrough` individuelle par message (`Principes B, H, K, K.4, K.5, K.6`).
+
+### Story 10.1: Gouvernance & Personnalisation à 4 Niveaux de `Mon Assistant` (Bornes `🔒 AssistantHarness`, Mode A Formulaire Rapide à 3 Onglets & Mode B Studio Graphique)
+
+As a Contributeur Métier, Chef d'Équipe ou Architecte (`Hélène UJ-1`, `Marc UJ-5`, `Antoine UJ-2`),
+I want personnaliser le comportement de `Mon Assistant` selon mes droits à 4 niveaux (`USER`, `WORKSPACE`, `TEAM`, `PLATFORM`) soit via la modale simple `⚙ Réglages de l'assistant` à 3 onglets (**Mode A**), soit via l'éditeur graphique `@xyflow/react` (**Mode B** `☍ Personnaliser dans le Studio`), tout en garantissant que les bornes de sécurité `🔒 AssistantHarness` restent inaltérables,
+So that chaque utilisateur et chaque équipe adapte le ton, les sources prioritaires et le raisonnement de son assistant sans jamais pouvoir contourner les règles de sécurité ou d'Ancrage Humain (`Principes B, H, K`, `AD-14`, `AD-15`, `AD-19`, `AD-21`).
+
+**Acceptance Criteria:**
+
+**Given** le workflow système `orcia://system/workflows/assistant-agent` (5 nœuds orientés : `1. Routeur d'Intention`, `2. Query Planner & Expansion Ontologique`, `3. Fan-Out Parallèle`, `4. Tri Critique & Vérification d'Axiomes`, `5. Synthétiseur Adaptatif`) encadré par les bornes d'entrée/sortie Python **`🔒 AssistantHarness`** (`AD-15`)
+**When** un utilisateur ouvre `Mon Assistant › ⚙ Réglages de l'assistant` (**Mode A**)
+**Then** la modale affiche **3 onglets** adaptés à ses droits :
+1. **`👤 Mes préférences (Couche 5 — USER)`** : ton/concision, format de réponse favori, Casquette métier par défaut et instructions personnelles permanentes ;
+2. **`📦 Réglages de l'Espace (Couche 4 — WORKSPACE)`** (éditable par `TEAM_LEAD`, lecture seule sinon) : instructions métier de l'Espace, sources cochées par défaut, agents `@` recommandés et politique d'arbitrage ;
+3. **`👁️ Assemblage complet (Lecture seule)`** : visualisation transparente des **5 couches de prompt actives** (`1. 🔒 Constitution`, `2. Pack Métier`, `3. Équipe`, `4. Espace`, `5. Utilisateur`).
+
+**Given** un `TEAM_LEAD` ou `PLATFORM_ADMIN` qui clique sur **`☍ Personnaliser dans le Studio`** (**Mode B**)
+**When** il modifie les sous-couches (`COUCHES · N`), ajoute un sous-agent ou ajuste le `Pré-prompt IA`, teste dans `▷ Tester` puis clique sur **`Enregistrer pour cet Espace / cette Équipe`** (ou **`↺ Réinitialiser à la configuration par défaut`**)
+**Then** les bornes `🔒 AssistantHarness` (Entrée/Sortie Couche 1) sont verrouillées et impossibles à supprimer ou court-circuiter (`HTTP 422 ERR_IMMUTABLE_HARNESS_BOUNDARY` en cas de tentative via API), la personnalisation est enregistrée comme surcharge scopée (`TEAM` ou `WORKSPACE`) dans `workspace_customization_overrides` sans altérer le workflow socle, et le bouton `↺ Réinitialiser` restaure en 1 clic le comportement standard
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 10.2: Garantie de Latence (`TTFT < 1,2 s`), Cache Redis du Prompt Assemblé & Routage Conversationnel à 3 Vitesses (`⚡ Rapide`, `🔍 Agent & Outils`, `🧠 Approfondi`)
+
+As a Utilisateur de `Mon Assistant` (`Hélène UJ-1`, `Yanis UJ-3`, `Lucas UJ-7`),
+I want que `Mon Assistant` affiche le premier mot de sa réponse en moins de `1,2 seconde` (`TTFT < 1,2 s`) grâce au cache Redis du prompt assemblé et à l'exécution déterministe `< 80 ms` des nœuds 1 à 4, et pouvoir basculer entre 3 vitesses d'exécution (`⚡ Rapide`, `🔍 Agent & Outils MCP`, `🧠 Approfondi`),
+So that la conversation quotidienne soit aussi fluide qu'un chat instantané tout en permettant de mobiliser des outils MCP ou un audit multi-étapes lorsque la question l'exige (`Principe K.4`, `AD-8`, `AD-15`, `AD-19`, `NFR-PERF-1`).
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur qui envoie un message dans `Mon Assistant`
+**When** le pipeline d'exécution démarre en **`⚡ Vitesse 1 (Rapide / Directe — défaut)`**
+**Then** :
+1. Le prompt système fusionné des 5 couches est lu en **`< 5 ms`** depuis le cache Redis (`assistant:prompt:<workspace_id>:<user_id>:<hat>`, `ttl=300s`, invalidé automatiquement sur événement Outbox `SettingsChanged`, modification de surcharge ou promotion au Glossaire) ;
+2. Les nœuds 1 à 4 s'exécutent en Python/SQL déterministe en **`< 80 ms` avec `0` appel LLM intermédiaire**, via une seule requête SQL parallèle (`UNION ALL` combinant `pgvector` HNSW + `tsvector` RRF sur les sources cochées et le Glossaire actif) ;
+3. Un **seul appel LLM** est déclenché au nœud 5 en **streaming SSE direct** (`text/event-stream`), délivrant le premier token en **`TTFT < 1,2 s`** (`NFR-PERF-1`).
+
+**Given** la pilule de vitesse **`⚡ Standard ⌄ / 🧠 Approfondi`** dans la barre de saisie de `Mon Assistant` et la détection d'intention du Nœud 1
+**When** l'utilisateur invoque `@Agent` / `/Compétence` (**`🔍 Vitesse 2`**) ou sélectionne **`🧠 Approfondi`** (**`🧠 Vitesse 3`**)
+**Then** `Vitesse 2` affiche un indicateur d'étape temps réel (`🔍 Interrogation de Jira...`) pendant l'appel `ConnectorInvoker` (`TTFT < 2,5 s`), tandis que `Vitesse 3` active la planification LLM intermédiaire et la vérification multi-lentilles (`AD-10`) avec barre de progression étape par étape
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis mesurant le cache hit `< 5 ms` et l'invalidation Outbox) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 10.3: Citation Déterministe & Vérification des Sources (`[S1]`, `[G1]`, `[O1]`), Filtrage `READ_SOURCE` par Lecteur & Garde-Fou Anti-Citation Fantôme
+
+As a Utilisateur Métier, Architecte ou Auditeur (`Hélène UJ-1`, `Antoine UJ-2`, `Sophie UJ-6`),
+I want que chaque réponse de `Mon Assistant` s'appuie sur une Table de Preuves Numérotées (`[S1]`, `[G1]`, `[O1]`), affiche des pastilles de citation cliquables ouvrant l'extrait exact surligné (tout en masquant l'extrait si un co-lecteur n'a pas le droit `READ_SOURCE`), et neutralise automatiquement toute citation inventée,
+So that aucune URI ni aucun numéro de ligne ne puisse être halluciné et qu'aucun partage de discussion ne provoque de fuite documentaire (`Principe K.5`, `AD-5`, `AD-8`, `AD-15`, `AD-19`, `AD-21`).
+
+**Acceptance Criteria:**
+
+**Given** les extraits récupérés en `< 60 ms` aux nœuds 2–4 (avec métadonnées `source_uri`, `title`, `section_or_symbol`, `page_or_lines`, `version_sha256`, `authority_role: REFERENCE | ACTIVE` et `freshness_status: FRESH | STALE_WARNING`)
+**When** le `AssistantHarness` assemble le contexte du nœud 5 et ouvre le flux SSE
+**Then** :
+1. Il injecte une **Table de Preuves Numérotées** à identifiants courts (`[S1..Sn]` Sources RAG où `RÉFÉRENCE` prime sur `ACTIF`, `[G1..Gn]` Glossaire/Axiomes, `[O1..On]` Outils MCP) et émet dès `t = 80 ms` l'événement SSE `citation_map` ;
+2. Lorsqu'un utilisateur consulte la discussion, l'API filtre dynamiquement chaque entrée de `citation_map` via `PermissionGuard` (`AD-21`) : si le lecteur ne possède pas `READ_SOURCE` sur la source sous-jacente, le `snippet` est purgé côté serveur et la pastille s'affiche en **`[S1 · 🔒 Source restreinte — Demander l'accès]`** ;
+3. En post-stream (`< 5 ms`), le vérificateur déterministe contrôle que chaque balise `[S1]`/`[G1]`/`[O1]` produite appartient à la `citation_map` et remplace toute balise hors bornes par un badge d'alerte **`[Citation non vérifiée]`** tracé dans `audit_ledger`.
+
+**Given** une réponse contenant des pastilles `[S1]`, `[G1]`, `[O1]` dans `Mon Assistant`
+**When** un utilisateur habilité survole ou clique sur une pastille ou déplie le bandeau **`📚 N sources citées`**
+**Then** un Popover affiche le titre, le badge **`📚 RÉFÉRENCE`** / **`🛠️ ACTIF`** (ou **`⚠️ STALE_WARNING`**), la section/lignes exactes, le passage surligné et le bouton **`Ouvrir le document complet →`**
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 vérifiant le masquage `READ_SOURCE` et le garde-fou anti-citation fantôme) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 10.4: Dossiers Thématiques (`📁 Dossiers`), Continuité Mémoire Couche 5, Partage Collaboratif (`🔒 Privé | 👥 Partagé | 📦 Espace`) & Verrou de Tour Redis
+
+As a Membre d'Équipe ou Chef d'Équipe (`Hélène UJ-1`, `Yanis UJ-3`, `Marc UJ-5`),
+I want organiser mes échanges dans `Mon Assistant` au sein de `📁 Dossiers` thématiques dotés de notes épinglées, d'une mémoire partagée entre discussions du même dossier et d'un bouton de lancement de Processus en 1 clic, et pouvoir partager un dossier ou une discussion avec mes collègues de l'Espace en `👁️ Lecture seule` ou `✍️ Co-contributeur` sous identité `Passthrough` individuelle,
+So that nous ne repartions jamais de zéro d'une discussion à l'autre et puissions co-construire un cadrage à plusieurs sans conflit d'écriture ni usurpation d'identité (`Principe K.6`, `AD-4`, `AD-6`, `AD-15`, `AD-19`, `AD-21`, Composant 15).
+
+**Acceptance Criteria:**
+
+**Given** l'en-tête sobre de `Mon Assistant` structuré en **3 onglets** (`💬 Discussion active` avec pilule `📁 Dossier ⌄` et bouton `📌 Notes du dossier`, `📁 Dossiers (N)`, `🕘 Historique & Recherche`)
+**When** l'utilisateur crée ou sélectionne un `📁 Dossier` (ex. `📁 Refonte Tunnel Checkout`), épingle des décisions dans `📌 Notes du dossier` et ouvre une nouvelle discussion dans ce dossier
+**Then** le `AssistantHarness` injecte automatiquement en **Couche 5 (`AD-15`)** les notes épinglées, pièces jointes/livrables de travail et résumés consolidés des discussions précédentes du dossier, et le bouton **`☍ Lancer un Processus à partir de ce dossier →`** pré-remplit les paramètres d'entrée (`Contrat du workflow`) d'un processus avec la synthèse du dossier.
+
+**Given** un propriétaire de `📁 Dossier` ou de discussion qui clique sur **`👥 Partager`**
+**When** il choisit l'un des **3 niveaux de visibilité** strictement confinés aux membres de l'Espace courant (`🔒 Privé` par défaut, `👥 Partagé avec des collègues choisis` en `👁️ Lecture seule` ou `✍️ Co-contributeur`, ou `📦 Ouvert à tout l'Espace`)
+**Then** :
+1. Si la discussion cite des sources restreintes, la modale affiche un avertissement préventif indiquant que leurs extraits seront masqués (`🔒 Source restreinte`) pour les collègues non habilités ;
+2. Lorsqu'un **Co-contributeur (`✍️`)** envoie un message, le moteur acquiert un **verrou de tour Redis léger** (`SET lock:thread:<thread_id> <user_id> NX EX 60`), diffuse en temps réel via SSE aux pairs présents l'indicateur `✍️ {Prénom} interroge l'assistant...` puis les tokens générés, et exécute tous les connecteurs externes et outils MCP avec **l'identité `Passthrough` personnelle de l'auteur du message** (`AD-6`)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis vérifiant le verrou de tour, l'isolation `Passthrough` et le confinement à l'Espace) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+## Epic 11: Gouvernance Métier de l'Espace (`Mes Espaces` à 5 Onglets, Cycle de Vie du Glossaire `✨ À valider`, Routage des Artefacts à 4 Niveaux), Banc de Test MCP/A2A `🔌` & Atelier `orcia-pack-builder`
+
+Permettre aux Responsables d'Espace (`TEAM_LEAD`), Stewards Métier (`ONTOLOGY_STEWARD_L3`) et Concepteurs de Packs de piloter leurs espaces dans **`Mes Espaces` structuré en 5 sous-onglets** (`Vue d'ensemble`, `Documents & Sources`, `Livrables & Artefacts`, `Glossaire & Règles métier`, `Membres & Équipe`), de gouverner la localisation et la publication des livrables produits selon une **Cascade à 4 Niveaux** (avec confinement `local://`, bail `ResourceLeasePort` `AD-4` et alias `orcia://workspaces/<ws>/artifacts/<type>/<slug>@v<N>`), d'alimenter leur **Glossaire métier (`✨ À valider`)** grâce à une extraction en 2 passes à coût maîtrisé (`0 $` déterministe + batch `Top-15`), sélection multiple et simulation *What-If* (`AD-7`), de déclarer et tester à chaud des **Services/Serveurs MCP et `@Agents Distants (MCP / A2A)`** via un **Banc de Test en 4 Étapes (`🔌`)** supportant le mode `Passthrough`, et de concevoir/faire évoluer/documenter des Packs Métier via le pack système **`packages/orcia-pack-builder`** (`Principes D.4, I, J, L, M.1, M.2`, `Sections 3 & 4`).
+
+### Story 11.1: Refonte de `Mes Espaces` en 5 Sous-Onglets, Cascade de Localisation des Artefacts Produits à 4 Niveaux & Catalogue `Livrables & Artefacts`
+
+As a Responsable d'Espace, Product Manager ou Tech Lead (`Marc UJ-5`, `Hélène UJ-1`, `Yanis UJ-3`),
+I want gérer mon Espace à travers 5 sous-onglets clairs (`Vue d'ensemble`, `Documents & Sources`, `Livrables & Artefacts`, `Glossaire & Règles métier`, `Membres & Équipe`), qualifier mes sources en `Lecture seule` vs `Lecture & Écriture (Cible)`, définir la destination des livrables produits selon la cascade à 4 niveaux et retrouver tous mes artefacts versionnés (`@v1`, `@v2`, `diff`),
+So that nous sachions toujours exactement où est stocké chaque livrable produit par ORCIA et puissions le télécharger ou le publier de manière gouvernée vers Git, Confluence ou un dossier cible (`Principes I & J`, `AD-4`, `AD-5`, `AD-14`, `AD-19`, `AD-21`).
+
+**Acceptance Criteria:**
+
+**Given** l'écran **`Mes Espaces › [Espace actif]`** structuré en **5 sous-onglets**
+**When** le Responsable d'Espace configure l'onglet **`2. Documents & Sources`** ou qu'un concepteur configure le bloc **« Sortie & Localisation »** d'une étape dans `Mes Processus › Studio`
+**Then** :
+1. Chaque source de l'Espace est qualifiée par rôle (**`📚 RÉFÉRENCE`** vs **`🛠️ ACTIF`**) et par mode d'accès (**`👁️ Lecture seule`** vs **`✍️ Lecture & Écriture (Cible d'artefacts)`**), avec un sélecteur **`📌 Destination par défaut des livrables de l'Espace`** (`Coffre interne ORCIA S3 CAS` par défaut ou une source cible externe) ;
+2. Lors de la production d'un artefact, le moteur résout sa destination selon la **cascade à 4 niveaux** : (1) `artifact_routing_rules` du Pack Métier $\rightarrow$ (2) Destination par défaut de l'Espace $\rightarrow$ (3) Surcharge de l'étape dans le Studio (`Modèle de chemin {slug}.md`, `Mode d'écriture Staged`) $\rightarrow$ (4) Action à la volée sur la Carte Artefact (`⬇️ Télécharger`, `📌 Enregistrer dans le Coffre`, `📤 Publier vers une source...`).
+
+**Given** un artefact validé à une Gate et publié vers une destination cible
+**When** la publication s'exécute et que l'utilisateur consulte le sous-onglet **`3. Livrables & Artefacts`**
+**Then** :
+1. Toute écriture vers `local://` est confinée à la racine autorisée de l'Espace (`os.path.realpath`, rejet `HTTP 403 ERR_PATH_TRAVERSAL_DENIED` sur tout `../`), toute publication vers une source partagée acquiert un bail **`ResourceLeasePort`** (`AD-4`), et chaque version validée reçoit une empreinte immuable `cas/<sha256>` dans `SeaweedFS` ainsi qu'une URI canonique `orcia://workspaces/<ws_slug>/artifacts/<type>/<slug>@v<N>` (`AD-5`) ;
+2. Le sous-onglet **`3. Livrables & Artefacts`** permet de filtrer par type/processus/statut, de comparer deux versions (`@v1 ↔ @v2`), de télécharger le fichier ou d'ouvrir directement l'URL externe synchronisée (commit Git, page Confluence)
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + SeaweedFS) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 11.2: Cycle de Vie du Glossaire & des Règles Métiers (`✨ À valider`), Extraction en 2 Passes à Coût Maîtrisé, Sélection Multiple & Simulation *What-If*
+
+As a Responsable Métier / Steward Ontologique ou Chef d'Équipe (`Hélène UJ-1`, `Marc UJ-5`),
+I want que les nouveaux termes, acronymes et règles de gestion soient détectés en tâche de fond selon une extraction en 2 passes à coût maîtrisé (`0 $` déterministe + 1 batch `Top-15` par source) ou proposés en 1 clic depuis `Mon Assistant`, alimentent la file `✨ À valider (N)` au statut `CANDIDATE` sans polluer le glossaire actif, et puissent être acceptés/écartés en lot avec simulation d'impact *What-If*,
+So that le Glossaire de l'Espace s'enrichisse continuellement à partir de nos documents réels sans bruit ni explosion des coûts LLM (`Principe L`, `AD-7`, `AD-8`, `AD-19`, Composant 16).
+
+**Acceptance Criteria:**
+
+**Given** l'indexation d'une nouvelle source documentaire ou de code via `domain_events_outbox` **OU** le clic d'un utilisateur sur la pilule **`💡 Proposer au Glossaire`** en pied d'une réponse de `Mon Assistant`
+**When** le service `OntologyExtractor` (`packages/orcia-core/ontology`) analyse les contenus
+**Then** :
+1. **Passe 1 déterministe (`0 $` d'appel LLM)** : extrait les candidats via `tree-sitter` (identifiants/types/enums) et `Docling` (titres, tableaux de définitions, motifs `« X désigne Y »`), les déduplique contre `ontology_nodes` et filtre les empreintes déjà écartées (`REJECTED_CANDIDATE`) ;
+2. **Passe 2 de consolidation LLM bornée (1 seul appel batch `simple €` sur le `Top-15` par source)** : rédige la définition concise, détecte tout **`⚠️ ONTOLOGY_CONFLICT`** avec un terme actif (`Actif`, `Équipe`, `BU`, `Organisation`), inscrit les candidats au statut **`CANDIDATE`** dans la file **`✨ À valider (N)`** de `Mes Espaces › Glossaire & Règles métier`, et émet **1 seule notification groupée par source** dans `🔔 Notifications`.
+
+**Given** un Responsable d'Espace ou `ONTOLOGY_STEWARD_L3` dans `Mes Espaces › Glossaire & Règles métier › ✨ À valider (N)`
+**When** il sélectionne un ou plusieurs termes par cases à cocher et clique sur **`✓ Accepter la sélection (K)`**, **`✏️ Ajuster`**, **`✕ Écarter la sélection (K)`** ou **`↑ Proposer à l'équipe / BU`**
+**Then** :
+1. En cas de conflit (`ONTOLOGY_CONFLICT`) ou de modification d'une règle existante, une bannière d'aperçu **`ImpactSimulatorService` (*What-If*, `AD-7`)** affiche les Processus, Gabarits et Règles aval impactés avant confirmation ;
+2. L'acceptation passe les termes à `ACTIVE` au niveau `3_WORKSPACE`, déclenche l'**invalidation immédiate du Cache Redis du prompt de `Mon Assistant`** et journalise la décision dans `audit_ledger`, tandis que l'écartement mémorise l'empreinte `REJECTED_CANDIDATE` pour empêcher toute re-proposition automatique
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 11.3: Déclaration Guidée des Services / Serveurs MCP & `@Agents Distants (MCP / A2A)` et Banc de Test & Découverte Automatique à Chaud en 4 Étapes (`🔌`)
+
+As a Administrateur Plateforme, Chef d'Équipe ou Concepteur d'Agents (`Karim UJ-9`, `Marc UJ-5`, `Yanis UJ-3`),
+I want déclarer un serveur MCP distant, une API REST OpenAPI ou un `@Agent Distant (MCP / A2A)` et exécuter directement dans la modale de configuration le Banc de Test & Découverte Automatique à Chaud en 4 étapes (`🔌`) avant de l'activer,
+So that la connectivité réseau/TLS, l'authentification (`Passthrough` ou `Service Principal`), la liste des outils découverts (avec passage forcé des outils d'écriture en `Action Staged`) et la télémétrie FinOps (`_meta.usage`) soient vérifiées sans jamais activer un service défaillant en production (`Principes M.1 & M.2`, `AD-3`, `AD-6`, `AD-12`, `AD-19`, `AD-21`, Composant 19 `remote-service-test-bench`).
+
+**Acceptance Criteria:**
+
+**Given** la modale **`+ Déclarer un service / serveur MCP`** (`Configuration › Connecteurs` ou `Mes Agents › Outils`) et la modale **`+ Nouvel agent › 🌐 Agent Distant (MCP / A2A)`** (`Mes Agents`)
+**When** l'utilisateur renseigne le protocole (`MCP Streamable HTTP / SSE`, `OpenAPI 3.1 REST`, `A2A / Agent Distant` ou `WASM Sandbox`), l'URL, l'identité d'exécution (`Passthrough` `AD-6` par défaut ou `<SecretField />` write-only `AD-21`), la classification (`C0–C2` vs `C3`) et clique sur **`🔌 Tester la connexion & Découvrir les capacités`** (`POST /api/v1/settings/connectors/test-and-discover`)
+**Then** le composant `@orcia/ui` **`remote-service-test-bench`** exécute et affiche en temps réel les **4 étapes de vérification** :
+1. **`1. Réseau, TLS & Anti-SSRF`** : validation DNS/TLS et blocage de toute IP privée/loopback/metadata cloud non explicitement autorisée ;
+2. **`2. Authentification`** : validation du secret via `SecretProviderPort` ; si le service est configuré en mode **`Passthrough` (`AD-6`)** et que l'administrateur n'a pas lié son propre jeton personnel, l'étape affiche **`🟠 En attente de jeton utilisateur (Passthrough)`** (avec bouton optionnel *Tester avec mon jeton personnel*), **sans bloquer le bouton `Activer`** dès lors que les étapes 1 et 3 sont vertes ;
+3. **`3. Découverte Automatique du Contrat`** : appel `tools/list` / `resources/list` ou lecture de l'`Agent Card` / `openapi.json`, pré-remplissant la liste des outils avec qualification automatique **`👁️ Lecture seule`** vs **`✍️ Écriture -> Action Staged obligatoire (AD-3)`** ;
+4. **`4. 💬 Essai Rapide à Chaud (Dry-Run)`** : exécution d'un appel de test en lecture seule borné par un **timeout strict de `5 s`**, une **taille maximale de réponse de `1 Mo`** et tracé dans `audit_ledger` sous `actor_type: ADMIN_CONNECTION_TEST` (`run_id: null`), affichant le JSON retourné et les métriques FinOps détectées dans `_meta.usage` / `X-Orcia-Usage`
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + serveur MCP factice) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
+
+### Story 11.4: Pack Métier Système `packages/orcia-pack-builder` — Création, Évolution *What-If*, Certification d'Outils en Sandbox & Promotion depuis un Espace (Processus 1 à 4)
+
+As a Architecte Métier, Tech Lead ou Ingénieur Plateforme (`Antoine UJ-2`, `Yanis UJ-3`, `Karim UJ-9`),
+I want disposer du pack système pré-installé `packages/orcia-pack-builder` embarquant 4 agents spécialisés et 4 processus gouvernés pour créer un nouveau Pack Métier (`packages/orcia-pack-{pack_slug}/`), simuler l'impact d'une évolution (*What-If*), certifier un outil en Sandbox et promouvoir une brique d'un Espace vers un Pack partagé,
+So that ORCIA puisse s'étendre à de nouveaux métiers (Finance, Juridique, RH, Retail, Ops) avec la même rigueur d'isolation `AD-20` et `AD-9` que le pack SDLC (`Sections 3 & 4.1..4.3`, `AD-7`, `AD-9`, `AD-19`, `AD-20`).
+
+**Acceptance Criteria:**
+
+**Given** le package Python `packages/orcia-pack-builder` enregistré via les `entry_points` `orcia.packs` (`AD-20`) et activable dans un Espace « Atelier »
+**When** un concepteur lance l'un des **4 premiers processus gouvernés** du pack (accompagnés par `@Architecte-Métier-Pack`, `@Ingénieur-Prompt-et-Workflow`, `@Certificateur-Sécurité-et-Sandbox` et `@Rédacteur-Documentation-Orcia`)
+**Then** :
+1. **Processus 1 (`create-business-pack`)** : exige un `✍️ Ancrage Humain Violet` d'intention métier, structure le glossaire socle, les profils humains, les agents et les processus, génère l'arborescence complète dans **`packages/orcia-pack-{pack_slug}/`** (avec `0` écriture dans `packages/orcia-kernel` ou `packages/orcia-core`, vérifié par `lint-imports`), et valide le manifeste `pack.yaml` en Sandbox Palier 1 (`< 5 s`) avant publication ;
+2. **Processus 2 (`evolve-business-pack`)** : exécute `ImpactSimulatorService` (*What-If*, `AD-7`) pour identifier tous les Espaces et Processus impactés par la nouvelle version `@vX.Y.Z` sans jamais altérer les `run-lock.json` des runs en cours ;
+3. **Processus 3 (`certify-pack-tool`)** : exécute les tests TDD et l'audit de sécurité de l'outil dans le service isolé hors processus **`sandbox-runner` Palier 2** (`TIER_2_CONTAINER`, `gVisor/Podman rootless --network=none < 60 s`, `AD-9`) puis certifie l'exécution nominale en Palier 1 (`Wasmtime < 5 s`) ;
+4. **Processus 4 (`export-from-workspace-to-pack`)** : nettoie toute référence ou secret spécifique à un Espace et promeut un agent, un processus ou un terme de glossaire éprouvé vers une nouvelle révision du Pack Métier
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`) et d'intégration (`testcontainers` PG18 + SeaweedFS) couvrent $\ge 90\%$ de `packages/orcia-pack-builder` (`AD-17`, `AD-19`, `AD-20`).
+
+### Story 11.5: Processus 5 `generate-and-attach-help`, Validateur Déterministe `validate_help_article` (Palier 1 `< 5 s`) & Rattachement à Chaud / Export Git
+
+As a Responsable Produit, Tech Lead ou Créateur de Pack (`Hélène UJ-1`, `Yanis UJ-3`, `Antoine UJ-2`),
+I want exécuter le Processus 5 (`generate-and-attach-help`) de `orcia-pack-builder` pour rédiger automatiquement en français et en anglais les fiches d'aide `HelpArticle`, les vérifier en `< 5 s` via la Gate Déterministe `validate_help_article` et les rattacher à chaud en `< 100 ms` à la Colonne `❓` (`340px`), au menu `Aide`, à la recherche `⌘K` et au RAG `RÉFÉRENCE` (tout en exportant le fichier `.md` vers Git),
+So that aucune nouvelle fonctionnalité ni aucun nouveau Pack Métier ne soit jamais livré sans son aide contextuelle à jour (`Principe D.4`, `Section 4.4`, `AD-5`, `AD-9`, `AD-18`, `AD-19`, `AD-20`).
+
+**Acceptance Criteria:**
+
+**Given** le workflow `orcia://pack-builder/workflows/generate-and-attach-help` lancé soit manuellement avec revue humaine (`Action Staged`), soit automatiquement sur événement de publication d'un Pack/Processus sous `AUTONOMOUS_CONTRACT` (`AD-18`)
+**When** l'étape 2 (`@Rédacteur-Documentation-Orcia`) génère la fiche Markdown bilingue (`fr`/`en`) à frontmatter YAML déclaratif (`id`, `version`, `bound_routes`, `pack_id`, `roles_allowed`, `glossary_terms`, `related_workflows`) et la soumet à l'étape 3 (**Gate Déterministe `validate_help_article` en Sandbox Palier 1 `< 5 s`**)
+**Then** `validate_help_article` vérifie automatiquement :
+1. Que chaque route de `bound_routes` existe dans l'arbre TanStack Router ou le manifeste du Pack ;
+2. Qu'aucun composant UI inexistant dans `@orcia/ui` n'est cité et que les 3 sections obligatoires (`## 1. À quoi sert cet écran ?`, `## 2. Comment faire (Pas-à-pas)`, `## 3. Questions fréquentes & Dépannage`) ainsi que les ancres `#` sont présentes ;
+3. Que les termes de `glossary_terms` sont alignés avec le Glossaire et qu'**aucun secret ou token** ne figure dans le texte (`0` fuite).
+
+**Given** une fiche `HelpArticle` ayant franchi la Gate Déterministe (et la Gate Agentique / Revue Humaine selon le régime)
+**When** l'étape 4 exécute le rattachement à chaud
+**Then** la fiche est persistée atomiquement dans `catalog_items` (`item_type = "HELP_ARTICLE"`) + `cas/<sha256>` (`SeaweedFS`), son vecteur `halfvec(1024)` + `tsvector` est indexé avec `authority_role = "REFERENCE"`, le cache Redis `help:route:*` est invalidé pour un affichage immédiat en `< 100 ms` dans la Colonne `❓` (`340px`), et le fichier `.md` est exporté vers `docs/help/{fr,en}/` ou `packages/orcia-pack-{slug}/help/{fr,en}/`
+**And** `lint-imports` passe à `0` violation et les tests unitaires (`pytest`, `Vitest`) et d'intégration (`testcontainers` PG18 + Redis + SeaweedFS) couvrent $\ge 90\%$ du périmètre (`AD-17`, `AD-19`).
