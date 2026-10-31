@@ -1,4 +1,5 @@
 import type {
+  ContextualHelpColumnAndCenterLabels,
   FourZoneDirectionCShellLabels,
   ProgressiveDay0AccostageLabels,
   StreamlinedCockpitLabels,
@@ -12,6 +13,7 @@ export interface Epic9DictionarySection {
   readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
   readonly topHeaderSearch: TopHeaderSearchCommandLabels;
   readonly userAccountAndSettings: UserAccountDropdownAndSettingsLabels;
+  readonly contextualHelpHybrid: ContextualHelpColumnAndCenterLabels;
 }
 
 export const EPIC9_FR_LABELS: Epic9DictionarySection = {
@@ -138,6 +140,19 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     targetSingleAgentLabel: "Un agent précis (/api/v1/mcp/agents/<agent_slug>)",
     ideJsonReadyTitle: "Extrait JSON prêt à copier",
   },
+  contextualHelpHybrid: {
+    columnHeaderTitle: "❓ Aide Contextuelle (340px)",
+    centerHeaderTitle: "Centre d'Aide & Gouvernance (/help)",
+    whatForSectionTitle: "À quoi sert cet écran ?",
+    stepByStepAccordionTitle: "Pas-à-pas opérationnel",
+    keyTermsAccordionTitle: "Termes clés du Pack",
+    faqAccordionTitle: "Questions fréquentes",
+    askAssistantOnScreenCta:
+      "Poser une question à l'assistant sur cet écran →",
+    rollbackButtonLabel: "⏪ Rollback",
+    rollbackCompletedPrefix: "Version restaurée :",
+    mergedLayersPrefix: "Fusion 4 couches :",
+  },
 };
 
 export const EPIC9_EN_LABELS: Epic9DictionarySection = {
@@ -263,5 +278,17 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     targetWholeSpaceLabel: "Entire Space (/api/v1/mcp/spaces/<ws_slug>)",
     targetSingleAgentLabel: "Specific Agent (/api/v1/mcp/agents/<agent_slug>)",
     ideJsonReadyTitle: "Ready-to-copy JSON snippet",
+  },
+  contextualHelpHybrid: {
+    columnHeaderTitle: "❓ Contextual Help (340px)",
+    centerHeaderTitle: "Help Center & Governance (/help)",
+    whatForSectionTitle: "What is this screen for?",
+    stepByStepAccordionTitle: "Step-by-step guide",
+    keyTermsAccordionTitle: "Key Pack terms",
+    faqAccordionTitle: "Frequently asked questions",
+    askAssistantOnScreenCta: "Ask the assistant about this screen →",
+    rollbackButtonLabel: "⏪ Rollback",
+    rollbackCompletedPrefix: "Restored version:",
+    mergedLayersPrefix: "4-layer merge:",
   },
 };

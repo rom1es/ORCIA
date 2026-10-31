@@ -361,6 +361,29 @@ export interface components {
       timeout_budget_ms: number;
       uri: string;
     };
+    ContextualHelpPublishRequest: {
+      layer?: "BASE" | "PACK" | "WORKSPACE" | "USER" | null;
+      new_markdown_body: string;
+      new_summary_what_for: string;
+      new_title: string;
+      new_version: string;
+      resource_id: string;
+    };
+    ContextualHelpResolveResponse: {
+      active_article: components["schemas"]["HelpArticleSchemaItem"];
+      ask_assistant_prefill: string;
+      cache_hit: boolean;
+      lang: "fr" | "en";
+      merged_layers: ("BASE" | "PACK" | "WORKSPACE" | "USER")[];
+      pack: string;
+      redis_cache_key: string;
+      rollback_available: boolean;
+      route: string;
+      trace_id?: string | null;
+    };
+    ContextualHelpRollbackRequest: {
+      resource_id: string;
+    };
     ControlCenterOverviewResponse: {
       consolidated_finops_usd: number;
       contributor_runs: (components["schemas"]["SupervisedRunItemResponse"])[];
@@ -565,6 +588,26 @@ export interface components {
     HealthResponse: {
       status?: "ok";
       trace_id: string;
+      version: string;
+    };
+    HelpArticleSchemaItem: {
+      bound_routes: (string)[];
+      cas_key: string;
+      faq_items: (string)[];
+      item_type?: string;
+      key_terms_items: (string)[];
+      lang: "fr" | "en";
+      layer: "BASE" | "PACK" | "WORKSPACE" | "USER";
+      markdown_body: string;
+      pack_name?: string | null;
+      previous_cas_key?: string | null;
+      previous_version?: string | null;
+      resource_id: string;
+      sha256: string;
+      step_by_step_items: (string)[];
+      summary_what_for: string;
+      title: string;
+      uri: string;
       version: string;
     };
     HumanAnchorSignRequest: {
@@ -2401,6 +2444,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/help/publish": {
+    post: {
+      responses: {
+        200: components["schemas"]["HelpArticleSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/help/resolve": {
+    get: {
+      responses: {
+        200: components["schemas"]["ContextualHelpResolveResponse"];
+      };
+    };
+  };
+  "/api/v1/help/rollback": {
+    post: {
+      responses: {
+        200: components["schemas"]["HelpArticleSchemaItem"];
+      };
+    };
+  };
   "/api/v1/inbox/notifications": {
     get: {
       responses: {
@@ -2880,6 +2944,9 @@ export type CommitStagedJiraActionResponse = components["schemas"]["CommitStaged
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type ConnectorTestConnectionResponse = components["schemas"]["ConnectorTestConnectionResponse"];
+export type ContextualHelpPublishRequest = components["schemas"]["ContextualHelpPublishRequest"];
+export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
+export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
 export type ControlCenterOverviewResponse = components["schemas"]["ControlCenterOverviewResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
@@ -2902,6 +2969,7 @@ export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSche
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
+export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
 export type HumanAnchorSignRequest = components["schemas"]["HumanAnchorSignRequest"];
 export type HumanAnchorSignResponse = components["schemas"]["HumanAnchorSignResponse"];
 export type HumanAnchorSignatureSchemaItem = components["schemas"]["HumanAnchorSignatureSchemaItem"];

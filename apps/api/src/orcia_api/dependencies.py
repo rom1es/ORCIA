@@ -22,6 +22,7 @@ from orcia_core.catalog import (
     FederatedCatalogService,
     build_default_federated_catalog_service,
 )
+from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
 from orcia_core.ontology import (
     OntologyGovernanceService,
     build_empty_ontology_service,
@@ -460,4 +461,15 @@ def get_user_preferences_and_mcp_token_service(
     if svc is None:
         svc = UserPreferencesAndMcpTokenService()
         request.app.state.user_preferences_and_mcp_token_service = svc
+    return svc
+
+
+def get_contextual_help_service(request: Request) -> ContextualHelpResolutionService:
+    """FastAPI `Depends` provider returning `ContextualHelpResolutionService` (`Story 9.5`)."""
+    svc: ContextualHelpResolutionService | None = getattr(
+        request.app.state, "contextual_help_service", None
+    )
+    if svc is None:
+        svc = ContextualHelpResolutionService()
+        request.app.state.contextual_help_service = svc
     return svc

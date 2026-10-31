@@ -3,6 +3,8 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
   computeDefaultHelpColumnOpen,
+  ContextualHelpColumnAndCenter,
+  type ContextualHelpColumnAndCenterLabels,
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
   FourZoneDirectionCShell,
   type FourZoneDirectionCShellLabels,
@@ -549,5 +551,100 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
 
     fireEvent.click(screen.getByTestId("mcp-revoke-btn-mcp-tok-1"));
     expect(screen.getByTestId("mcp-token-revoked-badge-mcp-tok-1")).toBeDefined();
+  });
+
+  it("Story 9.5 — renders Hybrid Contextual Help (340px column + /help center) with 4-layer merge, 3 accordions, assistant screen link, and 1-click Rollback @v(N-1)", () => {
+    const helpLabels: ContextualHelpColumnAndCenterLabels = {
+      columnHeaderTitle: "❓ Aide Contextuelle (340px)",
+      centerHeaderTitle: "Centre d'Aide & Gouvernance (/help)",
+      whatForSectionTitle: "À quoi sert cet écran ?",
+      stepByStepAccordionTitle: "Pas-à-pas opérationnel",
+      keyTermsAccordionTitle: "Termes clés du Pack",
+      faqAccordionTitle: "Questions fréquentes",
+      askAssistantOnScreenCta:
+        "Poser une question à l'assistant sur cet écran →",
+      rollbackButtonLabel: "⏪ Rollback",
+      rollbackCompletedPrefix: "Version restaurée :",
+      mergedLayersPrefix: "Fusion 4 couches :",
+    };
+
+    const onAskAssistantOnScreen = vi.fn();
+    const onRollbackVersion = vi.fn();
+
+    render(
+      <ContextualHelpColumnAndCenter
+        mode="COLUMN_340PX"
+        route="/mes-espaces/$id/sources"
+        pack="orcia-pack-sdlc"
+        redisCacheKey="help:route:/mes-espaces/$id/sources:orcia-pack-sdlc:fr"
+        mergedLayers={["BASE", "PACK", "WORKSPACE"]}
+        rollbackAvailable={true}
+        isAdmin={true}
+        article={{
+          resourceId: "orcia://pack/sdlc/help/fr/spaces-sources",
+          uri: "orcia://pack/sdlc/help/fr/spaces-sources@2.0.0",
+          title: "Brancher & synchroniser vos Sources (Pack SDLC)",
+          version: "2.0.0",
+          previousVersion: "1.1.0",
+          lang: "fr",
+          layer: "PACK",
+          packName: "orcia-pack-sdlc",
+          boundRoutes: ["/mes-espaces/$id/sources", "/spaces/sources"],
+          summaryWhatFor:
+            "Configurez les dépôts Git, projets Jira et espaces Confluence pour l'ontologie N1–N4.",
+          stepByStepItems: [
+            "Connectez votre dépôt Git via un jeton Passthrough.",
+            "Lancez l'indexation incrémentale SHA-256.",
+          ],
+          keyTermsItems: [
+            "Passthrough OIDC : jeton individuel utilisateur.",
+            "CAS SHA-256 : stockage adressable par le contenu.",
+          ],
+          faqItems: [
+            "Comment forcer une resynchronisation ? Cliquez sur Tester la connexion.",
+          ],
+          casKey: "cas/aaaa0000aaaa0000",
+          sha256: "a".repeat(64),
+        }}
+        labels={helpLabels}
+        onAskAssistantOnScreen={onAskAssistantOnScreen}
+        onRollbackVersion={onRollbackVersion}
+      />,
+    );
+
+    const panel = screen.getByTestId("contextual-help-hybrid-panel");
+    expect(panel.getAttribute("data-mode")).toBe("COLUMN_340PX");
+    expect(
+      screen.getByTestId("contextual-help-merged-layers").textContent,
+    ).toContain("BASE → PACK → WORKSPACE");
+    expect(
+      screen.getByTestId("contextual-help-what-for-box").textContent,
+    ).toContain("À quoi sert cet écran ?");
+
+    // Toggle FAQ accordion (closed by default -> open)
+    expect(screen.queryByTestId("help-accordion-faq-content")).toBeNull();
+    fireEvent.click(screen.getByTestId("help-accordion-faq-btn"));
+    expect(
+      screen.getByTestId("help-accordion-faq-content").textContent,
+    ).toContain("resynchronisation");
+
+    // 1-click Rollback to @v(N-1) (1.1.0)
+    fireEvent.click(screen.getByTestId("contextual-help-rollback-btn"));
+    expect(onRollbackVersion).toHaveBeenCalledWith(
+      "orcia://pack/sdlc/help/fr/spaces-sources",
+    );
+    expect(
+      screen.getByTestId("contextual-help-version-pill").textContent,
+    ).toBe("@1.1.0");
+    expect(
+      screen.getByTestId("contextual-help-rollback-banner").textContent,
+    ).toContain("@1.1.0");
+
+    // Ask Assistant about current screen
+    fireEvent.click(screen.getByTestId("contextual-help-ask-assistant-btn"));
+    expect(onAskAssistantOnScreen).toHaveBeenCalledWith(
+      "/mes-espaces/$id/sources",
+      expect.stringContaining("/mes-espaces/$id/sources"),
+    );
   });
 });

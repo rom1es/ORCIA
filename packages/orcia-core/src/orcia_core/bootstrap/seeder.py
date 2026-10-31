@@ -184,6 +184,11 @@ WIZARD_SESSIONS_UPSERT_SPEC = UpsertSpec(
     ("dbos_workflow_id",),
     ("id", "wizard_type", "user_id", "scope_id", "current_step_index", "state_jsonb", "status"),
 )  # fmt: skip
+HELP_ARTICLES_CATALOG_UPSERT_SPEC = UpsertSpec(
+    "catalog_items",
+    ("resource_id",),
+    ("id", "uri", "title", "description", "resource_type", "source_format", "version", "sha256", "cas_key", "visibility_scope", "owner_org_unit_id", "owner_workspace_id", "item_type", "metadata_jsonb"),  # noqa: E501
+)  # fmt: skip
 
 __all__ = [
     "ASSISTANT_WORKFLOW_URI", "CATALOG_ITEMS_UPSERT_SPEC", "CONNECTOR_SCHEMES_UPSERT_SPEC",
@@ -196,7 +201,8 @@ __all__ = [
     "DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS", "DEFAULT_SYSTEM_BOOTSTRAP_WORKFLOW_SEEDS",
     "DEFAULT_USER_ONBOARDING_STATE_SEEDS", "DEFAULT_WORKFLOW_DEFINITION_SEEDS",
     "DEFAULT_WORKSPACE_DATASOURCE_SEEDS", "DEFAULT_WORKSPACE_SEEDS",
-    "LLM_MODEL_ENDPOINTS_UPSERT_SPEC", "ORG_UNITS_UPSERT_SPEC",
+    "HELP_ARTICLES_CATALOG_UPSERT_SPEC", "LLM_MODEL_ENDPOINTS_UPSERT_SPEC",
+    "ORG_UNITS_UPSERT_SPEC",
     "PERMISSION_BROKER_POLICIES_UPSERT_SPEC", "PERMISSION_BROKER_TICKETS_UPSERT_SPEC",
     "PLATFORM_SETTINGS_UPSERT_SPEC", "ROLE_PERMISSION_GRANTS_UPSERT_SPEC",
     "SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC", "SYSTEM_BOOTSTRAP_WORKFLOW_URIS",

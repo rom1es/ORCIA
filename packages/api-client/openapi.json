@@ -2271,6 +2271,163 @@
         "title": "ConnectorTestConnectionResponse",
         "type": "object"
       },
+      "ContextualHelpPublishRequest": {
+        "additionalProperties": false,
+        "description": "Story 9.5 — Request payload to publish a hot `@v(N+1)` `HELP_ARTICLE` in `cas/<sha256>`.",
+        "properties": {
+          "layer": {
+            "anyOf": [
+              {
+                "enum": [
+                  "BASE",
+                  "PACK",
+                  "WORKSPACE",
+                  "USER"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Layer"
+          },
+          "new_markdown_body": {
+            "maxLength": 16384,
+            "minLength": 1,
+            "title": "New Markdown Body",
+            "type": "string"
+          },
+          "new_summary_what_for": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "New Summary What For",
+            "type": "string"
+          },
+          "new_title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "New Title",
+            "type": "string"
+          },
+          "new_version": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "New Version",
+            "type": "string"
+          },
+          "resource_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Resource Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_id",
+          "new_version",
+          "new_title",
+          "new_summary_what_for",
+          "new_markdown_body"
+        ],
+        "title": "ContextualHelpPublishRequest",
+        "type": "object"
+      },
+      "ContextualHelpResolveResponse": {
+        "additionalProperties": false,
+        "description": "Story 9.5 — Response payload for `GET /api/v1/help/resolve` (`< 10 ms` Redis + 4 layers).",
+        "properties": {
+          "active_article": {
+            "$ref": "#/components/schemas/HelpArticleSchemaItem"
+          },
+          "ask_assistant_prefill": {
+            "title": "Ask Assistant Prefill",
+            "type": "string"
+          },
+          "cache_hit": {
+            "title": "Cache Hit",
+            "type": "boolean"
+          },
+          "lang": {
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Lang",
+            "type": "string"
+          },
+          "merged_layers": {
+            "items": {
+              "enum": [
+                "BASE",
+                "PACK",
+                "WORKSPACE",
+                "USER"
+              ],
+              "type": "string"
+            },
+            "title": "Merged Layers",
+            "type": "array"
+          },
+          "pack": {
+            "title": "Pack",
+            "type": "string"
+          },
+          "redis_cache_key": {
+            "title": "Redis Cache Key",
+            "type": "string"
+          },
+          "rollback_available": {
+            "title": "Rollback Available",
+            "type": "boolean"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "route",
+          "pack",
+          "lang",
+          "redis_cache_key",
+          "cache_hit",
+          "merged_layers",
+          "active_article",
+          "rollback_available",
+          "ask_assistant_prefill"
+        ],
+        "title": "ContextualHelpResolveResponse",
+        "type": "object"
+      },
+      "ContextualHelpRollbackRequest": {
+        "additionalProperties": false,
+        "description": "Story 9.5 — Request payload for 1-click `⏪ Rollback` to `@v(N-1)`.",
+        "properties": {
+          "resource_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Resource Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_id"
+        ],
+        "title": "ContextualHelpRollbackRequest",
+        "type": "object"
+      },
       "ControlCenterOverviewResponse": {
         "additionalProperties": false,
         "description": "Consolidated 4-tab fractal payload (`GET /api/v1/control-center/overview`, `Story 5.2`).",
@@ -3549,6 +3706,146 @@
           "trace_id"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "HelpArticleSchemaItem": {
+        "additionalProperties": false,
+        "description": "Story 9.5 — Serialized `HELP_ARTICLE` from `catalog_items` + `cas/<sha256>`.",
+        "properties": {
+          "bound_routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bound Routes",
+            "type": "array"
+          },
+          "cas_key": {
+            "title": "Cas Key",
+            "type": "string"
+          },
+          "faq_items": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Faq Items",
+            "type": "array"
+          },
+          "item_type": {
+            "default": "HELP_ARTICLE",
+            "title": "Item Type",
+            "type": "string"
+          },
+          "key_terms_items": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Key Terms Items",
+            "type": "array"
+          },
+          "lang": {
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Lang",
+            "type": "string"
+          },
+          "layer": {
+            "enum": [
+              "BASE",
+              "PACK",
+              "WORKSPACE",
+              "USER"
+            ],
+            "title": "Layer",
+            "type": "string"
+          },
+          "markdown_body": {
+            "title": "Markdown Body",
+            "type": "string"
+          },
+          "pack_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Name"
+          },
+          "previous_cas_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Cas Key"
+          },
+          "previous_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Version"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "step_by_step_items": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Step By Step Items",
+            "type": "array"
+          },
+          "summary_what_for": {
+            "title": "Summary What For",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_id",
+          "uri",
+          "title",
+          "version",
+          "lang",
+          "layer",
+          "bound_routes",
+          "summary_what_for",
+          "step_by_step_items",
+          "key_terms_items",
+          "faq_items",
+          "cas_key",
+          "sha256",
+          "markdown_body"
+        ],
+        "title": "HelpArticleSchemaItem",
         "type": "object"
       },
       "HumanAnchorSignRequest": {
@@ -17714,6 +18011,301 @@
         "summary": "Check ORCIA API health and propagate W3C trace_id",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/help/publish": {
+      "post": {
+        "operationId": "publish_hot_contextual_help_api_v1_help_publish_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextualHelpPublishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpArticleSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Publish a hot `@v(N+1)` contextual help article in `cas/<sha256>` (`Story 9.5`)",
+        "tags": [
+          "portal-epic9"
+        ]
+      }
+    },
+    "/api/v1/help/resolve": {
+      "get": {
+        "operationId": "resolve_contextual_help_api_v1_help_resolve_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "route",
+            "required": false,
+            "schema": {
+              "default": "/mes-espaces/$id/sources",
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Route",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pack",
+            "required": false,
+            "schema": {
+              "default": "orcia-pack-sdlc",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Pack",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "default": "fr",
+              "enum": [
+                "fr",
+                "en"
+              ],
+              "title": "Lang",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextualHelpResolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Resolve Contextual Help (`< 10 ms` Redis + 4-layer merge, `Story 9.5`)",
+        "tags": [
+          "portal-epic9"
+        ]
+      }
+    },
+    "/api/v1/help/rollback": {
+      "post": {
+        "operationId": "rollback_contextual_help_api_v1_help_rollback_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextualHelpRollbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpArticleSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute 1-click `⏪ Rollback` to `@v(N-1)` for a `HELP_ARTICLE` (`Story 9.5`)",
+        "tags": [
+          "portal-epic9"
         ]
       }
     },

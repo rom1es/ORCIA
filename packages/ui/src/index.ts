@@ -193,6 +193,13 @@ export {
   type UserAccountDropdownAndSettingsModalProps,
   type UserAccountPreferencesPatch,
 } from "./primitives/UserAccountDropdownAndSettingsModal";
+export {
+  ContextualHelpColumnAndCenter,
+  type ContextualHelpColumnAndCenterLabels,
+  type ContextualHelpColumnAndCenterProps,
+  type UiContextualHelpArticleView,
+  type UiHelpArticleLayer,
+} from "./primitives/ContextualHelpColumnAndCenter";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

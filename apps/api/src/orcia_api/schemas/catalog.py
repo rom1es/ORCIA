@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from orcia_core.catalog.models import (
@@ -265,3 +267,66 @@ class BmadSkillPackImportResponse(BaseModel):
     catalog_item: CatalogItemResponse
     workflow_definition: WorkflowDefinitionResponseItem
     trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class HelpArticleSchemaItem(BaseModel):
+    """Story 9.5 — Serialized `HELP_ARTICLE` from `catalog_items` + `cas/<sha256>`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    resource_id: str
+    uri: str
+    title: str
+    version: str
+    lang: Literal["fr", "en"]
+    layer: Literal["BASE", "PACK", "WORKSPACE", "USER"]
+    pack_name: str | None = None
+    bound_routes: list[str]
+    summary_what_for: str
+    step_by_step_items: list[str]
+    key_terms_items: list[str]
+    faq_items: list[str]
+    cas_key: str
+    sha256: str
+    markdown_body: str
+    item_type: str = "HELP_ARTICLE"
+    previous_version: str | None = None
+    previous_cas_key: str | None = None
+
+
+class ContextualHelpResolveResponse(BaseModel):
+    """Story 9.5 — Response payload for `GET /api/v1/help/resolve` (`< 10 ms` Redis + 4 layers)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    route: str
+    pack: str
+    lang: Literal["fr", "en"]
+    redis_cache_key: str
+    cache_hit: bool
+    merged_layers: list[Literal["BASE", "PACK", "WORKSPACE", "USER"]]
+    active_article: HelpArticleSchemaItem
+    rollback_available: bool
+    ask_assistant_prefill: str
+    trace_id: str | None = None
+
+
+class ContextualHelpPublishRequest(BaseModel):
+    """Story 9.5 — Request payload to publish a hot `@v(N+1)` `HELP_ARTICLE` in `cas/<sha256>`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    resource_id: str = Field(..., min_length=1, max_length=128)
+    new_version: str = Field(..., min_length=1, max_length=64)
+    new_title: str = Field(..., min_length=1, max_length=255)
+    new_summary_what_for: str = Field(..., min_length=1, max_length=512)
+    new_markdown_body: str = Field(..., min_length=1, max_length=16384)
+    layer: Literal["BASE", "PACK", "WORKSPACE", "USER"] | None = None
+
+
+class ContextualHelpRollbackRequest(BaseModel):
+    """Story 9.5 — Request payload for 1-click `⏪ Rollback` to `@v(N-1)`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    resource_id: str = Field(..., min_length=1, max_length=128)

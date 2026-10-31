@@ -10,6 +10,7 @@ from typing import Literal
 from fastapi import APIRouter, Query, Request
 
 from orcia_api.dependencies import (
+    get_contextual_help_service,
     get_two_speed_search_service,
     get_user_preferences_and_mcp_token_service,
 )
@@ -22,10 +23,17 @@ from orcia_api.schemas.auth_and_org import (
     UserPreferencesResponse,
     UserPreferencesUpdateRequest,
 )
+from orcia_api.schemas.catalog import (
+    ContextualHelpPublishRequest,
+    ContextualHelpResolveResponse,
+    ContextualHelpRollbackRequest,
+    HelpArticleSchemaItem,
+)
 from orcia_api.schemas.ontology_and_rag import (
     TwoSpeedSearchHitSchemaItem,
     TwoSpeedSearchResponse,
 )
+from orcia_core.catalog.contextual_help import HelpArticleCatalogItem
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.permissions.user_preferences_and_mcp_tokens import ScopedMcpPersonalTokenRecord
 
@@ -52,6 +60,29 @@ def _serialize_mcp_token_record(rec: ScopedMcpPersonalTokenRecord) -> McpPersona
         mcp_endpoint_uri=rec.mcp_endpoint_uri,
         ide_json_snippet=rec.ide_json_snippet,
         revoked=rec.revoked,
+    )
+
+
+def _serialize_help_article(art: HelpArticleCatalogItem) -> HelpArticleSchemaItem:
+    return HelpArticleSchemaItem(
+        resource_id=art.resource_id,
+        uri=art.uri,
+        title=art.title,
+        version=art.version,
+        lang=art.lang,
+        layer=art.layer,
+        pack_name=art.pack_name,
+        bound_routes=list(art.bound_routes),
+        summary_what_for=art.summary_what_for,
+        step_by_step_items=list(art.step_by_step_items),
+        key_terms_items=list(art.key_terms_items),
+        faq_items=list(art.faq_items),
+        cas_key=art.cas_key,
+        sha256=art.sha256,
+        markdown_body=art.markdown_body,
+        item_type=art.item_type,
+        previous_version=art.previous_version,
+        previous_cas_key=art.previous_cas_key,
     )
 
 
@@ -199,3 +230,72 @@ async def revoke_my_mcp_token(
     svc = get_user_preferences_and_mcp_token_service(request)
     revoked = svc.revoke_mcp_token(user_id=user.id, token_id=token_id)
     return _serialize_mcp_token_record(revoked)
+
+
+@router.get(
+    "/help/resolve",
+    response_model=ContextualHelpResolveResponse,
+    summary="Resolve Contextual Help (`< 10 ms` Redis + 4-layer merge, `Story 9.5`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def resolve_contextual_help(
+    request: Request,
+    route: str = Query(default="/mes-espaces/$id/sources", min_length=1, max_length=256),
+    pack: str = Query(default="orcia-pack-sdlc", min_length=1, max_length=128),
+    lang: Literal["fr", "en"] = Query(default="fr"),
+) -> ContextualHelpResolveResponse:
+    svc = get_contextual_help_service(request)
+    res = svc.resolve_for_route(route=route, pack=pack, lang=lang)
+    return ContextualHelpResolveResponse(
+        route=res.route,
+        pack=res.pack,
+        lang=res.lang,
+        redis_cache_key=res.redis_cache_key,
+        cache_hit=res.cache_hit,
+        merged_layers=list(res.merged_layers),
+        active_article=_serialize_help_article(res.active_article),
+        rollback_available=res.rollback_available,
+        ask_assistant_prefill=res.ask_assistant_prefill,
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/help/publish",
+    response_model=HelpArticleSchemaItem,
+    summary="Publish a hot `@v(N+1)` contextual help article in `cas/<sha256>` (`Story 9.5`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def publish_hot_contextual_help(
+    request: Request,
+    body: ContextualHelpPublishRequest,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> HelpArticleSchemaItem:
+    resolve_request_user(request, persona_key=persona_key)
+    svc = get_contextual_help_service(request)
+    updated = svc.publish_hot_version(
+        resource_id=body.resource_id,
+        new_version=body.new_version,
+        new_title=body.new_title,
+        new_summary_what_for=body.new_summary_what_for,
+        new_markdown_body=body.new_markdown_body,
+        layer=body.layer,
+    )
+    return _serialize_help_article(updated)
+
+
+@router.post(
+    "/help/rollback",
+    response_model=HelpArticleSchemaItem,
+    summary="Execute 1-click `⏪ Rollback` to `@v(N-1)` for a `HELP_ARTICLE` (`Story 9.5`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def rollback_contextual_help(
+    request: Request,
+    body: ContextualHelpRollbackRequest,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> HelpArticleSchemaItem:
+    resolve_request_user(request, persona_key=persona_key)
+    svc = get_contextual_help_service(request)
+    restored = svc.rollback_to_previous_version(body.resource_id)
+    return _serialize_help_article(restored)
