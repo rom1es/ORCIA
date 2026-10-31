@@ -5,6 +5,10 @@ import {
   type DnaStarlarkAndGlossaryLabels,
 } from "../primitives/DnaStarlarkCompilerAndGlossaryLifecycleView";
 import {
+  RemoteServiceTestBenchAndMcpExposureView,
+  type RemoteServiceTestBenchLabels,
+} from "../primitives/RemoteServiceTestBenchAndMcpExposureView";
+import {
   WorkspaceFiveTabsAndExternalRebaseView,
   type WorkspaceFiveTabsLabels,
 } from "../primitives/WorkspaceFiveTabsAndExternalRebaseView";
@@ -40,6 +44,17 @@ const DNA_LABELS_FR: DnaStarlarkAndGlossaryLabels = {
   promoteInFlowCheckboxLabel: "Promouvoir au Glossaire de l'Espace",
   promoteSelectedCta: "Promouvoir la sélection",
   rejectCandidateCta: "Écarter",
+};
+
+const TEST_BENCH_LABELS_FR: RemoteServiceTestBenchLabels = {
+  heading: "Banc de Test à Chaud & Découverte (🔌)",
+  testAndDiscoverCta: "🔌 Tester la connexion & Découvrir les capacités",
+  activateConnectorCta: "Activer le service",
+  testWithPersonalTokenCta: "Tester avec mon jeton personnel",
+  mcpExposureHeading: "Serveur MCP Gouverné (/api/v1/mcp)",
+  exposeMcpToggleLabel: "🔌 Exposer en MCP",
+  mcpIdeBadge: "💻 Appelé via MCP (IDE)",
+  ipProtectionNotice: "execute != read : protection du system_prompt et des SecretRef.",
 };
 
 describe("Story 11.1 — WorkspaceFiveTabsAndExternalRebaseView", () => {
@@ -162,5 +177,67 @@ describe("Story 11.2 — DnaStarlarkCompilerAndGlossaryLifecycleView", () => {
     );
     fireEvent.click(screen.getByTestId("promote-in-flow-btn"));
     expect(onPromoteInFlow).toHaveBeenCalledWith(["cand-1"]);
+  });
+});
+
+describe("Story 11.3 — RemoteServiceTestBenchAndMcpExposureView", () => {
+  it("renders the 4 test bench steps, non-blocking Passthrough status, and MCP exposure", () => {
+    const onActivate = vi.fn();
+    render(
+      <RemoteServiceTestBenchAndMcpExposureView
+        endpointUrl="https://mcp.orcia.io/sse"
+        steps={[
+          {
+            stepNumber: 1,
+            stepCode: "1_NETWORK_TLS_ANTI_SSRF",
+            status: "PASS",
+            detailFr: "Anti-SSRF validé",
+          },
+          {
+            stepNumber: 2,
+            stepCode: "2_AUTHENTICATION",
+            status: "WAITING_USER_PASSTHROUGH_TOKEN", // pragma: allowlist secret
+            detailFr: "🟠 En attente de jeton utilisateur (Passthrough)",
+          },
+          {
+            stepNumber: 3,
+            stepCode: "3_CONTRACT_DISCOVERY",
+            status: "PASS",
+            detailFr: "2 outils découverts",
+          },
+          {
+            stepNumber: 4,
+            stepCode: "4_HOT_DRY_RUN",
+            status: "SKIPPED",
+            detailFr: "Différé Passthrough",
+          },
+        ]}
+        discoveredCapabilities={[
+          {
+            toolName: "search_docs",
+            qualification: "READ_ONLY",
+            badgeFr: "👁️ Lecture seule",
+          },
+          {
+            toolName: "create_issue",
+            qualification: "WRITE_STAGED_REQUIRED", // pragma: allowlist secret
+            badgeFr: "✍️ Écriture -> Action Staged obligatoire (AD-3)",
+          },
+        ]}
+        canActivate={true}
+        mcpExposed={true}
+        exposedToolNames={["assistant.ask", "agent.claims-triage"]}
+        labels={TEST_BENCH_LABELS_FR}
+        onActivateService={onActivate}
+      />
+    );
+
+    expect(screen.getByTestId("test-bench-status-2").textContent).toBe(
+      "WAITING_USER_PASSTHROUGH_TOKEN" // pragma: allowlist secret
+    );
+    const activateBtn = screen.getByTestId("activate-remote-service-btn") as HTMLButtonElement;
+    expect(activateBtn.disabled).toBe(false);
+    fireEvent.click(activateBtn);
+    expect(onActivate).toHaveBeenCalled();
   });
 });

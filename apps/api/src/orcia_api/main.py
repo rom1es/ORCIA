@@ -21,6 +21,9 @@ from orcia_api.routers.epic10_assistant import router as epic10_assistant_router
 from orcia_api.routers.epic11_dna_and_glossary import (
     router as epic11_dna_and_glossary_router,
 )
+from orcia_api.routers.epic11_mcp_and_test_bench import (
+    router as epic11_mcp_and_test_bench_router,
+)
 from orcia_api.routers.epic11_workspace_governance import (
     router as epic11_workspace_governance_router,
 )
@@ -78,6 +81,7 @@ def create_app() -> FastAPI:
     application.include_router(epic10_assistant_router)
     application.include_router(epic11_workspace_governance_router)
     application.include_router(epic11_dna_and_glossary_router)
+    application.include_router(epic11_mcp_and_test_bench_router)
     return application
 
 

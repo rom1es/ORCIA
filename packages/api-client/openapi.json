@@ -2920,6 +2920,67 @@
         "title": "CompiledMarkdownChunkSchemaItem",
         "type": "object"
       },
+      "ConfigureAgentMcpExposureRequest": {
+        "additionalProperties": false,
+        "description": "Request to toggle `🔌 Exposer en MCP` on a local Agent or Workspace Assistant.",
+        "properties": {
+          "agent_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Agent Slug",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "human_authored_required": {
+            "default": false,
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "mcp_exposed": {
+            "default": true,
+            "title": "Mcp Exposed",
+            "type": "boolean"
+          },
+          "pat_token_to_register": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pat Token To Register"
+          },
+          "regime": {
+            "default": "CONSULTATION_ANALYSIS",
+            "enum": [
+              "CONSULTATION_ANALYSIS",
+              "GOVERNED_STAGED_COPILOT"
+            ],
+            "title": "Regime",
+            "type": "string"
+          },
+          "workspace_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_slug",
+          "agent_slug",
+          "display_name"
+        ],
+        "title": "ConfigureAgentMcpExposureRequest",
+        "type": "object"
+      },
       "ConfigureFolderSharingRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/folders/{folder_id}/share` (`Story 10.4`).",
@@ -3949,6 +4010,40 @@
         "title": "DeterministicGateEvaluateResponse",
         "type": "object"
       },
+      "DiscoveredRemoteCapabilitySchema": {
+        "additionalProperties": false,
+        "description": "Discovered tool or capability qualified during Step 3.",
+        "properties": {
+          "badge_fr": {
+            "title": "Badge Fr",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "qualification": {
+            "enum": [
+              "READ_ONLY",
+              "WRITE_STAGED_REQUIRED"
+            ],
+            "title": "Qualification",
+            "type": "string"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name",
+          "description",
+          "qualification",
+          "badge_fr"
+        ],
+        "title": "DiscoveredRemoteCapabilitySchema",
+        "type": "object"
+      },
       "DnaChainNodeSchema": {
         "additionalProperties": false,
         "description": "Transport schema for a causal DNA chain node (`DIRECTIVE ➔ NORME ➔ MÉCANISME`).",
@@ -4751,6 +4846,58 @@
         "title": "ExecuteTierRoutingRequest",
         "type": "object"
       },
+      "ExposedMcpAgentResponse": {
+        "additionalProperties": false,
+        "description": "Response representing an exposed MCP Agent configuration.",
+        "properties": {
+          "agent_slug": {
+            "title": "Agent Slug",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "exposed_tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exposed Tools",
+            "type": "array"
+          },
+          "human_authored_required": {
+            "title": "Human Authored Required",
+            "type": "boolean"
+          },
+          "mcp_exposed": {
+            "title": "Mcp Exposed",
+            "type": "boolean"
+          },
+          "regime": {
+            "enum": [
+              "CONSULTATION_ANALYSIS",
+              "GOVERNED_STAGED_COPILOT"
+            ],
+            "title": "Regime",
+            "type": "string"
+          },
+          "workspace_slug": {
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_slug",
+          "workspace_slug",
+          "display_name",
+          "mcp_exposed",
+          "regime",
+          "human_authored_required",
+          "exposed_tools"
+        ],
+        "title": "ExposedMcpAgentResponse",
+        "type": "object"
+      },
       "ExternalRebaseResponse": {
         "additionalProperties": false,
         "description": "Response from `ExternalEditRebaser` (`Verrou V2`).",
@@ -5171,6 +5318,152 @@
           "created_at"
         ],
         "title": "GlossaryCandidateSchema",
+        "type": "object"
+      },
+      "GovernedMcpInvokeRequest": {
+        "additionalProperties": false,
+        "description": "Request to invoke an agent over `/api/v1/mcp/spaces/{ws_slug}/invoke`.",
+        "properties": {
+          "agent_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Agent Slug",
+            "type": "string"
+          },
+          "caller_verbs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Caller Verbs",
+            "type": "array"
+          },
+          "passthrough_identity": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Passthrough Identity",
+            "type": "string"
+          },
+          "prompt_text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Prompt Text",
+            "type": "string"
+          },
+          "raw_pat_token": {
+            "maxLength": 256,
+            "minLength": 8,
+            "title": "Raw Pat Token",
+            "type": "string"
+          },
+          "requested_write_target_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Write Target Uri"
+          }
+        },
+        "required": [
+          "raw_pat_token",
+          "agent_slug",
+          "passthrough_identity",
+          "prompt_text"
+        ],
+        "title": "GovernedMcpInvokeRequest",
+        "type": "object"
+      },
+      "GovernedMcpInvokeResponse": {
+        "additionalProperties": false,
+        "description": "Response from invoking an agent over `/api/v1/mcp` (`Principe M.4`).",
+        "properties": {
+          "audit_actor_type": {
+            "const": "MCP_IDE_CLIENT",
+            "title": "Audit Actor Type",
+            "type": "string"
+          },
+          "history_badge_fr": {
+            "title": "History Badge Fr",
+            "type": "string"
+          },
+          "invocation_id": {
+            "format": "uuid",
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "meta_usage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "title": "Meta Usage",
+            "type": "object"
+          },
+          "passthrough_identity": {
+            "title": "Passthrough Identity",
+            "type": "string"
+          },
+          "sanitized_response_text": {
+            "title": "Sanitized Response Text",
+            "type": "string"
+          },
+          "secret_refs_exposed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Secret Refs Exposed",
+            "type": "array"
+          },
+          "staged_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Staged Actions",
+            "type": "array"
+          },
+          "system_prompt_exposed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt Exposed"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "workspace_slug": {
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invocation_id",
+          "tool_name",
+          "workspace_slug",
+          "passthrough_identity",
+          "sanitized_response_text",
+          "system_prompt_exposed",
+          "secret_refs_exposed",
+          "staged_actions",
+          "meta_usage",
+          "history_badge_fr",
+          "audit_actor_type"
+        ],
+        "title": "GovernedMcpInvokeResponse",
         "type": "object"
       },
       "GuidanceStepItemResponse": {
@@ -10826,6 +11119,160 @@
         "title": "ReleaseTaskClaimRequest",
         "type": "object"
       },
+      "RemoteServiceTestAndDiscoverRequest": {
+        "additionalProperties": false,
+        "description": "Request for `POST /api/v1/settings/connectors/test-and-discover` (`Story 11.3`).",
+        "properties": {
+          "allow_private_network": {
+            "default": false,
+            "title": "Allow Private Network",
+            "type": "boolean"
+          },
+          "endpoint_url": {
+            "maxLength": 512,
+            "minLength": 4,
+            "title": "Endpoint Url",
+            "type": "string"
+          },
+          "has_user_personal_token": {
+            "default": false,
+            "title": "Has User Personal Token",
+            "type": "boolean"
+          },
+          "identity_mode": {
+            "default": "PASSTHROUGH",
+            "enum": [
+              "PASSTHROUGH",
+              "SECRET_REF"
+            ],
+            "title": "Identity Mode",
+            "type": "string"
+          },
+          "protocol": {
+            "default": "MCP_STREAMABLE_HTTP_SSE",
+            "enum": [
+              "MCP_STREAMABLE_HTTP_SSE",
+              "OPENAPI_3_1_REST",
+              "A2A_REMOTE_AGENT",
+              "WASM_SANDBOX"
+            ],
+            "title": "Protocol",
+            "type": "string"
+          },
+          "raw_tool_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Raw Tool Names",
+            "type": "array"
+          },
+          "secret_ref_valid": {
+            "default": true,
+            "title": "Secret Ref Valid",
+            "type": "boolean"
+          },
+          "simulated_dry_run_bytes": {
+            "default": 2048,
+            "minimum": 0.0,
+            "title": "Simulated Dry Run Bytes",
+            "type": "integer"
+          },
+          "simulated_dry_run_elapsed_ms": {
+            "default": 120.0,
+            "maximum": 60000.0,
+            "minimum": 0.0,
+            "title": "Simulated Dry Run Elapsed Ms",
+            "type": "number"
+          }
+        },
+        "required": [
+          "endpoint_url"
+        ],
+        "title": "RemoteServiceTestAndDiscoverRequest",
+        "type": "object"
+      },
+      "RemoteServiceTestAndDiscoverResponse": {
+        "additionalProperties": false,
+        "description": "Response from `POST /api/v1/settings/connectors/test-and-discover`.",
+        "properties": {
+          "can_activate": {
+            "title": "Can Activate",
+            "type": "boolean"
+          },
+          "discovered_capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredRemoteCapabilitySchema"
+            },
+            "title": "Discovered Capabilities",
+            "type": "array"
+          },
+          "dry_run_audit_actor_type": {
+            "const": "ADMIN_CONNECTION_TEST",
+            "title": "Dry Run Audit Actor Type",
+            "type": "string"
+          },
+          "dry_run_run_id": {
+            "title": "Dry Run Run Id",
+            "type": "null"
+          },
+          "endpoint_url": {
+            "title": "Endpoint Url",
+            "type": "string"
+          },
+          "finops_meta_usage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "title": "Finops Meta Usage",
+            "type": "object"
+          },
+          "identity_mode": {
+            "enum": [
+              "PASSTHROUGH",
+              "SECRET_REF"
+            ],
+            "title": "Identity Mode",
+            "type": "string"
+          },
+          "protocol": {
+            "enum": [
+              "MCP_STREAMABLE_HTTP_SSE",
+              "OPENAPI_3_1_REST",
+              "A2A_REMOTE_AGENT",
+              "WASM_SANDBOX"
+            ],
+            "title": "Protocol",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TestBenchStepResultSchema"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocol",
+          "endpoint_url",
+          "identity_mode",
+          "steps",
+          "discovered_capabilities",
+          "can_activate",
+          "dry_run_audit_actor_type",
+          "dry_run_run_id",
+          "finops_meta_usage"
+        ],
+        "title": "RemoteServiceTestAndDiscoverResponse",
+        "type": "object"
+      },
       "ResetAssistantStudioGraphRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/governance/mode-b/reset` (`Story 10.1`).",
@@ -13535,6 +13982,54 @@
           "created_at"
         ],
         "title": "TaskNotificationItemResponse",
+        "type": "object"
+      },
+      "TestBenchStepResultSchema": {
+        "additionalProperties": false,
+        "description": "Single step outcome in the 4-step Hot Test Bench (`🔌`).",
+        "properties": {
+          "detail_fr": {
+            "title": "Detail Fr",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "WAITING_USER_PASSTHROUGH_TOKEN",
+              "SKIPPED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_code": {
+            "enum": [
+              "1_NETWORK_TLS_ANTI_SSRF",
+              "2_AUTHENTICATION",
+              "3_CONTRACT_DISCOVERY",
+              "4_HOT_DRY_RUN"
+            ],
+            "title": "Step Code",
+            "type": "string"
+          },
+          "step_number": {
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "title": "Step Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step_number",
+          "step_code",
+          "status",
+          "detail_fr"
+        ],
+        "title": "TestBenchStepResultSchema",
         "type": "object"
       },
       "ThreeSpeedStepProgressSchemaItem": {
@@ -23290,6 +23785,135 @@
         ]
       }
     },
+    "/api/v1/mcp/exposure": {
+      "put": {
+        "description": "Toggle `🔌 Exposer en MCP` and return the dynamic `tools/list`.",
+        "operationId": "configure_mcp_exposure_api_v1_mcp_exposure_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureAgentMcpExposureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposedMcpAgentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Configure MCP exposure on a local Agent or Workspace Assistant (Story 11.3)",
+        "tags": [
+          "mcp-and-connectors"
+        ]
+      }
+    },
+    "/api/v1/mcp/spaces/{workspace_slug}/invoke": {
+      "post": {
+        "description": "Invoke an exposed MCP agent enforcing the 7 hardware locks (`execute != read`, `AD-3`).",
+        "operationId": "invoke_governed_mcp_agent_api_v1_mcp_spaces__workspace_slug__invoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_slug",
+            "required": true,
+            "schema": {
+              "title": "Workspace Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GovernedMcpInvokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GovernedMcpInvokeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Invoke an exposed MCP agent/assistant under the 7 Hardware Security Locks (M.4)",
+        "tags": [
+          "mcp-and-connectors"
+        ]
+      }
+    },
     "/api/v1/mcp/tools": {
       "get": {
         "description": "Return MCP tools available in `passthrough` mode for VS Code / Cursor / Claude Code / AGY.",
@@ -27434,6 +28058,66 @@
         "summary": "Ingest Document Endpoint",
         "tags": [
           "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/connectors/test-and-discover": {
+      "post": {
+        "description": "Execute the 4-step Hot Test Bench (`🔌`) for MCP/OpenAPI/A2A/WASM services.",
+        "operationId": "test_and_discover_connector_api_v1_settings_connectors_test_and_discover_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoteServiceTestAndDiscoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoteServiceTestAndDiscoverResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run the 4-Step Hot Test Bench & Contract Discovery (Story 11.3)",
+        "tags": [
+          "mcp-and-connectors"
         ]
       }
     },

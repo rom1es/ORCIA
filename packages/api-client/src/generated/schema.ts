@@ -459,6 +459,15 @@ export interface components {
       section_title: string;
       word_count: number;
     };
+    ConfigureAgentMcpExposureRequest: {
+      agent_slug: string;
+      display_name: string;
+      human_authored_required?: boolean;
+      mcp_exposed?: boolean;
+      pat_token_to_register?: string | null;
+      regime?: "CONSULTATION_ANALYSIS" | "GOVERNED_STAGED_COPILOT";
+      workspace_slug: string;
+    };
     ConfigureFolderSharingRequest: {
       outside_workspace_user_ids?: (string)[];
       shares?: (components["schemas"]["FolderShareGrantSchemaItem"])[];
@@ -620,6 +629,12 @@ export interface components {
       evaluation: components["schemas"]["GateEvaluationSchemaItem"];
       trace_id: string;
     };
+    DiscoveredRemoteCapabilitySchema: {
+      badge_fr: string;
+      description: string;
+      qualification: "READ_ONLY" | "WRITE_STAGED_REQUIRED";
+      tool_name: string;
+    };
     DnaChainNodeSchema: {
       inviolable?: boolean;
       level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
@@ -751,6 +766,15 @@ export interface components {
       system_prompt?: string;
       user_prompt?: string;
     };
+    ExposedMcpAgentResponse: {
+      agent_slug: string;
+      display_name: string;
+      exposed_tools: (string)[];
+      human_authored_required: boolean;
+      mcp_exposed: boolean;
+      regime: "CONSULTATION_ANALYSIS" | "GOVERNED_STAGED_COPILOT";
+      workspace_slug: string;
+    };
     ExternalRebaseResponse: {
       artifact_uri: string;
       chunks: (components["schemas"]["RebasedSectionChunkSchema"])[];
@@ -820,6 +844,27 @@ export interface components {
       pre_checked_for_in_flow_promotion: boolean;
       status: "PENDING_VALIDATION" | "ACTIVE" | "REJECTED_CANDIDATE";
       workspace_id: string;
+    };
+    GovernedMcpInvokeRequest: {
+      agent_slug: string;
+      caller_verbs?: (string)[];
+      passthrough_identity: string;
+      prompt_text: string;
+      raw_pat_token: string;
+      requested_write_target_uri?: string | null;
+    };
+    GovernedMcpInvokeResponse: {
+      audit_actor_type: "MCP_IDE_CLIENT";
+      history_badge_fr: string;
+      invocation_id: string;
+      meta_usage: Record<string, number>;
+      passthrough_identity: string;
+      sanitized_response_text: string;
+      secret_refs_exposed: (string)[];
+      staged_actions: (string)[];
+      system_prompt_exposed: string | null;
+      tool_name: string;
+      workspace_slug: string;
     };
     GuidanceStepItemResponse: {
       action_command: string;
@@ -1708,6 +1753,28 @@ export interface components {
     ReleaseTaskClaimRequest: {
       force?: boolean;
     };
+    RemoteServiceTestAndDiscoverRequest: {
+      allow_private_network?: boolean;
+      endpoint_url: string;
+      has_user_personal_token?: boolean;
+      identity_mode?: "PASSTHROUGH" | "SECRET_REF";
+      protocol?: "MCP_STREAMABLE_HTTP_SSE" | "OPENAPI_3_1_REST" | "A2A_REMOTE_AGENT" | "WASM_SANDBOX";
+      raw_tool_names?: (string)[];
+      secret_ref_valid?: boolean;
+      simulated_dry_run_bytes?: number;
+      simulated_dry_run_elapsed_ms?: number;
+    };
+    RemoteServiceTestAndDiscoverResponse: {
+      can_activate: boolean;
+      discovered_capabilities: (components["schemas"]["DiscoveredRemoteCapabilitySchema"])[];
+      dry_run_audit_actor_type: "ADMIN_CONNECTION_TEST";
+      dry_run_run_id: null;
+      endpoint_url: string;
+      finops_meta_usage: Record<string, number>;
+      identity_mode: "PASSTHROUGH" | "SECRET_REF";
+      protocol: "MCP_STREAMABLE_HTTP_SSE" | "OPENAPI_3_1_REST" | "A2A_REMOTE_AGENT" | "WASM_SANDBOX";
+      steps: (components["schemas"]["TestBenchStepResultSchema"])[];
+    };
     ResetAssistantStudioGraphRequest: {
       scope_id: string;
       scope_level?: "TEAM" | "WORKSPACE";
@@ -2122,6 +2189,12 @@ export interface components {
       target_user_id?: string | null;
       title: string;
       workspace_id: string;
+    };
+    TestBenchStepResultSchema: {
+      detail_fr: string;
+      status: "PASS" | "FAIL" | "WAITING_USER_PASSTHROUGH_TOKEN" | "SKIPPED";
+      step_code: "1_NETWORK_TLS_ANTI_SSRF" | "2_AUTHENTICATION" | "3_CONTRACT_DISCOVERY" | "4_HOT_DRY_RUN";
+      step_number: 1 | 2 | 3 | 4;
     };
     ThreeSpeedStepProgressSchemaItem: {
       connector_or_lens?: string | null;
@@ -3159,6 +3232,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/mcp/exposure": {
+    put: {
+      responses: {
+        200: components["schemas"]["ExposedMcpAgentResponse"];
+      };
+    };
+  };
+  "/api/v1/mcp/spaces/{workspace_slug}/invoke": {
+    post: {
+      responses: {
+        200: components["schemas"]["GovernedMcpInvokeResponse"];
+      };
+    };
+  };
   "/api/v1/mcp/tools": {
     get: {
       responses: {
@@ -3432,6 +3519,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/connectors/test-and-discover": {
+    post: {
+      responses: {
+        200: components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
+      };
+    };
+  };
   "/api/v1/settings/connectors/{connector_id}/test-connection": {
     post: {
       responses: {
@@ -3681,6 +3775,7 @@ export type CommitStagedJiraActionResponse = components["schemas"]["CommitStaged
 export type CompileStarlarkMechanismRequest = components["schemas"]["CompileStarlarkMechanismRequest"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
+export type ConfigureAgentMcpExposureRequest = components["schemas"]["ConfigureAgentMcpExposureRequest"];
 export type ConfigureFolderSharingRequest = components["schemas"]["ConfigureFolderSharingRequest"];
 export type ConfigureFolderSharingResponse = components["schemas"]["ConfigureFolderSharingResponse"];
 export type ConfigureWorkspaceTabsRequest = components["schemas"]["ConfigureWorkspaceTabsRequest"];
@@ -3699,6 +3794,7 @@ export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSche
 export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
+export type DiscoveredRemoteCapabilitySchema = components["schemas"]["DiscoveredRemoteCapabilitySchema"];
 export type DnaChainNodeSchema = components["schemas"]["DnaChainNodeSchema"];
 export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
 export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
@@ -3714,12 +3810,15 @@ export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSo
 export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];
 export type ExceptionWaiverResponse = components["schemas"]["ExceptionWaiverResponse"];
 export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
+export type ExposedMcpAgentResponse = components["schemas"]["ExposedMcpAgentResponse"];
 export type ExternalRebaseResponse = components["schemas"]["ExternalRebaseResponse"];
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GeneratedStarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
 export type GlossaryCandidateSchema = components["schemas"]["GlossaryCandidateSchema"];
+export type GovernedMcpInvokeRequest = components["schemas"]["GovernedMcpInvokeRequest"];
+export type GovernedMcpInvokeResponse = components["schemas"]["GovernedMcpInvokeResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
 export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
@@ -3828,6 +3927,8 @@ export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChu
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
+export type RemoteServiceTestAndDiscoverRequest = components["schemas"]["RemoteServiceTestAndDiscoverRequest"];
+export type RemoteServiceTestAndDiscoverResponse = components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
 export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
 export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
@@ -3875,6 +3976,7 @@ export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunIt
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
 export type TaskNotificationItemResponse = components["schemas"]["TaskNotificationItemResponse"];
+export type TestBenchStepResultSchema = components["schemas"]["TestBenchStepResultSchema"];
 export type ThreeSpeedStepProgressSchemaItem = components["schemas"]["ThreeSpeedStepProgressSchemaItem"];
 export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
 export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];

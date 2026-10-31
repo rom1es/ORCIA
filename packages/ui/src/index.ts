@@ -249,6 +249,13 @@ export {
   type UiCompiledStarlarkMechanism,
   type UiGlossaryCandidateItem,
 } from "./primitives/DnaStarlarkCompilerAndGlossaryLifecycleView";
+export {
+  RemoteServiceTestBenchAndMcpExposureView,
+  type RemoteServiceTestBenchAndMcpExposureViewProps,
+  type RemoteServiceTestBenchLabels,
+  type UiDiscoveredCapabilityItem,
+  type UiTestBenchStepItem,
+} from "./primitives/RemoteServiceTestBenchAndMcpExposureView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

@@ -7,6 +7,9 @@ from fastapi import Request
 from orcia_core.orchestration.dna_starlark_and_glossary_lifecycle import (
     DnaStarlarkAndGlossaryLifecycleService,
 )
+from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
+    RemoteServiceTestBenchAndGovernedMcpService,
+)
 from orcia_core.orchestration.workspace_governance_and_rebaser import (
     WorkspaceGovernanceAndArtifactRoutingService,
 )
@@ -35,4 +38,17 @@ def get_dna_starlark_and_glossary_service(
     if svc is None:
         svc = DnaStarlarkAndGlossaryLifecycleService()
         request.app.state.dna_starlark_and_glossary_service = svc
+    return svc
+
+
+def get_remote_test_bench_and_mcp_service(
+    request: Request,
+) -> RemoteServiceTestBenchAndGovernedMcpService:
+    """Return `RemoteServiceTestBenchAndGovernedMcpService` (`Story 11.3`)."""
+    svc: RemoteServiceTestBenchAndGovernedMcpService | None = getattr(
+        request.app.state, "remote_test_bench_and_mcp_service", None
+    )
+    if svc is None:
+        svc = RemoteServiceTestBenchAndGovernedMcpService()
+        request.app.state.remote_test_bench_and_mcp_service = svc
     return svc
