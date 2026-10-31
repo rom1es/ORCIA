@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-31-2026 01:30
+last_updated: 10-31-2026 11:45
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -124,8 +124,8 @@ development_status:
   10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: backlog
   epic-10-retrospective: optional
 
-  # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Banc de Test MCP/A2A 🔌 & Atelier orcia-pack-builder
-  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, Sections 3 & 4)
+  # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Exposition MCP Gouvernée (Agents & Assistant /api/v1/mcp) & Banc de Test MCP/A2A 🔌 + Atelier orcia-pack-builder
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, M.4, Sections 3 & 4)
   epic-11: backlog
   11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: backlog
   11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: backlog
@@ -570,3 +570,79 @@ action_items:
       Formalisé le 30/10/2026 via AD-21 dans ARCHITECTURE-SPINE.md, mise à jour de DESIGN.md / EXPERIENCE.md,
       plan directeur docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md et
       ajout de l'Epic 8 complète (Stories 8.1 à 8.6) + Story 5.4 dans docs/planning-artifacts/epics.md.
+  - id: REDTEAM-V1
+    title: "Verrou V1 — Registre des Exceptions Acquittées (workspace_exception_waivers) en mode risk_or_exception_based"
+    action: "Persister (workspace_id, source_uri, source_sha256, conflict_rule_id, expires_at) lors de l'arbitrage d'un [STALE_WARNING] ou ONTOLOGY_CONFLICT pour qu'un écart connu ne redéclenche plus d'escalade humaine tant que source_sha256 est inchangé"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-11"
+    story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
+    owner: "Winston (Architect) / Sally (UX)"
+    status: open
+    epic: epic-11
+    description: >
+      Parade au piège du 0 tolérance en mode risk_or_exception_based : évite que le bruit latent Confluence/Git ne ramène le Tech Lead à > 5 sollicitations/jour. S'invalide automatiquement dès que le sha256 de la source externe évolue.
+  - id: REDTEAM-V2
+    title: "Verrou V2 — ExternalEditRebaser & Marquage Automatique 🔒 HUMAN_AMENDED_EXTERNAL après édition dans Git/Confluence"
+    action: "Lors de la détection d'une divergence SHA-256 sur un artefact publié vers git:// ou confluence://, exécuter un diff par section, promouvoir les sections retouchées par l'humain en HUMAN_AMENDED_EXTERNAL (inviolables par l'agent aval) et marquer [SUPERSEDED_BY_HUMAN_COMMIT] les hypothèses antérieures contradictoires dans step_memlog_jsonb"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-3, AD-5"
+    story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
+    owner: "Winston (Architect)"
+    status: open
+    epic: epic-11
+    description: >
+      Évite la friction du Rebase de Prompt où un agent régénérant une étape aval écraserait une modification manuelle poussée directement dans Git ou Confluence après publication.
+  - id: REDTEAM-V3
+    title: "Verrou V3 — Confinement Strict d'Orthogonalité par Palier de Souveraineté (SovereigntyTier C0..C3)"
+    action: "Interdire tout déclassement d'un flux C2/C3 vers une API LLM Cloud publique sous prétexte que PiiReversibleScrubber est actif ; imposer que l'orthogonalité (exécuteur != évaluateur) s'opère strictement à l'intérieur d'un palier de souveraineté >= à celui de l'Espace"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-10, AD-21"
+    story_ref: "8-2-abstraction-llm-tiers-routage-auto"
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-8
+    description: >
+      Protège la propriété intellectuelle et la logique métier propriétaire (AST, seuils de fraude, algorithmes blanchis par l'Ontologie) que le masquage PII ne couvre pas. Déjà câblé dans gates/agentic.py (_resolve_sovereign_evaluator_route) et gravé dans AD-10.
+  - id: REDTEAM-V4
+    title: "Verrou V4 — Promotion In-Flow du Glossaire dans le Briefing 4 Blocs (Top-3 pré-cochés), Plafond FIFO max 15 & 0 $ LLM sur git push"
+    action: "Intégrer les Top-3 termes L4 (>= 0.85) en cases pré-cochées dans le Briefing de Revue 4 blocs à la Gate, plafonner la file ✨ À valider à max 15 candidats actifs par Espace, purger les entrées L4 non promues après 30j, et interdire la Passe 2 LLM sur un simple git push (Passe 1 tree-sitter 0 $ seule)"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-7, AD-8, AD-11"
+    story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
+    owner: "Sally (UX) / Winston (Architect)"
+    status: open
+    epic: epic-11
+    description: >
+      Élimine la corvée d'administration d'une file ✨ À valider (142) désertée par les équipes et maîtrise le coût FinOps des branches Git.
+  - id: REDTEAM-V5
+    title: "Verrou V5 — Frontière Matérielle AssistantHarness : Exploration Libre dans Mon Assistant, Écriture SI Exclusivement par Gate de Processus"
+    action: "Bloquer matériellement toute écriture directe vers git://, confluence://, jira:// ou officialisation @v1 au Catalogue depuis le chat rapide de Mon Assistant (HTTP 422 ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE) et router obligatoirement les boutons Publier / Officialiser vers la Gate de Validation & Publication d'un Processus"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-15"
+    story_ref: "10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage"
+    owner: "Sally (UX) / Winston (Architect)"
+    status: open
+    epic: epic-10
+    description: >
+      Empêche que la rapidité de Mon Assistant (TTFT < 1,2 s) ne conduise 90 % des utilisateurs à contourner la gouvernance des Processus lors des écritures engageantes dans le SI.
+  - id: PILOT-W1-SDLC
+    title: "Coupe Minimum Lovable Pilot (3 semaines) & Workflow Pilote Semaine 1 (orcia://pack-sdlc/workflows/ticket-to-tech-spec)"
+    action: "Prioriser 6.1-6.2 (Audit/FinOps) + 9.1/9.2/9.5 (Coquille 4 zones, Accostage 1/6, Aide ?) + 10.1-10.3 (Mon Assistant TTFT < 1,2s & Citations [S1]) + 11.1-11.2 (Verrous V1..V5 & Workflow sdlc/ticket-to-tech-spec), et geler Epic 7 + 11.3-11.5 derrière feature-flag post-pilote"
+    priority: P1
+    depends_on:
+      - REDTEAM-V1
+      - REDTEAM-V2
+      - REDTEAM-V4
+      - REDTEAM-V5
+    ad_ref: "AD-20"
+    story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
+    owner: "Romain (PO) / Winston (Architect) / Sally (UX)"
+    status: open
+    epic: epic-11
+    description: >
+      Workflow de référence Semaine 1 du pilote SDLC : Ticket Jira + 1 Ancrage Humain -> Traversée Graphe Tripartite & Arbitrage -> Spécification Technique & Impact AST Git (0 hallucination de symbole) -> Briefing 4 blocs & Publication Staged Jira/Git.
