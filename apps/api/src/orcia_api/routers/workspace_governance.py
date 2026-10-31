@@ -7,9 +7,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from orcia_api.dependencies_epic11 import get_workspace_governance_and_rebaser_service
+from orcia_api.dependencies import get_workspace_governance_and_rebaser_service
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.schemas.epic11_governance import (
+from orcia_api.schemas.workspace_governance import (
     ConfigureWorkspaceTabsRequest,
     DnaChainNodeSchema,
     ExceptionWaiverResponse,

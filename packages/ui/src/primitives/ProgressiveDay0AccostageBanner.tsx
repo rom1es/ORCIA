@@ -58,8 +58,8 @@ export function ProgressiveDay0AccostageBanner({
   onNavigateMilestone,
 }: ProgressiveDay0AccostageBannerProps): React.ReactElement {
   const [families, setFamilies] = useState<readonly string[]>(initialFamilies);
-  const [adminEmail, setAdminEmail] = useState<string>("karim@orcia.io");
-  const [adminName, setAdminName] = useState<string>("Karim Admin");
+  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminName, setAdminName] = useState<string>("");
   const [bootstrapToken, setBootstrapToken] = useState<string>("");
   const [tokenDenied, setTokenDenied] = useState<boolean>(false);
   const [adminCreated, setAdminCreated] = useState<boolean>(false);

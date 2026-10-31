@@ -26,7 +26,7 @@ from orcia_api.dependencies import (
     get_auth_service,
     get_bootstrap_service,
     get_catalog_service,
-    get_epic2_services,
+    get_ontology_and_rag_services,
     get_orchestration_service,
     get_permission_broker_service,
     initialize_app_services,
@@ -337,8 +337,8 @@ def test_ac5_no_router_import_time_singletons_and_composition_root_lifespan() ->
     assert get_permission_broker_service(EmptyAppRequest()) is not None  # type: ignore[arg-type]
     assert get_bootstrap_service(EmptyAppRequest()) is not None  # type: ignore[arg-type]
     assert get_orchestration_service(EmptyAppRequest()) is not None  # type: ignore[arg-type]
-    assert len(get_epic2_services(req, fixture=False)) == 3  # type: ignore[arg-type]
-    assert len(get_epic2_services(req, fixture=True)) == 3  # type: ignore[arg-type]
+    assert len(get_ontology_and_rag_services(req, fixture=False)) == 3  # type: ignore[arg-type]
+    assert len(get_ontology_and_rag_services(req, fixture=True)) == 3  # type: ignore[arg-type]
 
 
 class EmptyAppRequest:

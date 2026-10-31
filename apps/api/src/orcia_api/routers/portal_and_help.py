@@ -37,7 +37,7 @@ from orcia_core.catalog.contextual_help import HelpArticleCatalogItem
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.permissions.user_preferences_and_mcp_tokens import ScopedMcpPersonalTokenRecord
 
-router = APIRouter(prefix="/api/v1", tags=["portal-epic9"])
+router = APIRouter(prefix="/api/v1", tags=["portal-and-help"])
 
 
 def _trace(request: Request) -> str:

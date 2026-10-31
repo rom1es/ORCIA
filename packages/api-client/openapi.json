@@ -2267,6 +2267,131 @@
         "title": "CatalogUriResolveResponse",
         "type": "object"
       },
+      "CertifyPackToolRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for Process 3 (`certify-pack-tool`).",
+        "properties": {
+          "actor_role": {
+            "default": "ARCHITECT",
+            "title": "Actor Role",
+            "type": "string"
+          },
+          "container_command": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Container Command",
+            "type": "array"
+          },
+          "container_image_digest": {
+            "default": "",
+            "title": "Container Image Digest",
+            "type": "string"
+          },
+          "failing_test_payload": {
+            "additionalProperties": true,
+            "title": "Failing Test Payload",
+            "type": "object"
+          },
+          "passing_test_payload": {
+            "additionalProperties": true,
+            "title": "Passing Test Payload",
+            "type": "object"
+          },
+          "rule_id": {
+            "default": "NORM-PACK-001",
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "sandbox_tier": {
+            "default": "TIER_1B_STARLARK",
+            "enum": [
+              "TIER_1B_STARLARK",
+              "TIER_2_CONTAINER"
+            ],
+            "title": "Sandbox Tier",
+            "type": "string"
+          },
+          "starlark_source": {
+            "default": "",
+            "title": "Starlark Source",
+            "type": "string"
+          },
+          "tool_slug": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Tool Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_slug"
+        ],
+        "title": "CertifyPackToolRequest",
+        "type": "object"
+      },
+      "CertifyPackToolResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for Process 3 (`certify-pack-tool`).",
+        "properties": {
+          "certificate_sha256": {
+            "title": "Certificate Sha256",
+            "type": "string"
+          },
+          "certified": {
+            "title": "Certified",
+            "type": "boolean"
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "elapsed_ms": {
+            "title": "Elapsed Ms",
+            "type": "number"
+          },
+          "failing_vector_rejected_ok": {
+            "title": "Failing Vector Rejected Ok",
+            "type": "boolean"
+          },
+          "network_isolated": {
+            "title": "Network Isolated",
+            "type": "boolean"
+          },
+          "passing_vector_ok": {
+            "title": "Passing Vector Ok",
+            "type": "boolean"
+          },
+          "sandbox_tier": {
+            "enum": [
+              "TIER_1B_STARLARK",
+              "TIER_2_CONTAINER"
+            ],
+            "title": "Sandbox Tier",
+            "type": "string"
+          },
+          "tool_slug": {
+            "title": "Tool Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_slug",
+          "sandbox_tier",
+          "certified",
+          "elapsed_ms",
+          "passing_vector_ok",
+          "failing_vector_rejected_ok",
+          "network_isolated",
+          "certificate_sha256",
+          "diagnostics"
+        ],
+        "title": "CertifyPackToolResponse",
+        "type": "object"
+      },
       "ChunkApprovalSchemaItem": {
         "additionalProperties": false,
         "description": "Serialized `ChunkApprovalRecord` (`chunk_approvals` table, `UX-DR5`).",
@@ -3491,6 +3616,157 @@
         "title": "CreateAssistantThreadRequest",
         "type": "object"
       },
+      "CreateBusinessPackRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for Process 1 (`create-business-pack`).",
+        "properties": {
+          "actor_id": {
+            "default": "architect-user",
+            "title": "Actor Id",
+            "type": "string"
+          },
+          "actor_role": {
+            "default": "ARCHITECT",
+            "title": "Actor Role",
+            "type": "string"
+          },
+          "agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Agents",
+            "type": "array"
+          },
+          "dna_seeds": {
+            "items": {
+              "$ref": "#/components/schemas/DnaChainPackSeedItemRequest"
+            },
+            "title": "Dna Seeds",
+            "type": "array"
+          },
+          "domain_name": {
+            "default": "FINANCE",
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Domain Name",
+            "type": "string"
+          },
+          "human_anchor_intent": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Human Anchor Intent",
+            "type": "string"
+          },
+          "human_profiles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Human Profiles",
+            "type": "array"
+          },
+          "pack_slug": {
+            "maxLength": 40,
+            "minLength": 2,
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": "0.1.0",
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Version",
+            "type": "string"
+          },
+          "workflows": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Workflows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pack_slug",
+          "title",
+          "human_anchor_intent"
+        ],
+        "title": "CreateBusinessPackRequest",
+        "type": "object"
+      },
+      "CreateBusinessPackResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for Process 1 (`create-business-pack`).",
+        "properties": {
+          "generated_file_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Generated File Paths",
+            "type": "array"
+          },
+          "human_anchor_intent": {
+            "title": "Human Anchor Intent",
+            "type": "string"
+          },
+          "kernel_or_core_touched": {
+            "title": "Kernel Or Core Touched",
+            "type": "boolean"
+          },
+          "manifest_validation_elapsed_ms": {
+            "title": "Manifest Validation Elapsed Ms",
+            "type": "number"
+          },
+          "max_starlark_elapsed_ms": {
+            "title": "Max Starlark Elapsed Ms",
+            "type": "number"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "starlark_rules_certified_count": {
+            "title": "Starlark Rules Certified Count",
+            "type": "integer"
+          },
+          "target_directory": {
+            "title": "Target Directory",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_id",
+          "pack_slug",
+          "version",
+          "title",
+          "human_anchor_intent",
+          "target_directory",
+          "generated_file_paths",
+          "manifest_validation_elapsed_ms",
+          "starlark_rules_certified_count",
+          "max_starlark_elapsed_ms",
+          "kernel_or_core_touched"
+        ],
+        "title": "CreateBusinessPackResponse",
+        "type": "object"
+      },
       "CreateOrUpdateAssistantFolderRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/folders` (`Story 10.4`).",
@@ -4087,6 +4363,75 @@
         "title": "DnaChainNodeSchema",
         "type": "object"
       },
+      "DnaChainPackSeedItemRequest": {
+        "additionalProperties": false,
+        "description": "Causal DNA chain seed (`DIRECTIVE ➔ NORME ➔ MÉCANISME`) in Process 1.",
+        "properties": {
+          "directive_code": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Directive Code",
+            "type": "string"
+          },
+          "directive_title": {
+            "maxLength": 256,
+            "minLength": 2,
+            "title": "Directive Title",
+            "type": "string"
+          },
+          "failing_test_payload": {
+            "additionalProperties": true,
+            "title": "Failing Test Payload",
+            "type": "object"
+          },
+          "mechanism_code": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Mechanism Code",
+            "type": "string"
+          },
+          "norm_code": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Norm Code",
+            "type": "string"
+          },
+          "norm_title": {
+            "maxLength": 256,
+            "minLength": 2,
+            "title": "Norm Title",
+            "type": "string"
+          },
+          "passing_test_payload": {
+            "additionalProperties": true,
+            "title": "Passing Test Payload",
+            "type": "object"
+          },
+          "rule_id": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "starlark_source": {
+            "maxLength": 16384,
+            "minLength": 10,
+            "title": "Starlark Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "directive_code",
+          "directive_title",
+          "norm_code",
+          "norm_title",
+          "mechanism_code",
+          "rule_id",
+          "starlark_source"
+        ],
+        "title": "DnaChainPackSeedItemRequest",
+        "type": "object"
+      },
       "DocVsCodeAuditRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4680,6 +5025,128 @@
         "title": "EvidenceToolCitationSchemaItem",
         "type": "object"
       },
+      "EvolveBusinessPackWhatIfRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for Process 2 (`evolve-business-pack` *What-If*).",
+        "properties": {
+          "active_run_lock_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Active Run Lock Ids",
+            "type": "array"
+          },
+          "actor_role": {
+            "default": "ARCHITECT",
+            "title": "Actor Role",
+            "type": "string"
+          },
+          "modified_norms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Modified Norms",
+            "type": "array"
+          },
+          "modified_workflows": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Modified Workflows",
+            "type": "array"
+          },
+          "pack_slug": {
+            "maxLength": 40,
+            "minLength": 2,
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "previous_version": {
+            "default": "0.1.0",
+            "title": "Previous Version",
+            "type": "string"
+          },
+          "subscribed_workspaces": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Subscribed Workspaces",
+            "type": "array"
+          },
+          "target_version": {
+            "default": "0.2.0",
+            "title": "Target Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_slug"
+        ],
+        "title": "EvolveBusinessPackWhatIfRequest",
+        "type": "object"
+      },
+      "EvolveBusinessPackWhatIfResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for Process 2 (`evolve-business-pack` *What-If*).",
+        "properties": {
+          "active_run_locks_preserved": {
+            "title": "Active Run Locks Preserved",
+            "type": "boolean"
+          },
+          "breaking_changes_detected": {
+            "title": "Breaking Changes Detected",
+            "type": "boolean"
+          },
+          "impacted_workflows_count": {
+            "title": "Impacted Workflows Count",
+            "type": "integer"
+          },
+          "impacted_workspaces_count": {
+            "title": "Impacted Workspaces Count",
+            "type": "integer"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "previous_version": {
+            "title": "Previous Version",
+            "type": "string"
+          },
+          "target_version": {
+            "title": "Target Version",
+            "type": "string"
+          },
+          "untouched_run_lock_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Untouched Run Lock Ids",
+            "type": "array"
+          },
+          "workspace_impacts": {
+            "items": {
+              "$ref": "#/components/schemas/WhatIfWorkspaceImpactItemResponse"
+            },
+            "title": "Workspace Impacts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pack_slug",
+          "previous_version",
+          "target_version",
+          "impacted_workspaces_count",
+          "impacted_workflows_count",
+          "breaking_changes_detected",
+          "active_run_locks_preserved",
+          "untouched_run_lock_ids",
+          "workspace_impacts"
+        ],
+        "title": "EvolveBusinessPackWhatIfResponse",
+        "type": "object"
+      },
       "ExceptionWaiverResponse": {
         "additionalProperties": false,
         "description": "Response representing a persisted `workspace_exception_waivers` record (`Verrou V1`).",
@@ -4844,6 +5311,120 @@
           }
         },
         "title": "ExecuteTierRoutingRequest",
+        "type": "object"
+      },
+      "ExportFromWorkspaceToPackRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for Process 4 (`export-from-workspace-to-pack`).",
+        "properties": {
+          "actor_role": {
+            "default": "ARCHITECT",
+            "title": "Actor Role",
+            "type": "string"
+          },
+          "asset_kind": {
+            "default": "STARLARK_MECHANISM",
+            "enum": [
+              "AGENT",
+              "WORKFLOW",
+              "NORM",
+              "STARLARK_MECHANISM"
+            ],
+            "title": "Asset Kind",
+            "type": "string"
+          },
+          "asset_slug": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Asset Slug",
+            "type": "string"
+          },
+          "raw_asset_payload": {
+            "additionalProperties": true,
+            "title": "Raw Asset Payload",
+            "type": "object"
+          },
+          "source_workspace_key": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Source Workspace Key",
+            "type": "string"
+          },
+          "target_pack_slug": {
+            "maxLength": 40,
+            "minLength": 2,
+            "title": "Target Pack Slug",
+            "type": "string"
+          },
+          "target_pack_version": {
+            "default": "0.2.0",
+            "title": "Target Pack Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_workspace_key",
+          "target_pack_slug",
+          "asset_slug"
+        ],
+        "title": "ExportFromWorkspaceToPackRequest",
+        "type": "object"
+      },
+      "ExportFromWorkspaceToPackResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for Process 4 (`export-from-workspace-to-pack`).",
+        "properties": {
+          "asset_kind": {
+            "enum": [
+              "AGENT",
+              "WORKFLOW",
+              "NORM",
+              "STARLARK_MECHANISM"
+            ],
+            "title": "Asset Kind",
+            "type": "string"
+          },
+          "asset_slug": {
+            "title": "Asset Slug",
+            "type": "string"
+          },
+          "promoted_uri": {
+            "title": "Promoted Uri",
+            "type": "string"
+          },
+          "sanitized_payload": {
+            "additionalProperties": true,
+            "title": "Sanitized Payload",
+            "type": "object"
+          },
+          "scrubbed_references_count": {
+            "title": "Scrubbed References Count",
+            "type": "integer"
+          },
+          "source_workspace_key": {
+            "title": "Source Workspace Key",
+            "type": "string"
+          },
+          "target_pack_slug": {
+            "title": "Target Pack Slug",
+            "type": "string"
+          },
+          "target_pack_version": {
+            "title": "Target Pack Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_workspace_key",
+          "target_pack_slug",
+          "target_pack_version",
+          "asset_kind",
+          "asset_slug",
+          "promoted_uri",
+          "scrubbed_references_count",
+          "sanitized_payload"
+        ],
+        "title": "ExportFromWorkspaceToPackResponse",
         "type": "object"
       },
       "ExposedMcpAgentResponse": {
@@ -5146,6 +5727,260 @@
           "trace_id"
         ],
         "title": "GateEvaluationsListResponse",
+        "type": "object"
+      },
+      "GenerateAndAttachHelpRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for Process 5 (`generate-and-attach-help`).",
+        "properties": {
+          "actor_role": {
+            "default": "ARCHITECT",
+            "title": "Actor Role",
+            "type": "string"
+          },
+          "article_id": {
+            "maxLength": 128,
+            "minLength": 3,
+            "title": "Article Id",
+            "type": "string"
+          },
+          "article_slug": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Article Slug",
+            "type": "string"
+          },
+          "bound_routes": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Bound Routes",
+            "type": "array"
+          },
+          "faq_en": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Faq En",
+            "type": "array"
+          },
+          "faq_fr": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Faq Fr",
+            "type": "array"
+          },
+          "glossary_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Glossary Terms",
+            "type": "array"
+          },
+          "known_glossary_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Known Glossary Terms",
+            "type": "array"
+          },
+          "pack_slug": {
+            "default": "core",
+            "maxLength": 40,
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "purpose_en": {
+            "maxLength": 4000,
+            "minLength": 10,
+            "title": "Purpose En",
+            "type": "string"
+          },
+          "purpose_fr": {
+            "maxLength": 4000,
+            "minLength": 10,
+            "title": "Purpose Fr",
+            "type": "string"
+          },
+          "related_workflows": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Related Workflows",
+            "type": "array"
+          },
+          "roles_allowed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles Allowed",
+            "type": "array"
+          },
+          "steps_en": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Steps En",
+            "type": "array"
+          },
+          "steps_fr": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Steps Fr",
+            "type": "array"
+          },
+          "title_en": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Title En",
+            "type": "string"
+          },
+          "title_fr": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Title Fr",
+            "type": "string"
+          },
+          "trigger_regime": {
+            "default": "AUTONOMOUS_CONTRACT",
+            "enum": [
+              "STAGED_HUMAN_REVIEW",
+              "AUTONOMOUS_CONTRACT"
+            ],
+            "title": "Trigger Regime",
+            "type": "string"
+          },
+          "ui_component_name": {
+            "default": "ContextualHelpColumnAndCenter",
+            "title": "Ui Component Name",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "article_id",
+          "article_slug",
+          "title_fr",
+          "title_en",
+          "bound_routes",
+          "purpose_fr",
+          "purpose_en",
+          "steps_fr",
+          "steps_en",
+          "faq_fr",
+          "faq_en"
+        ],
+        "title": "GenerateAndAttachHelpRequest",
+        "type": "object"
+      },
+      "GenerateAndAttachHelpResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for Process 5 (`generate-and-attach-help`).",
+        "properties": {
+          "article_id": {
+            "title": "Article Id",
+            "type": "string"
+          },
+          "authority_role": {
+            "const": "REFERENCE",
+            "default": "REFERENCE",
+            "title": "Authority Role",
+            "type": "string"
+          },
+          "bound_routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bound Routes",
+            "type": "array"
+          },
+          "en_cas_key": {
+            "title": "En Cas Key",
+            "type": "string"
+          },
+          "en_sha256": {
+            "title": "En Sha256",
+            "type": "string"
+          },
+          "exported_git_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exported Git Paths",
+            "type": "array"
+          },
+          "fr_cas_key": {
+            "title": "Fr Cas Key",
+            "type": "string"
+          },
+          "fr_sha256": {
+            "title": "Fr Sha256",
+            "type": "string"
+          },
+          "hot_attach_elapsed_ms": {
+            "title": "Hot Attach Elapsed Ms",
+            "type": "number"
+          },
+          "invalidated_redis_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invalidated Redis Keys",
+            "type": "array"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "trigger_regime": {
+            "enum": [
+              "STAGED_HUMAN_REVIEW",
+              "AUTONOMOUS_CONTRACT"
+            ],
+            "title": "Trigger Regime",
+            "type": "string"
+          },
+          "validation_en": {
+            "$ref": "#/components/schemas/ValidateHelpArticleResponse"
+          },
+          "validation_fr": {
+            "$ref": "#/components/schemas/ValidateHelpArticleResponse"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "article_id",
+          "version",
+          "pack_id",
+          "trigger_regime",
+          "bound_routes",
+          "fr_cas_key",
+          "en_cas_key",
+          "fr_sha256",
+          "en_sha256",
+          "validation_fr",
+          "validation_en",
+          "invalidated_redis_keys",
+          "exported_git_paths",
+          "hot_attach_elapsed_ms"
+        ],
+        "title": "GenerateAndAttachHelpResponse",
         "type": "object"
       },
       "GeneratedStarlarkMechanismResponse": {
@@ -15698,6 +16533,103 @@
         "title": "ValidateFencedWriteResponse",
         "type": "object"
       },
+      "ValidateHelpArticleRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for deterministic validator `validate_help_article` (`< 5 s`).",
+        "properties": {
+          "extra_allowed_routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Extra Allowed Routes",
+            "type": "array"
+          },
+          "known_glossary_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Known Glossary Terms",
+            "type": "array"
+          },
+          "lang": {
+            "default": "fr",
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Lang",
+            "type": "string"
+          },
+          "markdown_text": {
+            "maxLength": 65536,
+            "minLength": 10,
+            "title": "Markdown Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "markdown_text"
+        ],
+        "title": "ValidateHelpArticleRequest",
+        "type": "object"
+      },
+      "ValidateHelpArticleResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `validate_help_article`.",
+        "properties": {
+          "article_id": {
+            "title": "Article Id",
+            "type": "string"
+          },
+          "bound_routes_valid": {
+            "title": "Bound Routes Valid",
+            "type": "boolean"
+          },
+          "elapsed_ms": {
+            "title": "Elapsed Ms",
+            "type": "number"
+          },
+          "glossary_and_zero_secret_valid": {
+            "title": "Glossary And Zero Secret Valid",
+            "type": "boolean"
+          },
+          "lang": {
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Lang",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "ui_components_and_sections_valid": {
+            "title": "Ui Components And Sections Valid",
+            "type": "boolean"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Violations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "article_id",
+          "lang",
+          "passed",
+          "bound_routes_valid",
+          "ui_components_and_sections_valid",
+          "glossary_and_zero_secret_valid",
+          "elapsed_ms",
+          "violations"
+        ],
+        "title": "ValidateHelpArticleResponse",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -16073,6 +17005,47 @@
           "has_immutable_axiom_conflict"
         ],
         "title": "WhatIfSimulationResponse",
+        "type": "object"
+      },
+      "WhatIfWorkspaceImpactItemResponse": {
+        "additionalProperties": false,
+        "description": "Per-workspace impact entry in Process 2.",
+        "properties": {
+          "active_runs_count": {
+            "title": "Active Runs Count",
+            "type": "integer"
+          },
+          "breaking_norms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Breaking Norms",
+            "type": "array"
+          },
+          "impacted_workflows": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Impacted Workflows",
+            "type": "array"
+          },
+          "run_locks_untouched": {
+            "title": "Run Locks Untouched",
+            "type": "boolean"
+          },
+          "workspace_key": {
+            "title": "Workspace Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_key",
+          "impacted_workflows",
+          "breaking_norms",
+          "active_runs_count",
+          "run_locks_untouched"
+        ],
+        "title": "WhatIfWorkspaceImpactItemResponse",
         "type": "object"
       },
       "WizardAdvanceStepRequest": {
@@ -18027,7 +19000,7 @@
         },
         "summary": "Execute Artifact Card Action Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18282,7 +19255,7 @@
         },
         "summary": "Verify And Filter Citations Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18342,7 +19315,7 @@
         },
         "summary": "Create Or Update Assistant Folder Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18411,7 +19384,7 @@
         },
         "summary": "Launch Process From Folder Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18480,7 +19453,7 @@
         },
         "summary": "Configure Folder Sharing Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18550,7 +19523,7 @@
         },
         "summary": "Get Assistant Governance Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18610,7 +19583,7 @@
         },
         "summary": "Update User Layer Preferences Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18670,7 +19643,7 @@
         },
         "summary": "Update Workspace Layer Settings Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18730,7 +19703,7 @@
         },
         "summary": "Reset Assistant Studio Graph Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18790,7 +19763,7 @@
         },
         "summary": "Save Assistant Studio Graph Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18850,7 +19823,7 @@
         },
         "summary": "Create Assistant Thread Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18919,7 +19892,7 @@
         },
         "summary": "Send Collaborative Thread Turn Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -18979,7 +19952,7 @@
         },
         "summary": "Invalidate Prompt Cache Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -19037,7 +20010,7 @@
         },
         "summary": "Stream Three Speed Turn Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -19097,7 +20070,7 @@
         },
         "summary": "Execute Three Speed Turn Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -19262,7 +20235,7 @@
         },
         "summary": "Get Assistant Workspace Overview Endpoint",
         "tags": [
-          "assistant-epic10"
+          "assistant-workspace"
         ]
       }
     },
@@ -23048,7 +24021,7 @@
         },
         "summary": "Publish a hot `@v(N+1)` contextual help article in `cas/<sha256>` (`Story 9.5`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },
@@ -23153,7 +24126,7 @@
         },
         "summary": "Resolve Contextual Help (`< 10 ms` Redis + 4-layer merge, `Story 9.5`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },
@@ -23248,7 +24221,7 @@
         },
         "summary": "Execute 1-click `⏪ Rollback` to `@v(N-1)` for a `HELP_ARTICLE` (`Story 9.5`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },
@@ -26542,6 +27515,282 @@
         ]
       }
     },
+    "/api/v1/pack-builder/manifest": {
+      "get": {
+        "description": "Return the system `orcia-pack-builder` manifest (4 agents + 5 governed processes).",
+        "operationId": "get_system_pack_builder_manifest_endpoint_api_v1_pack_builder_manifest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get System Pack Builder Manifest Endpoint Api V1 Pack Builder Manifest Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get System Pack Builder Manifest Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/processes/certify-tool": {
+      "post": {
+        "description": "Execute Process 3 (`certify-pack-tool` in Tier 1b Starlark or Tier 2 Container).",
+        "operationId": "certify_pack_tool_endpoint_api_v1_pack_builder_processes_certify_tool_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertifyPackToolRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertifyPackToolResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Certify Pack Tool Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/processes/create-pack": {
+      "post": {
+        "description": "Execute Process 1 (`create-business-pack`).",
+        "operationId": "create_business_pack_endpoint_api_v1_pack_builder_processes_create_pack_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessPackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBusinessPackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Business Pack Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/processes/evolve-what-if": {
+      "post": {
+        "description": "Execute Process 2 (`evolve-business-pack` *What-If* simulation).",
+        "operationId": "evolve_business_pack_what_if_endpoint_api_v1_pack_builder_processes_evolve_what_if_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvolveBusinessPackWhatIfRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvolveBusinessPackWhatIfResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evolve Business Pack What If Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/processes/export-from-workspace": {
+      "post": {
+        "description": "Execute Process 4 (`export-from-workspace-to-pack`).",
+        "operationId": "export_from_workspace_to_pack_endpoint_api_v1_pack_builder_processes_export_from_workspace_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportFromWorkspaceToPackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportFromWorkspaceToPackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export From Workspace To Pack Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/processes/generate-and-attach-help": {
+      "post": {
+        "description": "Execute Process 5 (`generate-and-attach-help`).",
+        "operationId": "generate_and_attach_help_endpoint_api_v1_pack_builder_processes_generate_and_attach_help_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateAndAttachHelpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateAndAttachHelpResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate And Attach Help Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/processes/validate-help-article": {
+      "post": {
+        "description": "Execute deterministic Gate `validate_help_article` (`< 5 s`).",
+        "operationId": "validate_help_article_endpoint_api_v1_pack_builder_processes_validate_help_article_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateHelpArticleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateHelpArticleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Help Article Endpoint",
+        "tags": [
+          "pack-builder"
+        ]
+      }
+    },
     "/api/v1/permissions/broker/check-access": {
       "post": {
         "description": "Execute governed connector access check with anti-Confused Deputy and Jira KB brokering.",
@@ -27432,7 +28681,7 @@
         },
         "summary": "Execute 2-Speed Federated & Contextual Search (`⌘K`, Zero Layout Shift, `Story 9.3`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },
@@ -29188,7 +30437,7 @@
         },
         "summary": "List personal IDE/MCP tokens (`pat_mcp_*` SHA-256 metadata, `Story 9.4`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       },
       "post": {
@@ -29281,7 +30530,7 @@
         },
         "summary": "Issue a scoped personal IDE/MCP token (`pat_mcp_*` hashed SHA-256, `Story 9.4`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },
@@ -29375,7 +30624,7 @@
         },
         "summary": "Revoke a personal IDE/MCP token in `< 10 ms` Redis (`Story 9.4`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },
@@ -29460,7 +30709,7 @@
         },
         "summary": "Get current user's display & workspace preferences (`Story 9.4`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       },
       "patch": {
@@ -29553,7 +30802,7 @@
         },
         "summary": "Synchronize user preferences (`0 ms` Anti-FOUC background sync, `Story 9.4`)",
         "tags": [
-          "portal-epic9"
+          "portal-and-help"
         ]
       }
     },

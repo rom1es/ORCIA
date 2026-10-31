@@ -33,18 +33,18 @@ export interface InboxAndClaimsCopy {
   presencePill: PresenceClaimPillLabels;
 }
 
-import type { Epic5DictionarySection } from "./locales/epic5_labels";
-import type { Epic8DictionarySection } from "./locales/epic8_labels";
-import type { Epic9DictionarySection } from "./locales/epic9_labels";
-import type { Epic10DictionarySection } from "./locales/epic10_labels";
-import type { Epic11DictionarySection } from "./locales/epic11_labels";
+import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
+import type { AssistantDictionarySection } from "./locales/assistant_labels";
+import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
+import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
+import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
 
 export interface TranslationDictionary
-  extends Epic5DictionarySection,
-    Epic8DictionarySection,
-    Epic9DictionarySection,
-    Epic10DictionarySection,
-    Epic11DictionarySection {
+  extends InboxAndCockpitDictionarySection,
+    AdminAndStudioDictionarySection,
+    ShellAndSearchDictionarySection,
+    AssistantDictionarySection,
+    GovernanceAndPacksDictionarySection {
   locale: SupportedWebLocale;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {

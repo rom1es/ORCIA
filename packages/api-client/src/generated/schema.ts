@@ -360,6 +360,28 @@ export interface components {
       trace_id: string;
       uri: string;
     };
+    CertifyPackToolRequest: {
+      actor_role?: string;
+      container_command?: (string)[];
+      container_image_digest?: string;
+      failing_test_payload?: Record<string, unknown>;
+      passing_test_payload?: Record<string, unknown>;
+      rule_id?: string;
+      sandbox_tier?: "TIER_1B_STARLARK" | "TIER_2_CONTAINER";
+      starlark_source?: string;
+      tool_slug: string;
+    };
+    CertifyPackToolResponse: {
+      certificate_sha256: string;
+      certified: boolean;
+      diagnostics: (string)[];
+      elapsed_ms: number;
+      failing_vector_rejected_ok: boolean;
+      network_isolated: boolean;
+      passing_vector_ok: boolean;
+      sandbox_tier: "TIER_1B_STARLARK" | "TIER_2_CONTAINER";
+      tool_slug: string;
+    };
     ChunkApprovalSchemaItem: {
       challenge_reason?: string | null;
       chunk_key: string;
@@ -544,6 +566,32 @@ export interface components {
       title: string;
       workspace_id: string;
     };
+    CreateBusinessPackRequest: {
+      actor_id?: string;
+      actor_role?: string;
+      agents?: (string)[];
+      dna_seeds?: (components["schemas"]["DnaChainPackSeedItemRequest"])[];
+      domain_name?: string;
+      human_anchor_intent: string;
+      human_profiles?: (string)[];
+      pack_slug: string;
+      title: string;
+      version?: string;
+      workflows?: (string)[];
+    };
+    CreateBusinessPackResponse: {
+      generated_file_paths: (string)[];
+      human_anchor_intent: string;
+      kernel_or_core_touched: boolean;
+      manifest_validation_elapsed_ms: number;
+      max_starlark_elapsed_ms: number;
+      pack_id: string;
+      pack_slug: string;
+      starlark_rules_certified_count: number;
+      target_directory: string;
+      title: string;
+      version: string;
+    };
     CreateOrUpdateAssistantFolderRequest: {
       consolidated_summary?: string;
       evidence_tags?: (string)[];
@@ -640,6 +688,17 @@ export interface components {
       level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
       node_key: string;
       stereotype: "DIRECTIVE" | "NORM" | "MECHANISM";
+    };
+    DnaChainPackSeedItemRequest: {
+      directive_code: string;
+      directive_title: string;
+      failing_test_payload?: Record<string, unknown>;
+      mechanism_code: string;
+      norm_code: string;
+      norm_title: string;
+      passing_test_payload?: Record<string, unknown>;
+      rule_id: string;
+      starlark_source: string;
     };
     DocVsCodeAuditRequest: {
       code_rule_summary: string;
@@ -740,6 +799,27 @@ export interface components {
       tag: string;
       tool_name: string;
     };
+    EvolveBusinessPackWhatIfRequest: {
+      active_run_lock_ids?: (string)[];
+      actor_role?: string;
+      modified_norms?: (string)[];
+      modified_workflows?: (string)[];
+      pack_slug: string;
+      previous_version?: string;
+      subscribed_workspaces?: (Record<string, unknown>)[];
+      target_version?: string;
+    };
+    EvolveBusinessPackWhatIfResponse: {
+      active_run_locks_preserved: boolean;
+      breaking_changes_detected: boolean;
+      impacted_workflows_count: number;
+      impacted_workspaces_count: number;
+      pack_slug: string;
+      previous_version: string;
+      target_version: string;
+      untouched_run_lock_ids: (string)[];
+      workspace_impacts: (components["schemas"]["WhatIfWorkspaceImpactItemResponse"])[];
+    };
     ExceptionWaiverResponse: {
       approved_by_role: string;
       approved_by_user_id: string;
@@ -765,6 +845,25 @@ export interface components {
       step_execution_id?: string;
       system_prompt?: string;
       user_prompt?: string;
+    };
+    ExportFromWorkspaceToPackRequest: {
+      actor_role?: string;
+      asset_kind?: "AGENT" | "WORKFLOW" | "NORM" | "STARLARK_MECHANISM";
+      asset_slug: string;
+      raw_asset_payload?: Record<string, unknown>;
+      source_workspace_key: string;
+      target_pack_slug: string;
+      target_pack_version?: string;
+    };
+    ExportFromWorkspaceToPackResponse: {
+      asset_kind: "AGENT" | "WORKFLOW" | "NORM" | "STARLARK_MECHANISM";
+      asset_slug: string;
+      promoted_uri: string;
+      sanitized_payload: Record<string, unknown>;
+      scrubbed_references_count: number;
+      source_workspace_key: string;
+      target_pack_slug: string;
+      target_pack_version: string;
     };
     ExposedMcpAgentResponse: {
       agent_slug: string;
@@ -814,6 +913,45 @@ export interface components {
     GateEvaluationsListResponse: {
       evaluations: (components["schemas"]["GateEvaluationSchemaItem"])[];
       trace_id: string;
+    };
+    GenerateAndAttachHelpRequest: {
+      actor_role?: string;
+      article_id: string;
+      article_slug: string;
+      bound_routes: (string)[];
+      faq_en: (string)[];
+      faq_fr: (string)[];
+      glossary_terms?: (string)[];
+      known_glossary_terms?: (string)[];
+      pack_slug?: string;
+      purpose_en: string;
+      purpose_fr: string;
+      related_workflows?: (string)[];
+      roles_allowed?: (string)[];
+      steps_en: (string)[];
+      steps_fr: (string)[];
+      title_en: string;
+      title_fr: string;
+      trigger_regime?: "STAGED_HUMAN_REVIEW" | "AUTONOMOUS_CONTRACT";
+      ui_component_name?: string;
+      version?: string;
+    };
+    GenerateAndAttachHelpResponse: {
+      article_id: string;
+      authority_role?: "REFERENCE";
+      bound_routes: (string)[];
+      en_cas_key: string;
+      en_sha256: string;
+      exported_git_paths: (string)[];
+      fr_cas_key: string;
+      fr_sha256: string;
+      hot_attach_elapsed_ms: number;
+      invalidated_redis_keys: (string)[];
+      pack_id: string;
+      trigger_regime: "STAGED_HUMAN_REVIEW" | "AUTONOMOUS_CONTRACT";
+      validation_en: components["schemas"]["ValidateHelpArticleResponse"];
+      validation_fr: components["schemas"]["ValidateHelpArticleResponse"];
+      version: string;
     };
     GeneratedStarlarkMechanismResponse: {
       causal_breadcrumb: string;
@@ -2445,6 +2583,22 @@ export interface components {
       status: "COMMITTED_FENCED";
       trace_id: string;
     };
+    ValidateHelpArticleRequest: {
+      extra_allowed_routes?: (string)[];
+      known_glossary_terms?: (string)[];
+      lang?: "fr" | "en";
+      markdown_text: string;
+    };
+    ValidateHelpArticleResponse: {
+      article_id: string;
+      bound_routes_valid: boolean;
+      elapsed_ms: number;
+      glossary_and_zero_secret_valid: boolean;
+      lang: "fr" | "en";
+      passed: boolean;
+      ui_components_and_sections_valid: boolean;
+      violations: (string)[];
+    };
     ValidationError: {
       ctx?: Record<string, unknown>;
       input?: unknown;
@@ -2502,6 +2656,13 @@ export interface components {
       proposed_change: string;
       trace_id?: string | null;
       transitively_affected_concepts: (string)[];
+    };
+    WhatIfWorkspaceImpactItemResponse: {
+      active_runs_count: number;
+      breaking_norms: (string)[];
+      impacted_workflows: (string)[];
+      run_locks_untouched: boolean;
+      workspace_key: string;
     };
     WizardAdvanceStepRequest: {
       actor_persona?: string;
@@ -3428,6 +3589,55 @@ export interface paths {
       };
     };
   };
+  "/api/v1/pack-builder/manifest": {
+    get: {
+      responses: {
+        200: Record<string, unknown>;
+      };
+    };
+  };
+  "/api/v1/pack-builder/processes/certify-tool": {
+    post: {
+      responses: {
+        200: components["schemas"]["CertifyPackToolResponse"];
+      };
+    };
+  };
+  "/api/v1/pack-builder/processes/create-pack": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/pack-builder/processes/evolve-what-if": {
+    post: {
+      responses: {
+        200: components["schemas"]["EvolveBusinessPackWhatIfResponse"];
+      };
+    };
+  };
+  "/api/v1/pack-builder/processes/export-from-workspace": {
+    post: {
+      responses: {
+        200: components["schemas"]["ExportFromWorkspaceToPackResponse"];
+      };
+    };
+  };
+  "/api/v1/pack-builder/processes/generate-and-attach-help": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/pack-builder/processes/validate-help-article": {
+    post: {
+      responses: {
+        200: components["schemas"]["ValidateHelpArticleResponse"];
+      };
+    };
+  };
   "/api/v1/permissions/broker/check-access": {
     post: {
       responses: {
@@ -3764,6 +3974,8 @@ export type CatalogResourceInspectionResponse = components["schemas"]["CatalogRe
 export type CatalogResourceSourceResponse = components["schemas"]["CatalogResourceSourceResponse"];
 export type CatalogUriResolveRequest = components["schemas"]["CatalogUriResolveRequest"];
 export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolveResponse"];
+export type CertifyPackToolRequest = components["schemas"]["CertifyPackToolRequest"];
+export type CertifyPackToolResponse = components["schemas"]["CertifyPackToolResponse"];
 export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchemaItem"];
 export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
 export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
@@ -3785,6 +3997,8 @@ export type ContextualHelpResolveResponse = components["schemas"]["ContextualHel
 export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
 export type ControlCenterOverviewResponse = components["schemas"]["ControlCenterOverviewResponse"];
 export type CreateAssistantThreadRequest = components["schemas"]["CreateAssistantThreadRequest"];
+export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPackRequest"];
+export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];
 export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
@@ -3796,6 +4010,7 @@ export type DeterministicGateEvaluateRequest = components["schemas"]["Determinis
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
 export type DiscoveredRemoteCapabilitySchema = components["schemas"]["DiscoveredRemoteCapabilitySchema"];
 export type DnaChainNodeSchema = components["schemas"]["DnaChainNodeSchema"];
+export type DnaChainPackSeedItemRequest = components["schemas"]["DnaChainPackSeedItemRequest"];
 export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
 export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
 export type DocumentIngestionRequest = components["schemas"]["DocumentIngestionRequest"];
@@ -3808,13 +4023,19 @@ export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["EvidenceGlossaryCitationSchemaItem"];
 export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
 export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];
+export type EvolveBusinessPackWhatIfRequest = components["schemas"]["EvolveBusinessPackWhatIfRequest"];
+export type EvolveBusinessPackWhatIfResponse = components["schemas"]["EvolveBusinessPackWhatIfResponse"];
 export type ExceptionWaiverResponse = components["schemas"]["ExceptionWaiverResponse"];
 export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
+export type ExportFromWorkspaceToPackRequest = components["schemas"]["ExportFromWorkspaceToPackRequest"];
+export type ExportFromWorkspaceToPackResponse = components["schemas"]["ExportFromWorkspaceToPackResponse"];
 export type ExposedMcpAgentResponse = components["schemas"]["ExposedMcpAgentResponse"];
 export type ExternalRebaseResponse = components["schemas"]["ExternalRebaseResponse"];
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
+export type GenerateAndAttachHelpRequest = components["schemas"]["GenerateAndAttachHelpRequest"];
+export type GenerateAndAttachHelpResponse = components["schemas"]["GenerateAndAttachHelpResponse"];
 export type GeneratedStarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
 export type GlossaryCandidateSchema = components["schemas"]["GlossaryCandidateSchema"];
 export type GovernedMcpInvokeRequest = components["schemas"]["GovernedMcpInvokeRequest"];
@@ -4003,6 +4224,8 @@ export type UserPreferencesResponse = components["schemas"]["UserPreferencesResp
 export type UserPreferencesUpdateRequest = components["schemas"]["UserPreferencesUpdateRequest"];
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
+export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
+export type ValidateHelpArticleResponse = components["schemas"]["ValidateHelpArticleResponse"];
 export type ValidationError = components["schemas"]["ValidationError"];
 export type VerifyAndFilterCitationsRequest = components["schemas"]["VerifyAndFilterCitationsRequest"];
 export type VerifyAndFilterCitationsResponse = components["schemas"]["VerifyAndFilterCitationsResponse"];
@@ -4010,6 +4233,7 @@ export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupF
 export type WelcomeSetupFirstAdminResponse = components["schemas"]["WelcomeSetupFirstAdminResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
 export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];
+export type WhatIfWorkspaceImpactItemResponse = components["schemas"]["WhatIfWorkspaceImpactItemResponse"];
 export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepRequest"];
 export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"];
 export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];

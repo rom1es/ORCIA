@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, Request
 
-from orcia_api.dependencies import get_epic2_services
+from orcia_api.dependencies import get_ontology_and_rag_services
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import (
     get_trace_id,
@@ -39,7 +39,7 @@ async def get_ontology_and_rag_state(
     request: Request,
     fixture: bool = Query(default=False, description="Use deterministic test fixture data"),
 ) -> s.OntologyAndRagStateResponse:
-    gov, rag, trip = get_epic2_services(request, fixture=fixture)
+    gov, rag, trip = get_ontology_and_rag_services(request, fixture=fixture)
     return s.OntologyAndRagStateResponse(
         concepts=[serialize_concept(c) for c in gov.concepts],
         relations=[serialize_relation(r) for r in gov.relations],
@@ -62,7 +62,7 @@ async def resolve_ontology_hierarchy(
     body: s.OntologyResolveRequest,
     fixture: bool = Query(default=False),
 ) -> s.OntologyResolveResponse:
-    gov, _, _ = get_epic2_services(request, fixture=fixture)
+    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
     snap = gov.resolve_snapshot(
         enterprise_scope_id=body.enterprise_scope_id,
         domain_scope_id=body.domain_scope_id,
@@ -95,7 +95,7 @@ async def upsert_ontology_concept(
     persona_key: str | None = Query(default=None),
 ) -> s.OntologyConceptSchemaItem:
     user = resolve_request_user(request, persona_key=persona_key)
-    gov, _, _ = get_epic2_services(request, fixture=fixture)
+    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
     candidate = OntologyConceptEntity(
         id=new_uuid7_str(),
         concept_key=body.concept_key,
@@ -141,7 +141,7 @@ async def simulate_ontology_what_if(
     body: s.WhatIfSimulationRequest,
     fixture: bool = Query(default=False),
 ) -> s.WhatIfSimulationResponse:
-    gov, _, _ = get_epic2_services(request, fixture=fixture)
+    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
     report = gov.simulate_what_if(
         concept_key=body.concept_key,
         proposed_change=body.proposed_change,
@@ -162,7 +162,7 @@ async def promote_ontology_proposal(
     persona_key: str | None = Query(default=None),
 ) -> s.OntologyPromotionProposalSchemaItem:
     user = resolve_request_user(request, persona_key=persona_key)
-    gov, _, _ = get_epic2_services(request, fixture=fixture)
+    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
     proposal = gov.promote_concept(user, proposal_key=body.proposal_key)
     return serialize_promotion(proposal)
 
@@ -178,7 +178,7 @@ async def search_hybrid_rag(
     body: s.HybridRagSearchRequest,
     fixture: bool = Query(default=False),
 ) -> s.HybridRagSearchResponse:
-    gov, rag, _ = get_epic2_services(request, fixture=fixture)
+    gov, rag, _ = get_ontology_and_rag_services(request, fixture=fixture)
     snap = gov.resolve_snapshot(workspace_scope_id=body.workspace_id)
     expanded = OntologyHierarchyResolver.expand_rag_query(body.query_text, snap)
     combined_query = " ".join((body.query_text, *expanded.expanded_terms))
@@ -233,7 +233,7 @@ async def index_db_ddl_schema(
     user = resolve_request_user(request, persona_key=persona_key)
     if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
         raise ObserverModeReadOnlyError(instance="/api/v1/ontology-rag/rag/index-db-ddl")
-    _, rag, _ = get_epic2_services(request, fixture=fixture)
+    _, rag, _ = get_ontology_and_rag_services(request, fixture=fixture)
     doc, chunks = DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
         workspace_id=body.workspace_id,
         datasource_id=body.datasource_id,
@@ -258,7 +258,7 @@ async def audit_doc_vs_code(
     body: s.DocVsCodeAuditRequest,
     fixture: bool = Query(default=False),
 ) -> s.DocVsCodeAuditResponse:
-    _, _, trip = get_epic2_services(request, fixture=fixture)
+    _, _, trip = get_ontology_and_rag_services(request, fixture=fixture)
     finding = trip.audit_doc_vs_code_divergence(
         confluence_uri=body.confluence_uri,
         git_repo_uri=body.git_repo_uri,

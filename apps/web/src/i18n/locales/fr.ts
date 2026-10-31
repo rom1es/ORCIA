@@ -1,16 +1,16 @@
 import type { TranslationDictionary } from "../types";
-import { EPIC5_FR_LABELS } from "./epic5_labels";
-import { EPIC8_FR_LABELS } from "./epic8_labels";
-import { EPIC9_FR_LABELS } from "./epic9_labels";
-import { EPIC10_FR_LABELS } from "./epic10_labels";
-import { EPIC11_FR_LABELS } from "./epic11_labels";
+import { ADMIN_AND_STUDIO_FR_LABELS } from "./admin_and_studio_labels";
+import { ASSISTANT_FR_LABELS } from "./assistant_labels";
+import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
+import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
+import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
 
 export const frDictionary: TranslationDictionary = {
-  ...EPIC5_FR_LABELS,
-  ...EPIC8_FR_LABELS,
-  ...EPIC9_FR_LABELS,
-  ...EPIC10_FR_LABELS,
-  ...EPIC11_FR_LABELS,
+  ...INBOX_AND_COCKPIT_FR_LABELS,
+  ...ADMIN_AND_STUDIO_FR_LABELS,
+  ...SHELL_AND_SEARCH_FR_LABELS,
+  ...ASSISTANT_FR_LABELS,
+  ...GOVERNANCE_AND_PACKS_FR_LABELS,
   locale: "fr",
   shell: {
     brandTitle: "ORCIA",
@@ -67,7 +67,7 @@ export const frDictionary: TranslationDictionary = {
     placeholderText: "Saisissez vos hypothèses structurantes (rédaction humaine obligatoire)...",
     submitLabel: "Signer l'ancrage humain",
     defaultSectionTitle: "Intentions & Contraintes Architecturales",
-    defaultAuthorName: "Architecte / Tech Lead",
+    defaultAuthorName: "Administrateur de la plateforme",
     defaultValue: "Isolation hexagonale stricte et contrat OpenAPI 3.1 sans dérive (0-diff).",
   },
   arbitrationTieBreak: {
@@ -81,9 +81,9 @@ export const frDictionary: TranslationDictionary = {
     justificationPlaceholder: "Justification ou orientation complémentaire (optionnel)...",
     selectOptionButtonLabel: "Choisir cette option",
     resolvedBannerPrefix: "✅ Décision d'arbitrage enregistrée dans le Blackboard",
-    defaultQuestionTitle: "Garantie de taux FX multi-devises : Taux Spot 15 min vs Taux Bloqué 48h",
+    defaultQuestionTitle: "Arbitrage d'architecture",
     defaultContextSummary:
-      "Deux options techniques et métier équivalentes détectées par l'Agent Exécuteur (FR-5, UX-DR6).",
+      "Deux options techniques et métier équivalentes détectées par l'Agent Exécuteur.",
   },
   workspaceTopology: {
     panelTitle: "Arbre d'Équipes (OrgUnit), Workspaces Multi-Sources & 5 Permissions Dissociées",
@@ -115,11 +115,11 @@ export const frDictionary: TranslationDictionary = {
   catalogExplorer: {
     panelTitle: "Catalogue Fédéré Multi-Sources, Cache CAS SHA-256 & Surcharges à 4 Niveaux",
     panelSubtitle:
-      "Résolution à la volée (< 50 ms sur cache chaud cas/<sha256>), cycle de publication gouverné et Adaptateur BMAD.",
+      "Résolution à la volée, cycle de publication gouverné et Adaptateur BMAD.",
     filterAllSchemesLabel: "Tous les schémas",
     maskedSourceBadgeLabel: "🔒 Source masquée",
     openSourceBadgeLabel: "📖 Source ouverte",
-    resolveCasButtonLabel: "Résoudre CAS (< 50 ms)",
+    resolveCasButtonLabel: "Résoudre CAS",
     casResolvedBannerPrefix: "HTTP 200 OK — Objet immuable résolu",
     promoteScopeButtonLabel: "Promouvoir la portée",
     promotedBannerPrefix: "HTTP 200 OK — Portée promue",
@@ -162,9 +162,9 @@ export const frDictionary: TranslationDictionary = {
       humanMarkdownTabLabel: "Vue Humaine (Markdown + Chunks)",
       agentSchemaTabLabel: "Vue Agent (JSON Schema Ontologie)",
       sampleHumanMarkdown:
-        "## 1. Intention Stratégique & Arbitrage Humain [✍️ ANCRE HUMAINE OBLIGATOIRE]\nIntention directrice pour **Claims Core Engine** (Ticket `PAY-142`)",
+        "## 1. Intention Stratégique & Arbitrage Humain [✍️ ANCRE HUMAINE OBLIGATOIRE]\nIntention directrice de l'artefact",
       sampleAgentJsonSchema:
-        '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique","Exemption 3DS Frictionless TRA"]}',
+        '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique"]}',
       subWorkflowLocksTitle: "Arbre récursif sub_workflow_locks épinglé dans run-lock.json",
     },
   },
@@ -227,7 +227,7 @@ export const frDictionary: TranslationDictionary = {
       sectionTitle: "Justification de sécurité & périmètre du connecteur fédéré",
       placeholderText: "Rédigez la justification humaine obligatoire (>= 30 caractères)...",
       signatureLabel: "Signature cryptographique / nominative de l'auteur humain",
-      signaturePlaceholder: "Ex: Marc (Tech Lead Checkout)",
+      signaturePlaceholder: "Ex: Administrateur",
       submitLabel: "Signer l'ancre humaine",
     },
   },
@@ -250,7 +250,7 @@ export const frDictionary: TranslationDictionary = {
     promotedBannerPrefix: "Simulation What-If exécutée pour :",
     immutableConflictBanner: "ERR_ONTOLOGY_CONFLICT (HTTP 422) : axiome parent immutable=true inviolable.",
     hybridRagTitle: "Recherche RAG Hybride (halfvec(1024) + BM25 RRF)",
-    hybridRagSearchPlaceholder: "Rechercher un concept, ticket Jira (PAY-142) ou symbole AST...",
+    hybridRagSearchPlaceholder: "Rechercher un concept, ticket ou symbole...",
     hybridRagSearchButtonLabel: "Rechercher",
     tripartiteTitle: "Graphe Tripartite Multi-Sources (Confluence <-> Jira <-> Git)",
     staleAlertsTitle: "Brique data-freshness & Alertes [STALE_WARNING]",
@@ -261,60 +261,60 @@ export const frDictionary: TranslationDictionary = {
       subtitle: "Espace de co-conception Human-Led, Agent-Accelerated",
       description:
         "Pilotez vos Workflows durables, rédigez les Ancres Humaines Obligatoires et arbitrez les matrices de décision.",
-      uriBadgeExample: "orcia://system/workflows/assistant-agent",
+      uriBadgeExample: "orcia://cockpit",
     },
     inbox: {
-      subtitle: "Boîte de Notifications Unifiée & Verrouillage Temps Réel (< 500ms)",
+      subtitle: "Boîte de Notifications Unifiée & Verrouillage Temps Réel",
       description:
         "Consultez vos Workflow Runs actifs en mode Contributeur ou Observateur et prenez en charge les étapes en attente.",
-      uriBadgeExample: "orcia://runs/active/inbox",
+      uriBadgeExample: "orcia://assistant",
     },
     catalog: {
       subtitle: "Catalogue Fédéré Multi-Sources & Cache CAS SHA-256",
       description:
         "Explorez les ressources fédérées (git://, jira://, confluence://, db://, nexus://) et les surcharges à 4 niveaux.",
-      uriBadgeExample: "git://orcia-core/skills/bmad-pack@sha256:8f4e2b",
+      uriBadgeExample: "orcia://catalog",
     },
     ontology: {
       subtitle: "Ontologie Dynamique à 4 Niveaux & Base de Connaissances RAG",
       description:
         "Gouvernez les concepts (Entreprise, Domaine, Équipe/Workspace, Run Éphémère) et résolvez les alertes [STALE_WARNING].",
-      uriBadgeExample: "confluence://ARCHI/ontology-v1@v12",
+      uriBadgeExample: "orcia://ontology",
     },
     gates: {
       subtitle: "Gates Déterministes, Agentiques Cross-Model & Permission Broker",
       description:
         "Auditez les évaluations en DAG de lentilles orthogonales et débloquez les refus 401/403 via Jira.",
-      uriBadgeExample: "jira://IAM/PERM-403",
+      uriBadgeExample: "orcia://processes",
     },
     finops: {
       subtitle: "Journal d'Audit Immuable & Coupe-Circuit Budgétaire FinOps",
       description:
         "Suivez la consommation de tokens par modèle/étape et vérifiez la lignée cryptographique run-lock.json.",
-      uriBadgeExample: "db://orcia/audit_ledger",
+      uriBadgeExample: "orcia://finops",
     },
     admin: {
       subtitle: "Centre de Pilotage Unifié des Workspaces & Unités Organisationnelles",
       description:
         "Administrez l'arbre d'équipes (OrgUnit), les Workspaces Solutions multi-sources et leurs habilitations.",
-      uriBadgeExample: "orcia://system/workspaces/topology",
+      uriBadgeExample: "orcia://spaces",
     },
     bootstrap: {
       subtitle: "Workflows Système d'Amorçage Jour 0 & Onboarding d'Équipe",
       description:
         "Initialisez l'organisation (init-organization), les Workspaces (init-workspace), les sources fédérées et les utilisateurs.",
-      uriBadgeExample: "orcia://system/bootstrap/init-workspace",
+      uriBadgeExample: "orcia://configuration",
     },
   },
   upstreamChallengeModal: {
-    modalTitle: "Challenge Amont & Simulation d'Impact What-If (UX-DR7)",
+    modalTitle: "Challenge Amont & Simulation d'Impact What-If",
     modalSubtitle:
       "Contestez une règle d'un artefact amont, inspectez le graphe d'impact aval et déclenchez un Replay ciblé Step N (0 token reconsommé en amont).",
     targetStepLabel: "Step amont ciblé",
     sectionKeyLabel: "Section / Règle contestée",
     reasonLabel: "Justification technique ou métier du Challenge (>= 10 car.)",
     reasonPlaceholder: "Expliquez l'incohérence détectée vis-à-vis de l'artefact amont...",
-    whatIfTitle: "Aperçu de Simulation d'Impact (What-If Impact Preview — AD-7)",
+    whatIfTitle: "Aperçu de Simulation d'Impact (What-If)",
     invalidatedStepsLabel: "Steps aval invalidés",
     invalidatedSectionsLabel: "Sections d'artefacts impactées",
     invalidatedAxiomsLabel: "Axiomes d'Ontologie concernés",
@@ -328,7 +328,7 @@ export const frDictionary: TranslationDictionary = {
   },
   humanGates: {
     briefing: {
-      gridTitle: "Briefing de Revue Cognitive (4 Blocs — UX-DR4)",
+      gridTitle: "Briefing de Revue Cognitive (4 Blocs)",
       block1Title: "1. Résumé Exécutif",
       block2Title: "2. Éléments Clés & Contrôle Transverse",
       block3Title: "3. Décisions Prises",
@@ -338,7 +338,7 @@ export const frDictionary: TranslationDictionary = {
       hypothesesPendingBadgeLabel: "Inspection requise (Bloc 4)",
     },
     chunkValidation: {
-      sectionListTitle: "Validation par Découpage (UX-DR5 — Zéro bouton Tout Approuver)",
+      sectionListTitle: "Validation par Découpage (Zéro bouton Tout Approuver)",
       keyboardNavHint: "Navigation clavier : Alt + ↑ / ↓",
       approveSectionLabel: "Valider la section",
       coEditSectionLabel: "Co-éditer (SHA-256)",
@@ -346,9 +346,9 @@ export const frDictionary: TranslationDictionary = {
       finalizeGateButtonLabel: "Approuver la Gate Humaine",
       pendingSectionsNotice:
         "Chaque section obligatoire et le Bloc 4 (Hypothèses Retenues) doivent être validés individuellement.",
-      guardModalTitle: "Garde-fou Anti-Rubber-Stamping (< 15 s — UX-DR10)",
+      guardModalTitle: "Garde-fou Anti-Rubber-Stamping",
       guardModalDescription:
-        "Approbation soumise en moins de 15 secondes sur un artefact > 1 000 mots. Confirmez explicitement les hypothèses retenues (fast_approval_warning: true).",
+        "Approbation soumise rapidement sur un artefact volumineux. Confirmez explicitement les hypothèses retenues (fast_approval_warning: true).",
       guardConfirmCheckboxLabel:
         "Je confirme avoir vérifié les hypothèses retenues et les sections critiques",
       guardConfirmButtonLabel: "Confirmer et enregistrer l'approbation",

@@ -7,9 +7,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from orcia_api.dependencies_epic11 import get_dna_starlark_and_glossary_service
+from orcia_api.dependencies import get_dna_starlark_and_glossary_service
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.schemas.epic11_dna_glossary import (
+from orcia_api.schemas.dna_glossary import (
     CompileStarlarkMechanismRequest,
     EvaluateStarlarkMechanismRequest,
     GeneratedStarlarkMechanismResponse,

@@ -40,7 +40,7 @@ const WIZARD_STEPS: readonly DurableWizardStepDescriptor[] = [
 
 function WizardsRouteComponent() {
   const { dictionary, locale } = useI18n();
-  const labels = dictionary.epic8SettingsHub.wizardLabels;
+  const labels = dictionary.settingsHub.wizardLabels;
   const isFr = locale === "fr";
   const {
     addOrgUnit,

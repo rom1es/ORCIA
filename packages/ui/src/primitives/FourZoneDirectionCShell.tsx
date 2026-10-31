@@ -54,6 +54,7 @@ export interface FourZoneDirectionCShellProps {
   readonly pendingDecisionsTotal: number;
   readonly viewportWidth?: number;
   readonly labels: FourZoneDirectionCShellLabels;
+  readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
   readonly onOpenWorkspaceSwitcher?: () => void;
   readonly onOpenSearchCommand?: () => void;
@@ -66,7 +67,7 @@ export interface FourZoneDirectionCShellProps {
 }
 
 /**
- * Pure helper computing whether the 340px Contextual Help Column should be open by default:
+ * Pure helper computing whether the Contextual Help Column should be open by default:
  * - Open on large screens (>= 1440px) or when pendingDecisionsTotal == 0
  * - Auto-collapsed on standard screens (< 1440px) when pendingDecisionsTotal >= 1
  */
@@ -90,6 +91,7 @@ export function FourZoneDirectionCShell({
   pendingDecisionsTotal,
   viewportWidth = 1440,
   labels,
+  disabledMenuKeys,
   onSelectMenu,
   onOpenWorkspaceSwitcher,
   onOpenSearchCommand,
@@ -295,13 +297,23 @@ export function FourZoneDirectionCShell({
             {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.map((entry) => {
               const isActive = entry.key === activeMenuKey;
               const entryLabel = labels.menuEntries[entry.key];
+              const disabledReason = disabledMenuKeys?.[entry.key];
+              const isDisabled = Boolean(disabledReason);
               return (
                 <button
                   key={entry.key}
                   type="button"
                   data-testid={`eight-menu-item-${entry.key}`}
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled ? "true" : undefined}
+                  title={disabledReason}
+                  data-disabled-reason={disabledReason}
                   aria-current={isActive ? "page" : undefined}
-                  onClick={() => onSelectMenu(entry.key, entry.route)}
+                  onClick={() => {
+                    if (!isDisabled) {
+                      onSelectMenu(entry.key, entry.route);
+                    }
+                  }}
                   className="flex items-center gap-2.5 rounded px-2.5 py-2 text-left text-xs font-medium"
                   style={{
                     backgroundColor: isActive
@@ -310,6 +322,8 @@ export function FourZoneDirectionCShell({
                     color: isActive
                       ? "var(--color-action-primary)"
                       : "var(--color-text-primary)",
+                    opacity: isDisabled ? 0.45 : 1,
+                    cursor: isDisabled ? "not-allowed" : "pointer",
                   }}
                 >
                   <span aria-hidden="true">{entry.icon}</span>
@@ -321,39 +335,41 @@ export function FourZoneDirectionCShell({
             {!railCollapsed && sidebarSecondarySlot}
           </nav>
 
-          {/* Footer active Business Pack selector */}
-          <div
-            className="mt-4 border-t pt-2"
-            style={{ borderColor: "var(--color-border-subtle)" }}
-          >
-            {!railCollapsed && (
-              <label
-                htmlFor="sidebar-pack-selector-input"
-                className="mb-1 block text-[11px] font-medium"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                {labels.packSelectorLabel}
-              </label>
-            )}
-            <select
-              id="sidebar-pack-selector-input"
-              data-testid="sidebar-pack-selector"
-              value={activePackKey}
-              onChange={(e) => onSelectPack?.(e.target.value)}
-              className="w-full rounded border px-2 py-1 font-mono text-xs"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border-subtle)",
-                color: "var(--color-text-primary)",
-              }}
+          {/* Footer active Business Pack selector (shown only when explicitly opted-in) */}
+          {Boolean(onSelectPack) && availablePacks.length > 0 && (
+            <div
+              className="mt-4 border-t pt-2"
+              style={{ borderColor: "var(--color-border-subtle)" }}
             >
-              {availablePacks.map((pack) => (
-                <option key={pack} value={pack}>
-                  {pack}
-                </option>
-              ))}
-            </select>
-          </div>
+              {!railCollapsed && (
+                <label
+                  htmlFor="sidebar-pack-selector-input"
+                  className="mb-1 block text-[11px] font-medium"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {labels.packSelectorLabel}
+                </label>
+              )}
+              <select
+                id="sidebar-pack-selector-input"
+                data-testid="sidebar-pack-selector"
+                value={activePackKey}
+                onChange={(e) => onSelectPack?.(e.target.value)}
+                className="w-full rounded border px-2 py-1 font-mono text-xs"
+                style={{
+                  backgroundColor: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border-subtle)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {availablePacks.map((pack) => (
+                  <option key={pack} value={pack}>
+                    {pack}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </aside>
 
         {/* Zone 3: Central Zone (1fr) */}

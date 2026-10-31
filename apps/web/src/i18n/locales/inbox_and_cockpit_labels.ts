@@ -9,7 +9,7 @@ import type {
   WorkspaceControlCenterLabels,
 } from "@orcia/ui";
 
-export interface Epic5DictionarySection {
+export interface InboxAndCockpitDictionarySection {
   readonly controlCenter: WorkspaceControlCenterLabels;
   readonly commandPalette: CommandPaletteModalLabels;
   readonly mobileCompanion: MobileCompanionLabels;
@@ -20,7 +20,7 @@ export interface Epic5DictionarySection {
   readonly scopedPrompt: ScopedPromptBoxLabels;
 }
 
-export const EPIC5_FR_LABELS: Epic5DictionarySection = {
+export const INBOX_AND_COCKPIT_FR_LABELS: InboxAndCockpitDictionarySection = {
   controlCenter: {
     title: "Centre de Pilotage Unifié Multi-Niveaux des Workspaces (4 Onglets Fractals)",
     scopeSelectorLabel: "Périmètre",
@@ -54,7 +54,7 @@ export const EPIC5_FR_LABELS: Epic5DictionarySection = {
     },
   },
   commandPalette: {
-    modalTitle: "Palette de Commandes Universelle & Bascule Multi-Runs (< 1 s)",
+    modalTitle: "Palette de Commandes Universelle & Bascule Multi-Runs",
     searchPlaceholder: "Rechercher un Run, Workspace, concept SKOS ou raccourci (g c, g w)...",
     closeButton: "Fermer",
     emptyResults: "Aucun résultat pour cette recherche.",
@@ -62,7 +62,7 @@ export const EPIC5_FR_LABELS: Epic5DictionarySection = {
     observerBadge: "👁️ Observateur",
   },
   mobileCompanion: {
-    companionTitle: "Interface Mobile Companion Restreinte (3 Onglets — UX-DR16)",
+    companionTitle: "Interface Mobile Companion Restreinte (3 Onglets)",
     tabInbox: "🔔 Inbox",
     tabArbitration: "💬 Arbitrage/Chat",
     tabBriefing: "📄 Briefing",
@@ -75,7 +75,7 @@ export const EPIC5_FR_LABELS: Epic5DictionarySection = {
     badgeGate: "🛡️ Gate",
     badgeStaleWarning: "🚨 Obsolète",
     approveSectionCta: "Valider la section",
-    liveRegionDefault: "Flux temps réel actif (SSE < 500 ms)",
+    liveRegionDefault: "Flux temps réel actif",
   },
   biModeLogin: {
     title: "Connexion à la Plateforme ORCIA",
@@ -91,8 +91,8 @@ export const EPIC5_FR_LABELS: Epic5DictionarySection = {
   },
   collapsibleRail: {
     railAriaLabel: "Barre latérale repliable Direction C",
-    expandRailCta: "Étendre (240px)",
-    collapseRailCta: "Mode Rail (72px)",
+    expandRailCta: "Étendre",
+    collapseRailCta: "Mode Rail",
     activePackPrefix: "Pack actif",
     actionRequiredBadgeLabel: "actions requises",
     outboxHealthyLabel: "relais nominal",
@@ -123,7 +123,7 @@ export const EPIC5_FR_LABELS: Epic5DictionarySection = {
   },
 };
 
-export const EPIC5_EN_LABELS: Epic5DictionarySection = {
+export const INBOX_AND_COCKPIT_EN_LABELS: InboxAndCockpitDictionarySection = {
   controlCenter: {
     title: "Multi-Level Unified Workspace Control Center (4 Fractal Tabs)",
     scopeSelectorLabel: "Scope",
@@ -157,7 +157,7 @@ export const EPIC5_EN_LABELS: Epic5DictionarySection = {
     },
   },
   commandPalette: {
-    modalTitle: "Universal Command Palette & Multi-Run Switcher (< 1 s)",
+    modalTitle: "Universal Command Palette & Multi-Run Switcher",
     searchPlaceholder: "Search Run, Workspace, SKOS concept, or shortcut (g c, g w)...",
     closeButton: "Close",
     emptyResults: "No matching entries found.",
@@ -165,7 +165,7 @@ export const EPIC5_EN_LABELS: Epic5DictionarySection = {
     observerBadge: "👁️ Observer",
   },
   mobileCompanion: {
-    companionTitle: "Restricted Mobile Companion Interface (3 Tabs — UX-DR16)",
+    companionTitle: "Restricted Mobile Companion Interface (3 Tabs)",
     tabInbox: "🔔 Inbox",
     tabArbitration: "💬 Arbitration/Chat",
     tabBriefing: "📄 Briefing",
@@ -178,7 +178,7 @@ export const EPIC5_EN_LABELS: Epic5DictionarySection = {
     badgeGate: "🛡️ Gate",
     badgeStaleWarning: "🚨 Obsolète",
     approveSectionCta: "Approve section",
-    liveRegionDefault: "Real-time stream active (SSE < 500 ms)",
+    liveRegionDefault: "Real-time stream active",
   },
   biModeLogin: {
     title: "Sign in to ORCIA Platform",
@@ -194,8 +194,8 @@ export const EPIC5_EN_LABELS: Epic5DictionarySection = {
   },
   collapsibleRail: {
     railAriaLabel: "Direction C collapsible sidebar rail",
-    expandRailCta: "Expand (240px)",
-    collapseRailCta: "Rail Mode (72px)",
+    expandRailCta: "Expand",
+    collapseRailCta: "Rail Mode",
     activePackPrefix: "Active pack",
     actionRequiredBadgeLabel: "actions required",
     outboxHealthyLabel: "nominal relay",

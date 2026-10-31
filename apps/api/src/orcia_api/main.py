@@ -10,37 +10,37 @@ from orcia_api.middleware.trace_and_error import (
     register_exception_handlers,
 )
 from orcia_api.routers.assistant import router as assistant_router
+from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
 from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
 from orcia_api.routers.challenge_and_replay import router as challenge_and_replay_router
 from orcia_api.routers.control_center import router as control_center_router
-from orcia_api.routers.epic9_portal import router as epic9_portal_router
-from orcia_api.routers.epic10_assistant import router as epic10_assistant_router
-from orcia_api.routers.epic11_dna_and_glossary import (
-    router as epic11_dna_and_glossary_router,
-)
-from orcia_api.routers.epic11_mcp_and_test_bench import (
-    router as epic11_mcp_and_test_bench_router,
-)
-from orcia_api.routers.epic11_pack_builder import (
-    router as epic11_pack_builder_router,
-)
-from orcia_api.routers.epic11_workspace_governance import (
-    router as epic11_workspace_governance_router,
+from orcia_api.routers.dna_and_glossary import (
+    router as dna_and_glossary_router,
 )
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
 from orcia_api.routers.inbox_and_leases import router as inbox_and_leases_router
 from orcia_api.routers.jira_and_mcp import router as jira_and_mcp_router
+from orcia_api.routers.mcp_and_test_bench import (
+    router as mcp_and_test_bench_router,
+)
 from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
 from orcia_api.routers.orchestration import router as orchestration_router
 from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
+from orcia_api.routers.pack_builder import (
+    router as pack_builder_router,
+)
 from orcia_api.routers.permission_broker import router as permission_broker_router
+from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
+from orcia_api.routers.workspace_governance import (
+    router as workspace_governance_router,
+)
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
 from orcia_core.observability.logging import configure_structlog
@@ -80,12 +80,12 @@ def create_app() -> FastAPI:
     application.include_router(blackboard_and_engine_router)
     application.include_router(challenge_and_replay_router)
     application.include_router(assistant_router)
-    application.include_router(epic9_portal_router)
-    application.include_router(epic10_assistant_router)
-    application.include_router(epic11_workspace_governance_router)
-    application.include_router(epic11_dna_and_glossary_router)
-    application.include_router(epic11_mcp_and_test_bench_router)
-    application.include_router(epic11_pack_builder_router)
+    application.include_router(portal_and_help_router)
+    application.include_router(assistant_workspace_router)
+    application.include_router(workspace_governance_router)
+    application.include_router(dna_and_glossary_router)
+    application.include_router(mcp_and_test_bench_router)
+    application.include_router(pack_builder_router)
     return application
 
 

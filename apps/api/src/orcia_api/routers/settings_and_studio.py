@@ -59,7 +59,7 @@ from orcia_core.permissions import (
 )
 from orcia_core.rag import ConnectorHubAndIngestionService
 
-EPIC8_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
+SETTINGS_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
     401: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
     403: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
@@ -73,7 +73,7 @@ EPIC8_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
 router = APIRouter(
     prefix="/api/v1",
     tags=["settings-and-studio"],
-    responses=EPIC8_PROBLEM_RESPONSES,
+    responses=SETTINGS_PROBLEM_RESPONSES,
 )
 
 

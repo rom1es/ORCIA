@@ -6,9 +6,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from orcia_api.dependencies_epic11 import get_remote_test_bench_and_mcp_service
+from orcia_api.dependencies import get_remote_test_bench_and_mcp_service
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.schemas.epic11_mcp_test_bench import (
+from orcia_api.schemas.mcp_test_bench import (
     ConfigureAgentMcpExposureRequest,
     DiscoveredRemoteCapabilitySchema,
     ExposedMcpAgentResponse,

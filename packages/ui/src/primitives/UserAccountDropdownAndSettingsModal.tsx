@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { UserSettingsModalTabs } from "./UserSettingsModalTabs";
 
 export type UiThemePreference = "light" | "dark" | "system";
 export type UiLocalePreference = "fr" | "en";
@@ -69,23 +70,29 @@ export interface UserAccountDropdownAndSettingsModalProps {
   readonly onNavigateAssistantBehavior?: (redirectUri: string) => void;
 }
 
-/**
- * Story 9.4 — UserAccountDropdown (`280px`) + UserSettingsModal (`720px × max 600px`, 4 Tabs)
- * with `0 ms` Anti-FOUC dual persistence (`localStorage` + `PATCH /api/v1/users/me/preferences`).
- */
+export const ROLE_DISPLAY_LABELS_FR: Record<string, string> = {
+  PLATFORM_ADMIN: "Administrateur de la plateforme",
+  ANALYST_PM_PO: "Product Manager / Métier",
+  ARCHITECT: "Architecte",
+  TECH_LEAD_DEV: "Tech Lead / Développeur",
+  SECURITY_COMPLIANCE: "Sécurité & Conformité",
+};
+
 export function UserAccountDropdownAndSettingsModal({
   userDisplayName,
   userEmail,
   userRole,
   initialTheme = "light",
   initialLocale = "fr",
-  initialHat = "ANALYST_PM_PO",
+  initialHat,
   initialMcpTokens = [],
   labels,
   onPreferencesSync,
   onLogout,
   onNavigateAssistantBehavior,
 }: UserAccountDropdownAndSettingsModalProps): React.ReactElement {
+  const defaultRoleKey =
+    initialHat ?? (userRole === "PLATFORM_ADMIN" ? "PLATFORM_ADMIN" : "ANALYST_PM_PO");
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<UiUserSettingsTabKey>(
@@ -93,7 +100,7 @@ export function UserAccountDropdownAndSettingsModal({
   );
   const [theme, setTheme] = useState<UiThemePreference>(initialTheme);
   const [locale, setLocale] = useState<UiLocalePreference>(initialLocale);
-  const [hat, setHat] = useState<string>(initialHat);
+  const [hat, setHat] = useState<string>(defaultRoleKey);
   const [autoOpenHelp, setAutoOpenHelp] = useState<boolean>(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [loggedOut, setLoggedOut] = useState<boolean>(false);
@@ -101,7 +108,7 @@ export function UserAccountDropdownAndSettingsModal({
 
   // Tab 4: Scoped Personal MCP Keys state
   const [mcpTargetKind, setMcpTargetKind] = useState<UiMcpTargetKind>("SPACE");
-  const [mcpTargetSlug, setMcpTargetSlug] = useState<string>("ws-claims-alpha");
+  const [mcpTargetSlug, setMcpTargetSlug] = useState<string>("");
   const [mcpExpiryDays, setMcpExpiryDays] = useState<30 | 90>(30);
   const [mcpRpmLimit, setMcpRpmLimit] = useState<number>(60);
   const [mcpTokens, setMcpTokens] = useState<readonly UiPersonalMcpTokenItem[]>(
@@ -142,7 +149,6 @@ export function UserAccountDropdownAndSettingsModal({
   };
 
   const handleOpenSettingsModal = (tab: UiUserSettingsTabKey): void => {
-    // Story 9.4 invariant: opening UserSettingsModal automatically closes UserAccountDropdown!
     setDropdownOpen(false);
     setActiveTab(tab);
     setModalOpen(true);
@@ -155,14 +161,15 @@ export function UserAccountDropdownAndSettingsModal({
   };
 
   const handleIssueMcpToken = (): void => {
+    const resolvedSlug = mcpTargetSlug.trim() || "default";
     const endpointUri =
       mcpTargetKind === "SPACE"
-        ? `/api/v1/mcp/spaces/${mcpTargetSlug}`
-        : `/api/v1/mcp/agents/${mcpTargetSlug}`;
+        ? `/api/v1/mcp/spaces/${resolvedSlug}`
+        : `/api/v1/mcp/agents/${resolvedSlug}`;
     const snippet = JSON.stringify(
       {
         mcpServers: {
-          [`orcia-${mcpTargetKind.toLowerCase()}-${mcpTargetSlug}`]: {
+          [`orcia-${mcpTargetKind.toLowerCase()}-${resolvedSlug}`]: {
             url: `https://orcia.internal${endpointUri}`,
             headers: { Authorization: "Bearer ${ORCIA_MCP_PAT}" },
           },
@@ -173,13 +180,13 @@ export function UserAccountDropdownAndSettingsModal({
     );
     const newItem: UiPersonalMcpTokenItem = {
       tokenId: `mcp-tok-${mcpTokens.length + 1}`,
-      label: `IDE MCP (${mcpTargetKind} · ${mcpTargetSlug})`,
+      label: `IDE MCP (${mcpTargetKind} · ${resolvedSlug})`,
       tokenPrefix: "pat_mcp_9a8b7c...",
       tokenSha256: "sha256_at_rest_verified_digest",
       expiresInDays: mcpExpiryDays,
       rpmLimit: mcpRpmLimit,
       targetKind: mcpTargetKind,
-      targetSlug: mcpTargetSlug,
+      targetSlug: resolvedSlug,
       mcpEndpointUri: endpointUri,
       ideJsonSnippet: snippet,
       revoked: false,
@@ -194,12 +201,14 @@ export function UserAccountDropdownAndSettingsModal({
     );
   };
 
+  const displayRoleLabel = ROLE_DISPLAY_LABELS_FR[hat] ?? hat;
+
   return (
     <div
       data-testid="user-account-control-root"
       className="relative inline-flex items-center"
     >
-      {/* TopHeaderBar Trigger Button: 👤 Login · [Casquette] */}
+      {/* TopHeaderBar Trigger Button: 👤 Nom · Rôle */}
       <button
         type="button"
         aria-label={labels.triggerAriaLabel}
@@ -209,21 +218,24 @@ export function UserAccountDropdownAndSettingsModal({
         className="px-2.5 py-1 rounded-md text-xs font-medium border border-surface-border bg-surface-secondary text-text-primary flex items-center gap-1.5"
       >
         <span>👤 {userDisplayName}</span>
-        <span className="font-mono text-[11px] text-text-secondary">
-          · [{hat}]
+        <span
+          data-testid="user-account-role-pill"
+          className="text-[11px] text-text-secondary"
+        >
+          · {displayRoleLabel}
         </span>
       </button>
 
       {loggedOut && (
         <span
           data-testid="user-logged-out-redirect-pill"
-          className="ml-2 text-xs font-mono text-text-secondary"
+          className="ml-2 text-xs text-text-secondary"
         >
-          POST /api/v1/auth/logout → /login
+          Déconnecté
         </span>
       )}
 
-      {/* UserAccountDropdown (280px) */}
+      {/* UserAccountDropdown */}
       {dropdownOpen && (
         <div
           role="menu"
@@ -234,11 +246,11 @@ export function UserAccountDropdownAndSettingsModal({
           <div className="border-b border-surface-border pb-2">
             <div className="font-semibold">{userDisplayName}</div>
             <div className="text-[11px] text-text-secondary">
-              {userEmail} · {userRole}
+              {userEmail} · {ROLE_DISPLAY_LABELS_FR[userRole] ?? userRole}
             </div>
           </div>
 
-          {/* Business Hat Selector */}
+          {/* Role Selector */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-text-secondary">{labels.hatSelectorLabel}</span>
             <select
@@ -252,14 +264,15 @@ export function UserAccountDropdownAndSettingsModal({
               }}
               className="rounded border border-surface-border bg-surface-primary px-1.5 py-0.5 text-xs"
             >
-              <option value="ANALYST_PM_PO">ANALYST_PM_PO</option>
-              <option value="ARCHITECT">ARCHITECT</option>
-              <option value="TECH_LEAD_DEV">TECH_LEAD_DEV</option>
-              <option value="SECURITY_COMPLIANCE">SECURITY_COMPLIANCE</option>
+              <option value="PLATFORM_ADMIN">Administrateur de la plateforme</option>
+              <option value="ANALYST_PM_PO">Product Manager / Métier</option>
+              <option value="ARCHITECT">Architecte</option>
+              <option value="TECH_LEAD_DEV">Tech Lead / Développeur</option>
+              <option value="SECURITY_COMPLIANCE">Sécurité &amp; Conformité</option>
             </select>
           </div>
 
-          {/* 1-Click Theme & Language Switches (0 ms Anti-FOUC localStorage + API PATCH) */}
+          {/* 1-Click Theme & Language Switches */}
           <div className="flex items-center justify-between gap-2">
             <span>{labels.themeQuickToggleLabel}</span>
             <button
@@ -319,7 +332,7 @@ export function UserAccountDropdownAndSettingsModal({
         </div>
       )}
 
-      {/* UserSettingsModal (720px × max 600px, 4 Tabs) */}
+      {/* UserSettingsModal */}
       {modalOpen && (
         <div
           role="dialog"
@@ -346,272 +359,58 @@ export function UserAccountDropdownAndSettingsModal({
               data-testid="user-settings-tabs"
               className="px-4 pt-2 border-b border-surface-border flex items-center gap-2 text-xs"
             >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "PREFERENCES_DISPLAY"}
-                data-testid="user-settings-tab-PREFERENCES_DISPLAY"
-                onClick={() => setActiveTab("PREFERENCES_DISPLAY")}
-                className={`px-3 py-1.5 rounded-t border-b-2 ${
-                  activeTab === "PREFERENCES_DISPLAY"
-                    ? "border-brand-primary font-semibold text-text-primary"
-                    : "border-transparent text-text-secondary"
-                }`}
-              >
-                {labels.tab1PreferencesTitle}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "PROFILE_SECURITY"}
-                data-testid="user-settings-tab-PROFILE_SECURITY"
-                onClick={() => setActiveTab("PROFILE_SECURITY")}
-                className={`px-3 py-1.5 rounded-t border-b-2 ${
-                  activeTab === "PROFILE_SECURITY"
-                    ? "border-brand-primary font-semibold text-text-primary"
-                    : "border-transparent text-text-secondary"
-                }`}
-              >
-                {labels.tab2SecurityTitle}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "PASSTHROUGH_SOURCES"}
-                data-testid="user-settings-tab-PASSTHROUGH_SOURCES"
-                onClick={() => setActiveTab("PASSTHROUGH_SOURCES")}
-                className={`px-3 py-1.5 rounded-t border-b-2 ${
-                  activeTab === "PASSTHROUGH_SOURCES"
-                    ? "border-brand-primary font-semibold text-text-primary"
-                    : "border-transparent text-text-secondary"
-                }`}
-              >
-                {labels.tab3PassthroughTitle}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "IDE_MCP_KEYS"}
-                data-testid="user-settings-tab-IDE_MCP_KEYS"
-                onClick={() => setActiveTab("IDE_MCP_KEYS")}
-                className={`px-3 py-1.5 rounded-t border-b-2 ${
-                  activeTab === "IDE_MCP_KEYS"
-                    ? "border-brand-primary font-semibold text-text-primary"
-                    : "border-transparent text-text-secondary"
-                }`}
-              >
-                {labels.tab4McpKeysTitle}
-              </button>
+              {(
+                [
+                  ["PREFERENCES_DISPLAY", labels.tab1PreferencesTitle],
+                  ["PROFILE_SECURITY", labels.tab2SecurityTitle],
+                  ["PASSTHROUGH_SOURCES", labels.tab3PassthroughTitle],
+                  ["IDE_MCP_KEYS", labels.tab4McpKeysTitle],
+                ] as const
+              ).map(([tabKey, tabLabel]) => (
+                <button
+                  key={tabKey}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tabKey}
+                  data-testid={`user-settings-tab-${tabKey}`}
+                  onClick={() => setActiveTab(tabKey)}
+                  className={`px-3 py-1.5 rounded-t border-b-2 ${
+                    activeTab === tabKey
+                      ? "border-brand-primary font-semibold text-text-primary"
+                      : "border-transparent text-text-secondary"
+                  }`}
+                >
+                  {tabLabel}
+                </button>
+              ))}
             </div>
 
-            {/* Tab Panels */}
-            <div className="flex-1 overflow-y-auto p-4 text-xs space-y-3">
-              {activeTab === "PREFERENCES_DISPLAY" && (
-                <div
-                  data-testid="user-settings-panel-PREFERENCES_DISPLAY"
-                  className="space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>Ouverture automatique de l&apos;Aide ❓</span>
-                    <input
-                      type="checkbox"
-                      checked={autoOpenHelp}
-                      onChange={(e) => {
-                        setAutoOpenHelp(e.target.checked);
-                        onPreferencesSync?.({
-                          autoOpenContextualHelp: e.target.checked,
-                        });
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Notifications 🔔 actives</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationsEnabled}
-                      onChange={(e) => {
-                        setNotificationsEnabled(e.target.checked);
-                        onPreferencesSync?.({
-                          notificationsEnabled: e.target.checked,
-                        });
-                      }}
-                    />
-                  </div>
-                  {/* Redirect link to Mon Assistant Layer 5 without duplicating prompt textarea */}
-                  <div className="pt-2 border-t border-surface-border">
-                    <button
-                      type="button"
-                      data-testid="user-settings-assistant-redirect-link"
-                      onClick={() =>
-                        onNavigateAssistantBehavior?.("/assistant?modal=settings")
-                      }
-                      className="text-brand-primary font-medium hover:underline"
-                    >
-                      {labels.customizeAssistantRedirectCta}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "PROFILE_SECURITY" && (
-                <div
-                  data-testid="user-settings-panel-PROFILE_SECURITY"
-                  className="space-y-2"
-                >
-                  <div className="font-semibold">
-                    Argon2id Local Password &amp; MFA TOTP (AD-6)
-                  </div>
-                  <p className="text-text-secondary">
-                    Identité : {userEmail} ({userRole})
-                  </p>
-                </div>
-              )}
-
-              {activeTab === "PASSTHROUGH_SOURCES" && (
-                <div
-                  data-testid="user-settings-panel-PASSTHROUGH_SOURCES"
-                  className="space-y-2"
-                >
-                  <div className="font-semibold">
-                    Jetons personnels Passthrough AES-256-GCM (Git / Jira / Confluence / Notion)
-                  </div>
-                  <button
-                    type="button"
-                    data-testid="passthrough-test-token-btn"
-                    onClick={() => setPassthroughTested(true)}
-                    className="px-2.5 py-1 rounded bg-brand-primary text-surface-elevated font-medium"
-                  >
-                    {labels.testPassthroughTokenCta}
-                  </button>
-                  {passthroughTested && (
-                    <span
-                      data-testid="passthrough-test-ok-badge"
-                      className="ml-2 text-status-success font-mono"
-                    >
-                      ✅ Connectivité vérifiée (&lt; 5 s)
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "IDE_MCP_KEYS" && (
-                <div
-                  data-testid="user-settings-panel-IDE_MCP_KEYS"
-                  className="space-y-3"
-                >
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="flex flex-col gap-1">
-                      <span className="text-text-secondary">Cible MCP</span>
-                      <select
-                        data-testid="mcp-target-kind-select"
-                        value={mcpTargetKind}
-                        onChange={(e) =>
-                          setMcpTargetKind(e.target.value as UiMcpTargetKind)
-                        }
-                        className="rounded border border-surface-border bg-surface-primary px-2 py-1"
-                      >
-                        <option value="SPACE">{labels.targetWholeSpaceLabel}</option>
-                        <option value="AGENT">{labels.targetSingleAgentLabel}</option>
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-1">
-                      <span className="text-text-secondary">Slug (Espace ou Agent)</span>
-                      <input
-                        type="text"
-                        data-testid="mcp-target-slug-input"
-                        value={mcpTargetSlug}
-                        onChange={(e) => setMcpTargetSlug(e.target.value)}
-                        className="rounded border border-surface-border bg-surface-primary px-2 py-1 font-mono"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1">
-                      <span className="text-text-secondary">Expiration obligatoire</span>
-                      <select
-                        data-testid="mcp-expiry-days-select"
-                        value={mcpExpiryDays}
-                        onChange={(e) =>
-                          setMcpExpiryDays(Number(e.target.value) as 30 | 90)
-                        }
-                        className="rounded border border-surface-border bg-surface-primary px-2 py-1"
-                      >
-                        <option value={30}>30 jours</option>
-                        <option value={90}>90 jours</option>
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-1">
-                      <span className="text-text-secondary">Plafond RPM</span>
-                      <input
-                        type="number"
-                        data-testid="mcp-rpm-limit-input"
-                        value={mcpRpmLimit}
-                        onChange={(e) => setMcpRpmLimit(Number(e.target.value))}
-                        className="rounded border border-surface-border bg-surface-primary px-2 py-1 font-mono"
-                      />
-                    </label>
-                  </div>
-
-                  <button
-                    type="button"
-                    data-testid="mcp-generate-token-btn"
-                    onClick={handleIssueMcpToken}
-                    className="px-3 py-1.5 rounded bg-brand-primary text-surface-elevated font-medium"
-                  >
-                    {labels.generateMcpTokenCta}
-                  </button>
-
-                  {lastIssuedPlaintext !== null && (
-                    <div
-                      data-testid="mcp-issued-plaintext-banner"
-                      className="p-2 rounded border border-surface-border bg-surface-secondary font-mono text-[11px]"
-                    >
-                      Jeton unique (SHA-256 en base) : {lastIssuedPlaintext}
-                    </div>
-                  )}
-
-                  <div data-testid="mcp-tokens-list" className="space-y-2">
-                    {mcpTokens.map((tok) => (
-                      <div
-                        key={tok.tokenId}
-                        data-testid={`mcp-token-row-${tok.tokenId}`}
-                        className="p-2.5 rounded border border-surface-border bg-surface-primary space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold">
-                            {tok.label} · {tok.mcpEndpointUri}
-                          </span>
-                          {tok.revoked ? (
-                            <span
-                              data-testid={`mcp-token-revoked-badge-${tok.tokenId}`}
-                              className="text-status-error font-mono text-[11px]"
-                            >
-                              Révoqué (&lt; 10 ms Redis)
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              data-testid={`mcp-revoke-btn-${tok.tokenId}`}
-                              onClick={() => handleRevokeMcpToken(tok.tokenId)}
-                              className="px-2 py-0.5 rounded border border-surface-border text-status-error text-[11px]"
-                            >
-                              {labels.revokeMcpTokenCta}
-                            </button>
-                          )}
-                        </div>
-                        <div className="text-[10px] text-text-secondary">
-                          {labels.ideJsonReadyTitle} (VS Code / Cursor / Claude Code / Antigravity / JetBrains)
-                        </div>
-                        <pre
-                          data-testid={`mcp-ide-snippet-${tok.tokenId}`}
-                          className="p-2 rounded bg-surface-secondary font-mono text-[10px] overflow-x-auto"
-                        >
-                          {tok.ideJsonSnippet}
-                        </pre>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <UserSettingsModalTabs
+              activeTab={activeTab}
+              userEmail={userEmail}
+              userRole={userRole}
+              autoOpenHelp={autoOpenHelp}
+              notificationsEnabled={notificationsEnabled}
+              passthroughTested={passthroughTested}
+              mcpTargetKind={mcpTargetKind}
+              mcpTargetSlug={mcpTargetSlug}
+              mcpExpiryDays={mcpExpiryDays}
+              mcpRpmLimit={mcpRpmLimit}
+              mcpTokens={mcpTokens}
+              lastIssuedPlaintext={lastIssuedPlaintext}
+              labels={labels}
+              onChangeAutoOpenHelp={setAutoOpenHelp}
+              onChangeNotificationsEnabled={setNotificationsEnabled}
+              onPreferencesSync={onPreferencesSync}
+              onNavigateAssistantBehavior={onNavigateAssistantBehavior}
+              onTestPassthrough={() => setPassthroughTested(true)}
+              onChangeMcpTargetKind={setMcpTargetKind}
+              onChangeMcpTargetSlug={setMcpTargetSlug}
+              onChangeMcpExpiryDays={setMcpExpiryDays}
+              onChangeMcpRpmLimit={setMcpRpmLimit}
+              onIssueMcpToken={handleIssueMcpToken}
+              onRevokeMcpToken={handleRevokeMcpToken}
+            />
           </div>
         </div>
       )}

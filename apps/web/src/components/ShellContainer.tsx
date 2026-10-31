@@ -8,7 +8,6 @@ import {
   type UiContextualHelpArticleView,
   type UiHumanProfileBadge,
   type UiModuleKey,
-  type UiShellModuleItem,
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useI18n } from "../i18n";
@@ -71,7 +70,7 @@ const DEFAULT_SEARCH_HITS: readonly TopSearchHitItem[] = [
   {
     itemId: "hit-assistant",
     family: "FOLDERS_DISCUSSIONS",
-    title: "Mon Assistant (3 Vitesses & Citations [S1])",
+    title: "Mon Assistant",
     snippet: "Interrogez vos sources avec citations déterministes [S1] / [G1] / [O1].",
     workspaceId: "scope-global",
     screenRoute: "/assistant",
@@ -86,8 +85,8 @@ const DEFAULT_SEARCH_HITS: readonly TopSearchHitItem[] = [
   {
     itemId: "hit-spaces",
     family: "ONTOLOGY_GLOSSARY",
-    title: "Mes Espaces (5 Sous-Onglets & Chaîne ADN Starlark)",
-    snippet: "Gérez vos sources, livrables, dérogations V1 et règles métiers Starlark.",
+    title: "Mes Espaces",
+    snippet: "Gérez vos sources, livrables, dérogations et règles métiers Starlark.",
     workspaceId: "scope-global",
     screenRoute: "/workspaces",
     deepLinkUri: "/workspaces",
@@ -109,13 +108,24 @@ function InnerShellContainer({
 }) {
   const { locale, dictionary, toggleLocale } = useI18n();
   const { pathname, navigateTo } = useOrciaNavigation();
-  const { scopes, workspaces, runs, packs } = usePlatformSetup();
+  const {
+    platformAdmin,
+    scopes,
+    workspaces,
+    llmTiers,
+    runs,
+    createPlatformAdmin,
+  } = usePlatformSetup();
   const [activeScopeId, setActiveScopeId] = useState("scope-global");
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
   const [selectedMenuKeyOverride, setSelectedMenuKeyOverride] =
     useState<EightFixedMenuKey | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
-  const [activePackKey, setActivePackKey] = useState<string>("orcia-pack-sdlc@1.0.0");
+
+  // First-boot Platform Administrator setup modal state (starts 100% empty)
+  const [adminFullName, setAdminFullName] = useState<string>("");
+  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminPassword, setAdminPassword] = useState<string>("");
 
   useEffect(() => {
     setSelectedModuleOverride(null);
@@ -139,22 +149,9 @@ function InnerShellContainer({
 
   const effectiveProfile: UiHumanProfileBadge = {
     ...DEFAULT_HUMAN_PROFILE,
+    displayName: platformAdmin?.displayName ?? DEFAULT_HUMAN_PROFILE.displayName,
     accessMode: selectedScope.accessMode,
   };
-
-  const hasWorkspaces = workspaces.length > 0;
-  const visibilityMap = evaluateScopeModuleVisibility(
-    effectiveProfile.role ?? "PLATFORM_ADMIN",
-    selectedScope.level,
-    hasWorkspaces,
-  );
-
-  const effectiveModules: UiShellModuleItem[] = DEFAULT_SHELL_MODULES.map((mod) => ({
-    ...mod,
-    contributorBadgeCount: 0,
-    hasStaleWarning: false,
-    enabled: visibilityMap[mod.key],
-  }));
 
   const safeModuleKey: UiModuleKey = activeModuleKey;
 
@@ -172,11 +169,33 @@ function InnerShellContainer({
   const activeWorkspaceName =
     workspaces[0]?.name ?? selectedScope.name ?? "Plateforme Globale ORCIA";
 
-  const availablePackKeys = [
-    "orcia-pack-sdlc@1.0.0",
-    "orcia-pack-builder@1.0.0",
-    ...packs.map((p) => `${p.packKey}@${p.version}`),
-  ];
+  const isFr = locale === "fr";
+  const disabledMenuKeys: Partial<Record<EightFixedMenuKey, string>> = {
+    ...(llmTiers.length === 0
+      ? {
+          assistant: isFr
+            ? "Configurez au moins un modèle IA dans Configuration pour activer Mon Assistant."
+            : "Configure at least one AI model in Configuration to enable My Assistant.",
+          agents: isFr
+            ? "Configurez un modèle IA ou activez un Pack dans Configuration pour déverrouiller Mes Agents."
+            : "Configure an AI model or enable a Pack in Configuration to unlock My Agents.",
+        }
+      : {}),
+    ...(workspaces.length === 0 || llmTiers.length === 0
+      ? {
+          processes: isFr
+            ? "Créez un Espace de Travail et configurez un modèle IA pour activer Mes Processus."
+            : "Create a Workspace and configure an AI model to enable My Processes.",
+        }
+      : {}),
+    ...(workspaces.length === 0 && llmTiers.length === 0
+      ? {
+          finops: isFr
+            ? "Configurez un modèle IA ou créez un Espace de Travail pour consulter le suivi FinOps."
+            : "Configure an AI model or create a Workspace to view FinOps tracking.",
+        }
+      : {}),
+  };
 
   const contextualHelpArticle: UiContextualHelpArticleView = {
     resourceId: `help-${activeMenuKey}`,
@@ -185,56 +204,31 @@ function InnerShellContainer({
     version: "1.0.0",
     lang: locale,
     layer: "PACK",
-    packName: activePackKey,
+    packName: "orcia-core",
     boundRoutes: [pathname ?? "/cockpit"],
     summaryWhatFor: dictionary.modulePages[safeModuleKey].description,
     stepByStepItems: [
-      "1. Sélectionnez votre Espace actif dans la barre supérieure (52px).",
+      "1. Sélectionnez votre Espace actif dans la barre supérieure.",
       "2. Utilisez la recherche fédérée ⌘K ou Mon Assistant pour interroger vos sources.",
       "3. Validez les décisions en attente ou lancez un processus gouverné.",
     ],
-    keyTermsItems: ["Ancrage Humain Violet", "Action Staged (AD-3)", "Chaîne Causale ADN"],
-    faqItems: ["Comment personnaliser Mon Assistant ? → Cliquez sur ⚙️ Réglages de l'assistant."],
-    casKey: "cas/help_ contextual_v1",
+    keyTermsItems: ["Ancrage Humain Violet", "Action Staged", "Chaîne Causale ADN"],
+    faqItems: ["Comment personnaliser Mon Assistant ? → Cliquez sur ⚙ Réglages de l'assistant."],
+    casKey: "cas/help_contextual_v1",
     sha256: "sha256_contextual_help_v1",
     previousVersion: "0.9.0",
   };
 
-  const sidebarModuleShortcuts = (
-    <div
-      className="mt-2 border-t pt-2 flex flex-col gap-1"
-      style={{ borderColor: "var(--color-border-subtle)" }}
-    >
-      {effectiveModules
-        .filter((m) => m.enabled)
-        .map((mod) => {
-          const isCurrent = mod.key === safeModuleKey;
-          return (
-            <button
-              key={mod.key}
-              type="button"
-              data-testid={`sidebar-nav-item-${mod.key}`}
-              aria-current={isCurrent ? "page" : undefined}
-              onClick={() => {
-                setSelectedModuleOverride(mod.key);
-                dispatchNavigation(mod.route);
-              }}
-              className="flex items-center justify-between rounded px-2 py-1 text-left text-[11px]"
-              style={{
-                backgroundColor: isCurrent
-                  ? "var(--color-action-primary-subtle)"
-                  : "transparent",
-                color: isCurrent
-                  ? "var(--color-action-primary)"
-                  : "var(--color-text-secondary)",
-              }}
-            >
-              <span>{dictionary.shell.modules[mod.key]}</span>
-            </button>
-          );
-        })}
-    </div>
-  );
+  const handleFirstBootAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminFullName.trim() || !adminEmail.trim()) {
+      return;
+    }
+    createPlatformAdmin({
+      displayName: adminFullName.trim(),
+      email: adminEmail.trim(),
+    });
+  };
 
   return (
     <ShellNavigationContext.Provider
@@ -248,12 +242,13 @@ function InnerShellContainer({
       <FourZoneDirectionCShell
         activeMenuKey={activeMenuKey}
         activeWorkspaceName={activeWorkspaceName}
-        activePackKey={activePackKey}
-        availablePacks={Array.from(new Set(availablePackKeys))}
+        activePackKey=""
+        availablePacks={[]}
         userDisplayName={effectiveProfile.displayName}
-        userHatLabel={effectiveProfile.archetypeKey}
+        userHatLabel="Administrateur de la plateforme"
         pendingDecisionsTotal={runs.length}
         labels={dictionary.fourZoneShell}
+        disabledMenuKeys={disabledMenuKeys}
         onSelectMenu={(menuKey) => {
           const mapped = mapEightMenuKeyToModule(menuKey);
           setSelectedMenuKeyOverride(menuKey);
@@ -270,43 +265,26 @@ function InnerShellContainer({
           }
         }}
         onOpenSearchCommand={() => setSearchModalOpen(true)}
-        onSelectPack={(nextPack) => setActivePackKey(nextPack)}
         headerUserControl={
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              data-testid="shell-locale-toggle"
-              onClick={toggleLocale}
-              className="rounded border px-2 py-1 text-xs font-medium"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border-subtle)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              {dictionary.userAccountAndSettings.localeQuickToggleLabel} ({locale.toUpperCase()})
-            </button>
-            <UserAccountDropdownAndSettingsModal
-              userDisplayName={effectiveProfile.displayName}
-              userEmail="operateur@orcia.io"
-              userRole={effectiveProfile.role ?? "PLATFORM_ADMIN"}
-              initialLocale={locale}
-              labels={dictionary.userAccountAndSettings}
-              onPreferencesSync={(patch) => {
-                if (patch.locale && patch.locale !== locale) {
-                  toggleLocale();
-                }
-              }}
-              onNavigateAssistantBehavior={(uri) => dispatchNavigation(uri)}
-            />
-          </div>
+          <UserAccountDropdownAndSettingsModal
+            userDisplayName={effectiveProfile.displayName}
+            userEmail={platformAdmin?.email ?? ""}
+            userRole={effectiveProfile.role ?? "PLATFORM_ADMIN"}
+            initialLocale={locale}
+            labels={dictionary.userAccountAndSettings}
+            onPreferencesSync={(patch) => {
+              if (patch.locale && patch.locale !== locale) {
+                toggleLocale();
+              }
+            }}
+            onNavigateAssistantBehavior={(uri) => dispatchNavigation(uri)}
+          />
         }
-        sidebarSecondarySlot={sidebarModuleShortcuts}
         helpColumnContent={
           <ContextualHelpColumnAndCenter
             mode="COLUMN_340PX"
             route={pathname ?? "/cockpit"}
-            pack={activePackKey}
+            pack="orcia-core"
             redisCacheKey={`help:route:${pathname ?? "/cockpit"}:core:${locale}`}
             mergedLayers={["BASE", "PACK", "WORKSPACE"]}
             article={contextualHelpArticle}
@@ -314,15 +292,143 @@ function InnerShellContainer({
             isAdmin={true}
             labels={dictionary.contextualHelpHybrid}
             onAskAssistantOnScreen={() => {
-              setSelectedMenuKeyOverride("assistant");
-              setSelectedModuleOverride("inbox");
-              dispatchNavigation("/assistant");
+              if (!disabledMenuKeys.assistant) {
+                setSelectedMenuKeyOverride("assistant");
+                setSelectedModuleOverride("inbox");
+                dispatchNavigation("/assistant");
+              }
             }}
           />
         }
       >
         {children}
       </FourZoneDirectionCShell>
+
+      {/* Modale d'amorçage au 1er démarrage : Création du compte Administrateur de la plateforme */}
+      {platformAdmin === null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="first-boot-admin-modal-title"
+          data-testid="first-boot-admin-setup-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.45)" }}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border p-6 shadow-xl space-y-4"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              borderColor: "var(--color-border-subtle)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            <div>
+              <span
+                className="inline-block rounded px-2 py-0.5 text-[11px] font-semibold mb-2"
+                style={{
+                  backgroundColor: "var(--color-action-primary-subtle)",
+                  color: "var(--color-action-primary)",
+                }}
+              >
+                {isFr ? "Premier démarrage · Jour 0" : "First Boot · Day 0"}
+              </span>
+              <h2 id="first-boot-admin-modal-title" className="text-base font-bold">
+                {isFr
+                  ? "Création du compte Administrateur de la plateforme"
+                  : "Create Platform Administrator Account"}
+              </h2>
+              <p className="mt-1 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                {isFr
+                  ? "Aucun compte administrateur n'est encore configuré. Initialisez le premier compte Administrateur de la plateforme pour démarrer la configuration."
+                  : "No administrator account is configured yet. Initialize the first Platform Administrator account to start configuration."}
+              </p>
+            </div>
+
+            <form onSubmit={handleFirstBootAdminSubmit} className="space-y-3 text-xs">
+              <label className="flex flex-col gap-1">
+                <span className="font-medium">
+                  {isFr ? "Nom complet" : "Full name"}
+                </span>
+                <input
+                  type="text"
+                  data-testid="first-boot-admin-name-input"
+                  value={adminFullName}
+                  onChange={(e) => setAdminFullName(e.target.value)}
+                  placeholder={isFr ? "Ex : Romain" : "e.g. Romain"}
+                  className="rounded border px-3 py-1.5"
+                  style={{
+                    backgroundColor: "var(--color-bg-canvas)",
+                    borderColor: "var(--color-border-subtle)",
+                  }}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-medium">
+                  {isFr ? "Adresse e-mail" : "Email address"}
+                </span>
+                <input
+                  type="email"
+                  data-testid="first-boot-admin-email-input"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder={isFr ? "admin@entreprise.fr" : "admin@company.com"}
+                  className="rounded border px-3 py-1.5"
+                  style={{
+                    backgroundColor: "var(--color-bg-canvas)",
+                    borderColor: "var(--color-border-subtle)",
+                  }}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-medium">
+                  {isFr ? "Mot de passe" : "Password"}
+                </span>
+                <input
+                  type="password"
+                  data-testid="first-boot-admin-password-input"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="rounded border px-3 py-1.5"
+                  style={{
+                    backgroundColor: "var(--color-bg-canvas)",
+                    borderColor: "var(--color-border-subtle)",
+                  }}
+                />
+              </label>
+
+              <div className="flex items-center justify-between pt-2">
+                <span
+                  data-testid="first-boot-admin-role-badge"
+                  className="text-[11px] font-medium"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {isFr ? "Rôle attribué : Administrateur de la plateforme" : "Assigned role: Platform Administrator"}
+                </span>
+                <button
+                  type="submit"
+                  data-testid="first-boot-admin-submit-btn"
+                  disabled={!adminFullName.trim() || !adminEmail.trim()}
+                  className="rounded px-4 py-1.5 font-semibold"
+                  style={{
+                    backgroundColor: "var(--color-action-primary)",
+                    color: "var(--color-bg-surface)",
+                    opacity: !adminFullName.trim() || !adminEmail.trim() ? 0.5 : 1,
+                    cursor:
+                      !adminFullName.trim() || !adminEmail.trim()
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {isFr ? "Créer le compte Administrateur" : "Create Administrator Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {searchModalOpen && (
         <div
@@ -339,9 +445,11 @@ function InnerShellContainer({
             }}
             onAskAssistant={() => {
               setSearchModalOpen(false);
-              setSelectedMenuKeyOverride("assistant");
-              setSelectedModuleOverride("inbox");
-              dispatchNavigation("/assistant");
+              if (!disabledMenuKeys.assistant) {
+                setSelectedMenuKeyOverride("assistant");
+                setSelectedModuleOverride("inbox");
+                dispatchNavigation("/assistant");
+              }
             }}
             onClose={() => setSearchModalOpen(false)}
           />

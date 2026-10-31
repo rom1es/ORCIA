@@ -1,9 +1,4 @@
-"""Single Composition Root & FastAPI `Depends` providers for `apps/api` (`AD-19`, `Story 3.2a`).
-
-All domain services and adapters are wired here and attached to `app.state` during application
-initialization / `lifespan`. Zero `_DEFAULT_*_SERVICE` singletons are instantiated at module
-import time inside router modules.
-"""
+"""Core Composition Root lifespan & foundational service providers (`AD-19`)."""
 
 from __future__ import annotations
 
@@ -14,7 +9,6 @@ from fastapi import FastAPI, Request
 
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
-    ProgressiveDay0AccostageService,
     SystemBootstrapWorkflowService,
     build_default_system_bootstrap_service,
 )
@@ -22,7 +16,6 @@ from orcia_core.catalog import (
     FederatedCatalogService,
     build_default_federated_catalog_service,
 )
-from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
 from orcia_core.ontology import (
     OntologyGovernanceService,
     build_empty_ontology_service,
@@ -35,22 +28,9 @@ from orcia_core.orchestration import (
     ControlCenterOverviewService,
     ResourceLeaseService,
     UnifiedNotificationAndClaimService,
-    WorkflowOrchestrationSetupService,
     WorkflowStudioAndPackService,
     build_default_orchestration_setup_service,
     register_default_step_executors,
-)
-from orcia_core.orchestration.assistant_citations_and_v5_guard import (
-    AssistantCitationAndV5GuardService,
-)
-from orcia_core.orchestration.assistant_folders_and_sharing import (
-    AssistantFoldersAndSharingService,
-)
-from orcia_core.orchestration.assistant_governance import (
-    AssistantFourLevelGovernanceService,
-)
-from orcia_core.orchestration.assistant_three_speed_router import (
-    AssistantThreeSpeedRouterService,
 )
 from orcia_core.permissions import (
     AuthAndOrganizationService,
@@ -61,16 +41,12 @@ from orcia_core.permissions import (
     build_default_auth_and_org_service,
     build_default_permission_broker_service,
 )
-from orcia_core.permissions.user_preferences_and_mcp_tokens import (
-    UserPreferencesAndMcpTokenService,
-)
 from orcia_core.rag import (
     CatalogAndBlackboardContextSourceAdapter,
     ConnectorHubAndIngestionService,
     HybridRagService,
     HybridRagVectorStoreAdapter,
     TripartiteGraphAndFreshnessService,
-    TwoSpeedFederatedSearchService,
     build_empty_rag_service,
     build_seeded_rag_service,
 )
@@ -270,70 +246,14 @@ def get_bootstrap_service(request: Request) -> SystemBootstrapWorkflowService:
     return svc
 
 
-def get_orchestration_service(request: Request) -> WorkflowOrchestrationSetupService:
-    """FastAPI `Depends` provider returning `WorkflowOrchestrationSetupService` from `app.state`."""
-    svc: WorkflowOrchestrationSetupService | None = getattr(
-        request.app.state, "orchestration_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.orchestration_service
-    assert svc is not None
-    return svc
-
-
-def get_notification_service(request: Request) -> UnifiedNotificationAndClaimService:
-    """FastAPI `Depends` provider returning `UnifiedNotificationAndClaimService` (`Story 5.1`)."""
-    svc: UnifiedNotificationAndClaimService | None = getattr(
-        request.app.state, "notification_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.notification_service
-    assert svc is not None
-    return svc
-
-
-def get_resource_lease_service(request: Request) -> ResourceLeaseService:
-    """FastAPI `Depends` provider returning `ResourceLeaseService` (`DEC-CONC-01`)."""
-    svc: ResourceLeaseService | None = getattr(request.app.state, "resource_lease_service", None)
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.resource_lease_service
-    assert svc is not None
-    return svc
-
-
-def get_control_center_service(request: Request) -> ControlCenterOverviewService:
-    """FastAPI `Depends` provider returning `ControlCenterOverviewService` (`Story 5.2`)."""
-    svc: ControlCenterOverviewService | None = getattr(
-        request.app.state, "control_center_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.control_center_service
-    assert svc is not None
-    return svc
-
-
-def get_assistant_service(request: Request) -> AssistantAgentService:
-    """FastAPI `Depends` provider returning `AssistantAgentService` (`Story 3.3`)."""
-    svc: AssistantAgentService | None = getattr(request.app.state, "assistant_service", None)
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.assistant_service
-    assert svc is not None
-    return svc
-
-
-def get_epic2_services(
+def get_ontology_and_rag_services(
     request: Request, *, fixture: bool = False
 ) -> tuple[
     OntologyGovernanceService,
     HybridRagService,
     TripartiteGraphAndFreshnessService,
 ]:
-    """Return either the empty runtime Epic 2 bundle or the deterministic test fixture bundle."""
+    """Return either the empty runtime Ontology/RAG bundle or the deterministic test fixture."""
     if fixture:
         seeded: (
             tuple[
@@ -342,12 +262,12 @@ def get_epic2_services(
                 TripartiteGraphAndFreshnessService,
             ]
             | None
-        ) = getattr(request.app.state, "epic2_seeded_bundle", None)
+        ) = getattr(request.app.state, "ontology_rag_seeded_bundle", None)
         if seeded is None:
             gov = build_seeded_ontology_service()
             rag, trip = build_seeded_rag_service()
             seeded = (gov, rag, trip)
-            request.app.state.epic2_seeded_bundle = seeded
+            request.app.state.ontology_rag_seeded_bundle = seeded
         return seeded
 
     runtime: (
@@ -357,184 +277,10 @@ def get_epic2_services(
             TripartiteGraphAndFreshnessService,
         ]
         | None
-    ) = getattr(request.app.state, "epic2_runtime_bundle", None)
+    ) = getattr(request.app.state, "ontology_rag_runtime_bundle", None)
     if runtime is None:
         gov = build_empty_ontology_service()
         rag, trip = build_empty_rag_service()
         runtime = (gov, rag, trip)
-        request.app.state.epic2_runtime_bundle = runtime
+        request.app.state.ontology_rag_runtime_bundle = runtime
     return runtime
-
-
-def get_hierarchical_rbac_service(request: Request) -> HierarchicalRbacService:
-    """FastAPI `Depends` provider returning `HierarchicalRbacService` (`Story 8.1`)."""
-    svc: HierarchicalRbacService | None = getattr(
-        request.app.state, "hierarchical_rbac_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.hierarchical_rbac_service
-    assert svc is not None
-    return svc
-
-
-def get_platform_settings_service(request: Request) -> PlatformSettingsService:
-    """FastAPI `Depends` provider returning `PlatformSettingsService` (`Story 8.3`)."""
-    svc: PlatformSettingsService | None = getattr(
-        request.app.state, "platform_settings_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.platform_settings_service
-    assert svc is not None
-    return svc
-
-
-def get_cognitive_router_service(request: Request) -> CognitiveModelRouterService:
-    """FastAPI `Depends` provider returning `CognitiveModelRouterService` (`Story 8.2`)."""
-    svc: CognitiveModelRouterService | None = getattr(
-        request.app.state, "cognitive_router_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.cognitive_router_service
-    assert svc is not None
-    return svc
-
-
-def get_connector_hub_service(request: Request) -> ConnectorHubAndIngestionService:
-    """FastAPI `Depends` provider returning `ConnectorHubAndIngestionService` (`Story 8.4`)."""
-    svc: ConnectorHubAndIngestionService | None = getattr(
-        request.app.state, "connector_hub_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.connector_hub_service
-    assert svc is not None
-    return svc
-
-
-def get_studio_and_pack_service(request: Request) -> WorkflowStudioAndPackService:
-    """FastAPI `Depends` provider returning `WorkflowStudioAndPackService` (`Story 8.5`)."""
-    svc: WorkflowStudioAndPackService | None = getattr(
-        request.app.state, "studio_and_pack_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.studio_and_pack_service
-    assert svc is not None
-    return svc
-
-
-def get_durable_wizard_service(request: Request) -> DurableOnboardingWizardService:
-    """FastAPI `Depends` provider returning `DurableOnboardingWizardService` (`Story 8.6`)."""
-    svc: DurableOnboardingWizardService | None = getattr(
-        request.app.state, "durable_wizard_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.durable_wizard_service
-    assert svc is not None
-    return svc
-
-
-def get_accostage_service(request: Request) -> ProgressiveDay0AccostageService:
-    """FastAPI `Depends` provider returning `ProgressiveDay0AccostageService` (`Story 9.2`)."""
-    svc: ProgressiveDay0AccostageService | None = getattr(
-        request.app.state, "accostage_service", None
-    )
-    if svc is None:
-        svc = ProgressiveDay0AccostageService(
-            orcia_env="local",
-            expected_bootstrap_token="orcia-day0-bootstrap-token",
-        )
-        request.app.state.accostage_service = svc
-    return svc
-
-
-def get_two_speed_search_service(request: Request) -> TwoSpeedFederatedSearchService:
-    """FastAPI `Depends` provider returning `TwoSpeedFederatedSearchService` (`Story 9.3`)."""
-    svc: TwoSpeedFederatedSearchService | None = getattr(
-        request.app.state, "two_speed_search_service", None
-    )
-    if svc is None:
-        svc = TwoSpeedFederatedSearchService()
-        request.app.state.two_speed_search_service = svc
-    return svc
-
-
-def get_user_preferences_and_mcp_token_service(
-    request: Request,
-) -> UserPreferencesAndMcpTokenService:
-    """FastAPI `Depends` provider returning `UserPreferencesAndMcpTokenService` (`Story 9.4`)."""
-    svc: UserPreferencesAndMcpTokenService | None = getattr(
-        request.app.state, "user_preferences_and_mcp_token_service", None
-    )
-    if svc is None:
-        svc = UserPreferencesAndMcpTokenService()
-        request.app.state.user_preferences_and_mcp_token_service = svc
-    return svc
-
-
-def get_contextual_help_service(request: Request) -> ContextualHelpResolutionService:
-    """FastAPI `Depends` provider returning `ContextualHelpResolutionService` (`Story 9.5`)."""
-    svc: ContextualHelpResolutionService | None = getattr(
-        request.app.state, "contextual_help_service", None
-    )
-    if svc is None:
-        svc = ContextualHelpResolutionService()
-        request.app.state.contextual_help_service = svc
-    return svc
-
-
-def get_assistant_governance_service(
-    request: Request,
-) -> AssistantFourLevelGovernanceService:
-    """FastAPI `Depends` provider returning `AssistantFourLevelGovernanceService` (`Story 10.1`)."""
-    svc: AssistantFourLevelGovernanceService | None = getattr(
-        request.app.state, "assistant_governance_service", None
-    )
-    if svc is None:
-        svc = AssistantFourLevelGovernanceService()
-        request.app.state.assistant_governance_service = svc
-    return svc
-
-
-def get_assistant_three_speed_router_service(
-    request: Request,
-) -> AssistantThreeSpeedRouterService:
-    """FastAPI `Depends` provider returning `AssistantThreeSpeedRouterService` (`Story 10.2`)."""
-    svc: AssistantThreeSpeedRouterService | None = getattr(
-        request.app.state, "assistant_three_speed_router_service", None
-    )
-    if svc is None:
-        gov = get_assistant_governance_service(request)
-        svc = AssistantThreeSpeedRouterService(governance_service=gov)
-        request.app.state.assistant_three_speed_router_service = svc
-    return svc
-
-
-def get_assistant_citation_and_v5_guard_service(
-    request: Request,
-) -> AssistantCitationAndV5GuardService:
-    """FastAPI `Depends` provider returning `AssistantCitationAndV5GuardService` (`Story 10.3`)."""
-    svc: AssistantCitationAndV5GuardService | None = getattr(
-        request.app.state, "assistant_citation_and_v5_guard_service", None
-    )
-    if svc is None:
-        svc = AssistantCitationAndV5GuardService()
-        request.app.state.assistant_citation_and_v5_guard_service = svc
-    return svc
-
-
-def get_assistant_folders_and_sharing_service(
-    request: Request,
-) -> AssistantFoldersAndSharingService:
-    """FastAPI `Depends` provider returning `AssistantFoldersAndSharingService` (`Story 10.4`)."""
-    svc: AssistantFoldersAndSharingService | None = getattr(
-        request.app.state, "assistant_folders_and_sharing_service", None
-    )
-    if svc is None:
-        svc = AssistantFoldersAndSharingService()
-        request.app.state.assistant_folders_and_sharing_service = svc
-    return svc

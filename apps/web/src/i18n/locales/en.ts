@@ -1,16 +1,16 @@
 import type { TranslationDictionary } from "../types";
-import { EPIC5_EN_LABELS } from "./epic5_labels";
-import { EPIC8_EN_LABELS } from "./epic8_labels";
-import { EPIC9_EN_LABELS } from "./epic9_labels";
-import { EPIC10_EN_LABELS } from "./epic10_labels";
-import { EPIC11_EN_LABELS } from "./epic11_labels";
+import { ADMIN_AND_STUDIO_EN_LABELS } from "./admin_and_studio_labels";
+import { ASSISTANT_EN_LABELS } from "./assistant_labels";
+import { GOVERNANCE_AND_PACKS_EN_LABELS } from "./governance_and_packs_labels";
+import { INBOX_AND_COCKPIT_EN_LABELS } from "./inbox_and_cockpit_labels";
+import { SHELL_AND_SEARCH_EN_LABELS } from "./shell_and_search_labels";
 
 export const enDictionary: TranslationDictionary = {
-  ...EPIC5_EN_LABELS,
-  ...EPIC8_EN_LABELS,
-  ...EPIC9_EN_LABELS,
-  ...EPIC10_EN_LABELS,
-  ...EPIC11_EN_LABELS,
+  ...INBOX_AND_COCKPIT_EN_LABELS,
+  ...ADMIN_AND_STUDIO_EN_LABELS,
+  ...SHELL_AND_SEARCH_EN_LABELS,
+  ...ASSISTANT_EN_LABELS,
+  ...GOVERNANCE_AND_PACKS_EN_LABELS,
   locale: "en",
   shell: {
     brandTitle: "ORCIA",
@@ -67,7 +67,7 @@ export const enDictionary: TranslationDictionary = {
     placeholderText: "Enter your foundational assumptions (mandatory human authoring)...",
     submitLabel: "Sign human anchor",
     defaultSectionTitle: "Architectural Intent & Constraints",
-    defaultAuthorName: "System Architect / Tech Lead",
+    defaultAuthorName: "Platform Administrator",
     defaultValue: "Strict hexagonal isolation and zero-drift OpenAPI 3.1 contract (0-diff).",
   },
   arbitrationTieBreak: {
@@ -81,9 +81,9 @@ export const enDictionary: TranslationDictionary = {
     justificationPlaceholder: "Optional justification or additional guidance...",
     selectOptionButtonLabel: "Select option",
     resolvedBannerPrefix: "✅ Arbitration decision recorded in Blackboard",
-    defaultQuestionTitle: "Multi-currency FX rate guarantee: 15-min Spot Rate vs 48-hr Locked Rate",
+    defaultQuestionTitle: "Architectural Arbitration",
     defaultContextSummary:
-      "Two equivalent technical and business options identified by the Executor Agent (FR-5, UX-DR6).",
+      "Two equivalent technical and business options identified by the Executor Agent.",
   },
   workspaceTopology: {
     panelTitle: "OrgUnit Team Tree, Multi-Source Workspaces & 5 Dissociated Permissions",
@@ -115,11 +115,11 @@ export const enDictionary: TranslationDictionary = {
   catalogExplorer: {
     panelTitle: "Multi-Source Federated Catalog, SHA-256 CAS Cache & 4-Layer Overrides",
     panelSubtitle:
-      "On-the-fly resolution (< 50 ms on hot cas/<sha256> cache), governed publication lifecycle, and BMAD Adapter.",
+      "On-the-fly resolution, governed publication lifecycle, and BMAD Adapter.",
     filterAllSchemesLabel: "All schemes",
     maskedSourceBadgeLabel: "🔒 Masked source",
     openSourceBadgeLabel: "📖 Open source",
-    resolveCasButtonLabel: "Resolve CAS (< 50 ms)",
+    resolveCasButtonLabel: "Resolve CAS",
     casResolvedBannerPrefix: "HTTP 200 OK — Immutable object resolved",
     promoteScopeButtonLabel: "Promote scope",
     promotedBannerPrefix: "HTTP 200 OK — Scope promoted",
@@ -162,9 +162,9 @@ export const enDictionary: TranslationDictionary = {
       humanMarkdownTabLabel: "Human View (Markdown + Chunks)",
       agentSchemaTabLabel: "Agent View (Ontology JSON Schema)",
       sampleHumanMarkdown:
-        "## 1. Strategic Intent & Human Arbitration [✍️ ANCRE HUMAINE OBLIGATOIRE]\nGuiding intent for **Claims Core Engine** (Issue `PAY-142`)",
+        "## 1. Strategic Intent & Human Arbitration [✍️ MANDATORY HUMAN ANCHOR]\nGuiding intent for the artifact",
       sampleAgentJsonSchema:
-        '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique","Exemption 3DS Frictionless TRA"]}',
+        '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Strategic Asset"]}',
       subWorkflowLocksTitle: "Recursive sub_workflow_locks tree pinned in run-lock.json",
     },
   },
@@ -227,7 +227,7 @@ export const enDictionary: TranslationDictionary = {
       sectionTitle: "Federated connector security & scope justification",
       placeholderText: "Enter mandatory human justification (>= 30 characters)...",
       signatureLabel: "Human author signature",
-      signaturePlaceholder: "e.g. Marc (Checkout Tech Lead)",
+      signaturePlaceholder: "e.g. Administrator",
       submitLabel: "Sign human anchor",
     },
   },
@@ -250,7 +250,7 @@ export const enDictionary: TranslationDictionary = {
     promotedBannerPrefix: "What-If simulation executed for:",
     immutableConflictBanner: "ERR_ONTOLOGY_CONFLICT (HTTP 422): parent axiom immutable=true cannot be overridden.",
     hybridRagTitle: "Hybrid RAG Search (halfvec(1024) + BM25 RRF)",
-    hybridRagSearchPlaceholder: "Search concept, Jira issue (PAY-142), or AST symbol...",
+    hybridRagSearchPlaceholder: "Search concept, issue, or symbol...",
     hybridRagSearchButtonLabel: "Search",
     tripartiteTitle: "Multi-Source Tripartite Graph (Confluence <-> Jira <-> Git)",
     staleAlertsTitle: "data-freshness Brick & [STALE_WARNING] Alerts",
@@ -261,60 +261,60 @@ export const enDictionary: TranslationDictionary = {
       subtitle: "Human-Led, Agent-Accelerated Co-Design Space",
       description:
         "Drive durable Workflows, author Mandatory Human Anchors, and resolve tie-break arbitration matrices.",
-      uriBadgeExample: "orcia://system/workflows/assistant-agent",
+      uriBadgeExample: "orcia://cockpit",
     },
     inbox: {
-      subtitle: "Unified Notification Inbox & Real-Time Presence Lock (< 500ms)",
+      subtitle: "Unified Notification Inbox & Real-Time Presence Lock",
       description:
         "Inspect active Workflow Runs in Contributor or Observer mode and claim pending steps.",
-      uriBadgeExample: "orcia://runs/active/inbox",
+      uriBadgeExample: "orcia://assistant",
     },
     catalog: {
       subtitle: "Multi-Source Federated Catalog & SHA-256 CAS Cache",
       description:
         "Browse federated resources (git://, jira://, confluence://, db://, nexus://) and 4-layer overrides.",
-      uriBadgeExample: "git://orcia-core/skills/bmad-pack@sha256:8f4e2b",
+      uriBadgeExample: "orcia://catalog",
     },
     ontology: {
       subtitle: "4-Level Dynamic Ontology & Hybrid RAG Knowledge Base",
       description:
         "Govern semantic concepts (Enterprise, Domain, Team/Workspace, Ephemeral Run) and resolve [STALE_WARNING] alerts.",
-      uriBadgeExample: "confluence://ARCHI/ontology-v1@v12",
+      uriBadgeExample: "orcia://ontology",
     },
     gates: {
       subtitle: "Deterministic, Cross-Model Agentic Gates & Permission Broker",
       description:
         "Audit orthogonal lens DAG evaluations and unblock 401/403 access denials via Jira.",
-      uriBadgeExample: "jira://IAM/PERM-403",
+      uriBadgeExample: "orcia://processes",
     },
     finops: {
       subtitle: "Immutable Audit Ledger & FinOps Budget Circuit Breaker",
       description:
         "Track token costs per model/step and verify cryptographic run-lock.json provenance.",
-      uriBadgeExample: "db://orcia/audit_ledger",
+      uriBadgeExample: "orcia://finops",
     },
     admin: {
       subtitle: "Unified Workspace Control Center & Organizational Units",
       description:
         "Manage the OrgUnit team tree, multi-source Solution Workspaces, and their access permissions.",
-      uriBadgeExample: "orcia://system/workspaces/topology",
+      uriBadgeExample: "orcia://spaces",
     },
     bootstrap: {
       subtitle: "Day-0 System Bootstrap Workflows & Team Onboarding",
       description:
         "Initialize the organization (init-organization), Solution Workspaces (init-workspace), federated datasources, and users.",
-      uriBadgeExample: "orcia://system/bootstrap/init-workspace",
+      uriBadgeExample: "orcia://configuration",
     },
   },
   upstreamChallengeModal: {
-    modalTitle: "Upstream Challenge & What-If Impact Simulation (UX-DR7)",
+    modalTitle: "Upstream Challenge & What-If Impact Simulation",
     modalSubtitle:
       "Challenge an upstream artifact rule, inspect the downstream impact graph, and trigger a targeted Step N Replay (0 upstream tokens re-consumed).",
     targetStepLabel: "Target upstream step",
     sectionKeyLabel: "Challenged section / rule",
     reasonLabel: "Technical or business challenge reason (>= 10 chars)",
     reasonPlaceholder: "Describe the inconsistency detected against the upstream artifact...",
-    whatIfTitle: "What-If Impact Preview (AD-7)",
+    whatIfTitle: "What-If Impact Preview",
     invalidatedStepsLabel: "Invalidated downstream steps",
     invalidatedSectionsLabel: "Impacted artifact sections",
     invalidatedAxiomsLabel: "Impacted Ontology axioms",
@@ -328,7 +328,7 @@ export const enDictionary: TranslationDictionary = {
   },
   humanGates: {
     briefing: {
-      gridTitle: "Cognitive Review Briefing (4 Blocks — UX-DR4)",
+      gridTitle: "Cognitive Review Briefing (4 Blocks)",
       block1Title: "1. Executive Summary",
       block2Title: "2. Key Elements & Transverse Check",
       block3Title: "3. Decisions Taken",
@@ -338,7 +338,7 @@ export const enDictionary: TranslationDictionary = {
       hypothesesPendingBadgeLabel: "Inspection required (Block 4)",
     },
     chunkValidation: {
-      sectionListTitle: "Chunked Validation (UX-DR5 — Zero 1-Click Approve All)",
+      sectionListTitle: "Chunked Validation (Zero 1-Click Approve All)",
       keyboardNavHint: "Keyboard navigation: Alt + ↑ / ↓",
       approveSectionLabel: "Approve section",
       coEditSectionLabel: "Co-edit (SHA-256)",
@@ -346,9 +346,9 @@ export const enDictionary: TranslationDictionary = {
       finalizeGateButtonLabel: "Approve Human Gate",
       pendingSectionsNotice:
         "Every required section and Block 4 (Retained Hypotheses) must be validated individually.",
-      guardModalTitle: "Anti-Rubber-Stamping Guard (< 15 s — UX-DR10)",
+      guardModalTitle: "Anti-Rubber-Stamping Guard",
       guardModalDescription:
-        "Approval submitted in under 15 seconds on an artifact > 1,000 words. Explicitly confirm retained hypotheses (fast_approval_warning: true).",
+        "Approval submitted rapidly on a large artifact. Explicitly confirm retained hypotheses (fast_approval_warning: true).",
       guardConfirmCheckboxLabel:
         "I confirm I have reviewed the retained hypotheses and critical sections",
       guardConfirmButtonLabel: "Confirm and record approval",

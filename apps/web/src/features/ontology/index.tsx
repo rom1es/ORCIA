@@ -154,17 +154,17 @@ export function OntologyFeaturePanel() {
             : "This center aggregates HelpArticle entries (catalog_items + cas/<sha256>) bound to your screens and Business Packs.",
           stepByStepItems: isFr
             ? [
-                "Ouvrez la colonne ❓ (340px) sur n'importe quel écran pour obtenir la fiche ciblée (< 10 ms Redis).",
-                "Utilisez le Processus 5 (generate-and-attach-help) dans Processus & Studio pour générer et rattacher à chaud (< 100 ms) de nouvelles fiches.",
+                "Ouvrez la colonne ❓ sur n'importe quel écran pour obtenir la fiche ciblée.",
+                "Utilisez le Processus 5 (generate-and-attach-help) dans Processus & Studio pour générer et rattacher à chaud de nouvelles fiches.",
               ]
             : [
-                "Open the ❓ (340px) column on any screen to get the targeted article (< 10 ms Redis).",
-                "Use Process 5 (generate-and-attach-help) in Processes & Studio to generate and hot-attach (< 100 ms) new articles.",
+                "Open the ❓ column on any screen to get the targeted article.",
+                "Use Process 5 (generate-and-attach-help) in Processes & Studio to generate and hot-attach new articles.",
               ],
           keyTermsItems: [
             "HelpArticle (REFERENCE)",
             "Fusion 4 couches (BASE -> PACK -> WORKSPACE -> USER)",
-            "Validation déterministe Palier 1 (< 5 s)",
+            "Validation déterministe",
           ],
           faqItems: [
             isFr

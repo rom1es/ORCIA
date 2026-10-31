@@ -38,8 +38,8 @@ export function GatesFeaturePanel() {
             }}
           >
             {isFr
-              ? "Les Gates déterministes, agentiques (5 lentilles) et humaines adaptatives s'affichent lors de l'exécution d'un Workflow Run. Vous pouvez configurer vos règles d'habilitation et vos workflows dans Paramètres."
-              : "Deterministic, agentic (5-lens), and adaptive human Gates are displayed during Workflow Run execution. You can configure permission rules and workflows in Settings."}
+              ? "Les Gates déterministes, agentiques et humaines adaptatives s'affichent lors de l'exécution d'un Workflow Run. Vous pouvez configurer vos règles d'habilitation et vos workflows dans Paramètres."
+              : "Deterministic, agentic, and adaptive human Gates are displayed during Workflow Run execution. You can configure permission rules and workflows in Settings."}
           </p>
         </div>
         <button
@@ -60,88 +60,45 @@ export function GatesFeaturePanel() {
         </button>
       </div>
 
-      {/* Story 11.4 — Atelier Système orcia-pack-builder (Processus 1 à 4) */}
+      {/* Atelier Système orcia-pack-builder (démarre 100 % vide) */}
       <PackBuilderProcessesStudioView
-        agents={[
-          {
-            slug: "pack-architect",
-            handle: "@pack-architect",
-            roleDescription: "Architecture du manifeste pack.yaml, casquettes et chaîne ADN N1->N2->N3.",
-          },
-          {
-            slug: "workflow-designer",
-            handle: "@workflow-designer",
-            roleDescription: "Conception des DAGs durables, Ancres Humaines Violets et Gates orthogonales.",
-          },
-          {
-            slug: "starlark-engineer",
-            handle: "@starlark-engineer",
-            roleDescription: "Compilation et certification déterministe des mécanismes Starlark Palier 1b (< 2 ms).",
-          },
-          {
-            slug: "help-curator",
-            handle: "@help-curator",
-            roleDescription: "Génération bilingue FR/EN et validation déterministe des fiches HelpArticle.",
-          },
-        ]}
-        initialHumanAnchorIntent="Pack Métier Conformité Paiements SEPA & PSD2 avec règles Starlark Palier 1b."
-        whatIfImpacts={[
-          {
-            workspaceKey: "ws-checkout-core",
-            impactedWorkflows: ["sdlc/ticket-to-tech-spec"],
-            breakingNorms: [],
-            activeRunsCount: 2,
-            runLocksUntouched: true,
-          },
-        ]}
-        certifications={[
-          {
-            toolSlug: "check_tra_threshold.star",
-            sandboxTier: "TIER_1B_STARLARK",
-            certified: true,
-            elapsedMs: 1.2,
-            certificateSha256: "cert-starlark-tra-v1",
-          },
-        ]}
+        agents={[]}
+        initialHumanAnchorIntent=""
+        whatIfImpacts={[]}
+        certifications={[]}
         labels={dictionary.packBuilderStudio}
       />
 
-      {/* Story 11.5 — Processus 5 generate-and-attach-help & Validateur validate_help_article (< 5 s) */}
+      {/* Processus 5 generate-and-attach-help (démarre 100 % vide) */}
       <HelpArticleGeneratorAndValidatorView
-        articleId="help-processes-pack-builder"
+        articleId=""
         version="1.0.0"
-        packId="orcia-pack-builder"
+        packId=""
         triggerRegime="STAGED_HUMAN_REVIEW"
-        boundRoutes={["/processes", "/spaces", "/help"]}
+        boundRoutes={[]}
         validationFr={{
-          articleId: "help-processes-pack-builder",
+          articleId: "",
           lang: "fr",
-          passed: true,
-          boundRoutesValid: true,
-          uiComponentsAndSectionsValid: true,
-          glossaryAndZeroSecretValid: true,
-          elapsedMs: 4.1,
+          passed: false,
+          boundRoutesValid: false,
+          uiComponentsAndSectionsValid: false,
+          glossaryAndZeroSecretValid: false,
+          elapsedMs: 0,
           violations: [],
         }}
         validationEn={{
-          articleId: "help-processes-pack-builder",
+          articleId: "",
           lang: "en",
-          passed: true,
-          boundRoutesValid: true,
-          uiComponentsAndSectionsValid: true,
-          glossaryAndZeroSecretValid: true,
-          elapsedMs: 3.9,
+          passed: false,
+          boundRoutesValid: false,
+          uiComponentsAndSectionsValid: false,
+          glossaryAndZeroSecretValid: false,
+          elapsedMs: 0,
           violations: [],
         }}
-        invalidatedRedisKeys={[
-          "help:route:/processes:orcia-pack-builder:fr",
-          "help:route:/processes:orcia-pack-builder:en",
-        ]}
-        exportedGitPaths={[
-          "packages/orcia-pack-builder/help/fr/help-processes-pack-builder.md",
-          "packages/orcia-pack-builder/help/en/help-processes-pack-builder.md",
-        ]}
-        hotAttachElapsedMs={14.2}
+        invalidatedRedisKeys={[]}
+        exportedGitPaths={[]}
+        hotAttachElapsedMs={0}
         labels={dictionary.helpArticleGenerator}
       />
     </div>

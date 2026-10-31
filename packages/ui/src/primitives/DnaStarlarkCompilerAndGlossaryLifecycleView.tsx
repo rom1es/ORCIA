@@ -35,7 +35,7 @@ export interface DnaStarlarkAndGlossaryLabels {
 }
 
 export interface DnaStarlarkCompilerAndGlossaryLifecycleViewProps {
-  readonly mechanism: UiCompiledStarlarkMechanism;
+  readonly mechanism?: UiCompiledStarlarkMechanism | null;
   readonly pendingQueueCandidates: readonly UiGlossaryCandidateItem[];
   readonly top3PrecheckedCandidates: readonly UiGlossaryCandidateItem[];
   readonly labels: DnaStarlarkAndGlossaryLabels;
@@ -48,7 +48,7 @@ export interface DnaStarlarkCompilerAndGlossaryLifecycleViewProps {
 export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
   DnaStarlarkCompilerAndGlossaryLifecycleViewProps
 > = ({
-  mechanism,
+  mechanism = null,
   pendingQueueCandidates,
   top3PrecheckedCandidates,
   labels,
@@ -69,20 +69,24 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--orcia-border-subtle)] pb-3">
         <div>
           <h2 className="text-base font-semibold">{labels.heading}</h2>
-          <p
-            data-testid="dna-causal-breadcrumb"
-            className="font-mono text-xs text-[var(--orcia-text-secondary)]"
-          >
-            {mechanism.causalBreadcrumb}
-          </p>
+          {mechanism && (
+            <p
+              data-testid="dna-causal-breadcrumb"
+              className="font-mono text-xs text-[var(--orcia-text-secondary)]"
+            >
+              {mechanism.causalBreadcrumb}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span
-            data-testid="starlark-verified-badge"
-            className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium"
-          >
-            {mechanism.verifiedBadgeFr}
-          </span>
+          {mechanism && (
+            <span
+              data-testid="starlark-verified-badge"
+              className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium"
+            >
+              {mechanism.verifiedBadgeFr}
+            </span>
+          )}
           <span className="rounded border border-[var(--orcia-border-subtle)] px-2 py-1 font-mono text-[11px] text-[var(--orcia-text-secondary)]">
             {labels.runtimeZeroTokenBadge}
           </span>
@@ -90,50 +94,59 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
       </header>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div
-          data-testid="starlark-compiler-panel"
-          className="space-y-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
-        >
-          <div className="flex items-center justify-between">
-            <code className="font-mono text-xs font-semibold">
-              {mechanism.scriptName}
-            </code>
-            <code className="font-mono text-[11px] text-[var(--orcia-text-secondary)]">
-              {mechanism.sha256.slice(0, 12)}
-            </code>
-          </div>
-          <p className="text-xs text-[var(--orcia-text-secondary)]">
-            {mechanism.explanationFr}
-          </p>
-          <pre
-            data-testid="starlark-code-preview"
-            className="overflow-x-auto rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 font-mono text-xs"
+        {mechanism ? (
+          <div
+            data-testid="starlark-compiler-panel"
+            className="space-y-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
           >
-            {mechanism.starlarkCode}
-          </pre>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {onCompileFromNorm && (
-              <button
-                type="button"
-                data-testid="compile-starlark-btn"
-                onClick={() => onCompileFromNorm(mechanism.ruleId)}
-                className="rounded bg-[var(--orcia-surface-primary)] px-3 py-1.5 text-xs font-medium"
-              >
-                {labels.generateStarlarkCta}
-              </button>
-            )}
-            {onSignAndActivate && (
-              <button
-                type="button"
-                data-testid="sign-activate-starlark-btn"
-                onClick={() => onSignAndActivate(mechanism.mechanismId)}
-                className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)]"
-              >
-                {labels.signAndActivateCta}
-              </button>
-            )}
+            <div className="flex items-center justify-between">
+              <code className="font-mono text-xs font-semibold">
+                {mechanism.scriptName}
+              </code>
+              <code className="font-mono text-[11px] text-[var(--orcia-text-secondary)]">
+                {mechanism.sha256.slice(0, 12)}
+              </code>
+            </div>
+            <p className="text-xs text-[var(--orcia-text-secondary)]">
+              {mechanism.explanationFr}
+            </p>
+            <pre
+              data-testid="starlark-code-preview"
+              className="overflow-x-auto rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 font-mono text-xs"
+            >
+              {mechanism.starlarkCode}
+            </pre>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {onCompileFromNorm && (
+                <button
+                  type="button"
+                  data-testid="compile-starlark-btn"
+                  onClick={() => onCompileFromNorm(mechanism.ruleId)}
+                  className="rounded bg-[var(--orcia-surface-primary)] px-3 py-1.5 text-xs font-medium"
+                >
+                  {labels.generateStarlarkCta}
+                </button>
+              )}
+              {onSignAndActivate && (
+                <button
+                  type="button"
+                  data-testid="sign-activate-starlark-btn"
+                  onClick={() => onSignAndActivate(mechanism.mechanismId)}
+                  className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)]"
+                >
+                  {labels.signAndActivateCta}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            data-testid="dna-starlark-empty-state"
+            className="flex flex-col justify-center rounded border border-dashed border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-4 text-xs text-[var(--orcia-text-secondary)]"
+          >
+            Aucun mécanisme Starlark compilé pour cet Espace. Ajoutez une norme métier pour compiler un contrôle déterministe.
+          </div>
+        )}
 
         <div className="space-y-3">
           <div

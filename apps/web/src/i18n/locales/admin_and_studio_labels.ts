@@ -1,5 +1,5 @@
-export interface Epic8DictionarySection {
-  readonly epic8SettingsHub: {
+export interface AdminAndStudioDictionarySection {
+  readonly settingsHub: {
     readonly hubTitle: string;
     readonly hubSubtitle: string;
     readonly tabs: {
@@ -62,8 +62,8 @@ export interface Epic8DictionarySection {
   };
 }
 
-export const EPIC8_FR_LABELS: Epic8DictionarySection = {
-  epic8SettingsHub: {
+export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
+  settingsHub: {
     hubTitle: "Hub de Paramétrage Post-Jour 0 & Gouvernance 6 Verbes (/settings/*)",
     hubSubtitle:
       "Administration unifiée IAM RBAC/ABAC, Connecteurs write-only (SecretStatus), Routage Cognitif Abstrait (simple/medium/complex/auto), Registre des Packs et Studio Visuel.",
@@ -128,8 +128,8 @@ export const EPIC8_FR_LABELS: Epic8DictionarySection = {
   },
 };
 
-export const EPIC8_EN_LABELS: Epic8DictionarySection = {
-  epic8SettingsHub: {
+export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
+  settingsHub: {
     hubTitle: "Post-Day-0 Settings Hub & 6-Verb Governance (/settings/*)",
     hubSubtitle:
       "Unified IAM 6-verb RBAC/ABAC, write-only Connectors (SecretStatus), Abstract Cognitive Routing (simple/medium/complex/auto), Business Pack Registry, and Visual Studio.",

@@ -66,7 +66,14 @@ export interface ConfiguredAuditEvent {
   readonly summary: string;
 }
 
+export interface ConfiguredPlatformAdmin {
+  readonly displayName: string;
+  readonly email: string;
+  readonly role: string;
+}
+
 export interface PlatformSetupContextValue {
+  readonly platformAdmin: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly rbacGrants: readonly ConfiguredRbacGrant[];
   readonly llmTiers: readonly ConfiguredLlmTierMapping[];
@@ -82,6 +89,10 @@ export interface PlatformSetupContextValue {
   readonly scopes: readonly UiScopeNode[];
   readonly isDay0Complete: boolean;
   readonly completedSetupStepsCount: number;
+  readonly createPlatformAdmin: (input: {
+    displayName: string;
+    email: string;
+  }) => void;
   readonly addOrgUnit: (input: Omit<ConfiguredOrgUnit, "id">) => void;
   readonly addRbacGrant: (input: Omit<ConfiguredRbacGrant, "id">) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
@@ -124,6 +135,7 @@ const BASE_GLOBAL_SCOPE: UiScopeNode = {
 const PlatformSetupContext = createContext<PlatformSetupContextValue | null>(null);
 
 export function PlatformSetupProvider({ children }: { children: React.ReactNode }) {
+  const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(null);
   const [orgUnits, setOrgUnits] = useState<readonly ConfiguredOrgUnit[]>([]);
   const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>([]);
   const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>([]);
@@ -146,6 +158,19 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       },
       ...prev,
     ]);
+  };
+
+  const createPlatformAdmin = (input: { displayName: string; email: string }) => {
+    const admin: ConfiguredPlatformAdmin = {
+      displayName: input.displayName.trim(),
+      email: input.email.trim(),
+      role: "PLATFORM_ADMIN",
+    };
+    setPlatformAdmin(admin);
+    recordAudit(
+      "PlatformAdminInitialized",
+      `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
+    );
   };
 
   const addOrgUnit = (input: Omit<ConfiguredOrgUnit, "id">) => {
@@ -369,12 +394,13 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     teamOverride: "—",
     workspaceOverride: `${wf.layers.filter((l) => l.enabled).length} couches actives`,
     userOverride: "—",
-    spineContractRef: "AD-21",
+    spineContractRef: "—",
   }));
 
   return (
     <PlatformSetupContext.Provider
       value={{
+        platformAdmin,
         orgUnits,
         rbacGrants,
         llmTiers,
@@ -390,6 +416,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         scopes,
         isDay0Complete,
         completedSetupStepsCount,
+        createPlatformAdmin,
         addOrgUnit,
         addRbacGrant,
         upsertLlmTier,

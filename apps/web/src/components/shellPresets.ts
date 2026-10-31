@@ -23,8 +23,8 @@ export const EMPTY_DEFAULT_SCOPES: UiScopeNode[] = [
 ];
 
 export const DEFAULT_HUMAN_PROFILE: UiHumanProfileBadge = {
-  archetypeKey: "TECH_LEAD",
-  displayName: "Administrateur / Tech Lead",
+  archetypeKey: "PLATFORM_ADMIN",
+  displayName: "Administrateur de la plateforme",
   accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
   role: "PLATFORM_ADMIN",
   orgUnitName: "",

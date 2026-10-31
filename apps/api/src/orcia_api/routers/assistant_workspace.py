@@ -83,7 +83,7 @@ from orcia_core.orchestration.assistant_three_speed_router import (
 )
 from orcia_core.permissions.models import UserIdentity
 
-router = APIRouter(prefix="/api/v1/assistant", tags=["assistant-epic10"])
+router = APIRouter(prefix="/api/v1/assistant", tags=["assistant-workspace"])
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 GovernanceServiceDep = Annotated[

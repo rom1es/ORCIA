@@ -30,7 +30,7 @@ export type SettingsSectionTab =
 
 export function SettingsHubView() {
   const { dictionary, locale } = useI18n();
-  const copy = dictionary.epic8SettingsHub;
+  const copy = dictionary.settingsHub;
   const isFr = locale === "fr";
 
   const {

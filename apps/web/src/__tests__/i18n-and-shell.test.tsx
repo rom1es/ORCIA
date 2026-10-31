@@ -131,7 +131,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(graph.edges).toHaveLength(4);
   });
 
-  it("starts 100% empty of sample data by default and displays the 0/5 Platform Onboarding Checklist", () => {
+  it("starts 100% empty of sample data by default, displays the First-Boot Platform Admin Modal, and greys out unconfigured menu entries", () => {
     render(
       <I18nProvider initialLocale="fr">
         <ShellContainer onNavigate={mockPush}>
@@ -140,24 +140,42 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </I18nProvider>,
     );
 
+    // First-boot Platform Administrator creation modal is displayed on 1st startup
+    expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
+
     // 0/5 onboarding progress at blank start
     expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("0/5");
     expect(screen.getByTestId("cockpit-no-workspace-empty-state")).toBeDefined();
 
-    // Only scope-applicable entries are visible when no Workspace exists yet
-    expect(screen.getByTestId("sidebar-nav-item-cockpit")).toBeDefined();
-    expect(screen.getByTestId("sidebar-nav-item-catalog")).toBeDefined();
-    expect(screen.getByTestId("sidebar-nav-item-admin")).toBeDefined();
-    expect(screen.getByTestId("sidebar-nav-item-bootstrap")).toBeDefined();
-    expect(screen.queryByTestId("sidebar-nav-item-inbox")).toBeNull();
-    expect(screen.queryByTestId("sidebar-nav-item-ontology")).toBeNull();
-    expect(screen.queryByTestId("sidebar-nav-item-gates")).toBeNull();
-    expect(screen.queryByTestId("sidebar-nav-item-finops")).toBeNull();
+    // Unconfigured features are greyed out (disabled) in the 8-entry sidebar
+    expect(
+      (screen.getByTestId("eight-menu-item-cockpit") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-spaces") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-configuration") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-help") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("eight-menu-item-processes") as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("eight-menu-item-agents") as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
+    ).toBe(true);
 
-    // Navigate to Catalog -> Empty state, zero sample items
-    fireEvent.click(screen.getByTestId("sidebar-nav-item-catalog"));
-    expect(screen.getByTestId("catalog-explorer-empty-state")).toBeDefined();
-    expect(screen.getByTestId("catalog-setup-guidance-card")).toBeDefined();
+    // Redundant TopHeaderBar locale toggle and sidebar pack selector are removed
+    expect(screen.queryByTestId("shell-locale-toggle")).toBeNull();
+    expect(screen.queryByTestId("sidebar-pack-selector")).toBeNull();
   });
 
   it("guides workspace creation from /workspaces and dynamically unlocks workspace-scoped modules and runs", async () => {
@@ -172,8 +190,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // Initially empty topology
+    // Initially empty topology and FinOps is disabled before workspace creation
     expect(screen.getByTestId("workspace-topology-empty-state")).toBeDefined();
+    expect(
+      (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
+    ).toBe(true);
 
     // Create a Workspace via the setup form
     fireEvent.change(screen.getByTestId("workspace-name-input"), {
@@ -181,11 +202,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
 
-    // Workspace-scoped modules are now unlocked in the sidebar!
-    expect(screen.getByTestId("sidebar-nav-item-inbox")).toBeDefined();
-    expect(screen.getByTestId("sidebar-nav-item-ontology")).toBeDefined();
-    expect(screen.getByTestId("sidebar-nav-item-gates")).toBeDefined();
-    expect(screen.getByTestId("sidebar-nav-item-finops")).toBeDefined();
+    // FinOps is now unlocked in the sidebar!
+    expect(
+      (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
+    ).toBe(false);
 
     // Navigate to /cockpit -> Onboarding progress is 1/5 and Run launcher is unlocked
     await act(async () => {
@@ -345,5 +365,75 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(helpPanels.some((el) => el.getAttribute("data-mode") === "HELP_MENU_CENTER")).toBe(
       true,
     );
+  });
+
+  it("enforces Story 12.4 UX sobriety: First-Boot Platform Admin Modal, zero fictional data (PAY-142/PSD2), zero NFR latency strings, and human-readable Rôle selector", () => {
+    const serializedFr = JSON.stringify(frDictionary);
+    const serializedEn = JSON.stringify(enDictionary);
+
+    // Zero NFR latency or pixel dimension strings in dictionaries
+    for (const forbidden of [
+      "< 500ms",
+      "< 500 ms",
+      "(0 ms)",
+      "< 30 ms",
+      "Pause 450 ms",
+      "450 ms pause",
+      "< 50 ms",
+      "< 2 ms",
+      "< 5 s",
+      "< 100 ms",
+      "< 10 ms",
+      "< 15 s",
+      "340px",
+      "420px",
+      "280px",
+      "720px",
+      "PAY-142",
+      "Administrateur / Tech Lead",
+    ]) {
+      expect(serializedFr).not.toContain(forbidden);
+      expect(serializedEn).not.toContain(forbidden);
+    }
+
+    // Role label is "Rôle" / "Role"
+    expect(frDictionary.userAccountAndSettings.hatSelectorLabel).toBe("Rôle");
+    expect(enDictionary.userAccountAndSettings.hatSelectorLabel).toBe("Role");
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={mockPush}>
+          <ModuleWorkspaceView moduleKey="inbox" />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    // Zero PAY-142 or PSD2 sample data on /assistant
+    expect(document.body.textContent ?? "").not.toContain("PAY-142");
+    expect(document.body.textContent ?? "").not.toContain("PSD2");
+    expect(document.body.textContent ?? "").not.toContain("Administrateur / Tech Lead");
+
+    // Complete First-Boot Platform Admin Modal
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Romain Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "romain@orcia.fr" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-input"), {
+      target: { value: "Secret123456!" },
+    });
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+
+    // Modal closes and header shows Romain Admin · Administrateur de la plateforme
+    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    const userTrigger = screen.getByTestId("user-account-dropdown-trigger");
+    expect(userTrigger.textContent).toContain("Romain Admin");
+    expect(userTrigger.textContent).toContain("Administrateur de la plateforme");
+
+    // Open user dropdown and check Role selector ("Rôle")
+    fireEvent.click(userTrigger);
+    const roleSelect = screen.getByTestId("dropdown-hat-selector") as HTMLSelectElement;
+    expect(roleSelect.value).toBe("PLATFORM_ADMIN");
   });
 });

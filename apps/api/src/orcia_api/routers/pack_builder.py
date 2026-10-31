@@ -6,11 +6,11 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 
-from orcia_api.dependencies_epic11 import (
+from orcia_api.dependencies import (
     get_help_generation_and_attachment_service,
     get_pack_builder_system_service,
 )
-from orcia_api.schemas.epic11_pack_builder import (
+from orcia_api.schemas.pack_builder import (
     CertifyPackToolRequest,
     CertifyPackToolResponse,
     CreateBusinessPackRequest,
@@ -34,7 +34,7 @@ from orcia_core.orchestration.pack_builder_processes import (
 )
 from orcia_pack_builder import get_pack_builder_manifest
 
-router = APIRouter(tags=["epic11-pack-builder"])
+router = APIRouter(tags=["pack-builder"])
 
 
 @router.get(

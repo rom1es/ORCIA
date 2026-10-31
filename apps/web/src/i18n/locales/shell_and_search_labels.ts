@@ -7,7 +7,7 @@ import type {
   UserAccountDropdownAndSettingsLabels,
 } from "@orcia/ui";
 
-export interface Epic9DictionarySection {
+export interface ShellAndSearchDictionarySection {
   readonly fourZoneShell: FourZoneDirectionCShellLabels;
   readonly streamlinedCockpit: StreamlinedCockpitLabels;
   readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
@@ -16,19 +16,19 @@ export interface Epic9DictionarySection {
   readonly contextualHelpHybrid: ContextualHelpColumnAndCenterLabels;
 }
 
-export const EPIC9_FR_LABELS: Epic9DictionarySection = {
+export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
   fourZoneShell: {
     workspacePrefix: "Espace",
     searchTriggerPlaceholder: "Rechercher dans cet Espace ou partout (⌘K)...",
     contextualHelpButtonLabel: "? Aide",
     notificationsButtonLabel: "🔔 Notifications",
-    notificationsDrawerTitle: "Centre de Notifications (420px)",
+    notificationsDrawerTitle: "Centre de Notifications",
     notificationsEmptyText: "Aucune notification non lue.",
     sidebarAriaLabel: "Navigation principale à 8 entrées sans numéro",
     railCollapseLabel: "Replier le rail ([)",
     railExpandLabel: "Déplier le rail ([)",
     packSelectorLabel: "Pack Métier actif",
-    helpColumnTitle: "❓ Aide Contextuelle (340px)",
+    helpColumnTitle: "❓ Aide Contextuelle",
     helpColumnExpectedTitle: "Ce qui est attendu ici",
     helpColumnExpectedBody:
       "Pilotez vos décisions prioritaires ou interrogez Mon Assistant.",
@@ -50,10 +50,10 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     quickAssistantCta: "Ouvrir Mon Assistant →",
     orientationAssistantTitle: "💬 Mon Assistant",
     orientationAssistantDesc:
-      "Interrogez vos sources avec citations [S1] en < 1,2 s.",
+      "Interrogez vos sources avec citations vérifiées [S1].",
     orientationProcessesTitle: "☍ Mes Processus",
     orientationProcessesDesc:
-      "Lancez le workflow pilote sdlc/ticket-to-tech-spec.",
+      "Configurez et lancez vos processus gouvernés.",
     orientationSpacesTitle: "📦 Mes Espaces",
     orientationSpacesDesc:
       "Gérez vos sources, livrables et glossaire métier.",
@@ -70,25 +70,25 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     openFocusReviewCta: "Ouvrir l'atelier de revue →",
     focusWorkshopBreadcrumbPrefix: "Mes Processus › Exécutions & Décisions ›",
     focusWorkshopCloseCta: "← Retour au Cockpit",
-    redisLockAcquiredPrefix: "🔒 Verrou Redis acquis :",
+    redisLockAcquiredPrefix: "🔒 Verrou de session acquis :",
   },
   progressiveAccostage: {
     bannerTitle: "Parcours d'Accostage Progressif Jour 0",
     welcomeWizardTitle: "Assistant de Bienvenue (/welcome-setup)",
-    step1AdminTitle: "Étape 1 : Premier Administrateur (LOCK TABLE users)",
+    step1AdminTitle: "Étape 1 : Administrateur de la plateforme",
     step2LlmTitle: "Étape 2 : Modèles IA Progressifs (1 Modèle → ≥ 2 Familles)",
-    step3SpaceTitle: "Étape 3 : Jalons d'Accostage 1/6",
+    step3SpaceTitle: "Étape 3 : Jalons d'Accostage",
     bootstrapTokenLabel: "Jeton d'amorçage ORCIA_BOOTSTRAP_TOKEN",
     bootstrapTokenPlaceholder: "Saisissez ORCIA_BOOTSTRAP_TOKEN...",
     bootstrapTokenDeniedBanner:
       "HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN — Jeton d'amorçage invalide",
-    createFirstAdminCta: "Créer le compte PLATFORM_ADMIN",
-    addFirstModelCta: "+ Configurer 1er modèle (Ollama / OpenAI)",
-    addSecondModelFamilyCta: "+ Ajouter 2e famille orthogonale (Claude)",
+    createFirstAdminCta: "Créer le compte Administrateur de la plateforme",
+    addFirstModelCta: "+ Configurer 1er modèle",
+    addSecondModelFamilyCta: "+ Ajouter 2e famille orthogonale",
     singleFamilyAmberWarning:
-      "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans Configuration › Modèles IA pour activer les Gates Agentiques AD-10",
+      "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans Configuration › Modèles IA pour activer les Gates Agentiques multi-modèles",
     dualFamilyAd10UnlockedBadge:
-      "✅ ≥ 2 familles orthogonales actives — Gates Agentiques AD-10 débloquées",
+      "✅ ≥ 2 familles orthogonales actives — Gates Agentiques multi-modèles débloquées",
     assistantTrialReadyBadge:
       "🚀 Mode Essai Rapide actif : Mon Assistant & Cockpit débloqués",
   },
@@ -98,8 +98,8 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     scopeScreenLabel: "📍 Cet écran",
     scopeWorkspaceLabel: "📦 Cet Espace",
     scopeAllWorkspacesLabel: "🌐 Tous mes Espaces",
-    speed1SectionTitle: "Vitesse 1 — Résultats lexicaux immédiats (< 30 ms · 0 $)",
-    speed2SectionTitle: "Vitesse 2 — Passages proches sémantiques (Pause 450 ms)",
+    speed1SectionTitle: "Vitesse 1 — Résultats lexicaux immédiats",
+    speed2SectionTitle: "Vitesse 2 — Passages proches sémantiques",
     semanticCloseMatchBadge: "✨ Passage proche",
     emptyResultsLabel: "Aucun résultat trouvé dans cette portée.",
     previewPaneTitle: "Aperçu rapide (⌘+Entrée)",
@@ -118,15 +118,15 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     },
   },
   userAccountAndSettings: {
-    triggerAriaLabel: "Ouvrir le menu rapide du compte (280px)",
-    dropdownWidthNote: "280px",
-    hatSelectorLabel: "Casquette métier",
-    themeQuickToggleLabel: "🌓 Apparence (0 ms)",
-    localeQuickToggleLabel: "🌐 Langue (0 ms)",
+    triggerAriaLabel: "Ouvrir le menu rapide du compte",
+    dropdownWidthNote: "menu",
+    hatSelectorLabel: "Rôle",
+    themeQuickToggleLabel: "🌓 Apparence",
+    localeQuickToggleLabel: "🌐 Langue",
     openAccountSettingsLabel: "⚙️ Paramètres de mon compte...",
     openPassthroughSourcesLabel: "🔗 Mes accès aux sources...",
     logoutButtonLabel: "🚪 Se déconnecter",
-    modalTitle: "⚙️ Paramètres de mon compte (720px × max 600px)",
+    modalTitle: "⚙️ Paramètres de mon compte",
     tab1PreferencesTitle: "🎨 Préférences & Affichage",
     tab2SecurityTitle: "👤 Profil & Sécurité",
     tab3PassthroughTitle: "🔗 Accès aux sources (Passthrough)",
@@ -134,14 +134,14 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     customizeAssistantRedirectCta:
       "💬 Personnaliser le comportement de Mon Assistant →",
     testPassthroughTokenCta: "🔌 Tester mon jeton",
-    generateMcpTokenCta: "+ Générer un jeton MCP scopé (pat_mcp_*)",
-    revokeMcpTokenCta: "Révoquer (< 10 ms)",
+    generateMcpTokenCta: "+ Générer un jeton MCP scopé",
+    revokeMcpTokenCta: "Révoquer",
     targetWholeSpaceLabel: "Tout l'Espace (/api/v1/mcp/spaces/<ws_slug>)",
     targetSingleAgentLabel: "Un agent précis (/api/v1/mcp/agents/<agent_slug>)",
     ideJsonReadyTitle: "Extrait JSON prêt à copier",
   },
   contextualHelpHybrid: {
-    columnHeaderTitle: "❓ Aide Contextuelle (340px)",
+    columnHeaderTitle: "❓ Aide Contextuelle",
     centerHeaderTitle: "Centre d'Aide & Gouvernance (/help)",
     whatForSectionTitle: "À quoi sert cet écran ?",
     stepByStepAccordionTitle: "Pas-à-pas opérationnel",
@@ -155,19 +155,19 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
   },
 };
 
-export const EPIC9_EN_LABELS: Epic9DictionarySection = {
+export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
   fourZoneShell: {
     workspacePrefix: "Space",
     searchTriggerPlaceholder: "Search in this Space or everywhere (⌘K)...",
     contextualHelpButtonLabel: "? Help",
     notificationsButtonLabel: "🔔 Notifications",
-    notificationsDrawerTitle: "Notification Center (420px)",
+    notificationsDrawerTitle: "Notification Center",
     notificationsEmptyText: "No unread notifications.",
     sidebarAriaLabel: "Main 8-Entry Unnumbered Navigation",
     railCollapseLabel: "Collapse rail ([)",
     railExpandLabel: "Expand rail ([)",
     packSelectorLabel: "Active Business Pack",
-    helpColumnTitle: "❓ Contextual Help (340px)",
+    helpColumnTitle: "❓ Contextual Help",
     helpColumnExpectedTitle: "What is expected here",
     helpColumnExpectedBody:
       "Drive your priority decisions or query My Assistant.",
@@ -189,10 +189,10 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     quickAssistantCta: "Open My Assistant →",
     orientationAssistantTitle: "💬 My Assistant",
     orientationAssistantDesc:
-      "Query your sources with [S1] citations in < 1.2 s.",
+      "Query your sources with verified [S1] citations.",
     orientationProcessesTitle: "☍ My Processes",
     orientationProcessesDesc:
-      "Launch the pilot workflow sdlc/ticket-to-tech-spec.",
+      "Configure and launch your governed processes.",
     orientationSpacesTitle: "📦 My Spaces",
     orientationSpacesDesc:
       "Manage your sources, deliverables, and business glossary.",
@@ -209,25 +209,25 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     openFocusReviewCta: "Open Review Workshop →",
     focusWorkshopBreadcrumbPrefix: "My Processes › Executions & Decisions ›",
     focusWorkshopCloseCta: "← Back to Cockpit",
-    redisLockAcquiredPrefix: "🔒 Redis lock acquired:",
+    redisLockAcquiredPrefix: "🔒 Session lock acquired:",
   },
   progressiveAccostage: {
     bannerTitle: "Progressive Day-0 Accostage Journey",
     welcomeWizardTitle: "Welcome Setup Wizard (/welcome-setup)",
-    step1AdminTitle: "Step 1: First Administrator (LOCK TABLE users)",
+    step1AdminTitle: "Step 1: Platform Administrator",
     step2LlmTitle: "Step 2: Progressive AI Models (1 Model → ≥ 2 Families)",
-    step3SpaceTitle: "Step 3: 1/6 Accostage Milestones",
+    step3SpaceTitle: "Step 3: Accostage Milestones",
     bootstrapTokenLabel: "ORCIA_BOOTSTRAP_TOKEN bootstrap token",
     bootstrapTokenPlaceholder: "Enter ORCIA_BOOTSTRAP_TOKEN...",
     bootstrapTokenDeniedBanner:
       "HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN — Invalid bootstrap token",
-    createFirstAdminCta: "Create PLATFORM_ADMIN account",
-    addFirstModelCta: "+ Configure 1st model (Ollama / OpenAI)",
-    addSecondModelFamilyCta: "+ Add 2nd orthogonal family (Claude)",
+    createFirstAdminCta: "Create Platform Administrator account",
+    addFirstModelCta: "+ Configure 1st model",
+    addSecondModelFamilyCta: "+ Add 2nd orthogonal family",
     singleFamilyAmberWarning:
-      "⚠️ Only 1 model family configured — Add a 2nd family in Configuration › AI Models to enable AD-10 Agentic Gates",
+      "⚠️ Only 1 model family configured — Add a 2nd family in Configuration › AI Models to enable multi-model Agentic Gates",
     dualFamilyAd10UnlockedBadge:
-      "✅ ≥ 2 orthogonal families active — AD-10 Agentic Gates unlocked",
+      "✅ ≥ 2 orthogonal families active — Multi-model Agentic Gates unlocked",
     assistantTrialReadyBadge:
       "🚀 Quick Trial Mode active: My Assistant & Cockpit unlocked",
   },
@@ -237,8 +237,8 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     scopeScreenLabel: "📍 This screen",
     scopeWorkspaceLabel: "📦 This Space",
     scopeAllWorkspacesLabel: "🌐 All my Spaces",
-    speed1SectionTitle: "Speed 1 — Immediate lexical hits (< 30 ms · 0 $)",
-    speed2SectionTitle: "Speed 2 — Semantic close passages (450 ms pause)",
+    speed1SectionTitle: "Speed 1 — Immediate lexical hits",
+    speed2SectionTitle: "Speed 2 — Semantic close passages",
     semanticCloseMatchBadge: "✨ Passage proche",
     emptyResultsLabel: "No results found in this scope.",
     previewPaneTitle: "Quick preview (⌘+Enter)",
@@ -257,15 +257,15 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     },
   },
   userAccountAndSettings: {
-    triggerAriaLabel: "Open quick account menu (280px)",
-    dropdownWidthNote: "280px",
-    hatSelectorLabel: "Business Hat",
-    themeQuickToggleLabel: "🌓 Appearance (0 ms)",
-    localeQuickToggleLabel: "🌐 Language (0 ms)",
+    triggerAriaLabel: "Open quick account menu",
+    dropdownWidthNote: "menu",
+    hatSelectorLabel: "Role",
+    themeQuickToggleLabel: "🌓 Appearance",
+    localeQuickToggleLabel: "🌐 Language",
     openAccountSettingsLabel: "⚙️ My account settings...",
     openPassthroughSourcesLabel: "🔗 My source credentials...",
     logoutButtonLabel: "🚪 Sign out",
-    modalTitle: "⚙️ My Account Settings (720px × max 600px)",
+    modalTitle: "⚙️ My Account Settings",
     tab1PreferencesTitle: "🎨 Preferences & Display",
     tab2SecurityTitle: "👤 Profile & Security",
     tab3PassthroughTitle: "🔗 Source Access (Passthrough)",
@@ -273,14 +273,14 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     customizeAssistantRedirectCta:
       "💬 Customize My Assistant behavior →",
     testPassthroughTokenCta: "🔌 Test my token",
-    generateMcpTokenCta: "+ Generate scoped MCP token (pat_mcp_*)",
-    revokeMcpTokenCta: "Revoke (< 10 ms)",
+    generateMcpTokenCta: "+ Generate scoped MCP token",
+    revokeMcpTokenCta: "Revoke",
     targetWholeSpaceLabel: "Entire Space (/api/v1/mcp/spaces/<ws_slug>)",
     targetSingleAgentLabel: "Specific Agent (/api/v1/mcp/agents/<agent_slug>)",
     ideJsonReadyTitle: "Ready-to-copy JSON snippet",
   },
   contextualHelpHybrid: {
-    columnHeaderTitle: "❓ Contextual Help (340px)",
+    columnHeaderTitle: "❓ Contextual Help",
     centerHeaderTitle: "Help Center & Governance (/help)",
     whatForSectionTitle: "What is this screen for?",
     stepByStepAccordionTitle: "Step-by-step guide",

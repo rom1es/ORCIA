@@ -139,6 +139,7 @@ development_status:
   12-1-bascule-apps-web-shell-4-zones-direction-c-8-entrees-cockpit: done
   12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10: done
   12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder: done
+  12-4-epuration-ux-zero-donnee-fictive-modale-admin-jour-0-grisage-et-purge-nfr: done
   epic-12-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1

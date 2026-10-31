@@ -1,4 +1,4 @@
-"""FastAPI `Depends` providers for Epic 11 services (`AD-19` Composition Root)."""
+"""Workspace Governance, DNA Starlark, Test Bench & Pack Builder providers (`AD-19`)."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from orcia_core.orchestration.workspace_governance_and_rebaser import (
 def get_workspace_governance_and_rebaser_service(
     request: Request,
 ) -> WorkspaceGovernanceAndArtifactRoutingService:
-    """Return `WorkspaceGovernanceAndArtifactRoutingService` (`Story 11.1`)."""
+    """Return `WorkspaceGovernanceAndArtifactRoutingService`."""
     svc: WorkspaceGovernanceAndArtifactRoutingService | None = getattr(
         request.app.state, "workspace_governance_and_rebaser_service", None
     )
@@ -37,7 +37,7 @@ def get_workspace_governance_and_rebaser_service(
 def get_dna_starlark_and_glossary_service(
     request: Request,
 ) -> DnaStarlarkAndGlossaryLifecycleService:
-    """Return `DnaStarlarkAndGlossaryLifecycleService` (`Story 11.2`)."""
+    """Return `DnaStarlarkAndGlossaryLifecycleService`."""
     svc: DnaStarlarkAndGlossaryLifecycleService | None = getattr(
         request.app.state, "dna_starlark_and_glossary_service", None
     )
@@ -50,7 +50,7 @@ def get_dna_starlark_and_glossary_service(
 def get_remote_test_bench_and_mcp_service(
     request: Request,
 ) -> RemoteServiceTestBenchAndGovernedMcpService:
-    """Return `RemoteServiceTestBenchAndGovernedMcpService` (`Story 11.3`)."""
+    """Return `RemoteServiceTestBenchAndGovernedMcpService`."""
     svc: RemoteServiceTestBenchAndGovernedMcpService | None = getattr(
         request.app.state, "remote_test_bench_and_mcp_service", None
     )
@@ -63,7 +63,7 @@ def get_remote_test_bench_and_mcp_service(
 def get_pack_builder_system_service(
     request: Request,
 ) -> PackBuilderSystemService:
-    """Return `PackBuilderSystemService` (`Story 11.4`)."""
+    """Return `PackBuilderSystemService`."""
     svc: PackBuilderSystemService | None = getattr(
         request.app.state, "pack_builder_system_service", None
     )
@@ -76,7 +76,7 @@ def get_pack_builder_system_service(
 def get_help_generation_and_attachment_service(
     request: Request,
 ) -> HelpGenerationAndHotAttachmentService:
-    """Return `HelpGenerationAndHotAttachmentService` (`Story 11.5`)."""
+    """Return `HelpGenerationAndHotAttachmentService`."""
     svc: HelpGenerationAndHotAttachmentService | None = getattr(
         request.app.state, "help_generation_and_attachment_service", None
     )
