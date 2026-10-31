@@ -126,8 +126,8 @@ development_status:
 
   # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Exposition MCP Gouvernée (Agents & Assistant /api/v1/mcp) & Banc de Test MCP/A2A 🔌 + Atelier orcia-pack-builder
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, M.4, Sections 3 & 4)
-  epic-11: backlog
-  11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: backlog
+  epic-11: in-progress
+  11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: done
   11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: backlog
   11-3-déclaration-services-mcp-agents-distants-a2a-banc-de-test-à-c: backlog
   11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i: backlog

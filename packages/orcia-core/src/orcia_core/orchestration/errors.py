@@ -195,6 +195,44 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
             "lock SET lock:thread:<thread_id> NX EX 60).",
         ),
     },
+    "ERR_ENTERPRISE_DIRECTIVE_WAIVER_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Acquittement local interdit sur une Directive inviolable (Verrou V1 AD-7)",
+            "Une norme rattachée par la chaîne causale ADN (DIRECTIVE -> NORME -> MECANISME) à "
+            "une Directive 1_ENTERPRISE inviolable ne peut pas être acquittée par un simple "
+            "TEAM_LEAD. L'arbitrage requiert PLATFORM_ADMIN ou SECOPS.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Local waiver forbidden on an inviolable Enterprise Directive (Lock V1 AD-7)",
+            "A norm linked via the DNA causal chain (DIRECTIVE -> NORM -> MECHANISM) to an "
+            "inviolable 1_ENTERPRISE Directive cannot be waived by a TEAM_LEAD. Requires "
+            "PLATFORM_ADMIN or SECOPS.",
+        ),
+    },
+    "ERR_PATH_TRAVERSAL_DENIED": {
+        "fr": LocalizedErrorCopy(
+            "Sortie du périmètre local:// interdite (Path Traversal)",
+            "Toute écriture vers local:// est strictement confinée à la racine autorisée de "
+            "l'Espace (os.path.realpath). Les séquences '../' hors périmètre sont rejetées.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Escape from local:// workspace root denied (Path Traversal)",
+            "Any write to local:// is strictly confined to the authorized Workspace root "
+            "(os.path.realpath). Out-of-bounds '../' sequences are rejected.",
+        ),
+    },
+    "ERR_ORTHOGONAL_JUDGE_SOVEREIGNTY_VIOLATION": {
+        "fr": LocalizedErrorCopy(
+            "Violation du confinement de souveraineté par le Juge Orthogonal (Verrou V3 AD-9)",
+            "Le modèle juge orthogonal sélectionné possède un SovereigntyTier inférieur au "
+            "SovereigntyTier exigé par l'Espace.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Orthogonal Judge sovereignty confinement violation (Lock V3 AD-9)",
+            "The selected orthogonal judge model has a lower SovereigntyTier than required by "
+            "the Workspace.",
+        ),
+    },
 }
 
 register_domain_error_catalog(ORCHESTRATION_ERROR_CATALOG)
@@ -275,16 +313,34 @@ class ThreadTurnLockHeldError(OrciaDomainError):
     http_status, type_slug = 409, "thread-turn-lock-held"
 
 
+class EnterpriseDirectiveWaiverForbiddenError(OrciaDomainError):
+    error_code = "ERR_ENTERPRISE_DIRECTIVE_WAIVER_FORBIDDEN"
+    http_status, type_slug = 403, "enterprise-directive-waiver-forbidden"
+
+
+class PathTraversalDeniedError(OrciaDomainError):
+    error_code = "ERR_PATH_TRAVERSAL_DENIED"
+    http_status, type_slug = 403, "path-traversal-denied"
+
+
+class OrthogonalJudgeSovereigntyViolationError(OrciaDomainError):
+    error_code = "ERR_ORTHOGONAL_JUDGE_SOVEREIGNTY_VIOLATION"
+    http_status, type_slug = 422, "orthogonal-judge-sovereignty-violation"
+
+
 __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "CyclicResourceWaitDetectedError",
     "DirectSiWriteRequiresProcessGateError",
+    "EnterpriseDirectiveWaiverForbiddenError",
     "FunnelRuleViolationError",
     "HumanAnchorRequiredError",
     "ImmutableHarnessBoundaryError",
     "IntentionBeforeCodeRequiredError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "OrthogonalJudgeSovereigntyViolationError",
+    "PathTraversalDeniedError",
     "ResourceLeaseHeldByOtherRunError",
     "ResourceNotFoundError",
     "ResourcePinnedByActiveRunsError",

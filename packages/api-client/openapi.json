@@ -2928,6 +2928,55 @@
         "title": "ConfigureFolderSharingResponse",
         "type": "object"
       },
+      "ConfigureWorkspaceTabsRequest": {
+        "additionalProperties": false,
+        "description": "Request to configure a workspace's 5 sub-tabs, sources, and default destination.",
+        "properties": {
+          "default_artifact_destination_uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Default Artifact Destination Uri",
+            "type": "string"
+          },
+          "local_root_realpath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Root Realpath"
+          },
+          "pending_glossary_candidates_count": {
+            "default": 0,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Pending Glossary Candidates Count",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSourceSummarySchema"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "workspace_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_slug",
+          "default_artifact_destination_uri"
+        ],
+        "title": "ConfigureWorkspaceTabsRequest",
+        "type": "object"
+      },
       "ConnectorTestConnectionResponse": {
         "additionalProperties": false,
         "description": "Fail-fast DBOS connector healthcheck response (`< 5 s`, `Story 8.4`).",
@@ -3814,6 +3863,49 @@
         "title": "DeterministicGateEvaluateResponse",
         "type": "object"
       },
+      "DnaChainNodeSchema": {
+        "additionalProperties": false,
+        "description": "Transport schema for a causal DNA chain node (`DIRECTIVE ➔ NORME ➔ MÉCANISME`).",
+        "properties": {
+          "inviolable": {
+            "default": false,
+            "title": "Inviolable",
+            "type": "boolean"
+          },
+          "level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "node_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Key",
+            "type": "string"
+          },
+          "stereotype": {
+            "enum": [
+              "DIRECTIVE",
+              "NORM",
+              "MECHANISM"
+            ],
+            "title": "Stereotype",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_key",
+          "stereotype",
+          "level"
+        ],
+        "title": "DnaChainNodeSchema",
+        "type": "object"
+      },
       "DocVsCodeAuditRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4391,6 +4483,101 @@
         "title": "EvidenceToolCitationSchemaItem",
         "type": "object"
       },
+      "ExceptionWaiverResponse": {
+        "additionalProperties": false,
+        "description": "Response representing a persisted `workspace_exception_waivers` record (`Verrou V1`).",
+        "properties": {
+          "approved_by_role": {
+            "title": "Approved By Role",
+            "type": "string"
+          },
+          "approved_by_user_id": {
+            "format": "uuid",
+            "title": "Approved By User Id",
+            "type": "string"
+          },
+          "conflict_rule_id": {
+            "title": "Conflict Rule Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dna_chain": {
+            "items": {
+              "$ref": "#/components/schemas/DnaChainNodeSchema"
+            },
+            "title": "Dna Chain",
+            "type": "array"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "norm_level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE"
+            ],
+            "title": "Norm Level",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "source_sha256": {
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "source_uri": {
+            "title": "Source Uri",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "INVALIDATED_SHA_DRIFT",
+              "EXPIRED",
+              "REVOKED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "waiver_id": {
+            "format": "uuid",
+            "title": "Waiver Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "waiver_id",
+          "workspace_id",
+          "source_uri",
+          "source_sha256",
+          "conflict_rule_id",
+          "norm_level",
+          "dna_chain",
+          "approved_by_user_id",
+          "approved_by_role",
+          "reason",
+          "status",
+          "expires_at",
+          "created_at"
+        ],
+        "title": "ExceptionWaiverResponse",
+        "type": "object"
+      },
       "ExecuteTierRoutingRequest": {
         "additionalProperties": false,
         "description": "Execute an LLM call or `auto` tier escalation (`Story 8.2`).",
@@ -4460,6 +4647,62 @@
           }
         },
         "title": "ExecuteTierRoutingRequest",
+        "type": "object"
+      },
+      "ExternalRebaseResponse": {
+        "additionalProperties": false,
+        "description": "Response from `ExternalEditRebaser` (`Verrou V2`).",
+        "properties": {
+          "artifact_uri": {
+            "title": "Artifact Uri",
+            "type": "string"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/RebasedSectionChunkSchema"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "divergence_detected": {
+            "title": "Divergence Detected",
+            "type": "boolean"
+          },
+          "external_sha256": {
+            "title": "External Sha256",
+            "type": "string"
+          },
+          "imported_version": {
+            "title": "Imported Version",
+            "type": "integer"
+          },
+          "previous_sha256": {
+            "title": "Previous Sha256",
+            "type": "string"
+          },
+          "previous_version": {
+            "title": "Previous Version",
+            "type": "integer"
+          },
+          "step_memlog_annotations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Step Memlog Annotations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artifact_uri",
+          "previous_version",
+          "imported_version",
+          "previous_sha256",
+          "external_sha256",
+          "divergence_detected",
+          "chunks",
+          "step_memlog_annotations"
+        ],
+        "title": "ExternalRebaseResponse",
         "type": "object"
       },
       "FolderShareGrantSchemaItem": {
@@ -9503,6 +9746,71 @@
         "title": "PermissionTicketActionResponse",
         "type": "object"
       },
+      "PilotWorkflowRunResponse": {
+        "additionalProperties": false,
+        "description": "Response for the 3-step pilot workflow `ticket-to-tech-spec`.",
+        "properties": {
+          "destination": {
+            "$ref": "#/components/schemas/ResolvedArtifactDestinationResponse"
+          },
+          "executed_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executed Steps",
+            "type": "array"
+          },
+          "generator_model_family": {
+            "title": "Generator Model Family",
+            "type": "string"
+          },
+          "judge_model_family": {
+            "title": "Judge Model Family",
+            "type": "string"
+          },
+          "judge_sovereignty_tier": {
+            "enum": [
+              "CLOUD_PUBLIC",
+              "EU_SOVEREIGN",
+              "ON_PREM_AIRGAPPED"
+            ],
+            "title": "Judge Sovereignty Tier",
+            "type": "string"
+          },
+          "requires_human_anchor_card": {
+            "title": "Requires Human Anchor Card",
+            "type": "boolean"
+          },
+          "staged_transitions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Staged Transitions",
+            "type": "array"
+          },
+          "ticket_key": {
+            "title": "Ticket Key",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_uri",
+          "ticket_key",
+          "executed_steps",
+          "generator_model_family",
+          "judge_model_family",
+          "judge_sovereignty_tier",
+          "requires_human_anchor_card",
+          "destination",
+          "staged_transitions"
+        ],
+        "title": "PilotWorkflowRunResponse",
+        "type": "object"
+      },
       "PlatformSettingResponse": {
         "additionalProperties": false,
         "description": "Versioned platform setting response with `ETag` and `SecretStatus` (`Story 8.3`).",
@@ -9902,6 +10210,85 @@
         "title": "RawToolOutputCandidateSchemaItem",
         "type": "object"
       },
+      "RebaseExternalArtifactEditsRequest": {
+        "additionalProperties": false,
+        "description": "Request to run `ExternalEditRebaser` on an externally edited artifact (`Verrou V2`).",
+        "properties": {
+          "artifact_uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Artifact Uri",
+            "type": "string"
+          },
+          "current_version": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Current Version",
+            "type": "integer"
+          },
+          "external_markdown": {
+            "title": "External Markdown",
+            "type": "string"
+          },
+          "orcia_markdown": {
+            "title": "Orcia Markdown",
+            "type": "string"
+          },
+          "step_memlog_entries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Step Memlog Entries",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artifact_uri",
+          "orcia_markdown",
+          "external_markdown"
+        ],
+        "title": "RebaseExternalArtifactEditsRequest",
+        "type": "object"
+      },
+      "RebasedSectionChunkSchema": {
+        "additionalProperties": false,
+        "description": "Section chunk evaluated by `ExternalEditRebaser`.",
+        "properties": {
+          "chunk_key": {
+            "title": "Chunk Key",
+            "type": "string"
+          },
+          "content_markdown": {
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "locked_against_agent_overwrite": {
+            "title": "Locked Against Agent Overwrite",
+            "type": "boolean"
+          },
+          "section_title": {
+            "title": "Section Title",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "APPROVED",
+              "HUMAN_AMENDED_EXTERNAL"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_key",
+          "section_title",
+          "content_markdown",
+          "status",
+          "locked_against_agent_overwrite"
+        ],
+        "title": "RebasedSectionChunkSchema",
+        "type": "object"
+      },
       "RecursiveRunLockManifestSchemaItem": {
         "additionalProperties": false,
         "description": "Extended `run-lock.json` pinning sources, overrides, KB hash, and sub-workflows.",
@@ -9989,6 +10376,69 @@
         "title": "RecursiveRunLockManifestSchemaItem",
         "type": "object"
       },
+      "RegisterExceptionWaiverRequest": {
+        "additionalProperties": false,
+        "description": "Request to register an exception waiver governed by the causal DNA chain (`Verrou V1`).",
+        "properties": {
+          "conflict_rule_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Conflict Rule Id",
+            "type": "string"
+          },
+          "dna_chain": {
+            "items": {
+              "$ref": "#/components/schemas/DnaChainNodeSchema"
+            },
+            "title": "Dna Chain",
+            "type": "array"
+          },
+          "norm_level": {
+            "default": "3_WORKSPACE",
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE"
+            ],
+            "title": "Norm Level",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "source_sha256": {
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "source_uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Uri",
+            "type": "string"
+          },
+          "ttl_days": {
+            "default": 30,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Ttl Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_uri",
+          "source_sha256",
+          "conflict_rule_id",
+          "reason"
+        ],
+        "title": "RegisterExceptionWaiverRequest",
+        "type": "object"
+      },
       "ReleaseTaskClaimRequest": {
         "additionalProperties": false,
         "description": "Request body for releasing or force-unclaiming a task notification (`UX-DR9`).",
@@ -10025,6 +10475,133 @@
           "scope_id"
         ],
         "title": "ResetAssistantStudioGraphRequest",
+        "type": "object"
+      },
+      "ResolveArtifactDestinationRequest": {
+        "additionalProperties": false,
+        "description": "Request to resolve the 4-level artifact destination cascade (`Story 11.1`).",
+        "properties": {
+          "artifact_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Artifact Slug",
+            "type": "string"
+          },
+          "artifact_type": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Artifact Type",
+            "type": "string"
+          },
+          "content_markdown": {
+            "default": "",
+            "title": "Content Markdown",
+            "type": "string"
+          },
+          "local_root_realpath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Root Realpath"
+          },
+          "run_override_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Override Uri"
+          },
+          "version": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "workflow_step_target_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Step Target Uri"
+          },
+          "workspace_default_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Default Uri"
+          },
+          "workspace_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_slug",
+          "artifact_type",
+          "artifact_slug"
+        ],
+        "title": "ResolveArtifactDestinationRequest",
+        "type": "object"
+      },
+      "ResolvedArtifactDestinationResponse": {
+        "additionalProperties": false,
+        "description": "Response for the 4-level artifact destination cascade.",
+        "properties": {
+          "canonical_alias_uri": {
+            "title": "Canonical Alias Uri",
+            "type": "string"
+          },
+          "cas_storage_path": {
+            "title": "Cas Storage Path",
+            "type": "string"
+          },
+          "resolved_uri": {
+            "title": "Resolved Uri",
+            "type": "string"
+          },
+          "selected_level": {
+            "enum": [
+              "1_RUN_OVERRIDE",
+              "2_WORKFLOW_STEP_TARGET",
+              "3_WORKSPACE_DEFAULT",
+              "4_ORCIA_VAULT_FALLBACK"
+            ],
+            "title": "Selected Level",
+            "type": "string"
+          },
+          "staged_for_gate_publication": {
+            "title": "Staged For Gate Publication",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "selected_level",
+          "resolved_uri",
+          "cas_storage_path",
+          "canonical_alias_uri",
+          "staged_for_gate_publication"
+        ],
+        "title": "ResolvedArtifactDestinationResponse",
         "type": "object"
       },
       "ResourceDiscoveryResponse": {
@@ -10454,6 +11031,78 @@
           "trace_id"
         ],
         "title": "RunMutationGuardCheckResponse",
+        "type": "object"
+      },
+      "RunPilotTicketToTechSpecRequest": {
+        "additionalProperties": false,
+        "description": "Request to execute `orcia://pack-sdlc/workflows/ticket-to-tech-spec` (`Verrou V3`).",
+        "properties": {
+          "generator_model_family": {
+            "default": "claude-4.6",
+            "title": "Generator Model Family",
+            "type": "string"
+          },
+          "judge_model_family": {
+            "default": "mistral-large-3",
+            "title": "Judge Model Family",
+            "type": "string"
+          },
+          "judge_sovereignty_tier": {
+            "default": "EU_SOVEREIGN",
+            "enum": [
+              "CLOUD_PUBLIC",
+              "EU_SOVEREIGN",
+              "ON_PREM_AIRGAPPED"
+            ],
+            "title": "Judge Sovereignty Tier",
+            "type": "string"
+          },
+          "run_override_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Override Uri"
+          },
+          "ticket_key": {
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Ticket Key",
+            "type": "string"
+          },
+          "ticket_summary": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Ticket Summary",
+            "type": "string"
+          },
+          "workspace_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workspace Slug",
+            "type": "string"
+          },
+          "workspace_sovereignty_tier": {
+            "default": "EU_SOVEREIGN",
+            "enum": [
+              "CLOUD_PUBLIC",
+              "EU_SOVEREIGN",
+              "ON_PREM_AIRGAPPED"
+            ],
+            "title": "Workspace Sovereignty Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_slug",
+          "ticket_key",
+          "ticket_summary"
+        ],
+        "title": "RunPilotTicketToTechSpecRequest",
         "type": "object"
       },
       "SaveAssistantStudioGraphRequest": {
@@ -15568,6 +16217,80 @@
         "title": "WorkspaceDatasourceItem",
         "type": "object"
       },
+      "WorkspaceFiveTabsStateResponse": {
+        "additionalProperties": false,
+        "description": "Response for the 5 sub-tabs of `Mes Espaces` (`Story 11.1`).",
+        "properties": {
+          "active_waivers": {
+            "items": {
+              "$ref": "#/components/schemas/ExceptionWaiverResponse"
+            },
+            "title": "Active Waivers",
+            "type": "array"
+          },
+          "default_artifact_destination_uri": {
+            "title": "Default Artifact Destination Uri",
+            "type": "string"
+          },
+          "local_root_realpath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Root Realpath"
+          },
+          "pending_glossary_candidates_count": {
+            "title": "Pending Glossary Candidates Count",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSourceSummarySchema"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "tabs": {
+            "items": {
+              "enum": [
+                "OVERVIEW",
+                "DOCUMENTS_SOURCES",
+                "DELIVERABLES_ARTIFACTS",
+                "GLOSSARY_RULES",
+                "MEMBERS_TEAM"
+              ],
+              "type": "string"
+            },
+            "title": "Tabs",
+            "type": "array"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_slug": {
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workspace_slug",
+          "tabs",
+          "default_artifact_destination_uri",
+          "local_root_realpath",
+          "sources",
+          "active_waivers",
+          "pending_glossary_candidates_count"
+        ],
+        "title": "WorkspaceFiveTabsStateResponse",
+        "type": "object"
+      },
       "WorkspaceGovernanceItemResponse": {
         "additionalProperties": false,
         "description": "Workspace product lifecycle & governance summary in Tab 4 (`TEAMS_AND_GOVERNANCE`).",
@@ -15746,6 +16469,64 @@
           "sha256"
         ],
         "title": "WorkspaceLayerSettingsSchemaItem",
+        "type": "object"
+      },
+      "WorkspaceSourceSummarySchema": {
+        "additionalProperties": false,
+        "description": "Transport schema for a qualified workspace source in Tab 2 (`Documents & Sources`).",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "READ_ONLY",
+              "READ_WRITE_TARGET"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "authority_role": {
+            "enum": [
+              "REFERENCE",
+              "ACTIVE"
+            ],
+            "title": "Authority Role",
+            "type": "string"
+          },
+          "freshness_status": {
+            "default": "FRESH",
+            "enum": [
+              "FRESH",
+              "STALE_WARNING",
+              "WAIVED"
+            ],
+            "title": "Freshness Status",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "uri",
+          "title",
+          "authority_role",
+          "access_mode"
+        ],
+        "title": "WorkspaceSourceSummarySchema",
         "type": "object"
       },
       "WorkspaceSpineBaselineSchemaItem": {
@@ -28079,6 +28860,366 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/artifacts/external-rebase": {
+      "post": {
+        "description": "Run `ExternalEditRebaser` on an externally edited artifact (`Verrou V2`).",
+        "operationId": "rebase_external_artifact_api_v1_workspaces__workspace_id__artifacts_external_rebase_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RebaseExternalArtifactEditsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalRebaseResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detect external SHA-256 divergence and lock human-amended sections (Verrou V2)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/artifacts/resolve-destination": {
+      "post": {
+        "description": "Resolve the 4-level artifact destination cascade (`Story 11.1`).",
+        "operationId": "resolve_workspace_artifact_destination_api_v1_workspaces__workspace_id__artifacts_resolve_destination_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveArtifactDestinationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedArtifactDestinationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve 4-level artifact destination cascade with local:// path confinement",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/exception-waivers": {
+      "post": {
+        "description": "Persist an exception waiver or reject `1_ENTERPRISE` inviolable directives with HTTP 403.",
+        "operationId": "register_workspace_exception_waiver_api_v1_workspaces__workspace_id__exception_waivers_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterExceptionWaiverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionWaiverResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register an exception waiver governed by the causal DNA chain (Verrou V1)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/five-tabs": {
+      "get": {
+        "description": "Return the consolidated state for the 5 sub-tabs of `Mes Espaces`.",
+        "operationId": "get_workspace_five_tabs_api_v1_workspaces__workspace_id__five_tabs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_slug",
+            "required": false,
+            "schema": {
+              "default": "default-ws",
+              "title": "Workspace Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pending_glossary_candidates_count",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 100,
+              "minimum": 0,
+              "title": "Pending Glossary Candidates Count",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceFiveTabsStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get the 5 sub-tabs state for Mes Espaces (Story 11.1)",
+        "tags": [
+          "workspaces"
+        ]
+      },
+      "put": {
+        "description": "Configure workspace sources (`REFERENCE` vs `ACTIVE`), access modes, and default target.",
+        "operationId": "configure_workspace_five_tabs_api_v1_workspaces__workspace_id__five_tabs_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureWorkspaceTabsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceFiveTabsStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Configure workspace 5 sub-tabs, sources, and default destination (Story 11.1)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/mutations/check": {
       "post": {
         "description": "Verify the caller can perform mutations on `workspace_id` (`ScopeAccessGuard`).",
@@ -28173,6 +29314,76 @@
         "summary": "Enforce ScopeAccessGuard on Workspace mutation (rejects READ_ONLY_OBSERVER)",
         "tags": [
           "workspaces-and-catalog"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/ticket-to-tech-spec": {
+      "post": {
+        "description": "Execute the 3-step pilot workflow `orcia://pack-sdlc/workflows/ticket-to-tech-spec`.",
+        "operationId": "run_pilot_ticket_to_tech_spec_api_v1_workspaces__workspace_id__workflows_ticket_to_tech_spec_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunPilotTicketToTechSpecRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PilotWorkflowRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run pilot workflow orcia://pack-sdlc/workflows/ticket-to-tech-spec (Verrou V3)",
+        "tags": [
+          "workspaces"
         ]
       }
     }

@@ -461,6 +461,13 @@ export interface components {
       visibility_mode: "PRIVATE" | "SHARED_SELECTED" | "WORKSPACE_OPEN";
       workspace_id: string;
     };
+    ConfigureWorkspaceTabsRequest: {
+      default_artifact_destination_uri: string;
+      local_root_realpath?: string | null;
+      pending_glossary_candidates_count?: number;
+      sources?: (components["schemas"]["WorkspaceSourceSummarySchema"])[];
+      workspace_slug: string;
+    };
     ConnectorTestConnectionResponse: {
       connector_id: string;
       diagnostic_message: string;
@@ -601,6 +608,12 @@ export interface components {
       evaluation: components["schemas"]["GateEvaluationSchemaItem"];
       trace_id: string;
     };
+    DnaChainNodeSchema: {
+      inviolable?: boolean;
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
+      node_key: string;
+      stereotype: "DIRECTIVE" | "NORM" | "MECHANISM";
+    };
     DocVsCodeAuditRequest: {
       code_rule_summary: string;
       confluence_uri: string;
@@ -697,6 +710,21 @@ export interface components {
       tag: string;
       tool_name: string;
     };
+    ExceptionWaiverResponse: {
+      approved_by_role: string;
+      approved_by_user_id: string;
+      conflict_rule_id: string;
+      created_at: string;
+      dna_chain: (components["schemas"]["DnaChainNodeSchema"])[];
+      expires_at: string;
+      norm_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
+      reason: string;
+      source_sha256: string;
+      source_uri: string;
+      status: "ACTIVE" | "INVALIDATED_SHA_DRIFT" | "EXPIRED" | "REVOKED";
+      waiver_id: string;
+      workspace_id: string;
+    };
     ExecuteTierRoutingRequest: {
       effort?: "default" | "fast" | "balanced" | "deep";
       evaluator_model_family?: string | null;
@@ -707,6 +735,16 @@ export interface components {
       step_execution_id?: string;
       system_prompt?: string;
       user_prompt?: string;
+    };
+    ExternalRebaseResponse: {
+      artifact_uri: string;
+      chunks: (components["schemas"]["RebasedSectionChunkSchema"])[];
+      divergence_detected: boolean;
+      external_sha256: string;
+      imported_version: number;
+      previous_sha256: string;
+      previous_version: number;
+      step_memlog_annotations: (string)[];
     };
     FolderShareGrantSchemaItem: {
       access_role?: "READ_ONLY" | "CO_CONTRIBUTOR";
@@ -1492,6 +1530,17 @@ export interface components {
       ticket: components["schemas"]["PermissionBrokerTicketItem"];
       trace_id: string;
     };
+    PilotWorkflowRunResponse: {
+      destination: components["schemas"]["ResolvedArtifactDestinationResponse"];
+      executed_steps: (string)[];
+      generator_model_family: string;
+      judge_model_family: string;
+      judge_sovereignty_tier: "CLOUD_PUBLIC" | "EU_SOVEREIGN" | "ON_PREM_AIRGAPPED";
+      requires_human_anchor_card: boolean;
+      staged_transitions: (string)[];
+      ticket_key: string;
+      workflow_uri: string;
+    };
     PlatformSettingResponse: {
       category: "iam" | "connectors" | "ai-models" | "packs" | "workflows" | "audit";
       etag: string;
@@ -1558,6 +1607,20 @@ export interface components {
       summary: string;
       tool_name: string;
     };
+    RebaseExternalArtifactEditsRequest: {
+      artifact_uri: string;
+      current_version?: number;
+      external_markdown: string;
+      orcia_markdown: string;
+      step_memlog_entries?: (string)[];
+    };
+    RebasedSectionChunkSchema: {
+      chunk_key: string;
+      content_markdown: string;
+      locked_against_agent_overwrite: boolean;
+      section_title: string;
+      status: "APPROVED" | "HUMAN_AMENDED_EXTERNAL";
+    };
     RecursiveRunLockManifestSchemaItem: {
       applied_override_keys: (string)[];
       effective_workflow_sha256: string;
@@ -1572,12 +1635,39 @@ export interface components {
       workflow_version: string;
       workspace_id: string;
     };
+    RegisterExceptionWaiverRequest: {
+      conflict_rule_id: string;
+      dna_chain?: (components["schemas"]["DnaChainNodeSchema"])[];
+      norm_level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE";
+      reason: string;
+      source_sha256: string;
+      source_uri: string;
+      ttl_days?: number;
+    };
     ReleaseTaskClaimRequest: {
       force?: boolean;
     };
     ResetAssistantStudioGraphRequest: {
       scope_id: string;
       scope_level?: "TEAM" | "WORKSPACE";
+    };
+    ResolveArtifactDestinationRequest: {
+      artifact_slug: string;
+      artifact_type: string;
+      content_markdown?: string;
+      local_root_realpath?: string | null;
+      run_override_uri?: string | null;
+      version?: number;
+      workflow_step_target_uri?: string | null;
+      workspace_default_uri?: string | null;
+      workspace_slug: string;
+    };
+    ResolvedArtifactDestinationResponse: {
+      canonical_alias_uri: string;
+      cas_storage_path: string;
+      resolved_uri: string;
+      selected_level: "1_RUN_OVERRIDE" | "2_WORKFLOW_STEP_TARGET" | "3_WORKSPACE_DEFAULT" | "4_ORCIA_VAULT_FALLBACK";
+      staged_for_gate_publication: boolean;
     };
     ResourceDiscoveryResponse: {
       allowed_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
@@ -1649,6 +1739,16 @@ export interface components {
       run_id: string;
       step_execution_id: string;
       trace_id: string;
+    };
+    RunPilotTicketToTechSpecRequest: {
+      generator_model_family?: string;
+      judge_model_family?: string;
+      judge_sovereignty_tier?: "CLOUD_PUBLIC" | "EU_SOVEREIGN" | "ON_PREM_AIRGAPPED";
+      run_override_uri?: string | null;
+      ticket_key: string;
+      ticket_summary: string;
+      workspace_slug: string;
+      workspace_sovereignty_tier?: "CLOUD_PUBLIC" | "EU_SOVEREIGN" | "ON_PREM_AIRGAPPED";
     };
     SaveAssistantStudioGraphRequest: {
       ai_pre_prompt: string;
@@ -2406,6 +2506,16 @@ export interface components {
       uri: string;
       workspace_id: string;
     };
+    WorkspaceFiveTabsStateResponse: {
+      active_waivers: (components["schemas"]["ExceptionWaiverResponse"])[];
+      default_artifact_destination_uri: string;
+      local_root_realpath: string | null;
+      pending_glossary_candidates_count: number;
+      sources: (components["schemas"]["WorkspaceSourceSummarySchema"])[];
+      tabs: ("OVERVIEW" | "DOCUMENTS_SOURCES" | "DELIVERABLES_ARTIFACTS" | "GLOSSARY_RULES" | "MEMBERS_TEAM")[];
+      workspace_id: string;
+      workspace_slug: string;
+    };
     WorkspaceGovernanceItemResponse: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       blackboard_payload_masked?: boolean;
@@ -2432,6 +2542,14 @@ export interface components {
       welcome_suggestions: (string)[];
       workspace_id: string;
       workspace_instructions: string;
+    };
+    WorkspaceSourceSummarySchema: {
+      access_mode: "READ_ONLY" | "READ_WRITE_TARGET";
+      authority_role: "REFERENCE" | "ACTIVE";
+      freshness_status?: "FRESH" | "STALE_WARNING" | "WAIVED";
+      source_id: string;
+      title: string;
+      uri: string;
     };
     WorkspaceSpineBaselineSchemaItem: {
       allowed_dependencies: (string)[];
@@ -3340,10 +3458,50 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/artifacts/external-rebase": {
+    post: {
+      responses: {
+        200: components["schemas"]["ExternalRebaseResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/artifacts/resolve-destination": {
+    post: {
+      responses: {
+        200: components["schemas"]["ResolvedArtifactDestinationResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/exception-waivers": {
+    post: {
+      responses: {
+        200: components["schemas"]["ExceptionWaiverResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/five-tabs": {
+    get: {
+      responses: {
+        200: components["schemas"]["WorkspaceFiveTabsStateResponse"];
+      };
+    };
+    put: {
+      responses: {
+        200: components["schemas"]["WorkspaceFiveTabsStateResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/mutations/check": {
     post: {
       responses: {
         200: components["schemas"]["ScopeMutationCheckResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/workflows/ticket-to-tech-spec": {
+    post: {
+      responses: {
+        200: components["schemas"]["PilotWorkflowRunResponse"];
       };
     };
   };
@@ -3402,6 +3560,7 @@ export type CompiledArtifactTemplateSchemaItem = components["schemas"]["Compiled
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
 export type ConfigureFolderSharingRequest = components["schemas"]["ConfigureFolderSharingRequest"];
 export type ConfigureFolderSharingResponse = components["schemas"]["ConfigureFolderSharingResponse"];
+export type ConfigureWorkspaceTabsRequest = components["schemas"]["ConfigureWorkspaceTabsRequest"];
 export type ConnectorTestConnectionResponse = components["schemas"]["ConnectorTestConnectionResponse"];
 export type ContextualHelpPublishRequest = components["schemas"]["ContextualHelpPublishRequest"];
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
@@ -3417,6 +3576,7 @@ export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSche
 export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
+export type DnaChainNodeSchema = components["schemas"]["DnaChainNodeSchema"];
 export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest"];
 export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
 export type DocumentIngestionRequest = components["schemas"]["DocumentIngestionRequest"];
@@ -3428,7 +3588,9 @@ export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["EvidenceGlossaryCitationSchemaItem"];
 export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
 export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];
+export type ExceptionWaiverResponse = components["schemas"]["ExceptionWaiverResponse"];
 export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
+export type ExternalRebaseResponse = components["schemas"]["ExternalRebaseResponse"];
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
@@ -3523,6 +3685,7 @@ export type PermissionPolicyImportMarkdownRequest = components["schemas"]["Permi
 export type PermissionPolicyImportMarkdownResponse = components["schemas"]["PermissionPolicyImportMarkdownResponse"];
 export type PermissionTicketActionRequest = components["schemas"]["PermissionTicketActionRequest"];
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
+export type PilotWorkflowRunResponse = components["schemas"]["PilotWorkflowRunResponse"];
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
@@ -3531,9 +3694,14 @@ export type RagReciprocityResponse = components["schemas"]["RagReciprocityRespon
 export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
 export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];
 export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
+export type RebaseExternalArtifactEditsRequest = components["schemas"]["RebaseExternalArtifactEditsRequest"];
+export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChunkSchema"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
+export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
 export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
+export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
+export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
@@ -3542,6 +3710,7 @@ export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
 export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripletItem"];
 export type RunMutationGuardCheckRequest = components["schemas"]["RunMutationGuardCheckRequest"];
 export type RunMutationGuardCheckResponse = components["schemas"]["RunMutationGuardCheckResponse"];
+export type RunPilotTicketToTechSpecRequest = components["schemas"]["RunPilotTicketToTechSpecRequest"];
 export type SaveAssistantStudioGraphRequest = components["schemas"]["SaveAssistantStudioGraphRequest"];
 export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationCheckResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
@@ -3622,8 +3791,10 @@ export type WorkflowStepSpecSchemaItem = components["schemas"]["WorkflowStepSpec
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
+export type WorkspaceFiveTabsStateResponse = components["schemas"]["WorkspaceFiveTabsStateResponse"];
 export type WorkspaceGovernanceItemResponse = components["schemas"]["WorkspaceGovernanceItemResponse"];
 export type WorkspaceLayerSettingsSchemaItem = components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
+export type WorkspaceSourceSummarySchema = components["schemas"]["WorkspaceSourceSummarySchema"];
 export type WorkspaceSpineBaselineSchemaItem = components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];

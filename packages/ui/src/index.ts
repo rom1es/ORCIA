@@ -233,6 +233,15 @@ export {
   type UiAssistantFolderItem,
   type UiAssistantHistoryHitItem,
 } from "./primitives/AssistantFoldersAndCollaborativeThreadView";
+export {
+  WorkspaceFiveTabsAndExternalRebaseView,
+  type ExceptionWaiverItem,
+  type RebasedChunkItem,
+  type WorkspaceFiveTabsAndExternalRebaseViewProps,
+  type WorkspaceFiveTabsLabels,
+  type WorkspaceSourceItem,
+  type WorkspaceSubTabKey,
+} from "./primitives/WorkspaceFiveTabsAndExternalRebaseView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {
