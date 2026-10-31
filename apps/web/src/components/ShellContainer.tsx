@@ -156,9 +156,7 @@ function InnerShellContainer({
     enabled: visibilityMap[mod.key],
   }));
 
-  const safeModuleKey: UiModuleKey = !visibilityMap[activeModuleKey]
-    ? "cockpit"
-    : activeModuleKey;
+  const safeModuleKey: UiModuleKey = activeModuleKey;
 
   const activeMenuKey: EightFixedMenuKey =
     selectedMenuKeyOverride ?? resolveEightMenuKeyFromModule(safeModuleKey, pathname);

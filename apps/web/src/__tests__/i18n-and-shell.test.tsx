@@ -285,4 +285,26 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("progressive-day0-accostage-banner")).toBeDefined();
     expect(screen.getByTestId("streamlined-cockpit-view")).toBeDefined();
   });
+
+  it("mounts the all-in-one Mon Assistant screen on /assistant with 3-Speed selector, Folders, Citations, and 4-Level Governance (Story 12.2)", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/assistant"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("inbox-feature-panel")).toBeDefined();
+    expect(screen.getByTestId("assistant-folders-and-collaborative-thread-view")).toBeDefined();
+    expect(screen.getByTestId("assistant-speed-selector-and-stream")).toBeDefined();
+    expect(screen.getByTestId("assistant-citation-pills-and-artifact-card")).toBeDefined();
+
+    // Open the 4-level governance modal/studio
+    fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
+    expect(screen.getByTestId("assistant-governance-container")).toBeDefined();
+  });
 });
