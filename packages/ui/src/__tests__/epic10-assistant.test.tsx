@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   AssistantCitationPillsAndArtifactCard,
   type AssistantCitationPillsAndArtifactCardLabels,
+  AssistantFoldersAndCollaborativeThreadView,
+  type AssistantFoldersAndCollaborativeThreadViewLabels,
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
   AssistantSpeedSelectorAndStreamView,
@@ -372,5 +374,115 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       "# Spécification Technique\n- Plafond : 5 000 € [S1]",
       ["S1", "S2"],
     );
+  });
+
+  it("Story 10.4 — renders 3-tab Mon Assistant header (💬 Discussion active, 📁 Dossiers, 🕘 Historique), Layer 5 folder notes continuity, 1-click Process Bridge, 3-level sharing with restricted sources warning, and Redis turn lock banner", () => {
+    const onSelectFolder = vi.fn();
+    const onUpdatePinnedNotes = vi.fn();
+    const onLaunchProcessFromFolder = vi.fn();
+    const onChangeVisibility = vi.fn();
+    const onSendCollaborativeMessage = vi.fn();
+
+    const folderLabels: AssistantFoldersAndCollaborativeThreadViewLabels = {
+      tab1ActiveDiscussionTitle: "💬 Discussion active",
+      tab2FoldersTitlePrefix: "📁 Dossiers",
+      tab3HistorySearchTitle: "🕘 Historique & Recherche",
+      activeFolderPillPrefix: "📁 Dossier",
+      pinnedNotesButtonLabel: "📌 Notes du dossier",
+      launchProcessFromFolderCta: "☍ Lancer un Processus à partir de ce dossier →",
+      shareButtonLabel: "👥 Partager",
+      visibilityPrivateLabel: "🔒 Privé",
+      visibilitySharedSelectedLabel: "👥 Partagé avec des collègues choisis",
+      visibilityWorkspaceOpenLabel: "📦 Ouvert à tout l'Espace",
+      restrictedSourcesWarningText:
+        "⚠️ Ce dossier cite des sources restreintes : leurs extraits seront masqués (🔒 Source restreinte) pour les collègues non habilités.",
+      searchPlaceholder: "Rechercher dans les discussions, dossiers et artefacts...",
+    };
+
+    render(
+      <AssistantFoldersAndCollaborativeThreadView
+        workspaceId="ws-claims-alpha"
+        activeFolderId="folder-checkout-01"
+        folders={[
+          {
+            folderId: "folder-checkout-01",
+            title: "Refonte Tunnel Checkout",
+            pinnedNotesMarkdown: "Décision #1 : conserver le PSP Stripe en secours.",
+            consolidatedSummary: "Synthèse de 3 discussions sur le parcours paiement.",
+            visibilityMode: "SHARED_SELECTED",
+            hasRestrictedSources: true,
+            assembledLayer5PromptBlock:
+              "[LAYER_5_FOLDER_CONTINUITY folder=Refonte Tunnel Checkout] 📌 Notes : PSP Stripe",
+          },
+        ]}
+        historyHits={[
+          {
+            itemId: "hit-thread-01",
+            itemKind: "THREAD",
+            title: "Arbitrage PSP Checkout",
+            snippet: "Comparaison des latences 3DS2",
+          },
+        ]}
+        activeTurnLockBanner="✍️ Yanis interroge l'assistant..."
+        currentAuthorPassthroughIdentity="passthrough:oidc:u-yanis-01:yanis@orcia.io"
+        labels={folderLabels}
+        onSelectFolder={onSelectFolder}
+        onUpdatePinnedNotes={onUpdatePinnedNotes}
+        onLaunchProcessFromFolder={onLaunchProcessFromFolder}
+        onChangeVisibility={onChangeVisibility}
+        onSendCollaborativeMessage={onSendCollaborativeMessage}
+      />,
+    );
+
+    // Redis turn lock banner & personal Passthrough identity
+    expect(
+      screen.getByTestId("assistant-redis-turn-lock-banner").textContent,
+    ).toContain("✍️ Yanis interroge l'assistant...");
+    expect(
+      screen.getByTestId("assistant-author-passthrough-badge").textContent,
+    ).toContain("passthrough:oidc:u-yanis-01:yanis@orcia.io");
+
+    // Open 📌 Notes du dossier (Layer 5 Continuity) and update notes
+    fireEvent.click(screen.getByTestId("assistant-folder-notes-toggle-btn"));
+    expect(
+      screen.getByTestId("assistant-layer5-injected-preview").textContent,
+    ).toContain("LAYER_5_FOLDER_CONTINUITY");
+    fireEvent.click(screen.getByTestId("assistant-save-pinned-notes-btn"));
+    expect(onUpdatePinnedNotes).toHaveBeenCalledWith(
+      "folder-checkout-01",
+      "Décision #1 : conserver le PSP Stripe en secours.",
+    );
+
+    // Open 👥 Partager modal, check preventive restricted sources warning & change visibility
+    fireEvent.click(screen.getByTestId("assistant-folder-share-modal-btn"));
+    expect(
+      screen.getByTestId("assistant-share-restricted-sources-warning").textContent,
+    ).toContain("🔒 Source restreinte");
+    fireEvent.click(screen.getByTestId("folder-visibility-btn-WORKSPACE_OPEN"));
+    expect(onChangeVisibility).toHaveBeenCalledWith(
+      "folder-checkout-01",
+      "WORKSPACE_OPEN",
+    );
+
+    // 1-click Process Bridge (`☍ Lancer un Processus à partir de ce dossier →`)
+    fireEvent.click(
+      screen.getByTestId("assistant-launch-process-from-folder-btn"),
+    );
+    expect(onLaunchProcessFromFolder).toHaveBeenCalledWith(
+      "folder-checkout-01",
+      "orcia://pack-sdlc/workflows/ticket-to-tech-spec",
+    );
+
+    // Switch to Tab 2 (`📁 Dossiers (1)`) and Tab 3 (`🕘 Historique & Recherche`)
+    fireEvent.click(screen.getByTestId("assistant-main-tab-FOLDERS"));
+    fireEvent.click(
+      screen.getByTestId("assistant-select-folder-btn-folder-checkout-01"),
+    );
+    expect(onSelectFolder).toHaveBeenCalledWith("folder-checkout-01");
+
+    fireEvent.click(screen.getByTestId("assistant-main-tab-HISTORY_SEARCH"));
+    expect(
+      screen.getByTestId("assistant-history-hit-hit-thread-01").textContent,
+    ).toContain("Arbitrage PSP Checkout");
   });
 });

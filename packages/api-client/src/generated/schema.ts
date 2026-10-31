@@ -132,6 +132,20 @@ export interface components {
       workflow_uri: string;
       workspace_id: string;
     };
+    AssistantFolderSchemaItem: {
+      assembled_layer5_prompt_block?: string;
+      consolidated_summary: string;
+      evidence_tags: (string)[];
+      folder_id: string;
+      has_restricted_sources: boolean;
+      owner_user_id: string;
+      pinned_notes_markdown: string;
+      shares?: (components["schemas"]["FolderShareGrantSchemaItem"])[];
+      title: string;
+      visibility_mode: "PRIVATE" | "SHARED_SELECTED" | "WORKSPACE_OPEN";
+      working_attachments_uris: (string)[];
+      workspace_id: string;
+    };
     AssistantGovernanceViewResponse: {
       assembled_layers: (components["schemas"]["AssembledLayerPreviewSchemaItem"])[];
       can_edit_workspace_layer: boolean;
@@ -140,6 +154,13 @@ export interface components {
       user_preferences: components["schemas"]["UserLayerPreferencesSchemaItem"];
       workspace_id: string;
       workspace_settings: components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
+    };
+    AssistantHistorySearchHitSchemaItem: {
+      folder_id?: string | null;
+      item_id: string;
+      item_kind: "THREAD" | "FOLDER" | "ARTIFACT_CARD";
+      snippet: string;
+      title: string;
     };
     AssistantNodeTraceSchemaItem: {
       duration_ms: number;
@@ -182,6 +203,17 @@ export interface components {
       sub_layers_count?: number;
       title: string;
     };
+    AssistantThreadSchemaItem: {
+      creator_user_id: string;
+      folder_id?: string | null;
+      last_author_passthrough_identity?: string | null;
+      last_author_user_id?: string | null;
+      thread_id: string;
+      thread_summary: string;
+      title: string;
+      turn_count: number;
+      workspace_id: string;
+    };
     AssistantWorkflowProposalSchemaItem: {
       description: string;
       edges: (components["schemas"]["XyFlowEdgeSchemaItem"])[];
@@ -191,6 +223,15 @@ export interface components {
       proposal_id: string;
       title: string;
       workflow_uri: string;
+    };
+    AssistantWorkspaceOverviewResponse: {
+      active_folder_pill_label?: string | null;
+      folders: (components["schemas"]["AssistantFolderSchemaItem"])[];
+      folders_count: number;
+      history_hits: (components["schemas"]["AssistantHistorySearchHitSchemaItem"])[];
+      tabs: ("ACTIVE_DISCUSSION" | "FOLDERS" | "HISTORY_SEARCH")[];
+      threads: (components["schemas"]["AssistantThreadSchemaItem"])[];
+      workspace_id: string;
     };
     AuthTokenResponse: {
       access_token: string;
@@ -406,6 +447,20 @@ export interface components {
       section_title: string;
       word_count: number;
     };
+    ConfigureFolderSharingRequest: {
+      outside_workspace_user_ids?: (string)[];
+      shares?: (components["schemas"]["FolderShareGrantSchemaItem"])[];
+      visibility_mode: "PRIVATE" | "SHARED_SELECTED" | "WORKSPACE_OPEN";
+      workspace_id: string;
+    };
+    ConfigureFolderSharingResponse: {
+      folder_id: string;
+      has_restricted_sources: boolean;
+      restricted_sources_warning?: string | null;
+      shares: (components["schemas"]["FolderShareGrantSchemaItem"])[];
+      visibility_mode: "PRIVATE" | "SHARED_SELECTED" | "WORKSPACE_OPEN";
+      workspace_id: string;
+    };
     ConnectorTestConnectionResponse: {
       connector_id: string;
       diagnostic_message: string;
@@ -454,6 +509,22 @@ export interface components {
       viewer_access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       workflow_overrides: (components["schemas"]["DeclarativeOverrideLayerResponse"])[];
       workspaces_governance: (components["schemas"]["WorkspaceGovernanceItemResponse"])[];
+    };
+    CreateAssistantThreadRequest: {
+      folder_id?: string | null;
+      initial_summary?: string;
+      title: string;
+      workspace_id: string;
+    };
+    CreateOrUpdateAssistantFolderRequest: {
+      consolidated_summary?: string;
+      evidence_tags?: (string)[];
+      folder_id?: string | null;
+      has_restricted_sources?: boolean;
+      pinned_notes_markdown?: string;
+      title: string;
+      working_attachments_uris?: (string)[];
+      workspace_id: string;
     };
     DbDdlIndexRequest: {
       datasource_alias: string;
@@ -636,6 +707,10 @@ export interface components {
       step_execution_id?: string;
       system_prompt?: string;
       user_prompt?: string;
+    };
+    FolderShareGrantSchemaItem: {
+      access_role?: "READ_ONLY" | "CO_CONTRIBUTOR";
+      grantee_user_id: string;
     };
     GateEvaluationSchemaItem: {
       duration_ms: number;
@@ -1068,6 +1143,18 @@ export interface components {
       justifying_jira_key?: string | null;
       resolved: boolean;
       source_uri: string;
+      workspace_id: string;
+    };
+    LaunchProcessFromFolderRequest: {
+      target_workflow_uri?: string;
+      workspace_id: string;
+    };
+    LaunchProcessFromFolderResponse: {
+      folder_id: string;
+      initiated_by_user_id: string;
+      passthrough_identity: string;
+      prefilled_contract_inputs: Record<string, unknown>;
+      workflow_uri: string;
       workspace_id: string;
     };
     LlmModelEndpointItem: {
@@ -1592,6 +1679,26 @@ export interface components {
       fingerprint?: string | null;
       updated_at: string;
       updated_by: string;
+    };
+    SendCollaborativeThreadTurnRequest: {
+      message_text: string;
+      release_lock_after_turn?: boolean;
+      workspace_id: string;
+    };
+    SendCollaborativeThreadTurnResponse: {
+      assembled_layer5_preview: string;
+      assistant_reply_markdown: string;
+      author_passthrough_identity: string;
+      author_user_id: string;
+      folder_creator_user_id: string;
+      folder_id?: string | null;
+      layer5_memory_injected: boolean;
+      lock_holder_user_id: string;
+      lock_ttl_seconds: number;
+      redis_lock_key: string;
+      sse_presence_banner: string;
+      thread_id: string;
+      workspace_id: string;
     };
     ShellModuleItem: {
       contributor_badge_count?: number;
@@ -2406,6 +2513,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/assistant/folders": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantFolderSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/folders/{folder_id}/launch-process": {
+    post: {
+      responses: {
+        200: components["schemas"]["LaunchProcessFromFolderResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/folders/{folder_id}/share": {
+    post: {
+      responses: {
+        200: components["schemas"]["ConfigureFolderSharingResponse"];
+      };
+    };
+  };
   "/api/v1/assistant/governance": {
     get: {
       responses: {
@@ -2441,6 +2569,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/assistant/threads": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantThreadSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/threads/{thread_id}/turns": {
+    post: {
+      responses: {
+        200: components["schemas"]["SendCollaborativeThreadTurnResponse"];
+      };
+    };
+  };
   "/api/v1/assistant/three-speed/invalidate-cache": {
     post: {
       responses: {
@@ -2466,6 +2608,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["AssistantSaveAndLaunchResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/workspaces/{workspace_id}/overview": {
+    get: {
+      responses: {
+        200: components["schemas"]["AssistantWorkspaceOverviewResponse"];
       };
     };
   };
@@ -3213,13 +3362,17 @@ export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTem
 export type AssembledLayerPreviewSchemaItem = components["schemas"]["AssembledLayerPreviewSchemaItem"];
 export type AssistantChatRequest = components["schemas"]["AssistantChatRequest"];
 export type AssistantChatResponse = components["schemas"]["AssistantChatResponse"];
+export type AssistantFolderSchemaItem = components["schemas"]["AssistantFolderSchemaItem"];
 export type AssistantGovernanceViewResponse = components["schemas"]["AssistantGovernanceViewResponse"];
+export type AssistantHistorySearchHitSchemaItem = components["schemas"]["AssistantHistorySearchHitSchemaItem"];
 export type AssistantNodeTraceSchemaItem = components["schemas"]["AssistantNodeTraceSchemaItem"];
 export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
 export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
 export type AssistantStudioGraphStateSchemaItem = components["schemas"]["AssistantStudioGraphStateSchemaItem"];
 export type AssistantStudioNodeSchemaItem = components["schemas"]["AssistantStudioNodeSchemaItem"];
+export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
+export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
 export type BackgroundAuditRunRequest = components["schemas"]["BackgroundAuditRunRequest"];
@@ -3247,11 +3400,15 @@ export type CommitStagedJiraActionRequest = components["schemas"]["CommitStagedJ
 export type CommitStagedJiraActionResponse = components["schemas"]["CommitStagedJiraActionResponse"];
 export type CompiledArtifactTemplateSchemaItem = components["schemas"]["CompiledArtifactTemplateSchemaItem"];
 export type CompiledMarkdownChunkSchemaItem = components["schemas"]["CompiledMarkdownChunkSchemaItem"];
+export type ConfigureFolderSharingRequest = components["schemas"]["ConfigureFolderSharingRequest"];
+export type ConfigureFolderSharingResponse = components["schemas"]["ConfigureFolderSharingResponse"];
 export type ConnectorTestConnectionResponse = components["schemas"]["ConnectorTestConnectionResponse"];
 export type ContextualHelpPublishRequest = components["schemas"]["ContextualHelpPublishRequest"];
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
 export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
 export type ControlCenterOverviewResponse = components["schemas"]["ControlCenterOverviewResponse"];
+export type CreateAssistantThreadRequest = components["schemas"]["CreateAssistantThreadRequest"];
+export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DelegateGrantRequest = components["schemas"]["DelegateGrantRequest"];
@@ -3272,6 +3429,7 @@ export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["Evidence
 export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
 export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];
 export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
+export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
@@ -3321,6 +3479,8 @@ export type JiraJqlSearchRequest = components["schemas"]["JiraJqlSearchRequest"]
 export type JiraJqlSearchResponse = components["schemas"]["JiraJqlSearchResponse"];
 export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"];
 export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
+export type LaunchProcessFromFolderRequest = components["schemas"]["LaunchProcessFromFolderRequest"];
+export type LaunchProcessFromFolderResponse = components["schemas"]["LaunchProcessFromFolderResponse"];
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type LlmTierMappingResponse = components["schemas"]["LlmTierMappingResponse"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
@@ -3387,6 +3547,8 @@ export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationChe
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
 export type SecretStatusResponse = components["schemas"]["SecretStatusResponse"];
+export type SendCollaborativeThreadTurnRequest = components["schemas"]["SendCollaborativeThreadTurnRequest"];
+export type SendCollaborativeThreadTurnResponse = components["schemas"]["SendCollaborativeThreadTurnResponse"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
 export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeResponse"];

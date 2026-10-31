@@ -224,6 +224,15 @@ export {
   type UiEvidenceSourceItem,
   type UiEvidenceToolItem,
 } from "./primitives/AssistantCitationPillsAndArtifactCard";
+export {
+  AssistantFoldersAndCollaborativeThreadView,
+  type AssistantFolderVisibilityMode,
+  type AssistantFoldersAndCollaborativeThreadViewLabels,
+  type AssistantFoldersAndCollaborativeThreadViewProps,
+  type AssistantMainTabCode,
+  type UiAssistantFolderItem,
+  type UiAssistantHistoryHitItem,
+} from "./primitives/AssistantFoldersAndCollaborativeThreadView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

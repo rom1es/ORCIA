@@ -829,6 +829,89 @@
         "title": "AssistantChatResponse",
         "type": "object"
       },
+      "AssistantFolderSchemaItem": {
+        "additionalProperties": false,
+        "description": "Thematic `📁 Dossier` representation (`Story 10.4`).",
+        "properties": {
+          "assembled_layer5_prompt_block": {
+            "default": "",
+            "title": "Assembled Layer5 Prompt Block",
+            "type": "string"
+          },
+          "consolidated_summary": {
+            "title": "Consolidated Summary",
+            "type": "string"
+          },
+          "evidence_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Tags",
+            "type": "array"
+          },
+          "folder_id": {
+            "title": "Folder Id",
+            "type": "string"
+          },
+          "has_restricted_sources": {
+            "title": "Has Restricted Sources",
+            "type": "boolean"
+          },
+          "owner_user_id": {
+            "title": "Owner User Id",
+            "type": "string"
+          },
+          "pinned_notes_markdown": {
+            "title": "Pinned Notes Markdown",
+            "type": "string"
+          },
+          "shares": {
+            "items": {
+              "$ref": "#/components/schemas/FolderShareGrantSchemaItem"
+            },
+            "title": "Shares",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "visibility_mode": {
+            "enum": [
+              "PRIVATE",
+              "SHARED_SELECTED",
+              "WORKSPACE_OPEN"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          },
+          "working_attachments_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Working Attachments Uris",
+            "type": "array"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_id",
+          "workspace_id",
+          "owner_user_id",
+          "title",
+          "pinned_notes_markdown",
+          "working_attachments_uris",
+          "consolidated_summary",
+          "evidence_tags",
+          "has_restricted_sources",
+          "visibility_mode"
+        ],
+        "title": "AssistantFolderSchemaItem",
+        "type": "object"
+      },
       "AssistantGovernanceViewResponse": {
         "additionalProperties": false,
         "description": "Response envelope for `GET /api/v1/assistant/governance` (`Story 10.1`).",
@@ -872,6 +955,52 @@
           "studio_graph"
         ],
         "title": "AssistantGovernanceViewResponse",
+        "type": "object"
+      },
+      "AssistantHistorySearchHitSchemaItem": {
+        "additionalProperties": false,
+        "description": "Search hit in `🕘 Historique & Recherche` (`Story 10.4`).",
+        "properties": {
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "item_kind": {
+            "enum": [
+              "THREAD",
+              "FOLDER",
+              "ARTIFACT_CARD"
+            ],
+            "title": "Item Kind",
+            "type": "string"
+          },
+          "snippet": {
+            "title": "Snippet",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "item_kind",
+          "title",
+          "snippet"
+        ],
+        "title": "AssistantHistorySearchHitSchemaItem",
         "type": "object"
       },
       "AssistantNodeTraceSchemaItem": {
@@ -1125,6 +1254,79 @@
         "title": "AssistantStudioNodeSchemaItem",
         "type": "object"
       },
+      "AssistantThreadSchemaItem": {
+        "additionalProperties": false,
+        "description": "Thread representation inside a `📁 Dossier` (`Story 10.4`).",
+        "properties": {
+          "creator_user_id": {
+            "title": "Creator User Id",
+            "type": "string"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "last_author_passthrough_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Author Passthrough Identity"
+          },
+          "last_author_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Author User Id"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "thread_summary": {
+            "title": "Thread Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "turn_count": {
+            "title": "Turn Count",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "thread_id",
+          "workspace_id",
+          "creator_user_id",
+          "title",
+          "thread_summary",
+          "turn_count"
+        ],
+        "title": "AssistantThreadSchemaItem",
+        "type": "object"
+      },
       "AssistantWorkflowProposalSchemaItem": {
         "additionalProperties": false,
         "description": "Workflow proposal with `@xyflow/react` graph and YAML manifest (`UX-DR15`, `FR-11`).",
@@ -1179,6 +1381,74 @@
           "edges"
         ],
         "title": "AssistantWorkflowProposalSchemaItem",
+        "type": "object"
+      },
+      "AssistantWorkspaceOverviewResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/assistant/workspaces/{workspace_id}/overview` (`Story 10.4`).",
+        "properties": {
+          "active_folder_pill_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Folder Pill Label"
+          },
+          "folders": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantFolderSchemaItem"
+            },
+            "title": "Folders",
+            "type": "array"
+          },
+          "folders_count": {
+            "title": "Folders Count",
+            "type": "integer"
+          },
+          "history_hits": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantHistorySearchHitSchemaItem"
+            },
+            "title": "History Hits",
+            "type": "array"
+          },
+          "tabs": {
+            "items": {
+              "enum": [
+                "ACTIVE_DISCUSSION",
+                "FOLDERS",
+                "HISTORY_SEARCH"
+              ],
+              "type": "string"
+            },
+            "title": "Tabs",
+            "type": "array"
+          },
+          "threads": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantThreadSchemaItem"
+            },
+            "title": "Threads",
+            "type": "array"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "tabs",
+          "folders_count",
+          "folders",
+          "threads",
+          "history_hits"
+        ],
+        "title": "AssistantWorkspaceOverviewResponse",
         "type": "object"
       },
       "AuthTokenResponse": {
@@ -2564,6 +2834,100 @@
         "title": "CompiledMarkdownChunkSchemaItem",
         "type": "object"
       },
+      "ConfigureFolderSharingRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/folders/{folder_id}/share` (`Story 10.4`).",
+        "properties": {
+          "outside_workspace_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Outside Workspace User Ids",
+            "type": "array"
+          },
+          "shares": {
+            "items": {
+              "$ref": "#/components/schemas/FolderShareGrantSchemaItem"
+            },
+            "title": "Shares",
+            "type": "array"
+          },
+          "visibility_mode": {
+            "enum": [
+              "PRIVATE",
+              "SHARED_SELECTED",
+              "WORKSPACE_OPEN"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "visibility_mode"
+        ],
+        "title": "ConfigureFolderSharingRequest",
+        "type": "object"
+      },
+      "ConfigureFolderSharingResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/folders/{folder_id}/share` (`Story 10.4`).",
+        "properties": {
+          "folder_id": {
+            "title": "Folder Id",
+            "type": "string"
+          },
+          "has_restricted_sources": {
+            "title": "Has Restricted Sources",
+            "type": "boolean"
+          },
+          "restricted_sources_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restricted Sources Warning"
+          },
+          "shares": {
+            "items": {
+              "$ref": "#/components/schemas/FolderShareGrantSchemaItem"
+            },
+            "title": "Shares",
+            "type": "array"
+          },
+          "visibility_mode": {
+            "enum": [
+              "PRIVATE",
+              "SHARED_SELECTED",
+              "WORKSPACE_OPEN"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_id",
+          "workspace_id",
+          "visibility_mode",
+          "shares",
+          "has_restricted_sources"
+        ],
+        "title": "ConfigureFolderSharingResponse",
+        "type": "object"
+      },
       "ConnectorTestConnectionResponse": {
         "additionalProperties": false,
         "description": "Fail-fast DBOS connector healthcheck response (`< 5 s`, `Story 8.4`).",
@@ -2891,6 +3255,106 @@
           "trace_id"
         ],
         "title": "ControlCenterOverviewResponse",
+        "type": "object"
+      },
+      "CreateAssistantThreadRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/threads` (`Story 10.4`).",
+        "properties": {
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "initial_summary": {
+            "default": "",
+            "title": "Initial Summary",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "title"
+        ],
+        "title": "CreateAssistantThreadRequest",
+        "type": "object"
+      },
+      "CreateOrUpdateAssistantFolderRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/folders` (`Story 10.4`).",
+        "properties": {
+          "consolidated_summary": {
+            "default": "",
+            "title": "Consolidated Summary",
+            "type": "string"
+          },
+          "evidence_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Tags",
+            "type": "array"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "has_restricted_sources": {
+            "default": false,
+            "title": "Has Restricted Sources",
+            "type": "boolean"
+          },
+          "pinned_notes_markdown": {
+            "default": "",
+            "title": "Pinned Notes Markdown",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "working_attachments_uris": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Working Attachments Uris",
+            "type": "array"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "title"
+        ],
+        "title": "CreateOrUpdateAssistantFolderRequest",
         "type": "object"
       },
       "DbDdlIndexRequest": {
@@ -3996,6 +4460,31 @@
           }
         },
         "title": "ExecuteTierRoutingRequest",
+        "type": "object"
+      },
+      "FolderShareGrantSchemaItem": {
+        "additionalProperties": false,
+        "description": "Colleague share grant (`READ_ONLY` or `CO_CONTRIBUTOR`) (`Story 10.4`).",
+        "properties": {
+          "access_role": {
+            "default": "READ_ONLY",
+            "enum": [
+              "READ_ONLY",
+              "CO_CONTRIBUTOR"
+            ],
+            "title": "Access Role",
+            "type": "string"
+          },
+          "grantee_user_id": {
+            "minLength": 1,
+            "title": "Grantee User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "grantee_user_id"
+        ],
+        "title": "FolderShareGrantSchemaItem",
         "type": "object"
       },
       "GateEvaluationSchemaItem": {
@@ -6743,6 +7232,68 @@
           "resolved"
         ],
         "title": "KbStaleAlertSchemaItem",
+        "type": "object"
+      },
+      "LaunchProcessFromFolderRequest": {
+        "additionalProperties": false,
+        "description": "Request for `POST /api/v1/assistant/folders/{folder_id}/launch-process` (`Story 10.4`).",
+        "properties": {
+          "target_workflow_uri": {
+            "default": "orcia://pack-sdlc/workflows/ticket-to-tech-spec",
+            "title": "Target Workflow Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "LaunchProcessFromFolderRequest",
+        "type": "object"
+      },
+      "LaunchProcessFromFolderResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/assistant/folders/{folder_id}/launch-process` (`Story 10.4`).",
+        "properties": {
+          "folder_id": {
+            "title": "Folder Id",
+            "type": "string"
+          },
+          "initiated_by_user_id": {
+            "title": "Initiated By User Id",
+            "type": "string"
+          },
+          "passthrough_identity": {
+            "title": "Passthrough Identity",
+            "type": "string"
+          },
+          "prefilled_contract_inputs": {
+            "additionalProperties": true,
+            "title": "Prefilled Contract Inputs",
+            "type": "object"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_id",
+          "workspace_id",
+          "workflow_uri",
+          "initiated_by_user_id",
+          "passthrough_identity",
+          "prefilled_contract_inputs"
+        ],
+        "title": "LaunchProcessFromFolderResponse",
         "type": "object"
       },
       "LlmModelEndpointItem": {
@@ -10109,6 +10660,114 @@
           "updated_by"
         ],
         "title": "SecretStatusResponse",
+        "type": "object"
+      },
+      "SendCollaborativeThreadTurnRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/threads/{thread_id}/turns` (`Story 10.4`).",
+        "properties": {
+          "message_text": {
+            "minLength": 1,
+            "title": "Message Text",
+            "type": "string"
+          },
+          "release_lock_after_turn": {
+            "default": false,
+            "title": "Release Lock After Turn",
+            "type": "boolean"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "message_text"
+        ],
+        "title": "SendCollaborativeThreadTurnRequest",
+        "type": "object"
+      },
+      "SendCollaborativeThreadTurnResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/threads/{thread_id}/turns` (`Story 10.4`).",
+        "properties": {
+          "assembled_layer5_preview": {
+            "title": "Assembled Layer5 Preview",
+            "type": "string"
+          },
+          "assistant_reply_markdown": {
+            "title": "Assistant Reply Markdown",
+            "type": "string"
+          },
+          "author_passthrough_identity": {
+            "title": "Author Passthrough Identity",
+            "type": "string"
+          },
+          "author_user_id": {
+            "title": "Author User Id",
+            "type": "string"
+          },
+          "folder_creator_user_id": {
+            "title": "Folder Creator User Id",
+            "type": "string"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "layer5_memory_injected": {
+            "title": "Layer5 Memory Injected",
+            "type": "boolean"
+          },
+          "lock_holder_user_id": {
+            "title": "Lock Holder User Id",
+            "type": "string"
+          },
+          "lock_ttl_seconds": {
+            "title": "Lock Ttl Seconds",
+            "type": "integer"
+          },
+          "redis_lock_key": {
+            "title": "Redis Lock Key",
+            "type": "string"
+          },
+          "sse_presence_banner": {
+            "title": "Sse Presence Banner",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "thread_id",
+          "workspace_id",
+          "redis_lock_key",
+          "lock_holder_user_id",
+          "lock_ttl_seconds",
+          "sse_presence_banner",
+          "author_user_id",
+          "author_passthrough_identity",
+          "folder_creator_user_id",
+          "layer5_memory_injected",
+          "assembled_layer5_preview",
+          "assistant_reply_markdown"
+        ],
+        "title": "SendCollaborativeThreadTurnResponse",
         "type": "object"
       },
       "ShellModuleItem": {
@@ -15779,6 +16438,204 @@
         ]
       }
     },
+    "/api/v1/assistant/folders": {
+      "post": {
+        "description": "Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`, Layer 5 continuity).",
+        "operationId": "create_or_update_assistant_folder_endpoint_api_v1_assistant_folders_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateAssistantFolderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantFolderSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Or Update Assistant Folder Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/folders/{folder_id}/launch-process": {
+      "post": {
+        "description": "Pre-fill a Process contract in 1 click (`☍ Lancer un Processus à partir de ce dossier →`).",
+        "operationId": "launch_process_from_folder_endpoint_api_v1_assistant_folders__folder_id__launch_process_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LaunchProcessFromFolderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaunchProcessFromFolderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Launch Process From Folder Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/folders/{folder_id}/share": {
+      "post": {
+        "description": "Configure folder visibility (`🔒 Privé | 👥 Partagé | 📦 Espace`) confined to Workspace.",
+        "operationId": "configure_folder_sharing_endpoint_api_v1_assistant_folders__folder_id__share_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureFolderSharingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigureFolderSharingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Configure Folder Sharing Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
     "/api/v1/assistant/governance": {
       "get": {
         "description": "Return Mode A (3 tabs) & Mode B (Studio graph) governance state (`Story 10.1`).",
@@ -16089,6 +16946,135 @@
         ]
       }
     },
+    "/api/v1/assistant/threads": {
+      "post": {
+        "description": "Create a discussion thread inside a `📁 Dossier` (`Story 10.4`).",
+        "operationId": "create_assistant_thread_endpoint_api_v1_assistant_threads_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssistantThreadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantThreadSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Assistant Thread Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/threads/{thread_id}/turns": {
+      "post": {
+        "description": "Execute a turn in a shared thread under Redis turn lock (`NX EX 60`).",
+        "operationId": "send_collaborative_thread_turn_endpoint_api_v1_assistant_threads__thread_id__turns_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCollaborativeThreadTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendCollaborativeThreadTurnResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Collaborative Thread Turn Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
     "/api/v1/assistant/three-speed/invalidate-cache": {
       "post": {
         "description": "Invalidate Redis 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`).",
@@ -16360,6 +17346,75 @@
         "summary": "Save a composed Workflow-as-Code manifest in the Workspace and launch its real run",
         "tags": [
           "assistant-agent"
+        ]
+      }
+    },
+    "/api/v1/assistant/workspaces/{workspace_id}/overview": {
+      "get": {
+        "description": "Return the 3-tab `Mon Assistant` workspace overview (`💬`, `📁`, `🕘`) (`Story 10.4`).",
+        "operationId": "get_assistant_workspace_overview_endpoint_api_v1_assistant_workspaces__workspace_id__overview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active_folder_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active Folder Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search_query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Search Query",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantWorkspaceOverviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Assistant Workspace Overview Endpoint",
+        "tags": [
+          "assistant-epic10"
         ]
       }
     },

@@ -43,6 +43,9 @@ from orcia_core.orchestration import (
 from orcia_core.orchestration.assistant_citations_and_v5_guard import (
     AssistantCitationAndV5GuardService,
 )
+from orcia_core.orchestration.assistant_folders_and_sharing import (
+    AssistantFoldersAndSharingService,
+)
 from orcia_core.orchestration.assistant_governance import (
     AssistantFourLevelGovernanceService,
 )
@@ -521,4 +524,17 @@ def get_assistant_citation_and_v5_guard_service(
     if svc is None:
         svc = AssistantCitationAndV5GuardService()
         request.app.state.assistant_citation_and_v5_guard_service = svc
+    return svc
+
+
+def get_assistant_folders_and_sharing_service(
+    request: Request,
+) -> AssistantFoldersAndSharingService:
+    """FastAPI `Depends` provider returning `AssistantFoldersAndSharingService` (`Story 10.4`)."""
+    svc: AssistantFoldersAndSharingService | None = getattr(
+        request.app.state, "assistant_folders_and_sharing_service", None
+    )
+    if svc is None:
+        svc = AssistantFoldersAndSharingService()
+        request.app.state.assistant_folders_and_sharing_service = svc
     return svc

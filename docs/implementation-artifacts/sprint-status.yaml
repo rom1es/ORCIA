@@ -117,11 +117,11 @@ development_status:
 
   # Epic 10 — Mon Assistant Tout-en-Un (Style EXEMPLE) : Gouvernance 4 Niveaux (Mode A & Mode B), Routage 3 Vitesses (TTFT < 1,2s), Citations Déterministes [S1]/[G1]/[O1] & Dossiers Collaboratifs
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes B, H, K, K.4, K.5, K.6)
-  epic-10: in-progress
+  epic-10: done
   10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m: done
   10-2-garantie-de-latence-ttft-1-2s-cache-redis-prompt-assemblé-3-v: done
   10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage: done
-  10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: backlog
+  10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: done
   epic-10-retrospective: optional
 
   # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Exposition MCP Gouvernée (Agents & Assistant /api/v1/mcp) & Banc de Test MCP/A2A 🔌 + Atelier orcia-pack-builder
