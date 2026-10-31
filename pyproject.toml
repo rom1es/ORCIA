@@ -46,6 +46,7 @@ members = [
     "packages/orcia-kernel",
     "packages/orcia-core",
     "packages/orcia-pack-sdlc",
+    "packages/orcia-pack-builder",
     "apps/api",
     "apps/worker",
 ]
@@ -54,6 +55,7 @@ members = [
 orcia-kernel = { workspace = true }
 orcia-core = { workspace = true }
 orcia-pack-sdlc = { workspace = true }
+orcia-pack-builder = { workspace = true }
 orcia-api = { workspace = true }
 orcia-worker = { workspace = true }
 
@@ -61,6 +63,7 @@ orcia-worker = { workspace = true }
 orcia_kernel = "packages/orcia-kernel/src/orcia_kernel"
 orcia_core = "packages/orcia-core/src/orcia_core"
 orcia_pack_sdlc = "packages/orcia-pack-sdlc/src/orcia_pack_sdlc"
+orcia_pack_builder = "packages/orcia-pack-builder/src/orcia_pack_builder"
 orcia_api = "apps/api/src/orcia_api"
 orcia_worker = "apps/worker/src/orcia_worker"
 
@@ -69,9 +72,13 @@ where = [
     "packages/orcia-kernel/src",
     "packages/orcia-core/src",
     "packages/orcia-pack-sdlc/src",
+    "packages/orcia-pack-builder/src",
     "apps/api/src",
     "apps/worker/src",
 ]
+
+[project.entry-points."orcia.packs"]
+pack_builder = "orcia_pack_builder:get_pack_builder_manifest"
 
 [project.entry-points."orcia.connectors"]
 git = "orcia_pack_sdlc.connectors:create_git_connector"
@@ -98,6 +105,7 @@ root_packages = [
     "orcia_kernel",
     "orcia_core",
     "orcia_pack_sdlc",
+    "orcia_pack_builder",
     "orcia_api",
     "orcia_worker",
 ]
@@ -108,7 +116,7 @@ name = "AD-19 Contract 1: Unidirectional Package Layers (api/worker -> pack_sdlc
 type = "layers"
 layers = [
     "orcia_api | orcia_worker",
-    "orcia_pack_sdlc",
+    "orcia_pack_sdlc | orcia_pack_builder",
     "orcia_core",
     "orcia_kernel",
 ]
@@ -145,6 +153,7 @@ forbidden_modules = [
     "orcia_api",
     "orcia_worker",
     "orcia_pack_sdlc",
+    "orcia_pack_builder",
 ]
 
 [[tool.importlinter.contracts]]
@@ -156,6 +165,7 @@ source_modules = [
 ]
 forbidden_modules = [
     "orcia_pack_sdlc",
+    "orcia_pack_builder",
 ]
 
 [[tool.importlinter.contracts]]
@@ -179,6 +189,7 @@ src = [
     "packages/orcia-kernel/src",
     "packages/orcia-core/src",
     "packages/orcia-pack-sdlc/src",
+    "packages/orcia-pack-builder/src",
     "apps/api/src",
     "apps/worker/src",
     "tests",
@@ -197,6 +208,7 @@ mypy_path = [
     "packages/orcia-kernel/src",
     "packages/orcia-core/src",
     "packages/orcia-pack-sdlc/src",
+    "packages/orcia-pack-builder/src",
     "apps/api/src",
     "apps/worker/src",
 ]
@@ -220,6 +232,7 @@ pythonpath = [
     "packages/orcia-kernel/src",
     "packages/orcia-core/src",
     "packages/orcia-pack-sdlc/src",
+    "packages/orcia-pack-builder/src",
     "apps/api/src",
     "apps/worker/src",
     ".",

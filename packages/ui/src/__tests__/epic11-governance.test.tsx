@@ -5,6 +5,10 @@ import {
   type DnaStarlarkAndGlossaryLabels,
 } from "../primitives/DnaStarlarkCompilerAndGlossaryLifecycleView";
 import {
+  PackBuilderProcessesStudioView,
+  type PackBuilderProcessesStudioLabels,
+} from "../primitives/PackBuilderProcessesStudioView";
+import {
   RemoteServiceTestBenchAndMcpExposureView,
   type RemoteServiceTestBenchLabels,
 } from "../primitives/RemoteServiceTestBenchAndMcpExposureView";
@@ -239,5 +243,71 @@ describe("Story 11.3 — RemoteServiceTestBenchAndMcpExposureView", () => {
     expect(activateBtn.disabled).toBe(false);
     fireEvent.click(activateBtn);
     expect(onActivate).toHaveBeenCalled();
+  });
+});
+
+const PACK_BUILDER_LABELS_FR: PackBuilderProcessesStudioLabels = {
+  studioTitle: "Atelier Système orcia-pack-builder (Processus 1 à 4)",
+  agentsSectionTitle: "4 Agents Spécialisés",
+  humanAnchorSectionTitle: "✍️ Ancrage Humain Violet — Intention Métier du Pack (>= 30 caractères)",
+  humanAnchorPlaceholder: "Décrivez l'intention métier et réglementaire du Pack...",
+  process1CreatePackButtonLabel: "Générer le Pack Métier (Processus 1)",
+  process2WhatIfTitle: "Processus 2 — Simulation d'Impact What-If (@vX.Y.Z)",
+  runLocksPreservedBadgeLabel: "✓ run-lock.json intacts",
+  process3CertifyTitle: "Processus 3 — Certification Starlark Palier 1b (< 2 ms) & Palier 2",
+  certifiedBadgeLabel: "✓ Certifié",
+  process4PromoteButtonLabel: "Promouvoir une brique depuis un Espace (Processus 4)",
+};
+
+describe("Story 11.4 — PackBuilderProcessesStudioView", () => {
+  it("enforces Violet Human Anchor (>= 30 chars) and renders What-If & Starlark certifications", () => {
+    const onCreate = vi.fn();
+    render(
+      <PackBuilderProcessesStudioView
+        agents={[
+          {
+            slug: "architecte-metier-pack",
+            handle: "@Architecte-Métier-Pack",
+            roleDescription: "Structuration ADN",
+          },
+        ]}
+        whatIfImpacts={[
+          {
+            workspaceKey: "claims-fr-ws",
+            impactedWorkflows: ["claims/triage-flow"],
+            breakingNorms: ["NORM-FIN-01"],
+            activeRunsCount: 3,
+            runLocksUntouched: true,
+          },
+        ]}
+        certifications={[
+          {
+            toolSlug: "mech-fin-solvency",
+            sandboxTier: "TIER_1B_STARLARK", // pragma: allowlist secret
+            certified: true,
+            elapsedMs: 0.42,
+            certificateSha256: "abc123",
+          },
+        ]}
+        labels={PACK_BUILDER_LABELS_FR}
+        onCreateBusinessPack={onCreate}
+      />
+    );
+
+    const createBtn = screen.getByTestId("process1-create-pack-btn") as HTMLButtonElement;
+    expect(createBtn.disabled).toBe(true);
+
+    fireEvent.change(screen.getByTestId("pack-builder-anchor-input"), {
+      target: {
+        value:
+          "Intention métier Solvabilité II : garantir le contrôle déterministe des provisions techniques.",
+      },
+    });
+    expect(createBtn.disabled).toBe(false);
+    fireEvent.click(createBtn);
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("run-locks-preserved-claims-fr-ws").textContent).toBe(
+      "✓ run-lock.json intacts"
+    );
   });
 });

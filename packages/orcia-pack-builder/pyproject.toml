@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orcia-pack-builder"
+version = "0.1.0"
+description = "ORCIA System Pack Builder — 4 specialized agents & 5 governed processes for creating, evolving (What-If), certifying (Starlark Tier 1b / Container Tier 2), promoting, and documenting Business Packs"
+requires-python = ">=3.12"
+dependencies = [
+    "orcia-kernel",
+    "orcia-core",
+]
+
+[project.entry-points."orcia.packs"]
+pack_builder = "orcia_pack_builder:get_pack_builder_manifest"
+
+[tool.setuptools.package-dir]
+orcia_pack_builder = "src/orcia_pack_builder"
+
+[tool.setuptools.packages.find]
+where = ["src"]

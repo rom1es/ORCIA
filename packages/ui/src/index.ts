@@ -256,6 +256,14 @@ export {
   type UiDiscoveredCapabilityItem,
   type UiTestBenchStepItem,
 } from "./primitives/RemoteServiceTestBenchAndMcpExposureView";
+export {
+  PackBuilderProcessesStudioView,
+  type PackBuilderAgentItem,
+  type PackBuilderProcessesStudioLabels,
+  type PackBuilderProcessesStudioViewProps,
+  type PackToolCertificationSummary,
+  type PackWhatIfImpactItem,
+} from "./primitives/PackBuilderProcessesStudioView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

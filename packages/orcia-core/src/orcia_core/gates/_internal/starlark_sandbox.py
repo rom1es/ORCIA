@@ -86,8 +86,9 @@ class _OrciaSysHost:
                 f"Step cap exceeded ({self.steps_executed} > {self._max_steps})."
             )
 
-    def input(self) -> dict[str, Any]:
+    def input(self, schema_ref: str | None = None) -> dict[str, Any]:
         """Return a copy of the validated step payload."""
+        _ = schema_ref
         self._tick(1)
         return copy.deepcopy(self._payload)
 
@@ -120,6 +121,18 @@ class _OrciaSysHost:
                 message_fr=str(message_fr),
             )
         )
+
+    def assert_rule(
+        self,
+        *,
+        rule_id: str,
+        condition: bool,
+        message: str,
+        evidence_ref: str = "",
+    ) -> None:
+        """Record a deterministic PASS or FAIL verdict from a boolean `condition`."""
+        _ = evidence_ref
+        self.emit_verdict(rule_id, "PASS" if bool(condition) else "FAIL", message)
 
     def emit_effect(
         self,
