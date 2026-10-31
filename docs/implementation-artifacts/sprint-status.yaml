@@ -133,6 +133,13 @@ development_status:
   11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i: done
   11-5-processus-5-generate-and-attach-help-validateur-validate_help: done
   epic-11-retrospective: optional
+
+  # Epic 12 — Intégration Bout-en-Bout du Portail SPA (apps/web) : Bascule Shell 4 Zones Direction C (8 Entrées Fixes), Cockpit Épuré, Mon Assistant (Epic 10), Mes Espaces 5 Onglets, Banc de Test MCP 🔌 & Atelier orcia-pack-builder (Epic 11)
+  epic-12: in-progress
+  12-1-bascule-apps-web-shell-4-zones-direction-c-8-entrees-cockpit: done
+  12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10: ready-for-dev
+  12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder: ready-for-dev
+  epic-12-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"

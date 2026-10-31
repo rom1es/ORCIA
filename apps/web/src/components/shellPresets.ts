@@ -1,4 +1,5 @@
 import type {
+  EightFixedMenuKey,
   UiHumanProfileBadge,
   UiModuleKey,
   UiScopeLevel,
@@ -54,18 +55,81 @@ export function resolveModuleFromPathname(pathname: string | null): UiModuleKey 
   if (!pathname || pathname === "/" || pathname.startsWith("/cockpit")) {
     return "cockpit";
   }
-  if (pathname.startsWith("/inbox")) return "inbox";
-  if (pathname.startsWith("/catalog")) return "catalog";
-  if (pathname.startsWith("/ontology")) return "ontology";
-  if (pathname.startsWith("/gates")) return "gates";
+  if (pathname.startsWith("/inbox") || pathname.startsWith("/assistant")) return "inbox";
+  if (pathname.startsWith("/catalog") || pathname.startsWith("/agents")) return "catalog";
+  if (pathname.startsWith("/ontology") || pathname.startsWith("/help")) return "ontology";
+  if (pathname.startsWith("/gates") || pathname.startsWith("/processes")) return "gates";
   if (pathname.startsWith("/finops")) return "finops";
   if (
     pathname.startsWith("/bootstrap") ||
     pathname.startsWith("/settings") ||
+    pathname.startsWith("/configuration") ||
     pathname.startsWith("/wizards")
   ) {
     return "bootstrap";
   }
-  if (pathname.startsWith("/workspaces") || pathname.startsWith("/admin")) return "admin";
+  if (
+    pathname.startsWith("/workspaces") ||
+    pathname.startsWith("/spaces") ||
+    pathname.startsWith("/admin")
+  ) {
+    return "admin";
+  }
   return "cockpit";
+}
+
+export function resolveEightMenuKeyFromModule(
+  moduleKey: UiModuleKey,
+  pathname: string | null,
+): EightFixedMenuKey {
+  if (pathname?.startsWith("/help")) return "help";
+  if (pathname?.startsWith("/agents")) return "agents";
+  if (pathname?.startsWith("/processes")) return "processes";
+  if (pathname?.startsWith("/assistant")) return "assistant";
+  if (pathname?.startsWith("/spaces") || pathname?.startsWith("/workspaces")) return "spaces";
+  if (pathname?.startsWith("/configuration") || pathname?.startsWith("/settings")) {
+    return "configuration";
+  }
+  switch (moduleKey) {
+    case "cockpit":
+      return "cockpit";
+    case "inbox":
+      return "assistant";
+    case "catalog":
+      return "agents";
+    case "ontology":
+      return "spaces";
+    case "gates":
+      return "processes";
+    case "finops":
+      return "finops";
+    case "admin":
+      return "spaces";
+    case "bootstrap":
+      return "configuration";
+  }
+}
+
+export function mapEightMenuKeyToModule(key: EightFixedMenuKey): {
+  moduleKey: UiModuleKey;
+  route: string;
+} {
+  switch (key) {
+    case "cockpit":
+      return { moduleKey: "cockpit", route: "/cockpit" };
+    case "assistant":
+      return { moduleKey: "inbox", route: "/assistant" };
+    case "processes":
+      return { moduleKey: "gates", route: "/processes" };
+    case "agents":
+      return { moduleKey: "catalog", route: "/agents" };
+    case "spaces":
+      return { moduleKey: "admin", route: "/workspaces" };
+    case "finops":
+      return { moduleKey: "finops", route: "/finops" };
+    case "configuration":
+      return { moduleKey: "bootstrap", route: "/settings" };
+    case "help":
+      return { moduleKey: "ontology", route: "/help" };
+  }
 }

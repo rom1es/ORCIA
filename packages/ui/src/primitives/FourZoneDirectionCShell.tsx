@@ -59,6 +59,9 @@ export interface FourZoneDirectionCShellProps {
   readonly onOpenSearchCommand?: () => void;
   readonly onSelectPack?: (packKey: string) => void;
   readonly onOpenUserDropdown?: () => void;
+  readonly headerUserControl?: React.ReactNode;
+  readonly sidebarSecondarySlot?: React.ReactNode;
+  readonly helpColumnContent?: React.ReactNode;
   readonly children: React.ReactNode;
 }
 
@@ -92,6 +95,9 @@ export function FourZoneDirectionCShell({
   onOpenSearchCommand,
   onSelectPack,
   onOpenUserDropdown,
+  headerUserControl,
+  sidebarSecondarySlot,
+  helpColumnContent,
   children,
 }: FourZoneDirectionCShellProps): React.ReactElement {
   const [railCollapsed, setRailCollapsed] = useState<boolean>(false);
@@ -203,29 +209,31 @@ export function FourZoneDirectionCShell({
             {labels.notificationsButtonLabel}
           </button>
 
-          <button
-            type="button"
-            data-testid="topbar-user-account-trigger"
-            onClick={onOpenUserDropdown}
-            className="flex items-center gap-2 rounded border px-2.5 py-1 text-xs"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border-subtle)",
-              color: "var(--color-text-primary)",
-            }}
-          >
-            <span>👤 {userDisplayName}</span>
-            <span
-              data-testid="topbar-hat-badge"
-              className="rounded px-1.5 py-0.5 text-[11px] font-semibold"
+          {headerUserControl ?? (
+            <button
+              type="button"
+              data-testid="topbar-user-account-trigger"
+              onClick={onOpenUserDropdown}
+              className="flex items-center gap-2 rounded border px-2.5 py-1 text-xs"
               style={{
-                backgroundColor: "var(--color-action-primary-subtle)",
-                color: "var(--color-action-primary)",
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-border-subtle)",
+                color: "var(--color-text-primary)",
               }}
             >
-              {userHatLabel}
-            </span>
-          </button>
+              <span>👤 {userDisplayName}</span>
+              <span
+                data-testid="topbar-hat-badge"
+                className="rounded px-1.5 py-0.5 text-[11px] font-semibold"
+                style={{
+                  backgroundColor: "var(--color-action-primary-subtle)",
+                  color: "var(--color-action-primary)",
+                }}
+              >
+                {userHatLabel}
+              </span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -309,6 +317,8 @@ export function FourZoneDirectionCShell({
                 </button>
               );
             })}
+
+            {!railCollapsed && sidebarSecondarySlot}
           </nav>
 
           {/* Footer active Business Pack selector */}
@@ -389,6 +399,7 @@ export function FourZoneDirectionCShell({
                 {labels.helpColumnExpectedBody}
               </p>
             </div>
+            {helpColumnContent && <div className="mt-3">{helpColumnContent}</div>}
           </aside>
         )}
       </div>

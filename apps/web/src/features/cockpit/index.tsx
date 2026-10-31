@@ -1,10 +1,13 @@
-import { ScopedPromptBox, StatusBadge, StreamlinedCockpitView } from "@orcia/ui";
+import {
+  ProgressiveDay0AccostageBanner,
+  StatusBadge,
+  StreamlinedCockpitView,
+} from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
-import { PlatformOnboardingChecklistCard } from "./PlatformOnboardingChecklistCard";
 
 export function buildCockpitWorkflowPreviewGraph(): {
   nodes: Node[];
@@ -49,76 +52,51 @@ export function CockpitFeaturePanel() {
 
   const isFr = locale === "fr";
 
-  const checklistSteps = [
+  const milestones = [
     {
-      id: "step-llm",
-      number: 1,
+      index: 1,
+      key: "step-llm",
       title: isFr
-        ? "1. Modèles IA & Paliers Cognitifs (simple / medium / complex / auto)"
-        : "1. AI Models & Cognitive Tiers (simple / medium / complex / auto)",
-      done: llmTiers.length > 0,
-      countLabel: isFr
-        ? `${llmTiers.length} palier(s) configuré(s)`
-        : `${llmTiers.length} tier(s) configured`,
-      settingsHref: "/settings",
-      wizardHref: "/wizards",
-      ctaLabel: isFr ? "Paramétrer les modèles IA" : "Configure AI models",
+        ? "1. Modèles IA & Paliers Cognitifs"
+        : "1. AI Models & Cognitive Tiers",
+      completed: llmTiers.length > 0,
+      targetRoute: "/settings",
     },
     {
-      id: "step-iam",
-      number: 2,
+      index: 2,
+      key: "step-iam",
       title: isFr
-        ? "2. Structure Organisationnelle (BU / Équipe) & Habilitations 6 verbes"
-        : "2. Organization Tree (BU / Team) & 6-Verb Permissions",
-      done: orgUnits.length > 0 || rbacGrants.length > 0,
-      countLabel: isFr
-        ? `${orgUnits.length} unité(s) · ${rbacGrants.length} règle(s)`
-        : `${orgUnits.length} unit(s) · ${rbacGrants.length} grant(s)`,
-      settingsHref: "/settings",
-      wizardHref: "/wizards",
-      ctaLabel: isFr ? "Configurer l'organisation & IAM" : "Configure Org & IAM",
+        ? "2. Structure Organisationnelle & Habilitations"
+        : "2. Organization Tree & 6-Verb Permissions",
+      completed: orgUnits.length > 0 || rbacGrants.length > 0,
+      targetRoute: "/settings",
     },
     {
-      id: "step-workspaces",
-      number: 3,
+      index: 3,
+      key: "step-workspaces",
       title: isFr
         ? "3. Espaces de Travail (Workspaces)"
         : "3. Solution Workspaces",
-      done: workspaces.length > 0,
-      countLabel: isFr
-        ? `${workspaces.length} espace(s) créé(s)`
-        : `${workspaces.length} workspace(s) created`,
-      settingsHref: "/workspaces",
-      wizardHref: "/wizards",
-      ctaLabel: isFr ? "Créer un Workspace" : "Create a Workspace",
+      completed: workspaces.length > 0,
+      targetRoute: "/workspaces",
     },
     {
-      id: "step-connectors",
-      number: 4,
+      index: 4,
+      key: "step-connectors",
       title: isFr
-        ? "4. Connecteurs & Sources Documentaires RAG"
-        : "4. Connectors & RAG Knowledge Sources",
-      done: datasources.length > 0,
-      countLabel: isFr
-        ? `${datasources.length} connecteur(s) rattaché(s)`
-        : `${datasources.length} connector(s) attached`,
-      settingsHref: "/settings",
-      wizardHref: "/wizards",
-      ctaLabel: isFr ? "Ajouter un connecteur" : "Add a connector",
+        ? "4. Connecteurs & Sources Documentaires"
+        : "4. Connectors & Knowledge Sources",
+      completed: datasources.length > 0,
+      targetRoute: "/settings",
     },
     {
-      id: "step-workflows",
-      number: 5,
+      index: 5,
+      key: "step-workflows",
       title: isFr
-        ? "5. Packs Métiers & Studio de Workflows"
-        : "5. Business Packs & Workflow Studio",
-      done: workflows.length > 0 || packs.length > 0,
-      countLabel: isFr
-        ? `${packs.length} pack(s) · ${workflows.length} workflow(s)`
-        : `${packs.length} pack(s) · ${workflows.length} workflow(s)`,
-      settingsHref: "/settings",
-      wizardHref: "/wizards",
-      ctaLabel: isFr ? "Ouvrir le Studio / Packs" : "Open Studio / Packs",
+        ? "5. Packs Métiers & Studio de Processus"
+        : "5. Business Packs & Process Studio",
+      completed: workflows.length > 0 || packs.length > 0,
+      targetRoute: "/processes",
     },
   ];
 
@@ -144,6 +122,19 @@ export function CockpitFeaturePanel() {
       data-testid="cockpit-empty-first-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
+      <div className="flex items-center justify-between">
+        <span
+          data-testid="onboarding-progress-badge"
+          className="rounded px-2.5 py-0.5 font-mono text-xs font-semibold"
+          style={{
+            backgroundColor: "var(--color-action-primary-subtle)",
+            color: "var(--color-action-primary)",
+          }}
+        >
+          {completedSetupStepsCount}/5
+        </span>
+      </div>
+
       <StreamlinedCockpitView
         decisions={runs.map((r) => ({
           decisionId: `dec-${r.runId}`,
@@ -155,14 +146,16 @@ export function CockpitFeaturePanel() {
         }))}
         currentUserId="local-operator"
         labels={dictionary.streamlinedCockpit}
+        onOpenAssistant={() => navigateToRoute("/assistant")}
         onNavigateModule={(href) => navigateToRoute(href)}
       />
 
-      <PlatformOnboardingChecklistCard
-        isFr={isFr}
-        completedSetupStepsCount={completedSetupStepsCount}
-        checklistSteps={checklistSteps}
-        onNavigateToRoute={navigateToRoute}
+      <ProgressiveDay0AccostageBanner
+        completedCount={completedSetupStepsCount}
+        totalCount={5}
+        milestones={milestones}
+        labels={dictionary.progressiveAccostage}
+        onNavigateMilestone={(href) => navigateToRoute(href)}
       />
 
       <section
@@ -170,15 +163,6 @@ export function CockpitFeaturePanel() {
         className="orcia-bento-card"
         style={{ display: "flex", flexDirection: "column", gap: "14px" }}
       >
-        <ScopedPromptBox
-          availableSources={datasources.map((ds) => ({
-            sourceUri: ds.uri,
-            alias: ds.alias,
-            authorized: true,
-          }))}
-          labels={dictionary.scopedPrompt}
-        />
-
         {workspaces.length === 0 ? (
           <div
             data-testid="cockpit-no-workspace-empty-state"
@@ -208,8 +192,8 @@ export function CockpitFeaturePanel() {
                 }}
               >
                 {isFr
-                  ? "Créez votre premier Espace de Travail pour activer le lancement de Runs supervisés, la boîte de notifications et les Gates."
-                  : "Create your first Workspace to enable supervised Workflow Runs, the notification inbox, and Gates."}
+                  ? "Créez votre premier Espace de Travail pour activer le lancement de Runs supervisés, Mon Assistant et les Gates."
+                  : "Create your first Workspace to enable supervised Workflow Runs, My Assistant, and Gates."}
               </p>
             </div>
             <button

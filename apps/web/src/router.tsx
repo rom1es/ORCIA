@@ -1,5 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRouter, type RouterHistory } from "@tanstack/react-router";
+import { createRoute, createRouter, type RouterHistory } from "@tanstack/react-router";
+import React from "react";
+import { ModuleWorkspaceView } from "./components/ModuleWorkspaceView";
 import { Route as rootRoute } from "./routes/__root";
 import { Route as bootstrapRoute } from "./routes/bootstrap";
 import { Route as catalogRoute } from "./routes/catalog";
@@ -10,9 +12,62 @@ import { Route as inboxRoute } from "./routes/inbox";
 import { Route as indexRoute } from "./routes/index";
 import { Route as loginRoute } from "./routes/login";
 import { Route as ontologyRoute } from "./routes/ontology";
-import { Route as settingsRoute } from "./routes/settings";
+import { validateOrciaRouteSearch } from "./routes/searchSchema";
+import { Route as settingsRoute, SettingsHubView } from "./routes/settings";
 import { Route as wizardsRoute } from "./routes/wizards";
 import { Route as workspacesRoute } from "./routes/workspaces";
+
+const assistantRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/assistant",
+  validateSearch: validateOrciaRouteSearch,
+  component: function AssistantRouteComponent() {
+    return <ModuleWorkspaceView moduleKey="inbox" />;
+  },
+});
+
+const processesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/processes",
+  validateSearch: validateOrciaRouteSearch,
+  component: function ProcessesRouteComponent() {
+    return <ModuleWorkspaceView moduleKey="gates" />;
+  },
+});
+
+const agentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/agents",
+  validateSearch: validateOrciaRouteSearch,
+  component: function AgentsRouteComponent() {
+    return <ModuleWorkspaceView moduleKey="catalog" />;
+  },
+});
+
+const spacesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/spaces",
+  validateSearch: validateOrciaRouteSearch,
+  component: function SpacesRouteComponent() {
+    return <ModuleWorkspaceView moduleKey="admin" />;
+  },
+});
+
+const configurationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/configuration",
+  validateSearch: validateOrciaRouteSearch,
+  component: SettingsHubView,
+});
+
+const helpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/help",
+  validateSearch: validateOrciaRouteSearch,
+  component: function HelpRouteComponent() {
+    return <ModuleWorkspaceView moduleKey="ontology" />;
+  },
+});
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -27,6 +82,12 @@ export const routeTree = rootRoute.addChildren([
   bootstrapRoute,
   settingsRoute,
   wizardsRoute,
+  assistantRoute,
+  processesRoute,
+  agentsRoute,
+  spacesRoute,
+  configurationRoute,
+  helpRoute,
 ]);
 
 export function createOrciaQueryClient(): QueryClient {

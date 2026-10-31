@@ -260,4 +260,29 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("wizard-complete-step-btn"));
     expect(screen.getByTestId("wizard-step-form-2")).toBeDefined();
   });
+
+  it("renders the 4-Zone Direction C Shell with 8 fixed menu entries, StreamlinedCockpitView, and Day 0 Accostage Banner (Story 12.1)", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/cockpit"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("four-zone-direction-c-shell")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-cockpit")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-assistant")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-spaces")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-processes")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-agents")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-finops")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-configuration")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-help")).toBeDefined();
+    expect(screen.getByTestId("progressive-day0-accostage-banner")).toBeDefined();
+    expect(screen.getByTestId("streamlined-cockpit-view")).toBeDefined();
+  });
 });
