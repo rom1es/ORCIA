@@ -1,6 +1,92 @@
 {
   "components": {
     "schemas": {
+      "AccostageStatusResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/bootstrap/accostage-status` & progressive LLM registration.",
+        "properties": {
+          "agentic_gates_ad10_enabled": {
+            "title": "Agentic Gates Ad10 Enabled",
+            "type": "boolean"
+          },
+          "amber_warning_badge": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amber Warning Badge"
+          },
+          "assistant_trial_enabled": {
+            "title": "Assistant Trial Enabled",
+            "type": "boolean"
+          },
+          "badge_label": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Badge Label",
+            "type": "string"
+          },
+          "completed_count": {
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Completed Count",
+            "type": "integer"
+          },
+          "completed_milestone_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Completed Milestone Keys",
+            "type": "array"
+          },
+          "distinct_families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Distinct Families",
+            "type": "array"
+          },
+          "llm_tier_mode": {
+            "enum": [
+              "UNCONFIGURED",
+              "QUICK_TRIAL_SINGLE_FAMILY",
+              "FULL_ORTHOGONAL_AD10"
+            ],
+            "title": "Llm Tier Mode",
+            "type": "string"
+          },
+          "total_count": {
+            "maximum": 6.0,
+            "minimum": 6.0,
+            "title": "Total Count",
+            "type": "integer"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "completed_count",
+          "total_count",
+          "badge_label",
+          "llm_tier_mode",
+          "distinct_families",
+          "assistant_trial_enabled",
+          "agentic_gates_ad10_enabled",
+          "completed_milestone_keys",
+          "trace_id"
+        ],
+        "title": "AccostageStatusResponse",
+        "type": "object"
+      },
       "AcquireResourceLeasesRequest": {
         "additionalProperties": false,
         "description": "Request body for acquiring shared resource leases in canonical order (`DEC-CONC-01`).",
@@ -7892,6 +7978,51 @@
         "title": "ProblemDetails",
         "type": "object"
       },
+      "ProgressiveLlmEndpointRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/progressive-llm` (`Story 9.2`).",
+        "properties": {
+          "endpoint_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Endpoint Key",
+            "type": "string"
+          },
+          "endpoint_uri": {
+            "maxLength": 512,
+            "minLength": 8,
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "model_family": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "provider_slug": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Provider Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint_key",
+          "provider_slug",
+          "model_family",
+          "model_name",
+          "endpoint_uri"
+        ],
+        "title": "ProgressiveLlmEndpointRequest",
+        "type": "object"
+      },
       "PromptLayerBlockSchemaItem": {
         "additionalProperties": false,
         "description": "Metadata for one of the 5 prompt layers assembled by `AssistantHarness`.",
@@ -11205,6 +11336,114 @@
         "title": "ValidateFencedWriteResponse",
         "type": "object"
       },
+      "WelcomeSetupFirstAdminRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`).",
+        "properties": {
+          "bootstrap_token": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bootstrap Token"
+          },
+          "display_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "orcia_env": {
+            "default": "local",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Orcia Env",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 256,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "display_name",
+          "password"
+        ],
+        "title": "WelcomeSetupFirstAdminRequest",
+        "type": "object"
+      },
+      "WelcomeSetupFirstAdminResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`).",
+        "properties": {
+          "display_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "orcia_env": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Orcia Env",
+            "type": "string"
+          },
+          "platform_role": {
+            "const": "PLATFORM_ADMIN",
+            "title": "Platform Role",
+            "type": "string"
+          },
+          "sql_lock_statement": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Sql Lock Statement",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "user_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "display_name",
+          "platform_role",
+          "orcia_env",
+          "sql_lock_statement",
+          "trace_id"
+        ],
+        "title": "WelcomeSetupFirstAdminResponse",
+        "type": "object"
+      },
       "WhatIfSimulationRequest": {
         "additionalProperties": false,
         "properties": {
@@ -13721,6 +13960,71 @@
         ]
       }
     },
+    "/api/v1/bootstrap/accostage-status": {
+      "get": {
+        "operationId": "get_accostage_status_api_v1_bootstrap_accostage_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccostageStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
     "/api/v1/bootstrap/init-datasource": {
       "post": {
         "operationId": "execute_init_datasource_api_v1_bootstrap_init_datasource_post",
@@ -14371,6 +14675,156 @@
           }
         },
         "summary": "List Day-0 System Bootstrap workflows, orthogonal LLM endpoints, runs & onboarding",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/welcome-setup/first-admin": {
+      "post": {
+        "operationId": "create_welcome_setup_first_admin_api_v1_bootstrap_welcome_setup_first_admin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSetupFirstAdminRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeSetupFirstAdminResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create first PLATFORM_ADMIN under LOCK TABLE users IN EXCLUSIVE MODE (`Story 9.2`)",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/welcome-setup/progressive-llm": {
+      "post": {
+        "operationId": "register_welcome_setup_progressive_llm_api_v1_bootstrap_welcome_setup_progressive_llm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressiveLlmEndpointRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccostageStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Register progressive LLM endpoint (1 family -> Quick Trial; >= 2 -> AD-10 Gates)",
         "tags": [
           "bootstrap"
         ]

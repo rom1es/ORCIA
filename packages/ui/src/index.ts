@@ -166,6 +166,13 @@ export {
   type StreamlinedCockpitLabels,
   type StreamlinedCockpitViewProps,
 } from "./primitives/StreamlinedCockpitView";
+export {
+  ProgressiveDay0AccostageBanner,
+  type ProgressiveDay0AccostageBannerProps,
+  type ProgressiveDay0AccostageLabels,
+  type UiAccostageMilestoneItem,
+  type UiProgressiveLlmTierMode,
+} from "./primitives/ProgressiveDay0AccostageBanner";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

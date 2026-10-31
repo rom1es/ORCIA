@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request
 
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
+    ProgressiveDay0AccostageService,
     SystemBootstrapWorkflowService,
     build_default_system_bootstrap_service,
 )
@@ -417,4 +418,18 @@ def get_durable_wizard_service(request: Request) -> DurableOnboardingWizardServi
         initialize_app_services(request.app)
         svc = request.app.state.durable_wizard_service
     assert svc is not None
+    return svc
+
+
+def get_accostage_service(request: Request) -> ProgressiveDay0AccostageService:
+    """FastAPI `Depends` provider returning `ProgressiveDay0AccostageService` (`Story 9.2`)."""
+    svc: ProgressiveDay0AccostageService | None = getattr(
+        request.app.state, "accostage_service", None
+    )
+    if svc is None:
+        svc = ProgressiveDay0AccostageService(
+            orcia_env="local",
+            expected_bootstrap_token="orcia-day0-bootstrap-token",
+        )
+        request.app.state.accostage_service = svc
     return svc

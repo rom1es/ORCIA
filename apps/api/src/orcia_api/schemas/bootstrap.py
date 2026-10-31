@@ -258,3 +258,62 @@ class InitUserResponse(BaseModel):
     onboarding_state: UserOnboardingStateItem
     credentials: list[PassthroughSecretMetadataResponse]
     trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class WelcomeSetupFirstAdminRequest(BaseModel):
+    """Request payload for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    email: str = Field(..., min_length=3, max_length=255)
+    display_name: str = Field(..., min_length=1, max_length=128)
+    password: str = Field(..., min_length=8, max_length=256)
+    orcia_env: str = Field(default="local", min_length=1, max_length=32)
+    bootstrap_token: str | None = Field(default=None, max_length=256)
+
+
+class WelcomeSetupFirstAdminResponse(BaseModel):
+    """Response for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    user_id: str = Field(..., min_length=1, max_length=64)
+    email: str = Field(..., min_length=3, max_length=255)
+    display_name: str = Field(..., min_length=1, max_length=128)
+    platform_role: Literal["PLATFORM_ADMIN"]
+    orcia_env: str = Field(..., min_length=1, max_length=32)
+    sql_lock_statement: str = Field(..., min_length=1, max_length=128)
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class ProgressiveLlmEndpointRequest(BaseModel):
+    """Request payload for `POST /api/v1/bootstrap/welcome-setup/progressive-llm` (`Story 9.2`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    endpoint_key: str = Field(..., min_length=1, max_length=128)
+    provider_slug: str = Field(..., min_length=1, max_length=64)
+    model_family: str = Field(..., min_length=1, max_length=64)
+    model_name: str = Field(..., min_length=1, max_length=128)
+    endpoint_uri: str = Field(..., min_length=8, max_length=512)
+
+
+class AccostageStatusResponse(BaseModel):
+    """Response for `GET /api/v1/bootstrap/accostage-status` & progressive LLM registration."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    completed_count: int = Field(..., ge=1, le=6)
+    total_count: int = Field(..., ge=6, le=6)
+    badge_label: str = Field(..., min_length=1, max_length=64)
+    llm_tier_mode: Literal[
+        "UNCONFIGURED",
+        "QUICK_TRIAL_SINGLE_FAMILY",
+        "FULL_ORTHOGONAL_AD10",
+    ]
+    distinct_families: list[str]
+    assistant_trial_enabled: bool
+    agentic_gates_ad10_enabled: bool
+    amber_warning_badge: str | None = Field(default=None, max_length=512)
+    completed_milestone_keys: list[str]
+    trace_id: str = Field(..., min_length=32, max_length=32)

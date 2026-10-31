@@ -6,6 +6,8 @@ import {
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
   FourZoneDirectionCShell,
   type FourZoneDirectionCShellLabels,
+  ProgressiveDay0AccostageBanner,
+  type ProgressiveDay0AccostageLabels,
   StreamlinedCockpitView,
   type StreamlinedCockpitLabels,
 } from "../index";
@@ -243,6 +245,77 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(workshop.textContent).toContain("Run #run-202");
     expect(screen.getByTestId("focus-review-redis-lock-badge").textContent).toContain(
       "SET lock:step:step-exec-202 user-yanis-01 NX EX 900",
+    );
+  });
+
+  it("Story 9.2 — enforces ORCIA_BOOTSTRAP_TOKEN when ORCIA_ENV != local and unlocks Quick Trial Mode (1 model) then AD-10 Gates (>= 2 families)", () => {
+    const accostageLabels: ProgressiveDay0AccostageLabels = {
+      bannerTitle: "Parcours d'Accostage Progressif Jour 0",
+      welcomeWizardTitle: "Assistant de Bienvenue (/welcome-setup)",
+      step1AdminTitle: "Étape 1 : Premier Administrateur (LOCK TABLE users)",
+      step2LlmTitle: "Étape 2 : Modèles IA Progressifs",
+      step3SpaceTitle: "Étape 3 : Jalons d'Accostage 1/6",
+      bootstrapTokenLabel: "Jeton d'amorçage ORCIA_BOOTSTRAP_TOKEN",
+      bootstrapTokenPlaceholder: "Saisissez ORCIA_BOOTSTRAP_TOKEN...",
+      bootstrapTokenDeniedBanner:
+        "HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN — Jeton d'amorçage invalide",
+      createFirstAdminCta: "Créer le compte PLATFORM_ADMIN",
+      addFirstModelCta: "+ Configurer 1er modèle",
+      addSecondModelFamilyCta: "+ Ajouter 2e famille orthogonale",
+      singleFamilyAmberWarning:
+        "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans Configuration › Modèles IA pour activer les Gates Agentiques AD-10",
+      dualFamilyAd10UnlockedBadge:
+        "✅ ≥ 2 familles orthogonales actives — Gates Agentiques AD-10 débloquées",
+      assistantTrialReadyBadge:
+        "🚀 Mode Essai Rapide actif : Mon Assistant & Cockpit débloqués",
+    };
+
+    render(
+      <ProgressiveDay0AccostageBanner
+        completedCount={1}
+        orciaEnv="staging"
+        milestones={[
+          {
+            index: 1,
+            key: "first-admin",
+            title: "1. Compte Administrateur Initial",
+            completed: true,
+            targetRoute: "/welcome-setup",
+          },
+        ]}
+        labels={accostageLabels}
+      />,
+    );
+
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 1/6");
+
+    // Submitting without bootstrap token on staging -> 403 ERR_INVALID_BOOTSTRAP_TOKEN
+    fireEvent.click(screen.getByTestId("welcome-setup-submit-admin-btn"));
+    expect(screen.getByTestId("welcome-setup-token-denied-banner").textContent).toContain(
+      "ERR_INVALID_BOOTSTRAP_TOKEN",
+    );
+
+    // Provide token -> creates admin under LOCK TABLE users IN EXCLUSIVE MODE
+    fireEvent.change(screen.getByTestId("welcome-setup-bootstrap-token-input"), {
+      target: { value: "valid-boot-tok" },
+    });
+    fireEvent.click(screen.getByTestId("welcome-setup-submit-admin-btn"));
+    expect(screen.getByTestId("welcome-setup-admin-created-badge").textContent).toContain(
+      "LOCK TABLE users IN EXCLUSIVE MODE",
+    );
+
+    // Add 1st LLM model -> Quick Trial Mode with amber warning badge
+    fireEvent.click(screen.getByTestId("welcome-setup-add-first-llm-btn"));
+    expect(screen.getByTestId("accostage-single-family-amber-badge").textContent).toContain(
+      "⚠️ 1 seule famille de modèles configurée",
+    );
+    expect(screen.getByTestId("welcome-setup-assistant-trial-ready")).toBeDefined();
+
+    // Add 2nd distinct LLM family -> AD-10 Agentic Gates unlocked!
+    fireEvent.click(screen.getByTestId("welcome-setup-add-second-llm-btn"));
+    expect(screen.queryByTestId("accostage-single-family-amber-badge")).toBeNull();
+    expect(screen.getByTestId("accostage-dual-family-ad10-badge").textContent).toContain(
+      "AD-10",
     );
   });
 });

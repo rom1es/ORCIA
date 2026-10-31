@@ -1,11 +1,13 @@
 import type {
   FourZoneDirectionCShellLabels,
+  ProgressiveDay0AccostageLabels,
   StreamlinedCockpitLabels,
 } from "@orcia/ui";
 
 export interface Epic9DictionarySection {
   readonly fourZoneShell: FourZoneDirectionCShellLabels;
   readonly streamlinedCockpit: StreamlinedCockpitLabels;
+  readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
 }
 
 export const EPIC9_FR_LABELS: Epic9DictionarySection = {
@@ -64,6 +66,26 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
     focusWorkshopCloseCta: "← Retour au Cockpit",
     redisLockAcquiredPrefix: "🔒 Verrou Redis acquis :",
   },
+  progressiveAccostage: {
+    bannerTitle: "Parcours d'Accostage Progressif Jour 0",
+    welcomeWizardTitle: "Assistant de Bienvenue (/welcome-setup)",
+    step1AdminTitle: "Étape 1 : Premier Administrateur (LOCK TABLE users)",
+    step2LlmTitle: "Étape 2 : Modèles IA Progressifs (1 Modèle → ≥ 2 Familles)",
+    step3SpaceTitle: "Étape 3 : Jalons d'Accostage 1/6",
+    bootstrapTokenLabel: "Jeton d'amorçage ORCIA_BOOTSTRAP_TOKEN",
+    bootstrapTokenPlaceholder: "Saisissez ORCIA_BOOTSTRAP_TOKEN...",
+    bootstrapTokenDeniedBanner:
+      "HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN — Jeton d'amorçage invalide",
+    createFirstAdminCta: "Créer le compte PLATFORM_ADMIN",
+    addFirstModelCta: "+ Configurer 1er modèle (Ollama / OpenAI)",
+    addSecondModelFamilyCta: "+ Ajouter 2e famille orthogonale (Claude)",
+    singleFamilyAmberWarning:
+      "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans Configuration › Modèles IA pour activer les Gates Agentiques AD-10",
+    dualFamilyAd10UnlockedBadge:
+      "✅ ≥ 2 familles orthogonales actives — Gates Agentiques AD-10 débloquées",
+    assistantTrialReadyBadge:
+      "🚀 Mode Essai Rapide actif : Mon Assistant & Cockpit débloqués",
+  },
 };
 
 export const EPIC9_EN_LABELS: Epic9DictionarySection = {
@@ -121,5 +143,25 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
     focusWorkshopBreadcrumbPrefix: "My Processes › Executions & Decisions ›",
     focusWorkshopCloseCta: "← Back to Cockpit",
     redisLockAcquiredPrefix: "🔒 Redis lock acquired:",
+  },
+  progressiveAccostage: {
+    bannerTitle: "Progressive Day-0 Accostage Journey",
+    welcomeWizardTitle: "Welcome Setup Wizard (/welcome-setup)",
+    step1AdminTitle: "Step 1: First Administrator (LOCK TABLE users)",
+    step2LlmTitle: "Step 2: Progressive AI Models (1 Model → ≥ 2 Families)",
+    step3SpaceTitle: "Step 3: 1/6 Accostage Milestones",
+    bootstrapTokenLabel: "ORCIA_BOOTSTRAP_TOKEN bootstrap token",
+    bootstrapTokenPlaceholder: "Enter ORCIA_BOOTSTRAP_TOKEN...",
+    bootstrapTokenDeniedBanner:
+      "HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN — Invalid bootstrap token",
+    createFirstAdminCta: "Create PLATFORM_ADMIN account",
+    addFirstModelCta: "+ Configure 1st model (Ollama / OpenAI)",
+    addSecondModelFamilyCta: "+ Add 2nd orthogonal family (Claude)",
+    singleFamilyAmberWarning:
+      "⚠️ Only 1 model family configured — Add a 2nd family in Configuration › AI Models to enable AD-10 Agentic Gates",
+    dualFamilyAd10UnlockedBadge:
+      "✅ ≥ 2 orthogonal families active — AD-10 Agentic Gates unlocked",
+    assistantTrialReadyBadge:
+      "🚀 Quick Trial Mode active: My Assistant & Cockpit unlocked",
   },
 };

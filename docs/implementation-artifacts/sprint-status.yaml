@@ -109,7 +109,7 @@ development_status:
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes A, A.2, A.3, C, D, D.4, E, F, G, Section 2)
   epic-9: in-progress
   9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép: done
-  9-2-parcours-d-accostage-progressif-jour-0-accostage-1-6-protecti: backlog
+  9-2-parcours-d-accostage-progressif-jour-0-accostage-1-6-protecti: done
   9-3-recherche-fédérée-contextuelle-cmd-k-à-2-vitesses-zero-layout: backlog
   9-4-menu-déroulant-login-useraccountdropdown-modale-usersettingsm: backlog
   9-5-système-d-aide-contextuelle-hybride-helparticle-catalog_items: backlog

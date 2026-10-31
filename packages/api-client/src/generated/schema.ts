@@ -5,6 +5,18 @@
 
 export interface components {
   schemas: {
+    AccostageStatusResponse: {
+      agentic_gates_ad10_enabled: boolean;
+      amber_warning_badge?: string | null;
+      assistant_trial_enabled: boolean;
+      badge_label: string;
+      completed_count: number;
+      completed_milestone_keys: (string)[];
+      distinct_families: (string)[];
+      llm_tier_mode: "UNCONFIGURED" | "QUICK_TRIAL_SINGLE_FAMILY" | "FULL_ORTHOGONAL_AD10";
+      total_count: number;
+      trace_id: string;
+    };
     AcquireResourceLeasesRequest: {
       ancestor_run_ids?: (string)[];
       holder_parent_run_id?: string | null;
@@ -1241,6 +1253,13 @@ export interface components {
       trace_id: string;
       type?: string;
     };
+    ProgressiveLlmEndpointRequest: {
+      endpoint_key: string;
+      endpoint_uri: string;
+      model_family: string;
+      model_name: string;
+      provider_slug: string;
+    };
     PromptLayerBlockSchemaItem: {
       content_sha256: string;
       immutable: boolean;
@@ -1746,6 +1765,22 @@ export interface components {
       status: "COMMITTED_FENCED";
       trace_id: string;
     };
+    WelcomeSetupFirstAdminRequest: {
+      bootstrap_token?: string | null;
+      display_name: string;
+      email: string;
+      orcia_env?: string;
+      password: string;
+    };
+    WelcomeSetupFirstAdminResponse: {
+      display_name: string;
+      email: string;
+      orcia_env: string;
+      platform_role: "PLATFORM_ADMIN";
+      sql_lock_statement: string;
+      trace_id: string;
+      user_id: string;
+    };
     WhatIfSimulationRequest: {
       concept_key: string;
       proposed_change: string;
@@ -2058,6 +2093,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/bootstrap/accostage-status": {
+    get: {
+      responses: {
+        200: components["schemas"]["AccostageStatusResponse"];
+      };
+    };
+  };
   "/api/v1/bootstrap/init-datasource": {
     post: {
       responses: {
@@ -2104,6 +2146,20 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["SystemBootstrapStateResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/welcome-setup/first-admin": {
+    post: {
+      responses: {
+        200: components["schemas"]["WelcomeSetupFirstAdminResponse"];
+      };
+    };
+  };
+  "/api/v1/bootstrap/welcome-setup/progressive-llm": {
+    post: {
+      responses: {
+        200: components["schemas"]["AccostageStatusResponse"];
       };
     };
   };
@@ -2667,6 +2723,7 @@ export interface paths {
   };
 }
 
+export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourceLeasesRequest"];
 export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
@@ -2811,6 +2868,7 @@ export type PermissionTicketActionRequest = components["schemas"]["PermissionTic
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
+export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
@@ -2866,6 +2924,8 @@ export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
+export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupFirstAdminRequest"];
+export type WelcomeSetupFirstAdminResponse = components["schemas"]["WelcomeSetupFirstAdminResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
 export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];
 export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepRequest"];

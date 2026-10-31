@@ -5,6 +5,7 @@
 
 import type { components } from "./schema";
 
+export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
 export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];
 export type InitOrganizationRequest = components["schemas"]["InitOrganizationRequest"];
@@ -17,8 +18,11 @@ export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type OntologyTermInputItem = components["schemas"]["OntologyTermInputItem"];
+export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
+export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupFirstAdminRequest"];
+export type WelcomeSetupFirstAdminResponse = components["schemas"]["WelcomeSetupFirstAdminResponse"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];

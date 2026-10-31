@@ -249,3 +249,98 @@ async def execute_init_user(
         credentials=creds,
         trace_id=_trace(request),
     )
+
+
+@router.get(
+    "/accostage-status",
+    response_model=bs.AccostageStatusResponse,
+    summary="Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
+    from orcia_api.dependencies import get_accostage_service
+
+    svc = get_accostage_service(request)
+    rep = svc.get_accostage_status()
+    return bs.AccostageStatusResponse(
+        completed_count=rep.completed_count,
+        total_count=rep.total_count,
+        badge_label=rep.badge_label,
+        llm_tier_mode=rep.llm_tier_mode,
+        distinct_families=list(rep.distinct_families),
+        assistant_trial_enabled=rep.assistant_trial_enabled,
+        agentic_gates_ad10_enabled=rep.agentic_gates_ad10_enabled,
+        amber_warning_badge=rep.amber_warning_badge,
+        completed_milestone_keys=list(rep.completed_milestone_keys),
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/welcome-setup/first-admin",
+    response_model=bs.WelcomeSetupFirstAdminResponse,
+    summary="Create first PLATFORM_ADMIN under LOCK TABLE users IN EXCLUSIVE MODE (`Story 9.2`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def create_welcome_setup_first_admin(
+    payload: bs.WelcomeSetupFirstAdminRequest,
+    request: Request,
+) -> bs.WelcomeSetupFirstAdminResponse:
+    from orcia_api.dependencies import get_accostage_service
+
+    svc = get_accostage_service(request)
+    rec = await svc.create_first_platform_admin_async(
+        email=payload.email,
+        display_name=payload.display_name,
+        password_hash=f"argon2id${payload.password[:4]}",
+        bootstrap_token=payload.bootstrap_token,
+        orcia_env_override=payload.orcia_env,
+        instance=str(request.url.path),
+    )
+    return bs.WelcomeSetupFirstAdminResponse(
+        user_id=rec.user_id,
+        email=rec.email,
+        display_name=rec.display_name,
+        platform_role=rec.platform_role,
+        orcia_env=rec.orcia_env,
+        sql_lock_statement=rec.sql_lock_statement,
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/welcome-setup/progressive-llm",
+    response_model=bs.AccostageStatusResponse,
+    summary="Register progressive LLM endpoint (1 family -> Quick Trial; >= 2 -> AD-10 Gates)",
+    responses=PROBLEM_RESPONSES,
+)
+async def register_welcome_setup_progressive_llm(
+    payload: bs.ProgressiveLlmEndpointRequest,
+    request: Request,
+) -> bs.AccostageStatusResponse:
+    from orcia_api.dependencies import get_accostage_service
+    from orcia_kernel.ids import new_uuid7_str
+
+    svc = get_accostage_service(request)
+    rep = svc.register_progressive_llm_endpoint(
+        bm.LlmModelEndpoint(
+            id=new_uuid7_str(),
+            endpoint_key=payload.endpoint_key,
+            provider_slug=payload.provider_slug,
+            model_family=payload.model_family,
+            model_name=payload.model_name,
+            endpoint_uri=payload.endpoint_uri,
+        )
+    )
+    return bs.AccostageStatusResponse(
+        completed_count=rep.completed_count,
+        total_count=rep.total_count,
+        badge_label=rep.badge_label,
+        llm_tier_mode=rep.llm_tier_mode,
+        distinct_families=list(rep.distinct_families),
+        assistant_trial_enabled=rep.assistant_trial_enabled,
+        agentic_gates_ad10_enabled=rep.agentic_gates_ad10_enabled,
+        amber_warning_badge=rep.amber_warning_badge,
+        completed_milestone_keys=list(rep.completed_milestone_keys),
+        trace_id=_trace(request),
+    )

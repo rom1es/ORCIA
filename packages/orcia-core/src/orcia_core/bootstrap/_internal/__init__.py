@@ -1,1 +1,1 @@
-"""Infrastructure adapters for the bootstrap & LLM router bounded context (`ARCH-P1`)."""
+"""Internal SQL adapters for bootstrap domain (`AD-19`)."""
