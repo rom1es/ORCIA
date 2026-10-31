@@ -1,4 +1,8 @@
-import { OntologyAndKbExplorerPanel, type UiOntologyLevel } from "@orcia/ui";
+import {
+  ContextualHelpColumnAndCenter,
+  OntologyAndKbExplorerPanel,
+  type UiOntologyLevel,
+} from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useI18n } from "../../i18n";
@@ -126,6 +130,55 @@ export function OntologyFeaturePanel() {
           labels={dictionary.ontologyExplorer}
         />
       </div>
+
+      {/* Story 9.5 & 12.3 — Centre d'Aide Hybride (mode=HELP_MENU_CENTER) sur /help */}
+      <ContextualHelpColumnAndCenter
+        mode="HELP_MENU_CENTER"
+        route="/help"
+        pack="orcia-pack-sdlc@1.0.0"
+        redisCacheKey={`help:route:/help:orcia-pack-sdlc@1.0.0:${locale}`}
+        mergedLayers={["BASE", "PACK", "WORKSPACE"]}
+        article={{
+          resourceId: "help-center-overview",
+          uri: "orcia://system/help/help-center-overview@1.0.0",
+          title: isFr
+            ? "Centre d'Aide Contextuelle Hybride & Glossaire Actif"
+            : "Hybrid Contextual Help Center & Active Glossary",
+          version: "1.0.0",
+          lang: locale,
+          layer: "BASE",
+          packName: "orcia-pack-sdlc",
+          boundRoutes: ["/cockpit", "/assistant", "/spaces", "/processes", "/agents", "/help"],
+          summaryWhatFor: isFr
+            ? "Ce centre rassemble les fiches HelpArticle (catalog_items + cas/<sha256>) rattachées à vos écrans et Packs métiers."
+            : "This center aggregates HelpArticle entries (catalog_items + cas/<sha256>) bound to your screens and Business Packs.",
+          stepByStepItems: isFr
+            ? [
+                "Ouvrez la colonne ❓ (340px) sur n'importe quel écran pour obtenir la fiche ciblée (< 10 ms Redis).",
+                "Utilisez le Processus 5 (generate-and-attach-help) dans Processus & Studio pour générer et rattacher à chaud (< 100 ms) de nouvelles fiches.",
+              ]
+            : [
+                "Open the ❓ (340px) column on any screen to get the targeted article (< 10 ms Redis).",
+                "Use Process 5 (generate-and-attach-help) in Processes & Studio to generate and hot-attach (< 100 ms) new articles.",
+              ],
+          keyTermsItems: [
+            "HelpArticle (REFERENCE)",
+            "Fusion 4 couches (BASE -> PACK -> WORKSPACE -> USER)",
+            "Validation déterministe Palier 1 (< 5 s)",
+          ],
+          faqItems: [
+            isFr
+              ? "Comment revenir à la version précédente ? Cliquez sur ⏪ Rollback @v(N-1)."
+              : "How to revert to the previous version? Click ⏪ Rollback @v(N-1).",
+          ],
+          casKey: "cas/help-center-overview-v1",
+          sha256: "sha256-help-center-v1",
+          previousVersion: "0.9.0",
+        }}
+        rollbackAvailable={true}
+        isAdmin={true}
+        labels={dictionary.contextualHelpHybrid}
+      />
     </div>
   );
 }

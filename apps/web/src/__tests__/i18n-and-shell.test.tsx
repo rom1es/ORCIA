@@ -307,4 +307,43 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
     expect(screen.getByTestId("assistant-governance-container")).toBeDefined();
   });
+
+  it("mounts Mes Espaces 5-tabs, DNA Starlark compiler, MCP/A2A Test Bench, Pack Builder Studio, and Help Generator across /spaces, /agents, /processes, and /help (Story 12.3)", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/spaces"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // /spaces -> WorkspaceFiveTabsAndExternalRebaseView + DnaStarlarkCompilerAndGlossaryLifecycleView
+    expect(screen.getByTestId("workspace-five-tabs-view")).toBeDefined();
+    expect(screen.getByTestId("dna-starlark-glossary-view")).toBeDefined();
+
+    // Navigate to /agents -> RemoteServiceTestBenchAndMcpExposureView
+    await act(async () => {
+      await router.navigate({ to: "/agents" });
+    });
+    expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
+
+    // Navigate to /processes -> PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
+    await act(async () => {
+      await router.navigate({ to: "/processes" });
+    });
+    expect(screen.getByTestId("pack-builder-studio-view")).toBeDefined();
+    expect(screen.getByTestId("help-article-generator-validator-view")).toBeDefined();
+
+    // Navigate to /help -> ContextualHelpColumnAndCenter (HELP_MENU_CENTER)
+    await act(async () => {
+      await router.navigate({ to: "/help" });
+    });
+    const helpPanels = screen.getAllByTestId("contextual-help-hybrid-panel");
+    expect(helpPanels.some((el) => el.getAttribute("data-mode") === "HELP_MENU_CENTER")).toBe(
+      true,
+    );
+  });
 });

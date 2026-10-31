@@ -135,10 +135,10 @@ development_status:
   epic-11-retrospective: optional
 
   # Epic 12 — Intégration Bout-en-Bout du Portail SPA (apps/web) : Bascule Shell 4 Zones Direction C (8 Entrées Fixes), Cockpit Épuré, Mon Assistant (Epic 10), Mes Espaces 5 Onglets, Banc de Test MCP 🔌 & Atelier orcia-pack-builder (Epic 11)
-  epic-12: in-progress
+  epic-12: done
   12-1-bascule-apps-web-shell-4-zones-direction-c-8-entrees-cockpit: done
   12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10: done
-  12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder: ready-for-dev
+  12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder: done
   epic-12-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1

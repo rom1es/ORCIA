@@ -3,12 +3,14 @@ import { EPIC5_EN_LABELS } from "./epic5_labels";
 import { EPIC8_EN_LABELS } from "./epic8_labels";
 import { EPIC9_EN_LABELS } from "./epic9_labels";
 import { EPIC10_EN_LABELS } from "./epic10_labels";
+import { EPIC11_EN_LABELS } from "./epic11_labels";
 
 export const enDictionary: TranslationDictionary = {
   ...EPIC5_EN_LABELS,
   ...EPIC8_EN_LABELS,
   ...EPIC9_EN_LABELS,
   ...EPIC10_EN_LABELS,
+  ...EPIC11_EN_LABELS,
   locale: "en",
   shell: {
     brandTitle: "ORCIA",

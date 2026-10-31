@@ -1,9 +1,12 @@
 import {
   CommandPaletteModal,
+  DnaStarlarkCompilerAndGlossaryLifecycleView,
   type ControlCenterScopeType,
   type ProductLifecyclePhaseType,
   type UiDatasourceScheme,
+  type WorkspaceSubTabKey,
   WorkspaceControlCenter,
+  WorkspaceFiveTabsAndExternalRebaseView,
   WorkspaceTopologyPanel,
 } from "@orcia/ui";
 import React, { useState } from "react";
@@ -24,6 +27,7 @@ export function WorkspacesFeaturePanel() {
 
   const [scopeType, setScopeType] = useState<ControlCenterScopeType>("GLOBAL");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTabKey>("OVERVIEW");
 
   // Create Workspace form state (starts 100% empty)
   const [wsName, setWsName] = useState("");
@@ -263,6 +267,101 @@ export function WorkspacesFeaturePanel() {
           onSelectPersona={() => undefined}
         />
       </div>
+
+      {/* Story 11.1 — Mes Espaces à 5 Sous-Onglets, Dérogations V1 & Réconciliation Externe V2 */}
+      <WorkspaceFiveTabsAndExternalRebaseView
+        workspaceSlug={workspaces[0]?.workspaceId ?? "checkout-core"}
+        activeTab={activeSubTab}
+        defaultArtifactDestinationUri="git://checkout-core/docs/specs/"
+        pendingGlossaryCandidatesCount={2}
+        sources={[
+          {
+            sourceId: "src-ref-1",
+            uri: "confluence://ARCHI/psd2-directive@v14",
+            title: "Directive PSD2 & Plafonds TRA",
+            authorityRole: "REFERENCE",
+            accessMode: "READ_ONLY",
+            freshnessStatus: "FRESH",
+          },
+          {
+            sourceId: "src-act-1",
+            uri: "git://checkout-core/docs/specs/PAY-142.md",
+            title: "Spécification Technique PAY-142",
+            authorityRole: "ACTIVE",
+            accessMode: "READ_WRITE_TARGET",
+            freshnessStatus: "FRESH",
+          },
+        ]}
+        activeWaivers={[
+          {
+            waiverId: "waiver-n2-1",
+            sourceUri: "git://checkout-core/docs/specs/PAY-142.md",
+            conflictRuleId: "NORM-BU-LATENCY-200MS",
+            normLevel: "2_DOMAIN",
+            hasInviolableEnterpriseDirective: false,
+            status: "ACTIVE",
+            reason: "Tolérance 250 ms accordée pendant la bascule SEPA Instant.",
+          },
+        ]}
+        rebasedChunks={[
+          {
+            chunkKey: "sec-2-architecture",
+            sectionTitle: "2. Architecture & Contrats API",
+            status: "HUMAN_AMENDED_EXTERNAL",
+            lockedAgainstAgentOverwrite: true,
+          },
+        ]}
+        labels={dictionary.workspaceFiveTabs}
+        onSelectTab={setActiveSubTab}
+      />
+
+      {/* Story 11.2 — Chaîne Causale ADN Starlark Palier 1b (< 2 ms) & Glossaire ✨ À valider */}
+      <DnaStarlarkCompilerAndGlossaryLifecycleView
+        mechanism={{
+          mechanismId: "mech-tra-250",
+          ruleId: "NORM-PSD2-TRA-250",
+          scriptName: "check_tra_threshold.star",
+          starlarkCode:
+            'def evaluate(ctx):\n    if ctx["amount_eur"] > 250 and ctx["exemption"] == "TRA":\n        return {"passed": False, "violation": "ERR_TRA_LIMIT_EXCEEDED"}\n    return {"passed": True}',
+          sha256: "sha256-starlark-tra",
+          explanationFr:
+            "Vérifie déterministiquement en < 2 ms qu'aucune transaction > 250 € n'utilise l'exemption TRA.",
+          verifiedBadgeFr: "✅ Auto-test Palier 1b PASS (1.1 ms)",
+          causalBreadcrumb:
+            "DIRECTIVE N1 (PSD2) ➔ NORME N2 (Plafond TRA 250 €) ➔ MÉCANISME N3 (check_tra_threshold.star)",
+          selfCorrected: false,
+          signedAndActive: true,
+        }}
+        pendingQueueCandidates={[
+          {
+            candidateId: "cand-1",
+            canonicalTerm: "Exemption Frictionless TRA",
+            definitionFr: "Analyse de risque transactionnel autorisant le contournement 3DS sous 250 €.",
+            confidenceScore: 0.94,
+            ontologyConflictWarning: null,
+            preCheckedForInFlowPromotion: true,
+          },
+          {
+            candidateId: "cand-2",
+            canonicalTerm: "Jeton de Fencing Monotone",
+            definitionFr: "Compteur strictement croissant empêchant toute écriture fantôme sur ressource verrouillée.",
+            confidenceScore: 0.91,
+            ontologyConflictWarning: null,
+            preCheckedForInFlowPromotion: true,
+          },
+        ]}
+        top3PrecheckedCandidates={[
+          {
+            candidateId: "cand-1",
+            canonicalTerm: "Exemption Frictionless TRA",
+            definitionFr: "Analyse de risque transactionnel autorisant le contournement 3DS sous 250 €.",
+            confidenceScore: 0.94,
+            ontologyConflictWarning: null,
+            preCheckedForInFlowPromotion: true,
+          },
+        ]}
+        labels={dictionary.dnaStarlarkGlossary}
+      />
     </div>
   );
 }

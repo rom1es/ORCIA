@@ -37,12 +37,14 @@ import type { Epic5DictionarySection } from "./locales/epic5_labels";
 import type { Epic8DictionarySection } from "./locales/epic8_labels";
 import type { Epic9DictionarySection } from "./locales/epic9_labels";
 import type { Epic10DictionarySection } from "./locales/epic10_labels";
+import type { Epic11DictionarySection } from "./locales/epic11_labels";
 
 export interface TranslationDictionary
   extends Epic5DictionarySection,
     Epic8DictionarySection,
     Epic9DictionarySection,
-    Epic10DictionarySection {
+    Epic10DictionarySection,
+    Epic11DictionarySection {
   locale: SupportedWebLocale;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
