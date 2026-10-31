@@ -137,3 +137,151 @@ class AssistantSaveAndLaunchResponse(BaseModel):
     run_status: str
     executed_step_keys: list[str]
     snapshot_count: int
+
+
+class UserLayerPreferencesSchemaItem(BaseModel):
+    """Tab 1 (`👤 Mes préférences — Couche 5 USER`) schema (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str
+    workspace_id: str
+    response_tone: Literal["SYNTHETIC", "BALANCED", "DETAILED_CODE"]
+    favorite_format: Literal["BULLETS_SUMMARY", "STRUCTURED_SECTIONS", "STEP_BY_STEP"]
+    default_hat: str
+    personal_instructions: str
+    sha256: str
+
+
+class UpdateUserLayerPreferencesRequest(BaseModel):
+    """Request payload for `PUT /api/v1/assistant/governance/mode-a/user` (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str = Field(..., min_length=1)
+    response_tone: Literal["SYNTHETIC", "BALANCED", "DETAILED_CODE"] = "BALANCED"
+    favorite_format: Literal["BULLETS_SUMMARY", "STRUCTURED_SECTIONS", "STEP_BY_STEP"] = (
+        "STRUCTURED_SECTIONS"
+    )
+    default_hat: str = Field(default="PM", min_length=2)
+    personal_instructions: str = Field(..., min_length=3)
+
+
+class WorkspaceLayerSettingsSchemaItem(BaseModel):
+    """Tab 2 (`📦 Réglages de l'Espace — Couche 4 WORKSPACE`) schema (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str
+    workspace_instructions: str
+    default_checked_sources: list[str]
+    recommended_agents: list[str]
+    arbitration_policy: Literal["PAUSE_AND_ESCALATE", "AUTO_RESOLVE_WITH_TRACE"]
+    welcome_suggestions: list[str]
+    mcp_expose_assistant: bool
+    mcp_frozen_by_upper_layer: bool
+    mcp_frozen_origin: Literal["PLATFORM", "TEAM"] | None = None
+    mcp_endpoint_url: str
+    mcp_tool_name: str
+    mcp_ide_config_json: str
+    sha256: str
+
+
+class UpdateWorkspaceLayerSettingsRequest(BaseModel):
+    """Request payload for `PUT /api/v1/assistant/governance/mode-a/workspace` (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str = Field(..., min_length=1)
+    workspace_instructions: str = Field(..., min_length=3)
+    default_checked_sources: list[str] = Field(default_factory=list)
+    recommended_agents: list[str] = Field(default_factory=list)
+    arbitration_policy: Literal["PAUSE_AND_ESCALATE", "AUTO_RESOLVE_WITH_TRACE"] = (
+        "PAUSE_AND_ESCALATE"
+    )
+    welcome_suggestions: list[str] | None = None
+    mcp_expose_assistant: bool = True
+
+
+class AssembledLayerPreviewSchemaItem(BaseModel):
+    """Tab 3 (`👁️ Assemblage complet`) layer item (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    layer_number: int
+    layer_code: Literal[
+        "1_CONSTITUTION",
+        "2_PACK_METIER",
+        "3_EQUIPE",
+        "4_ESPACE",
+        "5_UTILISATEUR",
+    ]
+    label: str
+    immutable: bool
+    origin_badge: Literal["SOCLE", "PACK", "EQUIPE", "ESPACE", "UTILISATEUR"]
+    content: str
+    sha256: str
+
+
+class AssistantStudioNodeSchemaItem(BaseModel):
+    """Mode B Studio node schema (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    node_id: str
+    title: str
+    node_order: int
+    is_harness_boundary: bool
+    locked_by: Literal["HARNESS", "PLATFORM", "TEAM"] | None = None
+    enabled: bool = True
+    sub_layers_count: int = 3
+    enabled_sub_layers: list[str] = Field(default_factory=list)
+    sub_agent_uri: str | None = None
+
+
+class AssistantStudioGraphStateSchemaItem(BaseModel):
+    """Mode B Studio graph state (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workflow_uri: str
+    scope_level: Literal["DEFAULT", "TEAM", "WORKSPACE"]
+    scope_id: str
+    ai_pre_prompt: str
+    nodes: list[AssistantStudioNodeSchemaItem]
+    override_key: str | None = None
+    sha256: str
+
+
+class SaveAssistantStudioGraphRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/governance/mode-b/save` (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    scope_level: Literal["TEAM", "WORKSPACE"] = "WORKSPACE"
+    scope_id: str = Field(..., min_length=1)
+    ai_pre_prompt: str = Field(..., min_length=3)
+    nodes: list[AssistantStudioNodeSchemaItem]
+
+
+class ResetAssistantStudioGraphRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/governance/mode-b/reset` (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    scope_level: Literal["TEAM", "WORKSPACE"] = "WORKSPACE"
+    scope_id: str = Field(..., min_length=1)
+
+
+class AssistantGovernanceViewResponse(BaseModel):
+    """Response envelope for `GET /api/v1/assistant/governance` (`Story 10.1`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str
+    can_edit_workspace_layer: bool
+    can_open_studio_mode_b: bool
+    user_preferences: UserLayerPreferencesSchemaItem
+    workspace_settings: WorkspaceLayerSettingsSchemaItem
+    assembled_layers: list[AssembledLayerPreviewSchemaItem]
+    studio_graph: AssistantStudioGraphStateSchemaItem

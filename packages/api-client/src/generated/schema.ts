@@ -82,6 +82,15 @@ export interface components {
       compiled_template: components["schemas"]["CompiledArtifactTemplateSchemaItem"];
       trace_id: string;
     };
+    AssembledLayerPreviewSchemaItem: {
+      content: string;
+      immutable: boolean;
+      label: string;
+      layer_code: "1_CONSTITUTION" | "2_PACK_METIER" | "3_EQUIPE" | "4_ESPACE" | "5_UTILISATEUR";
+      layer_number: number;
+      origin_badge: "SOCLE" | "PACK" | "EQUIPE" | "ESPACE" | "UTILISATEUR";
+      sha256: string;
+    };
     AssistantChatRequest: {
       allowed_datasource_aliases?: (string)[];
       human_profile_archetype?: string | null;
@@ -106,6 +115,15 @@ export interface components {
       workflow_uri: string;
       workspace_id: string;
     };
+    AssistantGovernanceViewResponse: {
+      assembled_layers: (components["schemas"]["AssembledLayerPreviewSchemaItem"])[];
+      can_edit_workspace_layer: boolean;
+      can_open_studio_mode_b: boolean;
+      studio_graph: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
+      user_preferences: components["schemas"]["UserLayerPreferencesSchemaItem"];
+      workspace_id: string;
+      workspace_settings: components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
+    };
     AssistantNodeTraceSchemaItem: {
       duration_ms: number;
       node_id: "1_INTENT_ROUTER" | "2_QUERY_PLANNER_AND_ONTOLOGY_EXPANSION" | "3_PARALLEL_FAN_OUT" | "4_CRITICAL_TRIAGE_AND_AXIOM_VERIFICATION" | "5_PROFILE_ADAPTIVE_SYNTHESIZER";
@@ -126,6 +144,26 @@ export interface components {
       snapshot_count: number;
       version: string;
       workflow_uri: string;
+    };
+    AssistantStudioGraphStateSchemaItem: {
+      ai_pre_prompt: string;
+      nodes: (components["schemas"]["AssistantStudioNodeSchemaItem"])[];
+      override_key?: string | null;
+      scope_id: string;
+      scope_level: "DEFAULT" | "TEAM" | "WORKSPACE";
+      sha256: string;
+      workflow_uri: string;
+    };
+    AssistantStudioNodeSchemaItem: {
+      enabled?: boolean;
+      enabled_sub_layers?: (string)[];
+      is_harness_boundary: boolean;
+      locked_by?: "HARNESS" | "PLATFORM" | "TEAM" | null;
+      node_id: string;
+      node_order: number;
+      sub_agent_uri?: string | null;
+      sub_layers_count?: number;
+      title: string;
     };
     AssistantWorkflowProposalSchemaItem: {
       description: string;
@@ -584,6 +622,9 @@ export interface components {
       description_fr: string;
       step_number: number;
       title_fr: string;
+    };
+    HTTPValidationError: {
+      detail?: (components["schemas"]["ValidationError"])[];
     };
     HealthResponse: {
       status?: "ok";
@@ -1369,6 +1410,10 @@ export interface components {
     ReleaseTaskClaimRequest: {
       force?: boolean;
     };
+    ResetAssistantStudioGraphRequest: {
+      scope_id: string;
+      scope_level?: "TEAM" | "WORKSPACE";
+    };
     ResourceDiscoveryResponse: {
       allowed_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
       can_request_access: boolean;
@@ -1439,6 +1484,12 @@ export interface components {
       run_id: string;
       step_execution_id: string;
       trace_id: string;
+    };
+    SaveAssistantStudioGraphRequest: {
+      ai_pre_prompt: string;
+      nodes: (components["schemas"]["AssistantStudioNodeSchemaItem"])[];
+      scope_id: string;
+      scope_level?: "TEAM" | "WORKSPACE";
     };
     ScopeMutationCheckResponse: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
@@ -1768,6 +1819,22 @@ export interface components {
       speed2_redis_key?: string | null;
       trace_id?: string | null;
     };
+    UpdateUserLayerPreferencesRequest: {
+      default_hat?: string;
+      favorite_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP";
+      personal_instructions: string;
+      response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE";
+      workspace_id: string;
+    };
+    UpdateWorkspaceLayerSettingsRequest: {
+      arbitration_policy?: "PAUSE_AND_ESCALATE" | "AUTO_RESOLVE_WITH_TRACE";
+      default_checked_sources?: (string)[];
+      mcp_expose_assistant?: boolean;
+      recommended_agents?: (string)[];
+      welcome_suggestions?: (string)[] | null;
+      workspace_id: string;
+      workspace_instructions: string;
+    };
     UpdateWorkspaceLifecycleRequest: {
       lifecycle_phase: "RUN" | "BUILD" | "MIGRATION";
     };
@@ -1827,6 +1894,15 @@ export interface components {
       preview: components["schemas"]["UpstreamChallengePreviewSchemaItem"];
       trace_id: string;
     };
+    UserLayerPreferencesSchemaItem: {
+      default_hat: string;
+      favorite_format: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP";
+      personal_instructions: string;
+      response_tone: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE";
+      sha256: string;
+      user_id: string;
+      workspace_id: string;
+    };
     UserMeResponse: {
       auth_mode: "OIDC" | "LOCAL" | "HYBRID";
       consolidated_finops_usd: number;
@@ -1884,6 +1960,13 @@ export interface components {
       resource_uri: string;
       status: "COMMITTED_FENCED";
       trace_id: string;
+    };
+    ValidationError: {
+      ctx?: Record<string, unknown>;
+      input?: unknown;
+      loc: (string | number)[];
+      msg: string;
+      type: string;
     };
     WelcomeSetupFirstAdminRequest: {
       bootstrap_token?: string | null;
@@ -2098,6 +2181,21 @@ export interface components {
       visibility_mode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
       workspace_id: string;
     };
+    WorkspaceLayerSettingsSchemaItem: {
+      arbitration_policy: "PAUSE_AND_ESCALATE" | "AUTO_RESOLVE_WITH_TRACE";
+      default_checked_sources: (string)[];
+      mcp_endpoint_url: string;
+      mcp_expose_assistant: boolean;
+      mcp_frozen_by_upper_layer: boolean;
+      mcp_frozen_origin?: "PLATFORM" | "TEAM" | null;
+      mcp_ide_config_json: string;
+      mcp_tool_name: string;
+      recommended_agents: (string)[];
+      sha256: string;
+      welcome_suggestions: (string)[];
+      workspace_id: string;
+      workspace_instructions: string;
+    };
     WorkspaceSpineBaselineSchemaItem: {
       allowed_dependencies: (string)[];
       content_sha256: string;
@@ -2161,6 +2259,41 @@ export interface paths {
     post: {
       responses: {
         200: unknown;
+      };
+    };
+  };
+  "/api/v1/assistant/governance": {
+    get: {
+      responses: {
+        200: components["schemas"]["AssistantGovernanceViewResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/governance/mode-a/user": {
+    put: {
+      responses: {
+        200: components["schemas"]["UserLayerPreferencesSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/governance/mode-a/workspace": {
+    put: {
+      responses: {
+        200: components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/governance/mode-b/reset": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/governance/mode-b/save": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
       };
     };
   };
@@ -2910,11 +3043,15 @@ export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEval
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];
+export type AssembledLayerPreviewSchemaItem = components["schemas"]["AssembledLayerPreviewSchemaItem"];
 export type AssistantChatRequest = components["schemas"]["AssistantChatRequest"];
 export type AssistantChatResponse = components["schemas"]["AssistantChatResponse"];
+export type AssistantGovernanceViewResponse = components["schemas"]["AssistantGovernanceViewResponse"];
 export type AssistantNodeTraceSchemaItem = components["schemas"]["AssistantNodeTraceSchemaItem"];
 export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
 export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
+export type AssistantStudioGraphStateSchemaItem = components["schemas"]["AssistantStudioGraphStateSchemaItem"];
+export type AssistantStudioNodeSchemaItem = components["schemas"]["AssistantStudioNodeSchemaItem"];
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
@@ -2968,6 +3105,7 @@ export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutin
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
+export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
 export type HumanAnchorSignRequest = components["schemas"]["HumanAnchorSignRequest"];
@@ -3060,6 +3198,7 @@ export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlock
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
+export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
@@ -3068,6 +3207,7 @@ export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
 export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripletItem"];
 export type RunMutationGuardCheckRequest = components["schemas"]["RunMutationGuardCheckRequest"];
 export type RunMutationGuardCheckResponse = components["schemas"]["RunMutationGuardCheckResponse"];
+export type SaveAssistantStudioGraphRequest = components["schemas"]["SaveAssistantStudioGraphRequest"];
 export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationCheckResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
@@ -3102,6 +3242,8 @@ export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyRespon
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
+export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
+export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
 export type UpdateWorkspaceLifecycleRequest = components["schemas"]["UpdateWorkspaceLifecycleRequest"];
 export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
 export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];
@@ -3109,12 +3251,14 @@ export type UpstreamChallengePreviewSchemaItem = components["schemas"]["Upstream
 export type UpstreamChallengeSchemaItem = components["schemas"]["UpstreamChallengeSchemaItem"];
 export type UpstreamChallengeSubmitRequest = components["schemas"]["UpstreamChallengeSubmitRequest"];
 export type UpstreamChallengeSubmitResponse = components["schemas"]["UpstreamChallengeSubmitResponse"];
+export type UserLayerPreferencesSchemaItem = components["schemas"]["UserLayerPreferencesSchemaItem"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
 export type UserPreferencesUpdateRequest = components["schemas"]["UserPreferencesUpdateRequest"];
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
+export type ValidationError = components["schemas"]["ValidationError"];
 export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupFirstAdminRequest"];
 export type WelcomeSetupFirstAdminResponse = components["schemas"]["WelcomeSetupFirstAdminResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
@@ -3137,6 +3281,7 @@ export type WorkflowValidationFindingSchemaItem = components["schemas"]["Workflo
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
 export type WorkspaceGovernanceItemResponse = components["schemas"]["WorkspaceGovernanceItemResponse"];
+export type WorkspaceLayerSettingsSchemaItem = components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
 export type WorkspaceSpineBaselineSchemaItem = components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];

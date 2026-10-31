@@ -509,6 +509,65 @@
         "title": "ArtifactTemplateCompileResponse",
         "type": "object"
       },
+      "AssembledLayerPreviewSchemaItem": {
+        "additionalProperties": false,
+        "description": "Tab 3 (`👁️ Assemblage complet`) layer item (`Story 10.1`).",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "immutable": {
+            "title": "Immutable",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "layer_code": {
+            "enum": [
+              "1_CONSTITUTION",
+              "2_PACK_METIER",
+              "3_EQUIPE",
+              "4_ESPACE",
+              "5_UTILISATEUR"
+            ],
+            "title": "Layer Code",
+            "type": "string"
+          },
+          "layer_number": {
+            "title": "Layer Number",
+            "type": "integer"
+          },
+          "origin_badge": {
+            "enum": [
+              "SOCLE",
+              "PACK",
+              "EQUIPE",
+              "ESPACE",
+              "UTILISATEUR"
+            ],
+            "title": "Origin Badge",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "layer_number",
+          "layer_code",
+          "label",
+          "immutable",
+          "origin_badge",
+          "content",
+          "sha256"
+        ],
+        "title": "AssembledLayerPreviewSchemaItem",
+        "type": "object"
+      },
       "AssistantChatRequest": {
         "additionalProperties": false,
         "description": "Request payload for a conversational turn with `orcia://system/workflows/assistant-agent`.",
@@ -659,6 +718,51 @@
         "title": "AssistantChatResponse",
         "type": "object"
       },
+      "AssistantGovernanceViewResponse": {
+        "additionalProperties": false,
+        "description": "Response envelope for `GET /api/v1/assistant/governance` (`Story 10.1`).",
+        "properties": {
+          "assembled_layers": {
+            "items": {
+              "$ref": "#/components/schemas/AssembledLayerPreviewSchemaItem"
+            },
+            "title": "Assembled Layers",
+            "type": "array"
+          },
+          "can_edit_workspace_layer": {
+            "title": "Can Edit Workspace Layer",
+            "type": "boolean"
+          },
+          "can_open_studio_mode_b": {
+            "title": "Can Open Studio Mode B",
+            "type": "boolean"
+          },
+          "studio_graph": {
+            "$ref": "#/components/schemas/AssistantStudioGraphStateSchemaItem"
+          },
+          "user_preferences": {
+            "$ref": "#/components/schemas/UserLayerPreferencesSchemaItem"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_settings": {
+            "$ref": "#/components/schemas/WorkspaceLayerSettingsSchemaItem"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "can_edit_workspace_layer",
+          "can_open_studio_mode_b",
+          "user_preferences",
+          "workspace_settings",
+          "assembled_layers",
+          "studio_graph"
+        ],
+        "title": "AssistantGovernanceViewResponse",
+        "type": "object"
+      },
       "AssistantNodeTraceSchemaItem": {
         "additionalProperties": false,
         "description": "Telemetry item for one of the 5 nodes in the Assistant Agent DAG.",
@@ -775,6 +879,139 @@
           "snapshot_count"
         ],
         "title": "AssistantSaveAndLaunchResponse",
+        "type": "object"
+      },
+      "AssistantStudioGraphStateSchemaItem": {
+        "additionalProperties": false,
+        "description": "Mode B Studio graph state (`Story 10.1`).",
+        "properties": {
+          "ai_pre_prompt": {
+            "title": "Ai Pre Prompt",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantStudioNodeSchemaItem"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "override_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Key"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "enum": [
+              "DEFAULT",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "workflow_uri": {
+            "title": "Workflow Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_uri",
+          "scope_level",
+          "scope_id",
+          "ai_pre_prompt",
+          "nodes",
+          "sha256"
+        ],
+        "title": "AssistantStudioGraphStateSchemaItem",
+        "type": "object"
+      },
+      "AssistantStudioNodeSchemaItem": {
+        "additionalProperties": false,
+        "description": "Mode B Studio node schema (`Story 10.1`).",
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "enabled_sub_layers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Enabled Sub Layers",
+            "type": "array"
+          },
+          "is_harness_boundary": {
+            "title": "Is Harness Boundary",
+            "type": "boolean"
+          },
+          "locked_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "HARNESS",
+                  "PLATFORM",
+                  "TEAM"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locked By"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "node_order": {
+            "title": "Node Order",
+            "type": "integer"
+          },
+          "sub_agent_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Agent Uri"
+          },
+          "sub_layers_count": {
+            "default": 3,
+            "title": "Sub Layers Count",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "title",
+          "node_order",
+          "is_harness_boundary"
+        ],
+        "title": "AssistantStudioNodeSchemaItem",
         "type": "object"
       },
       "AssistantWorkflowProposalSchemaItem": {
@@ -3676,6 +3913,19 @@
           "action_command"
         ],
         "title": "GuidanceStepItemResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
         "type": "object"
       },
       "HealthResponse": {
@@ -8728,6 +8978,31 @@
         "title": "ReleaseTaskClaimRequest",
         "type": "object"
       },
+      "ResetAssistantStudioGraphRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/governance/mode-b/reset` (`Story 10.1`).",
+        "properties": {
+          "scope_id": {
+            "minLength": 1,
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "default": "WORKSPACE",
+            "enum": [
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_id"
+        ],
+        "title": "ResetAssistantStudioGraphRequest",
+        "type": "object"
+      },
       "ResourceDiscoveryResponse": {
         "additionalProperties": false,
         "description": "Evaluated resource access & passive-discovery lock state (`Story 8.1`).",
@@ -9155,6 +9430,45 @@
           "trace_id"
         ],
         "title": "RunMutationGuardCheckResponse",
+        "type": "object"
+      },
+      "SaveAssistantStudioGraphRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/governance/mode-b/save` (`Story 10.1`).",
+        "properties": {
+          "ai_pre_prompt": {
+            "minLength": 3,
+            "title": "Ai Pre Prompt",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantStudioNodeSchemaItem"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "scope_id": {
+            "minLength": 1,
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "default": "WORKSPACE",
+            "enum": [
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_id",
+          "ai_pre_prompt",
+          "nodes"
+        ],
+        "title": "SaveAssistantStudioGraphRequest",
         "type": "object"
       },
       "ScopeMutationCheckResponse": {
@@ -11367,6 +11681,118 @@
         "title": "TwoSpeedSearchResponse",
         "type": "object"
       },
+      "UpdateUserLayerPreferencesRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `PUT /api/v1/assistant/governance/mode-a/user` (`Story 10.1`).",
+        "properties": {
+          "default_hat": {
+            "default": "PM",
+            "minLength": 2,
+            "title": "Default Hat",
+            "type": "string"
+          },
+          "favorite_format": {
+            "default": "STRUCTURED_SECTIONS",
+            "enum": [
+              "BULLETS_SUMMARY",
+              "STRUCTURED_SECTIONS",
+              "STEP_BY_STEP"
+            ],
+            "title": "Favorite Format",
+            "type": "string"
+          },
+          "personal_instructions": {
+            "minLength": 3,
+            "title": "Personal Instructions",
+            "type": "string"
+          },
+          "response_tone": {
+            "default": "BALANCED",
+            "enum": [
+              "SYNTHETIC",
+              "BALANCED",
+              "DETAILED_CODE"
+            ],
+            "title": "Response Tone",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "personal_instructions"
+        ],
+        "title": "UpdateUserLayerPreferencesRequest",
+        "type": "object"
+      },
+      "UpdateWorkspaceLayerSettingsRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `PUT /api/v1/assistant/governance/mode-a/workspace` (`Story 10.1`).",
+        "properties": {
+          "arbitration_policy": {
+            "default": "PAUSE_AND_ESCALATE",
+            "enum": [
+              "PAUSE_AND_ESCALATE",
+              "AUTO_RESOLVE_WITH_TRACE"
+            ],
+            "title": "Arbitration Policy",
+            "type": "string"
+          },
+          "default_checked_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Default Checked Sources",
+            "type": "array"
+          },
+          "mcp_expose_assistant": {
+            "default": true,
+            "title": "Mcp Expose Assistant",
+            "type": "boolean"
+          },
+          "recommended_agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recommended Agents",
+            "type": "array"
+          },
+          "welcome_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Welcome Suggestions"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_instructions": {
+            "minLength": 3,
+            "title": "Workspace Instructions",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workspace_instructions"
+        ],
+        "title": "UpdateWorkspaceLayerSettingsRequest",
+        "type": "object"
+      },
       "UpdateWorkspaceLifecycleRequest": {
         "additionalProperties": false,
         "description": "Request body for updating product lifecycle (`RUN | BUILD | MIGRATION`).",
@@ -11753,6 +12179,61 @@
           "trace_id"
         ],
         "title": "UpstreamChallengeSubmitResponse",
+        "type": "object"
+      },
+      "UserLayerPreferencesSchemaItem": {
+        "additionalProperties": false,
+        "description": "Tab 1 (`👤 Mes préférences — Couche 5 USER`) schema (`Story 10.1`).",
+        "properties": {
+          "default_hat": {
+            "title": "Default Hat",
+            "type": "string"
+          },
+          "favorite_format": {
+            "enum": [
+              "BULLETS_SUMMARY",
+              "STRUCTURED_SECTIONS",
+              "STEP_BY_STEP"
+            ],
+            "title": "Favorite Format",
+            "type": "string"
+          },
+          "personal_instructions": {
+            "title": "Personal Instructions",
+            "type": "string"
+          },
+          "response_tone": {
+            "enum": [
+              "SYNTHETIC",
+              "BALANCED",
+              "DETAILED_CODE"
+            ],
+            "title": "Response Tone",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "workspace_id",
+          "response_tone",
+          "favorite_format",
+          "default_hat",
+          "personal_instructions",
+          "sha256"
+        ],
+        "title": "UserLayerPreferencesSchemaItem",
         "type": "object"
       },
       "UserMeResponse": {
@@ -12165,6 +12646,46 @@
           "trace_id"
         ],
         "title": "ValidateFencedWriteResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
         "type": "object"
       },
       "WelcomeSetupFirstAdminRequest": {
@@ -13657,6 +14178,104 @@
         "title": "WorkspaceGovernanceItemResponse",
         "type": "object"
       },
+      "WorkspaceLayerSettingsSchemaItem": {
+        "additionalProperties": false,
+        "description": "Tab 2 (`📦 Réglages de l'Espace — Couche 4 WORKSPACE`) schema (`Story 10.1`).",
+        "properties": {
+          "arbitration_policy": {
+            "enum": [
+              "PAUSE_AND_ESCALATE",
+              "AUTO_RESOLVE_WITH_TRACE"
+            ],
+            "title": "Arbitration Policy",
+            "type": "string"
+          },
+          "default_checked_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Default Checked Sources",
+            "type": "array"
+          },
+          "mcp_endpoint_url": {
+            "title": "Mcp Endpoint Url",
+            "type": "string"
+          },
+          "mcp_expose_assistant": {
+            "title": "Mcp Expose Assistant",
+            "type": "boolean"
+          },
+          "mcp_frozen_by_upper_layer": {
+            "title": "Mcp Frozen By Upper Layer",
+            "type": "boolean"
+          },
+          "mcp_frozen_origin": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PLATFORM",
+                  "TEAM"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp Frozen Origin"
+          },
+          "mcp_ide_config_json": {
+            "title": "Mcp Ide Config Json",
+            "type": "string"
+          },
+          "mcp_tool_name": {
+            "title": "Mcp Tool Name",
+            "type": "string"
+          },
+          "recommended_agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recommended Agents",
+            "type": "array"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "welcome_suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Welcome Suggestions",
+            "type": "array"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_instructions": {
+            "title": "Workspace Instructions",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workspace_instructions",
+          "default_checked_sources",
+          "recommended_agents",
+          "arbitration_policy",
+          "welcome_suggestions",
+          "mcp_expose_assistant",
+          "mcp_frozen_by_upper_layer",
+          "mcp_endpoint_url",
+          "mcp_tool_name",
+          "mcp_ide_config_json",
+          "sha256"
+        ],
+        "title": "WorkspaceLayerSettingsSchemaItem",
+        "type": "object"
+      },
       "WorkspaceSpineBaselineSchemaItem": {
         "additionalProperties": false,
         "description": "Serialized `WorkspaceSpineBaseline` (`[ADOPTED]`, `FR-28`, `AD-16`).",
@@ -14224,6 +14843,316 @@
         "summary": "Stream a 5-node Assistant Agent conversational turn via SSE (`< 1.5 s` first token)",
         "tags": [
           "assistant-agent"
+        ]
+      }
+    },
+    "/api/v1/assistant/governance": {
+      "get": {
+        "description": "Return Mode A (3 tabs) & Mode B (Studio graph) governance state (`Story 10.1`).",
+        "operationId": "get_assistant_governance_endpoint_api_v1_assistant_governance_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": "ws-claims-alpha",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pack_key",
+            "required": false,
+            "schema": {
+              "default": "orcia-pack-sdlc",
+              "title": "Pack Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantGovernanceViewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Assistant Governance Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/governance/mode-a/user": {
+      "put": {
+        "description": "Update Tab 1 (`👤 Mes préférences — Couche 5 USER`) (`Story 10.1`).",
+        "operationId": "update_user_layer_preferences_endpoint_api_v1_assistant_governance_mode_a_user_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserLayerPreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserLayerPreferencesSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update User Layer Preferences Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/governance/mode-a/workspace": {
+      "put": {
+        "description": "Update Tab 2 (`📦 Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`).",
+        "operationId": "update_workspace_layer_settings_endpoint_api_v1_assistant_governance_mode_a_workspace_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkspaceLayerSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceLayerSettingsSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Workspace Layer Settings Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/governance/mode-b/reset": {
+      "post": {
+        "description": "Reset Mode B Studio override in 1 click (`↺ Réinitialiser`) (`Story 10.1`).",
+        "operationId": "reset_assistant_studio_graph_endpoint_api_v1_assistant_governance_mode_b_reset_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetAssistantStudioGraphRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantStudioGraphStateSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Assistant Studio Graph Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
+    "/api/v1/assistant/governance/mode-b/save": {
+      "post": {
+        "description": "Save Mode B Studio graph override (`TEAM` or `WORKSPACE`) (`🔒 AssistantHarness`).",
+        "operationId": "save_assistant_studio_graph_endpoint_api_v1_assistant_governance_mode_b_save_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAssistantStudioGraphRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantStudioGraphStateSchemaItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Assistant Studio Graph Endpoint",
+        "tags": [
+          "assistant-epic10"
         ]
       }
     },

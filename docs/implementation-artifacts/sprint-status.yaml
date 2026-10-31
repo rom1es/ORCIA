@@ -117,8 +117,8 @@ development_status:
 
   # Epic 10 — Mon Assistant Tout-en-Un (Style KORE) : Gouvernance 4 Niveaux (Mode A & Mode B), Routage 3 Vitesses (TTFT < 1,2s), Citations Déterministes [S1]/[G1]/[O1] & Dossiers Collaboratifs
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes B, H, K, K.4, K.5, K.6)
-  epic-10: backlog
-  10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m: backlog
+  epic-10: in-progress
+  10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m: done
   10-2-garantie-de-latence-ttft-1-2s-cache-redis-prompt-assemblé-3-v: backlog
   10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage: backlog
   10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: backlog

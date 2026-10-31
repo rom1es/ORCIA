@@ -40,6 +40,9 @@ from orcia_core.orchestration import (
     build_default_orchestration_setup_service,
     register_default_step_executors,
 )
+from orcia_core.orchestration.assistant_governance import (
+    AssistantFourLevelGovernanceService,
+)
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
@@ -472,4 +475,17 @@ def get_contextual_help_service(request: Request) -> ContextualHelpResolutionSer
     if svc is None:
         svc = ContextualHelpResolutionService()
         request.app.state.contextual_help_service = svc
+    return svc
+
+
+def get_assistant_governance_service(
+    request: Request,
+) -> AssistantFourLevelGovernanceService:
+    """FastAPI `Depends` provider returning `AssistantFourLevelGovernanceService` (`Story 10.1`)."""
+    svc: AssistantFourLevelGovernanceService | None = getattr(
+        request.app.state, "assistant_governance_service", None
+    )
+    if svc is None:
+        svc = AssistantFourLevelGovernanceService()
+        request.app.state.assistant_governance_service = svc
     return svc

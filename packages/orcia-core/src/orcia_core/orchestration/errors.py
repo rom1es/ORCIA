@@ -144,6 +144,57 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
             "in the run-lock.json of active runs. Use Drain or Force mode (AD-21).",
         ),
     },
+    "ERR_IMMUTABLE_HARNESS_BOUNDARY": {
+        "fr": LocalizedErrorCopy(
+            "Borne de sécurité AssistantHarness inaltérable",
+            "Les bornes d'entrée/sortie 🔒 AssistantHarness (Couche 1 AD-15) ainsi que les nœuds "
+            "verrouillés par le Socle ou l'Équipe ne peuvent être ni supprimés, ni désactivés, "
+            "ni court-circuités.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Immutable AssistantHarness security boundary",
+            "The 🔒 AssistantHarness entry/exit boundaries (Layer 1 AD-15) and nodes locked by "
+            "Platform or Team cannot be deleted, disabled, or bypassed.",
+        ),
+    },
+    "ERR_FUNNEL_RULE_VIOLATION": {
+        "fr": LocalizedErrorCopy(
+            "Violation de la Règle de l'Entonnoir (Principe G)",
+            "Un périmètre inférieur (Espace) ne peut pas réactiver une exposition MCP, une source "
+            "ou un outil gelé par un niveau supérieur (Équipe ou Socle Plateforme).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Funnel Rule violation (Principle G)",
+            "A lower scope (Workspace) cannot re-enable an MCP exposure, source, or tool frozen "
+            "by an upper level (Team or Platform).",
+        ),
+    },
+    "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE": {
+        "fr": LocalizedErrorCopy(
+            "Écriture directe dans le SI interdite depuis Mon Assistant (Verrou V5 AD-15)",
+            "Toute publication vers une source externe (git://, confluence://, jira://) ou "
+            "officialisation @v1 dans le Coffre requiert obligatoirement le passage par la Gate "
+            "de Validation & Publication d'un Processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Direct enterprise SI write forbidden from My Assistant (Lock V5 AD-15)",
+            "Any publication to an external source (git://, confluence://, jira://) or @v1 "
+            "officialization in the Vault strictly requires passing through a Process Validation "
+            "& Publication Gate.",
+        ),
+    },
+    "ERR_THREAD_TURN_LOCK_HELD": {
+        "fr": LocalizedErrorCopy(
+            "Tour de parole déjà actif dans cette discussion partagée",
+            "Un co-contributeur interroge actuellement l'assistant sur ce fil (verrou Redis "
+            "SET lock:thread:<thread_id> NX EX 60 actif).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Turn lock already held in this shared thread",
+            "A co-contributor is currently querying the assistant on this thread (active Redis "
+            "lock SET lock:thread:<thread_id> NX EX 60).",
+        ),
+    },
 }
 
 register_domain_error_catalog(ORCHESTRATION_ERROR_CATALOG)
@@ -204,10 +255,33 @@ class ResourcePinnedByActiveRunsError(OrciaDomainError):
     http_status, type_slug = 409, "resource-pinned-by-active-runs"
 
 
+class ImmutableHarnessBoundaryError(OrciaDomainError):
+    error_code = "ERR_IMMUTABLE_HARNESS_BOUNDARY"
+    http_status, type_slug = 422, "immutable-harness-boundary"
+
+
+class FunnelRuleViolationError(OrciaDomainError):
+    error_code = "ERR_FUNNEL_RULE_VIOLATION"
+    http_status, type_slug = 403, "funnel-rule-violation"
+
+
+class DirectSiWriteRequiresProcessGateError(OrciaDomainError):
+    error_code = "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE"
+    http_status, type_slug = 422, "direct-si-write-requires-process-gate"
+
+
+class ThreadTurnLockHeldError(OrciaDomainError):
+    error_code = "ERR_THREAD_TURN_LOCK_HELD"
+    http_status, type_slug = 409, "thread-turn-lock-held"
+
+
 __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "CyclicResourceWaitDetectedError",
+    "DirectSiWriteRequiresProcessGateError",
+    "FunnelRuleViolationError",
     "HumanAnchorRequiredError",
+    "ImmutableHarnessBoundaryError",
     "IntentionBeforeCodeRequiredError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
@@ -220,6 +294,7 @@ __all__ = [
     "StepClaimNotHeldError",
     "SubWorkflowCycleDetectedError",
     "SubWorkflowMaxDepthExceededError",
+    "ThreadTurnLockHeldError",
     "UnknownWorkflowPolicyError",
     "ValidationDomainError",
 ]

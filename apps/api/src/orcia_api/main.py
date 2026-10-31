@@ -17,6 +17,7 @@ from orcia_api.routers.catalog import router as catalog_router
 from orcia_api.routers.challenge_and_replay import router as challenge_and_replay_router
 from orcia_api.routers.control_center import router as control_center_router
 from orcia_api.routers.epic9_portal import router as epic9_portal_router
+from orcia_api.routers.epic10_assistant import router as epic10_assistant_router
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
@@ -68,6 +69,7 @@ def create_app() -> FastAPI:
     application.include_router(challenge_and_replay_router)
     application.include_router(assistant_router)
     application.include_router(epic9_portal_router)
+    application.include_router(epic10_assistant_router)
     return application
 
 

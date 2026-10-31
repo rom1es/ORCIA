@@ -200,6 +200,15 @@ export {
   type UiContextualHelpArticleView,
   type UiHelpArticleLayer,
 } from "./primitives/ContextualHelpColumnAndCenter";
+export {
+  AssistantGovernanceModalAndStudio,
+  type AssistantGovernanceModalAndStudioLabels,
+  type AssistantGovernanceModalAndStudioProps,
+  type UiAssembledLayerItem,
+  type UiAssistantResponseFormat,
+  type UiAssistantResponseTone,
+  type UiAssistantStudioNode,
+} from "./primitives/AssistantGovernanceModalAndStudio";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {
