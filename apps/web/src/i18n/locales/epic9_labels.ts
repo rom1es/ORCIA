@@ -3,6 +3,7 @@ import type {
   ProgressiveDay0AccostageLabels,
   StreamlinedCockpitLabels,
   TopHeaderSearchCommandLabels,
+  UserAccountDropdownAndSettingsLabels,
 } from "@orcia/ui";
 
 export interface Epic9DictionarySection {
@@ -10,6 +11,7 @@ export interface Epic9DictionarySection {
   readonly streamlinedCockpit: StreamlinedCockpitLabels;
   readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
   readonly topHeaderSearch: TopHeaderSearchCommandLabels;
+  readonly userAccountAndSettings: UserAccountDropdownAndSettingsLabels;
 }
 
 export const EPIC9_FR_LABELS: Epic9DictionarySection = {
@@ -113,6 +115,29 @@ export const EPIC9_FR_LABELS: Epic9DictionarySection = {
       HELP_ACTIONS: "Aide & Actions",
     },
   },
+  userAccountAndSettings: {
+    triggerAriaLabel: "Ouvrir le menu rapide du compte (280px)",
+    dropdownWidthNote: "280px",
+    hatSelectorLabel: "Casquette métier",
+    themeQuickToggleLabel: "🌓 Apparence (0 ms)",
+    localeQuickToggleLabel: "🌐 Langue (0 ms)",
+    openAccountSettingsLabel: "⚙️ Paramètres de mon compte...",
+    openPassthroughSourcesLabel: "🔗 Mes accès aux sources...",
+    logoutButtonLabel: "🚪 Se déconnecter",
+    modalTitle: "⚙️ Paramètres de mon compte (720px × max 600px)",
+    tab1PreferencesTitle: "🎨 Préférences & Affichage",
+    tab2SecurityTitle: "👤 Profil & Sécurité",
+    tab3PassthroughTitle: "🔗 Accès aux sources (Passthrough)",
+    tab4McpKeysTitle: "💻 Clés IDE & MCP",
+    customizeAssistantRedirectCta:
+      "💬 Personnaliser le comportement de Mon Assistant →",
+    testPassthroughTokenCta: "🔌 Tester mon jeton",
+    generateMcpTokenCta: "+ Générer un jeton MCP scopé (pat_mcp_*)",
+    revokeMcpTokenCta: "Révoquer (< 10 ms)",
+    targetWholeSpaceLabel: "Tout l'Espace (/api/v1/mcp/spaces/<ws_slug>)",
+    targetSingleAgentLabel: "Un agent précis (/api/v1/mcp/agents/<agent_slug>)",
+    ideJsonReadyTitle: "Extrait JSON prêt à copier",
+  },
 };
 
 export const EPIC9_EN_LABELS: Epic9DictionarySection = {
@@ -215,5 +240,28 @@ export const EPIC9_EN_LABELS: Epic9DictionarySection = {
       ONTOLOGY_GLOSSARY: "Ontology & Glossary",
       HELP_ACTIONS: "Help & Actions",
     },
+  },
+  userAccountAndSettings: {
+    triggerAriaLabel: "Open quick account menu (280px)",
+    dropdownWidthNote: "280px",
+    hatSelectorLabel: "Business Hat",
+    themeQuickToggleLabel: "🌓 Appearance (0 ms)",
+    localeQuickToggleLabel: "🌐 Language (0 ms)",
+    openAccountSettingsLabel: "⚙️ My account settings...",
+    openPassthroughSourcesLabel: "🔗 My source credentials...",
+    logoutButtonLabel: "🚪 Sign out",
+    modalTitle: "⚙️ My Account Settings (720px × max 600px)",
+    tab1PreferencesTitle: "🎨 Preferences & Display",
+    tab2SecurityTitle: "👤 Profile & Security",
+    tab3PassthroughTitle: "🔗 Source Access (Passthrough)",
+    tab4McpKeysTitle: "💻 IDE & MCP Keys",
+    customizeAssistantRedirectCta:
+      "💬 Customize My Assistant behavior →",
+    testPassthroughTokenCta: "🔌 Test my token",
+    generateMcpTokenCta: "+ Generate scoped MCP token (pat_mcp_*)",
+    revokeMcpTokenCta: "Revoke (< 10 ms)",
+    targetWholeSpaceLabel: "Entire Space (/api/v1/mcp/spaces/<ws_slug>)",
+    targetSingleAgentLabel: "Specific Agent (/api/v1/mcp/agents/<agent_slug>)",
+    ideJsonReadyTitle: "Ready-to-copy JSON snippet",
   },
 };

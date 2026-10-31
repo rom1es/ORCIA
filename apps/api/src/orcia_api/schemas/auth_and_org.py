@@ -198,3 +198,88 @@ class PassthroughSecretMetadataResponse(BaseModel):
     key_version: int
     encrypted_at_rest: bool = True
     trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class UserPreferencesUpdateRequest(BaseModel):
+    """Story 9.4 — Request payload for `PATCH /api/v1/users/me/preferences` (`0 ms` Anti-FOUC)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    theme: Literal["light", "dark", "system"] | None = None
+    locale: Literal["fr", "en"] | None = None
+    default_hat: str | None = Field(default=None, min_length=1, max_length=64)
+    auto_open_contextual_help: bool | None = None
+    notifications_enabled: bool | None = None
+
+
+class UserPreferencesResponse(BaseModel):
+    """Story 9.4 — Response payload for `/api/v1/users/me/preferences`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    user_id: str
+    theme: Literal["light", "dark", "system"]
+    locale: Literal["fr", "en"]
+    default_hat: str
+    auto_open_contextual_help: bool
+    notifications_enabled: bool
+    assistant_behavior_redirect_uri: str
+    trace_id: str | None = None
+
+
+class McpPersonalTokenCreateRequest(BaseModel):
+    """Story 9.4 — Request payload for `POST /api/v1/users/me/mcp-tokens` (`pat_mcp_*`, SHA-256)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    label: str = Field(default="Clé IDE MCP", min_length=1, max_length=120)
+    expires_in_days: int = Field(default=30)
+    rpm_limit: int = Field(default=60, ge=1, le=600)
+    allowed_workspace_slugs: list[str] = Field(default_factory=lambda: ["ws-claims-alpha"])
+    exposed_capabilities: list[
+        Literal["ASSISTANT", "PUBLISHED_AGENTS", "KB_GLOSSARY_SEARCH", "STAGED_DRAFTS"]
+    ] = ["ASSISTANT", "KB_GLOSSARY_SEARCH"]
+    target_kind: Literal["SPACE", "AGENT"] = "SPACE"
+    target_slug: str = Field(default="ws-claims-alpha", min_length=1, max_length=120)
+
+
+class McpPersonalTokenMetadataItem(BaseModel):
+    """Story 9.4 — Metadata item for a personal IDE/MCP token (`SHA-256` at rest)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    token_id: str
+    user_id: str
+    label: str
+    token_prefix: str
+    token_sha256: str
+    expires_in_days: Literal[30, 90]
+    rpm_limit: int
+    allowed_workspace_slugs: list[str]
+    exposed_capabilities: list[
+        Literal["ASSISTANT", "PUBLISHED_AGENTS", "KB_GLOSSARY_SEARCH", "STAGED_DRAFTS"]
+    ]
+    target_kind: Literal["SPACE", "AGENT"]
+    target_slug: str
+    mcp_endpoint_uri: str
+    ide_json_snippet: str
+    revoked: bool
+
+
+class McpPersonalTokenIssuedResponse(BaseModel):
+    """Story 9.4 — One-time issuance response returning `plaintext_token` (`pat_mcp_*`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    plaintext_token: str
+    record: McpPersonalTokenMetadataItem
+    trace_id: str | None = None
+
+
+class McpPersonalTokenListResponse(BaseModel):
+    """Story 9.4 — List of personal IDE/MCP token metadata items."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    tokens: list[McpPersonalTokenMetadataItem]
+    trace_id: str | None = None

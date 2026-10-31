@@ -8,6 +8,19 @@
       name="description"
       content="Human-Led, Agent-Accelerated Enterprise Process & Context Orchestration"
     />
+    <script>
+      (function () {
+        try {
+          var theme = window.localStorage.getItem("orcia_theme") || "light";
+          var locale = window.localStorage.getItem("orcia_locale") || "fr";
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.lang = locale;
+        } catch (_err) {
+          document.documentElement.dataset.theme = "light";
+          document.documentElement.lang = "fr";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

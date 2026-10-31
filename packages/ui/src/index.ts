@@ -182,6 +182,17 @@ export {
   type TopSearchHitItem,
   type TopSearchScopeMode,
 } from "./primitives/TopHeaderSearchCommand";
+export {
+  UserAccountDropdownAndSettingsModal,
+  type UiLocalePreference,
+  type UiMcpTargetKind,
+  type UiPersonalMcpTokenItem,
+  type UiThemePreference,
+  type UiUserSettingsTabKey,
+  type UserAccountDropdownAndSettingsLabels,
+  type UserAccountDropdownAndSettingsModalProps,
+  type UserAccountPreferencesPatch,
+} from "./primitives/UserAccountDropdownAndSettingsModal";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

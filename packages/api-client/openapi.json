@@ -6057,6 +6057,232 @@
         "title": "LogoutResponse",
         "type": "object"
       },
+      "McpPersonalTokenCreateRequest": {
+        "additionalProperties": false,
+        "description": "Story 9.4 — Request payload for `POST /api/v1/users/me/mcp-tokens` (`pat_mcp_*`, SHA-256).",
+        "properties": {
+          "allowed_workspace_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Workspace Slugs",
+            "type": "array"
+          },
+          "expires_in_days": {
+            "default": 30,
+            "title": "Expires In Days",
+            "type": "integer"
+          },
+          "exposed_capabilities": {
+            "default": [
+              "ASSISTANT",
+              "KB_GLOSSARY_SEARCH"
+            ],
+            "items": {
+              "enum": [
+                "ASSISTANT",
+                "PUBLISHED_AGENTS",
+                "KB_GLOSSARY_SEARCH",
+                "STAGED_DRAFTS"
+              ],
+              "type": "string"
+            },
+            "title": "Exposed Capabilities",
+            "type": "array"
+          },
+          "label": {
+            "default": "Clé IDE MCP",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "rpm_limit": {
+            "default": 60,
+            "maximum": 600.0,
+            "minimum": 1.0,
+            "title": "Rpm Limit",
+            "type": "integer"
+          },
+          "target_kind": {
+            "default": "SPACE",
+            "enum": [
+              "SPACE",
+              "AGENT"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_slug": {
+            "default": "ws-claims-alpha",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Target Slug",
+            "type": "string"
+          }
+        },
+        "title": "McpPersonalTokenCreateRequest",
+        "type": "object"
+      },
+      "McpPersonalTokenIssuedResponse": {
+        "additionalProperties": false,
+        "description": "Story 9.4 — One-time issuance response returning `plaintext_token` (`pat_mcp_*`).",
+        "properties": {
+          "plaintext_token": {
+            "title": "Plaintext Token",
+            "type": "string"
+          },
+          "record": {
+            "$ref": "#/components/schemas/McpPersonalTokenMetadataItem"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "plaintext_token",
+          "record"
+        ],
+        "title": "McpPersonalTokenIssuedResponse",
+        "type": "object"
+      },
+      "McpPersonalTokenListResponse": {
+        "additionalProperties": false,
+        "description": "Story 9.4 — List of personal IDE/MCP token metadata items.",
+        "properties": {
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/McpPersonalTokenMetadataItem"
+            },
+            "title": "Tokens",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "tokens"
+        ],
+        "title": "McpPersonalTokenListResponse",
+        "type": "object"
+      },
+      "McpPersonalTokenMetadataItem": {
+        "additionalProperties": false,
+        "description": "Story 9.4 — Metadata item for a personal IDE/MCP token (`SHA-256` at rest).",
+        "properties": {
+          "allowed_workspace_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Workspace Slugs",
+            "type": "array"
+          },
+          "expires_in_days": {
+            "enum": [
+              30,
+              90
+            ],
+            "title": "Expires In Days",
+            "type": "integer"
+          },
+          "exposed_capabilities": {
+            "items": {
+              "enum": [
+                "ASSISTANT",
+                "PUBLISHED_AGENTS",
+                "KB_GLOSSARY_SEARCH",
+                "STAGED_DRAFTS"
+              ],
+              "type": "string"
+            },
+            "title": "Exposed Capabilities",
+            "type": "array"
+          },
+          "ide_json_snippet": {
+            "title": "Ide Json Snippet",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "mcp_endpoint_uri": {
+            "title": "Mcp Endpoint Uri",
+            "type": "string"
+          },
+          "revoked": {
+            "title": "Revoked",
+            "type": "boolean"
+          },
+          "rpm_limit": {
+            "title": "Rpm Limit",
+            "type": "integer"
+          },
+          "target_kind": {
+            "enum": [
+              "SPACE",
+              "AGENT"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_slug": {
+            "title": "Target Slug",
+            "type": "string"
+          },
+          "token_id": {
+            "title": "Token Id",
+            "type": "string"
+          },
+          "token_prefix": {
+            "title": "Token Prefix",
+            "type": "string"
+          },
+          "token_sha256": {
+            "title": "Token Sha256",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token_id",
+          "user_id",
+          "label",
+          "token_prefix",
+          "token_sha256",
+          "expires_in_days",
+          "rpm_limit",
+          "allowed_workspace_slugs",
+          "exposed_capabilities",
+          "target_kind",
+          "target_slug",
+          "mcp_endpoint_uri",
+          "ide_json_snippet",
+          "revoked"
+        ],
+        "title": "McpPersonalTokenMetadataItem",
+        "type": "object"
+      },
       "McpToolCallRequest": {
         "additionalProperties": false,
         "description": "Request payload for calling a governed MCP tool (`/api/v1/mcp/call`, `FR-24`, `AR-7`).",
@@ -11435,6 +11661,145 @@
           "linked_connectors"
         ],
         "title": "UserOnboardingStateItem",
+        "type": "object"
+      },
+      "UserPreferencesResponse": {
+        "additionalProperties": false,
+        "description": "Story 9.4 — Response payload for `/api/v1/users/me/preferences`.",
+        "properties": {
+          "assistant_behavior_redirect_uri": {
+            "title": "Assistant Behavior Redirect Uri",
+            "type": "string"
+          },
+          "auto_open_contextual_help": {
+            "title": "Auto Open Contextual Help",
+            "type": "boolean"
+          },
+          "default_hat": {
+            "title": "Default Hat",
+            "type": "string"
+          },
+          "locale": {
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Locale",
+            "type": "string"
+          },
+          "notifications_enabled": {
+            "title": "Notifications Enabled",
+            "type": "boolean"
+          },
+          "theme": {
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ],
+            "title": "Theme",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "theme",
+          "locale",
+          "default_hat",
+          "auto_open_contextual_help",
+          "notifications_enabled",
+          "assistant_behavior_redirect_uri"
+        ],
+        "title": "UserPreferencesResponse",
+        "type": "object"
+      },
+      "UserPreferencesUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Story 9.4 — Request payload for `PATCH /api/v1/users/me/preferences` (`0 ms` Anti-FOUC).",
+        "properties": {
+          "auto_open_contextual_help": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Open Contextual Help"
+          },
+          "default_hat": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Hat"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fr",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "notifications_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notifications Enabled"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          }
+        },
+        "title": "UserPreferencesUpdateRequest",
         "type": "object"
       },
       "ValidateFencedWriteRequest": {
@@ -23015,6 +23380,456 @@
         "summary": "Release or Force-Unclaim (after 15m inactivity) a task notification (`UX-DR9`)",
         "tags": [
           "inbox"
+        ]
+      }
+    },
+    "/api/v1/users/me/mcp-tokens": {
+      "get": {
+        "operationId": "list_my_mcp_tokens_api_v1_users_me_mcp_tokens_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpPersonalTokenListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List personal IDE/MCP tokens (`pat_mcp_*` SHA-256 metadata, `Story 9.4`)",
+        "tags": [
+          "portal-epic9"
+        ]
+      },
+      "post": {
+        "operationId": "create_my_mcp_token_api_v1_users_me_mcp_tokens_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpPersonalTokenCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpPersonalTokenIssuedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Issue a scoped personal IDE/MCP token (`pat_mcp_*` hashed SHA-256, `Story 9.4`)",
+        "tags": [
+          "portal-epic9"
+        ]
+      }
+    },
+    "/api/v1/users/me/mcp-tokens/{token_id}": {
+      "delete": {
+        "operationId": "revoke_my_mcp_token_api_v1_users_me_mcp_tokens__token_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpPersonalTokenMetadataItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Revoke a personal IDE/MCP token in `< 10 ms` Redis (`Story 9.4`)",
+        "tags": [
+          "portal-epic9"
+        ]
+      }
+    },
+    "/api/v1/users/me/preferences": {
+      "get": {
+        "operationId": "get_my_preferences_api_v1_users_me_preferences_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferencesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get current user's display & workspace preferences (`Story 9.4`)",
+        "tags": [
+          "portal-epic9"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_my_preferences_api_v1_users_me_preferences_patch",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPreferencesUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferencesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Synchronize user preferences (`0 ms` Anti-FOUC background sync, `Story 9.4`)",
+        "tags": [
+          "portal-epic9"
         ]
       }
     },

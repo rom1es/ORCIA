@@ -12,6 +12,8 @@ import {
   type StreamlinedCockpitLabels,
   TopHeaderSearchCommand,
   type TopHeaderSearchCommandLabels,
+  UserAccountDropdownAndSettingsModal,
+  type UserAccountDropdownAndSettingsLabels,
 } from "../index";
 
 const SHELL_LABELS: FourZoneDirectionCShellLabels = {
@@ -466,5 +468,86 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       "architecture paiement contrat",
       "ALL_WORKSPACES",
     );
+  });
+
+  it("Story 9.4 — opens UserAccountDropdown (280px), persists 0ms Anti-FOUC localStorage, auto-closes dropdown when opening UserSettingsModal (720px, 4 tabs), and manages pat_mcp_* tokens", () => {
+    const accountLabels: UserAccountDropdownAndSettingsLabels = {
+      triggerAriaLabel: "Ouvrir le menu rapide du compte (280px)",
+      dropdownWidthNote: "280px",
+      hatSelectorLabel: "Casquette métier",
+      themeQuickToggleLabel: "🌓 Apparence (0 ms)",
+      localeQuickToggleLabel: "🌐 Langue (0 ms)",
+      openAccountSettingsLabel: "⚙️ Paramètres de mon compte...",
+      openPassthroughSourcesLabel: "🔗 Mes accès aux sources...",
+      logoutButtonLabel: "🚪 Se déconnecter",
+      modalTitle: "⚙️ Paramètres de mon compte (720px × max 600px)",
+      tab1PreferencesTitle: "🎨 Préférences & Affichage",
+      tab2SecurityTitle: "👤 Profil & Sécurité",
+      tab3PassthroughTitle: "🔗 Accès aux sources (Passthrough)",
+      tab4McpKeysTitle: "💻 Clés IDE & MCP",
+      customizeAssistantRedirectCta:
+        "💬 Personnaliser le comportement de Mon Assistant →",
+      testPassthroughTokenCta: "🔌 Tester mon jeton",
+      generateMcpTokenCta: "+ Générer un jeton MCP scopé (pat_mcp_*)",
+      revokeMcpTokenCta: "Révoquer (< 10 ms)",
+      targetWholeSpaceLabel: "Tout l'Espace (/api/v1/mcp/spaces/<ws_slug>)",
+      targetSingleAgentLabel: "Un agent précis (/api/v1/mcp/agents/<agent_slug>)",
+      ideJsonReadyTitle: "Extrait JSON prêt à copier",
+    };
+
+    const onPreferencesSync = vi.fn();
+    const onLogout = vi.fn();
+    const onNavigateAssistantBehavior = vi.fn();
+
+    render(
+      <UserAccountDropdownAndSettingsModal
+        userDisplayName="Hélène"
+        userEmail="helene@orcia.local"
+        userRole="CONTRIBUTOR"
+        labels={accountLabels}
+        onPreferencesSync={onPreferencesSync}
+        onLogout={onLogout}
+        onNavigateAssistantBehavior={onNavigateAssistantBehavior}
+      />,
+    );
+
+    // 1. Open UserAccountDropdown (280px)
+    fireEvent.click(screen.getByTestId("user-account-dropdown-trigger"));
+    expect(screen.getByTestId("user-account-dropdown-menu")).toBeDefined();
+
+    // 2. 1-click theme switch writes 0ms to documentElement/localStorage ("orcia_theme") + triggers PATCH sync
+    fireEvent.click(screen.getByTestId("dropdown-quick-theme-switch"));
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(onPreferencesSync).toHaveBeenCalledWith({ theme: "dark" });
+
+    // 3. Clicking "⚙️ Paramètres de mon compte..." automatically closes UserAccountDropdown and opens UserSettingsModal (720px)
+    fireEvent.click(screen.getByTestId("dropdown-open-settings-modal-btn"));
+    expect(screen.queryByTestId("user-account-dropdown-menu")).toBeNull();
+    expect(screen.getByTestId("user-settings-modal")).toBeDefined();
+
+    // Tab 1 redirect link to Mon Assistant behavior
+    fireEvent.click(screen.getByTestId("user-settings-assistant-redirect-link"));
+    expect(onNavigateAssistantBehavior).toHaveBeenCalledWith(
+      "/assistant?modal=settings",
+    );
+
+    // Switch to Tab 4 (💻 Clés IDE & MCP), select AGENT target, generate pat_mcp_* token and revoke it
+    fireEvent.click(screen.getByTestId("user-settings-tab-IDE_MCP_KEYS"));
+    fireEvent.change(screen.getByTestId("mcp-target-kind-select"), {
+      target: { value: "AGENT" },
+    });
+    fireEvent.change(screen.getByTestId("mcp-target-slug-input"), {
+      target: { value: "sdlc-spec-agent" },
+    });
+    fireEvent.click(screen.getByTestId("mcp-generate-token-btn"));
+    expect(screen.getByTestId("mcp-issued-plaintext-banner").textContent).toContain(
+      "pat_mcp_",
+    );
+    expect(screen.getByTestId("mcp-ide-snippet-mcp-tok-1").textContent).toContain(
+      "/api/v1/mcp/agents/sdlc-spec-agent",
+    );
+
+    fireEvent.click(screen.getByTestId("mcp-revoke-btn-mcp-tok-1"));
+    expect(screen.getByTestId("mcp-token-revoked-badge-mcp-tok-1")).toBeDefined();
   });
 });

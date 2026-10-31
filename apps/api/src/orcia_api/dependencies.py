@@ -48,6 +48,9 @@ from orcia_core.permissions import (
     build_default_auth_and_org_service,
     build_default_permission_broker_service,
 )
+from orcia_core.permissions.user_preferences_and_mcp_tokens import (
+    UserPreferencesAndMcpTokenService,
+)
 from orcia_core.rag import (
     CatalogAndBlackboardContextSourceAdapter,
     ConnectorHubAndIngestionService,
@@ -444,4 +447,17 @@ def get_two_speed_search_service(request: Request) -> TwoSpeedFederatedSearchSer
     if svc is None:
         svc = TwoSpeedFederatedSearchService()
         request.app.state.two_speed_search_service = svc
+    return svc
+
+
+def get_user_preferences_and_mcp_token_service(
+    request: Request,
+) -> UserPreferencesAndMcpTokenService:
+    """FastAPI `Depends` provider returning `UserPreferencesAndMcpTokenService` (`Story 9.4`)."""
+    svc: UserPreferencesAndMcpTokenService | None = getattr(
+        request.app.state, "user_preferences_and_mcp_token_service", None
+    )
+    if svc is None:
+        svc = UserPreferencesAndMcpTokenService()
+        request.app.state.user_preferences_and_mcp_token_service = svc
     return svc

@@ -963,6 +963,40 @@ export interface components {
       revoked?: boolean;
       trace_id: string;
     };
+    McpPersonalTokenCreateRequest: {
+      allowed_workspace_slugs?: (string)[];
+      expires_in_days?: number;
+      exposed_capabilities?: ("ASSISTANT" | "PUBLISHED_AGENTS" | "KB_GLOSSARY_SEARCH" | "STAGED_DRAFTS")[];
+      label?: string;
+      rpm_limit?: number;
+      target_kind?: "SPACE" | "AGENT";
+      target_slug?: string;
+    };
+    McpPersonalTokenIssuedResponse: {
+      plaintext_token: string;
+      record: components["schemas"]["McpPersonalTokenMetadataItem"];
+      trace_id?: string | null;
+    };
+    McpPersonalTokenListResponse: {
+      tokens: (components["schemas"]["McpPersonalTokenMetadataItem"])[];
+      trace_id?: string | null;
+    };
+    McpPersonalTokenMetadataItem: {
+      allowed_workspace_slugs: (string)[];
+      expires_in_days: 30 | 90;
+      exposed_capabilities: ("ASSISTANT" | "PUBLISHED_AGENTS" | "KB_GLOSSARY_SEARCH" | "STAGED_DRAFTS")[];
+      ide_json_snippet: string;
+      label: string;
+      mcp_endpoint_uri: string;
+      revoked: boolean;
+      rpm_limit: number;
+      target_kind: "SPACE" | "AGENT";
+      target_slug: string;
+      token_id: string;
+      token_prefix: string;
+      token_sha256: string;
+      user_id: string;
+    };
     McpToolCallRequest: {
       arguments?: Record<string, unknown>;
       execution_identity?: string;
@@ -1777,6 +1811,23 @@ export interface components {
       user_email: string;
       user_id?: string | null;
       workspace_ids: (string)[];
+    };
+    UserPreferencesResponse: {
+      assistant_behavior_redirect_uri: string;
+      auto_open_contextual_help: boolean;
+      default_hat: string;
+      locale: "fr" | "en";
+      notifications_enabled: boolean;
+      theme: "light" | "dark" | "system";
+      trace_id?: string | null;
+      user_id: string;
+    };
+    UserPreferencesUpdateRequest: {
+      auto_open_contextual_help?: boolean | null;
+      default_hat?: string | null;
+      locale?: "fr" | "en" | null;
+      notifications_enabled?: boolean | null;
+      theme?: "light" | "dark" | "system" | null;
     };
     ValidateFencedWriteRequest: {
       fencing_token: number;
@@ -2712,6 +2763,37 @@ export interface paths {
       };
     };
   };
+  "/api/v1/users/me/mcp-tokens": {
+    get: {
+      responses: {
+        200: components["schemas"]["McpPersonalTokenListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: components["schemas"]["McpPersonalTokenIssuedResponse"];
+      };
+    };
+  };
+  "/api/v1/users/me/mcp-tokens/{token_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["McpPersonalTokenMetadataItem"];
+      };
+    };
+  };
+  "/api/v1/users/me/preferences": {
+    get: {
+      responses: {
+        200: components["schemas"]["UserPreferencesResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["UserPreferencesResponse"];
+      };
+    };
+  };
   "/api/v1/webhooks/jira/issue-updated": {
     post: {
       responses: {
@@ -2865,6 +2947,10 @@ export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"]
 export type LlmTierMappingResponse = components["schemas"]["LlmTierMappingResponse"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
+export type McpPersonalTokenCreateRequest = components["schemas"]["McpPersonalTokenCreateRequest"];
+export type McpPersonalTokenIssuedResponse = components["schemas"]["McpPersonalTokenIssuedResponse"];
+export type McpPersonalTokenListResponse = components["schemas"]["McpPersonalTokenListResponse"];
+export type McpPersonalTokenMetadataItem = components["schemas"]["McpPersonalTokenMetadataItem"];
 export type McpToolCallRequest = components["schemas"]["McpToolCallRequest"];
 export type McpToolCallResponse = components["schemas"]["McpToolCallResponse"];
 export type McpToolDescriptorSchema = components["schemas"]["McpToolDescriptorSchema"];
@@ -2957,6 +3043,8 @@ export type UpstreamChallengeSubmitRequest = components["schemas"]["UpstreamChal
 export type UpstreamChallengeSubmitResponse = components["schemas"]["UpstreamChallengeSubmitResponse"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
+export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
+export type UserPreferencesUpdateRequest = components["schemas"]["UserPreferencesUpdateRequest"];
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
 export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupFirstAdminRequest"];
