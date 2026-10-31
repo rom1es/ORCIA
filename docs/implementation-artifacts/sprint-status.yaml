@@ -126,12 +126,12 @@ development_status:
 
   # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Exposition MCP Gouvernée (Agents & Assistant /api/v1/mcp) & Banc de Test MCP/A2A 🔌 + Atelier orcia-pack-builder
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, M.4, Sections 3 & 4)
-  epic-11: in-progress
+  epic-11: done
   11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: done
   11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: done
   11-3-déclaration-services-mcp-agents-distants-a2a-banc-de-test-à-c: done
   11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i: done
-  11-5-processus-5-generate-and-attach-help-validateur-validate_help: backlog
+  11-5-processus-5-generate-and-attach-help-validateur-validate_help: done
   epic-11-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -578,7 +578,7 @@ action_items:
     ad_ref: "AD-11"
     story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
     owner: "Winston (Architect) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-11
     description: >
       Parade au piège du 0 tolérance en mode risk_or_exception_based : évite que le bruit latent Confluence/Git ne ramène le Tech Lead à > 5 sollicitations/jour. S'invalide automatiquement dès que le sha256 de la source externe évolue.
@@ -590,7 +590,7 @@ action_items:
     ad_ref: "AD-3, AD-5"
     story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
     owner: "Winston (Architect)"
-    status: open
+    status: done
     epic: epic-11
     description: >
       Évite la friction du Rebase de Prompt où un agent régénérant une étape aval écraserait une modification manuelle poussée directement dans Git ou Confluence après publication.
@@ -614,7 +614,7 @@ action_items:
     ad_ref: "AD-7, AD-8, AD-11"
     story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
     owner: "Sally (UX) / Winston (Architect)"
-    status: open
+    status: done
     epic: epic-11
     description: >
       Élimine la corvée d'administration d'une file ✨ À valider (142) désertée par les équipes et maîtrise le coût FinOps des branches Git.
@@ -626,7 +626,7 @@ action_items:
     ad_ref: "AD-15"
     story_ref: "10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage"
     owner: "Sally (UX) / Winston (Architect)"
-    status: open
+    status: done
     epic: epic-10
     description: >
       Empêche que la rapidité de Mon Assistant (TTFT < 1,2 s) ne conduise 90 % des utilisateurs à contourner la gouvernance des Processus lors des écritures engageantes dans le SI.
@@ -642,7 +642,7 @@ action_items:
     ad_ref: "AD-20"
     story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
     owner: "Romain (PO) / Winston (Architect) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-11
     description: >
       Workflow de référence Semaine 1 du pilote SDLC : Ticket Jira + 1 Ancrage Humain -> Traversée Graphe Tripartite & Arbitrage -> Spécification Technique & Impact AST Git (0 hallucination de symbole) -> Briefing 4 blocs & Publication Staged Jira/Git.
@@ -654,7 +654,7 @@ action_items:
     ad_ref: "AD-1, AD-9, AD-19"
     story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
     owner: "Winston (Architect) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-11
     description: >
       Emprunt ciblé à sie-operator (Poesis) sans dette JVM : permet aux Packs Métiers et aux Stewards d'écrire ou de générer en français des règles de Gate déterministes qui s'exécutent en < 2 ms et 0 $ LLM au Run-Time, sans compiler de WASI.
@@ -668,7 +668,7 @@ action_items:
     ad_ref: "AD-7, AD-11"
     story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
     owner: "Winston (Architect) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-11
     description: >
       Emprunt ciblé à gsm-ontology (Poesis) sur PostgreSQL 18 sans Neo4j : relie chaque verdict de Gate Starlark/Wasm à sa Norme et à sa Directive stratégique, et empêche un TEAM_LEAD de contourner une Directive d'Entreprise inviolable.

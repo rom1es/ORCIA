@@ -264,6 +264,12 @@ export {
   type PackToolCertificationSummary,
   type PackWhatIfImpactItem,
 } from "./primitives/PackBuilderProcessesStudioView";
+export {
+  HelpArticleGeneratorAndValidatorView,
+  type HelpArticleGeneratorAndValidatorLabels,
+  type HelpArticleGeneratorAndValidatorViewProps,
+  type UiHelpValidationSummary,
+} from "./primitives/HelpArticleGeneratorAndValidatorView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

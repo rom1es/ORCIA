@@ -161,3 +161,78 @@ class ExportFromWorkspaceToPackResponse(BaseModel):
     promoted_uri: str
     scrubbed_references_count: int
     sanitized_payload: dict[str, Any]
+
+
+class ValidateHelpArticleRequest(BaseModel):
+    """Request payload for deterministic validator `validate_help_article` (`< 5 s`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    markdown_text: str = Field(..., min_length=10, max_length=65536)
+    lang: Literal["fr", "en"] = "fr"
+    extra_allowed_routes: list[str] = Field(default_factory=list)
+    known_glossary_terms: list[str] = Field(default_factory=list)
+
+
+class ValidateHelpArticleResponse(BaseModel):
+    """Response payload for `validate_help_article`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    article_id: str
+    lang: Literal["fr", "en"]
+    passed: bool
+    bound_routes_valid: bool
+    ui_components_and_sections_valid: bool
+    glossary_and_zero_secret_valid: bool
+    elapsed_ms: float
+    violations: list[str]
+
+
+class GenerateAndAttachHelpRequest(BaseModel):
+    """Request payload for Process 5 (`generate-and-attach-help`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    article_id: str = Field(..., min_length=3, max_length=128)
+    article_slug: str = Field(..., min_length=2, max_length=80)
+    version: str = Field(default="1.0.0", min_length=3, max_length=32)
+    pack_slug: str = Field(default="core", max_length=40)
+    title_fr: str = Field(..., min_length=3, max_length=255)
+    title_en: str = Field(..., min_length=3, max_length=255)
+    bound_routes: list[str] = Field(..., min_length=1)
+    roles_allowed: list[str] = Field(default_factory=lambda: ["TEAM_LEAD", "CONTRIBUTOR"])
+    glossary_terms: list[str] = Field(default_factory=list)
+    related_workflows: list[str] = Field(default_factory=list)
+    purpose_fr: str = Field(..., min_length=10, max_length=4000)
+    purpose_en: str = Field(..., min_length=10, max_length=4000)
+    steps_fr: list[str] = Field(..., min_length=1)
+    steps_en: list[str] = Field(..., min_length=1)
+    faq_fr: list[str] = Field(..., min_length=1)
+    faq_en: list[str] = Field(..., min_length=1)
+    ui_component_name: str = Field(default="ContextualHelpColumnAndCenter")
+    trigger_regime: Literal["STAGED_HUMAN_REVIEW", "AUTONOMOUS_CONTRACT"] = "AUTONOMOUS_CONTRACT"
+    known_glossary_terms: list[str] = Field(default_factory=list)
+    actor_role: str = Field(default="ARCHITECT")
+
+
+class GenerateAndAttachHelpResponse(BaseModel):
+    """Response payload for Process 5 (`generate-and-attach-help`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    article_id: str
+    version: str
+    pack_id: str
+    trigger_regime: Literal["STAGED_HUMAN_REVIEW", "AUTONOMOUS_CONTRACT"]
+    bound_routes: list[str]
+    fr_cas_key: str
+    en_cas_key: str
+    fr_sha256: str
+    en_sha256: str
+    validation_fr: ValidateHelpArticleResponse
+    validation_en: ValidateHelpArticleResponse
+    invalidated_redis_keys: list[str]
+    exported_git_paths: list[str]
+    hot_attach_elapsed_ms: float
+    authority_role: Literal["REFERENCE"] = "REFERENCE"

@@ -13,6 +13,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from orcia_core.orchestration.help_generator_and_validator import (
+    GeneratedAndAttachedHelpResult,
+    HelpArticleDeterministicValidator,
+    HelpArticleValidationError,
+    HelpArticleValidationReport,
+    HelpGenerationAndHotAttachmentService,
+    HelpTriggerRegime,
+)
 from orcia_core.orchestration.pack_builder_processes import (
     PACK_BUILDER_AGENTS,
     CreatedBusinessPackResult,
@@ -141,7 +149,13 @@ def get_pack_builder_manifest() -> dict[str, Any]:
 __all__ = [
     "CreatedBusinessPackResult",
     "DnaChainPackSeedSpec",
+    "GeneratedAndAttachedHelpResult",
     "GovernedPackBuilderProcessSpec",
+    "HelpArticleDeterministicValidator",
+    "HelpArticleValidationError",
+    "HelpArticleValidationReport",
+    "HelpGenerationAndHotAttachmentService",
+    "HelpTriggerRegime",
     "PACK_BUILDER_AGENTS",
     "PACK_BUILDER_PROCESSES",
     "PACK_BUILDER_URI",

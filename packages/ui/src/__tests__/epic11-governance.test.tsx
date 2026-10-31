@@ -5,6 +5,10 @@ import {
   type DnaStarlarkAndGlossaryLabels,
 } from "../primitives/DnaStarlarkCompilerAndGlossaryLifecycleView";
 import {
+  HelpArticleGeneratorAndValidatorView,
+  type HelpArticleGeneratorAndValidatorLabels,
+} from "../primitives/HelpArticleGeneratorAndValidatorView";
+import {
   PackBuilderProcessesStudioView,
   type PackBuilderProcessesStudioLabels,
 } from "../primitives/PackBuilderProcessesStudioView";
@@ -309,5 +313,75 @@ describe("Story 11.4 — PackBuilderProcessesStudioView", () => {
     expect(screen.getByTestId("run-locks-preserved-claims-fr-ws").textContent).toBe(
       "✓ run-lock.json intacts"
     );
+  });
+});
+
+const HELP_VALIDATOR_LABELS_FR: HelpArticleGeneratorAndValidatorLabels = {
+  heading: "Processus 5 — generate-and-attach-help & validate_help_article",
+  triggerRegimeLabel: "Régime de déclenchement",
+  stagedRegimeBadge: "Staged avec revue humaine",
+  autonomousRegimeBadge: "Autonome sous contrat",
+  validationChecksHeading: "Gate validate_help_article",
+  checkBoundRoutesLabel: "Routes bound_routes existantes",
+  checkUiComponentsSectionsLabel: "Composants @orcia/ui & 3 sections + ancres #",
+  checkGlossaryZeroSecretLabel: "Alignement Glossaire & 0 secret exposé", // pragma: allowlist secret
+  passedBadge: "✓ PASS (< 5 s)",
+  failedBadge: "✗ REJETÉ",
+  hotAttachmentHeading: "Attachement à Chaud (< 100 ms) & Export Git",
+  authorityReferenceBadge: "authority_role: REFERENCE",
+  generateAndAttachCta: "Générer & Attacher à Chaud",
+};
+
+describe("Story 11.5 — HelpArticleGeneratorAndValidatorView", () => {
+  it("renders bilingual validation checks, REFERENCE badge, and hot attachment telemetry", () => {
+    const onGenerateAndAttach = vi.fn();
+    render(
+      <HelpArticleGeneratorAndValidatorView
+        articleId="help.claims.triage"
+        version="1.0.0"
+        packId="orcia://packs/orcia-pack-claims"
+        triggerRegime="AUTONOMOUS_CONTRACT"
+        boundRoutes={["/cockpit", "/mes-espaces/$id/glossary"]}
+        validationFr={{
+          articleId: "help.claims.triage",
+          lang: "fr",
+          passed: true,
+          boundRoutesValid: true,
+          uiComponentsAndSectionsValid: true,
+          glossaryAndZeroSecretValid: true,
+          elapsedMs: 0.35,
+          violations: [],
+        }}
+        validationEn={{
+          articleId: "help.claims.triage",
+          lang: "en",
+          passed: true,
+          boundRoutesValid: true,
+          uiComponentsAndSectionsValid: true,
+          glossaryAndZeroSecretValid: true,
+          elapsedMs: 0.31,
+          violations: [],
+        }}
+        invalidatedRedisKeys={[
+          "help:route:/cockpit:claims:fr",
+          "help:route:/cockpit:claims:en",
+        ]}
+        exportedGitPaths={[
+          "packages/orcia-pack-claims/help/fr/claims-triage.md",
+          "packages/orcia-pack-claims/help/en/claims-triage.md",
+        ]}
+        hotAttachElapsedMs={1.85}
+        labels={HELP_VALIDATOR_LABELS_FR}
+        onGenerateAndAttach={onGenerateAndAttach}
+      />
+    );
+
+    expect(screen.getByTestId("help-authority-reference-badge").textContent).toBe(
+      "authority_role: REFERENCE"
+    );
+    expect(screen.getByTestId("help-validation-status-fr").textContent).toBe("✓ PASS (< 5 s)");
+    expect(screen.getByTestId("help-validation-status-en").textContent).toBe("✓ PASS (< 5 s)");
+    fireEvent.click(screen.getByTestId("generate-and-attach-help-btn"));
+    expect(onGenerateAndAttach).toHaveBeenCalledTimes(1);
   });
 });

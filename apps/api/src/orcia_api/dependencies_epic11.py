@@ -7,6 +7,9 @@ from fastapi import Request
 from orcia_core.orchestration.dna_starlark_and_glossary_lifecycle import (
     DnaStarlarkAndGlossaryLifecycleService,
 )
+from orcia_core.orchestration.help_generator_and_validator import (
+    HelpGenerationAndHotAttachmentService,
+)
 from orcia_core.orchestration.pack_builder_processes import (
     PackBuilderSystemService,
 )
@@ -67,4 +70,17 @@ def get_pack_builder_system_service(
     if svc is None:
         svc = PackBuilderSystemService()
         request.app.state.pack_builder_system_service = svc
+    return svc
+
+
+def get_help_generation_and_attachment_service(
+    request: Request,
+) -> HelpGenerationAndHotAttachmentService:
+    """Return `HelpGenerationAndHotAttachmentService` (`Story 11.5`)."""
+    svc: HelpGenerationAndHotAttachmentService | None = getattr(
+        request.app.state, "help_generation_and_attachment_service", None
+    )
+    if svc is None:
+        svc = HelpGenerationAndHotAttachmentService()
+        request.app.state.help_generation_and_attachment_service = svc
     return svc
