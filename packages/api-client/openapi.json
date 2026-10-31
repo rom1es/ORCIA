@@ -457,6 +457,117 @@
         "title": "ArbitrationOptionSchemaItem",
         "type": "object"
       },
+      "ArtifactCardActionRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/artifacts/action` (`Story 10.3` V5 Guard).",
+        "properties": {
+          "action_type": {
+            "enum": [
+              "COPY",
+              "EXPORT_MD",
+              "EXPORT_JSON",
+              "SAVE_DRAFT",
+              "CONTINUE_IN_PROCESS",
+              "DIRECT_SI_WRITE",
+              "PUBLISH_V1_VAULT"
+            ],
+            "title": "Action Type",
+            "type": "string"
+          },
+          "artifact_content": {
+            "minLength": 1,
+            "title": "Artifact Content",
+            "type": "string"
+          },
+          "artifact_title": {
+            "minLength": 1,
+            "title": "Artifact Title",
+            "type": "string"
+          },
+          "cited_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cited Tags",
+            "type": "array"
+          },
+          "target_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Uri"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "action_type",
+          "artifact_title",
+          "artifact_content"
+        ],
+        "title": "ArtifactCardActionRequest",
+        "type": "object"
+      },
+      "ArtifactCardActionResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/artifacts/action` (`Story 10.3`).",
+        "properties": {
+          "action_id": {
+            "title": "Action Id",
+            "type": "string"
+          },
+          "action_type": {
+            "title": "Action Type",
+            "type": "string"
+          },
+          "artifact_title": {
+            "title": "Artifact Title",
+            "type": "string"
+          },
+          "artifact_version_tag": {
+            "title": "Artifact Version Tag",
+            "type": "string"
+          },
+          "draft_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Uri"
+          },
+          "process_launch_prefill": {
+            "additionalProperties": true,
+            "title": "Process Launch Prefill",
+            "type": "object"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "workspace_id",
+          "action_type",
+          "artifact_title",
+          "artifact_version_tag"
+        ],
+        "title": "ArtifactCardActionResponse",
+        "type": "object"
+      },
       "ArtifactTemplateCompileRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/orchestration/templates/compile`.",
@@ -3643,6 +3754,177 @@
           "threshold"
         ],
         "title": "EvaluationLensItem",
+        "type": "object"
+      },
+      "EvidenceGlossaryCitationSchemaItem": {
+        "additionalProperties": false,
+        "description": "Numbered `[G1..Gn]` glossary / axiom entry (`Story 10.3`).",
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ontology_level": {
+            "enum": [
+              "N1_DIRECTIVE",
+              "N2_NORME",
+              "N3_MECANISME",
+              "L4_GLOSSARY"
+            ],
+            "title": "Ontology Level",
+            "type": "string"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          },
+          "term_or_axiom_id": {
+            "title": "Term Or Axiom Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag",
+          "index",
+          "term_or_axiom_id",
+          "label",
+          "ontology_level",
+          "definition"
+        ],
+        "title": "EvidenceGlossaryCitationSchemaItem",
+        "type": "object"
+      },
+      "EvidenceSourceCitationSchemaItem": {
+        "additionalProperties": false,
+        "description": "Numbered `[S1..Sn]` source entry (`Story 10.3`).",
+        "properties": {
+          "authority_tier": {
+            "enum": [
+              "REFERENCE",
+              "ACTIVE"
+            ],
+            "title": "Authority Tier",
+            "type": "string"
+          },
+          "display_pill": {
+            "title": "Display Pill",
+            "type": "string"
+          },
+          "freshness": {
+            "enum": [
+              "FRESH",
+              "STALE_WARNING"
+            ],
+            "title": "Freshness",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "line_end": {
+            "title": "Line End",
+            "type": "integer"
+          },
+          "line_start": {
+            "title": "Line Start",
+            "type": "integer"
+          },
+          "request_access_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Access Uri"
+          },
+          "restricted_access": {
+            "default": false,
+            "title": "Restricted Access",
+            "type": "boolean"
+          },
+          "snippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snippet"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag",
+          "index",
+          "uri",
+          "title",
+          "authority_tier",
+          "freshness",
+          "line_start",
+          "line_end",
+          "display_pill"
+        ],
+        "title": "EvidenceSourceCitationSchemaItem",
+        "type": "object"
+      },
+      "EvidenceToolCitationSchemaItem": {
+        "additionalProperties": false,
+        "description": "Numbered `[O1..On]` tool entry (`Story 10.3`).",
+        "properties": {
+          "connector_uri": {
+            "title": "Connector Uri",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag",
+          "index",
+          "tool_name",
+          "connector_uri",
+          "summary"
+        ],
+        "title": "EvidenceToolCitationSchemaItem",
         "type": "object"
       },
       "ExecuteTierRoutingRequest": {
@@ -8950,6 +9232,125 @@
         "title": "RagReciprocityResponse",
         "type": "object"
       },
+      "RawGlossaryCandidateSchemaItem": {
+        "additionalProperties": false,
+        "description": "Input glossary / axiom candidate (`Story 10.3`).",
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ontology_level": {
+            "default": "L4_GLOSSARY",
+            "enum": [
+              "N1_DIRECTIVE",
+              "N2_NORME",
+              "N3_MECANISME",
+              "L4_GLOSSARY"
+            ],
+            "title": "Ontology Level",
+            "type": "string"
+          },
+          "term_or_axiom_id": {
+            "title": "Term Or Axiom Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "term_or_axiom_id",
+          "label",
+          "definition"
+        ],
+        "title": "RawGlossaryCandidateSchemaItem",
+        "type": "object"
+      },
+      "RawSourceCandidateSchemaItem": {
+        "additionalProperties": false,
+        "description": "Input source candidate (`Story 10.3`).",
+        "properties": {
+          "authority_tier": {
+            "default": "ACTIVE",
+            "enum": [
+              "REFERENCE",
+              "ACTIVE"
+            ],
+            "title": "Authority Tier",
+            "type": "string"
+          },
+          "freshness": {
+            "default": "FRESH",
+            "enum": [
+              "FRESH",
+              "STALE_WARNING"
+            ],
+            "title": "Freshness",
+            "type": "string"
+          },
+          "line_end": {
+            "default": 25,
+            "title": "Line End",
+            "type": "integer"
+          },
+          "line_start": {
+            "default": 1,
+            "title": "Line Start",
+            "type": "integer"
+          },
+          "relevance_score": {
+            "default": 0.9,
+            "title": "Relevance Score",
+            "type": "number"
+          },
+          "snippet": {
+            "title": "Snippet",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri",
+          "title",
+          "snippet"
+        ],
+        "title": "RawSourceCandidateSchemaItem",
+        "type": "object"
+      },
+      "RawToolOutputCandidateSchemaItem": {
+        "additionalProperties": false,
+        "description": "Input MCP tool / connector output candidate (`Story 10.3`).",
+        "properties": {
+          "connector_uri": {
+            "title": "Connector Uri",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name",
+          "connector_uri",
+          "summary"
+        ],
+        "title": "RawToolOutputCandidateSchemaItem",
+        "type": "object"
+      },
       "RecursiveRunLockManifestSchemaItem": {
         "additionalProperties": false,
         "description": "Extended `run-lock.json` pinning sources, overrides, KB hash, and sub-workflows.",
@@ -12962,6 +13363,144 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VerifyAndFilterCitationsRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/citations/verify-turn` (`Story 10.3`).",
+        "properties": {
+          "glossary_items": {
+            "items": {
+              "$ref": "#/components/schemas/RawGlossaryCandidateSchemaItem"
+            },
+            "title": "Glossary Items",
+            "type": "array"
+          },
+          "reader_allowed_source_uris": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reader Allowed Source Uris"
+          },
+          "response_text": {
+            "minLength": 1,
+            "title": "Response Text",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RawSourceCandidateSchemaItem"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "tool_outputs": {
+            "items": {
+              "$ref": "#/components/schemas/RawToolOutputCandidateSchemaItem"
+            },
+            "title": "Tool Outputs",
+            "type": "array"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "response_text"
+        ],
+        "title": "VerifyAndFilterCitationsRequest",
+        "type": "object"
+      },
+      "VerifyAndFilterCitationsResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/citations/verify-turn` (`Story 10.3`).",
+        "properties": {
+          "audit_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Id"
+          },
+          "citation_map_emitted_at_ms": {
+            "default": 80.0,
+            "title": "Citation Map Emitted At Ms",
+            "type": "number"
+          },
+          "footer_summary_line": {
+            "title": "Footer Summary Line",
+            "type": "string"
+          },
+          "glossary_items": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceGlossaryCitationSchemaItem"
+            },
+            "title": "Glossary Items",
+            "type": "array"
+          },
+          "sanitized_text": {
+            "title": "Sanitized Text",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSourceCitationSchemaItem"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "stripped_phantom_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stripped Phantom Tags",
+            "type": "array"
+          },
+          "tool_outputs": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceToolCitationSchemaItem"
+            },
+            "title": "Tool Outputs",
+            "type": "array"
+          },
+          "valid_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Valid Tags",
+            "type": "array"
+          },
+          "verification_duration_ms": {
+            "title": "Verification Duration Ms",
+            "type": "number"
+          }
+        },
+        "required": [
+          "sanitized_text",
+          "valid_tags",
+          "stripped_phantom_tags",
+          "verification_duration_ms",
+          "sources",
+          "glossary_items",
+          "tool_outputs",
+          "footer_summary_line"
+        ],
+        "title": "VerifyAndFilterCitationsResponse",
+        "type": "object"
+      },
       "WelcomeSetupFirstAdminRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`).",
@@ -14925,6 +15464,66 @@
         ]
       }
     },
+    "/api/v1/assistant/artifacts/action": {
+      "post": {
+        "description": "Execute a Structured Artifact Card action, enforcing Verrou V5 (`AD-15`).",
+        "operationId": "execute_artifact_card_action_endpoint_api_v1_assistant_artifacts_action_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactCardActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactCardActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execute Artifact Card Action Endpoint",
+        "tags": [
+          "assistant-epic10"
+        ]
+      }
+    },
     "/api/v1/assistant/chat": {
       "post": {
         "description": "Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`).",
@@ -15117,6 +15716,66 @@
         "summary": "Stream a 5-node Assistant Agent conversational turn via SSE (`< 1.5 s` first token)",
         "tags": [
           "assistant-agent"
+        ]
+      }
+    },
+    "/api/v1/assistant/citations/verify-turn": {
+      "post": {
+        "description": "Build Evidence Table (`REFERENCE > ACTIVE`), filter `READ_SOURCE` & strip phantom tags.",
+        "operationId": "verify_and_filter_citations_endpoint_api_v1_assistant_citations_verify_turn_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyAndFilterCitationsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyAndFilterCitationsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify And Filter Citations Endpoint",
+        "tags": [
+          "assistant-epic10"
         ]
       }
     },

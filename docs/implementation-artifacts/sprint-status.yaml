@@ -105,7 +105,7 @@ development_status:
   8-6-parcours-initialisation-wizards-durables: done
   epic-8-retrospective: optional
 
-  # Epic 9 — Coquille Ergonomique 4 Zones (Portals/KORE), Recherche ⌘K 2 Vitesses, Compte UserSettingsModal, Accostage 1/6 & Aide Contextuelle Hybride ?
+  # Epic 9 — Coquille Ergonomique 4 Zones (Portals/EXEMPLE), Recherche ⌘K 2 Vitesses, Compte UserSettingsModal, Accostage 1/6 & Aide Contextuelle Hybride ?
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes A, A.2, A.3, C, D, D.4, E, F, G, Section 2)
   epic-9: done
   9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép: done
@@ -115,12 +115,12 @@ development_status:
   9-5-système-d-aide-contextuelle-hybride-helparticle-catalog_items: done
   epic-9-retrospective: optional
 
-  # Epic 10 — Mon Assistant Tout-en-Un (Style KORE) : Gouvernance 4 Niveaux (Mode A & Mode B), Routage 3 Vitesses (TTFT < 1,2s), Citations Déterministes [S1]/[G1]/[O1] & Dossiers Collaboratifs
+  # Epic 10 — Mon Assistant Tout-en-Un (Style EXEMPLE) : Gouvernance 4 Niveaux (Mode A & Mode B), Routage 3 Vitesses (TTFT < 1,2s), Citations Déterministes [S1]/[G1]/[O1] & Dossiers Collaboratifs
   # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes B, H, K, K.4, K.5, K.6)
   epic-10: in-progress
   10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m: done
   10-2-garantie-de-latence-ttft-1-2s-cache-redis-prompt-assemblé-3-v: done
-  10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage: backlog
+  10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage: done
   10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: backlog
   epic-10-retrospective: optional
 

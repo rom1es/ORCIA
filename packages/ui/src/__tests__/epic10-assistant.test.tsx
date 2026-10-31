@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
+  AssistantCitationPillsAndArtifactCard,
+  type AssistantCitationPillsAndArtifactCardLabels,
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
   AssistantSpeedSelectorAndStreamView,
@@ -260,5 +262,115 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       requestedSpeed: "SPEED_3_DEEP_AUDIT",
       deepAuditPillActive: true,
     });
+  });
+
+  it("Story 10.3 — renders deterministic [S1]/[G1]/[O1] pills, filters restricted sources for shared readers without leaking snippets, highlights phantom citations, and enforces Verrou V5 on artifact cards", () => {
+    const onInspectSource = vi.fn();
+    const onRequestRestrictedAccess = vi.fn();
+    const onSaveDraft = vi.fn();
+    const onContinueInProcess = vi.fn();
+    const citationLabels: AssistantCitationPillsAndArtifactCardLabels = {
+      freshnessFreshBadge: "✅ À jour",
+      freshnessStaleBadge: "⚠️ [STALE_WARNING]",
+      restrictedSourcePillSuffix: "🔒 Source restreinte",
+      requestAccessCta: "Demander l'accès",
+      unverifiedCitationBadge: "⚠️ [Citation non vérifiée] neutralisée",
+      artifactCardTitlePrefix: "📄 Carte d'Artefact Structuré",
+      copyArtifactCta: "📋 Copier",
+      exportArtifactCta: "⬇️ Exporter",
+      saveDraftCta: "💾 Enregistrer le brouillon (@draft)",
+      continueInProcessCta: "☍ Poursuivre dans un Processus →",
+      v5LockNoticeText:
+        "🔒 Verrou V5 (AD-15) : Aucune écriture directe vers Git/Confluence/Jira ni publication @v1 hors Gate humaine.",
+    };
+
+    render(
+      <AssistantCitationPillsAndArtifactCard
+        sanitizedResponseText="Conformément à l'ADR [S1] et à l'invariant [G1], bien que [Citation non vérifiée] ait été filtrée."
+        strippedPhantomTags={["S99"]}
+        sources={[
+          {
+            tag: "S1",
+            index: 1,
+            uri: "confluence://claims/ADR-012",
+            title: "ADR-012 — Tarification Sinistres",
+            authorityTier: "REFERENCE",
+            freshness: "FRESH",
+            snippet: "Le plafond d'indemnisation automatique est fixé à 5 000 €.",
+            lineStart: 12,
+            lineEnd: 28,
+            restrictedAccess: false,
+            displayPill: "[S1 · ADR-012 — Tarification Sinistres]",
+          },
+          {
+            tag: "S2",
+            index: 2,
+            uri: "confluence://reinsurance/audit-2026",
+            title: "Audit Confidentiel Réassurance",
+            authorityTier: "ACTIVE",
+            freshness: "FRESH",
+            snippet: null,
+            lineStart: 1,
+            lineEnd: 15,
+            restrictedAccess: true,
+            displayPill: "[S2 · 🔒 Source restreinte — Demander l'accès]",
+          },
+        ]}
+        glossaryItems={[
+          {
+            tag: "G1",
+            label: "Plafond Sinistre Automatique",
+            ontologyLevel: "N1_DIRECTIVE",
+            definition: "Tout paiement > 5 000 € exige une Gate humaine.",
+          },
+        ]}
+        toolOutputs={[
+          {
+            tag: "O1",
+            toolName: "@jira-triage",
+            connectorUri: "jira://CLAIMS-402",
+            summary: "Ticket critique en attente d'arbitrage",
+          },
+        ]}
+        footerSummaryLine="📚 2 sources (1 REFERENCE, 1 restreinte) · 1 terme N1 · 1 outil"
+        artifactTitle="Spécification Technique — Routeur Sinistres"
+        artifactContent={"# Spécification Technique\n- Plafond : 5 000 € [S1]"}
+        labels={citationLabels}
+        onInspectSource={onInspectSource}
+        onRequestRestrictedAccess={onRequestRestrictedAccess}
+        onSaveDraft={onSaveDraft}
+        onContinueInProcess={onContinueInProcess}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("assistant-phantom-citations-alert").textContent,
+    ).toContain("S99");
+
+    // Clicking accessible [S1] opens side inspector panel with snippet
+    fireEvent.click(screen.getByTestId("citation-pill-S1"));
+    expect(onInspectSource).toHaveBeenCalledWith(
+      expect.objectContaining({ tag: "S1", authorityTier: "REFERENCE" }),
+    );
+    expect(
+      screen.getByTestId("citation-side-inspector-panel").textContent,
+    ).toContain("5 000 €");
+
+    // Restricted [S2] never leaks snippet and triggers onRequestRestrictedAccess
+    expect(
+      screen.getByTestId("citation-pill-restricted-S2").textContent,
+    ).toContain("🔒 Source restreinte");
+    fireEvent.click(screen.getByTestId("citation-request-access-btn-S2"));
+    expect(onRequestRestrictedAccess).toHaveBeenCalledWith(
+      "confluence://reinsurance/audit-2026",
+    );
+
+    // Structured Artifact Card actions + Verrou V5 bridge
+    fireEvent.click(screen.getByTestId("artifact-card-continue-process-btn"));
+    expect(onContinueInProcess).toHaveBeenCalledWith(
+      "Spécification Technique — Routeur Sinistres",
+      "# Spécification Technique\n- Plafond : 5 000 € [S1]",
+      ["S1", "S2"],
+    );
   });
 });

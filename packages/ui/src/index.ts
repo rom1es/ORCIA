@@ -216,6 +216,14 @@ export {
   type UiAssistantSpeedMode,
   type UiThreeSpeedStepProgress,
 } from "./primitives/AssistantSpeedSelectorAndStreamView";
+export {
+  AssistantCitationPillsAndArtifactCard,
+  type AssistantCitationPillsAndArtifactCardLabels,
+  type AssistantCitationPillsAndArtifactCardProps,
+  type UiEvidenceGlossaryItem,
+  type UiEvidenceSourceItem,
+  type UiEvidenceToolItem,
+} from "./primitives/AssistantCitationPillsAndArtifactCard";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

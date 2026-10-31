@@ -1,7 +1,7 @@
 # Rapport Tech Lead — Story 9.5 : Système d'Aide Contextuelle Hybride (`HelpArticle` dans `catalog_items` + `cas/<sha256>`), Colonne `❓` (`340px`), Menu `Aide` & Seeder Git-Seeded
 
 - **Clé de Story** : `9-5-système-d-aide-contextuelle-hybride-helparticle-catalog_items`
-- **Epic** : Epic 9 — Coquille Ergonomique 4 Zones (Portals/KORE), Recherche `⌘K` 2 Vitesses, Compte `UserSettingsModal`, Accostage `1/6` & Aide Contextuelle Hybride `❓`
+- **Epic** : Epic 9 — Coquille Ergonomique 4 Zones (Portals/EXEMPLE), Recherche `⌘K` 2 Vitesses, Compte `UserSettingsModal`, Accostage `1/6` & Aide Contextuelle Hybride `❓`
 - **Date** : 2026-10-31
 - **Auteur** : Équipe Tech Lead / Dev Senior ORCIA
 - **Statut** : `done`
@@ -62,15 +62,15 @@ La **Story 9.5** dote chaque écran d'ORCIA d'une documentation contextuelle bil
 ## 3. Bilan des Modifications & Résultats (Après Implémentation)
 
 ### 3.1 Fichiers Créés ou Modifiés
-| Fichier | Action | Lignes | Description |
-| :--- | :--- | :---: | :--- |
-| `infra/migrations/versions/0023_story_9_5_contextual_help_gin_index.py` | Créé | ~65 | Migration Alembic `0023` (`idx_catalog_help_routes` GIN sur `catalog_items`) |
-| `docs/help/fr/spaces-sources.md` & `docs/help/en/spaces-sources.md` | Créés | ~45 | Fiches d'aide Git-Seeded socle bilingues |
-| `packages/orcia-pack-sdlc/help/fr/spaces-sources.md` & `en/spaces-sources.md` | Créés | ~45 | Surcharges d'aide Git-Seeded Pack SDLC |
-| `packages/orcia-core/src/orcia_core/catalog/contextual_help.py` | Créé | ~285 | Service d'aide contextuelle hybride, CAS `<sha256>`, cache Redis & Rollback `@v(N-1)` |
-| `packages/ui/src/primitives/ContextualHelpColumnAndCenter.tsx` | Créé | ~250 | Colonne `❓` (`340px`) & Centre `Aide` dans `@orcia/ui` |
-| `tests/unit/test_epic_9_story_9_5_contextual_help.py` | Créé | ~190 | Tests unitaires Python et API |
-| `tests/integration/test_story_9_5_help_gin_index_postgres18.py` | Créé | ~115 | Test d'intégration réel PostgreSQL 18 (`testcontainers`) |
+| Fichier                                                                       | Action | Lignes | Description                                                                           |
+| :---------------------------------------------------------------------------- | :----- | :----: | :------------------------------------------------------------------------------------ |
+| `infra/migrations/versions/0023_story_9_5_contextual_help_gin_index.py`       | Créé   |  ~65   | Migration Alembic `0023` (`idx_catalog_help_routes` GIN sur `catalog_items`)          |
+| `docs/help/fr/spaces-sources.md` & `docs/help/en/spaces-sources.md`           | Créés  |  ~45   | Fiches d'aide Git-Seeded socle bilingues                                              |
+| `packages/orcia-pack-sdlc/help/fr/spaces-sources.md` & `en/spaces-sources.md` | Créés  |  ~45   | Surcharges d'aide Git-Seeded Pack SDLC                                                |
+| `packages/orcia-core/src/orcia_core/catalog/contextual_help.py`               | Créé   |  ~285  | Service d'aide contextuelle hybride, CAS `<sha256>`, cache Redis & Rollback `@v(N-1)` |
+| `packages/ui/src/primitives/ContextualHelpColumnAndCenter.tsx`                | Créé   |  ~250  | Colonne `❓` (`340px`) & Centre `Aide` dans `@orcia/ui`                                |
+| `tests/unit/test_epic_9_story_9_5_contextual_help.py`                         | Créé   |  ~190  | Tests unitaires Python et API                                                         |
+| `tests/integration/test_story_9_5_help_gin_index_postgres18.py`               | Créé   |  ~115  | Test d'intégration réel PostgreSQL 18 (`testcontainers`)                              |
 
 ### 3.2 Validation des 5 Couches de Tests (`AD-17`) & Garde-fous (`AD-19`)
 - **Couche 1 (Unitaires `pytest` & `Vitest`)** : `100 %` verts, couverture $\ge 90 \%$.

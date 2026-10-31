@@ -2,7 +2,7 @@
 
 - **Story Key** : `10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m`
 - **Titre** : Gouvernance & Personnalisation à 4 Niveaux de `Mon Assistant` (Bornes `🔒 AssistantHarness`, Mode A Formulaire Rapide à 3 Onglets & Mode B Studio Graphique)
-- **Epic** : Epic 10 — `Mon Assistant` Tout-en-Un (Style KORE)
+- **Epic** : Epic 10 — `Mon Assistant` Tout-en-Un (Style EXEMPLE)
 - **Date** : 2026-10-31
 - **Auteur** : Antigravity (Tech Lead / Dev Senior ORCIA)
 - **Statut** : `done`
@@ -52,12 +52,12 @@ Dans ORCIA, **`Mon Assistant`** est la résultante du workflow système à 5 nœ
 
 ## 3. Bilan des Modifications & Résultats
 
-| Fichier | Action | Rôle |
-| :--- | :--- | :--- |
-| `packages/orcia-core/src/orcia_core/orchestration/errors.py` | Modifié | Ajout de `ERR_IMMUTABLE_HARNESS_BOUNDARY` (`422`), `ERR_FUNNEL_RULE_VIOLATION` (`403`), `ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE` (`422`), `ERR_THREAD_TURN_LOCK_HELD` (`409`). |
-| `packages/orcia-core/src/orcia_core/orchestration/assistant_governance.py` | Créé | Service `AssistantFourLevelGovernanceService` (Mode A 3 onglets, Mode B Studio, bornes `🔒 AssistantHarness`, Règle de l'Entonnoir `Principe G`, reset 1 clic). |
-| `packages/orcia-core/src/orcia_core/bootstrap/seeder.py` | Modifié | Ajout de `WORKSPACE_CUSTOMIZATION_OVERRIDES_UPSERT_SPEC`. |
-| `apps/api/src/orcia_api/routers/epic10_assistant.py` | Créé | Endpoints REST `/api/v1/assistant/governance/*`. |
-| `packages/ui/src/primitives/AssistantGovernanceModalAndStudio.tsx` | Créé | Primitive `@orcia/ui` Mode A (3 onglets) & Mode B (Studio Graphique avec bornes `🔒 AssistantHarness`). |
-| `tests/unit/test_epic_10_story_10_1_assistant_governance.py` | Créé | Tests unitaires & API Mode A / Mode B / `ERR_IMMUTABLE_HARNESS_BOUNDARY` / `ERR_FUNNEL_RULE_VIOLATION`. |
-| `tests/integration/test_story_10_1_assistant_overrides_postgres18.py` | Créé | Test d'intégration réel `testcontainers` PostgreSQL 18 sur `workspace_customization_overrides`. |
+| Fichier                                                                    | Action  | Rôle                                                                                                                                                                              |
+| :------------------------------------------------------------------------- | :------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/orcia-core/src/orcia_core/orchestration/errors.py`               | Modifié | Ajout de `ERR_IMMUTABLE_HARNESS_BOUNDARY` (`422`), `ERR_FUNNEL_RULE_VIOLATION` (`403`), `ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE` (`422`), `ERR_THREAD_TURN_LOCK_HELD` (`409`). |
+| `packages/orcia-core/src/orcia_core/orchestration/assistant_governance.py` | Créé    | Service `AssistantFourLevelGovernanceService` (Mode A 3 onglets, Mode B Studio, bornes `🔒 AssistantHarness`, Règle de l'Entonnoir `Principe G`, reset 1 clic).                    |
+| `packages/orcia-core/src/orcia_core/bootstrap/seeder.py`                   | Modifié | Ajout de `WORKSPACE_CUSTOMIZATION_OVERRIDES_UPSERT_SPEC`.                                                                                                                         |
+| `apps/api/src/orcia_api/routers/epic10_assistant.py`                       | Créé    | Endpoints REST `/api/v1/assistant/governance/*`.                                                                                                                                  |
+| `packages/ui/src/primitives/AssistantGovernanceModalAndStudio.tsx`         | Créé    | Primitive `@orcia/ui` Mode A (3 onglets) & Mode B (Studio Graphique avec bornes `🔒 AssistantHarness`).                                                                            |
+| `tests/unit/test_epic_10_story_10_1_assistant_governance.py`               | Créé    | Tests unitaires & API Mode A / Mode B / `ERR_IMMUTABLE_HARNESS_BOUNDARY` / `ERR_FUNNEL_RULE_VIOLATION`.                                                                           |
+| `tests/integration/test_story_10_1_assistant_overrides_postgres18.py`      | Créé    | Test d'intégration réel `testcontainers` PostgreSQL 18 sur `workspace_customization_overrides`.                                                                                   |

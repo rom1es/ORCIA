@@ -1,7 +1,7 @@
 # Rapport Tech Lead — Story 9.4 : Menu Déroulant du Login (`UserAccountDropdown`), Modale « Paramètres de mon compte » (`UserSettingsModal` à 4 Onglets) & Double Persistance `0 ms` Anti-FOUC
 
 - **Clé de Story** : `9-4-menu-déroulant-login-useraccountdropdown-modale-usersettingsm`
-- **Epic** : Epic 9 — Coquille Ergonomique 4 Zones (Portals/KORE), Recherche `⌘K` 2 Vitesses, Compte `UserSettingsModal`, Accostage `1/6` & Aide Contextuelle Hybride `❓`
+- **Epic** : Epic 9 — Coquille Ergonomique 4 Zones (Portals/EXEMPLE), Recherche `⌘K` 2 Vitesses, Compte `UserSettingsModal`, Accostage `1/6` & Aide Contextuelle Hybride `❓`
 - **Date** : 2026-10-31
 - **Auteur** : Équipe Tech Lead / Dev Senior ORCIA
 - **Statut** : `done`
@@ -57,14 +57,14 @@ La **Story 9.4** sépare strictement la configuration personnelle de chaque util
 ## 3. Bilan des Modifications & Résultats (Après Implémentation)
 
 ### 3.1 Fichiers Créés ou Modifiés
-| Fichier | Action | Lignes | Description |
-| :--- | :--- | :---: | :--- |
-| `packages/orcia-core/src/orcia_core/permissions/user_preferences_and_mcp_tokens.py` | Créé | ~250 | Préférences utilisateur & jetons MCP scopés `pat_mcp_*` hachés `SHA-256` |
-| `apps/api/src/orcia_api/schemas/auth_and_org.py` | Modifié | ~295 | Schémas Pydantic v2 pour préférences et jetons MCP |
-| `apps/api/src/orcia_api/routers/epic9_portal.py` | Modifié | ~220 | Endpoints `/api/v1/users/me/preferences` et `/api/v1/users/me/mcp-tokens` |
-| `apps/web/index.html` | Modifié | ~30 | Script synchrone Anti-FOUC (`orcia_theme`, `orcia_locale`) |
-| `packages/ui/src/primitives/UserAccountDropdownAndSettingsModal.tsx` | Créé | ~340 | `UserAccountDropdown` (`280px`) & `UserSettingsModal` (`720px`, 4 onglets) |
-| `tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py` | Créé | ~195 | Tests unitaires Python et API |
+| Fichier                                                                             | Action  | Lignes | Description                                                                |
+| :---------------------------------------------------------------------------------- | :------ | :----: | :------------------------------------------------------------------------- |
+| `packages/orcia-core/src/orcia_core/permissions/user_preferences_and_mcp_tokens.py` | Créé    |  ~250  | Préférences utilisateur & jetons MCP scopés `pat_mcp_*` hachés `SHA-256`   |
+| `apps/api/src/orcia_api/schemas/auth_and_org.py`                                    | Modifié |  ~295  | Schémas Pydantic v2 pour préférences et jetons MCP                         |
+| `apps/api/src/orcia_api/routers/epic9_portal.py`                                    | Modifié |  ~220  | Endpoints `/api/v1/users/me/preferences` et `/api/v1/users/me/mcp-tokens`  |
+| `apps/web/index.html`                                                               | Modifié |  ~30   | Script synchrone Anti-FOUC (`orcia_theme`, `orcia_locale`)                 |
+| `packages/ui/src/primitives/UserAccountDropdownAndSettingsModal.tsx`                | Créé    |  ~340  | `UserAccountDropdown` (`280px`) & `UserSettingsModal` (`720px`, 4 onglets) |
+| `tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py`               | Créé    |  ~195  | Tests unitaires Python et API                                              |
 
 ### 3.2 Validation des 5 Couches de Tests (`AD-17`) & Garde-fous (`AD-19`)
 - **Couche 1 (Unitaires `pytest` & `Vitest`)** : `100 %` verts, couverture $\ge 90 \%$.

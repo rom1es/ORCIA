@@ -73,6 +73,23 @@ export interface components {
       si_impact: string;
       title: string;
     };
+    ArtifactCardActionRequest: {
+      action_type: "COPY" | "EXPORT_MD" | "EXPORT_JSON" | "SAVE_DRAFT" | "CONTINUE_IN_PROCESS" | "DIRECT_SI_WRITE" | "PUBLISH_V1_VAULT";
+      artifact_content: string;
+      artifact_title: string;
+      cited_tags?: (string)[];
+      target_uri?: string | null;
+      workspace_id: string;
+    };
+    ArtifactCardActionResponse: {
+      action_id: string;
+      action_type: string;
+      artifact_title: string;
+      artifact_version_tag: string;
+      draft_uri?: string | null;
+      process_launch_prefill?: Record<string, unknown>;
+      workspace_id: string;
+    };
     ArtifactTemplateCompileRequest: {
       template_key: string;
       variables?: Record<string, string>;
@@ -579,6 +596,35 @@ export interface components {
       code: string;
       threshold: number;
       weight: number;
+    };
+    EvidenceGlossaryCitationSchemaItem: {
+      definition: string;
+      index: number;
+      label: string;
+      ontology_level: "N1_DIRECTIVE" | "N2_NORME" | "N3_MECANISME" | "L4_GLOSSARY";
+      tag: string;
+      term_or_axiom_id: string;
+    };
+    EvidenceSourceCitationSchemaItem: {
+      authority_tier: "REFERENCE" | "ACTIVE";
+      display_pill: string;
+      freshness: "FRESH" | "STALE_WARNING";
+      index: number;
+      line_end: number;
+      line_start: number;
+      request_access_uri?: string | null;
+      restricted_access?: boolean;
+      snippet?: string | null;
+      tag: string;
+      title: string;
+      uri: string;
+    };
+    EvidenceToolCitationSchemaItem: {
+      connector_uri: string;
+      index: number;
+      summary: string;
+      tag: string;
+      tool_name: string;
     };
     ExecuteTierRoutingRequest: {
       effort?: "default" | "fast" | "balanced" | "deep";
@@ -1404,6 +1450,27 @@ export interface components {
       response_markdown: string;
       uri: string;
     };
+    RawGlossaryCandidateSchemaItem: {
+      definition: string;
+      label: string;
+      ontology_level?: "N1_DIRECTIVE" | "N2_NORME" | "N3_MECANISME" | "L4_GLOSSARY";
+      term_or_axiom_id: string;
+    };
+    RawSourceCandidateSchemaItem: {
+      authority_tier?: "REFERENCE" | "ACTIVE";
+      freshness?: "FRESH" | "STALE_WARNING";
+      line_end?: number;
+      line_start?: number;
+      relevance_score?: number;
+      snippet: string;
+      title: string;
+      uri: string;
+    };
+    RawToolOutputCandidateSchemaItem: {
+      connector_uri: string;
+      summary: string;
+      tool_name: string;
+    };
     RecursiveRunLockManifestSchemaItem: {
       applied_override_keys: (string)[];
       effective_workflow_sha256: string;
@@ -2011,6 +2078,26 @@ export interface components {
       msg: string;
       type: string;
     };
+    VerifyAndFilterCitationsRequest: {
+      glossary_items?: (components["schemas"]["RawGlossaryCandidateSchemaItem"])[];
+      reader_allowed_source_uris?: (string)[] | null;
+      response_text: string;
+      sources?: (components["schemas"]["RawSourceCandidateSchemaItem"])[];
+      tool_outputs?: (components["schemas"]["RawToolOutputCandidateSchemaItem"])[];
+      workspace_id: string;
+    };
+    VerifyAndFilterCitationsResponse: {
+      audit_id?: string | null;
+      citation_map_emitted_at_ms?: number;
+      footer_summary_line: string;
+      glossary_items: (components["schemas"]["EvidenceGlossaryCitationSchemaItem"])[];
+      sanitized_text: string;
+      sources: (components["schemas"]["EvidenceSourceCitationSchemaItem"])[];
+      stripped_phantom_tags: (string)[];
+      tool_outputs: (components["schemas"]["EvidenceToolCitationSchemaItem"])[];
+      valid_tags: (string)[];
+      verification_duration_ms: number;
+    };
     WelcomeSetupFirstAdminRequest: {
       bootstrap_token?: string | null;
       display_name: string;
@@ -2291,6 +2378,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/assistant/artifacts/action": {
+    post: {
+      responses: {
+        200: components["schemas"]["ArtifactCardActionResponse"];
+      };
+    };
+  };
   "/api/v1/assistant/chat": {
     post: {
       responses: {
@@ -2302,6 +2396,13 @@ export interface paths {
     post: {
       responses: {
         200: unknown;
+      };
+    };
+  };
+  "/api/v1/assistant/citations/verify-turn": {
+    post: {
+      responses: {
+        200: components["schemas"]["VerifyAndFilterCitationsResponse"];
       };
     };
   };
@@ -3105,6 +3206,8 @@ export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResour
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
 export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
+export type ArtifactCardActionRequest = components["schemas"]["ArtifactCardActionRequest"];
+export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActionResponse"];
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];
 export type AssembledLayerPreviewSchemaItem = components["schemas"]["AssembledLayerPreviewSchemaItem"];
@@ -3165,6 +3268,9 @@ export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWo
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResourceAccessRequest"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
+export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["EvidenceGlossaryCitationSchemaItem"];
+export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
+export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];
 export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
@@ -3262,6 +3368,9 @@ export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
+export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
+export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];
+export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
 export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
@@ -3328,6 +3437,8 @@ export type UserPreferencesUpdateRequest = components["schemas"]["UserPreference
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
 export type ValidationError = components["schemas"]["ValidationError"];
+export type VerifyAndFilterCitationsRequest = components["schemas"]["VerifyAndFilterCitationsRequest"];
+export type VerifyAndFilterCitationsResponse = components["schemas"]["VerifyAndFilterCitationsResponse"];
 export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupFirstAdminRequest"];
 export type WelcomeSetupFirstAdminResponse = components["schemas"]["WelcomeSetupFirstAdminResponse"];
 export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];

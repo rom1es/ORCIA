@@ -40,6 +40,9 @@ from orcia_core.orchestration import (
     build_default_orchestration_setup_service,
     register_default_step_executors,
 )
+from orcia_core.orchestration.assistant_citations_and_v5_guard import (
+    AssistantCitationAndV5GuardService,
+)
 from orcia_core.orchestration.assistant_governance import (
     AssistantFourLevelGovernanceService,
 )
@@ -505,4 +508,17 @@ def get_assistant_three_speed_router_service(
         gov = get_assistant_governance_service(request)
         svc = AssistantThreeSpeedRouterService(governance_service=gov)
         request.app.state.assistant_three_speed_router_service = svc
+    return svc
+
+
+def get_assistant_citation_and_v5_guard_service(
+    request: Request,
+) -> AssistantCitationAndV5GuardService:
+    """FastAPI `Depends` provider returning `AssistantCitationAndV5GuardService` (`Story 10.3`)."""
+    svc: AssistantCitationAndV5GuardService | None = getattr(
+        request.app.state, "assistant_citation_and_v5_guard_service", None
+    )
+    if svc is None:
+        svc = AssistantCitationAndV5GuardService()
+        request.app.state.assistant_citation_and_v5_guard_service = svc
     return svc
