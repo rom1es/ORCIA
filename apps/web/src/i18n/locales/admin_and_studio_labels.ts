@@ -64,11 +64,11 @@ export interface AdminAndStudioDictionarySection {
 
 export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
   settingsHub: {
-    hubTitle: "Hub de Paramétrage Post-Jour 0 & Gouvernance 6 Verbes (/settings/*)",
+    hubTitle: "Configuration de la Plateforme & Gouvernance",
     hubSubtitle:
-      "Administration unifiée IAM RBAC/ABAC, Connecteurs write-only (SecretStatus), Routage Cognitif Abstrait (simple/medium/complex/auto), Registre des Packs et Studio Visuel.",
+      "Administration unifiée des unités d'organisation (BU / Espaces), des habilitations d'accès, des modèles IA, des connecteurs, des Packs métiers et des processus.",
     tabs: {
-      iam: "Habilitations (IAM 6 verbes)",
+      iam: "Organisation & Habilitations",
       connectors: "Connecteurs & Réciprocité RAG",
       aiModels: "Modèles IA & Tiers Cognitifs",
       packs: "Packs Métiers",
@@ -76,7 +76,7 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
       audit: "Audit & Replay Outbox",
     },
     lockedSectionNotice:
-      "Ressource visible en découverte passive — habilitation update/grant requise.",
+      "Ressource visible en découverte passive — habilitation de modification ou d'administration requise.",
     requestAccessLabel: "Demander l'accès (Outbox)",
     secretFieldLabels: {
       configuredBadge: "Configuré",
@@ -130,11 +130,11 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
 
 export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
   settingsHub: {
-    hubTitle: "Post-Day-0 Settings Hub & 6-Verb Governance (/settings/*)",
+    hubTitle: "Platform Configuration & Governance",
     hubSubtitle:
-      "Unified IAM 6-verb RBAC/ABAC, write-only Connectors (SecretStatus), Abstract Cognitive Routing (simple/medium/complex/auto), Business Pack Registry, and Visual Studio.",
+      "Unified administration of organization units (BUs / Spaces), access permissions, AI models, connectors, business Packs, and processes.",
     tabs: {
-      iam: "Permissions (6-Verb IAM)",
+      iam: "Organization & Permissions",
       connectors: "Connectors & RAG Reciprocity",
       aiModels: "AI Models & Cognitive Tiers",
       packs: "Business Packs",
@@ -142,7 +142,7 @@ export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
       audit: "Audit & Outbox Replay",
     },
     lockedSectionNotice:
-      "Resource visible via passive discovery — update/grant permission required.",
+      "Resource visible via passive discovery — update or grant permission required.",
     requestAccessLabel: "Request access (Outbox)",
     secretFieldLabels: {
       configuredBadge: "Configured",

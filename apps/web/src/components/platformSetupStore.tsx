@@ -94,7 +94,12 @@ export interface PlatformSetupContextValue {
     email: string;
   }) => void;
   readonly addOrgUnit: (input: Omit<ConfiguredOrgUnit, "id">) => void;
+  readonly removeOrgUnit: (orgUnitId: string) => {
+    readonly deleted: boolean;
+    readonly blockedReason: string | null;
+  };
   readonly addRbacGrant: (input: Omit<ConfiguredRbacGrant, "id">) => void;
+  readonly removeRbacGrant: (grantId: string) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
   readonly createWorkspace: (input: {
     name: string;
@@ -174,17 +179,63 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   };
 
   const addOrgUnit = (input: Omit<ConfiguredOrgUnit, "id">) => {
-    const id = `org-${orgUnits.length + 1}`;
-    setOrgUnits((prev) => [...prev, { ...input, id }]);
+    setOrgUnits((prev) => {
+      const id = prev.length === 0 ? "org-1" : `org-${prev.length + 1}`;
+      return [...prev, { ...input, id }];
+    });
     recordAudit("OrgUnitCreated", `${input.level} "${input.name}" (${input.slug})`);
   };
 
+  const removeOrgUnit = (
+    orgUnitId: string,
+  ): { readonly deleted: boolean; readonly blockedReason: string | null } => {
+    const target = orgUnits.find((u) => u.id === orgUnitId);
+    if (!target) {
+      return { deleted: false, blockedReason: null };
+    }
+    const childUnits = orgUnits.filter((u) => u.parentId === target.id);
+    if (childUnits.length > 0) {
+      return {
+        deleted: false,
+        blockedReason: `Suppression refusée : ${childUnits.length} sous-unité(s) / Espace(s) sont rattachés à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
+      };
+    }
+    const dependentGrants = rbacGrants.filter(
+      (g) =>
+        g.scopePath === target.slug ||
+        g.scopePath === target.name ||
+        g.scopePath.includes(`/${target.slug}`) ||
+        g.scopePath.startsWith(`${target.slug}/`),
+    );
+    if (dependentGrants.length > 0) {
+      return {
+        deleted: false,
+        blockedReason: `Suppression refusée : ${dependentGrants.length} règle(s) d'habilitation ciblent « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
+      };
+    }
+    setOrgUnits((prev) => prev.filter((u) => u.id !== orgUnitId));
+    recordAudit("OrgUnitDeleted", `${target.level} "${target.name}" (${target.slug}) supprimé`);
+    return { deleted: true, blockedReason: null };
+  };
+
   const addRbacGrant = (input: Omit<ConfiguredRbacGrant, "id">) => {
-    const id = `grant-${rbacGrants.length + 1}`;
-    setRbacGrants((prev) => [...prev, { ...input, id }]);
+    setRbacGrants((prev) => {
+      const id = prev.length === 0 ? "grant-1" : `grant-${prev.length + 1}`;
+      return [...prev, { ...input, id }];
+    });
     recordAudit(
       "PermissionGranted",
       `${input.subjectType}:${input.subjectId} -> ${input.verb} (${input.effect}) sur ${input.scopePath}`,
+    );
+  };
+
+  const removeRbacGrant = (grantId: string) => {
+    const target = rbacGrants.find((g) => g.id === grantId);
+    if (!target) return;
+    setRbacGrants((prev) => prev.filter((g) => g.id !== grantId));
+    recordAudit(
+      "PermissionRevoked",
+      `${target.subjectType}:${target.subjectId} -> ${target.verb} (${target.effect}) révoqué sur ${target.scopePath}`,
     );
   };
 
@@ -418,7 +469,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         completedSetupStepsCount,
         createPlatformAdmin,
         addOrgUnit,
+        removeOrgUnit,
         addRbacGrant,
+        removeRbacGrant,
         upsertLlmTier,
         createWorkspace,
         updateWorkspacePhase,

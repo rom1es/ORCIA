@@ -436,4 +436,85 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     const roleSelect = screen.getByTestId("dropdown-hat-selector") as HTMLSelectElement;
     expect(roleSelect.value).toBe("PLATFORM_ADMIN");
   });
+
+  it("supports TopHeader workspace dropdown, BU/Espace linkage with orphan-safe deletion, Beneficiary vs Target Scope labels, 'Tous' checkboxes with deletion, and contextual help on /settings", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // 1. No "(IAM 6 verbes)" jargon in the tab or header
+    expect(screen.getByTestId("settings-tab-iam").textContent).toBe(
+      "Organisation & Habilitations",
+    );
+
+    // 2. Create a BU ("BU Finance") and a linked Espace ("Espace Comptabilité")
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "BU Finance" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain("BU Finance");
+
+    fireEvent.change(screen.getByTestId("org-unit-level-select"), {
+      target: { value: "TEAM" },
+    });
+    // Parent BU selector is displayed for Espace (TEAM)
+    const parentSelect = screen.getByTestId("org-unit-parent-select") as HTMLSelectElement;
+    expect(parentSelect.value).toBe("org-1");
+
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Espace Comptabilité" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    // Verify TopHeader workspace selector opens a dropdown list instead of blindly cycling
+    const wsTrigger = screen.getByTestId("topbar-fixed-workspace-selector");
+    expect(wsTrigger.textContent).toContain("Plateforme Globale ORCIA");
+    fireEvent.click(wsTrigger);
+    const dropdownMenu = screen.getByTestId("topbar-workspace-dropdown-menu");
+    expect(dropdownMenu.textContent).toContain("BU Finance");
+    expect(dropdownMenu.textContent).toContain("Espace Comptabilité");
+    fireEvent.click(screen.getByTestId("topbar-workspace-option-org-1"));
+    expect(wsTrigger.textContent).toContain("BU Finance");
+
+    // Attempt to delete parent BU while child Espace is attached -> blocked by orphan protection
+    fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-1"));
+    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-1"));
+    const feedback = screen.getByTestId("org-unit-delete-feedback");
+    expect(feedback.textContent).toContain("Suppression refusée");
+    expect(screen.getByTestId("org-unit-row-org-1")).toBeDefined();
+
+    // 3 & 4. Habilitations: Beneficiary (Chef1) vs Target Scope (aqwZSX), "Tous" checkbox, and deletion
+    fireEvent.change(screen.getByTestId("rbac-subject-input"), {
+      target: { value: "Chef1" },
+    });
+    fireEvent.change(screen.getByTestId("rbac-scope-input"), {
+      target: { value: "aqwZSX" },
+    });
+    // Click "Tous" verb checkbox to select all 6 verbs
+    fireEvent.click(screen.getByTestId("rbac-verb-checkbox-all"));
+    fireEvent.click(screen.getByTestId("create-rbac-grant-btn"));
+
+    const grantRow = screen.getByTestId("rbac-grant-row-grant-1");
+    expect(grantRow.textContent).toContain("Rôle (ROLE:Chef1)");
+    expect(grantRow.textContent).toContain("Périmètre cible : aqwZSX");
+
+    // Select all grants via "Tous" checkbox and bulk delete
+    fireEvent.click(screen.getByTestId("rbac-grants-select-all-checkbox"));
+    fireEvent.click(screen.getByTestId("rbac-grants-bulk-delete-btn"));
+    expect(screen.getByTestId("iam-grants-empty-state")).toBeDefined();
+
+    // 5. Right-hand contextual help explains INHERITANCE_BLOCK, 6 verbes, BU vs Espace, and Beneficiary vs Target Scope
+    const helpTerms = screen.getByTestId("help-accordion-terms-content");
+    expect(helpTerms.textContent).toContain("INHERITANCE_BLOCK");
+    expect(helpTerms.textContent).toContain("ROLE:Chef1");
+    expect(helpTerms.textContent).toContain("aqwZSX");
+    expect(helpTerms.textContent).toContain("BU vs Espace");
+  });
 });

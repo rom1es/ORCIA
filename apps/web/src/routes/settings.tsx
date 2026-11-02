@@ -43,7 +43,9 @@ export function SettingsHubView() {
     workflows,
     auditEvents,
     addOrgUnit,
+    removeOrgUnit,
     addRbacGrant,
+    removeRbacGrant,
     upsertLlmTier,
     registerDatasource,
     registerPack,
@@ -64,11 +66,55 @@ export function SettingsHubView() {
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
   const [orgLevel, setOrgLevel] = useState<"BU" | "TEAM">("BU");
+  const [orgParentId, setOrgParentId] = useState("scope-global");
+  const [orgDeleteFeedback, setOrgDeleteFeedback] = useState<string | null>(null);
+  const [confirmDeleteOrgId, setConfirmDeleteOrgId] = useState<string | null>(null);
+
   const [grantSubjectType, setGrantSubjectType] = useState<"ROLE" | "USER">("ROLE");
   const [grantSubjectId, setGrantSubjectId] = useState("TEAM_LEAD");
   const [grantScopePath, setGrantScopePath] = useState("GLOBAL");
   const [grantVerb, setGrantVerb] = useState<UiPermissionVerb>("execute");
+  const [grantSelectedVerbs, setGrantSelectedVerbs] = useState<readonly UiPermissionVerb[]>([
+    "execute",
+  ]);
   const [grantEffect, setGrantEffect] = useState<"ALLOW" | "DENY" | "INHERITANCE_BLOCK">("ALLOW");
+  const [selectedGrantIds, setSelectedGrantIds] = useState<readonly string[]>([]);
+
+  const verbDescriptions: Record<UiPermissionVerb, string> = isFr
+    ? {
+        create: "Créer (create)",
+        read: "Lire / Voir les secrets (read)",
+        update: "Modifier (update)",
+        delete: "Supprimer (delete)",
+        execute: "Exécuter / Utiliser (execute)",
+        grant: "Déléguer des droits (grant)",
+      }
+    : {
+        create: "Create (create)",
+        read: "Read / View secrets (read)",
+        update: "Update (update)",
+        delete: "Delete (delete)",
+        execute: "Execute / Use (execute)",
+        grant: "Delegate rights (grant)",
+      };
+
+  const effectDescriptions: Record<"ALLOW" | "DENY" | "INHERITANCE_BLOCK", string> = isFr
+    ? {
+        ALLOW: "Autoriser (ALLOW) — Accorde les actions cochées sur la cible",
+        DENY: "Interdire (DENY) — Bloque explicitement (prioritaire sur toute autorisation)",
+        INHERITANCE_BLOCK:
+          "Couper l'héritage (INHERITANCE_BLOCK) — Annule les droits hérités des niveaux parents (Organisation / BU) sur ce périmètre",
+      }
+    : {
+        ALLOW: "Allow (ALLOW) — Grants the checked actions on the target scope",
+        DENY: "Deny (DENY) — Explicitly blocks (overrides any allow rule)",
+        INHERITANCE_BLOCK:
+          "Block inheritance (INHERITANCE_BLOCK) — Clears permissions inherited from parent scopes (Organization / BU) at this level",
+      };
+
+  const allVerbsChecked = allowedVerbs.every((v) => grantSelectedVerbs.includes(v));
+  const allGrantsChecked =
+    rbacGrants.length > 0 && rbacGrants.every((g) => selectedGrantIds.includes(g.id));
 
   // Tab 2: Connectors form state
   const [connAlias, setConnAlias] = useState("");
@@ -162,6 +208,19 @@ export function SettingsHubView() {
     cursor: "pointer",
   };
 
+  const dangerBtnStyle: React.CSSProperties = {
+    padding: "5px 10px",
+    borderRadius: "var(--radius-sm)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-surface-card)",
+    color: "var(--color-foreground)",
+    fontSize: "12px",
+    fontWeight: 600,
+    cursor: "pointer",
+  };
+
+  const buUnits = orgUnits.filter((u) => u.level === "BU");
+
   return (
     <div
       data-testid="settings-hub-page"
@@ -235,40 +294,84 @@ export function SettingsHubView() {
               <div>
                 <h2 style={{ margin: 0, fontSize: "15px" }}>
                   {isFr
-                    ? "1. Créer une Unité d'Organisation (BU / Équipe)"
-                    : "1. Create an Organization Unit (BU / Team)"}
+                    ? "1. Créer et Structurer les Unités d'Organisation (BU & Espaces / Équipes)"
+                    : "1. Create and Structure Organization Units (BUs & Spaces / Teams)"}
                 </h2>
+                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--color-muted-foreground)" }}>
+                  {isFr
+                    ? "Rattachez chaque Espace (ou Équipe) à sa Business Unit (BU) parente. La suppression d'une unité est protégée si des sous-unités ou des habilitations en dépendent."
+                    : "Attach each Space (or Team) to its parent Business Unit (BU). Deleting a unit is blocked if child units or permission rules depend on it."}
+                </p>
                 <form
                   data-testid="create-org-unit-form"
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (!orgName.trim()) return;
+                    const resolvedParentId =
+                      orgLevel === "BU" ? "scope-global" : orgParentId || "scope-global";
                     addOrgUnit({
                       name: orgName.trim(),
                       slug: orgSlug.trim() || orgName.trim().toLowerCase().replace(/\s+/g, "-"),
                       level: orgLevel,
-                      parentId: "scope-global",
+                      parentId: resolvedParentId,
                     });
                     setOrgName("");
                     setOrgSlug("");
+                    setOrgDeleteFeedback(null);
                   }}
-                  style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}
+                  style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px", alignItems: "center" }}
                 >
                   <select
                     data-testid="org-unit-level-select"
                     value={orgLevel}
-                    onChange={(e) => setOrgLevel(e.target.value as "BU" | "TEAM")}
+                    onChange={(e) => {
+                      const nextLevel = e.target.value as "BU" | "TEAM";
+                      setOrgLevel(nextLevel);
+                      if (nextLevel === "BU") {
+                        setOrgParentId("scope-global");
+                      } else if (buUnits.length > 0 && orgParentId === "scope-global") {
+                        setOrgParentId(buUnits[0]!.id);
+                      }
+                    }}
                     style={inputStyle}
                   >
-                    <option value="BU">BU (Business Unit)</option>
-                    <option value="TEAM">TEAM (Équipe)</option>
+                    <option value="BU">BU (Business Unit / Direction)</option>
+                    <option value="TEAM">{isFr ? "Espace (Équipe)" : "Space (Team)"}</option>
                   </select>
+
+                  {orgLevel === "TEAM" && (
+                    <select
+                      data-testid="org-unit-parent-select"
+                      aria-label={isFr ? "BU parente de rattachement" : "Parent BU"}
+                      value={orgParentId}
+                      onChange={(e) => setOrgParentId(e.target.value)}
+                      style={inputStyle}
+                    >
+                      <option value="scope-global">
+                        {isFr ? "Rattachement : Plateforme Globale" : "Parent: Global Platform"}
+                      </option>
+                      {buUnits.map((bu) => (
+                        <option key={bu.id} value={bu.id}>
+                          {isFr ? `Rattaché à la BU : ${bu.name}` : `Attached to BU: ${bu.name}`}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
                   <input
                     type="text"
                     data-testid="org-unit-name-input"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    placeholder={isFr ? "Nom de l'unité..." : "Unit name..."}
+                    placeholder={
+                      orgLevel === "BU"
+                        ? isFr
+                          ? "Nom de la BU (ex: Direction Produit)..."
+                          : "BU name..."
+                        : isFr
+                          ? "Nom de l'Espace / Équipe..."
+                          : "Space / Team name..."
+                    }
                     style={{ ...inputStyle, flex: 1, minWidth: "180px" }}
                   />
                   <input
@@ -276,7 +379,7 @@ export function SettingsHubView() {
                     data-testid="org-unit-slug-input"
                     value={orgSlug}
                     onChange={(e) => setOrgSlug(e.target.value)}
-                    placeholder={isFr ? "Slug (optionnel)..." : "Slug (optional)..."}
+                    placeholder={isFr ? "Identifiant court / Slug (optionnel)..." : "Slug (optional)..."}
                     style={inputStyle}
                   />
                   <button type="submit" data-testid="create-org-unit-btn" style={primaryBtnStyle}>
@@ -284,33 +387,124 @@ export function SettingsHubView() {
                   </button>
                 </form>
 
+                {orgDeleteFeedback && (
+                  <div
+                    role="alert"
+                    data-testid="org-unit-delete-feedback"
+                    style={{
+                      marginTop: "10px",
+                      padding: "8px 12px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--color-border)",
+                      backgroundColor: "var(--color-surface-card)",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚠️ {orgDeleteFeedback}
+                  </div>
+                )}
+
                 {orgUnits.length === 0 ? (
                   <p
                     data-testid="iam-org-units-empty-state"
                     style={{ margin: "10px 0 0 0", fontSize: "13px", color: "var(--color-muted-foreground)" }}
                   >
                     {isFr
-                      ? "Aucune unité d'organisation configurée."
-                      : "No organization unit configured yet."}
+                      ? "Aucune unité d'organisation (BU ou Espace) configurée."
+                      : "No organization unit (BU or Space) configured yet."}
                   </p>
                 ) : (
                   <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
-                    {orgUnits.map((u) => (
-                      <div
-                        key={u.id}
-                        data-testid={`org-unit-row-${u.id}`}
-                        style={{
-                          padding: "8px 10px",
-                          borderRadius: "var(--radius-sm)",
-                          border: "1px solid var(--color-border)",
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <strong>{u.name}</strong>
-                        <StatusBadge label={`${u.level} · ${u.slug}`} tone="cobalt" monospace />
-                      </div>
-                    ))}
+                    {orgUnits.map((u) => {
+                      const parentNode = orgUnits.find((p) => p.id === u.parentId);
+                      const childCount = orgUnits.filter((c) => c.parentId === u.id).length;
+                      const levelDisplay =
+                        u.level === "TEAM" ? (isFr ? "ESPACE" : "SPACE") : "BU";
+                      const isConfirming = confirmDeleteOrgId === u.id;
+                      return (
+                        <div
+                          key={u.id}
+                          data-testid={`org-unit-row-${u.id}`}
+                          style={{
+                            padding: "8px 10px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--color-border)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                            <strong>{u.name}</strong>
+                            <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
+                              {parentNode
+                                ? isFr
+                                  ? `↳ Rattaché à la BU : ${parentNode.name}`
+                                  : `↳ Parent BU: ${parentNode.name}`
+                                : isFr
+                                  ? "↳ Niveau Racine (Plateforme Globale)"
+                                  : "↳ Root Level (Global Platform)"}
+                            </span>
+                            {childCount > 0 && (
+                              <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
+                                ({childCount} {isFr ? "Espace(s) rattaché(s)" : "attached Space(s)"})
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <StatusBadge label={`${levelDisplay} · ${u.slug}`} tone="cobalt" monospace />
+                            {!isConfirming ? (
+                              <button
+                                type="button"
+                                data-testid={`delete-org-unit-btn-${u.id}`}
+                                onClick={() => {
+                                  setOrgDeleteFeedback(null);
+                                  setConfirmDeleteOrgId(u.id);
+                                }}
+                                style={dangerBtnStyle}
+                              >
+                                {isFr ? "Supprimer" : "Delete"}
+                              </button>
+                            ) : (
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
+                                  {isFr
+                                    ? "Attention : vérifie l'absence d'éléments orphelins"
+                                    : "Warning: checks for orphan dependencies"}
+                                </span>
+                                <button
+                                  type="button"
+                                  data-testid={`confirm-delete-org-unit-btn-${u.id}`}
+                                  onClick={() => {
+                                    const res = removeOrgUnit(u.id);
+                                    if (!res.deleted && res.blockedReason) {
+                                      setOrgDeleteFeedback(res.blockedReason);
+                                    } else {
+                                      setOrgDeleteFeedback(null);
+                                    }
+                                    setConfirmDeleteOrgId(null);
+                                  }}
+                                  style={dangerBtnStyle}
+                                >
+                                  {isFr ? "Confirmer la suppression" : "Confirm delete"}
+                                </button>
+                                <button
+                                  type="button"
+                                  data-testid={`cancel-delete-org-unit-btn-${u.id}`}
+                                  onClick={() => setConfirmDeleteOrgId(null)}
+                                  style={dangerBtnStyle}
+                                >
+                                  {isFr ? "Annuler" : "Cancel"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -318,76 +512,220 @@ export function SettingsHubView() {
               <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "14px" }}>
                 <h2 style={{ margin: 0, fontSize: "15px" }}>
                   {isFr
-                    ? "2. Attribuer une Règle d'Habilitation RBAC/ABAC (6 Verbes)"
-                    : "2. Grant a 6-Verb RBAC/ABAC Permission Rule"}
+                    ? "2. Attribuer et Gérer les Règles d'Habilitation"
+                    : "2. Grant and Manage Permission Rules"}
                 </h2>
+                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--color-muted-foreground)" }}>
+                  {isFr
+                    ? "Définissez QUI (un Rôle ou un Utilisateur précis, ex. « Chef1 ») a le droit d'effectuer QUELLES ACTIONS sur QUEL PÉRIMÈTRE CIBLE (Plateforme Globale, une BU, un Espace ou une ressource précise)."
+                    : "Define WHO (a Role or a specific User) can perform WHICH ACTIONS on WHICH TARGET SCOPE (Global Platform, a BU, a Space, or a specific resource)."}
+                </p>
+
                 <form
                   data-testid="create-rbac-grant-form"
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (!grantSubjectId.trim() || !grantScopePath.trim()) return;
-                    addRbacGrant({
-                      subjectType: grantSubjectType,
-                      subjectId: grantSubjectId.trim(),
-                      scopePath: grantScopePath.trim(),
-                      verb: grantVerb,
-                      effect: grantEffect,
-                    });
-                  }}
-                  style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}
-                >
-                  <select
-                    value={grantSubjectType}
-                    onChange={(e) => setGrantSubjectType(e.target.value as "ROLE" | "USER")}
-                    style={inputStyle}
-                  >
-                    <option value="ROLE">ROLE</option>
-                    <option value="USER">USER</option>
-                  </select>
-                  <input
-                    type="text"
-                    data-testid="rbac-subject-input"
-                    value={grantSubjectId}
-                    onChange={(e) => setGrantSubjectId(e.target.value)}
-                    placeholder="Sujet (ex: TEAM_LEAD)"
-                    style={inputStyle}
-                  />
-                  <input
-                    type="text"
-                    data-testid="rbac-scope-input"
-                    value={grantScopePath}
-                    onChange={(e) => setGrantScopePath(e.target.value)}
-                    placeholder="Périmètre (ex: GLOBAL)"
-                    style={inputStyle}
-                  />
-                  <select
-                    data-testid="rbac-verb-select"
-                    value={grantVerb}
-                    onChange={(e) => setGrantVerb(e.target.value as UiPermissionVerb)}
-                    style={inputStyle}
-                  >
-                    <option value="create">create</option>
-                    <option value="read">read</option>
-                    <option value="update">update</option>
-                    <option value="delete">delete</option>
-                    <option value="execute">execute</option>
-                    <option value="grant">grant</option>
-                  </select>
-                  <select
-                    data-testid="rbac-effect-select"
-                    value={grantEffect}
-                    onChange={(e) =>
-                      setGrantEffect(e.target.value as "ALLOW" | "DENY" | "INHERITANCE_BLOCK")
+                    const verbsToGrant =
+                      grantSelectedVerbs.length > 0 ? grantSelectedVerbs : [grantVerb];
+                    for (const v of verbsToGrant) {
+                      addRbacGrant({
+                        subjectType: grantSubjectType,
+                        subjectId: grantSubjectId.trim(),
+                        scopePath: grantScopePath.trim(),
+                        verb: v,
+                        effect: grantEffect,
+                      });
                     }
-                    style={inputStyle}
+                  }}
+                  style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}
+                >
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "flex-end" }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+                      <span style={{ fontWeight: 600 }}>
+                        {isFr ? "Type de bénéficiaire" : "Beneficiary type"}
+                      </span>
+                      <select
+                        data-testid="rbac-subject-type-select"
+                        value={grantSubjectType}
+                        onChange={(e) => setGrantSubjectType(e.target.value as "ROLE" | "USER")}
+                        style={inputStyle}
+                      >
+                        <option value="ROLE">{isFr ? "Rôle (ROLE)" : "Role (ROLE)"}</option>
+                        <option value="USER">{isFr ? "Utilisateur (USER)" : "User (USER)"}</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", flex: 1, minWidth: "180px" }}>
+                      <span style={{ fontWeight: 600 }}>
+                        {isFr
+                          ? "Qui ? (Bénéficiaire : Rôle ou Utilisateur)"
+                          : "Who? (Beneficiary: Role or User)"}
+                      </span>
+                      <input
+                        type="text"
+                        data-testid="rbac-subject-input"
+                        value={grantSubjectId}
+                        onChange={(e) => setGrantSubjectId(e.target.value)}
+                        placeholder={
+                          isFr
+                            ? "Ex: TEAM_LEAD, ARCHITECT ou email utilisateur..."
+                            : "e.g. TEAM_LEAD, ARCHITECT or user email..."
+                        }
+                        style={inputStyle}
+                      />
+                    </label>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", flex: 1, minWidth: "220px" }}>
+                      <span style={{ fontWeight: 600 }}>
+                        {isFr
+                          ? "Sur quoi ? (Périmètre cible : GLOBAL, BU, Espace)"
+                          : "On what? (Target scope: GLOBAL, BU, Space)"}
+                      </span>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        {orgUnits.length > 0 && (
+                          <select
+                            data-testid="rbac-scope-preset-select"
+                            aria-label={isFr ? "Choisir un périmètre existant" : "Select existing scope"}
+                            value={
+                              grantScopePath === "GLOBAL" ||
+                              orgUnits.some((u) => u.slug === grantScopePath)
+                                ? grantScopePath
+                                : ""
+                            }
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                setGrantScopePath(e.target.value);
+                              }
+                            }}
+                            style={inputStyle}
+                          >
+                            <option value="GLOBAL">GLOBAL (Plateforme)</option>
+                            {orgUnits.map((u) => (
+                              <option key={u.id} value={u.slug}>
+                                {u.level === "TEAM" ? "Espace" : "BU"} : {u.name} ({u.slug})
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <input
+                          type="text"
+                          data-testid="rbac-scope-input"
+                          value={grantScopePath}
+                          onChange={(e) => setGrantScopePath(e.target.value)}
+                          placeholder={isFr ? "Périmètre (ex: GLOBAL ou slug d'Espace)" : "Scope (e.g. GLOBAL)"}
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                      </div>
+                    </label>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+                      <span style={{ fontWeight: 600 }}>
+                        {isFr ? "Action principale" : "Primary action"}
+                      </span>
+                      <select
+                        data-testid="rbac-verb-select"
+                        value={grantVerb}
+                        onChange={(e) => {
+                          const v = e.target.value as UiPermissionVerb;
+                          setGrantVerb(v);
+                          setGrantSelectedVerbs([v]);
+                        }}
+                        style={inputStyle}
+                      >
+                        {allowedVerbs.map((v) => (
+                          <option key={v} value={v}>
+                            {verbDescriptions[v]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+                      <span style={{ fontWeight: 600 }}>
+                        {isFr ? "Effet de la règle" : "Rule effect"}
+                      </span>
+                      <select
+                        data-testid="rbac-effect-select"
+                        value={grantEffect}
+                        onChange={(e) =>
+                          setGrantEffect(e.target.value as "ALLOW" | "DENY" | "INHERITANCE_BLOCK")
+                        }
+                        style={inputStyle}
+                      >
+                        <option value="ALLOW">{effectDescriptions.ALLOW}</option>
+                        <option value="DENY">{effectDescriptions.DENY}</option>
+                        <option value="INHERITANCE_BLOCK">
+                          {effectDescriptions.INHERITANCE_BLOCK}
+                        </option>
+                      </select>
+                    </label>
+
+                    <button type="submit" data-testid="create-rbac-grant-btn" style={primaryBtnStyle}>
+                      {isFr ? "+ Ajouter la règle" : "+ Add rule"}
+                    </button>
+                  </div>
+
+                  {/* Cases à cocher des actions d'habilitation avec l'entrée "Tous" */}
+                  <div
+                    data-testid="rbac-verbs-checkbox-group"
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "12px",
+                      alignItems: "center",
+                      padding: "8px 10px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--color-border)",
+                      fontSize: "12px",
+                    }}
                   >
-                    <option value="ALLOW">ALLOW</option>
-                    <option value="DENY">DENY</option>
-                    <option value="INHERITANCE_BLOCK">INHERITANCE_BLOCK</option>
-                  </select>
-                  <button type="submit" data-testid="create-rbac-grant-btn" style={primaryBtnStyle}>
-                    {isFr ? "+ Ajouter la règle" : "+ Add rule"}
-                  </button>
+                    <span style={{ fontWeight: 600 }}>
+                      {isFr ? "Habilitations à attribuer :" : "Permissions to grant:"}
+                    </span>
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: 600, cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        data-testid="rbac-verb-checkbox-all"
+                        checked={allVerbsChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setGrantSelectedVerbs([...allowedVerbs]);
+                          } else {
+                            setGrantSelectedVerbs([grantVerb]);
+                          }
+                        }}
+                      />
+                      <span>{isFr ? "Tous" : "All"}</span>
+                    </label>
+                    {allowedVerbs.map((v) => {
+                      const checked = grantSelectedVerbs.includes(v);
+                      return (
+                        <label
+                          key={v}
+                          style={{ display: "inline-flex", alignItems: "center", gap: "5px", cursor: "pointer" }}
+                        >
+                          <input
+                            type="checkbox"
+                            data-testid={`rbac-verb-checkbox-${v}`}
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setGrantSelectedVerbs((prev) =>
+                                  prev.includes(v) ? prev : [...prev, v],
+                                );
+                              } else {
+                                setGrantSelectedVerbs((prev) =>
+                                  prev.filter((item) => item !== v),
+                                );
+                              }
+                            }}
+                          />
+                          <span>{verbDescriptions[v]}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </form>
 
                 {rbacGrants.length === 0 ? (
@@ -399,28 +737,122 @@ export function SettingsHubView() {
                   </p>
                 ) : (
                   <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
-                    {rbacGrants.map((g) => (
-                      <div
-                        key={g.id}
-                        data-testid={`rbac-grant-row-${g.id}`}
-                        style={{
-                          padding: "8px 10px",
-                          borderRadius: "var(--radius-sm)",
-                          border: "1px solid var(--color-border)",
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>
-                          <strong>{g.subjectType}:{g.subjectId}</strong> → <code>{g.scopePath}</code>
-                        </span>
-                        <StatusBadge
-                          label={`${g.verb} (${g.effect})`}
-                          tone={g.effect === "ALLOW" ? "emerald" : "crimson"}
-                          monospace
+                    <div
+                      data-testid="rbac-grants-bulk-toolbar"
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--color-border)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "12px",
+                      }}
+                    >
+                      <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontWeight: 600, cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          data-testid="rbac-grants-select-all-checkbox"
+                          checked={allGrantsChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedGrantIds(rbacGrants.map((g) => g.id));
+                            } else {
+                              setSelectedGrantIds([]);
+                            }
+                          }}
                         />
-                      </div>
-                    ))}
+                        <span>{isFr ? "Tous (Tout sélectionner)" : "All (Select all)"}</span>
+                      </label>
+                      {selectedGrantIds.length > 0 && (
+                        <button
+                          type="button"
+                          data-testid="rbac-grants-bulk-delete-btn"
+                          onClick={() => {
+                            for (const id of selectedGrantIds) {
+                              removeRbacGrant(id);
+                            }
+                            setSelectedGrantIds([]);
+                          }}
+                          style={dangerBtnStyle}
+                        >
+                          {isFr
+                            ? `Supprimer la sélection (${selectedGrantIds.length})`
+                            : `Delete selected (${selectedGrantIds.length})`}
+                        </button>
+                      )}
+                    </div>
+
+                    {rbacGrants.map((g) => {
+                      const isRowChecked = selectedGrantIds.includes(g.id);
+                      return (
+                        <div
+                          key={g.id}
+                          data-testid={`rbac-grant-row-${g.id}`}
+                          style={{
+                            padding: "8px 10px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--color-border)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
+                        >
+                          <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              data-testid={`rbac-grant-checkbox-${g.id}`}
+                              checked={isRowChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedGrantIds((prev) =>
+                                    prev.includes(g.id) ? prev : [...prev, g.id],
+                                  );
+                                } else {
+                                  setSelectedGrantIds((prev) =>
+                                    prev.filter((id) => id !== g.id),
+                                  );
+                                }
+                              }}
+                            />
+                            <span>
+                              <strong>
+                                {g.subjectType === "ROLE"
+                                  ? isFr
+                                    ? "Rôle"
+                                    : "Role"
+                                  : isFr
+                                    ? "Utilisateur"
+                                    : "User"}{" "}
+                                ({g.subjectType}:{g.subjectId})
+                              </strong>{" "}
+                              → {isFr ? "Périmètre cible :" : "Target scope:"}{" "}
+                              <code>{g.scopePath}</code>
+                            </span>
+                          </label>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <StatusBadge
+                              label={`${g.verb} (${g.effect})`}
+                              tone={g.effect === "ALLOW" ? "emerald" : "crimson"}
+                              monospace
+                            />
+                            <button
+                              type="button"
+                              data-testid={`delete-rbac-grant-btn-${g.id}`}
+                              onClick={() => {
+                                removeRbacGrant(g.id);
+                                setSelectedGrantIds((prev) => prev.filter((id) => id !== g.id));
+                              }}
+                              style={dangerBtnStyle}
+                            >
+                              {isFr ? "Supprimer" : "Delete"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

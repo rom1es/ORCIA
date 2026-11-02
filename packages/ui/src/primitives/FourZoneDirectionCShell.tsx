@@ -44,9 +44,17 @@ export interface FourZoneDirectionCShellLabels {
   readonly menuEntries: Record<EightFixedMenuKey, string>;
 }
 
+export interface WorkspaceSwitcherOption {
+  readonly id: string;
+  readonly label: string;
+  readonly groupLabel?: string;
+}
+
 export interface FourZoneDirectionCShellProps {
   readonly activeMenuKey: EightFixedMenuKey;
   readonly activeWorkspaceName: string;
+  readonly activeScopeId?: string;
+  readonly workspaceOptions?: readonly WorkspaceSwitcherOption[];
   readonly activePackKey: string;
   readonly availablePacks: readonly string[];
   readonly userDisplayName: string;
@@ -57,6 +65,7 @@ export interface FourZoneDirectionCShellProps {
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
   readonly onOpenWorkspaceSwitcher?: () => void;
+  readonly onSelectWorkspace?: (scopeId: string) => void;
   readonly onOpenSearchCommand?: () => void;
   readonly onSelectPack?: (packKey: string) => void;
   readonly onOpenUserDropdown?: () => void;
@@ -84,6 +93,8 @@ export function computeDefaultHelpColumnOpen(
 export function FourZoneDirectionCShell({
   activeMenuKey,
   activeWorkspaceName,
+  activeScopeId,
+  workspaceOptions,
   activePackKey,
   availablePacks,
   userDisplayName,
@@ -94,6 +105,7 @@ export function FourZoneDirectionCShell({
   disabledMenuKeys,
   onSelectMenu,
   onOpenWorkspaceSwitcher,
+  onSelectWorkspace,
   onOpenSearchCommand,
   onSelectPack,
   onOpenUserDropdown,
@@ -104,6 +116,7 @@ export function FourZoneDirectionCShell({
 }: FourZoneDirectionCShellProps): React.ReactElement {
   const [railCollapsed, setRailCollapsed] = useState<boolean>(false);
   const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
+  const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState<boolean>(false);
   const [helpColumnOpen, setHelpColumnOpen] = useState<boolean>(() =>
     computeDefaultHelpColumnOpen(viewportWidth, pendingDecisionsTotal),
   );
@@ -118,6 +131,7 @@ export function FourZoneDirectionCShell({
         setRailCollapsed((prev) => !prev);
       } else if (event.key === "Escape") {
         setNotificationsOpen(false);
+        setWorkspaceDropdownOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -146,21 +160,84 @@ export function FourZoneDirectionCShell({
           borderColor: "var(--color-border-subtle)",
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <span className="text-sm font-bold tracking-tight">ORCIA</span>
           <button
             type="button"
             data-testid="topbar-fixed-workspace-selector"
-            onClick={onOpenWorkspaceSwitcher}
+            aria-haspopup="listbox"
+            aria-expanded={workspaceDropdownOpen}
+            onClick={() => {
+              onOpenWorkspaceSwitcher?.();
+              if (workspaceOptions && workspaceOptions.length > 0) {
+                setWorkspaceDropdownOpen((prev) => !prev);
+              }
+            }}
             className="rounded border px-2.5 py-1 text-xs font-semibold"
             style={{
               backgroundColor: "var(--color-bg-elevated)",
               borderColor: "var(--color-border-subtle)",
               color: "var(--color-text-primary)",
+              cursor: "pointer",
             }}
           >
             {labels.workspacePrefix} : {activeWorkspaceName} ⌄
           </button>
+
+          {workspaceDropdownOpen && workspaceOptions && workspaceOptions.length > 0 && (
+            <div
+              role="listbox"
+              aria-label={labels.workspacePrefix}
+              data-testid="topbar-workspace-dropdown-menu"
+              className="absolute left-12 top-10 z-40 min-w-[260px] rounded-xl border p-1.5 shadow-lg"
+              style={{
+                backgroundColor: "var(--color-bg-surface)",
+                borderColor: "var(--color-border-subtle)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              {workspaceOptions.map((opt) => {
+                const isSelected = opt.id === activeScopeId || opt.label === activeWorkspaceName;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    data-testid={`topbar-workspace-option-${opt.id}`}
+                    onClick={() => {
+                      onSelectWorkspace?.(opt.id);
+                      setWorkspaceDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left text-xs"
+                    style={{
+                      backgroundColor: isSelected
+                        ? "var(--color-action-primary-subtle)"
+                        : "transparent",
+                      color: isSelected
+                        ? "var(--color-action-primary)"
+                        : "var(--color-text-primary)",
+                      fontWeight: isSelected ? 600 : 400,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span>{opt.label}</span>
+                    {opt.groupLabel && (
+                      <span
+                        className="rounded px-1.5 py-0.5 font-mono text-[10px]"
+                        style={{
+                          backgroundColor: "var(--color-bg-elevated)",
+                          color: "var(--color-text-secondary)",
+                        }}
+                      >
+                        {opt.groupLabel}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <button

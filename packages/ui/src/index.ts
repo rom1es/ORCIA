@@ -157,6 +157,7 @@ export {
   type EightFixedMenuKey,
   type FourZoneDirectionCShellLabels,
   type FourZoneDirectionCShellProps,
+  type WorkspaceSwitcherOption,
 } from "./primitives/FourZoneDirectionCShell";
 export {
   StreamlinedCockpitView,

@@ -167,9 +167,24 @@ function InnerShellContainer({
   };
 
   const activeWorkspaceName =
-    workspaces[0]?.name ?? selectedScope.name ?? "Plateforme Globale ORCIA";
+    selectedScope.name ?? workspaces[0]?.name ?? "Plateforme Globale ORCIA";
 
   const isFr = locale === "fr";
+  const workspaceOptions = scopes.map((s) => ({
+    id: s.id,
+    label: s.name,
+    groupLabel:
+      s.level === "GLOBAL"
+        ? isFr
+          ? "Plateforme Globale"
+          : "Global Platform"
+        : s.level === "BU"
+          ? "BU"
+          : isFr
+            ? "Espace"
+            : "Workspace",
+  }));
+
   const disabledMenuKeys: Partial<Record<EightFixedMenuKey, string>> = {
     ...(llmTiers.length === 0
       ? {
@@ -197,27 +212,90 @@ function InnerShellContainer({
       : {}),
   };
 
-  const contextualHelpArticle: UiContextualHelpArticleView = {
-    resourceId: `help-${activeMenuKey}`,
-    uri: `orcia://packs/core/help/${activeMenuKey}/${locale}`,
-    title: dictionary.fourZoneShell.menuEntries[activeMenuKey],
-    version: "1.0.0",
-    lang: locale,
-    layer: "PACK",
-    packName: "orcia-core",
-    boundRoutes: [pathname ?? "/cockpit"],
-    summaryWhatFor: dictionary.modulePages[safeModuleKey].description,
-    stepByStepItems: [
-      "1. Sélectionnez votre Espace actif dans la barre supérieure.",
-      "2. Utilisez la recherche fédérée ⌘K ou Mon Assistant pour interroger vos sources.",
-      "3. Validez les décisions en attente ou lancez un processus gouverné.",
-    ],
-    keyTermsItems: ["Ancrage Humain Violet", "Action Staged", "Chaîne Causale ADN"],
-    faqItems: ["Comment personnaliser Mon Assistant ? → Cliquez sur ⚙ Réglages de l'assistant."],
-    casKey: "cas/help_contextual_v1",
-    sha256: "sha256_contextual_help_v1",
-    previousVersion: "0.9.0",
-  };
+  const isConfigurationScreen =
+    activeMenuKey === "configuration" ||
+    pathname === "/settings" ||
+    pathname === "/configuration";
+
+  const contextualHelpArticle: UiContextualHelpArticleView = isConfigurationScreen
+    ? {
+        resourceId: `help-${activeMenuKey}`,
+        uri: `orcia://packs/core/help/${activeMenuKey}/${locale}`,
+        title: dictionary.fourZoneShell.menuEntries[activeMenuKey],
+        version: "1.0.0",
+        lang: locale,
+        layer: "PACK",
+        packName: "orcia-core",
+        boundRoutes: [pathname ?? "/settings"],
+        summaryWhatFor: isFr
+          ? "Cet écran structure votre organisation (BU et Espaces), pilote vos règles d'habilitation (les 6 verbes de permissions : create, read, update, delete, execute, grant), vos modèles IA et vos connecteurs."
+          : "This screen structures your organization (BUs and Workspaces), governs permission rules (the 6 permission verbs: create, read, update, delete, execute, grant), AI models, and connectors.",
+        stepByStepItems: isFr
+          ? [
+              "1. Créez vos BU (Business Units / Directions), puis créez vos Espaces (Équipes) en les rattachant à leur BU parente. La suppression est protégée contre les orphelins.",
+              "2. Dans Habilitations, indiquez Qui ? (Bénéficiaire : Rôle ou Utilisateur, ex: ROLE:Chef1) et Sur quoi ? (Périmètre cible : GLOBAL, BU ou Espace, ex: aqwZSX).",
+              "3. Cochez les actions autorisées (ou Tous) et choisissez l'effet (ALLOW, DENY ou INHERITANCE_BLOCK). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
+            ]
+          : [
+              "1. Create your BUs (Business Units), then create your Workspaces (Teams) linked to their parent BU. Deletion is protected against orphans.",
+              "2. In Permissions, specify Who? (Beneficiary: Role or User, e.g. ROLE:Chef1) and On what? (Target scope: GLOBAL, BU, or Workspace, e.g. aqwZSX).",
+              "3. Check allowed actions (or All) and choose the effect (ALLOW, DENY, or INHERITANCE_BLOCK). Use the list checkboxes to delete one or more rules.",
+            ],
+        keyTermsItems: isFr
+          ? [
+              "BU vs Espace (Équipe) : Une BU est une direction ou pôle métier qui regroupe plusieurs Espaces. Un Espace correspond à une équipe ou un périmètre de travail rattaché à une BU.",
+              "Protection anti-orphelins : Impossible de supprimer une BU ou un Espace tant que des sous-espaces ou des règles d'habilitation y sont rattachés.",
+              "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : Dans « ROLE:Chef1 → aqwZSX », Chef1 est le Bénéficiaire (le rôle ou l'utilisateur qui reçoit le droit) et aqwZSX est le Périmètre cible (la BU, l'Espace ou la ressource sur laquelle s'applique ce droit).",
+              "Les 6 verbes d'habilitation (IAM) : create (créer), read (lire/voir les secrets), update (modifier), delete (supprimer), execute (utiliser un agent/modèle/connecteur sans voir ses secrets), grant (déléguer ses droits).",
+              "ALLOW (Autoriser) : Accorde explicitement les verbes cochés au bénéficiaire sur le périmètre cible.",
+              "DENY (Interdire — prioritaire) : Refuse explicitement les verbes cochés. Un DENY l'emporte toujours sur n'importe quel ALLOW.",
+              "INHERITANCE_BLOCK (Bloquer l'héritage parent) : Coupe la transmission automatique des droits hérités des niveaux supérieurs (Plateforme Globale ou BU parente) sur ce périmètre, afin de repartir d'une feuille blanche locale.",
+            ]
+          : [
+              "BU vs Workspace (Team): A BU is a business division grouping multiple Workspaces. A Workspace is a team scope linked to a parent BU.",
+              "Orphan protection: A BU or Workspace cannot be deleted while child workspaces or permission rules still depend on it.",
+              "Who? (Beneficiary) vs On what? (Target scope): In 'ROLE:Chef1 → aqwZSX', Chef1 is the Beneficiary (the role or user receiving the right) and aqwZSX is the Target scope (the BU, Workspace, or resource).",
+              "The 6 permission verbs (IAM): create, read (view config/secrets), update, delete, execute (run an agent/model/connector without reading secrets), grant (delegate rights).",
+              "ALLOW: Explicitly grants the checked verbs to the beneficiary on the target scope.",
+              "DENY (Priority override): Explicitly denies the checked verbs. DENY always overrides any ALLOW.",
+              "INHERITANCE_BLOCK (Block parent inheritance): Stops automatic inheritance of permissions from parent levels (Global Platform or parent BU) on this scope, starting from a clean local slate.",
+            ],
+        faqItems: isFr
+          ? [
+              "Pourquoi ne puis-je pas supprimer une BU ou un Espace ? → Pour éviter de rendre orphelins des Espaces enfants ou des règles d'habilitation qui y font référence. Supprimez ou détachez d'abord les éléments dépendants.",
+              "Quelle est la différence entre execute et read ? → execute permet d'utiliser un modèle IA ou connecteur dans un processus sans pouvoir lire sa clé secrète (read).",
+              "Quand utiliser INHERITANCE_BLOCK ? → Lorsqu'un Espace confidentiel ne doit plus hériter des accès larges accordés au niveau de sa BU parente.",
+            ]
+          : [
+              "Why can't I delete a BU or Workspace? → To prevent orphaning child Workspaces or permission rules that reference it. Remove dependent items first.",
+              "What is the difference between execute and read? → execute lets a user run an AI model or connector without viewing its secret key (read).",
+              "When should I use INHERITANCE_BLOCK? → When a confidential Workspace must stop inheriting broad permissions granted at its parent BU level.",
+            ],
+        casKey: "cas/help_contextual_v1",
+        sha256: "sha256_contextual_help_v1",
+        previousVersion: "0.9.0",
+      }
+    : {
+        resourceId: `help-${activeMenuKey}`,
+        uri: `orcia://packs/core/help/${activeMenuKey}/${locale}`,
+        title: dictionary.fourZoneShell.menuEntries[activeMenuKey],
+        version: "1.0.0",
+        lang: locale,
+        layer: "PACK",
+        packName: "orcia-core",
+        boundRoutes: [pathname ?? "/cockpit"],
+        summaryWhatFor: dictionary.modulePages[safeModuleKey].description,
+        stepByStepItems: [
+          "1. Sélectionnez votre Espace actif dans la barre supérieure.",
+          "2. Utilisez la recherche fédérée ⌘K ou Mon Assistant pour interroger vos sources.",
+          "3. Validez les décisions en attente ou lancez un processus gouverné.",
+        ],
+        keyTermsItems: ["Ancrage Humain Violet", "Action Staged", "Chaîne Causale ADN"],
+        faqItems: ["Comment personnaliser Mon Assistant ? → Cliquez sur ⚙ Réglages de l'assistant."],
+        casKey: "cas/help_contextual_v1",
+        sha256: "sha256_contextual_help_v1",
+        previousVersion: "0.9.0",
+      };
 
   const handleFirstBootAdminSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,6 +320,9 @@ function InnerShellContainer({
       <FourZoneDirectionCShell
         activeMenuKey={activeMenuKey}
         activeWorkspaceName={activeWorkspaceName}
+        activeScopeId={selectedScope.id}
+        workspaceOptions={workspaceOptions}
+        onSelectWorkspace={(scopeId) => setActiveScopeId(scopeId)}
         activePackKey=""
         availablePacks={[]}
         userDisplayName={effectiveProfile.displayName}
@@ -255,15 +336,7 @@ function InnerShellContainer({
           setSelectedModuleOverride(mapped.moduleKey);
           dispatchNavigation(mapped.route);
         }}
-        onOpenWorkspaceSwitcher={() => {
-          const nextIdx =
-            (scopes.findIndex((s) => s.id === selectedScope.id) + 1) %
-            Math.max(1, scopes.length);
-          const nextScope = scopes[nextIdx];
-          if (nextScope) {
-            setActiveScopeId(nextScope.id);
-          }
-        }}
+        onOpenWorkspaceSwitcher={() => undefined}
         onOpenSearchCommand={() => setSearchModalOpen(true)}
         headerUserControl={
           <UserAccountDropdownAndSettingsModal
