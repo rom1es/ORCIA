@@ -320,3 +320,43 @@ class AccostageStatusResponse(BaseModel):
     first_admin_email: str | None = Field(default=None, max_length=255)
     first_admin_display_name: str | None = Field(default=None, max_length=128)
     trace_id: str = Field(..., min_length=32, max_length=32)
+
+
+class PlatformSetupStatePutRequest(BaseModel):
+    """Request payload for `PUT /api/v1/bootstrap/platform-setup-state` (`Epics 8..12`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    org_units: list[dict[str, object]] = Field(default_factory=list)
+    rbac_grants: list[dict[str, object]] = Field(default_factory=list)
+    llm_tiers: list[dict[str, object]] = Field(default_factory=list)
+    workspaces: list[dict[str, object]] = Field(default_factory=list)
+    datasources: list[dict[str, object]] = Field(default_factory=list)
+    packs: list[dict[str, object]] = Field(default_factory=list)
+    workflows: list[dict[str, object]] = Field(default_factory=list)
+    runs: list[dict[str, object]] = Field(default_factory=list)
+    catalog_items: list[dict[str, object]] = Field(default_factory=list)
+    ontology_concepts: list[dict[str, object]] = Field(default_factory=list)
+    audit_events: list[dict[str, object]] = Field(default_factory=list)
+
+
+class PlatformSetupStateResponse(BaseModel):
+    """Response for `GET` / `PUT /api/v1/bootstrap/platform-setup-state` (`Epics 8..12`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    first_admin_initialized: bool = Field(default=False)
+    first_admin_email: str | None = Field(default=None, max_length=255)
+    first_admin_display_name: str | None = Field(default=None, max_length=128)
+    org_units: list[dict[str, object]] = Field(default_factory=list)
+    rbac_grants: list[dict[str, object]] = Field(default_factory=list)
+    llm_tiers: list[dict[str, object]] = Field(default_factory=list)
+    workspaces: list[dict[str, object]] = Field(default_factory=list)
+    datasources: list[dict[str, object]] = Field(default_factory=list)
+    packs: list[dict[str, object]] = Field(default_factory=list)
+    workflows: list[dict[str, object]] = Field(default_factory=list)
+    runs: list[dict[str, object]] = Field(default_factory=list)
+    catalog_items: list[dict[str, object]] = Field(default_factory=list)
+    ontology_concepts: list[dict[str, object]] = Field(default_factory=list)
+    audit_events: list[dict[str, object]] = Field(default_factory=list)
+    trace_id: str = Field(..., min_length=32, max_length=32)

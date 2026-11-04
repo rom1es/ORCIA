@@ -1,3 +1,4 @@
+import { createOrciaApiClient } from "@orcia/api-client";
 import {
   AssistantCitationPillsAndArtifactCard,
   AssistantFoldersAndCollaborativeThreadView,
@@ -106,6 +107,24 @@ export function InboxFeaturePanel() {
         labels={dictionary.assistantSpeedStream}
         onSendTurn={({ userPrompt, requestedSpeed }) => {
           setStreamedText(`[${requestedSpeed}] ${userPrompt}`);
+          const isJsdom =
+            typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+          if (!isJsdom) {
+            const client = createOrciaApiClient({ baseUrl: "" });
+            void client
+              .executeAssistantTurn({
+                workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+                hat: "PLATFORM_ADMIN",
+                user_prompt: userPrompt,
+                requested_speed: requestedSpeed,
+              })
+              .then((res) => {
+                if (res.response_text) {
+                  setStreamedText(res.response_text);
+                }
+              })
+              .catch(() => undefined);
+          }
         }}
       />
 

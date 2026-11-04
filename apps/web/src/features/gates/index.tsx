@@ -3,11 +3,13 @@ import {
   PackBuilderProcessesStudioView,
 } from "@orcia/ui";
 import React from "react";
+import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 
 export function GatesFeaturePanel() {
   const { dictionary, locale } = useI18n();
+  const { packs } = usePlatformSetup();
   const { navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
 
@@ -72,8 +74,8 @@ export function GatesFeaturePanel() {
       {/* Rédaction et Mise à Jour des Fiches d'Aide Contextuelle (démarre 100 % vide) */}
       <HelpArticleGeneratorAndValidatorView
         articleId=""
-        version="1.0.0"
-        packId=""
+        version={packs[0]?.version ?? "1.0.0"}
+        packId={packs[0]?.packKey ?? ""}
         triggerRegime="STAGED_HUMAN_REVIEW"
         boundRoutes={[]}
         validationFr={{

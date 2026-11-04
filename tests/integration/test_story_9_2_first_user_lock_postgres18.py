@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -22,6 +23,13 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
+from orcia_core.bootstrap import (
+    LlmModelEndpoint,
+    PlatformSetupSnapshotRecord,
+    load_platform_setup_state_from_postgres18,
+    persist_progressive_llm_endpoint_to_postgres18,
+    save_platform_setup_state_to_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_first_user_guard import (
     create_first_platform_admin_on_postgres18,
     get_first_platform_admin_from_postgres18,
@@ -34,7 +42,7 @@ from orcia_core.bootstrap.errors import (
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOCK_BASE_DIR = REPO_ROOT / ".pytest_cache" / "tc_9_2"
+SOCK_BASE_DIR = Path(tempfile.gettempdir()) / "orcia_tc_9_2"
 
 
 def _prepare_sock_dir(name: str) -> Path:
@@ -174,7 +182,102 @@ async def test_story_9_2_postgres18_exclusive_users_table_lock_under_concurrency
                 assert persisted_admin.display_name == winners[0].display_name
                 assert persisted_admin.platform_role == "PLATFORM_ADMIN"
 
-                # 4. Verify 09_reset_db_first_boot.py dry-run rolls back and apply clears users
+                # 3b. Persist PlatformSetupSnapshotRecord + progressive LLM endpoint on PG 18
+                await persist_progressive_llm_endpoint_to_postgres18(
+                    engine,
+                    LlmModelEndpoint(
+                        id="0195f000-0000-7000-8000-000000009901",
+                        endpoint_key="tier-trial",
+                        provider_slug="ollama",
+                        model_family="qwen",
+                        model_name="qwen2.5-coder:14b",
+                        endpoint_uri="http://localhost:11434",
+                    ),
+                )
+                snapshot_in = PlatformSetupSnapshotRecord(
+                    first_admin_initialized=True,
+                    first_admin_email=persisted_admin.email,
+                    first_admin_display_name=persisted_admin.display_name,
+                    org_units=[
+                        {"id": "org-1", "name": "BU Paiements", "slug": "bu-pay", "level": "BU"}
+                    ],
+                    rbac_grants=[{"id": "grant-1", "subjectId": "Chef1", "verb": "read"}],
+                    llm_tiers=[
+                        {
+                            "tier": "standard",
+                            "tierKey": "standard",
+                            "primaryModel": "claude-3-7-sonnet",
+                            "modelFamily": "anthropic",
+                            "provider": "anthropic",
+                            "model": "claude-3-7-sonnet",
+                        }
+                    ],
+                    workspaces=[
+                        {
+                            "workspaceId": "ws-1",
+                            "name": "Espace Core SEPA",
+                            "slug": "espace-core-sepa",
+                            "visibilityMode": "STANDARD",
+                            "lifecyclePhase": "BUILD",
+                        }
+                    ],
+                    datasources=[
+                        {"id": "ds-1", "alias": "git-sepa", "scheme": "git", "uri": "git://sepa"}
+                    ],
+                    packs=[
+                        {"packKey": "orcia-pack-sdlc", "version": "1.0.0", "status": "PUBLISHED"}
+                    ],
+                    workflows=[
+                        {"workflowKey": "wf-sepa", "title": "Audit SEPA", "version": "1.0.0"}
+                    ],
+                    runs=[{"runId": "run-1", "title": "Run SEPA", "status": "RUNNING"}],
+                    catalog_items=[{"resourceId": "wf-sepa", "title": "Audit SEPA"}],
+                    ontology_concepts=[{"conceptKey": "sepa-1", "canonicalTerm": "MandatSEPA"}],
+                    audit_events=[
+                        {"id": "evt-1", "eventType": "WorkspaceCreated", "summary": "ok"}
+                    ],
+                )
+                await save_platform_setup_state_to_postgres18(
+                    engine, snapshot_in, orcia_env="production"
+                )
+                loaded_snap = await load_platform_setup_state_from_postgres18(
+                    engine, orcia_env="production"
+                )
+                assert loaded_snap.first_admin_initialized is True
+                assert loaded_snap.first_admin_email == persisted_admin.email
+                assert len(loaded_snap.org_units) == 1
+                assert len(loaded_snap.workspaces) == 1
+                assert loaded_snap.workspaces[0]["name"] == "Espace Core SEPA"
+                assert len(loaded_snap.llm_tiers) >= 1
+                assert len(loaded_snap.datasources) == 1
+                assert len(loaded_snap.workflows) == 1
+
+                async with engine.connect() as conn:
+                    ws_cnt = int(
+                        (
+                            await conn.execute(sa.text("SELECT COUNT(*) FROM workspaces"))
+                        ).scalar_one()
+                    )
+                    ep_cnt = int(
+                        (
+                            await conn.execute(sa.text("SELECT COUNT(*) FROM llm_model_endpoints"))
+                        ).scalar_one()
+                    )
+                    ps_cnt = int(
+                        (
+                            await conn.execute(
+                                sa.text(
+                                    "SELECT COUNT(*) FROM platform_settings "
+                                    "WHERE key = 'platform_setup_state_v1'"
+                                )
+                            )
+                        ).scalar_one()
+                    )
+                    assert ws_cnt == 1
+                    assert ep_cnt >= 1
+                    assert ps_cnt == 1
+
+                # 4. Verify 09_reset_db_first_boot.py dry-run rolls back and apply clears all tables
                 dry_report = await reset_mod.reset_database_to_first_boot(
                     engine, apply_changes=False
                 )
@@ -188,7 +291,12 @@ async def test_story_9_2_postgres18_exclusive_users_table_lock_under_concurrency
                 assert apply_report.dry_run is False
                 assert apply_report.committed is True
                 assert apply_report.remaining_users_count == 0
+                assert apply_report.remaining_workspaces_count == 0
+                assert apply_report.remaining_org_units_count == 0
                 assert await get_first_platform_admin_from_postgres18(engine) is None
+                reset_snap = await load_platform_setup_state_from_postgres18(engine)
+                assert reset_snap.first_admin_initialized is False
+                assert len(reset_snap.workspaces) == 0
             finally:
                 await engine.dispose()
     finally:

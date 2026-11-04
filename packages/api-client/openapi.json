@@ -11390,6 +11390,236 @@
         "title": "PlatformSettingResponse",
         "type": "object"
       },
+      "PlatformSetupStatePutRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `PUT /api/v1/bootstrap/platform-setup-state` (`Epics 8..12`).",
+        "properties": {
+          "audit_events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Audit Events",
+            "type": "array"
+          },
+          "catalog_items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Catalog Items",
+            "type": "array"
+          },
+          "datasources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Datasources",
+            "type": "array"
+          },
+          "llm_tiers": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Llm Tiers",
+            "type": "array"
+          },
+          "ontology_concepts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Ontology Concepts",
+            "type": "array"
+          },
+          "org_units": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Org Units",
+            "type": "array"
+          },
+          "packs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "rbac_grants": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rbac Grants",
+            "type": "array"
+          },
+          "runs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "workflows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Workflows",
+            "type": "array"
+          },
+          "workspaces": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "title": "PlatformSetupStatePutRequest",
+        "type": "object"
+      },
+      "PlatformSetupStateResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET` / `PUT /api/v1/bootstrap/platform-setup-state` (`Epics 8..12`).",
+        "properties": {
+          "audit_events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Audit Events",
+            "type": "array"
+          },
+          "catalog_items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Catalog Items",
+            "type": "array"
+          },
+          "datasources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Datasources",
+            "type": "array"
+          },
+          "first_admin_display_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Admin Display Name"
+          },
+          "first_admin_email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Admin Email"
+          },
+          "first_admin_initialized": {
+            "default": false,
+            "title": "First Admin Initialized",
+            "type": "boolean"
+          },
+          "llm_tiers": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Llm Tiers",
+            "type": "array"
+          },
+          "ontology_concepts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Ontology Concepts",
+            "type": "array"
+          },
+          "org_units": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Org Units",
+            "type": "array"
+          },
+          "packs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "rbac_grants": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rbac Grants",
+            "type": "array"
+          },
+          "runs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Workflows",
+            "type": "array"
+          },
+          "workspaces": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "trace_id"
+        ],
+        "title": "PlatformSetupStateResponse",
+        "type": "object"
+      },
       "ProblemDetails": {
         "additionalProperties": false,
         "description": "RFC 9457 Problem Details envelope returned on all ORCIA API errors.",
@@ -21366,6 +21596,144 @@
           }
         },
         "summary": "Execute autonomous `TEAM_LEAD` `orcia://system/bootstrap/init-workspace` (`AD-14`)",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
+    "/api/v1/bootstrap/platform-setup-state": {
+      "get": {
+        "operationId": "get_platform_setup_state_api_v1_bootstrap_platform_setup_state_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSetupStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Load persisted Day-0 / Epics 8-12 Platform Setup state from PostgreSQL 18",
+        "tags": [
+          "bootstrap"
+        ]
+      },
+      "put": {
+        "operationId": "put_platform_setup_state_api_v1_bootstrap_platform_setup_state_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformSetupStatePutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSetupStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Persist Day-0 / Epics 8-12 Platform Setup state to PostgreSQL 18",
         "tags": [
           "bootstrap"
         ]

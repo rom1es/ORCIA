@@ -9,7 +9,7 @@ import { useI18n } from "../../i18n";
 
 export function CatalogFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { catalogItems } = usePlatformSetup();
+  const { catalogItems, datasources } = usePlatformSetup();
   const { navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
   const [mcpExposed, setMcpExposed] = useState<boolean>(false);
@@ -76,12 +76,12 @@ export function CatalogFeaturePanel() {
 
       {/* Connexion et Test d'Outils Externes & Accès depuis un Éditeur (démarre 100 % vide) */}
       <RemoteServiceTestBenchAndMcpExposureView
-        endpointUrl=""
+        endpointUrl={datasources[0]?.uri ?? ""}
         steps={[]}
         discoveredCapabilities={[]}
-        canActivate={false}
+        canActivate={datasources.length > 0}
         mcpExposed={mcpExposed}
-        exposedToolNames={[]}
+        exposedToolNames={catalogItems.map((item) => item.resourceId)}
         labels={dictionary.remoteServiceTestBench}
         onToggleMcpExposure={setMcpExposed}
       />

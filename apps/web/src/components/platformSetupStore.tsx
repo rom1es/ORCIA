@@ -1,4 +1,4 @@
-import { createOrciaApiClient } from "@orcia/api-client";
+import { createOrciaApiClient, type PlatformSetupStatePutRequest } from "@orcia/api-client";
 import type {
   ControlCenterDatasourceItem,
   ControlCenterOverrideItem,
@@ -16,17 +16,96 @@ import type {
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export const PLATFORM_ADMIN_STORAGE_KEY = "orcia.platform_admin.v1";
+export const PLATFORM_SETUP_STATE_STORAGE_KEY = "orcia.platform_setup_state.v1";
+
+const fallbackMemoryStorage = new Map<string, string>();
+
+export function clearPlatformSetupStorage(): void {
+  fallbackMemoryStorage.clear();
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.removeItem === "function"
+  ) {
+    try {
+      window.localStorage.removeItem(PLATFORM_ADMIN_STORAGE_KEY);
+      window.localStorage.removeItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
+  }
+}
+
+function readStorageItem(key: string): string | null {
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.getItem === "function"
+  ) {
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      // Fall through to memory storage
+    }
+  }
+  return fallbackMemoryStorage.get(key) ?? null;
+}
+
+function writeStorageItem(key: string, value: string | null): void {
+  if (value === null) {
+    fallbackMemoryStorage.delete(key);
+  } else {
+    fallbackMemoryStorage.set(key, value);
+  }
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.setItem === "function" &&
+    typeof window.localStorage.removeItem === "function"
+  ) {
+    try {
+      if (value === null) {
+        window.localStorage.removeItem(key);
+      } else {
+        window.localStorage.setItem(key, value);
+      }
+    } catch {
+      // Ignore storage quota / private mode errors
+    }
+  }
+}
+
+export interface CachedPlatformSetupState {
+  readonly orgUnits: readonly ConfiguredOrgUnit[];
+  readonly rbacGrants: readonly ConfiguredRbacGrant[];
+  readonly llmTiers: readonly ConfiguredLlmTierMapping[];
+  readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
+  readonly datasources: readonly ControlCenterDatasourceItem[];
+  readonly packs: readonly ConfiguredPackItem[];
+  readonly workflows: readonly ConfiguredWorkflowItem[];
+  readonly runs: readonly ControlCenterRunItem[];
+  readonly catalogItems: readonly UiCatalogExplorerItemView[];
+  readonly ontologyConcepts: readonly UiOntologyConceptView[];
+  readonly auditEvents: readonly ConfiguredAuditEvent[];
+}
+
+const EMPTY_PLATFORM_SETUP_STATE: CachedPlatformSetupState = {
+  orgUnits: [],
+  rbacGrants: [],
+  llmTiers: [],
+  workspaces: [],
+  datasources: [],
+  packs: [],
+  workflows: [],
+  runs: [],
+  catalogItems: [],
+  ontologyConcepts: [],
+  auditEvents: [],
+};
 
 function readCachedPlatformAdmin(): ConfiguredPlatformAdmin | null {
-  if (
-    typeof window === "undefined" ||
-    !window.localStorage ||
-    typeof window.localStorage.getItem !== "function"
-  ) {
-    return null;
-  }
   try {
-    const raw = window.localStorage.getItem(PLATFORM_ADMIN_STORAGE_KEY);
+    const raw = readStorageItem(PLATFORM_ADMIN_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ConfiguredPlatformAdmin>;
     if (
@@ -48,23 +127,37 @@ function readCachedPlatformAdmin(): ConfiguredPlatformAdmin | null {
 }
 
 function writeCachedPlatformAdmin(admin: ConfiguredPlatformAdmin | null): void {
-  if (
-    typeof window === "undefined" ||
-    !window.localStorage ||
-    typeof window.localStorage.setItem !== "function" ||
-    typeof window.localStorage.removeItem !== "function"
-  ) {
-    return;
-  }
+  writeStorageItem(PLATFORM_ADMIN_STORAGE_KEY, admin === null ? null : JSON.stringify(admin));
+}
+
+function readCachedPlatformSetupState(): CachedPlatformSetupState {
   try {
-    if (admin === null) {
-      window.localStorage.removeItem(PLATFORM_ADMIN_STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(PLATFORM_ADMIN_STORAGE_KEY, JSON.stringify(admin));
-    }
+    const raw = readStorageItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
+    if (!raw) return EMPTY_PLATFORM_SETUP_STATE;
+    const parsed = JSON.parse(raw) as Partial<CachedPlatformSetupState>;
+    return {
+      orgUnits: Array.isArray(parsed.orgUnits) ? parsed.orgUnits : [],
+      rbacGrants: Array.isArray(parsed.rbacGrants) ? parsed.rbacGrants : [],
+      llmTiers: Array.isArray(parsed.llmTiers) ? parsed.llmTiers : [],
+      workspaces: Array.isArray(parsed.workspaces) ? parsed.workspaces : [],
+      datasources: Array.isArray(parsed.datasources) ? parsed.datasources : [],
+      packs: Array.isArray(parsed.packs) ? parsed.packs : [],
+      workflows: Array.isArray(parsed.workflows) ? parsed.workflows : [],
+      runs: Array.isArray(parsed.runs) ? parsed.runs : [],
+      catalogItems: Array.isArray(parsed.catalogItems) ? parsed.catalogItems : [],
+      ontologyConcepts: Array.isArray(parsed.ontologyConcepts) ? parsed.ontologyConcepts : [],
+      auditEvents: Array.isArray(parsed.auditEvents) ? parsed.auditEvents : [],
+    };
   } catch {
-    // Ignore storage quota / private mode errors
+    return EMPTY_PLATFORM_SETUP_STATE;
   }
+}
+
+function writeCachedPlatformSetupState(state: CachedPlatformSetupState | null): void {
+  writeStorageItem(
+    PLATFORM_SETUP_STATE_STORAGE_KEY,
+    state === null ? null : JSON.stringify(state),
+  );
 }
 
 export interface ConfiguredOrgUnit {
@@ -197,17 +290,67 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(() =>
     readCachedPlatformAdmin(),
   );
-  const [orgUnits, setOrgUnits] = useState<readonly ConfiguredOrgUnit[]>([]);
-  const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>([]);
-  const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>([]);
-  const [workspaces, setWorkspaces] = useState<readonly ControlCenterWorkspaceGovItem[]>([]);
-  const [datasources, setDatasources] = useState<readonly ControlCenterDatasourceItem[]>([]);
-  const [packs, setPacks] = useState<readonly ConfiguredPackItem[]>([]);
-  const [workflows, setWorkflows] = useState<readonly ConfiguredWorkflowItem[]>([]);
-  const [runs, setRuns] = useState<readonly ControlCenterRunItem[]>([]);
-  const [catalogItems, setCatalogItems] = useState<readonly UiCatalogExplorerItemView[]>([]);
-  const [ontologyConcepts, setOntologyConcepts] = useState<readonly UiOntologyConceptView[]>([]);
-  const [auditEvents, setAuditEvents] = useState<readonly ConfiguredAuditEvent[]>([]);
+  const [initialCache] = useState<CachedPlatformSetupState>(() => readCachedPlatformSetupState());
+  const [orgUnits, setOrgUnits] = useState<readonly ConfiguredOrgUnit[]>(initialCache.orgUnits);
+  const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>(
+    initialCache.rbacGrants,
+  );
+  const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>(
+    initialCache.llmTiers,
+  );
+  const [workspaces, setWorkspaces] = useState<readonly ControlCenterWorkspaceGovItem[]>(
+    initialCache.workspaces,
+  );
+  const [datasources, setDatasources] = useState<readonly ControlCenterDatasourceItem[]>(
+    initialCache.datasources,
+  );
+  const [packs, setPacks] = useState<readonly ConfiguredPackItem[]>(initialCache.packs);
+  const [workflows, setWorkflows] = useState<readonly ConfiguredWorkflowItem[]>(
+    initialCache.workflows,
+  );
+  const [runs, setRuns] = useState<readonly ControlCenterRunItem[]>(initialCache.runs);
+  const [catalogItems, setCatalogItems] = useState<readonly UiCatalogExplorerItemView[]>(
+    initialCache.catalogItems,
+  );
+  const [ontologyConcepts, setOntologyConcepts] = useState<readonly UiOntologyConceptView[]>(
+    initialCache.ontologyConcepts,
+  );
+  const [auditEvents, setAuditEvents] = useState<readonly ConfiguredAuditEvent[]>(
+    initialCache.auditEvents,
+  );
+
+  const persistSnapshot = (next: CachedPlatformSetupState) => {
+    writeCachedPlatformSetupState(next);
+    const isJsdom =
+      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    if (isJsdom) {
+      return;
+    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    const payload: PlatformSetupStatePutRequest = {
+      org_units: next.orgUnits as unknown as Record<string, unknown>[],
+      rbac_grants: next.rbacGrants as unknown as Record<string, unknown>[],
+      llm_tiers: next.llmTiers.map((t) => ({
+        tier: t.tier,
+        tierKey: t.tier,
+        primaryModel: t.primaryModel,
+        secondaryModel: t.secondaryModel,
+        modelFamily: t.modelFamily,
+        defaultEffort: t.defaultEffort,
+        provider: t.modelFamily,
+        model: t.primaryModel,
+      })),
+      workspaces: next.workspaces as unknown as Record<string, unknown>[],
+      datasources: next.datasources as unknown as Record<string, unknown>[],
+      packs: next.packs as unknown as Record<string, unknown>[],
+      workflows: next.workflows as unknown as Record<string, unknown>[],
+      runs: next.runs as unknown as Record<string, unknown>[],
+      catalog_items: next.catalogItems as unknown as Record<string, unknown>[],
+      ontology_concepts: next.ontologyConcepts as unknown as Record<string, unknown>[],
+      audit_events: next.auditEvents as unknown as Record<string, unknown>[],
+    };
+    void client.savePlatformSetupState(payload).catch(() => undefined);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -217,10 +360,29 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       return;
     }
     const client = createOrciaApiClient({ baseUrl: "" });
-    client
-      .getAccostageStatus()
-      .then((status) => {
+    Promise.all([
+      client.getAccostageStatus(),
+      client.getPlatformSetupState().catch(() => null),
+    ])
+      .then(([status, remoteState]) => {
         if (cancelled) return;
+        if (status.first_admin_initialized === false) {
+          writeCachedPlatformAdmin(null);
+          writeCachedPlatformSetupState(null);
+          setPlatformAdmin(null);
+          setOrgUnits([]);
+          setRbacGrants([]);
+          setLlmTiers([]);
+          setWorkspaces([]);
+          setDatasources([]);
+          setPacks([]);
+          setWorkflows([]);
+          setRuns([]);
+          setCatalogItems([]);
+          setOntologyConcepts([]);
+          setAuditEvents([]);
+          return;
+        }
         if (status.first_admin_initialized && status.first_admin_email) {
           const synced: ConfiguredPlatformAdmin = {
             displayName: status.first_admin_display_name ?? status.first_admin_email,
@@ -229,9 +391,63 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           };
           writeCachedPlatformAdmin(synced);
           setPlatformAdmin(synced);
-        } else if (status.first_admin_initialized === false) {
-          writeCachedPlatformAdmin(null);
-          setPlatformAdmin(null);
+        }
+        if (remoteState) {
+          const rOrgUnits = remoteState.org_units ?? [];
+          const rRbacGrants = remoteState.rbac_grants ?? [];
+          const rLlmTiers = remoteState.llm_tiers ?? [];
+          const rWorkspaces = remoteState.workspaces ?? [];
+          const rDatasources = remoteState.datasources ?? [];
+          const rPacks = remoteState.packs ?? [];
+          const rWorkflows = remoteState.workflows ?? [];
+          const rRuns = remoteState.runs ?? [];
+          const rCatalogItems = remoteState.catalog_items ?? [];
+          const rOntologyConcepts = remoteState.ontology_concepts ?? [];
+          const rAuditEvents = remoteState.audit_events ?? [];
+          const hasRemoteEntities =
+            rOrgUnits.length > 0 ||
+            rRbacGrants.length > 0 ||
+            rLlmTiers.length > 0 ||
+            rWorkspaces.length > 0 ||
+            rDatasources.length > 0 ||
+            rPacks.length > 0 ||
+            rWorkflows.length > 0 ||
+            rRuns.length > 0 ||
+            rCatalogItems.length > 0 ||
+            rOntologyConcepts.length > 0;
+          if (hasRemoteEntities) {
+            const hydrated: CachedPlatformSetupState = {
+              orgUnits: rOrgUnits as unknown as ConfiguredOrgUnit[],
+              rbacGrants: rRbacGrants as unknown as ConfiguredRbacGrant[],
+              llmTiers: rLlmTiers.map((raw) => ({
+                tier: (raw.tier ?? raw.tierKey ?? "medium") as UiInferenceTier,
+                primaryModel: String(raw.primaryModel ?? raw.model ?? "claude-3-7-sonnet"),
+                secondaryModel: String(raw.secondaryModel ?? ""),
+                modelFamily: String(raw.modelFamily ?? raw.provider ?? "anthropic"),
+                defaultEffort: (raw.defaultEffort ?? "balanced") as UiInferenceEffort,
+              })),
+              workspaces: rWorkspaces as unknown as ControlCenterWorkspaceGovItem[],
+              datasources: rDatasources as unknown as ControlCenterDatasourceItem[],
+              packs: rPacks as unknown as ConfiguredPackItem[],
+              workflows: rWorkflows as unknown as ConfiguredWorkflowItem[],
+              runs: rRuns as unknown as ControlCenterRunItem[],
+              catalogItems: rCatalogItems as unknown as UiCatalogExplorerItemView[],
+              ontologyConcepts: rOntologyConcepts as unknown as UiOntologyConceptView[],
+              auditEvents: rAuditEvents as unknown as ConfiguredAuditEvent[],
+            };
+            writeCachedPlatformSetupState(hydrated);
+            setOrgUnits(hydrated.orgUnits);
+            setRbacGrants(hydrated.rbacGrants);
+            setLlmTiers(hydrated.llmTiers);
+            setWorkspaces(hydrated.workspaces);
+            setDatasources(hydrated.datasources);
+            setPacks(hydrated.packs);
+            setWorkflows(hydrated.workflows);
+            setRuns(hydrated.runs);
+            setCatalogItems(hydrated.catalogItems);
+            setOntologyConcepts(hydrated.ontologyConcepts);
+            setAuditEvents(hydrated.auditEvents);
+          }
         }
       })
       .catch(() => {
@@ -242,17 +458,34 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
-  const recordAudit = (eventType: string, summary: string) => {
-    setAuditEvents((prev) => [
-      {
-        id: `evt-${prev.length + 1}`,
-        timestampIso: new Date().toISOString(),
-        eventType,
-        summary,
-      },
-      ...prev,
-    ]);
-  };
+  const buildSnapshot = (
+    overrides: Partial<CachedPlatformSetupState>,
+  ): CachedPlatformSetupState => ({
+    orgUnits: overrides.orgUnits ?? orgUnits,
+    rbacGrants: overrides.rbacGrants ?? rbacGrants,
+    llmTiers: overrides.llmTiers ?? llmTiers,
+    workspaces: overrides.workspaces ?? workspaces,
+    datasources: overrides.datasources ?? datasources,
+    packs: overrides.packs ?? packs,
+    workflows: overrides.workflows ?? workflows,
+    runs: overrides.runs ?? runs,
+    catalogItems: overrides.catalogItems ?? catalogItems,
+    ontologyConcepts: overrides.ontologyConcepts ?? ontologyConcepts,
+    auditEvents: overrides.auditEvents ?? auditEvents,
+  });
+
+  const appendAudit = (
+    eventType: string,
+    summary: string,
+  ): readonly ConfiguredAuditEvent[] => [
+    {
+      id: `evt-${auditEvents.length + 1}`,
+      timestampIso: new Date().toISOString(),
+      eventType,
+      summary,
+    },
+    ...auditEvents,
+  ];
 
   const createPlatformAdmin = (input: {
     displayName: string;
@@ -266,10 +499,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     };
     writeCachedPlatformAdmin(admin);
     setPlatformAdmin(admin);
-    recordAudit(
+    const nextAudit = appendAudit(
       "PlatformAdminInitialized",
       `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
     );
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
 
     const isJsdom =
       typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
@@ -287,7 +522,6 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           orcia_env: "local",
         })
         .catch(() => {
-          // If already initialized on backend (409), refresh status from backend
           void client
             .getAccostageStatus()
             .then((status) => {
@@ -308,11 +542,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   };
 
   const addOrgUnit = (input: Omit<ConfiguredOrgUnit, "id">) => {
-    setOrgUnits((prev) => {
-      const id = prev.length === 0 ? "org-1" : `org-${prev.length + 1}`;
-      return [...prev, { ...input, id }];
-    });
-    recordAudit("OrgUnitCreated", `${input.level} "${input.name}" (${input.slug})`);
+    const id = orgUnits.length === 0 ? "org-1" : `org-${orgUnits.length + 1}`;
+    const nextOrgUnits = [...orgUnits, { ...input, id }];
+    const nextAudit = appendAudit("OrgUnitCreated", `${input.level} "${input.name}" (${input.slug})`);
+    setOrgUnits(nextOrgUnits);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
   };
 
   const removeOrgUnit = (
@@ -342,41 +577,66 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         blockedReason: `Suppression refusée : ${dependentGrants.length} règle(s) d'habilitation ciblent « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
       };
     }
-    setOrgUnits((prev) => prev.filter((u) => u.id !== orgUnitId));
-    recordAudit("OrgUnitDeleted", `${target.level} "${target.name}" (${target.slug}) supprimé`);
+    const nextOrgUnits = orgUnits.filter((u) => u.id !== orgUnitId);
+    const nextAudit = appendAudit(
+      "OrgUnitDeleted",
+      `${target.level} "${target.name}" (${target.slug}) supprimé`,
+    );
+    setOrgUnits(nextOrgUnits);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
     return { deleted: true, blockedReason: null };
   };
 
   const addRbacGrant = (input: Omit<ConfiguredRbacGrant, "id">) => {
-    setRbacGrants((prev) => {
-      const id = prev.length === 0 ? "grant-1" : `grant-${prev.length + 1}`;
-      return [...prev, { ...input, id }];
-    });
-    recordAudit(
+    const id = rbacGrants.length === 0 ? "grant-1" : `grant-${rbacGrants.length + 1}`;
+    const nextRbacGrants = [...rbacGrants, { ...input, id }];
+    const nextAudit = appendAudit(
       "PermissionGranted",
       `${input.subjectType}:${input.subjectId} -> ${input.verb} (${input.effect}) sur ${input.scopePath}`,
     );
+    setRbacGrants(nextRbacGrants);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ rbacGrants: nextRbacGrants, auditEvents: nextAudit }));
   };
 
   const removeRbacGrant = (grantId: string) => {
     const target = rbacGrants.find((g) => g.id === grantId);
     if (!target) return;
-    setRbacGrants((prev) => prev.filter((g) => g.id !== grantId));
-    recordAudit(
+    const nextRbacGrants = rbacGrants.filter((g) => g.id !== grantId);
+    const nextAudit = appendAudit(
       "PermissionRevoked",
       `${target.subjectType}:${target.subjectId} -> ${target.verb} (${target.effect}) révoqué sur ${target.scopePath}`,
     );
+    setRbacGrants(nextRbacGrants);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ rbacGrants: nextRbacGrants, auditEvents: nextAudit }));
   };
 
   const upsertLlmTier = (input: ConfiguredLlmTierMapping) => {
-    setLlmTiers((prev) => {
-      const filtered = prev.filter((item) => item.tier !== input.tier);
-      return [...filtered, input];
-    });
-    recordAudit(
+    const nextLlmTiers = [...llmTiers.filter((item) => item.tier !== input.tier), input];
+    const nextAudit = appendAudit(
       "SettingsChanged",
       `Palier IA "${input.tier}" associé à ${input.primaryModel} (famille ${input.modelFamily}, effort ${input.defaultEffort})`,
     );
+    setLlmTiers(nextLlmTiers);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ llmTiers: nextLlmTiers, auditEvents: nextAudit }));
+
+    const isJsdom =
+      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    if (!isJsdom) {
+      const client = createOrciaApiClient({ baseUrl: "" });
+      void client
+        .registerProgressiveLlmEndpoint({
+          endpoint_key: input.tier,
+          provider_slug: input.modelFamily,
+          model_family: input.modelFamily,
+          model_name: input.primaryModel,
+          endpoint_uri: `https://api.${input.modelFamily}.local/v1`,
+        })
+        .catch(() => undefined);
+    }
   };
 
   const createWorkspace = (input: {
@@ -395,26 +655,30 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
       finopsCostUsd: 0,
     };
-    setWorkspaces((prev) => [...prev, newWs]);
-    recordAudit(
+    const nextWorkspaces = [...workspaces, newWs];
+    const nextAudit = appendAudit(
       "WorkspaceCreated",
       `Workspace "${input.name}" (${input.slug}, ${input.lifecyclePhase}) créé`,
     );
+    setWorkspaces(nextWorkspaces);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }));
   };
 
   const updateWorkspacePhase = (
     workspaceId: string,
     phase: ProductLifecyclePhaseType,
   ) => {
-    setWorkspaces((prev) =>
-      prev.map((ws) =>
-        ws.workspaceId === workspaceId ? { ...ws, lifecyclePhase: phase } : ws,
-      ),
+    const nextWorkspaces = workspaces.map((ws) =>
+      ws.workspaceId === workspaceId ? { ...ws, lifecyclePhase: phase } : ws,
     );
-    recordAudit(
+    const nextAudit = appendAudit(
       "WorkspacePhaseUpdated",
       `Workspace ${workspaceId} -> phase ${phase}`,
     );
+    setWorkspaces(nextWorkspaces);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }));
   };
 
   const registerDatasource = (input: {
@@ -426,8 +690,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     freshnessTtlDays: number;
   }) => {
     const id = `ds-${datasources.length + 1}`;
-    setDatasources((prev) => [
-      ...prev,
+    const nextDatasources: readonly ControlCenterDatasourceItem[] = [
+      ...datasources,
       {
         id,
         workspaceName: input.workspaceName,
@@ -438,20 +702,23 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         freshnessTtlDays: input.freshnessTtlDays,
         tripartiteStatus: "ALIGNED",
       },
-    ]);
-    recordAudit(
+    ];
+    const nextAudit = appendAudit(
       "ConnectorConfigured",
       `Connecteur "${input.alias}" (${input.uri}) enregistré en mode ${input.executionIdentity}`,
     );
+    setDatasources(nextDatasources);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ datasources: nextDatasources, auditEvents: nextAudit }));
   };
 
   const registerPack = (input: ConfiguredPackItem) => {
-    setPacks((prev) => [
-      ...prev.filter((p) => !(p.packKey === input.packKey && p.version === input.version)),
+    const nextPacks = [
+      ...packs.filter((p) => !(p.packKey === input.packKey && p.version === input.version)),
       input,
-    ]);
-    setCatalogItems((prev) => [
-      ...prev.filter((item) => item.resourceId !== `pack-${input.packKey}`),
+    ];
+    const nextCatalogItems: readonly UiCatalogExplorerItemView[] = [
+      ...catalogItems.filter((item) => item.resourceId !== `pack-${input.packKey}`),
       {
         resourceId: `pack-${input.packKey}`,
         uri: `orcia://packs/${input.packKey}@${input.version}`,
@@ -467,20 +734,30 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         grantedPermissions: ["DISCOVER", "EXECUTE"],
         sourceMasked: false,
       },
-    ]);
-    recordAudit(
+    ];
+    const nextAudit = appendAudit(
       "PackRegistered",
       `Pack "${input.packKey}@${input.version}" (${input.status}) activé sur ${input.scopePath}`,
+    );
+    setPacks(nextPacks);
+    setCatalogItems(nextCatalogItems);
+    setAuditEvents(nextAudit);
+    persistSnapshot(
+      buildSnapshot({
+        packs: nextPacks,
+        catalogItems: nextCatalogItems,
+        auditEvents: nextAudit,
+      }),
     );
   };
 
   const upsertWorkflow = (input: ConfiguredWorkflowItem) => {
-    setWorkflows((prev) => [
-      ...prev.filter((w) => w.workflowKey !== input.workflowKey),
+    const nextWorkflows = [
+      ...workflows.filter((w) => w.workflowKey !== input.workflowKey),
       input,
-    ]);
-    setCatalogItems((prev) => [
-      ...prev.filter((item) => item.resourceId !== `wf-${input.workflowKey}`),
+    ];
+    const nextCatalogItems: readonly UiCatalogExplorerItemView[] = [
+      ...catalogItems.filter((item) => item.resourceId !== `wf-${input.workflowKey}`),
       {
         resourceId: `wf-${input.workflowKey}`,
         uri: `orcia://workflows/${input.workflowKey}@${input.version}`,
@@ -496,10 +773,20 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         grantedPermissions: ["DISCOVER", "EXECUTE", "EDIT"],
         sourceMasked: false,
       },
-    ]);
-    recordAudit(
+    ];
+    const nextAudit = appendAudit(
       "WorkflowSaved",
       `Workflow "${input.workflowKey}@${input.version}" (${input.status}) enregistré`,
+    );
+    setWorkflows(nextWorkflows);
+    setCatalogItems(nextCatalogItems);
+    setAuditEvents(nextAudit);
+    persistSnapshot(
+      buildSnapshot({
+        workflows: nextWorkflows,
+        catalogItems: nextCatalogItems,
+        auditEvents: nextAudit,
+      }),
     );
   };
 
@@ -510,8 +797,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     workflowKey: string;
   }) => {
     const runId = `run-${runs.length + 1}`;
-    setRuns((prev) => [
-      ...prev,
+    const nextRuns: readonly ControlCenterRunItem[] = [
+      ...runs,
       {
         runId,
         workspaceId: input.workspaceId,
@@ -524,18 +811,26 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         budgetConsumedUsd: 0,
         blackboardSummary: "Exécution initialisée par l'utilisateur.",
       },
-    ]);
-    recordAudit(
+    ];
+    const nextAudit = appendAudit(
       "RunLaunched",
       `Run "${input.title}" (${runId}) démarré sur ${input.workspaceName}`,
     );
+    setRuns(nextRuns);
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ runs: nextRuns, auditEvents: nextAudit }));
   };
 
   const addOntologyConcept = (input: UiOntologyConceptView) => {
-    setOntologyConcepts((prev) => [...prev, input]);
-    recordAudit(
+    const nextConcepts = [...ontologyConcepts, input];
+    const nextAudit = appendAudit(
       "OntologyConceptCreated",
       `Concept "${input.canonicalTerm}" (${input.level}) créé`,
+    );
+    setOntologyConcepts(nextConcepts);
+    setAuditEvents(nextAudit);
+    persistSnapshot(
+      buildSnapshot({ ontologyConcepts: nextConcepts, auditEvents: nextAudit }),
     );
   };
 

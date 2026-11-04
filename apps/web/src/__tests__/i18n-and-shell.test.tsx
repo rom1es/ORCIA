@@ -4,8 +4,9 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ModuleWorkspaceView } from "../components/ModuleWorkspaceView";
+import { clearPlatformSetupStorage } from "../components/platformSetupStore";
 import { resolveModuleFromPathname, ShellContainer } from "../components/ShellContainer";
 import { buildCockpitWorkflowPreviewGraph } from "../features/cockpit";
 import { I18nProvider } from "../i18n";
@@ -49,6 +50,10 @@ function walkTsFiles(dir: string): string[] {
 }
 
 describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () => {
+  beforeEach(() => {
+    clearPlatformSetupStorage();
+  });
+
   it("enforces 100% recursive key parity between fr.ts and en.ts", () => {
     const frKeys = collectNestedKeys(frDictionary as unknown as Record<string, unknown>);
     const enKeys = collectNestedKeys(enDictionary as unknown as Record<string, unknown>);
@@ -577,5 +582,94 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     for (const pattern of forbiddenJargonPatterns) {
       expect(allStrings).not.toMatch(pattern);
     }
+  });
+
+  it("survives full F5 page reload (unmount -> render): preserves Day-0 Admin, AI model, Workspace, and unlocked sidebar entries", async () => {
+    const queryClient1 = createOrciaQueryClient();
+    const history1 = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router1 = createOrciaRouter({ queryClient: queryClient1, history: history1 });
+    await router1.load();
+
+    const firstRender = render(
+      <QueryClientProvider client={queryClient1}>
+        <RouterProvider router={router1} />
+      </QueryClientProvider>,
+    );
+
+    // 1. Complete First-Boot Platform Admin Modal
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Romain Persistant" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "romain.persist@orcia.fr" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-input"), {
+      target: { value: "Secret123456!" },
+    });
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+
+    // 2. Configure an AI model in /settings -> AI Models tab (unlocks Mon Assistant & Mes Agents)
+    fireEvent.click(screen.getByTestId("settings-tab-ai-models"));
+    fireEvent.change(screen.getByTestId("llm-primary-model-input"), {
+      target: { value: "claude-3-7-sonnet-persist" },
+    });
+    fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
+
+    // 3. Configure a Workflow in /settings -> Workflows tab (unlocks Mes Processus)
+    fireEvent.click(screen.getByTestId("settings-tab-workflows"));
+    fireEvent.change(screen.getByTestId("workflow-key-input"), {
+      target: { value: "wf-persist" },
+    });
+    fireEvent.change(screen.getByTestId("workflow-title-input"), {
+      target: { value: "Workflow Persistant" },
+    });
+    fireEvent.click(screen.getByTestId("save-workflow-btn"));
+
+    // 4. Navigate to /workspaces and create a Workspace (unlocks FinOps)
+    await act(async () => {
+      await router1.navigate({ to: "/workspaces" });
+    });
+    fireEvent.change(screen.getByTestId("workspace-name-input"), {
+      target: { value: "Espace Survie F5" },
+    });
+    fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+
+    // Simulate F5 full browser reload by unmounting the entire React tree and mounting a fresh router
+    firstRender.unmount();
+
+    const queryClient2 = createOrciaQueryClient();
+    const history2 = createMemoryHistory({ initialEntries: ["/cockpit"] });
+    const router2 = createOrciaRouter({ queryClient: queryClient2, history: history2 });
+    await router2.load();
+
+    render(
+      <QueryClientProvider client={queryClient2}>
+        <RouterProvider router={router2} />
+      </QueryClientProvider>,
+    );
+
+    // Verify First-Boot Admin Modal does NOT reappear after F5
+    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    expect(screen.getByTestId("user-account-dropdown-trigger").textContent).toContain(
+      "Romain Persistant",
+    );
+
+    // Verify all unlocked sidebar items remain unlocked after F5
+    expect(
+      (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-agents") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-processes") as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
+    ).toBe(false);
+
+    // Verify onboarding progress badge is 3/5 (AI model + Workspace + Workflow)
+    expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("3/5");
   });
 });

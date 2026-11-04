@@ -23,6 +23,7 @@ export function WorkspacesFeaturePanel() {
     workspaces,
     datasources,
     runs,
+    ontologyConcepts,
     workflowOverrides,
     createWorkspace,
     updateWorkspacePhase,
@@ -275,9 +276,16 @@ export function WorkspacesFeaturePanel() {
       <WorkspaceFiveTabsAndExternalRebaseView
         workspaceSlug={workspaces[0]?.workspaceId ?? ""}
         activeTab={activeSubTab}
-        defaultArtifactDestinationUri=""
-        pendingGlossaryCandidatesCount={0}
-        sources={[]}
+        defaultArtifactDestinationUri={datasources[0]?.uri ?? ""}
+        pendingGlossaryCandidatesCount={ontologyConcepts.length}
+        sources={datasources.map((d) => ({
+          sourceId: d.id,
+          uri: d.uri,
+          title: d.alias,
+          authorityRole: d.scheme === "git" ? ("ACTIVE" as const) : ("REFERENCE" as const),
+          accessMode: "READ_WRITE_TARGET" as const,
+          freshnessStatus: "FRESH" as const,
+        }))}
         activeWaivers={[]}
         rebasedChunks={[]}
         labels={dictionary.workspaceFiveTabs}

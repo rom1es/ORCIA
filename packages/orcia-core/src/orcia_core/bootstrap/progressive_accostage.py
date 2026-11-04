@@ -261,6 +261,31 @@ class ProgressiveDay0AccostageService:
             self._completed_keys.add(milestone_key)
         return self.get_accostage_status()
 
+    def sync_platform_setup_snapshot(
+        self,
+        *,
+        llm_endpoints: tuple[LlmModelEndpoint, ...],
+        has_workspace: bool = False,
+        has_datasource: bool = False,
+        has_pilot_run: bool = False,
+    ) -> AccostageStatusReport:
+        """Synchronize progressive LLM endpoints and milestone state from persisted snapshot."""
+        self._model_router.replace_endpoints(llm_endpoints)
+        orth = self._model_router.evaluate_orthogonality()
+        with self._sync_lock:
+            self._completed_keys = {"first-admin"}
+            if len(orth.distinct_families) >= 1:
+                self._completed_keys.add("first-llm-model")
+            if len(orth.distinct_families) >= 2:
+                self._completed_keys.add("second-llm-family")
+            if has_workspace:
+                self._completed_keys.add("first-space")
+            if has_datasource:
+                self._completed_keys.add("first-datasource")
+            if has_pilot_run:
+                self._completed_keys.add("pilot-workflow-run")
+        return self.get_accostage_status()
+
     def get_accostage_status(self) -> AccostageStatusReport:
         """Compute current `Accostage k/6` badge and LLM progressive tier state."""
         orth = self._model_router.evaluate_orthogonality()
