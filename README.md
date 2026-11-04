@@ -1,324 +1,289 @@
 # ORCIA — Orchestration of Processes, Context, and Intelligent Agents
 
-> **« Human-Led, Agent-Accelerated — Gouverné par l'Intention Humaine, Exécuté en Co-Pilotage ou en Autonomie sous Contrat »**
+**ORCIA** est une plateforme d'orchestration d'agents IA, de compétences réutilisables (*Skills*) et de processus métiers gouvernés par l'humain.
 
-**ORCIA** est une plateforme d'exécution de processus d'entreprise et personnels qui réconcilie la rigueur des moteurs de workflows gouvernés avec l'intelligence adaptative des agents IA, tout en garantissant que **l'humain conserve la maîtrise intellectuelle, la responsabilité décisionnelle et la compréhension durable de ses systèmes**.
-
----
-
-## 1. Pourquoi ORCIA est nécessaire ? (Problématique)
-
-Aujourd'hui, les organisations et les équipes d'ingénierie font face à quatre limites structurelles lorsqu'elles déploient l'IA générative et l'automatisation à grande échelle :
-
-1. **Le fossé entre le "Chat IA" libre et l'automatisation rigide (BPM/RPA classique)** :
-   - Les moteurs de workflows traditionnels imposent des interfaces techniques rigides et gèrent mal le raisonnement probabiliste, la co-création humaine ou l'injection dynamique de connaissances.
-   - À l'inverse, les chats IA classiques fonctionnent hors de tout processus gouverné, sans jalons formels (*Gates*) ni contrat de livrable (*Gabarits d'Artefacts*).
-2. **Le piège cognitif du "relecteur passif" et la perte de maîtrise humaine (*Pattern Drift*)** :
-   - Lorsque l'IA génère directement des documents ou du code de 50 pages, l'humain subit un **biais d'ancrage** massif et finit par valider à l'aveugle (*Rubber-Stamping*).
-   - Les agents prennent des décisions d'architecture ou de gestion arbitraires en silence face à des options équivalentes, entraînant une dérive des patterns (*Pattern Drift*) et une perte de **Réversibilité Humaine** (incapacité pour l'équipe de reprendre la main sur son propre système).
-3. **Le cloisonnement des connaissances, des outils et des habilitations en entreprise** :
-   - La vérité d'un projet est dispersée entre de multiples dépôts **Git** , projets **Jira** , espaces **Confluence** , bases de données  et registres d'artefacts .
-   - Les équipes créent des prompts, des *Skills* et des agents en silo sans gouvernance RBAC/ABAC, sans alignement sémantique entre le vocabulaire Métier/Direction et le vocabulaire Technique, et perdent un temps précieux face aux blocages d'habilitations.
-4. **L'absence de traçabilité déterministe, de reproductibilité (*Replay*) et de contrôle FinOps** :
-   - Lorsqu'un processus long échoue ou change d'hypothèse à l'étape 4 sur 6, il est impossible de rejouer uniquement à partir de l'étape 4 sur un état figé (*Version Pinning* `SHA-256`), ni d'imputer finement le coût complet (Setup + Tokens Run vs gain de *Time-to-Market*) par équipe ou par Business Unit.
+Conçue pour les équipes informatiques et métiers (développeurs, architectes, DevOps, chefs de projet, DSI), ORCIA permet d'intégrer l'intelligence artificielle générative dans les flux de travail de l'entreprise de manière structurée, traçable et sécurisée, sans jamais transformer l'IA en « boîte noire » autonome hors de contrôle.
 
 ---
 
-## 2. Les Objectifs d'ORCIA
+## 1. À quels problèmes concrets répond ORCIA ?
 
-ORCIA répond à ces défis à travers quatre objectifs directeurs :
+Lorsqu'une organisation déploie l'IA à l'échelle d'une équipe ou d'un département, elle se heurte rapidement à quatre difficultés majeures auxquelles ORCIA apporte une réponse directe :
 
-- **Garantir la posture "Human-Led, Agent-Accelerated" (Objectif Cognitif)** :
-  - Maintenir la réflexion humaine (*Think*) en amont de la génération IA grâce aux **Ancrages Humains Obligatoires** (`human_authored_required: true`).
-  - Interdire tout choix implicite d'un agent face à des options équivalentes (**Arbitrage Humain** explicite ou départage par axiome d'**Ontologie**).
-  - Éliminer la fatigue de relecture grâce au **Briefing de Revue** structuré en 4 blocs et à la **Validation par Découpage** (*Chunked Review*).
-- **Orchestrer et Gouverner de bout en bout (Objectif Fonctionnel)** :
-  - Exécuter des **Workflows** collaboratifs ou **Autonomes sous Contrat** combinant **Agents Exécuteurs**, **Sous-Workflows** (jusqu'à 3 niveaux de profondeur), **Skills**, **Bases de Connaissances** et interventions humaines.
-  - Sécuriser chaque transition par des **Gates Multi-Niveaux** (**Déterministes** en Sandbox, **Agentiques Cross-Model** à modèles orthogonaux, et **Humaines** à politique adaptative) et par le **Contrôle Transverse d'Invariants** (`Intention -> Code`).
-- **Fédérer l'Entreprise sans Duplication (Objectif Opérationnel)** :
-  - Résoudre à la volée les ressources (`git://`, `jira://`, `confluence://`, `db://`, `nexus://`, `orcia://`) avec un cache immuable Content-Addressable (`SHA-256` / `run-lock.json`).
-  - Aligner le langage de toute l'organisation via une **Ontologie Dynamique à 4 Niveaux** et débloquer proactivement les accès via un **Permission Broker** intelligent.
-- **Maîtriser le ROI Budgétaire et la Souveraineté (Objectif Stratégique & FinOps)** :
-  - Mesurer en temps réel le ROI complet (Coût de Setup + Coût de Run vs TTM), prévenir le *Rubber-Stamping* et le *Pattern Drift*, et confiner strictement les flux IA selon le palier de souveraineté (`SovereigntyTier` `C0` à `C3`, avec modèles locaux Ollama/vLLM pour les actifs sensibles).
+### 1.1. Éviter l'effet « boîte noire » grâce à la validation humaine et à la traçabilité des sources
+- **Le problème** : Les assistants IA classiques génèrent de longs documents ou du code sans expliquer leurs choix, sans citer précisément leurs sources et sans laisser à l'humain la possibilité de cadrer les décisions structurantes avant la génération.
+- **La réponse d'ORCIA** :
+  - Chaque réponse ou livrable produit par l'IA s'accompagne de **citations explicites et vérifiables** pointant vers les documents, tickets ou fichiers de code de l'entreprise.
+  - Les décisions d'orientation (objectifs métier, choix d'architecture, arbitrages entre plusieurs options) restent **explicitement validées par l'humain**.
+  - Chaque étape d'un processus peut être soumise à des contrôles automatisés (vérification de format, exécution de tests, relecture croisée par un second modèle IA) avant d'être présentée pour validation humaine.
 
----
+### 1.2. Organiser le travail par Espaces de travail connectés aux outils de l'entreprise
+- **Le problème** : Le contexte d'un projet est dispersé entre plusieurs outils (dépôts de code, wikis documentaires, outils de gestion de tickets, bases de données), et les équipes perdent du temps à copier-coller des informations dans des discussions IA isolées.
+- **La réponse d'ORCIA** :
+  - Le travail est structuré en **Espaces de travail** dédiés à un produit, un projet ou une équipe.
+  - Chaque Espace se connecte directement aux sources de l'entreprise : dépôts **Git**, bases documentaires **Confluence**, projets **Jira**, schémas de **bases de données** et outils externes exposés via le protocole standard **MCP** (*Model Context Protocol*).
+  - Un glossaire métier et technique partagé permet d'harmoniser le vocabulaire entre les équipes métiers et les équipes d'ingénierie, du niveau global de l'entreprise jusqu'à chaque espace projet.
 
-## 3. Fonctionnalités Clés
+### 1.3. Structurer clairement les usages : Assistant, Agents, Compétences et Processus
+- **Le problème** : Dans la plupart des outils, tout se mélange dans de simples prompts copiés d'un utilisateur à l'autre, difficiles à maintenir, à tester et à partager.
+- **La réponse d'ORCIA** : ORCIA sépare clairement quatre briques complémentaires :
 
-L'expérience ORCIA est structurée autour de **7 espaces fonctionnels** accessibles selon le **Profil Humain** (RBAC/ABAC) et le **Sélecteur de Périmètre Hiérarchique (`⌘W` : `🌐 Plateforme Globale → 🏢 BU / Tribu → 👥 Équipe → 🗂️ Workspace`)** :
+| Concept | Rôle concret pour l'équipe | Exemple d'usage |
+| :--- | :--- | :--- |
+| **Assistant conversationnel** | Interlocuteur quotidien pour explorer les sources d'un espace, poser des questions avec citations vérifiées, rédiger des notes et collaborer avec ses collègues dans des dossiers partagés. | « Synthétise les impacts de ce ticket Jira sur notre API de facturation en citant la documentation et le code concernés. » |
+| **Agents** | Rôles spécialisés dotés d'instructions métier précises, d'un périmètre d'action défini et d'un accès contrôlé aux outils de l'espace. | Agent *Architecte Logiciel*, Agent *Analyste Fonctionnel*, Agent *Auditeur Sécurité*. |
+| **Compétences (*Skills*)** | Savoir-faire atomiques, testables et réutilisables par plusieurs agents ou processus (analyse de code, vérification de règles métiers, génération de schéma, etc.). | Compétence *Vérifier la conformité d'un contrat OpenAPI*, Compétence *Extraire les critères d'acceptation d'un ticket*. |
+| **Processus** | Chaînes d'étapes orchestrées combinant travail humain, intervention d'agents, exécution de compétences et jalons de validation jusqu'à la publication d'un livrable. | Processus *Transformer un ticket fonctionnel en spécification technique validée*, Processus *Revue de mise en production*. |
 
-### 3.1. Interface "Chat-First + Canvas" & Agent Assistant Adaptatif
-- **Adaptation au Profil Humain** : L'**Agent Assistant** ajuste automatiquement son niveau de synthèse et sa terminologie via l'**Ontologie** (KPIs budgétaires, TTM et risques pour une *Directrice BU* ; schémas d'API, AST et logs de Sandbox pour un *Tech Lead* ; rapports de conformité pour un *Auditeur SecOps*).
-- **Canvas interactif en Split-View** : Co-édition d'artefacts, passage des Gates, inspection du graphe d'exécution et revue par découpage côte à côte avec la conversation.
-
-### 3.2. Centre de Notifications Unifié & Pilotage Multi-Workspaces
-- **Boîte de réception individuelle et d'équipe** : Séparation claire entre **⚡ Actions Requises (Contributeur)**, **👁️ Workflows suivis (Consultation seule `READ_ONLY_OBSERVER`)** et **🤖 Exécutions Autonomes sous Contrat**.
-- **Prise en charge (*Claim*) temps réel (`< 500 ms`)** : Verrouillage atomique Redis + diffusion Server-Sent Events (SSE) empêchant deux membres d'une même équipe de traiter simultanément la même tâche.
-- **Centre de Pilotage Fractal des Workspaces** : Gestion multi-sources (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`), suivi des instances de *Runs*, et surcharges à 4 niveaux (`Base → Team → Workspace → User`).
-
-### 3.3. Ingénierie Cognitive & Exécution Durable ("Human-Led")
-- **Ancrages Humains Obligatoires (`human_authored_required: true`)** : Verrouillage API interdisant à tout agent IA de pré-remplir les sections d'intention stratégique, de valeur métier ou de choix d'architecture réservées à l'humain.
-- **Arbitrage Humain Systématique (`request_human_arbitration`)** : Suspension du Step dès qu'un agent rencontre plusieurs options équivalentes, ou application d'une politique déterministe sous contrat (`ONTOLOGY_AXIOM_FIRST`, `DEFER_AND_CONTINUE_WITH_ASSUMPTION`, `PAUSE_AND_ESCALATE`).
-- **Boucles de Rétroaction Amont, Rewind & Replay Non-Destructif** : Possibilité pour une étape aval (ex: Architecte ou Tech Lead détectant une incompatibilité d'API ou une règle métier trop coûteuse) de challenger une étape amont, avec simulation d'impact (*What-If*) et **Replay ciblé** à partir de l'étape $N$ (`DBOS.fork_workflow`) sans perdre l'historique.
-- **Souveraineté Bidirectionnelle (`ExternalEditRebaser`)** : Détection et ré-import automatique par diff structurel des modifications faites par un humain directement dans Git ou Confluence après publication (`HUMAN_AMENDED_EXTERNAL`), protégées contre tout écrasement ultérieur par un agent.
-
-### 3.4. Système de Gates Multi-Niveaux & Sandbox à 2 Paliers
-- **Gate Déterministe** :
-  - *Palier 1a (`Wasmtime < 5s`)* : Validation structurelle des Gabarits d'Artefacts (JSON/YAML Schema, sections Markdown).
-  - *Palier 1b (`Starlark + Google RE2 < 2ms`)* : Exécution déterministe sans réseau des règles métiers compilées via `Text-to-Starlark` (`0 $` LLM au Run-Time, immunisé contre les ReDoS).
-  - *Palier 2 (`Conteneur isolé gVisor / Podman Rootless < 60s`)* : Exécution hors processus des linters, compilateurs et suites de tests unitaires (`ruff`, `mypy`, `pytest`, `semgrep`).
-- **Gate Agentique Cross-Model (Orthogonalité des Modèles)** :
-  - Audit indépendant par un **Agent Évaluateur** d'une famille de modèles distincte de l'**Agent Exécuteur** (`evaluator_model_family != executor_model_family`), confiné au même palier de souveraineté (`SovereigntyTier`).
-  - Exécution d'un **DAG de 5 Lentilles d'Évaluation** : (1) *Alignement Transverse Étape 1 (PRD/Archi)*, (2) *Vérification Atomique de Faits (`fact_verification`)* contre les sources épinglées dans `run-lock.json`, (3) *Attaque Adversariale & Edge-Cases*, (4) *Conformité Métier/Sécurité*, et (5) *Synthèse & Génération du Briefing de Revue en 4 blocs*.
-- **Gate Humaine Adaptative** :
-  - Déclenchement selon la politique `mandatory_full`, `risk_or_exception_based` ou `sampling`, accompagné du **Briefing de Revue** (*Résumé*, *Éléments clés*, *Décisions prises*, *Hypothèses retenues*) et de la **Validation par Découpage**.
-
-### 3.5. Ontologie Dynamique à 4 Niveaux & Chaîne Causale ADN
-- **4 Strates avec héritage** : `1_ENTERPRISE` (Socle Corporate) $\rightarrow$ `2_DOMAIN` (BU / Métier) $\rightarrow$ `3_TEAM` & `3_WORKSPACE` $\rightarrow$ `4_RUN_EPHEMERAL` (concepts découverts en cours d'exécution).
-- **Chaîne Causale ADN (`🛡️ DIRECTIVE ➔ 📏 NORME ➔ ⚙️ MÉCANISME`)** : Chaque règle vérifiée par une Gate est reliée à la norme qu'elle implémente et à la directive d'entreprise qu'elle opérationnalise.
-- **Promotion "Zero-Corvée" (*In-Flow Promotion*)** : Intégration directe des `Top-3` concepts découverts à haute confiance dans le Briefing de Revue de fin de workflow pour une promotion au Glossaire en un clic.
-
-### 3.6. RAG Hybride Multi-Sources & Graphe Tripartite (`Confluence ↔ Jira ↔ Git`)
-- **Indexation incrémentale différenciée** :
-  - *Documentation & Confluence* : Découpage hiérarchique *Parent-Child* (`Docling` sur worker dédié).
-  - *Jira Hybride* : Vectorisation contextuelle des tickets porteurs de connaissance durable (Epics, US, Post-mortems).
-  - *Codebases Git* : Découpage syntaxique AST via `tree-sitter` (`0 $` LLM sur simple `git push`) et construction du graphe d'appel.
-- **Recherche Hybride Native** : Vecteurs `pgvector` `halfvec(1024)` (HNSW) + recherche lexicale `tsvector` fusionnés par **Reciprocal Rank Fusion (`RRF`)**, détection automatique d'obsolescence (`[STALE_WARNING]`) et **Actions Jira Staged** (préparées en brouillon et exécutées uniquement après validation de la Gate).
-
-### 3.7. Permission Broker, Exécution Autonome sous Contrat & FinOps
-- **Permission Broker IA** : Gestion des identités déléguées (*Passthrough* OAuth/PAT chiffré en AES-256-GCM ou *Service Principal* à privilèges minimaux) et accompagnement automatique de l'utilisateur en cas de refus d'accès (`401/403`) avec la procédure d'habilitation exacte de l'entreprise.
-- **Déclencheurs Événementiels & Auto-Remédiation (`AUTONOMOUS_CONTRACT`)** : Déclenchement idempotent par **Cron**, **Webhook** ou **Alerte de Puits de Logs (`LOG_SINK_ALERT`)** sous contrat signé (`max_cost_per_run_usd`, `tie_break_policy`), avec vérification post-action en boucle fermée (`POST_ACTION_VERIFICATION`) et **Auto-Rollback / Kill-Switch** en cas d'anomalie.
-- **Cockpit FinOps, Audit Immuable & Réversibilité** : Grand livre append-only (`audit_ledger`, `blackboard_snapshots`), suivi des budgets et quotas de tokens, détection du *Rubber-Stamping* (`< 10s`) et mesure de l'indice de *Pattern Drift*.
+### 1.4. Maîtriser la sécurité et les coûts d'utilisation des modèles IA
+- **Le problème** : Ouvrir des accès IA sur le système d'information soulève des risques de fuite de données, d'actions non autorisées sur les outils de production et de dérive budgétaire liée à la consommation de jetons (*tokens*).
+- **La réponse d'ORCIA** :
+  - **Contrôle d'accès par rôle et par périmètre** : Les droits de consultation, de modification, d'exécution et d'administration sont gérés finement selon la hiérarchie de l'organisation (Plateforme globale, Direction / Business Unit, Équipe, Espace de travail). Un utilisateur ne voit et n'interroge que les sources auxquelles il est habilité.
+  - **Protection des secrets et des écritures externes** : Les clés d'API et jetons d'accès sont chiffrés en base de données. Toute modification vers un outil externe (comme la mise à jour d'un ticket Jira ou la publication d'un document) est préparée en brouillon et nécessite une validation avant exécution.
+  - **Exécution isolée (*Sandbox*)** : Les vérifications techniques, scripts de validation et suites de tests s'exécutent dans des environnements isolés sans accès réseau non autorisé.
+  - **Suivi des coûts et quotas** : Un tableau de bord dédié permet de suivre en temps réel la consommation des modèles IA par espace, par équipe et par processus, de définir des plafonds budgétaires et d'orienter les données sensibles vers des modèles hébergés localement.
 
 ---
 
-## 4. Composants Techniques & Architecture
+## 2. Vue d'ensemble fonctionnelle (Les 8 écrans de l'application)
 
-ORCIA repose sur un **Monolithe Modulaire Hexagonal (Ports & Adapters)** couplé à un moteur d'orchestration durable transactionnel (**DBOS Transact** sur PostgreSQL 18), organisé dans un **Monorepo Hybride TypeScript + Python**.
+L'interface web d'ORCIA s'organise autour d'une barre de navigation latérale donnant accès à **8 écrans complémentaires**, complétés par une recherche rapide globale (`⌘K` / `Ctrl+K`) et un sélecteur d'espace de travail :
+
+1. **Cockpit** :
+   - Vue synthétique des actions en attente pour l'utilisateur connecté et son équipe : arbitrages demandés par un agent, étapes de processus prêtes à être relues ou validées, et suivi des exécutions en cours.
+   - Permet de prendre en charge une tâche en un clic afin d'éviter que deux membres d'une même équipe ne travaillent simultanément sur la même validation.
+2. **Mon Assistant** :
+   - Espace de travail conversationnel connecté aux sources documentaires et aux dépôts de code de l'espace actif.
+   - Propose trois modes de réponse selon le besoin (*Rapide*, *Appel d'un Agent ou d'une Compétence*, *Analyse approfondie*), affiche les citations exactes des sources utilisées et permet d'organiser ses échanges dans des **dossiers thématiques** privés ou partagés avec l'équipe.
+3. **Mes Espaces** :
+   - Gestion complète des Espaces de travail : connexion aux sources de données (Git, Confluence, Jira, bases de données), suivi de l'indexation documentaire, configuration des emplacements de publication des livrables et gestion du glossaire métier et des règles de l'espace.
+4. **Mes Agents & Compétences** :
+   - Catalogue centralisé permettant de consulter, configurer et tester les **Agents** spécialisés, les **Compétences (*Skills*)** réutilisables ainsi que les connecteurs et serveurs d'outils externes (**MCP** et agents distants) avec un banc de test intégré.
+5. **Mes Processus** :
+   - Conception, personnalisation et exécution des chaînes de travail multi-étapes.
+   - Permet de suivre l'avancement détaillé de chaque exécution, de consulter les synthèses de revue à chaque jalon de validation, et de relancer un processus à partir d'une étape précise en cas d'ajustement sans perdre l'historique des étapes précédentes.
+6. **Centre de Contrôle & Coûts** :
+   - Tableau de bord de supervision opérationnelle et financière : suivi des coûts d'utilisation des modèles IA, consommation de jetons par équipe et par espace, respect des budgets et consultation du journal d'audit immuable des opérations.
+7. **Paramètres** :
+   - Administration de la plateforme et des périmètres : gestion de l'arborescence organisationnelle, des utilisateurs et des rôles, configuration des fournisseurs de modèles IA (cloud ou locaux), gestion des connecteurs et des secrets.
+8. **Aide contextuelle** :
+   - Centre de documentation intégré et volet d'aide latéral (`❓`) qui affiche automatiquement le guide d'utilisation correspondant à l'écran actif pour accompagner les utilisateurs pas à pas.
+
+---
+
+## 3. Architecture technique
+
+ORCIA repose sur une architecture modulaire moderne, bâtie sur des composants standards et éprouvés de l'industrie :
 
 ```mermaid
 flowchart TD
-    subgraph Web["Frontend SPA — apps/web + packages/ui"]
-        SPA["apps/web (Vite 6 + TanStack Router v1 + React 19)"]
-        UI["packages/ui (@orcia/ui — Design System Direction C)"]
-        SDK["packages/api-client (SDK TypeScript OpenAPI 3.1)"]
+    subgraph Client["Interface Web (Frontend)"]
+        Web["Application React 19 / TypeScript / Vite\n(apps/web)"]
+        UI["Bibliothèque de composants UI\n(packages/ui)"]
+        SDK["Client HTTP typé OpenAPI 3.1\n(packages/api-client)"]
     end
 
-    subgraph Backend["Monolithe Modulaire Python 3.12+ (Workspace uv)"]
-        API["apps/api (FastAPI + Pydantic v2 + SSE + MCP Server)"]
-        Worker["apps/worker (DBOS Orchestration | Docling Indexing | Triggers | Sandbox)"]
-        Core["packages/orcia-core (8 Domaines Acycliques : permissions, catalog, ontology, rag, blackboard, gates, audit_finops, orchestration)"]
-        Kernel["packages/orcia-kernel (UUIDv7, OrciaDomainError, ConnectorPort, ClockPort)"]
-        Packs["packages/orcia-pack-sdlc & orcia-pack-builder (Plugins entry_points)"]
+    subgraph Serveur["Services Applicatifs Python 3.12+ (Backend)"]
+        API["API REST & Temps Réel FastAPI\n(apps/api)"]
+        Worker["Traitements asynchrones & Workflows résilients\n(apps/worker)"]
+        Core["Logique métier modulaire\n(packages/orcia-core & orcia-kernel)"]
+        Packs["Extensions métiers & Connecteurs\n(packages/orcia-pack-*)"]
     end
 
-    subgraph Infra["Infrastructure & Stockage Unifié"]
-        PG[("PostgreSQL 18 + pgvector 0.8\n(Tables Métier + Schéma DBOS + Outbox)")]
-        Redis[("Redis 7.4\n(Pub/Sub SSE + Verrous SET NX + Dramatiq)")]
-        CAS[("SeaweedFS 4.17 (S3 v4)\nStockage CAS SHA-256 (cas/<sha256>)")]
-        Sandbox["Sidecar Sandbox\n(T1a: Wasmtime | T1b: Starlark+RE2 | T2: gVisor/Podman)"]
+    subgraph Donnees["Infrastructure & Stockage"]
+        PG[("PostgreSQL 18 + pgvector\n(Données relationnelles, recherche vectorielle\n& plein texte, états des workflows)")]
+        Redis[("Redis 7.4\n(Cache, verrous temps réel\n& diffusion d'événements SSE)")]
+        S3[("SeaweedFS (Compatible S3)\n(Stockage objet des documents\net livrables versionnés)")]
+        Sandbox["Environnements d'exécution isolés\n(Validation de règles & exécution de tests)"]
     end
 
-    SPA --> UI
-    SPA --> SDK
+    Web --> UI
+    Web --> SDK
     SDK --> API
     API --> Core
     Worker --> Core
-    Packs -->|entry_points| Core
-    Core --> Kernel
+    Packs --> Core
     API --> Redis
     Worker --> PG
     Core --> PG
-    Core --> CAS
+    Core --> S3
     Core --> Sandbox
 ```
 
-### 4.1. Pile Technologique (Stack)
+### Principaux choix technologiques
 
-| Couche                                      | Technologies & Composants                                                                                                           | Rôle dans ORCIA                                                                                                                                                                                                              |
-| :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend Web (`apps/web`)**               | **TypeScript 5.8**, **React 19**, **Vite 6.4**, **TanStack Router v1**, **TanStack Query v5**, **Zustand v5**, **Tailwind CSS 4.3** | SPA réactive pure organisée par domaine fonctionnel (`cockpit`, `inbox`, `workspaces`, `catalog`, `ontology`, `gates`, `finops`, `admin`), internationalisée (`FR`/`EN`).                                                    |
-| **Design System (`packages/ui`)**           | **`@orcia/ui`**, Tokens CSS sémantiques **Direction C**                                                                             | Composants UI purs et composants cognitifs (`HumanLedAnchorCard` en violet exclusif `#6D28D9`, Briefing de Revue, Validation par Découpage) sans couplage réseau.                                                            |
-| **Contrat API (`packages/api-client`)**     | **OpenAPI 3.1**, `openapi-typescript`, `openapi-fetch`                                                                              | SDK client TypeScript typé de bout en bout, généré automatiquement depuis les schémas Pydantic v2 de `apps/api`.                                                                                                             |
-| **API Backend (`apps/api`)**                | **Python 3.12+**, **FastAPI**, **Pydantic v2**, **Uvicorn**, **Structlog**, **OpenTelemetry**                                       | Point d'assemblage (*Composition Root*), routes REST, erreurs **RFC 9457 (`application/problem+json`)**, flux temps réel **SSE** (`/api/v1/events/stream`) et serveur **MCP** (`/api/v1/mcp`).                               |
-| **Orchestration & Workers (`apps/worker`)** | **DBOS Transact (`dbos`)**, **Dramatiq 2.1**, **Docling**, **LiteLLM**                                                              | Exécution durable transactionnelle (`@DBOS.workflow`, `@DBOS.step`, `DBOS.fork_workflow`), relais Outbox PostgreSQL, indexation documentaire et routage multi-LLM orthogonal.                                                |
-| **Noyau Hexagonal (`packages/*`)**          | **`orcia-kernel`**, **`orcia-core`**, **`orcia-pack-sdlc`**, **`orcia-pack-builder`**                                               | Noyau métier pur sans dépendance framework (vérifié par **`import-linter`**), extensible par plugins `entry_points` (`orcia.connectors`, `orcia.indexers`, `orcia.workflow_policies`, `orcia.packs`).                        |
-| **Base de Données & RAG**                   | **PostgreSQL 18.0** + **`pgvector 0.8.7`**, **SQLAlchemy 2.1 Asyncio** (`asyncpg`), **Alembic**                                     | Stockage relationnel (clés primaires `UUIDv7`), checkpoints durables DBOS, table Outbox transactionnelle, tables append-only (`audit_ledger`, `blackboard_snapshots`) et recherche hybride `halfvec(1024)` + `tsvector` RRF. |
-| **Temps Réel & Files**                      | **Redis 7.4**                                                                                                                       | Diffusion Pub/Sub pour les notifications SSE (`< 500 ms`), verrous de présence atomiques (`SET lock:step:<id> NX`) et files de tâches Dramatiq.                                                                              |
-| **Stockage Objet CAS**                      | **SeaweedFS 4.17** (API S3 v4, licence Apache-2.0)                                                                                  | Stockage immuable adressé par le contenu (`cas/<sha256>`) des ressources fédérées et des artefacts figés dans `run-lock.json`.                                                                                               |
-| **Sandbox d'Exécution**                     | **Wasmtime** (`wasmtime-py`), **Starlark** (`starlark-pyo3` + `google-re2`), **gVisor / Podman Rootless**                           | Exécution isolée sans réseau à 2 paliers pour les Gates déterministes, les règles métiers et les tests d'auto-remédiation.                                                                                                   |
+| Couche | Technologies standards utilisées | Rôle dans la plateforme |
+| :--- | :--- | :--- |
+| **Frontend Web** | **React 19**, **TypeScript 5.8**, **Vite 6**, **TanStack Router**, **TanStack Query**, **Tailwind CSS 4** | Application web monopage (SPA) réactive, typée de bout en bout et disponible en français et en anglais. |
+| **Client API** | **OpenAPI 3.1**, `openapi-typescript`, `openapi-fetch` | Client HTTP TypeScript généré automatiquement à partir des schémas de l'API Python pour garantir la cohérence entre le frontend et le backend. |
+| **API Backend** | **Python 3.12+**, **FastAPI**, **Pydantic v2**, **Uvicorn**, **OpenTelemetry** | Exposition des routes REST, flux d'événements temps réel (*Server-Sent Events*), serveur compatible **MCP** et traçabilité distribuée. |
+| **Traitements asynchrones & Workflows** | **DBOS Transact**, **Dramatiq**, **Docling**, **LiteLLM** | Exécution de workflows résilients aux pannes (capables de reprendre exactement à l'étape interrompue ou de rejouer une étape spécifique), indexation documentaire en tâche de fond et routage multi-fournisseurs vers les modèles IA. |
+| **Base de données** | **PostgreSQL 18**, **pgvector**, **SQLAlchemy 2.1 (Asyncio)**, **Alembic** | Stockage transactionnel, recherche documentaire hybride combinant recherche vectorielle sémantique (`pgvector`) et recherche plein texte (`tsvector`), et journalisation d'audit. |
+| **Cache & Temps réel** | **Redis 7.4** | Cache applicatif, gestion des verrous de prise en charge simultanée entre utilisateurs et file de messages pour les notifications en temps réel. |
+| **Stockage objet** | **SeaweedFS** (API compatible Amazon S3) | Archivage versionné et vérifiable par empreinte cryptographique (`SHA-256`) des documents sources et des livrables produits. |
+| **Exécution isolée (*Sandbox*)** | **Wasmtime**, **Starlark**, **Conteneurs isolés sans réseau** | Exécution sécurisée des scripts de validation métier, des analyseurs statiques et des tests automatisés. |
 
-### 4.2. Structure du Monorepo
+---
+
+## 4. Organisation du dépôt (Monorepo)
+
+Le projet est organisé sous forme de monorepo réunissant les applications frontend et backend, les bibliothèques partagées et l'infrastructure locale :
 
 ```text
 ORCIA/
 ├── apps/
-│   ├── api/                    # Serveur FastAPI (Composition Root, schémas OpenAPI 3.1, SSE, MCP)
-│   ├── worker/                 # Workers (DBOS orchestration, Outbox relay, Docling indexer, Triggers)
-│   └── web/                    # Application SPA (Vite 6 + TanStack Router + React 19)
+│   ├── web/                    # Interface utilisateur web (React 19, TypeScript, Vite)
+│   ├── api/                    # Serveur d'API REST, flux temps réel SSE et point d'accès MCP (FastAPI)
+│   └── worker/                 # Processus d'arrière-plan (orchestration des workflows, indexation documentaire)
 ├── packages/
-│   ├── orcia-kernel/           # Primitives fondamentales (UUIDv7, OrciaDomainError, ConnectorPort, ClockPort)
-│   ├── orcia-core/             # 8 Domaines métiers hexagonaux acycliques (permissions, catalog, ontology, rag, blackboard, gates, audit_finops, orchestration)
-│   ├── orcia-pack-sdlc/        # Pack métier Ingénierie Logicielle (connecteurs Git/Jira/Confluence/Nexus, indexeurs AST/Jira, politique FR-13)
-│   ├── orcia-pack-builder/     # Pack Studio de création et validation de packs métiers
-│   ├── ui/                     # Librairie Design System @orcia/ui (Direction C)
-│   └── api-client/             # SDK TypeScript généré depuis le contrat OpenAPI 3.1
+│   ├── ui/                     # Bibliothèque de composants graphiques partagés (@orcia/ui)
+│   ├── api-client/             # Client TypeScript généré automatiquement depuis le contrat OpenAPI de l'API
+│   ├── orcia-kernel/           # Briques techniques de base Python (identifiants, gestion d'erreurs, interfaces)
+│   ├── orcia-core/             # Logique métier principale (espaces, droits d'accès, catalogue, recherche, processus, coûts)
+│   ├── orcia-pack-sdlc/        # Connecteurs et outils dédiés à l'ingénierie logicielle (Git, Jira, Confluence)
+│   └── orcia-pack-builder/     # Outils de création, de test et de publication de nouveaux packs métiers
 ├── infra/
-│   ├── docker/                 # Stack Docker Compose de développement (PostgreSQL 18 + pgvector, Redis 7.4, SeaweedFS 4.17)
-│   ├── migrations/             # Migrations de schéma Alembic incrémentales (SQL brut Expand -> Backfill -> Contract)
-│   ├── sandbox/                # Configuration des environnements d'exécution isolés
-│   └── scripts/maintenance/    # Scripts d'initialisation, vérification d'invariants et seeding idempotent
+│   ├── docker/                 # Configuration Docker Compose (PostgreSQL 18, Redis 7.4, stockage S3 SeaweedFS)
+│   ├── migrations/             # Scripts de migration de base de données (Alembic)
+│   ├── sandbox/                # Exécuteurs isolés pour la validation des règles et des tests
+│   └── scripts/maintenance/    # Scripts d'initialisation et de remise à zéro de la base de données
 ├── scripts/
-│   └── manage.py               # Orchestrateur unifié du cycle de vie local ( invoqué par ./manage.sh )
-├── tests/                      # Suites de tests (Unitaires, Propriétés Hypothesis, Contrats, Intégration Testcontainers)
-└── docs/                       # Documentation complète (PRD, Architecture Spine, UX Design, Epics, Rapports Tech Lead)
+│   └── manage.py               # Utilitaire d'administration locale appelé par ./manage.sh
+├── tests/                      # Suites de tests automatisés (unitaires, intégration et contrats d'API)
+└── docs/                       # Documentation technique et fonctionnelle détaillée du projet
 ```
 
 ---
 
-## 5. Mode d'Installation & Démarrage Rapide
+## 5. Guide de démarrage rapide (Quickstart)
 
 ### 5.1. Prérequis
 
-Assurez-vous de disposer des outils suivants sur votre machine locale (Linux / macOS / WSL2) :
-
-- **Python** `>= 3.12` et [**uv**](https://docs.astral.sh/uv/) (gestionnaire de workspace Python)
+Sur un environnement Linux, macOS ou Windows (via WSL2), assurez-vous d'avoir installé :
+- **Docker** et **Docker Compose v2**
+- **Python** `>= 3.12` et le gestionnaire de paquets [**uv**](https://docs.astral.sh/uv/)
 - **Node.js** `>= 22.0.0` et **pnpm** `>= 10.6.0` (`corepack enable && corepack prepare pnpm@10.6.0 --activate`)
-- **Docker** et **Docker Compose v2** (pour PostgreSQL 18 + `pgvector`, Redis 7.4 et SeaweedFS S3)
 - **Git**
 
-### 5.2. Installation pas à pas
+### 5.2. Installation et premier lancement pas à pas
 
-#### 1. Cloner le dépôt et configurer les variables d'environnement
+#### Étape 1 — Cloner le dépôt et préparer la configuration locale
 
 ```bash
-git clone <url-du-repo> ORCIA
+git clone <url-du-depot> ORCIA
 cd ORCIA
 
-# Créer le fichier .env local à partir du modèle fourni
+# Créer le fichier de configuration local à partir du modèle fourni
 cp .env.example .env
-```
 
-> **Note sur les ports par défaut (`.env`)** : Pour éviter tout conflit avec des services déjà présents sur votre poste, ORCIA utilise par défaut :
-> - **Web (SPA)** : `http://127.0.0.1:3100`
-> - **API (FastAPI)** : `http://127.0.0.1:8000` (Swagger/OpenAPI sur `/docs`)
-> - **PostgreSQL 18 (`pgvector`)** : `127.0.0.1:5433`
-> - **Redis 7.4** : `127.0.0.1:6380`
-> - **SeaweedFS S3 (CAS)** : `http://127.0.0.1:9000` (Master sur `:9333`)
-
-#### 2. Créer l'environnement virtuel Python (`.venv`) et installer les packages
-
-```bash
-# Créer le virtualenv en Python 3.12+ à la racine du projet
-uv venv .venv --python 3.12
-
-# Installer l'ensemble du workspace Python en mode éditable avec les dépendances de développement
-uv pip install --python .venv/bin/python -e ".[dev]"
-```
-
-#### 3. Installer les dépendances TypeScript / Frontend
-
-```bash
-pnpm install
-```
-
-#### 4. Initialiser les secrets cryptographiques locaux
-
-```bash
-# Génère automatiquement ORCIA_JWT_SIGNING_SECRET et ORCIA_PASSTHROUGH_MASTER_KEY dans .env
+# Générer automatiquement les clés de chiffrement locales dans le fichier .env
 ./manage.sh init-secrets
 ```
 
-#### 5. Démarrer l'infrastructure Docker, appliquer les migrations et amorcer les données (Seed)
+#### Étape 2 — Installer les dépendances Python et TypeScript
 
 ```bash
-# 1. Démarrer PostgreSQL 18 + pgvector, Redis 7.4 et SeaweedFS S3
+# Créer l'environnement virtuel Python (.venv) et installer les paquets backend
+uv venv .venv --python 3.12
+uv pip install --python .venv/bin/python -e ".[dev]"
+
+# Installer les dépendances JavaScript / TypeScript du monorepo
+pnpm install
+```
+
+#### Étape 3 — Démarrer l'infrastructure Docker et initialiser la base de données
+
+```bash
+# 1. Lancer PostgreSQL (port 5433), Redis (port 6380) et le stockage S3 SeaweedFS (port 9000)
 pnpm db:up
-# (ou via : ./manage.sh start infra)
 
-# 2. Appliquer toutes les migrations Alembic jusqu'à head
+# 2. Appliquer les migrations de schéma sur la base PostgreSQL
 pnpm db:migrate
-# (équivalent à : .venv/bin/alembic -c infra/migrations/alembic.ini upgrade head)
 
-# 3. Vérifier les invariants DB et charger les données de référence Jour 0 (Organisation, Catalogue, Permission Broker, Bootstrap)
+# 3. Charger les données système initiales (configuration de base et guides d'aide)
 pnpm db:seed
-
-# Optionnel : Charger le jeu de données complet de recette / démonstration (UAT)
-./manage.sh seed-uat --apply
 ```
 
----
+#### Étape 4 — Lancer la plateforme
 
-### 5.3. Lancement et Exploitation au Quotidien (`./manage.sh`)
-
-ORCIA fournit un script d'administration unifié [`./manage.sh`](manage.sh) (qui délègue automatiquement au Python de `.venv/bin/python`) permettant de piloter toute la stack ou chaque brique individuellement :
+Vous pouvez démarrer l'ensemble des services en arrière-plan via le script d'administration unifié :
 
 ```bash
-# Démarrer l'ensemble de la plateforme (infra Docker + API FastAPI + Worker + Web SPA)
 ./manage.sh start all
-
-# Vérifier l'état de santé et les ports de tous les composants
-./manage.sh status
-
-# Consulter les journaux d'exécution (tous les services ou un service spécifique)
-./manage.sh logs all -n 50
-./manage.sh logs api -n 100
-
-# Redémarrer ou arrêter un composant spécifique (all | infra | postgres | redis | minio | api | worker | web)
-./manage.sh restart api
-./manage.sh stop all
 ```
 
-Vous pouvez également lancer les serveurs applicatifs en mode interactif lors du développement :
+Ou lancer l'API et le frontend dans deux terminaux séparés pour le développement :
 
 ```bash
-# Terminal 1 — Backend API FastAPI (http://127.0.0.1:8000)
+# Terminal 1 — API Backend FastAPI
 pnpm dev:api
 
-# Terminal 2 — Frontend Web SPA Vite (http://127.0.0.1:3100)
+# Terminal 2 — Interface Web React / Vite
 pnpm dev:web
 ```
 
----
+Une fois les services démarrés :
+- **Application Web ORCIA** : [http://localhost:3100](http://localhost:3100)
+- **Documentation interactive de l'API (Swagger / OpenAPI)** : [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 5.4. Vérification de la Qualité, Architecture & Tests
+#### Étape 5 — Créer le premier compte administrateur au premier lancement
 
-Toutes les commandes Python doivent être exécutées via l'environnement virtuel `.venv/bin/` :
+Lorsque vous ouvrez [http://localhost:3100](http://localhost:3100) pour la toute première fois sur une base de données vierge (aucun utilisateur enregistré), ORCIA affiche automatiquement une fenêtre d'initialisation vous invitant à **créer le premier compte Administrateur** de la plateforme :
+1. Renseignez votre nom complet, votre adresse e-mail et votre mot de passe administrateur.
+2. Dès la validation, le compte est enregistré de manière sécurisée dans PostgreSQL (mot de passe haché avec `Argon2id`) et vous êtes immédiatement connecté.
+3. Vous pouvez ensuite configurer votre premier fournisseur de modèle IA et créer votre premier Espace de travail depuis l'interface.
+
+#### Étape 6 — Remettre la base de données à zéro (si besoin)
+
+Si vous souhaitez revenir à l'état initial du premier lancement (supprimer tous les comptes utilisateurs et les données de test tout en conservant le schéma et la configuration système de base) :
 
 ```bash
-# 1. Linter & Formatage Python (Ruff)
+pnpm db:reset
+```
+
+---
+
+## 6. Commandes utiles au quotidien
+
+### Gestion des services locaux (`./manage.sh` et `pnpm`)
+
+| Action | Commande |
+| :--- | :--- |
+| Démarrer toute la plateforme (Docker + API + Worker + Web) | `./manage.sh start all` |
+| Vérifier l'état des services et les ports actifs | `./manage.sh status` |
+| Consulter les journaux d'exécution (tous les services ou un seul) | `./manage.sh logs all -n 50` ou `./manage.sh logs api -n 100` |
+| Redémarrer un service spécifique (`api`, `worker`, `web`, `infra`) | `./manage.sh restart api` |
+| Arrêter tous les services | `./manage.sh stop all` |
+| Réinitialiser la base de données à l'état du premier lancement | `pnpm db:reset` |
+
+### Qualité du code et exécution des tests
+
+Toutes les commandes Python s'exécutent via l'environnement virtuel `.venv/bin/` situé à la racine du projet :
+
+```bash
+# Vérifier le style et le formatage du code Python (Ruff)
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 
-# 2. Typage statique strict Python (Mypy)
+# Vérifier le typage statique Python (Mypy)
 .venv/bin/mypy --strict packages/orcia-kernel packages/orcia-core apps/api apps/worker
 
-# 3. Vérification des frontières d'architecture hexagonale (AD-19 / import-linter)
+# Vérifier le respect de l'isolation entre les modules Python (import-linter)
 .venv/bin/lint-imports
 
-# 4. Exécution des tests Python avec couverture minimale obligatoire (>= 90%)
+# Exécuter la suite de tests Python avec contrôle de la couverture de code (>= 90 %)
 .venv/bin/pytest --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90
 
-# 5. Linter, Typage et Tests TypeScript / UI (Turborepo)
+# Exécuter le linter, la vérification de types et les tests Frontend / TypeScript
 pnpm turbo run lint typecheck test
 ```
 
 ---
 
-## 6. Documentation de Référence
+## 7. Documentation complémentaire
 
-Pour approfondir la conception et les règles d'ingénierie d'ORCIA :
-
-- **Vision & Produit** :
-  - [Product Brief (`docs/planning-artifacts/product-brief.md`)](docs/planning-artifacts/product-brief.md)
-  - [Product Requirements Document — PRD (`docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md`)](docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md)
-  - [Epics & User Stories (`docs/planning-artifacts/epics.md`)](docs/planning-artifacts/epics.md)
-- **Architecture & Décisions Techniques (AD-1 à AD-20)** :
-  - [Architecture Spine (`docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md`)](docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md)
-  - [Architecture Détaillée & Schéma de Données (`docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md`)](docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md)
-- **Expérience Utilisateur & Design System (Direction C)** :
-  - [Spécifications d'Expérience (`docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md`)](docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md)
-  - [Système de Design & Tokens (`docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md`)](docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md)
-- **Standards de Développement & Rapports Tech Lead** :
-  - [Guide & Politiques de Développement (`AGENTS.md`)](AGENTS.md)
-  - [Rapports d'Implémentation Tech Lead (`docs/implementation-artifacts/tech-lead-reports/`)](docs/implementation-artifacts/tech-lead-reports/)
+Pour approfondir le fonctionnement de la plateforme ou contribuer au développement :
+- **Guides d'aide intégrés (FR / EN)** : [`docs/help/`](docs/help/)
+- **Documentation d'architecture et de conception** : [`docs/planning-artifacts/`](docs/planning-artifacts/)
+- **Historique des rapports d'implémentation technique** : [`docs/implementation-artifacts/tech-lead-reports/`](docs/implementation-artifacts/tech-lead-reports/)
+- **Conventions de développement du dépôt** : [`AGENTS.md`](AGENTS.md)
