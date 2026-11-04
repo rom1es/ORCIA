@@ -5,6 +5,11 @@ from __future__ import annotations
 import json
 from typing import cast
 
+from orcia_core.catalog._internal.seaweedfs_adapter import (
+    SeaweedFsObjectStorageAdapter,
+    SeaweedFsS3HttpBackend,
+    build_s3_sigv4_headers,
+)
 from orcia_core.catalog.bmad_adapter import BmadSkillPackAdapter
 from orcia_core.catalog.cas_resolver import (
     CasObjectStoreProtocol,
@@ -243,9 +248,12 @@ __all__ = [
     "S3BucketBackendProtocol",
     "S3CompatibleCasObjectStore",
     "ScalarValue",
+    "SeaweedFsObjectStorageAdapter",
+    "SeaweedFsS3HttpBackend",
     "WorkflowDefinitionEntity",
     "WorkflowStepDefinition",
     "build_default_federated_catalog_service",
+    "build_s3_sigv4_headers",
     "compute_bytes_sha256",
     "compute_workflow_sha256",
     "parse_federated_uri",

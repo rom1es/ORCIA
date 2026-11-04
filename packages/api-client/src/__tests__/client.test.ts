@@ -387,4 +387,246 @@ describe("createOrciaApiClient", () => {
       expect.objectContaining({ method: "POST" }),
     );
   });
+
+  it("supports Epics 3 to 7 orchestration, blackboard, anchors, challenges, gates, Jira/MCP, inbox, leases, and Control Center SDK methods", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "ok" }),
+    });
+
+    const client = createOrciaApiClient({
+      baseUrl: "http://localhost:8000",
+      accessToken: "jwt-token-123",
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    });
+
+    await client.getOrchestrationState("marc");
+    await client.validateWorkflowManifest(
+      { raw_manifest: "uri: orcia://w/1", workspace_id: "ws-1" },
+      "marc",
+    );
+    await client.registerWorkflowManifest(
+      { raw_manifest: "uri: orcia://w/1", workspace_id: "ws-1" },
+      "marc",
+    );
+    await client.compileArtifactTemplate(
+      { template_key: "tpl-architecture-decision-record", variables: {} },
+      "marc",
+    );
+    await client.instantiateWorkflowRun(
+      {
+        workflow_uri: "db://orcia/workflows/root-payment-delivery@v1.0.0",
+        workspace_id: "0192c4e0-0000-7000-8000-000000000201",
+      },
+      "marc",
+    );
+    await client.getRunBlackboardState("run-1", "marc");
+    await client.hydrateStepContext({ run_id: "run-1", step_key: "step-1" }, "marc");
+    await client.executeWorkflowStep({ run_id: "run-1", step_key: "step-1" }, "marc");
+    await client.signHumanAnchor(
+      {
+        run_id: "run-1",
+        step_key: "step-1",
+        section_key: "intention",
+        content_text: "Validation architecturale complète et conforme aux exigences.",
+        signature_text: "Marc Lead",
+      },
+      "marc",
+    );
+    await client.requestHumanArbitration(
+      "run-1",
+      "step-1",
+      {
+        question_title: "Choix d'architecture",
+        context_summary: "Comparaison A vs B",
+        options_matrix: [],
+      },
+      "marc",
+    );
+    await client.resolveHumanArbitration(
+      "run-1",
+      "step-1",
+      {
+        arbitration_id: "arb-1",
+        selected_option_key: "opt-a",
+        human_justification: "Justification humaine validée pour l'option A.",
+      },
+      "marc",
+    );
+    await client.resumeHumanWorkflowStep("run-1", "step-1", { decision: "APPROVED" }, "marc");
+    await client.executeBackgroundFastPathAudit({ run_id: "run-1" }, "marc");
+    await client.previewUpstreamChallenge(
+      "run-1",
+      "step-2",
+      {
+        target_upstream_step_key: "step-1",
+        challenged_section_key: "sec-1",
+        challenge_reason: "Motif de challenge amont détaillé pour simulation.",
+      },
+      "marc",
+    );
+    await client.submitUpstreamChallenge(
+      "run-1",
+      "step-2",
+      {
+        target_upstream_step_key: "step-1",
+        challenged_section_key: "sec-1",
+        challenge_reason: "Motif de challenge amont détaillé pour soumission.",
+      },
+      "marc",
+    );
+    await client.replayWorkflowFromStep("run-1", "step-1", {}, "marc");
+    await client.assistantChatTurn(
+      { workspace_id: "ws-1", user_prompt: "Bonjour" },
+      "marc",
+    );
+    await client.assistantSaveAndLaunchWorkflow(
+      { workspace_id: "ws-1", manifest_yaml: "uri: orcia://w/1" },
+      "marc",
+    );
+    await client.evaluateDeterministicGate(
+      {
+        workspace_id: "ws-1",
+        run_id: "run-1",
+        step_execution_id: "step-exec-1",
+        step_key: "step-1",
+        artifact_payload: {},
+      },
+      "marc",
+    );
+    await client.listGateEvaluations("run-1", "marc");
+    await client.executeInitExistingProject(
+      {
+        workspace_id: "ws-1",
+        repository_uri: "git://repo/core",
+        detected_dependencies: ["fastapi"],
+        architecture_paradigm: "hexagonal",
+        human_anchor_justification:
+          "Validation humaine de la baseline d'architecture existante.",
+        human_anchor_signature: "Marc Lead",
+      },
+      "marc",
+    );
+    await client.executeInitSkill(
+      {
+        workspace_id: "ws-1",
+        skill_key: "sk-1",
+        skill_uri: "git://repo/skills/sk-1@v1.0.0",
+        title: "Skill 1",
+        description: "Desc",
+      },
+      "marc",
+    );
+    await client.verifyTier2Tdd(
+      {
+        workspace_id: "ws-1",
+        run_id: "run-1",
+        step_key: "step-1",
+        buggy_files: {},
+        patched_files: {},
+        test_files: {},
+      },
+      "marc",
+    );
+    await client.listDeploymentRoles("marc");
+    await client.evaluateAgenticGate(
+      {
+        workspace_id: "ws-1",
+        run_id: "run-1",
+        step_execution_id: "step-exec-1",
+        step_key: "step-1",
+        executor_model_family: "anthropic-claude",
+        evaluator_model_family: "mistral-large",
+        evaluator_model_id: "mistral-large-2411",
+        candidate_artifact: {},
+      },
+      "marc",
+    );
+    await client.evaluateHumanGate(
+      {
+        workspace_id: "ws-1",
+        run_id: "run-1",
+        step_execution_id: "step-exec-1",
+        step_key: "step-1",
+        policy: "mandatory_full",
+        artifact_payload: {},
+      },
+      "marc",
+    );
+    await client.inspectHumanGateHypotheses("gate-1", "marc");
+    await client.decideHumanGateChunk(
+      "gate-1",
+      "chunk-0",
+      { action: "APPROVE" },
+      "marc",
+    );
+    await client.finalizeHumanGate(
+      "gate-1",
+      { review_duration_ms: 20000, explicit_hypotheses_confirmation: true },
+      "marc",
+    );
+    await client.searchWorkspaceJiraJql(
+      { workspace_id: "ws-1", project_alias: "jira:product", jql: "project = PAY" },
+      "marc",
+    );
+    await client.stageJiraWorkflowAction(
+      {
+        workspace_id: "ws-1",
+        run_id: "run-1",
+        step_execution_id: "step-exec-1",
+        project_alias: "jira:product",
+        action_type: "transition_issue",
+        summary: "Transition issue",
+      },
+      "marc",
+    );
+    await client.commitStagedJiraAction(
+      { staged_action_id: "stg-1", gate_status: "PASS", run_lock_sha256: "a".repeat(64) },
+      "marc",
+    );
+    await client.listGovernedMcpTools("marc");
+    await client.callGovernedMcpTool(
+      {
+        tool_name: "orcia.read_blackboard_context",
+        workspace_id: "ws-1",
+        ide_client: "ANTIGRAVITY",
+      },
+      "marc",
+    );
+    await client.listInboxNotifications({
+      workspaceId: "ws-1",
+      scopeFilter: "ALL",
+      personaKey: "marc",
+    });
+    await client.claimTaskNotification("task-1", {}, "marc");
+    await client.releaseTaskNotificationClaim("task-1", {}, "marc");
+    await client.claimStepExecution("run-1", "step-1", {}, "marc");
+    await client.acquireResourceLeases(
+      {
+        resource_uris: ["git://repo/branch"],
+        holder_run_id: "run-1",
+        holder_root_run_id: "run-1",
+        holder_step_execution_id: "step-1",
+      },
+      "marc",
+    );
+    await client.executeFencedResourceWrite(
+      { resource_uri: "git://repo/branch", fencing_token: 1, payload: {} },
+      "marc",
+    );
+    await client.getControlCenterOverview({
+      scopeType: "GLOBAL",
+      scopeId: "scope-global",
+      personaKey: "marc",
+    });
+    await client.updateWorkspaceLifecycle(
+      "ws-1",
+      { lifecycle_phase: "BUILD" },
+      "marc",
+    );
+    await client.checkRunStepMutationGuard("run-1", "step-1", {}, "marc");
+    await client.searchCommandPalette("paiement", "marc");
+
+    expect(mockFetch).toHaveBeenCalledTimes(44);
+  });
 });

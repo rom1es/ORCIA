@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib
 
+from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_core.rag.connector_hub_and_ingestion import (
     ConnectorConnectionTestResult,
     ConnectorHealthKind,
@@ -102,6 +103,8 @@ __all__ = [
     "DocVsCodeAuditFinding",
     "DocumentIngestionReport",
     "EMBEDDING_DIM",
+    "FederatedSearchCandidate",
+    "FederatedSearchHit",
     "HybridRagHit",
     "HybridRagService",
     "HybridRagVectorStoreAdapter",
@@ -114,6 +117,7 @@ __all__ = [
     "SEVEN_SEARCH_FAMILIES",
     "SearchFamilyKey",
     "SearchScopeMode",
+    "SqlHybridRagRepository",
     "StaleAlertReason",
     "TripartiteGraphAndFreshnessService",
     "TripartiteNodeType",
@@ -121,8 +125,6 @@ __all__ = [
     "TripartiteTraceEdgeEntity",
     "TwoSpeedFederatedSearchService",
     "TwoSpeedSearchReport",
-    "FederatedSearchCandidate",
-    "FederatedSearchHit",
     "build_contextual_header",
     "build_empty_rag_service",
     "build_seeded_rag_service",

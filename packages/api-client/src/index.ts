@@ -2,6 +2,7 @@ import createClient from "openapi-fetch";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
+import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import type { paths } from "./generated/schema";
 import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from "./helpers";
 
@@ -10,6 +11,7 @@ export {
   createAuthAndShellDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
+  createEpics1To7OperationsDomainClient,
   OrciaProblemError,
   type OrciaApiClientOptions,
 };
@@ -38,5 +40,6 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createAuthAndShellDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
     ...createBootstrapAndOntologyDomainClient(requestJson),
+    ...createEpics1To7OperationsDomainClient(requestJson),
   };
 }

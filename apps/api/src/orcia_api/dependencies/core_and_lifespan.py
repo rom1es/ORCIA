@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -9,8 +10,10 @@ from fastapi import FastAPI, Request
 
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
+    LiteLLMAdapter,
     SystemBootstrapWorkflowService,
     build_default_system_bootstrap_service,
+    build_litellm_gateway_plugin,
 )
 from orcia_core.catalog import (
     FederatedCatalogService,
@@ -51,14 +54,25 @@ from orcia_core.rag import (
     build_seeded_rag_service,
 )
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+from orcia_kernel.ports import LLMPort
 from orcia_pack_sdlc import activate_sdlc_pack
+
+
+def _resolve_default_llm_gateway() -> LLMPort:
+    """Resolve `LiteLLMAdapter` (`ORCIA_LLM_GATEWAY=litellm`) or `DeterministicCassetteLLM`."""
+    mode = os.environ.get("ORCIA_LLM_GATEWAY", "").strip().lower()
+    if mode == "litellm":
+        return LiteLLMAdapter()
+    if mode == "litellm_plugin":
+        return build_litellm_gateway_plugin()
+    return DeterministicCassetteLLM()
 
 
 def initialize_app_services(app: FastAPI) -> None:
     """Wire and attach all domain services to `app.state` (idempotent Composition Root)."""
     activate_sdlc_pack()
     if getattr(app.state, "llm_gateway", None) is None:
-        app.state.llm_gateway = DeterministicCassetteLLM()
+        app.state.llm_gateway = _resolve_default_llm_gateway()
     if getattr(app.state, "connector_invoker", None) is None:
         app.state.connector_invoker = ConnectorInvoker()
     register_default_step_executors(
