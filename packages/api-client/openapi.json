@@ -51,6 +51,35 @@
             "title": "Distinct Families",
             "type": "array"
           },
+          "first_admin_display_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Admin Display Name"
+          },
+          "first_admin_email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Admin Email"
+          },
+          "first_admin_initialized": {
+            "default": false,
+            "title": "First Admin Initialized",
+            "type": "boolean"
+          },
           "llm_tier_mode": {
             "enum": [
               "UNCONFIGURED",

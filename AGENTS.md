@@ -9,8 +9,10 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 
 - Always use the project virtual environment `/home/romain/Documents/Projects/ORCIA/.venv` (`.venv/bin/python`, `.venv/bin/pytest`, `.venv/bin/ruff`, `.venv/bin/mypy`, `.venv/bin/alembic`, `.venv/bin/lint-imports`) for every Python command; never use system `python3` or global `pip`/`pytest`.
 - Before implementing any User Story or evolution, act as a Tech Lead / Senior Dev: study the US, run a GitNexus impact analysis (`gitnexus_query`, `gitnexus_context`, `gitnexus_impact`), check for code factorization opportunities (`DRY` / shared primitives), split any file approaching `300–400` lines, and proactively add dedicated technical debt / refactoring tickets (`Story N.Ma` in `docs/planning-artifacts/epics.md` + `docs/implementation-artifacts/sprint-status.yaml` or entries under `action_items:` in `sprint-status.yaml`).
-- For every User Story or significant evolution, generate and maintain a permanent Tech Lead Analysis & Implementation Report at `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md` following `docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`.
-- Enforce strict TDD (`Red → Green → Refactor`) with a mandatory minimum unit test coverage of `>= 90%` (`--cov-fail-under=90`) and all 5 testing layers (`AD-17`) before marking any Story `review` or `done`.
+- For every User Story (`Story N.M`) **AND for every ad-hoc user request / bugfix / adjustment that modifies ORCIA**, generate **BEFORE making any code modification** a permanent Tech Lead Analysis & Implementation Report in `docs/implementation-artifacts/tech-lead-reports/` following `docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`:
+  - Named `docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{short-slug}-tech-lead-report.md` (prefixed with the current date `YYYY-MM-DD` and a short kebab-case description of the changes) for ad-hoc adjustments, bugfixes, or evolutions outside a numbered story; or `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md` for sprint stories.
+  - Sections 1 (`Analyse du Besoin & Étude d'Impact Tech Lead`) and 2 (`Plan d'Implémentation`) MUST be written **before** editing application code, and Section 3 (`Bilan des Modifications & Résultats`) MUST be completed after passing all verification gates.
+- Enforce strict TDD (`Red → Green → Refactor`) with a mandatory minimum unit test coverage of `>= 90%` (`--cov-fail-under=90`), full vertical wiring (`apps/web` $\rightarrow$ `@orcia/api-client` $\rightarrow$ `apps/api` $\rightarrow$ `orcia_core` $\rightarrow$ PostgreSQL 18), and all 5 testing layers (`AD-17`) before marking any Story or change `review` or `done`.
 - Never mock PostgreSQL (with SQLite) or Redis in integration tests; always run against real ephemeral containers via `testcontainers-python` (PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS S3) and use `DeterministicCassetteLLM` (`0 $` external LLM calls in CI).
 - Enforce unidirectional modular monolith boundaries (`AD-19`, verified by `.venv/bin/lint-imports`): `orcia_kernel` $\leftarrow$ `orcia_core` domains $\leftarrow$ `orcia_api` / `orcia_worker`, with zero circular dependencies between domain modules (`blackboard`, `catalog`, `permissions`, `orchestration`, `ontology`, `audit_finops`, `identity`, `bootstrap`), zero cross-domain `_internal` imports (`orcia_core.<domaine>._internal`), and zero framework/SDK imports (`fastapi`, `sqlalchemy`, `dbos`, `dramatiq`, `redis`, `litellm`, `docling`, `wasmtime`) inside `orcia_kernel`, `orcia_core/domain`, or `orcia_core/ports`.
 - Keep HTTP/OpenAPI transport schemas (`*Request`, `*Response`) exclusively in `apps/api/src/orcia_api/schemas/<domaine>.py` — never inside `packages/orcia-core` — and define domain errors per bounded context in `packages/orcia-core/src/orcia_core/<domaine>/errors.py` inheriting from `orcia_kernel.errors.OrciaDomainError` (no central `domain/exceptions.py` catch-all).
@@ -36,6 +38,7 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 
 - Python commands must run through `.venv/bin/`: `.venv/bin/ruff check .`, `.venv/bin/ruff format --check .`, `.venv/bin/mypy --strict packages/orcia-kernel packages/orcia-core apps/api apps/worker`, `.venv/bin/lint-imports`, `.venv/bin/pytest --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90`.
 - TypeScript commands run via `pnpm`: `pnpm turbo run lint typecheck test`.
+- Reset database to Day-0 initial boot state (`0` users, system bootstrap preserved): `pnpm db:reset` (or `.venv/bin/python infra/scripts/maintenance/09_reset_db_first_boot.py --apply`).
 - Architecture spine lint: `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24`.
 - GitNexus index refresh: `npx gitnexus analyze` (run after structural changes and before `gitnexus_detect_changes()`).
 
@@ -63,10 +66,10 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 
 # Protocole Tech Lead / Dev Senior & Rapport Pérenne d'Implémentation
 
-Pour chaque User Story (`Story N.M`) ou évolution du projet **ORCIA**, l'agent agit en tant que **Tech Lead / Dev Senior** selon le cycle obligatoire en 3 temps ci-dessous :
+Pour **chaque User Story (`Story N.M`)** ET pour **chaque demande d'ajustement, correctif ou évolution du projet ORCIA**, l'agent agit en tant que **Tech Lead / Dev Senior** selon le cycle obligatoire en 3 temps ci-dessous :
 
 ## 1. Étude Préalable d'Impact, Factorisation & Dette Technique (Avant Codage)
-1. **Étude critique de l'US** : Vérifier les critères d'acceptation (`epics.md`), les décisions d'architecture (`ARCHITECTURE-SPINE.md`, `architecture.md`) et les spécifications UX (`DESIGN.md`, `EXPERIENCE.md`).
+1. **Étude critique du besoin ou de l'US** : Vérifier les critères d'acceptation (`epics.md`), les décisions d'architecture (`ARCHITECTURE-SPINE.md`, `architecture.md`) et les spécifications UX (`DESIGN.md`, `EXPERIENCE.md`).
 2. **Analyse d'impact GitNexus** : Exécuter `gitnexus_query`, `gitnexus_context` et `gitnexus_impact({target, direction: "upstream"})` sur les symboles existants touchés.
 3. **Opportunités de factorisation & contrôle de volumétrie** :
    - Identifier toute brique réutilisable dans `packages/orcia-kernel`, `packages/orcia-core`, `packages/api-client`, `apps/api` ou `apps/web` afin d'éviter toute duplication.
@@ -77,11 +80,21 @@ Pour chaque User Story (`Story N.M`) ou évolution du projet **ORCIA**, l'agent 
      - soit une **Story intercalaire `Story N.Ma`** dans `docs/planning-artifacts/epics.md` et `docs/implementation-artifacts/sprint-status.yaml`,
      - soit un ticket dans la section `action_items:` de `docs/implementation-artifacts/sprint-status.yaml`.
 
-## 2. Génération du Rapport Pérenne Tech Lead (`docs/implementation-artifacts/tech-lead-reports/`)
-Chaque User Story ou fonctionnalité livrée doit produire un document pérenne dans **`docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`** basé sur le gabarit officiel [TECH-LEAD-REPORT-TEMPLATE.md](file:///home/romain/Documents/Projects/ORCIA/docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md) :
-- **Section 1 (`Analyse du Besoin & Étude d'Impact Tech Lead`)** : rédigée **avant** l'implémentation (contexte, problématique, analyse GitNexus, chiffres clés / exploration DB, factorisations et tickets de dette créés).
-- **Section 2 (`Plan d'Implémentation`)** : migrations Alembic (`2.1`), noyau hexagonal & workers (`2.2`), backend FastAPI & SDK OpenAPI (`2.3`), interface SPA Vite + TanStack Router Direction C (`2.4`).
-- **Section 3 (`Bilan des Modifications & Résultats`)** : complétée **après** implémentation et passage des 5 couches de tests (tableau des fichiers créés/modifiés, métriques chiffrées & couverture $\ge 90\%$, validation des 5 couches `AD-17` et résultat de `gitnexus_detect_changes()`).
+## 2. Génération Préalable du Rapport Pérenne Tech Lead (`docs/implementation-artifacts/tech-lead-reports/`) — OBLIGATOIRE AVANT TOUTE MODIFICATION
+**Avant d'effectuer la moindre modification de code dans ORCIA**, générer systématiquement un rapport Tech Lead dans **`docs/implementation-artifacts/tech-lead-reports/`** basé sur le gabarit officiel [TECH-LEAD-REPORT-TEMPLATE.md](file:///home/romain/Documents/Projects/ORCIA/docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md) :
+- **Convention de nommage obligatoire** :
+  - Pour toute demande d'ajustement, correctif ou évolution hors Story : **`docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{descriptif-court}-tech-lead-report.md`** (préfixé par la date du jour `YYYY-MM-DD` suivie d'un descriptif court en `kebab-case`, ex. `2026-11-04-persistance-admin-jour0-et-reinit-bdd-tech-lead-report.md`).
+  - Pour une User Story du sprint : **`docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`** (ou `{YYYY-MM-DD}-{story-key}-tech-lead-report.md`).
+- **Cycle de rédaction en 2 phases** :
+  1. **AVANT toute modification de code** : créer le fichier du rapport avec la **Section 1 (`Analyse du Besoin & Étude d'Impact Tech Lead`)** et la **Section 2 (`Plan d'Implémentation` : `2.1` Alembic, `2.2` Noyau hexagonal & workers, `2.3` Backend FastAPI & SDK OpenAPI, `2.4` Interface SPA Vite + TanStack Router Direction C)**.
+  2. **APRÈS implémentation et passage des 5 couches de tests** : compléter la **Section 3 (`Bilan des Modifications & Résultats`)** (tableau des fichiers créés/modifiés, métriques chiffrées & couverture $\ge 90\%$, validation des 5 couches `AD-17` et résultat de `gitnexus_detect_changes()`).
+
+## 3. Quatre Garde-Fous Obligatoires de Câblage Vertical (Anti-Silos UI / API / SQL)
+Pour éviter toute fonctionnalité partiellement câblée (syndrome de l'adaptateur SQL orphelin ou du store React purement en mémoire `useState` perdu au rechargement `F5`) :
+1. **Zéro Adaptateur SQL Orphelin (Gate GitNexus)** : Toute fonction/classe SQL dans `_internal/sql_*.py` ou `adapters/postgres_*.py` doit obligatoirement avoir au moins un appelant actif dans `apps/api` ou `apps/worker` (`gitnexus_impact({target, direction: "upstream", repo: "ORCIA"})` $\rightarrow$ `impactedCount >= 1` hors `tests/`).
+2. **Test d'Intégration Vertical `HTTP ➔ PostgreSQL 18` (Couche 2 `AD-17`)** : Les tests d'intégration `testcontainers` PostgreSQL 18 doivent solliciter la route HTTP FastAPI (ou le service injecté dans la route) **ET** vérifier par une requête `SELECT` sur PostgreSQL 18 que l'état a bien été persisté en base (ne jamais tester uniquement la fonction SQL isolée à côté d'un routeur resté en mémoire).
+3. **Interdiction des Stores Métier `useState` Éphémères & Gate de « Survie au F5 » (`apps/web`)** : Tout état métier créé ou modifié par l'utilisateur dans `apps/web` doit appeler `@orcia/api-client` (`POST`/`PUT`/`PATCH`), se réhydrater au démarrage via `GET`, et être couvert par un test Vitest/Playwright qui démonte l'arbre React (`unmount()`) puis le remonte (`render()`) pour prouver que l'état survit au rafraîchissement de l'URL.
+4. **Vérité Terrain Jour 0 (`pnpm db:reset`)** : Toute évolution touchant à l'amorçage Jour 0 ou à la configuration initiale doit être vérifiée après remise à zéro via `pnpm db:reset` ([`infra/scripts/maintenance/09_reset_db_first_boot.py`](file:///home/romain/Documents/Projects/ORCIA/infra/scripts/maintenance/09_reset_db_first_boot.py)).
 
 ---
 

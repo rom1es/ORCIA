@@ -6,6 +6,10 @@ import json
 from typing import cast
 
 from orcia_core.bootstrap import workflow_bootstrap_seeds as wbs
+from orcia_core.bootstrap._internal.sql_first_user_guard import (
+    create_first_platform_admin_on_postgres18,
+    get_first_platform_admin_from_postgres18,
+)
 from orcia_core.bootstrap.durable_wizards import (
     WIZARD_STEPS_BY_TYPE,
     DemoWorkspaceProvisionResult,
@@ -169,4 +173,6 @@ __all__ = [
     "WorkspaceBootstrapInput",
     "build_default_system_bootstrap_service",
     "build_postgres_upsert_sql",
+    "create_first_platform_admin_on_postgres18",
+    "get_first_platform_admin_from_postgres18",
 ]

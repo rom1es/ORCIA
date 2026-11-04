@@ -316,4 +316,7 @@ class AccostageStatusResponse(BaseModel):
     agentic_gates_ad10_enabled: bool
     amber_warning_badge: str | None = Field(default=None, max_length=512)
     completed_milestone_keys: list[str]
+    first_admin_initialized: bool = Field(default=False)
+    first_admin_email: str | None = Field(default=None, max_length=255)
+    first_admin_display_name: str | None = Field(default=None, max_length=128)
     trace_id: str = Field(..., min_length=32, max_length=32)

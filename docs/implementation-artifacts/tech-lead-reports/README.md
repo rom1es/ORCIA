@@ -6,8 +6,9 @@ Ce répertoire centralise l'historique et la traçabilité de toutes les implém
 
 ## 📋 Standard d'Implémentation Obligatoire
 
-Pour chaque User Story (`Story N.M`) ou évolution structurante, un rapport Tech Lead pérenne doit être rédigé dans ce dossier selon la convention de nommage :
-`{story-key}-tech-lead-report.md` (s'appuyer sur le modèle officiel [`../TECH-LEAD-REPORT-TEMPLATE.md`](../TECH-LEAD-REPORT-TEMPLATE.md)).
+Pour chaque User Story (`Story N.M`) **et** pour chaque demande d'ajustement, correctif ou évolution d'ORCIA, un rapport Tech Lead pérenne doit être rédigé dans ce dossier **avant toute modification de code** selon la convention de nommage :
+- `{YYYY-MM-DD}-{descriptif-court}-tech-lead-report.md` (préfixé par la date du jour complétée d'un descriptif court des changements pour tout ajustement/correctif hors Story) ;
+- `{story-key}-tech-lead-report.md` (pour une User Story du sprint, en s'appuyant sur le modèle officiel [`../TECH-LEAD-REPORT-TEMPLATE.md`](../TECH-LEAD-REPORT-TEMPLATE.md)).
 
 Chaque document **doit obligatoirement comporter les 3 sections suivantes** :
 
@@ -20,11 +21,11 @@ Chaque document **doit obligatoirement comporter les 3 sections suivantes** :
    - Schéma de données & migrations Alembic (`infra/migrations/versions/`).
    - Noyau hexagonal, algorithmes & workers (`packages/orcia-core/`, `apps/worker/`, `infra/scripts/maintenance/`).
    - Couche Backend FastAPI & contrats OpenAPI (`apps/api/`, `packages/api-client/`).
-   - Design System (`packages/ui` / `@orcia/ui`), `i18n` (`fr`/`en`) & interface Next.js Direction C (`apps/web/`).
+   - Design System (`packages/ui` / `@orcia/ui`), `i18n` (`fr`/`en`) & interface SPA Vite + TanStack Router Direction C (`apps/web/`).
 3. **Bilan des Modifications & Résultats (Post-Implémentation)** :
    - Tableau synthétique des fichiers développés et modifiés.
    - Résultats chiffrés, métriques & couverture de tests ($\ge 90\%$).
-   - Validation des 5 couches de tests (`AD-17`) et résultat `gitnexus_detect_changes()`.
+   - Validation des 5 couches de tests (`AD-17`), des 4 garde-fous de câblage vertical et résultat `gitnexus_detect_changes()`.
 
 ---
 
@@ -86,3 +87,4 @@ Chaque document **doit obligatoirement comporter les 3 sections suivantes** :
 | **2026-10-31** | `Story 12.2` | [`12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10-tech-lead-report.md`](./12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10-tech-lead-report.md) | Montage de l'Écran « Mon Assistant » Tout-en-Un dans `apps/web` (`/assistant` — `Epic 10` : 3 Vitesses, Dossiers `📁`, Citations `[S1]/[G1]/[O1]` & Gouvernance 4 Niveaux) | Extension bilingue de `epic10_labels.ts` (`assistantSpeedStream`, `assistantCitations`, `assistantFolders`) et montage de `AssistantFoldersAndCollaborativeThreadView`, `AssistantSpeedSelectorAndStreamView`, `AssistantCitationPillsAndArtifactCard` et `AssistantGovernanceModalAndStudio` dans `InboxFeaturePanel`. |
 | **2026-10-31** | `Story 12.3` | [`12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder-tech-lead-report.md`](./12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder-tech-lead-report.md) | Montage de « Mes Espaces » (5 Sous-Onglets, Chaîne ADN Starlark, Glossaire `✨ À valider`), du Banc de Test MCP/A2A `🔌` et de l'Atelier `orcia-pack-builder` dans `apps/web` (`Epic 11`) | Création de `epic11_labels.ts` (FR/EN) et montage de `WorkspaceFiveTabsAndExternalRebaseView` + `DnaStarlarkCompilerAndGlossaryLifecycleView` (`/spaces`, `/workspaces`), `RemoteServiceTestBenchAndMcpExposureView` (`/agents`, `/catalog`), `PackBuilderProcessesStudioView` + `HelpArticleGeneratorAndValidatorView` (`/processes`, `/gates`) et `ContextualHelpColumnAndCenter` (`HELP_MENU_CENTER` sur `/help`). |
 | **2026-10-31** | `Story 12.4` | [`12-4-epuration-ux-zero-donnee-fictive-modale-admin-jour-0-grisage-et-purge-nfr-tech-lead-report.md`](./12-4-epuration-ux-zero-donnee-fictive-modale-admin-jour-0-grisage-et-purge-nfr-tech-lead-report.md) | Épuration UX « Zéro Donnée Fictive », Modale de Création du Compte Administrateur Jour 0, Grisage des Fonctionnalités Non Configurées, Nettoyage de la Sidebar & Purge des Libellés NFR (`Epic 12`) | Découpage de `UserAccountDropdownAndSettingsModal.tsx` (`UserSettingsModalTabs.tsx`), modale bloquante d'initialisation du 1er Administrateur, purge des données fictives (`PAY-142`, `SEPA`, `PSD2`) et du jargon NFR/pixels dans les dictionnaires FR/EN, grisage contextuel des menus non configurés, et refonte du sélecteur de « Rôle » humain. |
+| **2026-11-04** | `Post-Epic 12` | [`2026-11-04-persistance-admin-jour0-et-reinit-bdd-tech-lead-report.md`](./2026-11-04-persistance-admin-jour0-et-reinit-bdd-tech-lead-report.md) | Persistance PostgreSQL 18 du 1er Administrateur Jour 0, Script `db:reset` (`09_reset_db_first_boot.py`) & Gouvernance Anti-Silos (`GEMINI.md` / `CLAUDE.md`) | Câblage vertical complet de la création et relecture du 1er Administrateur (`apps/web` $\rightarrow$ `@orcia/api-client` $\rightarrow$ `routers/bootstrap.py` $\rightarrow$ `sql_first_user_guard.py` $\rightarrow$ PostgreSQL 18 `users` + Argon2id), script de remise à zéro Jour 0 (`pnpm db:reset`), et obligation de Rapport Tech Lead pré-modification (`{YYYY-MM-DD}-{descriptif-court}-tech-lead-report.md`) + 4 garde-fous anti-silos. |

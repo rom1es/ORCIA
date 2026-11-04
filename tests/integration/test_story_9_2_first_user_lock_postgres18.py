@@ -24,6 +24,7 @@ from testcontainers.core.waiting_utils import wait_for_logs
 
 from orcia_core.bootstrap._internal.sql_first_user_guard import (
     create_first_platform_admin_on_postgres18,
+    get_first_platform_admin_from_postgres18,
 )
 from orcia_core.bootstrap.errors import (
     FirstUserAlreadyInitializedError,
@@ -46,7 +47,20 @@ def _prepare_sock_dir(name: str) -> Path:
 
 @pytest.mark.asyncio
 async def test_story_9_2_postgres18_exclusive_users_table_lock_under_concurrency() -> None:
-    """Validate `LOCK TABLE users IN EXCLUSIVE MODE` on real PostgreSQL 18 under concurrency."""
+    """Validate `LOCK TABLE users IN EXCLUSIVE MODE`, DB lookup, and 1st-boot reset on PG 18."""
+    import importlib.util
+
+    reset_script_path = (
+        REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
+    )
+    spec = importlib.util.spec_from_file_location("reset_db_first_boot", reset_script_path)
+    assert spec is not None and spec.loader is not None
+    reset_mod = importlib.util.module_from_spec(spec)
+    import sys
+
+    sys.modules["reset_db_first_boot"] = reset_mod
+    spec.loader.exec_module(reset_mod)
+
     pg_sock_dir = _prepare_sock_dir("pg18_9_2")
     pg_container = (
         DockerContainer("pgvector/pgvector:pg18")
@@ -90,10 +104,11 @@ async def test_story_9_2_postgres18_exclusive_users_table_lock_under_concurrency
                         )
                     )
 
-                # Verify virgin database: COUNT(*) FROM users == 0
+                # Verify virgin database: COUNT(*) FROM users == 0 and lookup is None
                 async with engine.connect() as conn:
                     cnt0 = await conn.execute(sa.text("SELECT COUNT(*) FROM users"))
                     assert int(cnt0.scalar_one()) == 0
+                assert await get_first_platform_admin_from_postgres18(engine) is None
 
                 dummy_hash = "argon2id$test"  # pragma: allowlist secret
 
@@ -149,6 +164,31 @@ async def test_story_9_2_postgres18_exclusive_users_table_lock_under_concurrency
                 async with engine.connect() as conn:
                     cnt1 = await conn.execute(sa.text("SELECT COUNT(*) FROM users"))
                     assert int(cnt1.scalar_one()) == 1
+
+                # 3. Verify get_first_platform_admin_from_postgres18 returns the persisted winner
+                persisted_admin = await get_first_platform_admin_from_postgres18(
+                    engine, orcia_env="production"
+                )
+                assert persisted_admin is not None
+                assert persisted_admin.email == winners[0].email
+                assert persisted_admin.display_name == winners[0].display_name
+                assert persisted_admin.platform_role == "PLATFORM_ADMIN"
+
+                # 4. Verify 09_reset_db_first_boot.py dry-run rolls back and apply clears users
+                dry_report = await reset_mod.reset_database_to_first_boot(
+                    engine, apply_changes=False
+                )
+                assert dry_report.dry_run is True
+                assert dry_report.committed is False
+                assert await get_first_platform_admin_from_postgres18(engine) is not None
+
+                apply_report = await reset_mod.reset_database_to_first_boot(
+                    engine, apply_changes=True
+                )
+                assert apply_report.dry_run is False
+                assert apply_report.committed is True
+                assert apply_report.remaining_users_count == 0
+                assert await get_first_platform_admin_from_postgres18(engine) is None
             finally:
                 await engine.dispose()
     finally:

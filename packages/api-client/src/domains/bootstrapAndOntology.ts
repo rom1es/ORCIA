@@ -1,4 +1,5 @@
 import type {
+  AccostageStatusResponse,
   InitDatasourceRequest,
   InitDatasourceResponse,
   InitOrganizationRequest,
@@ -7,7 +8,10 @@ import type {
   InitUserResponse,
   InitWorkspaceRequest,
   InitWorkspaceResponse,
+  ProgressiveLlmEndpointRequest,
   SystemBootstrapStateResponse,
+  WelcomeSetupFirstAdminRequest,
+  WelcomeSetupFirstAdminResponse,
 } from "../generated/bootstrap";
 import type {
   DbDdlIndexRequest,
@@ -32,6 +36,27 @@ type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
 export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonFn) {
   return {
+    getAccostageStatus(): Promise<AccostageStatusResponse> {
+      return requestJson<AccostageStatusResponse>("/api/v1/bootstrap/accostage-status");
+    },
+    createWelcomeSetupFirstAdmin(
+      payload: WelcomeSetupFirstAdminRequest,
+    ): Promise<WelcomeSetupFirstAdminResponse> {
+      return requestJson<WelcomeSetupFirstAdminResponse>(
+        "/api/v1/bootstrap/welcome-setup/first-admin",
+        "POST",
+        payload,
+      );
+    },
+    registerProgressiveLlmEndpoint(
+      payload: ProgressiveLlmEndpointRequest,
+    ): Promise<AccostageStatusResponse> {
+      return requestJson<AccostageStatusResponse>(
+        "/api/v1/bootstrap/welcome-setup/progressive-llm",
+        "POST",
+        payload,
+      );
+    },
     getSystemBootstrapState(personaKey?: string): Promise<SystemBootstrapStateResponse> {
       return requestJson<SystemBootstrapStateResponse>(
         `/api/v1/bootstrap/state${buildPersonaQuery(personaKey)}`,

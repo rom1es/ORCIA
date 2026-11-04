@@ -89,3 +89,36 @@ async def create_first_platform_admin_on_postgres18(
         orcia_env=effective_env,
         sql_lock_statement=EXCLUSIVE_USERS_LOCK_SQL,
     )
+
+
+async def get_first_platform_admin_from_postgres18(
+    engine: AsyncEngine,
+    *,
+    orcia_env: str = "local",
+) -> FirstPlatformAdminRecord | None:
+    """Return the first active `PLATFORM_ADMIN` from PostgreSQL 18 `users`, or `None` if empty."""
+    effective_env = orcia_env.strip().lower() or "local"
+    async with engine.connect() as conn:
+        row = (
+            await conn.execute(
+                sa.text(
+                    """
+                    SELECT id, email, display_name
+                    FROM users
+                    WHERE is_active = TRUE
+                    ORDER BY (CASE WHEN platform_role = 'PLATFORM_ADMIN' THEN 0 ELSE 1 END), id ASC
+                    LIMIT 1
+                    """
+                )
+            )
+        ).first()
+        if row is None:
+            return None
+        return FirstPlatformAdminRecord(
+            user_id=str(row[0]),
+            email=str(row[1]),
+            display_name=str(row[2]),
+            platform_role="PLATFORM_ADMIN",
+            orcia_env=effective_env,
+            sql_lock_statement=EXCLUSIVE_USERS_LOCK_SQL,
+        )

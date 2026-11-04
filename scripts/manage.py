@@ -442,13 +442,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="manage",
         description=(
-            "Gestionnaire unifié ORCIA : start | stop | restart | status | logs | init-secrets "
-            "pour toute la stack (all) ou par composant."
+            "Gestionnaire unifié ORCIA : start | stop | restart | status | logs | init-secrets | "
+            "seed-uat | reset-db pour toute la stack (all) ou par composant."
         ),
     )
     parser.add_argument(
         "action",
-        choices=("start", "stop", "restart", "status", "logs", "init-secrets", "seed-uat"),
+        choices=(
+            "start",
+            "stop",
+            "restart",
+            "status",
+            "logs",
+            "init-secrets",
+            "seed-uat",
+            "reset-db",
+        ),
         help="Action à exécuter sur la cible.",
     )
     parser.add_argument(
@@ -475,7 +484,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--apply",
         action="store_true",
         default=False,
-        help="Appliquer réellement le peuplement UAT en base (pour 'seed-uat', sinon --dry-run).",
+        help=(
+            "Appliquer réellement l'opération en base "
+            "(pour 'seed-uat' ou 'reset-db', sinon --dry-run)."
+        ),
     )
     return parser
 
@@ -497,6 +509,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.action == "seed-uat":
         script_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "08_seed_uat_dataset.py"
+        cmd = [sys.executable, str(script_path)]
+        if args.apply:
+            cmd.append("--apply")
+        else:
+            cmd.append("--dry-run")
+        completed = subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
+        return completed.returncode
+
+    if args.action == "reset-db":
+        script_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
         cmd = [sys.executable, str(script_path)]
         if args.apply:
             cmd.append("--apply")

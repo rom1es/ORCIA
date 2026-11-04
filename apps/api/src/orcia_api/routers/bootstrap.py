@@ -251,17 +251,38 @@ async def execute_init_user(
     )
 
 
-@router.get(
-    "/accostage-status",
-    response_model=bs.AccostageStatusResponse,
-    summary="Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
-    responses=PROBLEM_RESPONSES,
-)
-async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
-    from orcia_api.dependencies import get_accostage_service
+async def _sync_first_admin_with_postgres18(
+    svc: bm.ProgressiveDay0AccostageService,
+) -> None:
+    """Synchronize `svc.first_admin` with PostgreSQL 18 `users` table when reachable."""
+    import os
 
-    svc = get_accostage_service(request)
-    rep = svc.get_accostage_status()
+    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+        return
+    try:
+        from sqlalchemy.ext.asyncio import create_async_engine
+
+        from orcia_core.config import resolve_database_url
+
+        engine = create_async_engine(
+            resolve_database_url(),
+            connect_args={"timeout": 1.5},
+        )
+        try:
+            db_record = await bm.get_first_platform_admin_from_postgres18(
+                engine,
+                orcia_env=svc.orcia_env,
+            )
+            svc.set_first_platform_admin_record(db_record)
+        finally:
+            await engine.dispose()
+    except Exception:
+        return
+
+
+def _serialize_accostage_status(
+    rep: bm.AccostageStatusReport, trace_id: str
+) -> bs.AccostageStatusResponse:
     return bs.AccostageStatusResponse(
         completed_count=rep.completed_count,
         total_count=rep.total_count,
@@ -272,8 +293,26 @@ async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
         agentic_gates_ad10_enabled=rep.agentic_gates_ad10_enabled,
         amber_warning_badge=rep.amber_warning_badge,
         completed_milestone_keys=list(rep.completed_milestone_keys),
-        trace_id=_trace(request),
+        first_admin_initialized=rep.first_admin_initialized,
+        first_admin_email=rep.first_admin_email,
+        first_admin_display_name=rep.first_admin_display_name,
+        trace_id=trace_id,
     )
+
+
+@router.get(
+    "/accostage-status",
+    response_model=bs.AccostageStatusResponse,
+    summary="Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
+    from orcia_api.dependencies import get_accostage_service
+
+    svc = get_accostage_service(request)
+    await _sync_first_admin_with_postgres18(svc)
+    rep = svc.get_accostage_status()
+    return _serialize_accostage_status(rep, _trace(request))
 
 
 @router.post(
@@ -286,17 +325,54 @@ async def create_welcome_setup_first_admin(
     payload: bs.WelcomeSetupFirstAdminRequest,
     request: Request,
 ) -> bs.WelcomeSetupFirstAdminResponse:
-    from orcia_api.dependencies import get_accostage_service
+    import os
+
+    from orcia_api.dependencies import get_accostage_service, get_auth_service
 
     svc = get_accostage_service(request)
-    rec = await svc.create_first_platform_admin_async(
-        email=payload.email,
-        display_name=payload.display_name,
-        password_hash=f"argon2id${payload.password[:4]}",
-        bootstrap_token=payload.bootstrap_token,
-        orcia_env_override=payload.orcia_env,
-        instance=str(request.url.path),
-    )
+    auth_svc = get_auth_service(request)
+    password_hash = auth_svc.hasher.hash_password(payload.password)
+
+    rec: bm.FirstPlatformAdminRecord | None = None
+    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+        try:
+            from sqlalchemy.ext.asyncio import create_async_engine
+
+            from orcia_core.bootstrap.errors import OrciaDomainError
+            from orcia_core.config import resolve_database_url
+
+            engine = create_async_engine(
+                resolve_database_url(),
+                connect_args={"timeout": 1.5},
+            )
+            try:
+                rec = await bm.create_first_platform_admin_on_postgres18(
+                    engine,
+                    email=payload.email,
+                    display_name=payload.display_name,
+                    password_hash=password_hash,
+                    orcia_env=payload.orcia_env,
+                    expected_bootstrap_token=svc.expected_bootstrap_token,
+                    provided_bootstrap_token=payload.bootstrap_token,
+                    instance=str(request.url.path),
+                )
+                svc.set_first_platform_admin_record(rec)
+            finally:
+                await engine.dispose()
+        except OrciaDomainError:
+            raise
+        except Exception:
+            rec = None
+
+    if rec is None:
+        rec = await svc.create_first_platform_admin_async(
+            email=payload.email,
+            display_name=payload.display_name,
+            password_hash=password_hash,
+            bootstrap_token=payload.bootstrap_token,
+            orcia_env_override=payload.orcia_env,
+            instance=str(request.url.path),
+        )
     return bs.WelcomeSetupFirstAdminResponse(
         user_id=rec.user_id,
         email=rec.email,
@@ -332,15 +408,4 @@ async def register_welcome_setup_progressive_llm(
             endpoint_uri=payload.endpoint_uri,
         )
     )
-    return bs.AccostageStatusResponse(
-        completed_count=rep.completed_count,
-        total_count=rep.total_count,
-        badge_label=rep.badge_label,
-        llm_tier_mode=rep.llm_tier_mode,
-        distinct_families=list(rep.distinct_families),
-        assistant_trial_enabled=rep.assistant_trial_enabled,
-        agentic_gates_ad10_enabled=rep.agentic_gates_ad10_enabled,
-        amber_warning_badge=rep.amber_warning_badge,
-        completed_milestone_keys=list(rep.completed_milestone_keys),
-        trace_id=_trace(request),
-    )
+    return _serialize_accostage_status(rep, _trace(request))

@@ -305,6 +305,7 @@ function InnerShellContainer({
     createPlatformAdmin({
       displayName: adminFullName.trim(),
       email: adminEmail.trim(),
+      password: adminPassword,
     });
   };
 

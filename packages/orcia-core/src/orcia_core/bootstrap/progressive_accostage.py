@@ -122,6 +122,9 @@ class AccostageStatusReport:
     agentic_gates_ad10_enabled: bool
     amber_warning_badge: str | None
     completed_milestone_keys: tuple[str, ...]
+    first_admin_initialized: bool = False
+    first_admin_email: str | None = None
+    first_admin_display_name: str | None = None
 
 
 class ProgressiveDay0AccostageService:
@@ -141,6 +144,28 @@ class ProgressiveDay0AccostageService:
         self._async_lock = asyncio.Lock()
         self._first_admin: FirstPlatformAdminRecord | None = None
         self._completed_keys: set[str] = {"first-admin"}
+
+    @property
+    def orcia_env(self) -> str:
+        """Configured ORCIA environment (`local`, `staging`, `production`)."""
+        return self._orcia_env
+
+    @property
+    def expected_bootstrap_token(self) -> str | None:
+        """Expected Day-0 bootstrap token when `orcia_env != 'local'`."""
+        return self._expected_bootstrap_token
+
+    @property
+    def first_admin(self) -> FirstPlatformAdminRecord | None:
+        """Currently cached `FirstPlatformAdminRecord`, if any."""
+        return self._first_admin
+
+    def set_first_platform_admin_record(self, record: FirstPlatformAdminRecord | None) -> None:
+        """Synchronize the in-memory `FirstPlatformAdminRecord` with PostgreSQL 18 state."""
+        with self._sync_lock:
+            self._first_admin = record
+            if record is not None:
+                self._completed_keys.add("first-admin")
 
     def _verify_bootstrap_token(
         self,
@@ -261,6 +286,7 @@ class ProgressiveDay0AccostageService:
         )
         completed_count = max(1, len(ordered_completed))
         total_count = len(ACCOSTAGE_SIX_MILESTONES)
+        admin = self._first_admin
         return AccostageStatusReport(
             completed_count=completed_count,
             total_count=total_count,
@@ -271,4 +297,7 @@ class ProgressiveDay0AccostageService:
             agentic_gates_ad10_enabled=ad10_ok,
             amber_warning_badge=amber_badge,
             completed_milestone_keys=ordered_completed,
+            first_admin_initialized=admin is not None,
+            first_admin_email=admin.email if admin is not None else None,
+            first_admin_display_name=admin.display_name if admin is not None else None,
         )

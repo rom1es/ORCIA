@@ -13,6 +13,9 @@ export interface components {
       completed_count: number;
       completed_milestone_keys: (string)[];
       distinct_families: (string)[];
+      first_admin_display_name?: string | null;
+      first_admin_email?: string | null;
+      first_admin_initialized?: boolean;
       llm_tier_mode: "UNCONFIGURED" | "QUICK_TRIAL_SINGLE_FAMILY" | "FULL_ORTHOGONAL_AD10";
       total_count: number;
       trace_id: string;

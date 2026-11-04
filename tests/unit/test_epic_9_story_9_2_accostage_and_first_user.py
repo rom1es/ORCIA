@@ -160,16 +160,21 @@ def test_story_9_2_progressive_llm_tier_and_accostage_1_to_6_progression() -> No
     assert status2.distinct_families == ("anthropic-claude", "qwen-2.5")
 
 
-def test_story_9_2_api_endpoints_welcome_setup_and_accostage() -> None:
+def test_story_9_2_api_endpoints_welcome_setup_and_accostage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify FastAPI endpoints for `/api/v1/bootstrap/welcome-setup/*` and `/accostage-status`."""
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     client = TestClient(app)
 
-    # 1. GET /api/v1/bootstrap/accostage-status
+    # 1. GET /api/v1/bootstrap/accostage-status -> first_admin_initialized is False initially
     resp0 = client.get("/api/v1/bootstrap/accostage-status")
     assert resp0.status_code == 200
     body0 = resp0.json()
     assert body0["badge_label"] == "Accostage 1/6"
+    assert body0["first_admin_initialized"] is False
+    assert body0["first_admin_email"] is None
 
     # 2. POST /api/v1/bootstrap/welcome-setup/first-admin with wrong token when env != local -> 403
     resp_denied = client.post(
@@ -184,6 +189,30 @@ def test_story_9_2_api_endpoints_welcome_setup_and_accostage() -> None:
     )
     assert resp_denied.status_code == 403
     assert resp_denied.json()["error_code"] == "ERR_INVALID_BOOTSTRAP_TOKEN"
+
+    # 2b. POST /api/v1/bootstrap/welcome-setup/first-admin in local env -> 200 and marks initialized
+    resp_admin = client.post(
+        "/api/v1/bootstrap/welcome-setup/first-admin",
+        json={
+            "email": "romain.admin@orcia.fr",
+            "display_name": "Romain Admin",
+            "password": DUMMY_PW,
+            "orcia_env": "local",
+        },
+    )
+    assert resp_admin.status_code == 200
+    admin_body = resp_admin.json()
+    assert admin_body["email"] == "romain.admin@orcia.fr"
+    assert admin_body["display_name"] == "Romain Admin"
+    assert admin_body["platform_role"] == "PLATFORM_ADMIN"
+
+    # 2c. Subsequent GET /api/v1/bootstrap/accostage-status reflects first_admin_initialized=True
+    resp_after = client.get("/api/v1/bootstrap/accostage-status")
+    assert resp_after.status_code == 200
+    after_body = resp_after.json()
+    assert after_body["first_admin_initialized"] is True
+    assert after_body["first_admin_email"] == "romain.admin@orcia.fr"
+    assert after_body["first_admin_display_name"] == "Romain Admin"
 
     # 3. POST /api/v1/bootstrap/welcome-setup/progressive-llm with 1 model -> Quick Trial Mode
     resp_llm1 = client.post(

@@ -1,7 +1,11 @@
-# [Story N.M — Nom de l'Implémentation / Fonctionnalité]
+# [Story N.M ou YYYY-MM-DD — Nom de l'Implémentation / Ajustement / Fonctionnalité]
+
+> **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
+> - Demande d'ajustement, correctif ou évolution hors Story : `docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{descriptif-court}-tech-lead-report.md`
+> - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 
 - **Date** : YYYY-MM-DD
-- **Story / Clé Sprint** : `{story-key}` (`Epic N`)
+- **Story / Clé Sprint** : `{story-key}` ou `{YYYY-MM-DD}-{descriptif-court}` (`Epic N` / `Ajustement Transverse`)
 - **Auteur / Contexte** : [Contexte métier, objectif principal, problème résolu, exigences `FR-*`, `NFR-*`, `AD-*`, `UX-DR*` couvertes]
 - **Commits associés** : `hash1`, `hash2`
 
@@ -39,7 +43,7 @@
 ### 2.2 Noyau Métier Hexagonal, Orchestration & Workers (`packages/orcia-core/`, `apps/worker/`, `infra/sandbox/`)
 - `packages/orcia-core/<domaine>/...` :
   - Logique algorithmique, complexité (McCabe $\le 10$), structures de données et invariants du domaine (zéro dépendance framework dans `domain/` et `ports/`).
-  - Règles d'isolation et garde-fous architecturaux (`AD-1` à `AD-17` : ex. immuabilité `run-lock.json`, ancres humaines `AD-3`, orthogonalité des modèles `AD-10`, sandbox `--unshare-net` `AD-9`).
+  - Règles d'isolation et garde-fous architecturaux (`AD-1` à `AD-19` : ex. immuabilité `run-lock.json`, ancres humaines `AD-3`, orthogonalité des modèles `AD-10`, sandbox `--unshare-net` `AD-9`).
 - `apps/worker/...` :
   - Acteurs Dramatiq, garanties d'idempotence en cas de retry et gestion des erreurs.
 
@@ -52,9 +56,9 @@
   - Régénération du SDK TypeScript via `openapi-typescript` (`0-diff` vérifié).
 
 ### 2.4 Interface Utilisateur & Expérience (`apps/web/`)
-- Routes Next.js App Router (`apps/web/src/app/...`) et composants React 19 / `shadcn/ui` créés ou modifiés.
-- Respect des Design Tokens Direction C (`DESIGN.md` — zéro hexadécimal en dur, exclusivité du violet `#6D28D9` pour `human-led-anchor-card`).
-- Éléments interactifs : flux SSE temps réel (`< 500 ms`), graphe `@xyflow/react`, filtres, tris, badges (`uri-badge`, `presence-claim-pill`), palette `⌘K`, sélecteur de périmètre `⌘W`, gestion responsive 3 breakpoints (Desktop, Laptop, Mobile Companion) et conformité WCAG 2.2 AA (`aria-live="polite"`, Couleur + Icône + Libellé en français).
+- Routes TanStack Router (`apps/web/src/...`) et composants React 19 / `@orcia/ui` créés ou modifiés.
+- Respect des Design Tokens Direction C (`DESIGN.md` — zéro hexadécimal en dur hors `tokens.css`, exclusivité du violet `#6D28D9` pour `human-led-anchor-card`) et des 11 règles fondamentales UX/UI.
+- Câblage vertical complet via `@orcia/api-client` (zéro store métier `useState` purement éphémère) et survie au rechargement de l'URL (`F5`).
 
 ---
 
@@ -74,12 +78,13 @@
 - **Qualité statique & Architecture** :
   - `ruff check` & `ruff format --check` : `0 warning`
   - `mypy --strict` & `pnpm typecheck` : `0 error`
+  - `lint-imports` : `5 contracts kept, 0 broken`
   - `lint_spine.py` : `ok: true, 0 findings`
   - `gitnexus_detect_changes()` : [Périmètre vérifié et conforme]
 
-### 3.3 Validation & Procédure de Test (5 Couches `AD-17`)
+### 3.3 Validation & Procédure de Test (5 Couches `AD-17` + 4 Garde-Fous de Câblage Vertical)
 - **Couche 1 — Tests Unitaires & Propriétés (`pytest` + `hypothesis`, `Vitest`)** : [Détail des invariants testés]
-- **Couche 2 — Tests d'Intégration (`testcontainers-python` : PostgreSQL 18 + `pgvector`, Redis 7.4, MinIO)** : [Vérification d'intégrité des données, triggers, verrous]
+- **Couche 2 — Tests d'Intégration Verticale `HTTP ➔ PostgreSQL 18` (`testcontainers-python` : PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS)** : [Appel de la route FastAPI + vérification `SELECT` en base, zéro adaptateur SQL orphelin]
 - **Couche 3 — Tests de Contrat API (`openapi-typescript` 0-diff + `Schemathesis`)** : [Validation des schémas et codes RFC 9457]
 - **Couche 4 — Tests d'Orchestration IA (`DeterministicCassetteLLM`)** : [Validation déterministe des flux d'agents et Gates]
-- **Couche 5 — Tests E2E & Accessibilité (`@playwright/test` Desktop `1440x900` & Mobile `390x844`)** : [Scénarios utilisateurs et cas limites validés]
+- **Couche 5 — Tests E2E, Survie au `F5` (`unmount()` + `render()`) & Vérité Terrain Jour 0 (`pnpm db:reset`)** : [Scénarios utilisateurs, persistance après rechargement de la page et cas limites validés]

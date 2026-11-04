@@ -1,3 +1,20 @@
+# Protocole Tech Lead / Dev Senior & Rapport Pérenne d'Implémentation (Obligatoire)
+
+Pour **chaque User Story (`Story N.M`)** ET pour **chaque demande qui nécessite des ajustements, correctifs ou évolutions d'ORCIA**, l'agent DOIT impérativement :
+
+1. **Générer AVANT d'effectuer toute modification un Rapport Tech Lead** dans `docs/implementation-artifacts/tech-lead-reports/` en utilisant le gabarit officiel [`docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`](file:///home/romain/Documents/Projects/ORCIA/docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md) :
+   - **Nommage du fichier** : préfixer le nom du fichier avec la date du jour au format `YYYY-MM-DD` complété d'un descriptif court des changements en `kebab-case` :
+     `docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{descriptif-court}-tech-lead-report.md` (ou `{story-key}-tech-lead-report.md` pour une Story du sprint).
+   - **Rédaction pré-implémentation obligatoire** : renseigner les **Sections 1 (`Analyse du Besoin & Étude d'Impact Tech Lead`)** et **2 (`Plan d'Implémentation`)** **avant** de modifier le moindre fichier de code, puis compléter la **Section 3 (`Bilan des Modifications & Résultats`)** après passage des portes de vérification.
+2. **Respecter les 4 Garde-Fous de Câblage Vertical (Anti-Silos UI / API / SQL)** :
+   - **Zéro Adaptateur SQL Orphelin** : toute fonction SQL (`_internal/sql_*.py`, `adapters/postgres_*.py`) doit être effectivement appelée par `apps/api` ou `apps/worker` (vérifié par `gitnexus_impact({direction: "upstream", repo: "ORCIA"})` $\rightarrow$ `impactedCount >= 1` hors `tests/`).
+   - **Test d'Intégration Vertical `HTTP ➔ PostgreSQL 18`** : les tests d'intégration `testcontainers` doivent appeler la route FastAPI et vérifier l'écriture réelle en base par `SELECT`.
+   - **Zéro Store Métier `useState` Éphémère & Test de « Survie au F5 » (`apps/web`)** : tout état métier modifié dans `apps/web` doit persister via `@orcia/api-client`, s'hydrater au démarrage via `GET`, et être testé avec démontage/remontage complet (`unmount()` puis `render()`).
+   - **Réinitialisation Jour 0 (`pnpm db:reset`)** : utiliser `.venv/bin/python infra/scripts/maintenance/09_reset_db_first_boot.py --apply` (`pnpm db:reset`) pour revenir à l'état du 1er démarrage (`0` compte dans `users`).
+   - Consulter [`GEMINI.md`](file:///home/romain/Documents/Projects/ORCIA/GEMINI.md) pour l'ensemble des règles d'architecture (`AD-1` à `AD-19`) et des 11 règles fondamentales UX/UI.
+
+---
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

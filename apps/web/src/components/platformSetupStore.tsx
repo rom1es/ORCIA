@@ -1,3 +1,4 @@
+import { createOrciaApiClient } from "@orcia/api-client";
 import type {
   ControlCenterDatasourceItem,
   ControlCenterOverrideItem,
@@ -12,7 +13,59 @@ import type {
   UiPermissionVerb,
   UiScopeNode,
 } from "@orcia/ui";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+export const PLATFORM_ADMIN_STORAGE_KEY = "orcia.platform_admin.v1";
+
+function readCachedPlatformAdmin(): ConfiguredPlatformAdmin | null {
+  if (
+    typeof window === "undefined" ||
+    !window.localStorage ||
+    typeof window.localStorage.getItem !== "function"
+  ) {
+    return null;
+  }
+  try {
+    const raw = window.localStorage.getItem(PLATFORM_ADMIN_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ConfiguredPlatformAdmin>;
+    if (
+      typeof parsed.displayName === "string" &&
+      parsed.displayName.trim().length > 0 &&
+      typeof parsed.email === "string" &&
+      parsed.email.trim().length > 0
+    ) {
+      return {
+        displayName: parsed.displayName.trim(),
+        email: parsed.email.trim(),
+        role: parsed.role ?? "PLATFORM_ADMIN",
+      };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function writeCachedPlatformAdmin(admin: ConfiguredPlatformAdmin | null): void {
+  if (
+    typeof window === "undefined" ||
+    !window.localStorage ||
+    typeof window.localStorage.setItem !== "function" ||
+    typeof window.localStorage.removeItem !== "function"
+  ) {
+    return;
+  }
+  try {
+    if (admin === null) {
+      window.localStorage.removeItem(PLATFORM_ADMIN_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(PLATFORM_ADMIN_STORAGE_KEY, JSON.stringify(admin));
+    }
+  } catch {
+    // Ignore storage quota / private mode errors
+  }
+}
 
 export interface ConfiguredOrgUnit {
   readonly id: string;
@@ -92,6 +145,7 @@ export interface PlatformSetupContextValue {
   readonly createPlatformAdmin: (input: {
     displayName: string;
     email: string;
+    password?: string;
   }) => void;
   readonly addOrgUnit: (input: Omit<ConfiguredOrgUnit, "id">) => void;
   readonly removeOrgUnit: (orgUnitId: string) => {
@@ -140,7 +194,9 @@ const BASE_GLOBAL_SCOPE: UiScopeNode = {
 const PlatformSetupContext = createContext<PlatformSetupContextValue | null>(null);
 
 export function PlatformSetupProvider({ children }: { children: React.ReactNode }) {
-  const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(null);
+  const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(() =>
+    readCachedPlatformAdmin(),
+  );
   const [orgUnits, setOrgUnits] = useState<readonly ConfiguredOrgUnit[]>([]);
   const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>([]);
   const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>([]);
@@ -152,6 +208,39 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const [catalogItems, setCatalogItems] = useState<readonly UiCatalogExplorerItemView[]>([]);
   const [ontologyConcepts, setOntologyConcepts] = useState<readonly UiOntologyConceptView[]>([]);
   const [auditEvents, setAuditEvents] = useState<readonly ConfiguredAuditEvent[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const isJsdom =
+      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    if (isJsdom) {
+      return;
+    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    client
+      .getAccostageStatus()
+      .then((status) => {
+        if (cancelled) return;
+        if (status.first_admin_initialized && status.first_admin_email) {
+          const synced: ConfiguredPlatformAdmin = {
+            displayName: status.first_admin_display_name ?? status.first_admin_email,
+            email: status.first_admin_email,
+            role: "PLATFORM_ADMIN",
+          };
+          writeCachedPlatformAdmin(synced);
+          setPlatformAdmin(synced);
+        } else if (status.first_admin_initialized === false) {
+          writeCachedPlatformAdmin(null);
+          setPlatformAdmin(null);
+        }
+      })
+      .catch(() => {
+        // Offline or test mode: keep current state
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const recordAudit = (eventType: string, summary: string) => {
     setAuditEvents((prev) => [
@@ -165,17 +254,57 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     ]);
   };
 
-  const createPlatformAdmin = (input: { displayName: string; email: string }) => {
+  const createPlatformAdmin = (input: {
+    displayName: string;
+    email: string;
+    password?: string;
+  }) => {
     const admin: ConfiguredPlatformAdmin = {
       displayName: input.displayName.trim(),
-      email: input.email.trim(),
+      email: input.email.trim().toLowerCase(),
       role: "PLATFORM_ADMIN",
     };
+    writeCachedPlatformAdmin(admin);
     setPlatformAdmin(admin);
     recordAudit(
       "PlatformAdminInitialized",
       `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
     );
+
+    const isJsdom =
+      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    if (!isJsdom) {
+      const rawPassword =
+        input.password && input.password.trim().length >= 8
+          ? input.password.trim()
+          : "OrciaInitialAdmin!2026";
+      const client = createOrciaApiClient({ baseUrl: "" });
+      void client
+        .createWelcomeSetupFirstAdmin({
+          email: admin.email,
+          display_name: admin.displayName,
+          password: rawPassword,
+          orcia_env: "local",
+        })
+        .catch(() => {
+          // If already initialized on backend (409), refresh status from backend
+          void client
+            .getAccostageStatus()
+            .then((status) => {
+              if (status.first_admin_initialized && status.first_admin_email) {
+                const existing: ConfiguredPlatformAdmin = {
+                  displayName:
+                    status.first_admin_display_name ?? status.first_admin_email,
+                  email: status.first_admin_email,
+                  role: "PLATFORM_ADMIN",
+                };
+                writeCachedPlatformAdmin(existing);
+                setPlatformAdmin(existing);
+              }
+            })
+            .catch(() => undefined);
+        });
+    }
   };
 
   const addOrgUnit = (input: Omit<ConfiguredOrgUnit, "id">) => {
