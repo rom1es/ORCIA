@@ -1,5 +1,6 @@
 import {
   CommandPaletteModal,
+  ContextualInfoTriggerButton,
   DnaStarlarkCompilerAndGlossaryLifecycleView,
   type ControlCenterScopeType,
   type ProductLifecyclePhaseType,
@@ -11,10 +12,12 @@ import {
 } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 
 export function WorkspacesFeaturePanel() {
   const { dictionary, locale } = useI18n();
+  const { openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
   const {
     workspaces,
@@ -70,23 +73,21 @@ export function WorkspacesFeaturePanel() {
         className="orcia-bento-card"
         style={{ display: "flex", flexDirection: "column", gap: "12px" }}
       >
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
             {isFr
-              ? "Initialiser un Nouvel Espace de Travail (Workspace)"
-              : "Initialize a New Solution Workspace"}
+              ? "Créer un Nouvel Espace de Travail"
+              : "Create a New Workspace"}
           </h2>
-          <p
-            style={{
-              margin: "4px 0 0 0",
-              fontSize: "13px",
-              color: "var(--color-muted-foreground)",
-            }}
-          >
-            {isFr
-              ? "Créez un Espace de Travail pour déverrouiller le sélecteur de périmètre (⌘W), rattacher des sources documentaires et lancer des Runs."
-              : "Create a Workspace to unlock the scope switcher (⌘W), attach knowledge sources, and launch Runs."}
-          </p>
+          <ContextualInfoTriggerButton
+            sectionId="workspace-sources"
+            label={
+              isFr
+                ? "Comprendre la création d'un Espace de travail et ses sources"
+                : "Understand how to create a Workspace and connect sources"
+            }
+            onOpenHelpSection={openHelpSection}
+          />
         </div>
 
         <form
@@ -109,7 +110,7 @@ export function WorkspacesFeaturePanel() {
             data-testid="workspace-slug-input"
             value={wsSlug}
             onChange={(e) => setWsSlug(e.target.value)}
-            placeholder={isFr ? "Identifiant / Slug..." : "Slug..."}
+            placeholder={isFr ? "Identifiant court (optionnel)..." : "Short ID (optional)..."}
             style={inputStyle}
           />
           <select
@@ -122,8 +123,10 @@ export function WorkspacesFeaturePanel() {
             }
             style={inputStyle}
           >
-            <option value="STANDARD">STANDARD</option>
-            <option value="CONFIDENTIAL_RESTRICTED">CONFIDENTIAL_RESTRICTED</option>
+            <option value="STANDARD">{isFr ? "Standard" : "Standard"}</option>
+            <option value="CONFIDENTIAL_RESTRICTED">
+              {isFr ? "Confidentiel (isolé)" : "Confidential (isolated)"}
+            </option>
           </select>
           <select
             data-testid="workspace-phase-select"
@@ -133,9 +136,9 @@ export function WorkspacesFeaturePanel() {
             }
             style={inputStyle}
           >
-            <option value="BUILD">BUILD</option>
-            <option value="RUN">RUN</option>
-            <option value="MIGRATION">MIGRATION</option>
+            <option value="BUILD">{isFr ? "Construction" : "Build"}</option>
+            <option value="RUN">{isFr ? "Exploitation" : "Operations"}</option>
+            <option value="MIGRATION">{isFr ? "Évolution" : "Evolution"}</option>
           </select>
           <button
             type="submit"
@@ -150,7 +153,7 @@ export function WorkspacesFeaturePanel() {
               cursor: "pointer",
             }}
           >
-            {isFr ? "+ Créer le Workspace" : "+ Create Workspace"}
+            {isFr ? "+ Créer l'Espace" : "+ Create Workspace"}
           </button>
         </form>
       </section>
@@ -167,32 +170,32 @@ export function WorkspacesFeaturePanel() {
           guidanceSteps={[
             {
               stepNumber: 1,
-              title: "1. Qualifier la phase du Produit / Workspace",
-              description: "Sélectionner RUN, BUILD ou MIGRATION.",
+              title: "1. Choisir la phase actuelle de l'Espace",
+              description: "Indiquez si l'équipe est en phase de Construction, d'Exploitation ou d'Évolution.",
               actionCommand: "set-lifecycle-phase",
             },
             {
               stepNumber: 2,
-              title: "2. Rattacher les sources dédiées et partagées",
-              description: "Connecter les dépôts documentaires et bases dans /settings.",
+              title: "2. Connecter les sources documentaires et outils",
+              description: "Ajoutez vos espaces documentaires, suivis de projets et dépôts dans Configuration.",
               actionCommand: "init-datasource",
             },
             {
               stepNumber: 3,
-              title: "3. Configurer l'identité d'exécution",
-              description: "Choisir passthrough ou service_account.",
+              title: "3. Choisir le mode de connexion aux sources",
+              description: "Utilisez le compte personnel de chaque membre ou un compte partagé d'équipe.",
               actionCommand: "configure-execution-identity",
             },
             {
               stepNumber: 4,
-              title: "4. Vérifier l'alignement dans le Graphe Tripartite",
-              description: "Inspecter les alertes [STALE_WARNING].",
+              title: "4. Vérifier l'actualité de vos documents",
+              description: "Consultez les alertes signalant des documents à mettre à jour.",
               actionCommand: "sync-tripartite-graph",
             },
             {
               stepNumber: 5,
-              title: "5. Activer les Workflows et Surcharges 4 niveaux",
-              description: "Valider les Gates et lancer un Run supervisé.",
+              title: "5. Activer vos processus métiers",
+              description: "Adaptez les étapes à votre équipe et lancez votre premier processus.",
               actionCommand: "launch-supervised-run",
             },
           ]}
@@ -211,7 +214,7 @@ export function WorkspacesFeaturePanel() {
           {
             entryId: "nav-cockpit",
             category: "NAVIGATION",
-            label: "Aller au Cockpit & Flux de Travail",
+            label: "Aller au Cockpit & Décisions",
             subtitle: "Navigation rapide",
             shortcut: "g c",
             targetRoute: "/cockpit",
@@ -219,8 +222,8 @@ export function WorkspacesFeaturePanel() {
           {
             entryId: "nav-settings",
             category: "NAVIGATION",
-            label: "Ouvrir le Hub de Paramétrage (/settings)",
-            subtitle: "IAM, Modèles IA, Connecteurs, Packs, Studio",
+            label: "Ouvrir la Configuration",
+            subtitle: "Organisation, Modèles IA, Sources, Packs, Atelier",
             shortcut: "g s",
             targetRoute: "/settings",
           },
@@ -281,7 +284,7 @@ export function WorkspacesFeaturePanel() {
         onSelectTab={setActiveSubTab}
       />
 
-      {/* Story 11.2 — Chaîne Causale ADN Starlark & Glossaire (démarre 100 % vide) */}
+      {/* Story 11.2 — Règles Métiers Automatiques & Glossaire (démarre 100 % vide) */}
       <DnaStarlarkCompilerAndGlossaryLifecycleView
         mechanism={null}
         pendingQueueCandidates={[]}

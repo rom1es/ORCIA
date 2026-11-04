@@ -89,7 +89,7 @@ function LoginRouteComponent() {
           if (!email.includes("@") || password.length < 6 || totpCode === "000000") {
             setLoginError({
               errorCode: "ERR_INVALID_CREDENTIALS",
-              detail: "Identifiants locaux ou code TOTP 2FA invalides.",
+              detail: "Adresse e-mail, mot de passe ou code de vérification incorrect.",
               traceId: "0195f000-0000-7000-8000-000000009457",
             });
             return;

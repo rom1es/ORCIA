@@ -516,5 +516,66 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(helpTerms.textContent).toContain("ROLE:Chef1");
     expect(helpTerms.textContent).toContain("aqwZSX");
     expect(helpTerms.textContent).toContain("BU vs Espace");
+
+    // 6. Clicking ContextualInfoTriggerButton ('i') re-opens the right-hand contextual help column if closed and highlights the targeted section
+    fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-org-tree"));
+    expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
+    expect(
+      screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
+    ).toBe("true");
+
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-role-grants"));
+    expect(
+      screen.getByTestId("help-section-iam-role-grants").getAttribute("data-active"),
+    ).toBe("true");
+    expect(
+      screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
+    ).toBe("false");
+  });
+
+  it("enforces zero internal ORCIA implementation jargon across all user-facing FR and EN i18n dictionaries", () => {
+    const collectLeafStrings = (obj: unknown): string[] => {
+      if (typeof obj === "string") {
+        return [obj];
+      }
+      if (Array.isArray(obj)) {
+        return obj.flatMap(collectLeafStrings);
+      }
+      if (typeof obj === "object" && obj !== null) {
+        return Object.values(obj).flatMap(collectLeafStrings);
+      }
+      return [];
+    };
+
+    const allStrings = [
+      ...collectLeafStrings(frDictionary),
+      ...collectLeafStrings(enDictionary),
+    ].join("\n");
+
+    const forbiddenJargonPatterns: RegExp[] = [
+      /\bDBOS\b/i,
+      /\bPostgreSQL 18\b/i,
+      /\bPG18\b/i,
+      /\bpgvector\b/i,
+      /\bhalfvec\b/i,
+      /\bdomain_events_outbox\b/i,
+      /\bWasmtime\b/i,
+      /\bStarlark\b/i,
+      /\bArgon2id\b/i,
+      /\bOIDC PKCE\b/i,
+      /\bRubber-Stamping\b/i,
+      /\bhuman_authored_required\b/i,
+      /\bWAITING_FOR_HUMAN_ARBITRATION\b/i,
+      /\bCONTRIBUTOR_ACTION_REQUIRED\b/i,
+      /\bREAD_ONLY_OBSERVER\b/i,
+      /\bORCIA_BOOTSTRAP_TOKEN\b/i,
+    ];
+
+    for (const pattern of forbiddenJargonPatterns) {
+      expect(allStrings).not.toMatch(pattern);
+    }
   });
 });

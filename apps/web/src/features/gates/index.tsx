@@ -27,8 +27,8 @@ export function GatesFeaturePanel() {
         <div>
           <strong>
             {isFr
-              ? "Aucune Gate de Qualité ou d'Approbation en attente"
-              : "No Quality or Approval Gate currently awaiting review"}
+              ? "Aucune étape de validation en attente actuellement"
+              : "No review checkpoint currently awaiting approval"}
           </strong>
           <p
             style={{
@@ -38,8 +38,8 @@ export function GatesFeaturePanel() {
             }}
           >
             {isFr
-              ? "Les Gates déterministes, agentiques et humaines adaptatives s'affichent lors de l'exécution d'un Workflow Run. Vous pouvez configurer vos règles d'habilitation et vos workflows dans Paramètres."
-              : "Deterministic, agentic, and adaptive human Gates are displayed during Workflow Run execution. You can configure permission rules and workflows in Settings."}
+              ? "Les contrôles automatiques, revues croisées et étapes de validation humaine s'affichent lors de l'exécution d'un processus. Vous pouvez adapter vos processus dans la Configuration."
+              : "Automated checks, cross-checked reviews, and human approval steps are displayed while a process runs. You can tailor your processes in Configuration."}
           </p>
         </div>
         <button
@@ -56,11 +56,11 @@ export function GatesFeaturePanel() {
             cursor: "pointer",
           }}
         >
-          {isFr ? "Paramétrer IAM & Workflows (/settings)" : "Configure IAM & Workflows (/settings)"}
+          {isFr ? "Configurer les Processus" : "Configure Processes"}
         </button>
       </div>
 
-      {/* Atelier Système orcia-pack-builder (démarre 100 % vide) */}
+      {/* Création et Évolution de Packs Métiers (démarre 100 % vide) */}
       <PackBuilderProcessesStudioView
         agents={[]}
         initialHumanAnchorIntent=""
@@ -69,7 +69,7 @@ export function GatesFeaturePanel() {
         labels={dictionary.packBuilderStudio}
       />
 
-      {/* Processus 5 generate-and-attach-help (démarre 100 % vide) */}
+      {/* Rédaction et Mise à Jour des Fiches d'Aide Contextuelle (démarre 100 % vide) */}
       <HelpArticleGeneratorAndValidatorView
         articleId=""
         version="1.0.0"

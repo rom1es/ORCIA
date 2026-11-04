@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export type UiHelpArticleLayer = "BASE" | "PACK" | "WORKSPACE" | "USER";
+
+export interface UiContextualHelpSectionItem {
+  readonly sectionId: string;
+  readonly title: string;
+  readonly body: string;
+  readonly category?: "whatFor" | "steps" | "terms" | "faq";
+}
 
 export interface UiContextualHelpArticleView {
   readonly resourceId: string;
@@ -15,6 +22,7 @@ export interface UiContextualHelpArticleView {
   readonly stepByStepItems: readonly string[];
   readonly keyTermsItems: readonly string[];
   readonly faqItems: readonly string[];
+  readonly sections?: readonly UiContextualHelpSectionItem[];
   readonly casKey: string;
   readonly sha256: string;
   readonly previousVersion?: string | null;
@@ -40,6 +48,7 @@ export interface ContextualHelpColumnAndCenterProps {
   readonly redisCacheKey: string;
   readonly mergedLayers: readonly UiHelpArticleLayer[];
   readonly article: UiContextualHelpArticleView;
+  readonly activeSectionId?: string | null;
   readonly rollbackAvailable?: boolean;
   readonly isAdmin?: boolean;
   readonly labels: ContextualHelpColumnAndCenterLabels;
@@ -48,9 +57,9 @@ export interface ContextualHelpColumnAndCenterProps {
 }
 
 /**
- * Story 9.5 — Hybrid Contextual Help Column (`❓`, `340px`) & Help Menu Center (`Aide`).
- * Displays the resolved `HELP_ARTICLE` (`catalog_items` + `cas/<sha256>` + Redis `< 10 ms`),
- * 4-layer merge indicator (`AD-14`), 3 accordions, Assistant CTA, and 1-click `⏪ Rollback` (`@v(N-1)`).
+ * Story 9.5 & UX Contextual Help Anchor — Hybrid Contextual Help Column (`❓`, `340px`) & Help Menu Center (`Aide`).
+ * Displays the resolved help article, targeted contextual sections triggered via `ⓘ` (`ContextualInfoTriggerButton`),
+ * 3 accordions, Assistant CTA, and 1-click version restore.
  */
 export function ContextualHelpColumnAndCenter({
   mode = "COLUMN_340PX",
@@ -59,6 +68,7 @@ export function ContextualHelpColumnAndCenter({
   redisCacheKey,
   mergedLayers,
   article,
+  activeSectionId = null,
   rollbackAvailable = false,
   isAdmin = false,
   labels,
@@ -71,6 +81,27 @@ export function ContextualHelpColumnAndCenter({
   const [rolledBackToVersion, setRolledBackToVersion] = useState<string | null>(
     null,
   );
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (!activeSectionId) {
+      return;
+    }
+    const matchingSection = article.sections?.find(
+      (sec) => sec.sectionId === activeSectionId,
+    );
+    if (matchingSection?.category === "steps") {
+      setOpenSteps(true);
+    } else if (matchingSection?.category === "terms") {
+      setOpenTerms(true);
+    } else if (matchingSection?.category === "faq") {
+      setOpenFaq(true);
+    }
+    const targetEl = sectionRefs.current[activeSectionId];
+    if (targetEl && typeof targetEl.scrollIntoView === "function") {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [activeSectionId, article.sections]);
 
   const displayVersion = rolledBackToVersion ?? article.version;
 
@@ -89,11 +120,12 @@ export function ContextualHelpColumnAndCenter({
       }
       data-testid="contextual-help-hybrid-panel"
       data-mode={mode}
+      data-active-section={activeSectionId ?? ""}
       className={`${
         mode === "COLUMN_340PX" ? "w-[340px]" : "w-full max-w-4xl"
       } rounded-xl border border-surface-border bg-surface-elevated p-3.5 text-xs text-text-primary space-y-3`}
     >
-      {/* Header + Version & CAS Metadata */}
+      {/* Header + Version */}
       <div className="border-b border-surface-border pb-2.5 space-y-1">
         <div className="flex items-center justify-between gap-2">
           <span className="font-semibold text-sm">{article.title}</span>
@@ -104,9 +136,11 @@ export function ContextualHelpColumnAndCenter({
             @{displayVersion}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-text-secondary">
+        <div
+          className="hidden"
+          aria-hidden="true"
+        >
           <span data-testid="contextual-help-redis-key">{redisCacheKey}</span>
-          <span>·</span>
           <span data-testid="contextual-help-cas-key">{article.casKey}</span>
         </div>
         <div
@@ -129,6 +163,40 @@ export function ContextualHelpColumnAndCenter({
           {article.summaryWhatFor}
         </p>
       </div>
+
+      {/* Targeted Contextual Help Sections (opened via ⓘ ContextualInfoTriggerButton) */}
+      {article.sections && article.sections.length > 0 && (
+        <div
+          data-testid="contextual-help-sections-list"
+          className="space-y-2"
+        >
+          {article.sections.map((sec) => {
+            const isActive = activeSectionId === sec.sectionId;
+            return (
+              <div
+                key={sec.sectionId}
+                id={`help-section-${sec.sectionId}`}
+                ref={(el) => {
+                  sectionRefs.current[sec.sectionId] = el;
+                }}
+                data-testid={`help-section-${sec.sectionId}`}
+                data-active={isActive ? "true" : "false"}
+                className={`orcia-help-section-card ${
+                  isActive ? "orcia-help-section-card--active" : ""
+                } space-y-1`}
+              >
+                <div className="font-semibold text-text-primary flex items-center gap-1.5">
+                  <span aria-hidden="true">ⓘ</span>
+                  <span>{sec.title}</span>
+                </div>
+                <p className="text-text-secondary leading-relaxed">
+                  {sec.body}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Accordion 1: Pas-à-pas */}
       <div className="rounded-lg border border-surface-border overflow-hidden">

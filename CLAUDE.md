@@ -12,6 +12,10 @@ Pour **chaque User Story (`Story N.M`)** ET pour **chaque demande qui nécessite
    - **Zéro Store Métier `useState` Éphémère & Test de « Survie au F5 » (`apps/web`)** : tout état métier modifié dans `apps/web` doit persister via `@orcia/api-client`, s'hydrater au démarrage via `GET`, et être testé avec démontage/remontage complet (`unmount()` puis `render()`).
    - **Réinitialisation Jour 0 (`pnpm db:reset`)** : utiliser `.venv/bin/python infra/scripts/maintenance/09_reset_db_first_boot.py --apply` (`pnpm db:reset`) pour revenir à l'état du 1er démarrage (`0` compte dans `users`).
    - Consulter [`GEMINI.md`](file:///home/romain/Documents/Projects/ORCIA/GEMINI.md) pour l'ensemble des règles d'architecture (`AD-1` à `AD-19`) et des 11 règles fondamentales UX/UI.
+3. **Appliquer strictement les 3 Règles de Microcopy Centrée Utilisateur & d'Aide Contextuelle Ciblée (`ⓘ`)** :
+   - **Zéro jargon ou plomberie interne ORCIA dans l'UI** : adopter exclusivement le point de vue de l'utilisateur final ; aucun terme d'implémentation interne (`DBOS`, `PostgreSQL 18`, `pgvector`, `halfvec`, `Outbox`, `Wasmtime`, `Starlark`, `Argon2id`, `OIDC PKCE`, `Passthrough`, `Tie-Break`, `Rubber-stamping`, `What-If`, `Verrou V1..V5`, `AD-*`, `RFC 9457`, codes d'état bruts) ne doit apparaître dans `apps/web/src/i18n/locales/*.ts` ni dans les composants.
+   - **Intitulés auto-porteurs (< 2 secondes)** : chaque titre, bouton, onglet ou champ doit être immédiatement compréhensible sans jargon abstrait.
+   - **Zéro pavé explicatif dans l'écran central — Renvoi par icône `ⓘ` (`ContextualInfoTriggerButton`)** : remplacer tout texte explicatif long dans l'espace de travail par un bouton `ⓘ` (`<ContextualInfoTriggerButton sectionId="..." />` de `@orcia/ui`) qui ouvre automatiquement la colonne d'aide contextuelle à droite et surligne la section explicative ciblée (`data-testid="help-section-${sectionId}"`).
 
 ---
 

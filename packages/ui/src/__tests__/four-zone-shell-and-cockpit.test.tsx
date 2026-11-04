@@ -5,6 +5,7 @@ import {
   computeDefaultHelpColumnOpen,
   ContextualHelpColumnAndCenter,
   type ContextualHelpColumnAndCenterLabels,
+  ContextualInfoTriggerButton,
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
   FourZoneDirectionCShell,
   type FourZoneDirectionCShellLabels,
@@ -646,5 +647,120 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       "/mes-espaces/$id/sources",
       expect.stringContaining("/mes-espaces/$id/sources"),
     );
+  });
+
+  it("renders ContextualInfoTriggerButton ('i'), opens controlled FourZoneDirectionCShell help column on click, and highlights activeSectionId in ContextualHelpColumnAndCenter", () => {
+    const helpLabels: ContextualHelpColumnAndCenterLabels = {
+      columnHeaderTitle: "Aide Contextuelle",
+      centerHeaderTitle: "Centre d'Aide",
+      whatForSectionTitle: "À quoi sert cet écran ?",
+      stepByStepAccordionTitle: "Guide pas-à-pas",
+      keyTermsAccordionTitle: "Points clés",
+      faqAccordionTitle: "Questions fréquentes",
+      askAssistantOnScreenCta: "Poser une question à Mon Assistant",
+      rollbackButtonLabel: "Revenir à la version précédente",
+      rollbackCompletedPrefix: "Version précédente restaurée :",
+      mergedLayersPrefix: "Origine :",
+    };
+
+    function ControlledShellHarness() {
+      const [helpOpen, setHelpOpen] = React.useState(false);
+      const [activeSectionId, setActiveSectionId] = React.useState<string | null>(null);
+
+      return (
+        <FourZoneDirectionCShell
+          activeMenuKey="configuration"
+          activeWorkspaceName="Portail Paiement"
+          activePackKey="orcia-pack-sdlc"
+          availablePacks={["orcia-pack-sdlc"]}
+          userDisplayName="Hélène PM"
+          userHatLabel="Product Manager"
+          pendingDecisionsTotal={2}
+          viewportWidth={1280}
+          helpColumnOpen={helpOpen}
+          onHelpColumnOpenChange={setHelpOpen}
+          onSelectMenu={vi.fn()}
+          labels={SHELL_LABELS}
+          helpColumnContent={
+            <ContextualHelpColumnAndCenter
+              mode="COLUMN_340PX"
+              route="/settings"
+              pack="orcia-pack-sdlc"
+              redisCacheKey="help:route:/settings:orcia-pack-sdlc:fr"
+              mergedLayers={["BASE"]}
+              rollbackAvailable={false}
+              isAdmin={true}
+              activeSectionId={activeSectionId}
+              article={{
+                resourceId: "orcia://system/help/fr/settings",
+                uri: "orcia://system/help/fr/settings@1.0.0",
+                title: "Organisation & Habilitations",
+                version: "1.0.0",
+                previousVersion: "1.0.0",
+                lang: "fr",
+                layer: "BASE",
+                packName: "orcia-pack-sdlc",
+                boundRoutes: ["/settings"],
+                summaryWhatFor: "Gérez votre organigramme et les droits d'accès.",
+                stepByStepItems: ["Créez une BU puis une Équipe."],
+                keyTermsItems: ["6 actions : Créer, Consulter, Modifier, Supprimer, Exécuter, Déléguer."],
+                faqItems: ["Comment supprimer une BU ? Retirez d'abord ses équipes."],
+                sections: [
+                  {
+                    sectionId: "iam-org-tree",
+                    title: "Organigramme (BU & Équipes)",
+                    body: "Structurez vos Directions (BU) et Équipes rattachées.",
+                    category: "steps",
+                  },
+                  {
+                    sectionId: "iam-role-grants",
+                    title: "Attribution des droits",
+                    body: "Attribuez les 6 actions (Créer, Consulter, Modifier, Supprimer, Exécuter, Déléguer).",
+                    category: "terms",
+                  },
+                ],
+                casKey: "cas/settings",
+                sha256: "b".repeat(64),
+              }}
+              labels={helpLabels}
+            />
+          }
+        >
+          <div>
+            <h2>
+              Organigramme{" "}
+              <ContextualInfoTriggerButton
+                sectionId="iam-org-tree"
+                label="Voir l'aide sur l'organigramme"
+                onOpenHelpSection={(secId) => {
+                  setActiveSectionId(secId);
+                  setHelpOpen(true);
+                }}
+              />
+            </h2>
+          </div>
+        </FourZoneDirectionCShell>
+      );
+    }
+
+    render(<ControlledShellHarness />);
+
+    // Initially closed
+    expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
+
+    // Click the 'i' info trigger button
+    const triggerBtn = screen.getByTestId("contextual-info-trigger-iam-org-tree");
+    expect(triggerBtn.textContent).toBe("i");
+    expect(triggerBtn.getAttribute("aria-label")).toBe("Voir l'aide sur l'organigramme");
+    fireEvent.click(triggerBtn);
+
+    // Right-hand contextual help column is now open and the targeted section is highlighted
+    expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
+    const activeSection = screen.getByTestId("help-section-iam-org-tree");
+    expect(activeSection.getAttribute("data-active")).toBe("true");
+    expect(activeSection.textContent).toContain("Organigramme (BU & Équipes)");
+
+    const inactiveSection = screen.getByTestId("help-section-iam-role-grants");
+    expect(inactiveSection.getAttribute("data-active")).toBe("false");
   });
 });

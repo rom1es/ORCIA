@@ -1,15 +1,18 @@
 import {
   ContextualHelpColumnAndCenter,
+  ContextualInfoTriggerButton,
   OntologyAndKbExplorerPanel,
   type UiOntologyLevel,
 } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 
 export function OntologyFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { ontologyConcepts, addOntologyConcept } = usePlatformSetup();
+  const { openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
 
   const [conceptName, setConceptName] = useState("");
@@ -50,11 +53,22 @@ export function OntologyFeaturePanel() {
         className="orcia-bento-card"
         style={{ display: "flex", flexDirection: "column", gap: "10px" }}
       >
-        <strong>
-          {isFr
-            ? "Initialiser un Concept ou Axiome dans l'Ontologie"
-            : "Initialize an Ontology Concept or Axiom"}
-        </strong>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <strong>
+            {isFr
+              ? "Ajouter un Terme Métier ou une Règle au Glossaire"
+              : "Add a Business Term or Rule to the Glossary"}
+          </strong>
+          <ContextualInfoTriggerButton
+            sectionId="glossary-rules"
+            label={
+              isFr
+                ? "Comprendre le glossaire métier et les règles de l'organisation"
+                : "Understand the business glossary and organization rules"
+            }
+            onOpenHelpSection={openHelpSection}
+          />
+        </div>
         <form
           data-testid="ontology-create-concept-form"
           onSubmit={handleAddConcept}
@@ -70,18 +84,28 @@ export function OntologyFeaturePanel() {
               border: "1px solid var(--color-border)",
             }}
           >
-            <option value="1_ENTERPRISE">1_ENTERPRISE (Axiome Global)</option>
-            <option value="2_DOMAIN">2_DOMAIN (Domaine BU)</option>
-            <option value="3_TEAM">3_TEAM (Équipe)</option>
-            <option value="3_WORKSPACE">3_WORKSPACE (Espace de Travail)</option>
-            <option value="4_RUN_EPHEMERAL">4_RUN_EPHEMERAL (Branche L4)</option>
+            <option value="1_ENTERPRISE">
+              {isFr ? "1. Organisation (Règle commune)" : "1. Organization (Shared rule)"}
+            </option>
+            <option value="2_DOMAIN">
+              {isFr ? "2. Direction / Pôle (BU)" : "2. Division / Department (BU)"}
+            </option>
+            <option value="3_TEAM">
+              {isFr ? "3a. Équipe" : "3a. Team"}
+            </option>
+            <option value="3_WORKSPACE">
+              {isFr ? "3b. Espace de Travail" : "3b. Workspace"}
+            </option>
+            <option value="4_RUN_EPHEMERAL">
+              {isFr ? "4. Exécution en cours" : "4. Current execution"}
+            </option>
           </select>
           <input
             type="text"
             data-testid="ontology-concept-name-input"
             value={conceptName}
             onChange={(e) => setConceptName(e.target.value)}
-            placeholder={isFr ? "Nom canonique du concept..." : "Canonical concept name..."}
+            placeholder={isFr ? "Intitulé du terme métier..." : "Business term name..."}
             style={{
               flex: 1,
               minWidth: "180px",
@@ -95,7 +119,7 @@ export function OntologyFeaturePanel() {
             data-testid="ontology-concept-def-input"
             value={conceptDef}
             onChange={(e) => setConceptDef(e.target.value)}
-            placeholder={isFr ? "Définition métier..." : "Business definition..."}
+            placeholder={isFr ? "Définition claire et partagée..." : "Clear shared definition..."}
             style={{
               flex: 2,
               minWidth: "220px",
@@ -117,7 +141,7 @@ export function OntologyFeaturePanel() {
               cursor: "pointer",
             }}
           >
-            {isFr ? "+ Ajouter le concept" : "+ Add concept"}
+            {isFr ? "+ Ajouter au glossaire" : "+ Add to glossary"}
           </button>
         </form>
       </section>
@@ -131,7 +155,7 @@ export function OntologyFeaturePanel() {
         />
       </div>
 
-      {/* Story 9.5 & 12.3 — Centre d'Aide Hybride (mode=HELP_MENU_CENTER) sur /help */}
+      {/* Story 9.5 & 12.3 — Centre d'Aide (mode=HELP_MENU_CENTER) sur /help */}
       <ContextualHelpColumnAndCenter
         mode="HELP_MENU_CENTER"
         route="/help"
@@ -142,34 +166,40 @@ export function OntologyFeaturePanel() {
           resourceId: "help-center-overview",
           uri: "orcia://system/help/help-center-overview@1.0.0",
           title: isFr
-            ? "Centre d'Aide Contextuelle Hybride & Glossaire Actif"
-            : "Hybrid Contextual Help Center & Active Glossary",
+            ? "Centre d'Aide Contextuelle & Glossaire de Votre Organisation"
+            : "Contextual Help Center & Organization Glossary",
           version: "1.0.0",
           lang: locale,
           layer: "BASE",
           packName: "orcia-pack-sdlc",
           boundRoutes: ["/cockpit", "/assistant", "/spaces", "/processes", "/agents", "/help"],
           summaryWhatFor: isFr
-            ? "Ce centre rassemble les fiches HelpArticle (catalog_items + cas/<sha256>) rattachées à vos écrans et Packs métiers."
-            : "This center aggregates HelpArticle entries (catalog_items + cas/<sha256>) bound to your screens and Business Packs.",
+            ? "Ce centre rassemble les guides pratiques et explications rattachés à vos écrans et à vos Packs métiers."
+            : "This center gathers practical guides and explanations bound to your screens and Business Packs.",
           stepByStepItems: isFr
             ? [
-                "Ouvrez la colonne ❓ sur n'importe quel écran pour obtenir la fiche ciblée.",
-                "Utilisez le Processus 5 (generate-and-attach-help) dans Processus & Studio pour générer et rattacher à chaud de nouvelles fiches.",
+                "Ouvrez la colonne ❓ ou cliquez sur une icône ⓘ sur n'importe quel écran pour afficher l'explication dédiée.",
+                "Utilisez l'outil de création de fiches d'aide dans Mes Processus pour rédiger et publier de nouveaux guides pour vos équipes.",
               ]
             : [
-                "Open the ❓ column on any screen to get the targeted article.",
-                "Use Process 5 (generate-and-attach-help) in Processes & Studio to generate and hot-attach new articles.",
+                "Open the ❓ column or click an ⓘ icon on any screen to display the dedicated explanation.",
+                "Use the help guide authoring tool in My Processes to write and publish new guides for your teams.",
               ],
-          keyTermsItems: [
-            "HelpArticle (REFERENCE)",
-            "Fusion 4 couches (BASE -> PACK -> WORKSPACE -> USER)",
-            "Validation déterministe",
-          ],
+          keyTermsItems: isFr
+            ? [
+                "Fiche de référence : Guide officiel associé à un écran.",
+                "Adaptation par niveau : Guides enrichis par votre métier et votre Espace.",
+                "Vérification de qualité : Contrôle automatique des liens et du vocabulaire.",
+              ]
+            : [
+                "Reference guide: Official guide linked to a screen.",
+                "Level customization: Guides enriched by your domain and Workspace.",
+                "Quality check: Automated verification of links and terminology.",
+              ],
           faqItems: [
             isFr
-              ? "Comment revenir à la version précédente ? Cliquez sur ⏪ Rollback @v(N-1)."
-              : "How to revert to the previous version? Click ⏪ Rollback @v(N-1).",
+              ? "Comment rétablir la version précédente d'un guide ? Cliquez sur ⏪ Version précédente."
+              : "How can I restore the previous version of a guide? Click ⏪ Previous version.",
           ],
           casKey: "cas/help-center-overview-v1",
           sha256: "sha256-help-center-v1",

@@ -199,8 +199,13 @@ export {
   type ContextualHelpColumnAndCenterLabels,
   type ContextualHelpColumnAndCenterProps,
   type UiContextualHelpArticleView,
+  type UiContextualHelpSectionItem,
   type UiHelpArticleLayer,
 } from "./primitives/ContextualHelpColumnAndCenter";
+export {
+  ContextualInfoTriggerButton,
+  type ContextualInfoTriggerButtonProps,
+} from "./components/ContextualInfoTriggerButton";
 export {
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,

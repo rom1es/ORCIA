@@ -13,28 +13,28 @@ import { validateOrciaRouteSearch } from "./searchSchema";
 const WIZARD_STEPS: readonly DurableWizardStepDescriptor[] = [
   {
     stepIndex: 1,
-    title: "1. Organisation & Périmètre",
-    description: "Initialisation de l'unité d'organisation (BU / Équipe) et du profil.",
+    title: "1. Organisation & Équipe",
+    description: "Création de votre Direction (BU) ou Équipe et choix de votre rôle.",
   },
   {
     stepIndex: 2,
     title: "2. Création de l'Espace de Travail",
-    description: "Paramétrage du nom, du niveau de visibilité et de la phase du cycle de vie.",
+    description: "Choix du nom, du niveau de confidentialité et de la phase actuelle.",
   },
   {
     stepIndex: 3,
-    title: "3. Connecteur & Source Documentaire",
-    description: "Rattachement d'un connecteur (Git / Confluence / Jira / DB) write-only.",
+    title: "3. Connexion d'une Source Documentaire",
+    description: "Ajout d'un dépôt de code, d'un espace documentaire ou d'un outil de suivi.",
   },
   {
     stepIndex: 4,
-    title: "4. Paliers Cognitifs IA",
-    description: "Configuration des paliers simple / medium / complex / auto (AD-10).",
+    title: "4. Choix du Modèle IA",
+    description: "Association d'un modèle IA principal pour vos questions et processus.",
   },
   {
     stepIndex: 5,
-    title: "5. Validation Finale & Activation",
-    description: "Vérification des 4 prérequis et activation opérationnelle du périmètre.",
+    title: "5. Vérification & Mise en Service",
+    description: "Récapitulatif de vos réglages et ouverture de votre Espace de travail.",
   },
 ];
 
@@ -130,13 +130,13 @@ function WizardsRouteComponent() {
         <div>
           <strong style={{ fontSize: "15px" }}>
             {isFr
-              ? "Sélection du Parcours d'Initialisation Guidé"
-              : "Select Guided Onboarding Wizard"}
+              ? "Choisir un Parcours de Configuration Guidé"
+              : "Choose a Guided Setup Journey"}
           </strong>
           <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--color-muted-foreground)" }}>
             {isFr
-              ? "Accompagne pas-à-pas la création des entités à partir d'un environnement vierge."
-              : "Guides step-by-step entity creation from a blank environment."}
+              ? "Vous accompagne étape par étape pour configurer votre environnement."
+              : "Guides you step by step to set up your environment."}
           </p>
         </div>
 
@@ -155,9 +155,15 @@ function WizardsRouteComponent() {
               border: "1px solid var(--color-border)",
             }}
           >
-            <option value="sdlc_tech_lead">orcia://system/wizards/workspace-onboarding@1.0.0</option>
-            <option value="secops_admin">orcia://system/wizards/platform-bootstrap@1.0.0</option>
-            <option value="ops_manager">orcia://system/wizards/connector-setup@1.0.0</option>
+            <option value="sdlc_tech_lead">
+              {isFr ? "Création d'un Espace de travail d'équipe" : "Team Workspace Setup"}
+            </option>
+            <option value="secops_admin">
+              {isFr ? "Configuration initiale de l'organisation" : "Initial Organization Setup"}
+            </option>
+            <option value="ops_manager">
+              {isFr ? "Connexion d'une source documentaire ou outil" : "Connect a Document Source or Tool"}
+            </option>
           </select>
 
           {currentStep > 1 && status !== "COMPLETED" && (
@@ -188,14 +194,14 @@ function WizardsRouteComponent() {
           {currentStep === 1 && (
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "13px" }}>
-                {isFr ? "Nom de l'Unité d'Organisation (BU / Équipe)" : "Organization Unit Name (BU / Team)"}
+                {isFr ? "Nom de la Direction (BU) ou de l'Équipe" : "Division (BU) or Team Name"}
               </span>
               <input
                 type="text"
                 data-testid="wizard-input-org-unit"
                 value={orgUnitName}
                 onChange={(e) => setOrgUnitName(e.target.value)}
-                placeholder={isFr ? "Saisir le nom de l'équipe ou BU..." : "Enter Team or BU name..."}
+                placeholder={isFr ? "Saisir le nom de l'équipe ou de la direction..." : "Enter Team or Division name..."}
                 style={inputStyle}
               />
             </label>
@@ -204,14 +210,14 @@ function WizardsRouteComponent() {
           {currentStep === 2 && (
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "13px" }}>
-                {isFr ? "Nom de l'Espace de Travail (Workspace)" : "Workspace Name"}
+                {isFr ? "Nom de l'Espace de Travail" : "Workspace Name"}
               </span>
               <input
                 type="text"
                 data-testid="wizard-input-workspace-name"
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
-                placeholder={isFr ? "Saisir le nom du Workspace..." : "Enter Workspace name..."}
+                placeholder={isFr ? "Saisir le nom de l'Espace..." : "Enter Workspace name..."}
                 style={inputStyle}
               />
             </label>
@@ -224,7 +230,7 @@ function WizardsRouteComponent() {
                 data-testid="wizard-input-connector-alias"
                 value={connectorAlias}
                 onChange={(e) => setConnectorAlias(e.target.value)}
-                placeholder={isFr ? "Alias du connecteur..." : "Connector alias..."}
+                placeholder={isFr ? "Nom donné à cette source..." : "Source display name..."}
                 style={inputStyle}
               />
               <input
@@ -232,7 +238,7 @@ function WizardsRouteComponent() {
                 data-testid="wizard-input-connector-uri"
                 value={connectorUri}
                 onChange={(e) => setConnectorUri(e.target.value)}
-                placeholder={isFr ? "URI de la source (ex: git://...)" : "Source URI (e.g. git://...)"}
+                placeholder={isFr ? "Adresse de la source (ex: https://...)" : "Source address (e.g. https://...)"}
                 style={inputStyle}
               />
             </div>
@@ -241,14 +247,14 @@ function WizardsRouteComponent() {
           {currentStep === 4 && (
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "13px" }}>
-                {isFr ? "Identifiant du Modèle IA Primaire (Palier Medium)" : "Primary AI Model ID (Medium Tier)"}
+                {isFr ? "Nom du Modèle IA Principal (Niveau Standard)" : "Primary AI Model Name (Standard Level)"}
               </span>
               <input
                 type="text"
                 data-testid="wizard-input-primary-model"
                 value={primaryModelId}
                 onChange={(e) => setPrimaryModelId(e.target.value)}
-                placeholder={isFr ? "Saisir l'identifiant du modèle..." : "Enter model identifier..."}
+                placeholder={isFr ? "Saisir le nom du modèle IA..." : "Enter AI model name..."}
                 style={inputStyle}
               />
             </label>
@@ -257,8 +263,8 @@ function WizardsRouteComponent() {
           {currentStep === 5 && (
             <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
               {isFr
-                ? "Vérifiez vos paramètres puis cliquez sur « Valider l'étape » pour activer l'environnement."
-                : "Review your settings and click Validate Step to activate the environment."}
+                ? "Vérifiez vos paramètres puis cliquez sur « Valider et continuer » pour ouvrir votre Espace."
+                : "Review your settings and click 'Validate and continue' to open your Workspace."}
             </p>
           )}
         </div>

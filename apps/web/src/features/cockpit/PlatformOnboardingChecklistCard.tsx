@@ -43,8 +43,8 @@ export function PlatformOnboardingChecklistCard({
         <div>
           <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
             {isFr
-              ? "Parcours d'Initialisation de la Plateforme (Jour 0 → Jour 1)"
-              : "Platform Onboarding & Entity Setup (Day 0 → Day 1)"}
+              ? "Guide de Mise en Route de la Plateforme"
+              : "Platform Getting Started Checklist"}
           </h2>
           <p
             style={{
@@ -54,8 +54,8 @@ export function PlatformOnboardingChecklistCard({
             }}
           >
             {isFr
-              ? "La plateforme démarre à vide. Configurez chaque entité via les écrans de paramétrage dédiés ou via l'assistant guidé pas-à-pas."
-              : "The platform starts empty. Configure each entity via dedicated settings screens or the step-by-step wizard."}
+              ? "Configurez chaque étape depuis les écrans dédiés ou lancez un assistant guidé pas à pas."
+              : "Complete each step from the dedicated settings screens or launch a step-by-step guided assistant."}
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -79,7 +79,7 @@ export function PlatformOnboardingChecklistCard({
               cursor: "pointer",
             }}
           >
-            {isFr ? "Assistants Guidés (/wizards)" : "Guided Wizards (/wizards)"}
+            {isFr ? "Assistants Guidés" : "Guided Assistants"}
           </button>
         </div>
       </div>
@@ -123,7 +123,7 @@ export function PlatformOnboardingChecklistCard({
                         ? "Configuré"
                         : "Configured"
                       : isFr
-                        ? "À initialiser"
+                        ? "À configurer"
                         : "To configure"
                   }
                   tone={step.done ? "emerald" : "amber"}

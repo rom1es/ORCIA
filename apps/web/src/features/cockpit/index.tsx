@@ -1,4 +1,5 @@
 import {
+  ContextualInfoTriggerButton,
   ProgressiveDay0AccostageBanner,
   StatusBadge,
   StreamlinedCockpitView,
@@ -32,7 +33,7 @@ export function buildCockpitWorkflowPreviewGraph(): {
 
 export function CockpitFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { navigateToRoute } = useShellNavigation();
+  const { navigateToRoute, openHelpSection } = useShellNavigation();
   const {
     llmTiers,
     orgUnits,
@@ -57,8 +58,8 @@ export function CockpitFeaturePanel() {
       index: 1,
       key: "step-llm",
       title: isFr
-        ? "1. Modèles IA & Paliers Cognitifs"
-        : "1. AI Models & Cognitive Tiers",
+        ? "1. Modèles IA"
+        : "1. AI Models",
       completed: llmTiers.length > 0,
       targetRoute: "/settings",
     },
@@ -67,7 +68,7 @@ export function CockpitFeaturePanel() {
       key: "step-iam",
       title: isFr
         ? "2. Structure Organisationnelle & Habilitations"
-        : "2. Organization Tree & 6-Verb Permissions",
+        : "2. Organization Structure & Permissions",
       completed: orgUnits.length > 0 || rbacGrants.length > 0,
       targetRoute: "/settings",
     },
@@ -75,8 +76,8 @@ export function CockpitFeaturePanel() {
       index: 3,
       key: "step-workspaces",
       title: isFr
-        ? "3. Espaces de Travail (Workspaces)"
-        : "3. Solution Workspaces",
+        ? "3. Espaces de Travail"
+        : "3. Workspaces",
       completed: workspaces.length > 0,
       targetRoute: "/workspaces",
     },
@@ -84,8 +85,8 @@ export function CockpitFeaturePanel() {
       index: 4,
       key: "step-connectors",
       title: isFr
-        ? "4. Connecteurs & Sources Documentaires"
-        : "4. Connectors & Knowledge Sources",
+        ? "4. Sources Documentaires & Outils"
+        : "4. Document Sources & Tools",
       completed: datasources.length > 0,
       targetRoute: "/settings",
     },
@@ -93,7 +94,7 @@ export function CockpitFeaturePanel() {
       index: 5,
       key: "step-workflows",
       title: isFr
-        ? "5. Packs Métiers & Studio de Processus"
+        ? "5. Packs Métiers & Atelier de Processus"
         : "5. Business Packs & Process Studio",
       completed: workflows.length > 0 || packs.length > 0,
       targetRoute: "/processes",
@@ -123,16 +124,27 @@ export function CockpitFeaturePanel() {
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
       <div className="flex items-center justify-between">
-        <span
-          data-testid="onboarding-progress-badge"
-          className="rounded px-2.5 py-0.5 font-mono text-xs font-semibold"
-          style={{
-            backgroundColor: "var(--color-action-primary-subtle)",
-            color: "var(--color-action-primary)",
-          }}
-        >
-          {completedSetupStepsCount}/5
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            data-testid="onboarding-progress-badge"
+            className="rounded px-2.5 py-0.5 font-mono text-xs font-semibold"
+            style={{
+              backgroundColor: "var(--color-action-primary-subtle)",
+              color: "var(--color-action-primary)",
+            }}
+          >
+            {completedSetupStepsCount}/5
+          </span>
+          <ContextualInfoTriggerButton
+            sectionId="cockpit-decisions"
+            label={
+              isFr
+                ? "Comprendre le fonctionnement du Cockpit et des décisions"
+                : "Understand how the Cockpit and decisions work"
+            }
+            onOpenHelpSection={openHelpSection}
+          />
+        </div>
       </div>
 
       <StreamlinedCockpitView
@@ -181,8 +193,8 @@ export function CockpitFeaturePanel() {
             <div>
               <strong>
                 {isFr
-                  ? "Aucun Espace de Travail ni Workflow Run actif"
-                  : "No Workspace or active Workflow Run yet"}
+                  ? "Aucun Espace de Travail ni processus en cours"
+                  : "No Workspace or active process yet"}
               </strong>
               <p
                 style={{
@@ -192,8 +204,8 @@ export function CockpitFeaturePanel() {
                 }}
               >
                 {isFr
-                  ? "Créez votre premier Espace de Travail pour activer le lancement de Runs supervisés, Mon Assistant et les Gates."
-                  : "Create your first Workspace to enable supervised Workflow Runs, My Assistant, and Gates."}
+                  ? "Créez votre premier Espace de Travail pour lancer vos processus, utiliser Mon Assistant et suivre vos validations."
+                  : "Create your first Workspace to run processes, use My Assistant, and track your reviews."}
               </p>
             </div>
             <button
@@ -255,7 +267,9 @@ export function CockpitFeaturePanel() {
                 border: "1px solid var(--color-border)",
               }}
             >
-              <option value="assistant-agent">orcia://system/workflows/assistant-agent</option>
+              <option value="assistant-agent">
+                {isFr ? "Assistant ORCIA (Processus standard)" : "ORCIA Assistant (Standard process)"}
+              </option>
               {workflows.map((wf) => (
                 <option key={wf.workflowKey} value={wf.workflowKey}>
                   {wf.title} (v{wf.version})
@@ -269,7 +283,7 @@ export function CockpitFeaturePanel() {
               value={runTitle}
               onChange={(e) => setRunTitle(e.target.value)}
               placeholder={
-                isFr ? "Intitulé du Workflow Run..." : "Workflow Run title..."
+                isFr ? "Intitulé de l'exécution..." : "Execution title..."
               }
               style={{
                 flex: 1,
@@ -293,7 +307,7 @@ export function CockpitFeaturePanel() {
                 cursor: "pointer",
               }}
             >
-              {isFr ? "Lancer le Run" : "Launch Run"}
+              {isFr ? "Démarrer le processus" : "Start process"}
             </button>
           </form>
         )}

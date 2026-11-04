@@ -32,6 +32,12 @@ L'UX désigne le parcours, la fluidité et la logique de navigation du portail O
 5. **Offrir des sorties de secours** : L'utilisateur doit toujours pouvoir annuler une action, fermer une modale/tiroir (`Escape` ou bouton explicite), replier la Sidebar (`[`) ou la Colonne d'Aide (`❓` / `]`), réinitialiser le graphe de `Mon Assistant` (`↺`), ou revenir en arrière via le Fil d'Ariane sans perte de contexte.
 6. **Optimiser la performance et le Mobile-First** : Privilégier la rapidité de chargement et de rendu (`< 1,5s` premier token, bascule `< 1s` entre runs) et concevoir d'abord la clarté structurelle sur petits écrans (Mobile Companion épuré sans débordement horizontal) avant d'enrichir la disposition multi-colonnes Desktop.
 
+### 1.2 Les 3 Invariants de Microcopy Centrée Utilisateur & de Renvoi vers l'Aide Contextuelle (`ⓘ`)
+
+1. **Zéro plomberie ou jargon interne ORCIA visible dans l'interface** : Tous les textes s'adressent à l'utilisateur final avec son vocabulaire métier. Aucun nom de composant logiciel interne, de table SQL, d'algorithme ou de décision d'architecture (`DBOS`, `PostgreSQL 18`, `PG18`, `pgvector`, `halfvec`, `Outbox`, `domain_events_outbox`, `Wasmtime`, `Starlark`, `Argon2id`, `OIDC PKCE`, `Passthrough`, `Service Principal`, `Tie-Break`, `Rubber-stamping`, `What-If`, `Rebase`, `Verrou V1..V5`, `RRF`, `BM25`, `HNSW`, `AD-*`, `RFC 9457`, `human_authored_required`, `WAITING_FOR_HUMAN_ARBITRATION`, etc.) ne doit figurer dans les libellés de l'interface.
+2. **Intitulés auto-porteurs et compréhensibles en moins de 2 secondes** : Chaque titre de section, d'onglet, de bouton, de badge ou de champ de formulaire exprime clairement ce que l'utilisateur voit et l'action attendue, en une formulation courte et directe.
+3. **Zéro pavé explicatif dans l'espace de travail — Renvoi ciblé par icône `ⓘ` (`ContextualInfoTriggerButton`)** : L'espace central ne comporte aucun paragraphe explicatif détaillé. Dès qu'une fonctionnalité ou une règle nécessite un éclairage complémentaire, un bouton `ⓘ` (`ContextualInfoTriggerButton` de `@orcia/ui`, cercle `18px × 18px`) est placé à côté de l'intitulé ; un clic sur `ⓘ` **ouvre automatiquement la Colonne d'Aide Contextuelle à droite (Zone 4)** et **fait défiler / surligne la fiche ou section explicative correspondante (`sectionId`)**.
+
 ---
 
 ## 2. Information Architecture (Double Sélecteur d'Organigramme, `TopHeaderBar` Contextualisée & Menu Global)
