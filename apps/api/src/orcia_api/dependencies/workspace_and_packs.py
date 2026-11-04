@@ -63,12 +63,13 @@ def get_remote_test_bench_and_mcp_service(
 def get_pack_builder_system_service(
     request: Request,
 ) -> PackBuilderSystemService:
-    """Return `PackBuilderSystemService`."""
+    """Return `PackBuilderSystemService` wired to `request.app.state.session_maker` when present."""
     svc: PackBuilderSystemService | None = getattr(
         request.app.state, "pack_builder_system_service", None
     )
     if svc is None:
-        svc = PackBuilderSystemService()
+        session_maker = getattr(request.app.state, "session_maker", None)
+        svc = PackBuilderSystemService(session_factory=session_maker)
         request.app.state.pack_builder_system_service = svc
     return svc
 
@@ -76,11 +77,12 @@ def get_pack_builder_system_service(
 def get_help_generation_and_attachment_service(
     request: Request,
 ) -> HelpGenerationAndHotAttachmentService:
-    """Return `HelpGenerationAndHotAttachmentService`."""
+    """Return `HelpGenerationAndHotAttachmentService` wired to `request.app.state.session_maker`."""
     svc: HelpGenerationAndHotAttachmentService | None = getattr(
         request.app.state, "help_generation_and_attachment_service", None
     )
     if svc is None:
-        svc = HelpGenerationAndHotAttachmentService()
+        session_maker = getattr(request.app.state, "session_maker", None)
+        svc = HelpGenerationAndHotAttachmentService(session_factory=session_maker)
         request.app.state.help_generation_and_attachment_service = svc
     return svc

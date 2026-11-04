@@ -71,6 +71,10 @@ class ModelRouterService:
         self._endpoints[endpoint.endpoint_key] = endpoint
         return endpoint
 
+    def replace_endpoints(self, endpoints: tuple[LlmModelEndpoint, ...]) -> None:
+        """Replace all registered LLM endpoints atomically."""
+        self._endpoints = {ep.endpoint_key: ep for ep in endpoints}
+
     def evaluate_orthogonality(
         self, endpoints: tuple[LlmModelEndpoint, ...] | None = None
     ) -> ModelOrthogonalityReport:

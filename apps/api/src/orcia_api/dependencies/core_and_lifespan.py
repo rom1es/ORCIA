@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 
@@ -194,12 +194,35 @@ def initialize_app_services(app: FastAPI) -> None:
             workflow_engine=app.state.orchestration_service.engine,
         )
 
+    import os
+
+    if (
+        getattr(app.state, "session_maker", None) is None
+        and os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
+    ):
+        try:
+            from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+            from orcia_core.config import resolve_database_url
+
+            db_engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
+            app.state.db_engine = db_engine
+            app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+        except Exception:
+            pass
+
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     """FastAPI lifespan context manager initializing Composition Root services (`AD-19`)."""
     initialize_app_services(app)
-    yield
+    try:
+        yield
+    finally:
+        db_engine = getattr(app.state, "db_engine", None)
+        if db_engine is not None:
+            with suppress(Exception):
+                await db_engine.dispose()
 
 
 def get_auth_service(request: Request) -> AuthAndOrganizationService:

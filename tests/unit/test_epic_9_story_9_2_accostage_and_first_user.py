@@ -159,6 +159,15 @@ def test_story_9_2_progressive_llm_tier_and_accostage_1_to_6_progression() -> No
     assert status2.amber_warning_badge is None
     assert status2.distinct_families == ("anthropic-claude", "qwen-2.5")
 
+    assert svc.orcia_env == "local"
+    assert svc.expected_bootstrap_token == "orcia-day0-bootstrap-token"
+    svc.set_first_platform_admin_record(None)
+    assert svc.first_admin is None
+    status_ws = svc.mark_milestone_completed("first-space")
+    assert status_ws.completed_count == 4
+    status_noop = svc.mark_milestone_completed("unknown-milestone")
+    assert status_noop.completed_count == 4
+
 
 def test_story_9_2_api_endpoints_welcome_setup_and_accostage(
     monkeypatch: pytest.MonkeyPatch,
@@ -248,3 +257,72 @@ def test_story_9_2_api_endpoints_welcome_setup_and_accostage(
     assert data2["llm_tier_mode"] == "FULL_ORTHOGONAL_AD10"
     assert data2["agentic_gates_ad10_enabled"] is True
     assert data2["amber_warning_badge"] is None
+
+    # 5. PUT & GET /api/v1/bootstrap/platform-setup-state persists 11 collections & syncs Accostage
+    put_resp = client.put(
+        "/api/v1/bootstrap/platform-setup-state",
+        json={
+            "org_units": [
+                {"id": "org-1", "name": "BU Finance", "slug": "bu-finance", "level": "BU"}
+            ],
+            "rbac_grants": [{"id": "grant-1", "subjectId": "Chef1", "verb": "read"}],
+            "llm_tiers": [
+                {
+                    "tier": "standard",
+                    "tierKey": "standard",
+                    "primaryModel": "claude-3-7-sonnet",
+                    "modelFamily": "anthropic",
+                    "provider": "anthropic",
+                    "model": "claude-3-7-sonnet",
+                },
+                {
+                    "tier": "reasoning",
+                    "tierKey": "reasoning",
+                    "primaryModel": "gpt-4o",
+                    "modelFamily": "openai",
+                    "provider": "openai",
+                    "model": "gpt-4o",
+                },
+            ],
+            "workspaces": [
+                {
+                    "workspaceId": "ws-1",
+                    "name": "Espace Paiements",
+                    "slug": "espace-paiements",
+                    "visibilityMode": "STANDARD",
+                    "lifecyclePhase": "BUILD",
+                }
+            ],
+            "datasources": [
+                {"id": "ds-1", "alias": "git-core", "scheme": "git", "uri": "git://core"}
+            ],
+            "packs": [{"packKey": "orcia-pack-sdlc", "version": "1.0.0", "status": "PUBLISHED"}],
+            "workflows": [{"workflowKey": "wf-1", "title": "Audit Code", "version": "1.0.0"}],
+            "runs": [{"runId": "run-1", "title": "Run Pilote", "status": "RUNNING"}],
+            "catalog_items": [{"resourceId": "wf-wf-1", "title": "Audit Code"}],
+            "ontology_concepts": [{"conceptKey": "c-1", "canonicalTerm": "RunLock"}],
+            "audit_events": [{"id": "evt-1", "eventType": "WorkspaceCreated", "summary": "ok"}],
+        },
+    )
+    assert put_resp.status_code == 200
+    put_data = put_resp.json()
+    assert put_data["first_admin_initialized"] is True
+    assert len(put_data["workspaces"]) == 1
+    assert put_data["workspaces"][0]["name"] == "Espace Paiements"
+    assert len(put_data["llm_tiers"]) == 2
+
+    get_resp = client.get("/api/v1/bootstrap/platform-setup-state")
+    assert get_resp.status_code == 200
+    get_data = get_resp.json()
+    assert len(get_data["org_units"]) == 1
+    assert len(get_data["workspaces"]) == 1
+    assert len(get_data["datasources"]) == 1
+    assert len(get_data["workflows"]) == 1
+
+    # Accostage status now reflects all 6 milestones completed!
+    resp_acc6 = client.get("/api/v1/bootstrap/accostage-status")
+    assert resp_acc6.status_code == 200
+    acc6 = resp_acc6.json()
+    assert acc6["completed_count"] == 6
+    assert acc6["badge_label"] == "Accostage 6/6"
+    assert acc6["llm_tier_mode"] == "FULL_ORTHOGONAL_AD10"

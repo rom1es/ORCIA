@@ -1796,6 +1796,36 @@ export interface components {
       value_jsonb: Record<string, unknown>;
       version: number;
     };
+    PlatformSetupStatePutRequest: {
+      audit_events?: (Record<string, unknown>)[];
+      catalog_items?: (Record<string, unknown>)[];
+      datasources?: (Record<string, unknown>)[];
+      llm_tiers?: (Record<string, unknown>)[];
+      ontology_concepts?: (Record<string, unknown>)[];
+      org_units?: (Record<string, unknown>)[];
+      packs?: (Record<string, unknown>)[];
+      rbac_grants?: (Record<string, unknown>)[];
+      runs?: (Record<string, unknown>)[];
+      workflows?: (Record<string, unknown>)[];
+      workspaces?: (Record<string, unknown>)[];
+    };
+    PlatformSetupStateResponse: {
+      audit_events?: (Record<string, unknown>)[];
+      catalog_items?: (Record<string, unknown>)[];
+      datasources?: (Record<string, unknown>)[];
+      first_admin_display_name?: string | null;
+      first_admin_email?: string | null;
+      first_admin_initialized?: boolean;
+      llm_tiers?: (Record<string, unknown>)[];
+      ontology_concepts?: (Record<string, unknown>)[];
+      org_units?: (Record<string, unknown>)[];
+      packs?: (Record<string, unknown>)[];
+      rbac_grants?: (Record<string, unknown>)[];
+      runs?: (Record<string, unknown>)[];
+      trace_id: string;
+      workflows?: (Record<string, unknown>)[];
+      workspaces?: (Record<string, unknown>)[];
+    };
     ProblemDetails: {
       detail: string;
       error_code: string;
@@ -3158,6 +3188,18 @@ export interface paths {
       };
     };
   };
+  "/api/v1/bootstrap/platform-setup-state": {
+    get: {
+      responses: {
+        200: components["schemas"]["PlatformSetupStateResponse"];
+      };
+    };
+    put: {
+      responses: {
+        200: components["schemas"]["PlatformSetupStateResponse"];
+      };
+    };
+  };
   "/api/v1/bootstrap/state": {
     get: {
       responses: {
@@ -4138,6 +4180,8 @@ export type PermissionTicketActionRequest = components["schemas"]["PermissionTic
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
 export type PilotWorkflowRunResponse = components["schemas"]["PilotWorkflowRunResponse"];
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
+export type PlatformSetupStatePutRequest = components["schemas"]["PlatformSetupStatePutRequest"];
+export type PlatformSetupStateResponse = components["schemas"]["PlatformSetupStateResponse"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];

@@ -10,6 +10,12 @@ from orcia_core.bootstrap._internal.sql_first_user_guard import (
     create_first_platform_admin_on_postgres18,
     get_first_platform_admin_from_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_platform_setup_store import (
+    PlatformSetupSnapshotRecord,
+    load_platform_setup_state_from_postgres18,
+    persist_progressive_llm_endpoint_to_postgres18,
+    save_platform_setup_state_to_postgres18,
+)
 from orcia_core.bootstrap.durable_wizards import (
     WIZARD_STEPS_BY_TYPE,
     DemoWorkspaceProvisionResult,
@@ -158,6 +164,7 @@ __all__ = [
     "ModelRouterService",
     "OntologyLayerLevel",
     "OntologyTermSpec",
+    "PlatformSetupSnapshotRecord",
     "PluginRegistryService",
     "ProgressiveDay0AccostageService",
     "SystemBootstrapRunRecord",
@@ -175,4 +182,7 @@ __all__ = [
     "build_postgres_upsert_sql",
     "create_first_platform_admin_on_postgres18",
     "get_first_platform_admin_from_postgres18",
+    "load_platform_setup_state_from_postgres18",
+    "persist_progressive_llm_endpoint_to_postgres18",
+    "save_platform_setup_state_to_postgres18",
 ]
