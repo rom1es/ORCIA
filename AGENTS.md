@@ -119,6 +119,13 @@ L'UI traduit l'UX en éléments visuels tangibles, esthétiques et fonctionnels 
 4. **Gestion des grilles (Grids)** : Structurer la page à l'aide de colonnes, de gouttières (`gap`) et de marges régulières pour aligner proprement tous les éléments.
 5. **Contrastes et accessibilité (WCAG AA)** : S'assurer que les couleurs de texte et de fond respectent les normes de contraste pour être lisibles par tous.
 
+## 3. Les 3 Règles Impératives de Microcopy Centrée Utilisateur & d'Aide Contextuelle Ciblée (`ⓘ`)
+Tous les textes, libellés, infobulles et écrans de `@orcia/ui` et `apps/web` (`apps/web/src/i18n/locales/*.ts`) DOIVENT respecter ces 3 règles sans exception :
+1. **Zéro plomberie ou jargon d'implémentation interne ORCIA dans l'interface** : Toujours adopter le point de vue et le vocabulaire métier de l'utilisateur final. Aucun nom de brique technique interne, de table SQL, de moteur ou d'identifiant d'architecture (`DBOS`, `PostgreSQL 18`, `PG18`, `pgvector`, `halfvec`, `Outbox`, `domain_events_outbox`, `Wasmtime`, `Starlark`, `Argon2id`, `OIDC PKCE`, `Passthrough`, `Service Principal`, `Tie-Break`, `Rubber-stamping`, `What-If`, `Rebase`, `Verrou V1..V5`, `RRF`, `BM25`, `HNSW`, `CTE`, `AD-10`, `AD-15`, `RFC 9457`, `human_authored_required`, `WAITING_FOR_HUMAN_ARBITRATION`, `CONTRIBUTOR_ACTION_REQUIRED`, `READ_ONLY_OBSERVER`, `ORCIA_BOOTSTRAP_TOKEN`, etc.) ne doit jamais apparaître dans les textes visibles par l'utilisateur.
+2. **Intitulés auto-porteurs et immédiats (< 2 secondes)** : Chaque titre de page, d'onglet, de carte, de bouton ou de champ doit permettre à l'utilisateur de comprendre en moins de 2 secondes ce qui est affiché et quelle action est attendue de lui, sans phrase fleuve ni jargon abstrait.
+3. **Zéro pavé explicatif dans l'espace de travail — Renvoi systématique par icône `ⓘ` (`ContextualInfoTriggerButton`) vers la colonne d'aide contextuelle droite** : Ne jamais alourdir un écran central, une carte ou un formulaire avec un paragraphe d'explication. Placer à côté du titre ou du libellé un bouton discret `ⓘ` (`<ContextualInfoTriggerButton sectionId="..." />` de `@orcia/ui`, cercle `18px × 18px`) dont le clic **ouvre automatiquement la colonne d'aide contextuelle à droite** (Zone 4) et **fait défiler / surligne la section d'explication correspondante** (`data-testid="help-section-${sectionId}"`, `data-active="true"`).
+
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

@@ -1,23 +1,33 @@
 ---
-resource_id: help-base-spaces-sources-en
-uri: orcia://system/help/spaces-sources/en
-title: "Space Sources & Documents"
-version: "1.0.0"
+id: spaces-sources
+title: Connect and synchronize your document sources and tools
+version: 1.1.0
 lang: en
 layer: BASE
 bound_routes:
   - /mes-espaces/$id/sources
-  - /spaces
-  - /cockpit
-summary_what_for: "This screen lets you connect and index the documentary sources of your Space."
+  - /spaces/sources
+  - /workspaces
+  - /settings
 ---
-### Step-by-Step
-1. Click **+ Attach a source** to link a Git, Jira, or Confluence repository.
-2. Check the freshness indicator (`freshness_ttl_days`).
 
-### Key Terms
-- **Space**: Project scope isolating your sources, deliverables, and business glossary.
-- **Passthrough**: Execution under your own AES-256-GCM encrypted personal identity.
+## What is this screen for?
 
-### Frequently Asked Questions
-- **How do I refresh a source?** Use the sync button or a real-time webhook.
+This screen lets you connect your team's knowledge sources (code repositories, documentation spaces, project trackers, or databases) to your **Workspace** and choose where approved deliverables are saved by default.
+
+## How to proceed step by step
+
+1. Select the type of source to connect (code, documentation, project tracking, or database) and give it a clear display name for your team.
+2. Choose the connection mode: **Each member's personal account** (every user only sees documents they are allowed to access) or **Shared team account** (approved by an administrator).
+3. Write a short business justification, sign the addition, and test the connection in one click.
+
+## Key concepts & pointers
+
+- **Reference source vs Working document**: A reference source serves as an authoritative reading baseline; a working document hosts deliverables currently being drafted.
+- **Personal account connection**: Ensures no team member can view a confidential document they do not have permission to read in the source tool.
+- **Confidential workspace isolation**: Prevents sensitive workspace content from rolling up to parent levels of the organization.
+
+## Frequently asked questions
+
+- **How do I view the explanation for a specific setting?** Click the `ⓘ` icon next to any heading: this help column opens and highlights the matching explanation section.
+- **What happens if a document is edited directly in our external tool?** Your direct edits are always preserved and never overwritten by an automated draft.

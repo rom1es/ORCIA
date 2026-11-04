@@ -1,4 +1,5 @@
 import {
+  ContextualInfoTriggerButton,
   EffortSelector,
   InferenceTierBadge,
   LayersInspectorPopover,
@@ -16,6 +17,7 @@ import {
 import { createRoute } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
+import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
@@ -30,6 +32,7 @@ export type SettingsSectionTab =
 
 export function SettingsHubView() {
   const { dictionary, locale } = useI18n();
+  const { openHelpSection } = useShellNavigation();
   const copy = dictionary.settingsHub;
   const isFr = locale === "fr";
 
@@ -292,16 +295,22 @@ export function SettingsHubView() {
               style={{ display: "flex", flexDirection: "column", gap: "16px" }}
             >
               <div>
-                <h2 style={{ margin: 0, fontSize: "15px" }}>
-                  {isFr
-                    ? "1. Créer et Structurer les Unités d'Organisation (BU & Espaces / Équipes)"
-                    : "1. Create and Structure Organization Units (BUs & Spaces / Teams)"}
-                </h2>
-                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-                  {isFr
-                    ? "Rattachez chaque Espace (ou Équipe) à sa Business Unit (BU) parente. La suppression d'une unité est protégée si des sous-unités ou des habilitations en dépendent."
-                    : "Attach each Space (or Team) to its parent Business Unit (BU). Deleting a unit is blocked if child units or permission rules depend on it."}
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ margin: 0, fontSize: "15px" }}>
+                    {isFr
+                      ? "1. Structure de l'Organisation (Directions / BU & Espaces)"
+                      : "1. Organization Structure (Divisions / BUs & Workspaces)"}
+                  </h2>
+                  <ContextualInfoTriggerButton
+                    sectionId="iam-org-tree"
+                    label={
+                      isFr
+                        ? "Comprendre la structure Directions (BU) et Espaces"
+                        : "Understand Divisions (BUs) and Workspaces structure"
+                    }
+                    onOpenHelpSection={openHelpSection}
+                  />
+                </div>
                 <form
                   data-testid="create-org-unit-form"
                   onSubmit={(e) => {
@@ -510,16 +519,22 @@ export function SettingsHubView() {
               </div>
 
               <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "14px" }}>
-                <h2 style={{ margin: 0, fontSize: "15px" }}>
-                  {isFr
-                    ? "2. Attribuer et Gérer les Règles d'Habilitation"
-                    : "2. Grant and Manage Permission Rules"}
-                </h2>
-                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-                  {isFr
-                    ? "Définissez QUI (un Rôle ou un Utilisateur précis, ex. « Chef1 ») a le droit d'effectuer QUELLES ACTIONS sur QUEL PÉRIMÈTRE CIBLE (Plateforme Globale, une BU, un Espace ou une ressource précise)."
-                    : "Define WHO (a Role or a specific User) can perform WHICH ACTIONS on WHICH TARGET SCOPE (Global Platform, a BU, a Space, or a specific resource)."}
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ margin: 0, fontSize: "15px" }}>
+                    {isFr
+                      ? "2. Attribuer et Gérer les Règles d'Habilitation"
+                      : "2. Grant and Manage Permission Rules"}
+                  </h2>
+                  <ContextualInfoTriggerButton
+                    sectionId="iam-role-grants"
+                    label={
+                      isFr
+                        ? "Comprendre comment attribuer une règle d'habilitation (Qui ? et Sur quoi ?)"
+                        : "Understand how to grant a permission rule (Who? and On what?)"
+                    }
+                    onOpenHelpSection={openHelpSection}
+                  />
+                </div>
 
                 <form
                   data-testid="create-rbac-grant-form"
@@ -866,11 +881,22 @@ export function SettingsHubView() {
               style={{ display: "flex", flexDirection: "column", gap: "14px" }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-                <InferenceTierBadge
-                  tier={selectedTier}
-                  effort={selectedEffort}
-                  labels={tierAndEffortLabels}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <InferenceTierBadge
+                    tier={selectedTier}
+                    effort={selectedEffort}
+                    labels={tierAndEffortLabels}
+                  />
+                  <ContextualInfoTriggerButton
+                    sectionId="ai-models-overview"
+                    label={
+                      isFr
+                        ? "Comprendre les niveaux de modèles IA et les fournisseurs indépendants"
+                        : "Understand AI model levels and independent providers"
+                    }
+                    onOpenHelpSection={openHelpSection}
+                  />
+                </div>
                 <EffortSelector
                   selectedTier={selectedTier}
                   selectedEffort={selectedEffort}
@@ -902,7 +928,7 @@ export function SettingsHubView() {
                   data-testid="llm-primary-model-input"
                   value={primaryModel}
                   onChange={(e) => setPrimaryModel(e.target.value)}
-                  placeholder={isFr ? "Modèle primaire (ex: provider/model-id)..." : "Primary model..."}
+                  placeholder={isFr ? "Modèle principal (ex: fournisseur/modèle)..." : "Primary model..."}
                   style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
                 />
                 <input
@@ -910,7 +936,7 @@ export function SettingsHubView() {
                   data-testid="llm-secondary-model-input"
                   value={secondaryModel}
                   onChange={(e) => setSecondaryModel(e.target.value)}
-                  placeholder={isFr ? "Modèle secondaire de secours..." : "Secondary fallback model..."}
+                  placeholder={isFr ? "Modèle secondaire de secours..." : "Backup model..."}
                   style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
                 />
                 <input
@@ -918,11 +944,11 @@ export function SettingsHubView() {
                   data-testid="llm-family-input"
                   value={modelFamily}
                   onChange={(e) => setModelFamily(e.target.value)}
-                  placeholder={isFr ? "Famille AD-10..." : "Model family..."}
+                  placeholder={isFr ? "Fournisseur IA (ex: Mistral, Anthropic)..." : "AI provider..."}
                   style={inputStyle}
                 />
                 <button type="submit" data-testid="save-llm-tier-btn" style={primaryBtnStyle}>
-                  {isFr ? "Enregistrer le palier" : "Save tier"}
+                  {isFr ? "Enregistrer le niveau" : "Save level"}
                 </button>
               </form>
 
@@ -932,8 +958,8 @@ export function SettingsHubView() {
                   style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
                 >
                   {isFr
-                    ? "Aucun palier cognitif configuré. Associez les paliers simple / medium / complex à vos modèles IA."
-                    : "No cognitive tier configured yet. Bind simple / medium / complex tiers to your AI models."}
+                    ? "Aucun modèle IA configuré. Associez les niveaux simple / standard / approfondi à vos modèles IA."
+                    : "No AI model configured yet. Assign simple / standard / in-depth levels to your AI models."}
                 </p>
               ) : (
                 <div style={{ display: "grid", gap: "8px" }}>
@@ -971,6 +997,22 @@ export function SettingsHubView() {
               className="orcia-bento-card"
               style={{ display: "flex", flexDirection: "column", gap: "14px" }}
             >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <strong style={{ fontSize: "14px" }}>
+                  {isFr
+                    ? "Clé d'accès et connexion aux sources documentaires"
+                    : "Access key and document source connection"}
+                </strong>
+                <ContextualInfoTriggerButton
+                  sectionId="connectors-overview"
+                  label={
+                    isFr
+                      ? "Comprendre la connexion aux outils et la protection des clés d'accès"
+                      : "Understand tool connections and access key protection"
+                  }
+                  onOpenHelpSection={openHelpSection}
+                />
+              </div>
               <SecretField
                 status={{
                   configured: connSecretConfigured,
@@ -988,7 +1030,7 @@ export function SettingsHubView() {
                   }
                 }}
                 labels={{
-                  fieldLabel: isFr ? "Secret du connecteur (Write-Only)" : "Connector Secret (Write-Only)",
+                  fieldLabel: isFr ? "Clé secrète du connecteur (protégée après saisie)" : "Connector secret key (protected after entry)",
                   configuredBadge: copy.secretFieldLabels.configuredBadge,
                   unconfiguredBadge: copy.secretFieldLabels.unconfiguredBadge,
                   fingerprintPrefix: copy.secretFieldLabels.fingerprintLabel,
@@ -1345,11 +1387,22 @@ export function SettingsHubView() {
               className="orcia-bento-card"
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
-              <h2 style={{ margin: 0, fontSize: "15px" }}>
-                {isFr
-                  ? "Journal des Modifications de Configuration (Outbox)"
-                  : "Configuration Change Log (Outbox)"}
-              </h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <h2 style={{ margin: 0, fontSize: "15px" }}>
+                  {isFr
+                    ? "Journal des Modifications de Configuration"
+                    : "Configuration Change Log"}
+                </h2>
+                <ContextualInfoTriggerButton
+                  sectionId="audit-overview"
+                  label={
+                    isFr
+                      ? "Comprendre le journal d'activité et le suivi des modifications"
+                      : "Understand the activity log and configuration change tracking"
+                  }
+                  onOpenHelpSection={openHelpSection}
+                />
+              </div>
               {auditEvents.length === 0 ? (
                 <p
                   data-testid="audit-events-empty-state"

@@ -31,8 +31,8 @@ export function CatalogFeaturePanel() {
           <div>
             <strong>
               {isFr
-                ? "Aucun Pack ou Workflow personnalisé dans le Catalogue"
-                : "No custom Pack or Workflow in the Catalog yet"}
+                ? "Aucun Pack métier ni modèle de processus personnalisé"
+                : "No custom Business Pack or process template yet"}
             </strong>
             <p
               style={{
@@ -42,8 +42,8 @@ export function CatalogFeaturePanel() {
               }}
             >
               {isFr
-                ? "Activez un Pack métier ou créez un Workflow dans le Studio (/settings) pour peupler le Catalogue fédéré."
-                : "Activate a business Pack or create a Workflow in the Studio (/settings) to populate the federated Catalog."}
+                ? "Activez un Pack métier ou créez un modèle de processus dans la Configuration pour enrichir votre catalogue."
+                : "Enable a Business Pack or create a process template in Configuration to populate your catalog."}
             </p>
           </div>
           <button
@@ -60,7 +60,7 @@ export function CatalogFeaturePanel() {
               cursor: "pointer",
             }}
           >
-            {isFr ? "Ouvrir Packs & Studio (/settings)" : "Open Packs & Studio (/settings)"}
+            {isFr ? "Ouvrir la Configuration" : "Open Configuration"}
           </button>
         </div>
       )}
@@ -74,7 +74,7 @@ export function CatalogFeaturePanel() {
         />
       </div>
 
-      {/* Banc de Test à Chaud MCP/A2A & Exposition MCP Gouvernée (démarre 100 % vide) */}
+      {/* Connexion et Test d'Outils Externes & Accès depuis un Éditeur (démarre 100 % vide) */}
       <RemoteServiceTestBenchAndMcpExposureView
         endpointUrl=""
         steps={[]}

@@ -47,8 +47,8 @@ export function FinopsFeaturePanel() {
         style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
       >
         {isFr
-          ? `${runs.length} Run(s) comptabilisé(s) · ${llmTiers.length} palier(s) cognitif(s) configuré(s).`
-          : `${runs.length} Run(s) accounted · ${llmTiers.length} cognitive tier(s) configured.`}
+          ? `${runs.length} exécution(s) comptabilisée(s) · ${llmTiers.length} niveau(x) de modèle IA configuré(s).`
+          : `${runs.length} execution(s) accounted · ${llmTiers.length} AI model level(s) configured.`}
       </p>
     </div>
   );

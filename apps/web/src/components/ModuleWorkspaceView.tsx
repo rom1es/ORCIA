@@ -1,4 +1,4 @@
-import { StatusBadge, type UiModuleKey } from "@orcia/ui";
+import { ContextualInfoTriggerButton, StatusBadge, type UiModuleKey } from "@orcia/ui";
 import React from "react";
 import { AdminFeaturePanel } from "../features/admin";
 import { CatalogFeaturePanel } from "../features/catalog";
@@ -12,11 +12,12 @@ import { useI18n } from "../i18n";
 import { useShellNavigation } from "./ShellContainer";
 
 export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
-  const { dictionary } = useI18n();
-  const { activeModuleKey } = useShellNavigation();
+  const { dictionary, locale } = useI18n();
+  const { activeModuleKey, openHelpSection } = useShellNavigation();
 
   const currentModule = activeModuleKey ?? moduleKey;
   const pageCopy = dictionary.modulePages[currentModule];
+  const isFr = locale === "fr";
 
   return (
     <div
@@ -44,7 +45,18 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
             flexWrap: "wrap",
           }}
         >
-          <strong style={{ fontSize: "16px" }}>{pageCopy.subtitle}</strong>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <strong style={{ fontSize: "16px" }}>{pageCopy.subtitle}</strong>
+            <ContextualInfoTriggerButton
+              sectionId="module-overview"
+              label={
+                isFr
+                  ? `Afficher l'aide sur ${pageCopy.subtitle}`
+                  : `Show help for ${pageCopy.subtitle}`
+              }
+              onOpenHelpSection={openHelpSection}
+            />
+          </div>
           <StatusBadge
             testId={`module-uri-badge-${currentModule}`}
             label={pageCopy.uriBadgeExample}

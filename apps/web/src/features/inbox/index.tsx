@@ -3,6 +3,7 @@ import {
   AssistantFoldersAndCollaborativeThreadView,
   AssistantGovernanceModalAndStudio,
   AssistantSpeedSelectorAndStreamView,
+  ContextualInfoTriggerButton,
   StatusBadge,
   type AssistantFolderVisibilityMode,
   type UiAssistantFolderItem,
@@ -14,7 +15,7 @@ import { useI18n } from "../../i18n";
 
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { navigateToRoute } = useShellNavigation();
+  const { navigateToRoute, openHelpSection } = useShellNavigation();
   const { platformAdmin, workspaces } = usePlatformSetup();
   const inboxCopy = dictionary.inboxAndClaims;
   const isFr = locale === "fr";
@@ -29,14 +30,25 @@ export function InboxFeaturePanel() {
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
-      {/* Barre d'actions Mon Assistant & Gouvernance */}
+      {/* Barre d'actions Mon Assistant & Réglages */}
       <div className="orcia-bento-card flex flex-wrap items-center justify-between gap-3">
-        <StatusBadge
-          testId="inbox-amber-counter"
-          label={`${inboxCopy.amberCounterPrefix} 0`}
-          tone="amber"
-          pill
-        />
+        <div className="flex items-center gap-2">
+          <StatusBadge
+            testId="inbox-amber-counter"
+            label={`${inboxCopy.amberCounterPrefix} 0`}
+            tone="amber"
+            pill
+          />
+          <ContextualInfoTriggerButton
+            sectionId="assistant-modes"
+            label={
+              isFr
+                ? "Comprendre les 3 modes de réponse de Mon Assistant"
+                : "Understand My Assistant's 3 response modes"
+            }
+            onOpenHelpSection={openHelpSection}
+          />
+        </div>
         <button
           type="button"
           data-testid="assistant-open-governance-btn"
@@ -47,7 +59,7 @@ export function InboxFeaturePanel() {
         </button>
       </div>
 
-      {/* Modale Gouvernance de l'Assistant */}
+      {/* Modale Réglages de l'Assistant */}
       {governanceOpen ? (
         <AssistantGovernanceModalAndStudio
           workspaceId={activeWorkspaceId}
@@ -81,7 +93,7 @@ export function InboxFeaturePanel() {
         onLaunchProcessFromFolder={() => navigateToRoute("/processes")}
       />
 
-      {/* Sélecteur Conversationnel à 3 Vitesses (démarre 100 % vide) */}
+      {/* Sélecteur de Mode de Réponse (démarre 100 % vide) */}
       <AssistantSpeedSelectorAndStreamView
         workspaceId={activeWorkspaceId}
         userId={platformAdmin?.email ?? ""}
@@ -97,7 +109,7 @@ export function InboxFeaturePanel() {
         }}
       />
 
-      {/* Pastilles de Citation & Carte d'Artefact (démarre 100 % vide) */}
+      {/* Pastilles de Citation & Brouillon de Document (démarre 100 % vide) */}
       <AssistantCitationPillsAndArtifactCard
         sanitizedResponseText={streamedText}
         sources={[]}
@@ -168,8 +180,8 @@ export function InboxFeaturePanel() {
           <div>
             <strong>
               {isFr
-                ? "Aucune notification ni demande d'arbitrage en attente"
-                : "No pending notification or arbitration request"}
+                ? "Aucune demande ni décision en attente"
+                : "No pending request or decision"}
             </strong>
             <p
               style={{
@@ -179,8 +191,8 @@ export function InboxFeaturePanel() {
               }}
             >
               {isFr
-                ? "Les tâches d'arbitrage humain, signatures d'ancrage et Gates adaptatives apparaîtront ici lorsqu'un Workflow Run les déclenchera."
-                : "Human arbitration tasks, anchor signatures, and adaptive Gates will appear here when triggered by an active Workflow Run."}
+                ? "Les demandes d'arbitrage, rédactions attendues et étapes de validation apparaîtront ici dès qu'un processus en aura besoin."
+                : "Decisions, required authoring entries, and review steps will appear here as soon as a process requests them."}
             </p>
           </div>
           <button

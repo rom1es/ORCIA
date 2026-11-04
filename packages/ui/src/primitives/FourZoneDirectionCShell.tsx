@@ -72,6 +72,8 @@ export interface FourZoneDirectionCShellProps {
   readonly headerUserControl?: React.ReactNode;
   readonly sidebarSecondarySlot?: React.ReactNode;
   readonly helpColumnContent?: React.ReactNode;
+  readonly helpColumnOpen?: boolean;
+  readonly onHelpColumnOpenChange?: (open: boolean) => void;
   readonly children: React.ReactNode;
 }
 
@@ -112,18 +114,34 @@ export function FourZoneDirectionCShell({
   headerUserControl,
   sidebarSecondarySlot,
   helpColumnContent,
+  helpColumnOpen: controlledHelpColumnOpen,
+  onHelpColumnOpenChange,
   children,
 }: FourZoneDirectionCShellProps): React.ReactElement {
   const [railCollapsed, setRailCollapsed] = useState<boolean>(false);
   const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState<boolean>(false);
-  const [helpColumnOpen, setHelpColumnOpen] = useState<boolean>(() =>
+  const [internalHelpColumnOpen, setInternalHelpColumnOpen] = useState<boolean>(() =>
     computeDefaultHelpColumnOpen(viewportWidth, pendingDecisionsTotal),
   );
 
+  const helpColumnOpen =
+    controlledHelpColumnOpen !== undefined
+      ? controlledHelpColumnOpen
+      : internalHelpColumnOpen;
+
+  const updateHelpColumnOpen = (nextOpen: boolean): void => {
+    setInternalHelpColumnOpen(nextOpen);
+    onHelpColumnOpenChange?.(nextOpen);
+  };
+
   useEffect(() => {
-    setHelpColumnOpen(computeDefaultHelpColumnOpen(viewportWidth, pendingDecisionsTotal));
-  }, [viewportWidth, pendingDecisionsTotal]);
+    if (controlledHelpColumnOpen === undefined) {
+      setInternalHelpColumnOpen(
+        computeDefaultHelpColumnOpen(viewportWidth, pendingDecisionsTotal),
+      );
+    }
+  }, [viewportWidth, pendingDecisionsTotal, controlledHelpColumnOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -259,7 +277,7 @@ export function FourZoneDirectionCShell({
           <button
             type="button"
             data-testid="topbar-contextual-help-toggle"
-            onClick={() => setHelpColumnOpen((prev) => !prev)}
+            onClick={() => updateHelpColumnOpen(!helpColumnOpen)}
             aria-expanded={helpColumnOpen}
             className="rounded border px-2.5 py-1 text-xs font-medium"
             style={{
@@ -474,7 +492,7 @@ export function FourZoneDirectionCShell({
               <button
                 type="button"
                 data-testid="contextual-help-close-btn"
-                onClick={() => setHelpColumnOpen(false)}
+                onClick={() => updateHelpColumnOpen(false)}
                 className="text-xs"
               >
                 ✕

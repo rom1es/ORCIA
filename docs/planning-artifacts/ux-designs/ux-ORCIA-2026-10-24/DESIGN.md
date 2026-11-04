@@ -119,6 +119,12 @@ L'UI traduit l'UX en éléments visuels tangibles, esthétiques et fonctionnels.
 4. **Gestion des grilles (Grids)** : Structurer chaque page et panneau à l'aide de colonnes régulières, de gouttières (`gap` sur échelle de `8px`/`16px`/`24px`) et de marges régulières pour aligner proprement tous les éléments.
 5. **Contrastes et accessibilité (WCAG 2.2 AA)** : Garantir que toutes les combinaisons de couleurs de texte et de fond respectent les ratios de contraste normatifs (`>= 4.5:1` texte normal, `>= 3:1` grands titres et composants UI) pour être lisibles par tous, en mode clair comme en mode sombre.
 
+### Microcopy Centrée Utilisateur & Déclencheur d'Aide Contextuelle Ciblée (`ⓘ` `ContextualInfoTriggerButton`)
+
+- **Zéro jargon d'implémentation interne dans l'UI** : Les dictionnaires `i18n` (`fr`/`en`) et composants adoptent exclusivement le point de vue de l'utilisateur final. Toute référence interne (`DBOS`, `PostgreSQL 18`, `pgvector`, `halfvec`, `Outbox`, `Wasmtime`, `Starlark`, `Argon2id`, `OIDC PKCE`, `Passthrough`, `Tie-Break`, `Rubber-stamping`, `What-If`, `Verrou V1..V5`, `AD-*`, `RFC 9457`, constantes techniques brutes) est proscrite des écrans.
+- **Intitulés auto-porteurs (< 2 secondes)** : Les titres, onglets, boutons et champs restent courts, explicites et immédiatement actionnables.
+- **Zéro pavé explicatif dans l'écran central — Bouton `ⓘ` (`ContextualInfoTriggerButton`)** : Tout complément d'explication est déporté dans la **Colonne d'Aide Contextuelle à droite (`340px`)** et accessible via le composant `@orcia/ui` `<ContextualInfoTriggerButton sectionId="..." />` (pastille circulaire `18px × 18px` avec lettre `"i"`, classe `.orcia-info-trigger-btn`). Au clic, la colonne d'aide droite s'ouvre automatiquement et surligne la section explicative ciblée (`data-testid="help-section-${sectionId}"`, `data-active="true"`).
+
 ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce document spécifie uniquement la couche identitaire et les composants cognitifs propres à ORCIA.
 
 ## Colors
