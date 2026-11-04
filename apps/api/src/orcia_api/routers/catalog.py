@@ -29,6 +29,8 @@ from orcia_core.catalog import (
     BmadSkillStepFile,
     CatalogItemEntity,
     FederatedScheme,
+    SeaweedFsObjectStorageAdapter,
+    SeaweedFsS3HttpBackend,
     WorkflowDefinitionEntity,
 )
 from orcia_core.observability.logging import get_current_trace_id
@@ -39,6 +41,22 @@ router = APIRouter(prefix="/api/v1", tags=["federated-catalog"])
 
 def _trace(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+
+
+def _get_optional_seaweedfs_adapter(request: Request) -> SeaweedFsObjectStorageAdapter | None:
+    """Return `SeaweedFsObjectStorageAdapter` when configured on `app.state`."""
+    adapter: SeaweedFsObjectStorageAdapter | None = getattr(
+        request.app.state, "seaweedfs_storage_adapter", None
+    )
+    if adapter is not None:
+        return adapter
+    s3_endpoint: str | None = getattr(request.app.state, "seaweedfs_endpoint_url", None)
+    if s3_endpoint:
+        backend = SeaweedFsS3HttpBackend(endpoint_url=s3_endpoint)
+        adapter = SeaweedFsObjectStorageAdapter(backend=backend)
+        request.app.state.seaweedfs_storage_adapter = adapter
+        return adapter
+    return None
 
 
 def _serialize_catalog_item(
@@ -161,6 +179,15 @@ async def resolve_federated_uri(
     res = get_catalog_service(request).resolver.resolve(
         payload.uri, expected_sha256=payload.expected_sha256
     )
+    seaweed = _get_optional_seaweedfs_adapter(request)
+    if seaweed is not None:
+        seaweed.put_bytes(
+            cas_key=res.cas_key,
+            sha256=res.sha256,
+            source_uri=res.uri,
+            content_bytes=res.content_text.encode("utf-8"),
+            content_type="text/plain; charset=utf-8",
+        )
     return CatalogUriResolveResponse(
         uri=res.uri,
         scheme=res.scheme,
@@ -187,6 +214,17 @@ async def get_cas_object(
 ) -> CasObjectResponse:
     """Retrieve an immutable object from `cas/<sha256>` verifying SHA-256 integrity."""
     resolve_request_user(request, persona_key=persona_key)
+    seaweed = _get_optional_seaweedfs_adapter(request)
+    if seaweed is not None:
+        s3_entry = seaweed.get_bytes(f"cas/{sha256}")
+        if s3_entry is not None:
+            return CasObjectResponse(
+                sha256=s3_entry.sha256,
+                cas_key=s3_entry.cas_key,
+                content_type=s3_entry.content_type,
+                content_text=s3_entry.content_bytes.decode("utf-8"),
+                trace_id=_trace(request),
+            )
     entry = get_catalog_service(request).resolver.get_cas_entry(
         sha256, instance=str(request.url.path)
     )

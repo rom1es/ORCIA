@@ -13,6 +13,7 @@ from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_orchestration_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.routers.orchestration_sql_wiring import sync_replay_fork_to_sql
 from orcia_api.schemas.challenge_and_replay import (
     StepReplayRequest,
     StepReplayResponse,
@@ -186,6 +187,13 @@ async def replay_workflow_from_step(
         sub_workflow_step_key=eff.sub_workflow_step_key,
         revised_section_payload=eff.revised_section_payload,
         instance=str(request.url.path),
+    )
+    run = svc.engine._get_run(run_id, instance=str(request.url.path))
+    await sync_replay_fork_to_sql(
+        request,
+        run=run,
+        step_key=step_key,
+        revised_payload=eff.revised_section_payload,
     )
     return StepReplayResponse(
         replay=_serialize_replay(res),

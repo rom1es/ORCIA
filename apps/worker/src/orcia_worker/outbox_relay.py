@@ -14,6 +14,7 @@ import dramatiq
 from dbos import DBOS
 
 from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork, SqlDomainEventsOutboxRepository
 from orcia_kernel.events import DomainEvent
 from orcia_kernel.ports import OutboxRelayPort
 
@@ -104,6 +105,19 @@ class DramatiqOutboxRelay(OutboxRelayPort):
             self._published_ids.add(eid)
         return len(keys)
 
+    async def relay_sql_pending_batch(
+        self,
+        uow: DbosSqlAlchemyUnitOfWork,
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Claim and relay `PENDING` rows from `domain_events_outbox` (`SKIP LOCKED`)."""
+        repo = SqlDomainEventsOutboxRepository(uow)
+        return await repo.claim_and_relay_pending_batch(
+            batch_size=batch_size,
+            subscriber_fn=self.event_bus.publish_idempotent_async,
+        )
+
 
 class DbosOutboxRelay(OutboxRelayPort):
     """`OutboxRelayPort` implementation backed by a DBOS workflow/step (`C3`, `Q2: 2A`)."""
@@ -125,6 +139,19 @@ class DbosOutboxRelay(OutboxRelayPort):
             self.event_bus.publish_idempotent(evt)
             self._published_ids.add(eid)
         return len(keys)
+
+    async def relay_sql_pending_batch(
+        self,
+        uow: DbosSqlAlchemyUnitOfWork,
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Claim and relay `PENDING` rows from `domain_events_outbox` (`SKIP LOCKED`)."""
+        repo = SqlDomainEventsOutboxRepository(uow)
+        return await repo.claim_and_relay_pending_batch(
+            batch_size=batch_size,
+            subscriber_fn=self.event_bus.publish_idempotent_async,
+        )
 
 
 @dramatiq.actor(actor_name="outbox_relay", max_retries=3)

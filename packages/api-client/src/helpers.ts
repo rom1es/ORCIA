@@ -37,7 +37,7 @@ export function createRequestJson(options: OrciaApiClientOptions) {
 
   return async function requestJson<T>(
     path: string,
-    method: "GET" | "POST" = "GET",
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     body?: unknown,
   ): Promise<T> {
     const headers: Record<string, string> = { ...baseHeaders };

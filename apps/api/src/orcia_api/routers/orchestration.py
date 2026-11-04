@@ -6,6 +6,7 @@ from fastapi import APIRouter, Query, Request
 
 from orcia_api.dependencies import get_orchestration_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.routers.orchestration_sql_wiring import sync_instantiated_run_to_sql
 from orcia_api.schemas.catalog import RunLockSourceTripletItem
 from orcia_api.schemas.orchestration import (
     ArtifactTemplateCompileRequest,
@@ -320,7 +321,8 @@ async def instantiate_workflow_run(
 ) -> WorkflowRunInstantiateResponse:
     """Instantiate a Workflow Run and lock all sources, overrides, KB hash, and sub-workflows."""
     user = resolve_request_user(request, persona_key=persona_key)
-    run = get_orchestration_service(request).instantiate_workflow_run(
+    svc = get_orchestration_service(request)
+    run = svc.instantiate_workflow_run(
         user,
         workflow_uri=payload.workflow_uri,
         workspace_id=payload.workspace_id,
@@ -331,6 +333,9 @@ async def instantiate_workflow_run(
         execution_identity_mode=payload.execution_identity_mode,
         instance=str(request.url.path),
     )
+    wf = svc.engine._get_workflow(run.workflow_uri, instance=str(request.url.path))
+    initial_steps = svc.engine.initialize_run_steps(run, wf)
+    await sync_instantiated_run_to_sql(request, run, initial_steps=initial_steps)
     return WorkflowRunInstantiateResponse(
         run=_serialize_run(run),
         trace_id=_trace(request),

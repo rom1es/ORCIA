@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Query, Request
 
 from orcia_api.dependencies import get_ontology_and_rag_services
@@ -23,10 +25,22 @@ from orcia_core.ontology import (
     ProfileSemanticTranslator,
 )
 from orcia_core.ontology.errors import ObserverModeReadOnlyError
-from orcia_core.rag import DifferentiatedIncrementalIndexer
+from orcia_core.rag import (
+    DifferentiatedIncrementalIndexer,
+    SqlHybridRagRepository,
+    compute_deterministic_halfvec_1024,
+)
 from orcia_kernel.ids import new_uuid7_str
 
 router = APIRouter(prefix="/api/v1/ontology-rag", tags=["ontology-rag"])
+
+
+def _get_optional_sql_rag_repo(request: Request) -> SqlHybridRagRepository | None:
+    """Return `SqlHybridRagRepository` when `session_maker` is attached on `request.app.state`."""
+    session_maker: Any = getattr(request.app.state, "session_maker", None)
+    if session_maker is None:
+        return None
+    return SqlHybridRagRepository(session_maker)
 
 
 @router.get(
@@ -38,14 +52,28 @@ router = APIRouter(prefix="/api/v1/ontology-rag", tags=["ontology-rag"])
 async def get_ontology_and_rag_state(
     request: Request,
     fixture: bool = Query(default=False, description="Use deterministic test fixture data"),
+    workspace_id: str | None = Query(default=None),
+    seed_uri: str | None = Query(default=None),
 ) -> s.OntologyAndRagStateResponse:
     gov, rag, trip = get_ontology_and_rag_services(request, fixture=fixture)
+    edges = list(trip.list_edges())
+    sql_rag_repo = _get_optional_sql_rag_repo(request)
+    if not fixture and sql_rag_repo is not None and workspace_id and seed_uri:
+        sql_edges = await sql_rag_repo.traverse_tripartite_neighborhood(
+            workspace_id=workspace_id,
+            seed_uri=seed_uri,
+            max_depth=2,
+        )
+        existing_keys = {e.edge_key for e in edges}
+        for sql_edge in sql_edges:
+            if sql_edge.edge_key not in existing_keys:
+                edges.append(sql_edge)
     return s.OntologyAndRagStateResponse(
         concepts=[serialize_concept(c) for c in gov.concepts],
         relations=[serialize_relation(r) for r in gov.relations],
         promotions=[serialize_promotion(p) for p in gov.proposals],
         documents=[serialize_doc(d) for d in rag.list_documents()],
-        tripartite_edges=[serialize_trace_edge(e) for e in trip.list_edges()],
+        tripartite_edges=[serialize_trace_edge(e) for e in edges],
         stale_alerts=[serialize_stale_alert(a) for a in trip.list_alerts()],
         trace_id=get_trace_id(request),
     )
@@ -187,12 +215,27 @@ async def search_hybrid_rag(
         if body.allowed_datasource_aliases is not None
         else None
     )
-    hits = rag.search_hybrid_rrf(
-        workspace_id=body.workspace_id,
-        query_text=combined_query,
-        allowed_datasource_aliases=allowed,
-        top_k=body.top_k,
-    )
+    sql_rag_repo = _get_optional_sql_rag_repo(request)
+    hits: tuple[Any, ...] = ()
+    if not fixture and sql_rag_repo is not None:
+        query_embedding = compute_deterministic_halfvec_1024(combined_query)
+        sql_hits = await sql_rag_repo.search_hybrid_rrf(
+            workspace_id=body.workspace_id,
+            query_text=combined_query,
+            query_embedding=query_embedding,
+            limit=body.top_k,
+        )
+        if allowed is not None:
+            hits = tuple(h for h in sql_hits if h.datasource_alias in allowed)
+        else:
+            hits = sql_hits
+    if not hits:
+        hits = rag.search_hybrid_rrf(
+            workspace_id=body.workspace_id,
+            query_text=combined_query,
+            allowed_datasource_aliases=allowed,
+            top_k=body.top_k,
+        )
     return s.HybridRagSearchResponse(
         expanded_terms=list(expanded.expanded_terms),
         detected_banned_terms=list(expanded.detected_banned_terms),

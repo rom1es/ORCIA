@@ -5,6 +5,16 @@ from __future__ import annotations
 from typing import Any
 
 from orcia_core.orchestration import seeds as _seeds
+from orcia_core.orchestration._internal.dbos_engine import (
+    DbosDurableWorkflowEngine,
+    DurableWorkflowRunSummary,
+)
+from orcia_core.orchestration._internal.outbox_repository import (
+    AsyncSubscriberCallback,
+    SqlDomainEventsOutboxRepository,
+)
+from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
+from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
 from orcia_core.orchestration.assistant_agent import (
     ASSISTANT_WORKFLOW_URI,
     AssistantAgentService,
@@ -185,8 +195,12 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "ASSISTANT_WORKFLOW_URI",
+    "AsyncSubscriberCallback",
     "DEFAULT_CLAIM_TTL_SECONDS",
     "DEFAULT_GUIDANCE_DRAWER_STEPS",
+    "DbosDurableWorkflowEngine",
+    "DbosSqlAlchemyUnitOfWork",
+    "DurableWorkflowRunSummary",
     "GOVERNED_MCP_TOOLS",
     "LIFECYCLE_SUGGESTED_WORKFLOWS",
     "MIN_HUMAN_ANCHOR_CHARS",
@@ -255,6 +269,8 @@ __all__ = [
     "SavedAndLaunchedWorkflowResult",
     "ScopeType",
     "SkillStepExecutor",
+    "SqlDomainEventsOutboxRepository",
+    "SqlOrchestrationRepository",
     "SseBroadcastPort",
     "SseEventEnvelope",
     "StepPresenceLockPort",

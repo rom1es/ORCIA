@@ -6,6 +6,7 @@ import json
 from typing import cast
 
 from orcia_core.bootstrap import workflow_bootstrap_seeds as wbs
+from orcia_core.bootstrap._internal.litellm_adapter import LiteLLMAdapter
 from orcia_core.bootstrap._internal.sql_first_user_guard import (
     create_first_platform_admin_on_postgres18,
     get_first_platform_admin_from_postgres18,
@@ -53,6 +54,7 @@ from orcia_core.bootstrap.models import (
 from orcia_core.bootstrap.plugin_registry import (
     PluginRegistryService,
     UriSchemePluginDescriptor,
+    build_litellm_gateway_plugin,
 )
 from orcia_core.bootstrap.progressive_accostage import (
     ACCOSTAGE_SIX_MILESTONES,
@@ -151,6 +153,7 @@ __all__ = [
     "InitUserPassthroughSecretInput",
     "InitWorkspaceInput",
     "InitWorkspaceOutcome",
+    "LiteLLMAdapter",
     "LlmModelEndpoint",
     "LlmProgressiveTierMode",
     "MemberInvitationInput",
@@ -172,6 +175,7 @@ __all__ = [
     "WizardType",
     "WorkspaceBootstrapInput",
     "build_default_system_bootstrap_service",
+    "build_litellm_gateway_plugin",
     "build_postgres_upsert_sql",
     "create_first_platform_admin_on_postgres18",
     "get_first_platform_admin_from_postgres18",
