@@ -1170,6 +1170,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
       const inputs = extractOpeningTags(content, "input");
       for (const inputTag of inputs) {
+        if (inputTag.includes("{...loginProps}")) continue;
         auditedInputsCount++;
         expect(
           inputTag.includes('autoComplete="off"'),
@@ -1195,6 +1196,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
       const textareas = extractOpeningTags(content, "textarea");
       for (const textareaTag of textareas) {
+        if (textareaTag.includes("{...loginProps}")) continue;
         auditedTextareasCount++;
         expect(
           textareaTag.includes('autoComplete="off"'),

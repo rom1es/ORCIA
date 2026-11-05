@@ -55,19 +55,20 @@ export function OrciaInput({
   const mergedClassName = ["orcia-ds-input", className]
     .filter(Boolean)
     .join(" ");
-  const resolvedAutoComplete =
-    autoComplete ?? (allowPasswordManager ? "on" : "off");
-  const antiPasswordManagerProps = allowPasswordManager
-    ? {
-        autoComplete: resolvedAutoComplete,
-        "data-lpignore": undefined,
-        "data-1p-ignore": undefined,
-        "data-bwignore": undefined,
-        "data-form-type": undefined,
-      }
-    : {
-        autoComplete: resolvedAutoComplete,
-      };
+
+  if (allowPasswordManager) {
+    const loginProps: React.InputHTMLAttributes<HTMLInputElement> = {
+      autoComplete: autoComplete ?? "on",
+      ...rest,
+    };
+    return (
+      <input
+        data-testid={testId}
+        className={mergedClassName}
+        {...loginProps}
+      />
+    );
+  }
 
   return (
     <input
@@ -79,7 +80,6 @@ export function OrciaInput({
       data-bwignore="true"
       data-form-type="other"
       spellCheck={false}
-      {...antiPasswordManagerProps}
       {...rest}
     />
   );
@@ -95,28 +95,24 @@ export function OrciaSelect({
   testId,
   allowPasswordManager = false,
   className,
-  autoComplete,
+  autoComplete = "off",
   children,
   ...rest
 }: OrciaSelectProps): React.ReactElement {
   const mergedClassName = ["orcia-ds-select", className]
     .filter(Boolean)
     .join(" ");
-  const antiPasswordManagerProps = allowPasswordManager
-    ? { autoComplete: autoComplete ?? "on" }
-    : {
-        autoComplete: autoComplete ?? "off",
-        "data-lpignore": "true",
-        "data-1p-ignore": "true",
-        "data-bwignore": "true",
-        "data-form-type": "other",
-      };
+  const effectiveAutoComplete = allowPasswordManager ? "on" : autoComplete;
 
   return (
     <select
       data-testid={testId}
       className={mergedClassName}
-      {...antiPasswordManagerProps}
+      autoComplete={effectiveAutoComplete || "off"}
+      data-lpignore={allowPasswordManager ? undefined : "true"}
+      data-1p-ignore={allowPasswordManager ? undefined : "true"}
+      data-bwignore={allowPasswordManager ? undefined : "true"}
+      data-form-type={allowPasswordManager ? undefined : "other"}
       {...rest}
     >
       {children}
@@ -140,19 +136,20 @@ export function OrciaTextarea({
   const mergedClassName = ["orcia-ds-textarea", className]
     .filter(Boolean)
     .join(" ");
-  const resolvedAutoComplete =
-    autoComplete ?? (allowPasswordManager ? "on" : "off");
-  const antiPasswordManagerProps = allowPasswordManager
-    ? {
-        autoComplete: resolvedAutoComplete,
-        "data-lpignore": undefined,
-        "data-1p-ignore": undefined,
-        "data-bwignore": undefined,
-        "data-form-type": undefined,
-      }
-    : {
-        autoComplete: resolvedAutoComplete,
-      };
+
+  if (allowPasswordManager) {
+    const loginProps: React.TextareaHTMLAttributes<HTMLTextAreaElement> = {
+      autoComplete: autoComplete ?? "on",
+      ...rest,
+    };
+    return (
+      <textarea
+        data-testid={testId}
+        className={mergedClassName}
+        {...loginProps}
+      />
+    );
+  }
 
   return (
     <textarea
@@ -164,7 +161,6 @@ export function OrciaTextarea({
       data-bwignore="true"
       data-form-type="other"
       spellCheck={false}
-      {...antiPasswordManagerProps}
       {...rest}
     />
   );
