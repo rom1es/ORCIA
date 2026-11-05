@@ -112,18 +112,14 @@ export function AssistantFoldersAndCollaborativeThreadView({
     >
       {/* 3-Tab Header: 💬 Discussion active | 📁 Dossiers (N) | 🕘 Historique & Recherche */}
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
-        <div role="tablist" className="flex flex-wrap items-center gap-1.5">
+        <div role="tablist" className="orcia-ds-tabs items-center">
           <button
             type="button"
             role="tab"
             data-testid="assistant-main-tab-ACTIVE_DISCUSSION"
             aria-selected={activeTab === "ACTIVE_DISCUSSION"}
             onClick={() => setActiveTab("ACTIVE_DISCUSSION")}
-            className={`rounded px-2.5 py-1 text-xs font-medium ${
-              activeTab === "ACTIVE_DISCUSSION"
-                ? "bg-action-primary text-white"
-                : "bg-surface-secondary text-text-secondary"
-            }`}
+            className="orcia-ds-tab"
           >
             {labels.tab1ActiveDiscussionTitle}
           </button>
@@ -133,11 +129,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
             data-testid="assistant-main-tab-FOLDERS"
             aria-selected={activeTab === "FOLDERS"}
             onClick={() => setActiveTab("FOLDERS")}
-            className={`rounded px-2.5 py-1 text-xs font-medium ${
-              activeTab === "FOLDERS"
-                ? "bg-action-primary text-white"
-                : "bg-surface-secondary text-text-secondary"
-            }`}
+            className="orcia-ds-tab"
           >
             {labels.tab2FoldersTitlePrefix} ({folders.length})
           </button>
@@ -147,11 +139,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
             data-testid="assistant-main-tab-HISTORY_SEARCH"
             aria-selected={activeTab === "HISTORY_SEARCH"}
             onClick={() => setActiveTab("HISTORY_SEARCH")}
-            className={`rounded px-2.5 py-1 text-xs font-medium ${
-              activeTab === "HISTORY_SEARCH"
-                ? "bg-action-primary text-white"
-                : "bg-surface-secondary text-text-secondary"
-            }`}
+            className="orcia-ds-tab"
           >
             {labels.tab3HistorySearchTitle}
           </button>

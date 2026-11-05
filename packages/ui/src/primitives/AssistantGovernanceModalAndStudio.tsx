@@ -304,11 +304,7 @@ export function AssistantGovernanceModalAndStudio({
               aria-selected={activeTab === "USER_PREFS"}
               data-testid="assistant-gov-tab-USER_PREFS"
               onClick={() => setActiveTab("USER_PREFS")}
-              className={`py-2 px-3 rounded-lg border font-medium text-left ${
-                activeTab === "USER_PREFS"
-                  ? "border-brand-primary bg-surface-secondary"
-                  : "border-surface-border bg-surface-primary text-text-secondary"
-              }`}
+              className="orcia-ds-tab text-left"
             >
               {labels.tab1UserTitle}
             </button>
@@ -318,11 +314,7 @@ export function AssistantGovernanceModalAndStudio({
               aria-selected={activeTab === "WORKSPACE_SETTINGS"}
               data-testid="assistant-gov-tab-WORKSPACE_SETTINGS"
               onClick={() => setActiveTab("WORKSPACE_SETTINGS")}
-              className={`py-2 px-3 rounded-lg border font-medium text-left ${
-                activeTab === "WORKSPACE_SETTINGS"
-                  ? "border-brand-primary bg-surface-secondary"
-                  : "border-surface-border bg-surface-primary text-text-secondary"
-              }`}
+              className="orcia-ds-tab text-left"
             >
               {labels.tab2WorkspaceTitle}
             </button>
@@ -332,11 +324,7 @@ export function AssistantGovernanceModalAndStudio({
               aria-selected={activeTab === "FULL_ASSEMBLY"}
               data-testid="assistant-gov-tab-FULL_ASSEMBLY"
               onClick={() => setActiveTab("FULL_ASSEMBLY")}
-              className={`py-2 px-3 rounded-lg border font-medium text-left ${
-                activeTab === "FULL_ASSEMBLY"
-                  ? "border-brand-primary bg-surface-secondary"
-                  : "border-surface-border bg-surface-primary text-text-secondary"
-              }`}
+              className="orcia-ds-tab text-left"
             >
               {labels.tab3AssemblyTitle}
             </button>

@@ -53,6 +53,15 @@
   --color-accent-primary: var(--color-primary-cobalt);
   --color-brand-primary: var(--color-primary-cobalt);
 
+  /* Unified Tab Tokens: Intense Blue on Focus/Active + Pale Blue on Inactive */
+  --color-tab-active-bg: var(--color-primary-cobalt);
+  --color-tab-active-fg: #FFFFFF;
+  --color-tab-active-border: #1D4ED8;
+  --color-tab-inactive-bg: #DBEAFE;
+  --color-tab-inactive-hover-bg: #BFDBFE;
+  --color-tab-inactive-fg: #1E3A8A;
+  --color-tab-inactive-border: #93C5FD;
+
   /* Reserved exclusively for HumanLedAnchorCard (human_authored_required: true) */
   --color-human-led-violet: #6D28D9;
   --color-human-led-bg: #F5F3FF;
@@ -153,7 +162,7 @@
   --color-border: #1E293B;
   --color-border-strong: #334155;
   --color-border-focus: #60A5FA;
-  --color-primary-cobalt: #6366F1;
+  --color-primary-cobalt: #2563EB;
   --color-modal-backdrop: rgba(2, 6, 23, 0.72);
 
   --color-bg-elevated: #1E293B;
@@ -161,6 +170,14 @@
   --color-surface-muted: #1E293B;
   --color-surface-secondary: #1E293B;
   --color-action-primary-subtle: #1E293B;
+
+  --color-tab-active-bg: #2563EB;
+  --color-tab-active-fg: #FFFFFF;
+  --color-tab-active-border: #3B82F6;
+  --color-tab-inactive-bg: #1E3A8A;
+  --color-tab-inactive-hover-bg: #1D4ED8;
+  --color-tab-inactive-fg: #DBEAFE;
+  --color-tab-inactive-border: #3B82F6;
 }
 
 *,
@@ -448,12 +465,13 @@ button {
   gap: 8px;
 }
 
-.orcia-ds-tab {
+.orcia-ds-tab,
+[role="tab"] {
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-surface-card);
-  color: var(--color-foreground);
+  border: 1px solid var(--color-tab-inactive-border);
+  background-color: var(--color-tab-inactive-bg);
+  color: var(--color-tab-inactive-fg);
   font-family: var(--font-sans);
   font-size: var(--control-font-size);
   font-weight: 600;
@@ -461,10 +479,21 @@ button {
   transition: all 150ms ease;
 }
 
-.orcia-ds-tab[aria-selected="true"] {
-  border-color: var(--color-primary-cobalt);
-  background-color: var(--color-primary-cobalt);
-  color: var(--color-primary-foreground);
+.orcia-ds-tab:hover:not([aria-selected="true"]),
+[role="tab"]:hover:not([aria-selected="true"]) {
+  background-color: var(--color-tab-inactive-hover-bg);
+  border-color: var(--color-tab-active-border);
+  color: var(--color-tab-inactive-fg);
+}
+
+.orcia-ds-tab[aria-selected="true"],
+.orcia-ds-tab:focus-visible,
+[role="tab"][aria-selected="true"],
+[role="tab"]:focus-visible {
+  border-color: var(--color-tab-active-border);
+  background-color: var(--color-tab-active-bg);
+  color: var(--color-tab-active-fg);
+  outline: none;
 }
 
 .orcia-ds-label {

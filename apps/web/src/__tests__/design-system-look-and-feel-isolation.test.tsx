@@ -152,6 +152,13 @@ describe("Sally & Winston Audit — 4 Golden Invariants of Look & Feel Separatio
         `Missing Design System class ${cls} in packages/ui/src/styles/tokens.css`,
       ).toBe(true);
     }
+
+    // Verify AD-22 Tab Chromatic Hierarchy: Intense Blue (#2563EB) when active/focused, Pale Blue (#DBEAFE) when inactive
+    expect(tokensCssContent).toContain("--color-tab-active-bg: var(--color-primary-cobalt);");
+    expect(tokensCssContent).toContain("--color-tab-inactive-bg: #DBEAFE;");
+    expect(tokensCssContent).toContain("--color-tab-inactive-fg: #1E3A8A;");
+    expect(tokensCssContent).toContain('[role="tab"][aria-selected="true"]');
+    expect(tokensCssContent).toContain('[role="tab"]:focus-visible');
   });
 
   it("Invariant 4 (Pure DesignSystemControls Primitives): renders OrciaSectionCard, OrciaTabBar, OrciaButton, OrciaInput, OrciaSelect, OrciaTextarea, and OrciaAlertBanner with .orcia-ds-* classes and anti-LastPass protection", () => {

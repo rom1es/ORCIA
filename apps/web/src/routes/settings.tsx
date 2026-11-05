@@ -92,7 +92,8 @@ export function SettingsHubView() {
         <nav
           role="tablist"
           aria-label="Settings hub navigation"
-          style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}
+          className="orcia-ds-tabs"
+          style={{ marginTop: "8px" }}
         >
           {tabs.map((tab) => {
             const isSelected = activeTab === tab.key;
@@ -104,21 +105,7 @@ export function SettingsHubView() {
                 aria-selected={isSelected}
                 data-testid={`settings-tab-${tab.key}`}
                 onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: isSelected
-                    ? "1px solid var(--color-primary-cobalt)"
-                    : "1px solid var(--color-border)",
-                  backgroundColor: isSelected
-                    ? "var(--color-primary-cobalt)"
-                    : "var(--color-surface-card)",
-                  color: isSelected
-                    ? "var(--color-primary-foreground)"
-                    : "var(--color-foreground)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className="orcia-ds-tab"
               >
                 {tab.label}
               </button>

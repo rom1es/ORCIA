@@ -117,7 +117,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
       <nav
         role="tablist"
         aria-label={labels.heading}
-        className="mb-4 flex flex-wrap gap-2"
+        className="orcia-ds-tabs mb-4"
       >
         {tabs.map((tab) => {
           const isSelected = tab.key === activeTab;
@@ -129,17 +129,13 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
               aria-selected={isSelected}
               data-testid={`workspace-tab-${tab.key}`}
               onClick={() => onSelectTab?.(tab.key)}
-              className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                isSelected
-                  ? "bg-[var(--orcia-action-primary)] text-[var(--orcia-text-on-action)]"
-                  : "bg-[var(--orcia-surface-secondary)] text-[var(--orcia-text-secondary)]"
-              }`}
+              className="orcia-ds-tab inline-flex items-center gap-1.5"
             >
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span
                   data-testid={`workspace-tab-badge-${tab.key}`}
-                  className="rounded-full bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 font-mono text-[10px]"
+                  className="rounded-full bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-primary)]"
                 >
                   {tab.badge}
                 </span>

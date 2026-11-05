@@ -176,7 +176,7 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
           <h2 className="text-base font-semibold">{labels.heading}</h2>
           <p className="text-xs text-[var(--orcia-text-secondary)]">{labels.subtitle}</p>
         </div>
-        <div role="tablist" className="flex flex-wrap gap-2">
+        <div role="tablist" className="orcia-ds-tabs">
           {(
             [
               ["AGENTS", "agents-subview-tab-agents", `${labels.tabAgents} (${agents.length})`],
@@ -191,11 +191,7 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               aria-selected={activeTab === tabKey}
               data-testid={testId}
               onClick={() => setActiveTab(tabKey)}
-              className={`rounded px-3 py-1.5 text-xs font-semibold ${
-                activeTab === tabKey
-                  ? "bg-[var(--orcia-action-primary)] text-[var(--orcia-text-on-action)]"
-                  : "border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] text-[var(--orcia-text-primary)]"
-              }`}
+              className="orcia-ds-tab"
             >
               {tabLabel}
             </button>

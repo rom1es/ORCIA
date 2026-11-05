@@ -172,7 +172,7 @@ export function WorkflowTopGovernanceBar({
       <nav
         role="tablist"
         aria-label="Workflow lifecycle tabs"
-        className="flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border-subtle)] pt-2"
+        className="orcia-ds-tabs items-center border-t border-[var(--color-border-subtle)] pt-2"
       >
         {tabCounts.map((entry) => {
           const selected = entry.tab === activeTab;
@@ -184,11 +184,7 @@ export function WorkflowTopGovernanceBar({
               aria-selected={selected}
               data-testid={`studio-tab-${entry.tab}`}
               onClick={() => onSelectTab(entry.tab)}
-              className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                selected
-                  ? "bg-[var(--color-brand-primary)] text-[var(--color-surface-elevated)]"
-                  : "bg-[var(--color-surface-canvas)] text-[var(--color-text-secondary)]"
-              }`}
+              className="orcia-ds-tab inline-flex items-center gap-1.5"
             >
               <span>{entry.label}</span>
               <span className="rounded-full bg-[var(--color-surface-elevated)]/20 px-1.5 py-0.2 font-mono text-[10px]">

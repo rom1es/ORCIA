@@ -680,3 +680,14 @@ action_items:
     epic: epic-11
     description: >
       Emprunt ciblé à gsm-ontology (Poesis) sur PostgreSQL 18 sans Neo4j : relie chaque verdict de Gate Starlark/Wasm à sa Norme et à sa Directive stratégique, et empêche un TEAM_LEAD de contourner une Directive d'Entreprise inviolable.
+  - id: UX-DS-RADIX-01
+    title: "Socle Design System Open Source @orcia/ui — Intégration Radix UI Primitives (@radix-ui/react-*) + Architecture shadcn/ui (RGAA 4.1 / WAI-ARIA Complet & Tokens Direction C — AD-22)"
+    action: "Déclarer @radix-ui/react-tabs, @radix-ui/react-dialog, @radix-ui/react-select, @radix-ui/react-dropdown-menu, @radix-ui/react-tooltip et @radix-ui/react-switch dans ARCHITECTURE-SPINE.md + packages/ui/package.json, et enrichir les primitives de packages/ui/src/primitives/DesignSystemControls.tsx (OrciaTabBar, OrciaDialog, OrciaSelect, OrciaTooltip, OrciaDropdownMenu) avec la gestion native du roving tabindex, navigation clavier flèches/Home/End/Escape, focus trap, aria-controls/role=tabpanel, tout en conservant 100 % du stylage dans tokens.css (.orcia-ds-*) et la parade anti-LastPass par défaut"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-1, AD-22"
+    owner: "Sally (UX/UI) / Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-12
+    description: >
+      Mutualiser le code des composants front dans @orcia/ui sur un standard open source éprouvé (Radix UI + pattern shadcn/ui) compatible React 19 + Tailwind CSS v4 + Vite 6 pour bénéficier d'une conformité RGAA 4.1 / WCAG AA exhaustive (clavier, lecteurs d'écran, focus trap) tout en gardant la séparation stricte Look & Feel (tokens.css) vs Logique (apps/web) vs Contenus (i18n).

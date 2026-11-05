@@ -254,10 +254,8 @@ export function WorkspaceControlCenter({
       <div
         role="tablist"
         aria-label={labels.title}
+        className="orcia-ds-tabs"
         style={{
-          display: "flex",
-          gap: "8px",
-          flexWrap: "wrap",
           borderBottom: "1px solid var(--orcia-border-subtle)",
           paddingBottom: "8px",
         }}
@@ -270,22 +268,7 @@ export function WorkspaceControlCenter({
             aria-selected={activeTab === tab.id}
             data-testid={`control-center-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "8px",
-              fontSize: "0.8125rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              border:
-                activeTab === tab.id
-                  ? "1px solid var(--orcia-action-primary)"
-                  : "1px solid var(--orcia-border-subtle)",
-              backgroundColor:
-                activeTab === tab.id
-                  ? "var(--orcia-surface-secondary)"
-                  : "var(--orcia-surface-elevated)",
-              color: "var(--orcia-text-primary)",
-            }}
+            className="orcia-ds-tab"
           >
             {tab.text}
           </button>

@@ -422,7 +422,7 @@ export function UserAccountDropdownAndSettingsModal({
             <div
               role="tablist"
               data-testid="user-settings-tabs"
-              className="px-4 pt-2 border-b border-surface-border flex items-center gap-2 text-xs"
+              className="orcia-ds-tabs px-4 pt-2 pb-2 border-b border-surface-border items-center text-xs"
             >
               {(
                 [
@@ -439,11 +439,7 @@ export function UserAccountDropdownAndSettingsModal({
                   aria-selected={activeTab === tabKey}
                   data-testid={`user-settings-tab-${tabKey}`}
                   onClick={() => setActiveTab(tabKey)}
-                  className={`px-3 py-1.5 rounded-t border-b-2 ${
-                    activeTab === tabKey
-                      ? "border-brand-primary font-semibold text-text-primary"
-                      : "border-transparent text-text-secondary"
-                  }`}
+                  className="orcia-ds-tab"
                 >
                   {tabLabel}
                 </button>

@@ -258,7 +258,7 @@ export function TopHeaderSearchCommand({
           role="tablist"
           aria-label="Portées de recherche"
           data-testid="cmdk-scope-pills"
-          className="flex items-center gap-1.5 text-xs"
+          className="orcia-ds-tabs items-center text-xs"
         >
           <button
             type="button"
@@ -266,11 +266,7 @@ export function TopHeaderSearchCommand({
             aria-selected={scope === "SCREEN"}
             data-testid="cmdk-scope-SCREEN"
             onClick={() => handleScopeSelect("SCREEN")}
-            className={`px-2.5 py-1 rounded-full border ${
-              scope === "SCREEN"
-                ? "border-brand-primary bg-surface-secondary font-semibold text-text-primary"
-                : "border-surface-border text-text-secondary"
-            }`}
+            className="orcia-ds-tab"
           >
             {labels.scopeScreenLabel}
           </button>
@@ -280,11 +276,7 @@ export function TopHeaderSearchCommand({
             aria-selected={scope === "WORKSPACE"}
             data-testid="cmdk-scope-WORKSPACE"
             onClick={() => handleScopeSelect("WORKSPACE")}
-            className={`px-2.5 py-1 rounded-full border ${
-              scope === "WORKSPACE"
-                ? "border-brand-primary bg-surface-secondary font-semibold text-text-primary"
-                : "border-surface-border text-text-secondary"
-            }`}
+            className="orcia-ds-tab"
           >
             {labels.scopeWorkspaceLabel}
           </button>
@@ -294,11 +286,7 @@ export function TopHeaderSearchCommand({
             aria-selected={scope === "ALL_WORKSPACES"}
             data-testid="cmdk-scope-ALL_WORKSPACES"
             onClick={() => handleScopeSelect("ALL_WORKSPACES")}
-            className={`px-2.5 py-1 rounded-full border ${
-              scope === "ALL_WORKSPACES"
-                ? "border-brand-primary bg-surface-secondary font-semibold text-text-primary"
-                : "border-surface-border text-text-secondary"
-            }`}
+            className="orcia-ds-tab"
           >
             {labels.scopeAllWorkspacesLabel}
           </button>

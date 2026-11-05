@@ -12,9 +12,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "uiPrimitivesCount": 66,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
-    "architectureDecisionsCount": 21,
+    "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 72
+    "techLeadReportsCount": 73
   },
   "activeRoutes": [
     "/",
@@ -231,6 +231,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     {
       "code": "AD-21",
       "title": "Gouvernance Post-Jour 0, Modèle d'Habilitations Hiérarchique à 6 Verbes (create|read|update|delete|execute|grant), Routage Cognitif Abstrait par Tiers/Effort (simple|medium|complex|auto), Contrat Secret Write-Only (SecretInput/SecretStatus), Propagation Déterministe DBOS et Studio/Shell Enrichis"
+    },
+    {
+      "code": "AD-22",
+      "title": "Socle Design System Open Source @orcia/ui (Radix UI Primitives + Architecture shadcn/ui), Séparation Stricte Look & Feel (tokens.css) / Logique (apps/web) / Contenus (i18n), Conformité RGAA 4.1 & Hiérarchie Chromatique des Onglets"
     }
   ],
   "stackComponents": [
@@ -396,6 +400,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-05",
+      "phaseOrStory": "Post-Epic 12 / AD-22",
+      "reportFile": "2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif-tech-lead-report.md",
+      "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Unification Chromatique des Onglets (Bleu Intense Cobalt au Focus/Sélection & Bleu Pâle teinte-DBEAFE Hors Focus), Création de l'ADR AD-22 & ACTION_ITEM UX-DS-RADIX-01 (Radix UI Primitives + shadcn/ui)",
+      "summary": "Définition des tokens --color-tab-active-* (Cobalt) et --color-tab-inactive-* (teinte-DBEAFE / teinte-1E3A8A) dans tokens.css (.orcia-ds-tab et [role=\"tab\"]), alignement des 10 barres d'onglets d'ORCIA, formalisation de l'ADR AD-22 dans ARCHITECTURE-SPINE.md et inscription de UX-DS-RADIX-01 dans sprint-status.yaml."
+    },
     {
       "date": "2026-11-05",
       "phaseOrStory": "Post-Epic 12",
