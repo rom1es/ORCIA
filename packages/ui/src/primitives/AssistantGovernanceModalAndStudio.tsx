@@ -1,4 +1,12 @@
 import React, { useState } from "react";
+import {
+  handleRgaaSubmitKeyDown,
+  resolveRgaaModalGuardLabels,
+  RgaaUnsavedChangesAlert,
+  useUnsavedChangesDialogGuard,
+  type RgaaModalGuardLabels,
+} from "../components/RgaaModalDialog";
+import { AssistantGovernanceStudioModeB } from "./AssistantGovernanceStudioModeB";
 
 export type UiAssistantResponseTone = "SYNTHETIC" | "BALANCED" | "DETAILED_CODE";
 export type UiAssistantResponseFormat =
@@ -32,7 +40,7 @@ export interface UiAssistantStudioNode {
   readonly subAgentUri?: string | null;
 }
 
-export interface AssistantGovernanceModalAndStudioLabels {
+export interface AssistantGovernanceModalAndStudioLabels extends RgaaModalGuardLabels {
   readonly modalTitle: string;
   readonly tab1UserTitle: string;
   readonly tab2WorkspaceTitle: string;
@@ -61,6 +69,7 @@ export interface AssistantGovernanceModalAndStudioProps {
   readonly workspaceId: string;
   readonly canEditWorkspaceLayer: boolean;
   readonly canOpenStudioModeB: boolean;
+  readonly isOpen?: boolean;
   readonly initialUserTone?: UiAssistantResponseTone;
   readonly initialUserFormat?: UiAssistantResponseFormat;
   readonly initialDefaultHat?: string;
@@ -90,16 +99,19 @@ export interface AssistantGovernanceModalAndStudioProps {
     nodes: readonly UiAssistantStudioNode[];
   }) => void;
   readonly onResetStudioOverride?: (scopeLevel: "TEAM" | "WORKSPACE") => void;
+  readonly onClose?: () => void;
 }
 
 /**
  * Story 10.1 — 4-Level Governance & Customization of `Mon Assistant`
- * (Mode A 3-Tab Modal & Mode B Studio Graph inside `🔒 AssistantHarness` bounds).
+ * (Mode A 3-Tab Modal & Mode B Studio Graph inside `🔒 AssistantHarness` bounds)
+ * with RGAA Escape, Cancel button, Unsaved Changes guard, and Enter-on-Submit.
  */
 export function AssistantGovernanceModalAndStudio({
   workspaceId,
   canEditWorkspaceLayer,
   canOpenStudioModeB,
+  isOpen = true,
   initialUserTone = "BALANCED",
   initialUserFormat = "STRUCTURED_SECTIONS",
   initialDefaultHat = "PM",
@@ -117,7 +129,9 @@ export function AssistantGovernanceModalAndStudio({
   onCopyMcpConfig,
   onSaveStudioOverride,
   onResetStudioOverride,
-}: AssistantGovernanceModalAndStudioProps): React.ReactElement {
+  onClose,
+}: AssistantGovernanceModalAndStudioProps): React.ReactElement | null {
+  const [internalOpen, setInternalOpen] = useState<boolean>(true);
   const [activeMode, setActiveMode] = useState<"MODE_A" | "MODE_B">("MODE_A");
   const [activeTab, setActiveTab] = useState<
     "USER_PREFS" | "WORKSPACE_SETTINGS" | "FULL_ASSEMBLY"
@@ -146,6 +160,42 @@ export function AssistantGovernanceModalAndStudio({
   const [nodes, setNodes] = useState<readonly UiAssistantStudioNode[]>(studioNodes);
   const [dryRunOutput, setDryRunOutput] = useState<string | null>(null);
   const [resetBanner, setResetBanner] = useState<boolean>(false);
+  const [isDirty, setIsDirty] = useState<boolean>(false);
+
+  const effectiveOpen = isOpen && internalOpen;
+  const guardLabels = resolveRgaaModalGuardLabels(labels);
+
+  const resetUnsavedChanges = (): void => {
+    setUserTone(initialUserTone);
+    setUserFormat(initialUserFormat);
+    setDefaultHat(initialDefaultHat);
+    setPersonalInstructions(initialPersonalInstructions);
+    setWorkspaceInstructions(initialWorkspaceInstructions);
+    setMcpExposed(mcpFrozenByUpperLayer ? false : initialMcpExposed);
+    setStudioPrePrompt(initialStudioPrePrompt);
+    setNodes(studioNodes);
+    setIsDirty(false);
+  };
+
+  const handleCloseAction = (): void => {
+    if (onClose) {
+      onClose();
+    } else {
+      setInternalOpen(false);
+    }
+  };
+
+  const { showUnsavedAlert, requestClose, cancelDiscard, confirmDiscard } =
+    useUnsavedChangesDialogGuard({
+      isOpen: effectiveOpen,
+      isDirty,
+      onClose: handleCloseAction,
+      onDiscardChanges: resetUnsavedChanges,
+    });
+
+  if (!effectiveOpen) {
+    return null;
+  }
 
   const handleToggleNodeSubAgent = (nodeId: string): void => {
     setNodes((prev) =>
@@ -160,15 +210,46 @@ export function AssistantGovernanceModalAndStudio({
         };
       }),
     );
+    setIsDirty(true);
+  };
+
+  const handleSaveUserPrefs = (): void => {
+    setIsDirty(false);
+    onSaveUserPreferences?.({
+      responseTone: userTone,
+      favoriteFormat: userFormat,
+      defaultHat,
+      personalInstructions,
+    });
+  };
+
+  const handleSaveWorkspaceSettings = (): void => {
+    setIsDirty(false);
+    onSaveWorkspaceSettings?.({
+      workspaceInstructions,
+      mcpExposeAssistant: mcpExposed,
+    });
+  };
+
+  const handleSaveStudio = (): void => {
+    setIsDirty(false);
+    onSaveStudioOverride?.({
+      scopeLevel: studioScope,
+      aiPrePrompt: studioPrePrompt,
+      nodes,
+    });
   };
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={activeMode === "MODE_A" ? labels.modalTitle : labels.studioHeaderTitle}
       data-testid="assistant-governance-container"
       data-active-mode={activeMode}
       className="rounded-xl border border-surface-border bg-surface-elevated p-4 text-xs text-text-primary space-y-4"
     >
-      {/* Top Header with Mode A <-> Mode B Switch */}
+      {/* Top Header with Mode A <-> Mode B Switch + Cancel / Close */}
       <div className="flex items-center justify-between border-b border-surface-border pb-3">
         <div className="font-semibold text-sm">
           {activeMode === "MODE_A" ? labels.modalTitle : labels.studioHeaderTitle}
@@ -194,8 +275,24 @@ export function AssistantGovernanceModalAndStudio({
               ← Mode A
             </button>
           )}
+          <button
+            type="button"
+            data-testid="assistant-gov-cancel-btn"
+            onClick={requestClose}
+            className="px-3 py-1.5 rounded-lg border border-surface-border bg-surface-secondary text-text-primary"
+          >
+            {guardLabels.cancelButtonLabel}
+          </button>
         </div>
       </div>
+
+      <RgaaUnsavedChangesAlert
+        testIdPrefix="assistant-gov"
+        isOpen={showUnsavedAlert}
+        labels={guardLabels}
+        onStay={cancelDiscard}
+        onConfirmDiscard={confirmDiscard}
+      />
 
       {activeMode === "MODE_A" ? (
         <div data-testid="assistant-governance-mode-a" className="space-y-4">
@@ -254,9 +351,10 @@ export function AssistantGovernanceModalAndStudio({
                   <select
                     data-testid="assistant-user-tone-select"
                     value={userTone}
-                    onChange={(e) =>
-                      setUserTone(e.target.value as UiAssistantResponseTone)
-                    }
+                    onChange={(e) => {
+                      setUserTone(e.target.value as UiAssistantResponseTone);
+                      setIsDirty(true);
+                    }}
                     className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
                   >
                     <option value="SYNTHETIC">SYNTHETIC</option>
@@ -269,9 +367,10 @@ export function AssistantGovernanceModalAndStudio({
                   <select
                     data-testid="assistant-user-format-select"
                     value={userFormat}
-                    onChange={(e) =>
-                      setUserFormat(e.target.value as UiAssistantResponseFormat)
-                    }
+                    onChange={(e) => {
+                      setUserFormat(e.target.value as UiAssistantResponseFormat);
+                      setIsDirty(true);
+                    }}
                     className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
                   >
                     <option value="BULLETS_SUMMARY">BULLETS_SUMMARY</option>
@@ -287,7 +386,10 @@ export function AssistantGovernanceModalAndStudio({
                     type="text"
                     data-testid="assistant-user-hat-input"
                     value={defaultHat}
-                    onChange={(e) => setDefaultHat(e.target.value)}
+                    onChange={(e) => {
+                      setDefaultHat(e.target.value);
+                      setIsDirty(true);
+                    }}
                     className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
                   />
                 </label>
@@ -300,20 +402,19 @@ export function AssistantGovernanceModalAndStudio({
                   rows={2}
                   data-testid="assistant-user-instructions-input"
                   value={personalInstructions}
-                  onChange={(e) => setPersonalInstructions(e.target.value)}
+                  onChange={(e) => {
+                    setPersonalInstructions(e.target.value);
+                    setIsDirty(true);
+                  }}
                   className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
                 />
               </label>
               <button
                 type="button"
                 data-testid="assistant-save-user-prefs-btn"
-                onClick={() =>
-                  onSaveUserPreferences?.({
-                    responseTone: userTone,
-                    favoriteFormat: userFormat,
-                    defaultHat,
-                    personalInstructions,
-                  })
+                onClick={handleSaveUserPrefs}
+                onKeyDown={(e) =>
+                  handleRgaaSubmitKeyDown(e, handleSaveUserPrefs, false)
                 }
                 className="px-3 py-1.5 rounded-lg bg-brand-primary text-surface-elevated font-medium"
               >
@@ -342,7 +443,10 @@ export function AssistantGovernanceModalAndStudio({
                   disabled={!canEditWorkspaceLayer}
                   data-testid="assistant-workspace-instructions-input"
                   value={workspaceInstructions}
-                  onChange={(e) => setWorkspaceInstructions(e.target.value)}
+                  onChange={(e) => {
+                    setWorkspaceInstructions(e.target.value);
+                    setIsDirty(true);
+                  }}
                   className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
                 />
               </label>
@@ -356,7 +460,10 @@ export function AssistantGovernanceModalAndStudio({
                       disabled={!canEditWorkspaceLayer || mcpFrozenByUpperLayer}
                       checked={mcpExposed}
                       data-testid="assistant-workspace-mcp-expose-toggle"
-                      onChange={(e) => setMcpExposed(e.target.checked)}
+                      onChange={(e) => {
+                        setMcpExposed(e.target.checked);
+                        setIsDirty(true);
+                      }}
                     />
                     <span>{labels.mcpExposeToggleLabel}</span>
                   </label>
@@ -394,11 +501,9 @@ export function AssistantGovernanceModalAndStudio({
                 <button
                   type="button"
                   data-testid="assistant-save-workspace-settings-btn"
-                  onClick={() =>
-                    onSaveWorkspaceSettings?.({
-                      workspaceInstructions,
-                      mcpExposeAssistant: mcpExposed,
-                    })
+                  onClick={handleSaveWorkspaceSettings}
+                  onKeyDown={(e) =>
+                    handleRgaaSubmitKeyDown(e, handleSaveWorkspaceSettings, false)
                   }
                   className="px-3 py-1.5 rounded-lg bg-brand-primary text-surface-elevated font-medium"
                 >
@@ -435,142 +540,39 @@ export function AssistantGovernanceModalAndStudio({
           )}
         </div>
       ) : (
-        /* Mode B: ☍ Personnaliser dans le Studio (@xyflow/react graph inside 🔒 AssistantHarness) */
-        <div data-testid="assistant-governance-mode-b-studio" className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <select
-              data-testid="studio-override-scope-select"
-              value={studioScope}
-              onChange={(e) =>
-                setStudioScope(e.target.value as "WORKSPACE" | "TEAM")
-              }
-              className="px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
-            >
-              <option value="WORKSPACE">WORKSPACE ({workspaceId})</option>
-              <option value="TEAM">TEAM</option>
-            </select>
-            <span
-              data-testid="studio-harness-immutable-badge"
-              className="px-2.5 py-1 rounded bg-surface-secondary border border-surface-border font-medium"
-            >
-              {labels.studioHarnessImmutableBadge}
-            </span>
-          </div>
-
-          <label className="block space-y-1">
-            <span className="text-text-secondary">
-              {labels.studioPrePromptLabel}
-            </span>
-            <input
-              type="text"
-              data-testid="studio-ai-preprompt-input"
-              value={studioPrePrompt}
-              onChange={(e) => setStudioPrePrompt(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
-            />
-          </label>
-
-          {/* 5 Nodes wrapped inside Entry/Exit 🔒 AssistantHarness */}
-          <div
-            data-testid="studio-nodes-canvas"
-            className="space-y-2 rounded-lg border border-surface-border bg-surface-primary p-3"
-          >
-            {nodes.map((node) => (
-              <div
-                key={node.nodeId}
-                data-testid={`studio-node-${node.nodeId}`}
-                data-harness-boundary={node.isHarnessBoundary ? "true" : "false"}
-                className="flex items-center justify-between p-2 rounded border border-surface-border bg-surface-elevated"
-              >
-                <div>
-                  <div className="font-semibold">{node.title}</div>
-                  <div className="text-[11px] font-mono text-text-secondary">
-                    COUCHES · {node.subLayersCount}
-                    {node.subAgentUri ? ` · ${node.subAgentUri}` : ""}
-                  </div>
-                </div>
-                {node.isHarnessBoundary || node.lockedBy !== null ? (
-                  <span
-                    data-testid={`studio-node-locked-${node.nodeId}`}
-                    className="px-2 py-0.5 rounded bg-surface-secondary text-text-secondary font-mono text-[10px]"
-                  >
-                    🔒 {node.lockedBy}
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    data-testid={`studio-node-add-subagent-${node.nodeId}`}
-                    onClick={() => handleToggleNodeSubAgent(node.nodeId)}
-                    className="px-2 py-1 rounded border border-surface-border bg-surface-secondary text-[11px]"
-                  >
-                    + Sous-agent / Couche
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {dryRunOutput !== null && (
-            <div
-              data-testid="studio-dry-run-banner"
-              className="p-2 rounded bg-status-success/15 text-status-success font-mono text-[11px]"
-            >
-              {dryRunOutput}
-            </div>
-          )}
-
-          {resetBanner && (
-            <div
-              data-testid="studio-reset-restored-banner"
-              className="p-2 rounded bg-surface-secondary border border-surface-border font-mono text-[11px]"
-            >
-              ↺ Configuration standard restaurée
-            </div>
-          )}
-
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                data-testid="studio-test-dryrun-btn"
-                onClick={() =>
-                  setDryRunOutput(
-                    "▷ Dry-Run OK : 5 nœuds + bornes 🔒 AssistantHarness vérifiées (0 écriture SI).",
-                  )
-                }
-                className="px-3 py-1.5 rounded border border-surface-border bg-surface-secondary font-medium"
-              >
-                {labels.studioTestDryRunCta}
-              </button>
-              <button
-                type="button"
-                data-testid="studio-save-override-btn"
-                onClick={() =>
-                  onSaveStudioOverride?.({
-                    scopeLevel: studioScope,
-                    aiPrePrompt: studioPrePrompt,
-                    nodes,
-                  })
-                }
-                className="px-3 py-1.5 rounded bg-brand-primary text-surface-elevated font-medium"
-              >
-                {labels.studioSaveOverrideCta}
-              </button>
-            </div>
-            <button
-              type="button"
-              data-testid="studio-reset-default-btn"
-              onClick={() => {
-                setNodes(studioNodes);
-                setResetBanner(true);
-                onResetStudioOverride?.(studioScope);
-              }}
-              className="px-3 py-1.5 rounded border border-surface-border bg-surface-primary text-text-secondary"
-            >
-              {labels.studioResetDefaultCta}
-            </button>
-          </div>
-        </div>
+        <AssistantGovernanceStudioModeB
+          workspaceId={workspaceId}
+          studioScope={studioScope}
+          studioPrePrompt={studioPrePrompt}
+          nodes={nodes}
+          dryRunOutput={dryRunOutput}
+          resetBanner={resetBanner}
+          cancelLabel={guardLabels.cancelButtonLabel}
+          labels={labels}
+          onChangeStudioScope={(s) => {
+            setStudioScope(s);
+            setIsDirty(true);
+          }}
+          onChangeStudioPrePrompt={(p) => {
+            setStudioPrePrompt(p);
+            setIsDirty(true);
+          }}
+          onToggleNodeSubAgent={handleToggleNodeSubAgent}
+          onRunDryRun={() =>
+            setDryRunOutput(
+              "▷ Dry-Run OK : 5 nœuds + bornes 🔒 AssistantHarness vérifiées (0 écriture SI).",
+            )
+          }
+          onSaveOverride={handleSaveStudio}
+          onResetDefault={() => {
+            setNodes(studioNodes);
+            setStudioPrePrompt(initialStudioPrePrompt);
+            setIsDirty(false);
+            setResetBanner(true);
+            onResetStudioOverride?.(studioScope);
+          }}
+          onCancel={requestClose}
+        />
       )}
     </div>
   );

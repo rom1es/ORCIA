@@ -1,4 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  RgaaDialogFooterActions,
+  RgaaUnsavedChangesAlert,
+  resolveRgaaModalGuardLabels,
+  useUnsavedChangesDialogGuard,
+  type RgaaModalGuardLabels,
+} from "../components/RgaaModalDialog";
 import { UserSettingsModalTabs } from "./UserSettingsModalTabs";
 
 export type UiThemePreference = "light" | "dark" | "system";
@@ -25,7 +32,7 @@ export interface UiPersonalMcpTokenItem {
   readonly revoked: boolean;
 }
 
-export interface UserAccountDropdownAndSettingsLabels {
+export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabels {
   readonly triggerAriaLabel: string;
   readonly dropdownWidthNote: string;
   readonly hatSelectorLabel: string;
@@ -117,6 +124,38 @@ export function UserAccountDropdownAndSettingsModal({
   const [lastIssuedPlaintext, setLastIssuedPlaintext] = useState<string | null>(
     null,
   );
+  const [isDirty, setIsDirty] = useState<boolean>(false);
+
+  const guardLabels = resolveRgaaModalGuardLabels(labels, locale);
+
+  const resetUnsavedDrafts = (): void => {
+    setMcpTargetSlug("");
+    setMcpTargetKind("SPACE");
+    setMcpExpiryDays(30);
+    setMcpRpmLimit(60);
+    setIsDirty(false);
+  };
+
+  const { showUnsavedAlert, requestClose, cancelDiscard, confirmDiscard } =
+    useUnsavedChangesDialogGuard({
+      isOpen: modalOpen,
+      isDirty,
+      onClose: () => setModalOpen(false),
+      onDiscardChanges: resetUnsavedDrafts,
+    });
+
+  useEffect(() => {
+    if (!dropdownOpen || modalOpen) {
+      return;
+    }
+    const handleDropdownKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        setDropdownOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleDropdownKeyDown);
+    return () => window.removeEventListener("keydown", handleDropdownKeyDown);
+  }, [dropdownOpen, modalOpen]);
 
   const persistZeroMsAntiFouc = (
     nextTheme: UiThemePreference,
@@ -151,6 +190,7 @@ export function UserAccountDropdownAndSettingsModal({
   const handleOpenSettingsModal = (tab: UiUserSettingsTabKey): void => {
     setDropdownOpen(false);
     setActiveTab(tab);
+    setIsDirty(false);
     setModalOpen(true);
   };
 
@@ -193,12 +233,25 @@ export function UserAccountDropdownAndSettingsModal({
     };
     setMcpTokens((prev) => [newItem, ...prev]);
     setLastIssuedPlaintext("pat_mcp_9a8b7c6d5e4f3a2b1c0d");
+    setIsDirty(false);
   };
 
   const handleRevokeMcpToken = (tokenId: string): void => {
     setMcpTokens((prev) =>
       prev.map((t) => (t.tokenId === tokenId ? { ...t, revoked: true } : t)),
     );
+  };
+
+  const handleSaveModalChanges = (): void => {
+    onPreferencesSync?.({
+      theme,
+      locale,
+      defaultHat: hat,
+      autoOpenContextualHelp: autoOpenHelp,
+      notificationsEnabled,
+    });
+    setIsDirty(false);
+    setModalOpen(false);
   };
 
   const displayRoleLabel = ROLE_DISPLAY_LABELS_FR[hat] ?? hat;
@@ -336,6 +389,7 @@ export function UserAccountDropdownAndSettingsModal({
       {modalOpen && (
         <div
           role="dialog"
+          aria-modal="true"
           aria-label={labels.modalTitle}
           data-testid="user-settings-modal"
           className="fixed inset-0 z-40 flex items-center justify-center bg-surface-primary/80 p-4"
@@ -346,11 +400,22 @@ export function UserAccountDropdownAndSettingsModal({
               <button
                 type="button"
                 data-testid="user-settings-modal-close-btn"
-                onClick={() => setModalOpen(false)}
+                onClick={requestClose}
                 className="px-2 py-1 rounded text-xs border border-surface-border text-text-secondary"
               >
                 Fermer (Esc)
               </button>
+            </div>
+
+            <div className="px-4 pt-2">
+              <RgaaUnsavedChangesAlert
+                testIdPrefix="user-settings-modal"
+                isOpen={showUnsavedAlert}
+                labels={guardLabels}
+                locale={locale}
+                onStay={cancelDiscard}
+                onConfirmDiscard={confirmDiscard}
+              />
             </div>
 
             {/* 4 Tabs Navigation */}
@@ -399,18 +464,46 @@ export function UserAccountDropdownAndSettingsModal({
               mcpTokens={mcpTokens}
               lastIssuedPlaintext={lastIssuedPlaintext}
               labels={labels}
-              onChangeAutoOpenHelp={setAutoOpenHelp}
-              onChangeNotificationsEnabled={setNotificationsEnabled}
+              onChangeAutoOpenHelp={(next) => {
+                setAutoOpenHelp(next);
+                setIsDirty(true);
+              }}
+              onChangeNotificationsEnabled={(next) => {
+                setNotificationsEnabled(next);
+                setIsDirty(true);
+              }}
               onPreferencesSync={onPreferencesSync}
               onNavigateAssistantBehavior={onNavigateAssistantBehavior}
               onTestPassthrough={() => setPassthroughTested(true)}
-              onChangeMcpTargetKind={setMcpTargetKind}
-              onChangeMcpTargetSlug={setMcpTargetSlug}
-              onChangeMcpExpiryDays={setMcpExpiryDays}
-              onChangeMcpRpmLimit={setMcpRpmLimit}
+              onChangeMcpTargetKind={(kind) => {
+                setMcpTargetKind(kind);
+                setIsDirty(true);
+              }}
+              onChangeMcpTargetSlug={(slug) => {
+                setMcpTargetSlug(slug);
+                setIsDirty(slug.trim().length > 0);
+              }}
+              onChangeMcpExpiryDays={(days) => {
+                setMcpExpiryDays(days);
+                setIsDirty(true);
+              }}
+              onChangeMcpRpmLimit={(rpm) => {
+                setMcpRpmLimit(rpm);
+                setIsDirty(true);
+              }}
               onIssueMcpToken={handleIssueMcpToken}
               onRevokeMcpToken={handleRevokeMcpToken}
             />
+
+            <div className="px-4 py-3 border-t border-surface-border bg-surface-secondary">
+              <RgaaDialogFooterActions
+                testIdPrefix="user-settings-modal"
+                cancelLabel={guardLabels.cancelButtonLabel}
+                submitLabel={guardLabels.submitButtonLabel}
+                onCancel={requestClose}
+                onSubmit={handleSaveModalChanges}
+              />
+            </div>
           </div>
         </div>
       )}

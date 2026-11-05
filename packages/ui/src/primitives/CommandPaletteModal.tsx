@@ -1,4 +1,11 @@
 import React, { useState } from "react";
+import {
+  DEFAULT_RGAA_MODAL_LABELS_FR,
+  RgaaUnsavedChangesAlert,
+  handleRgaaSubmitKeyDown,
+  useUnsavedChangesDialogGuard,
+  type RgaaModalDialogLabels,
+} from "../components/RgaaModalDialog.js";
 
 export interface CommandPaletteItemSpec {
   readonly entryId: string;
@@ -23,6 +30,8 @@ export interface CommandPaletteModalProps {
   readonly isOpen: boolean;
   readonly items: readonly CommandPaletteItemSpec[];
   readonly labels: CommandPaletteModalLabels;
+  readonly isDirty?: boolean;
+  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
   readonly onClose: () => void;
   readonly onSelectItem?: (item: CommandPaletteItemSpec) => void;
 }
@@ -31,10 +40,30 @@ export function CommandPaletteModal({
   isOpen,
   items,
   labels,
+  isDirty = false,
+  rgaaLabels,
   onClose,
   onSelectItem,
 }: CommandPaletteModalProps) {
   const [query, setQuery] = useState("");
+  const resolvedRgaaLabels: RgaaModalDialogLabels = {
+    ...DEFAULT_RGAA_MODAL_LABELS_FR,
+    cancelCta: labels.closeButton || DEFAULT_RGAA_MODAL_LABELS_FR.cancelCta,
+    ...rgaaLabels,
+  };
+
+  const {
+    showUnsavedConfirm,
+    requestClose,
+    confirmDiscardAndClose,
+    cancelDiscardAndStay,
+    handleDialogKeyDown,
+  } = useUnsavedChangesDialogGuard({
+    isOpen,
+    isDirty,
+    onClose,
+    onDiscardUnsavedChanges: () => setQuery(""),
+  });
 
   if (!isOpen) {
     return null;
@@ -50,17 +79,21 @@ export function CommandPaletteModal({
     );
   });
 
+  const activeItem = filtered[0] ?? null;
+
+  const handleConfirmActiveItem = (): void => {
+    if (!activeItem) return;
+    onSelectItem?.(activeItem);
+    onClose();
+  };
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={labels.modalTitle}
       data-testid="command-palette-modal"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          onClose();
-        }
-      }}
+      onKeyDown={handleDialogKeyDown}
       style={{
         position: "fixed",
         inset: 0,
@@ -96,7 +129,7 @@ export function CommandPaletteModal({
           <button
             type="button"
             data-testid="command-palette-close"
-            onClick={onClose}
+            onClick={requestClose}
             style={{
               padding: "4px 8px",
               borderRadius: "6px",
@@ -110,6 +143,15 @@ export function CommandPaletteModal({
             {labels.closeButton} (Esc)
           </button>
         </div>
+
+        {showUnsavedConfirm ? (
+          <RgaaUnsavedChangesAlert
+            testIdPrefix="command-palette"
+            labels={resolvedRgaaLabels}
+            onStay={cancelDiscardAndStay}
+            onDiscard={confirmDiscardAndClose}
+          />
+        ) : null}
 
         <input
           type="search"
@@ -152,6 +194,12 @@ export function CommandPaletteModal({
                   onSelectItem?.(item);
                   onClose();
                 }}
+                onKeyDown={(e) =>
+                  handleRgaaSubmitKeyDown(e, () => {
+                    onSelectItem?.(item);
+                    onClose();
+                  })
+                }
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
@@ -209,6 +257,56 @@ export function CommandPaletteModal({
               </button>
             ))
           )}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: "8px",
+            paddingTop: "6px",
+            borderTop: "1px solid var(--orcia-border-subtle)",
+          }}
+        >
+          <button
+            type="button"
+            data-testid="command-palette-cancel-btn"
+            onClick={requestClose}
+            style={{
+              padding: "4px 10px",
+              borderRadius: "6px",
+              fontSize: "0.75rem",
+              border: "1px solid var(--orcia-border-subtle)",
+              backgroundColor: "var(--orcia-surface-secondary)",
+              color: "var(--orcia-text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            {resolvedRgaaLabels.cancelCta}
+          </button>
+          <button
+            type="button"
+            data-testid="command-palette-submit-btn"
+            disabled={!activeItem}
+            onClick={handleConfirmActiveItem}
+            onKeyDown={(e) =>
+              handleRgaaSubmitKeyDown(e, handleConfirmActiveItem, !activeItem)
+            }
+            style={{
+              padding: "4px 10px",
+              borderRadius: "6px",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              border: "1px solid var(--orcia-border-subtle)",
+              backgroundColor: "var(--orcia-surface-primary)",
+              color: "var(--orcia-text-primary)",
+              cursor: activeItem ? "pointer" : "not-allowed",
+              opacity: activeItem ? 1 : 0.5,
+            }}
+          >
+            {resolvedRgaaLabels.submitCta}
+          </button>
         </div>
       </div>
     </div>

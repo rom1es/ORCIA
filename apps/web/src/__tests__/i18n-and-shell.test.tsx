@@ -517,4 +517,55 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(helpTerms.textContent).toContain("aqwZSX");
     expect(helpTerms.textContent).toContain("BU vs Espace");
   });
+
+  it("enforces RGAA Escape, Annuler, Unsaved Changes Guard, and Enter submit on First-Boot Admin Setup Modal", () => {
+    const { unmount } = render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={mockPush}>
+          <ModuleWorkspaceView moduleKey="cockpit" />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    // 1. Clean modal closes immediately on Escape
+    expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    unmount();
+
+    // 2. Re-mount, type in inputs -> dirty state -> Escape triggers unsaved changes alertdialog
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={mockPush}>
+          <ModuleWorkspaceView moduleKey="cockpit" />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Hélène Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "helene@orcia.fr" },
+    });
+
+    // Press Escape while dirty -> alertdialog appears, modal stays open
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByTestId("first-boot-admin-unsaved-changes-alert")).toBeDefined();
+    expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
+
+    // Click "Continuer l'édition" (stay)
+    fireEvent.click(screen.getByTestId("first-boot-admin-unsaved-stay-btn"));
+    expect(screen.queryByTestId("first-boot-admin-unsaved-changes-alert")).toBeNull();
+
+    // 3. Focus the submit button and press Enter -> creates admin and closes modal
+    const submitBtn = screen.getByTestId("first-boot-admin-submit-btn");
+    submitBtn.focus();
+    fireEvent.keyDown(submitBtn, { key: "Enter" });
+
+    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    expect(screen.getByTestId("user-account-dropdown-trigger").textContent).toContain(
+      "Hélène Admin",
+    );
+  });
 });

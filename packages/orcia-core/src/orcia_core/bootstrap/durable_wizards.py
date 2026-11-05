@@ -252,6 +252,29 @@ class DurableOnboardingWizardService:
         self._sessions_by_id[session_id] = updated
         return updated
 
+    def discard_unsaved_draft_or_abort(
+        self,
+        user: UserIdentity,
+        session_id: str,
+        *,
+        discard_draft_only: bool = True,
+        instance: str | None = None,
+    ) -> WizardSessionRecord:
+        """Discard unsaved draft keys or abort a wizard session on RGAA cancel/escape."""
+        if user.platform_role == "OBSERVER":
+            raise ObserverModeReadOnlyError(instance=instance)
+        session = self.get_session(session_id, instance=instance)
+        cleaned_state = {k: v for k, v in session.state_jsonb.items() if not k.startswith("draft_")}
+        next_status: WizardSessionStatus = session.status if discard_draft_only else "ABANDONED"
+        updated = replace(
+            session,
+            state_jsonb=cleaned_state,
+            status=next_status,
+            updated_at_iso=_now_iso(),
+        )
+        self._sessions_by_id[session_id] = updated
+        return updated
+
     def provision_zero_empty_state_demo(
         self,
         user: UserIdentity,

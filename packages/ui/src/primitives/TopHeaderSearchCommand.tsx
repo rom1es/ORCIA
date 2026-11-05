@@ -1,4 +1,11 @@
 import React, { useState } from "react";
+import {
+  DEFAULT_RGAA_MODAL_LABELS_FR,
+  RgaaUnsavedChangesAlert,
+  handleRgaaSubmitKeyDown,
+  useUnsavedChangesDialogGuard,
+  type RgaaModalDialogLabels,
+} from "../components/RgaaModalDialog.js";
 
 export type TopSearchScopeMode = "SCREEN" | "WORKSPACE" | "ALL_WORKSPACES";
 
@@ -59,6 +66,8 @@ export interface TopHeaderSearchCommandProps {
   readonly speed1Hits: readonly TopSearchHitItem[];
   readonly speed2Hits?: readonly TopSearchHitItem[];
   readonly speed2Loading?: boolean;
+  readonly isDirty?: boolean;
+  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
   readonly onQueryChange?: (query: string, scope: TopSearchScopeMode) => void;
   readonly onScopeChange?: (scope: TopSearchScopeMode) => void;
   readonly onTriggerSpeed2Now?: (query: string, scope: TopSearchScopeMode) => void;
@@ -85,6 +94,8 @@ export function TopHeaderSearchCommand({
   speed1Hits,
   speed2Hits = [],
   speed2Loading = false,
+  isDirty = false,
+  rgaaLabels,
   onQueryChange,
   onScopeChange,
   onTriggerSpeed2Now,
@@ -97,6 +108,24 @@ export function TopHeaderSearchCommand({
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const [lastDeepLink, setLastDeepLink] = useState<DeepLinkResolutionPayload | null>(null);
+
+  const resolvedRgaaLabels: RgaaModalDialogLabels = {
+    ...DEFAULT_RGAA_MODAL_LABELS_FR,
+    submitCta: labels.deepLinkActionLabel || DEFAULT_RGAA_MODAL_LABELS_FR.submitCta,
+    ...rgaaLabels,
+  };
+
+  const {
+    showUnsavedConfirm,
+    requestClose,
+    confirmDiscardAndClose,
+    cancelDiscardAndStay,
+  } = useUnsavedChangesDialogGuard({
+    isOpen: true,
+    isDirty,
+    onClose: () => onClose?.(),
+    onDiscardUnsavedChanges: () => setQuery(initialQuery),
+  });
 
   // Speed 1 hits are strictly locked at the top; Speed 2 hits are appended at the bottom
   const deduplicatedSpeed2 = speed2Hits.filter(
@@ -135,7 +164,8 @@ export function TopHeaderSearchCommand({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
     if (e.key === "Escape") {
       e.preventDefault();
-      onClose?.();
+      e.stopPropagation();
+      requestClose();
       return;
     }
     if (e.key === "Tab") {
@@ -168,6 +198,7 @@ export function TopHeaderSearchCommand({
   return (
     <div
       role="dialog"
+      aria-modal="true"
       aria-label={labels.modalTitle}
       data-testid="top-header-search-command"
       onKeyDown={handleKeyDown}
@@ -199,7 +230,24 @@ export function TopHeaderSearchCommand({
           >
             ✨ Vitesse 2 (450 ms)
           </button>
+          <button
+            type="button"
+            data-testid="cmdk-cancel-btn"
+            onClick={requestClose}
+            className="px-2 py-1 rounded text-xs border border-surface-border bg-surface-secondary text-text-secondary"
+          >
+            {resolvedRgaaLabels.cancelCta} (Esc)
+          </button>
         </div>
+
+        {showUnsavedConfirm ? (
+          <RgaaUnsavedChangesAlert
+            testIdPrefix="cmdk"
+            labels={resolvedRgaaLabels}
+            onStay={cancelDiscardAndStay}
+            onDiscard={confirmDiscardAndClose}
+          />
+        ) : null}
 
         <div
           role="tablist"
@@ -313,6 +361,7 @@ export function TopHeaderSearchCommand({
                           type="button"
                           data-testid={`cmdk-open-btn-${hit.itemId}`}
                           onClick={() => handleExecuteHit(hit)}
+                          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => handleExecuteHit(hit))}
                           className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-surface-elevated font-medium"
                         >
                           {hit.opensContextualHelpColumn
@@ -372,6 +421,7 @@ export function TopHeaderSearchCommand({
                           type="button"
                           data-testid={`cmdk-open-btn-${hit.itemId}`}
                           onClick={() => handleExecuteHit(hit)}
+                          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => handleExecuteHit(hit))}
                           className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-surface-elevated font-medium shrink-0"
                         >
                           {hit.opensContextualHelpColumn
@@ -409,6 +459,7 @@ export function TopHeaderSearchCommand({
               type="button"
               data-testid="cmdk-preview-navigate-btn"
               onClick={() => handleExecuteHit(previewHit)}
+              onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => handleExecuteHit(previewHit))}
               className="w-full py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium"
             >
               {labels.deepLinkActionLabel}
@@ -430,7 +481,7 @@ export function TopHeaderSearchCommand({
       )}
 
       {/* Footer CTA: Ask Mon Assistant with pre-filled query & active scope */}
-      <div className="p-2.5 border-t border-surface-border bg-surface-secondary flex items-center justify-between">
+      <div className="p-2.5 border-t border-surface-border bg-surface-secondary flex items-center justify-between gap-2">
         <button
           type="button"
           data-testid="cmdk-ask-assistant-cta"
@@ -440,9 +491,31 @@ export function TopHeaderSearchCommand({
           {labels.askAssistantFooterPrefix} « {query || "..."} »{" "}
           {labels.askAssistantFooterSuffix}
         </button>
-        <span className="text-[11px] font-mono text-text-secondary">
-          Tab: Portée · ↵: Ouvrir · ⌘↵: Aperçu
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-text-secondary">
+            Tab: Portée · ↵: Ouvrir · ⌘↵: Aperçu
+          </span>
+          <button
+            type="button"
+            data-testid="cmdk-submit-btn"
+            disabled={!activeHit}
+            onClick={() => {
+              if (activeHit) handleExecuteHit(activeHit);
+            }}
+            onKeyDown={(e) =>
+              handleRgaaSubmitKeyDown(
+                e,
+                () => {
+                  if (activeHit) handleExecuteHit(activeHit);
+                },
+                !activeHit,
+              )
+            }
+            className="px-2.5 py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium disabled:opacity-50"
+          >
+            {resolvedRgaaLabels.submitCta}
+          </button>
+        </div>
       </div>
     </div>
   );
