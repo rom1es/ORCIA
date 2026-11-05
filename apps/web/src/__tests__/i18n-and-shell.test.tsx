@@ -1026,8 +1026,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
     expect(screen.getByTestId("settings-packs-section")).toBeDefined();
 
-    // Free-text version input is completely eliminated
+    // Free-text version input and redundant header pack selector / button are completely eliminated
     expect(screen.queryByTestId("pack-version-input")).toBeNull();
+    expect(screen.queryByTestId("pack-key-input")).toBeNull();
+    expect(screen.queryByTestId("save-pack-btn")).toBeNull();
 
     // Installed packs catalog cards are directly displayed with human-readable titles
     const sdlcCard = screen.getByTestId("installed-pack-card-orcia-pack-sdlc");
@@ -1044,12 +1046,22 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(scopeSelect.textContent).toContain("Plateforme entière");
     expect(scopeSelect.textContent).toContain("Direction · Direction Produit");
 
-    // 1-click activation of orcia-pack-sdlc on Plateforme entière
+    // 1. Activate orcia-pack-sdlc on "Direction · Direction Produit" first
     expect(screen.getByTestId("packs-empty-state")).toBeDefined();
+    fireEvent.change(scopeSelect, { target: { value: "direction-produit" } });
     fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-sdlc"));
-    const packRow = screen.getByTestId("pack-row-orcia-pack-sdlc");
-    expect(packRow.textContent).toContain("Ingénierie Logicielle & Cycle de Vie Produit");
-    expect(packRow.textContent).toContain("Plateforme entière");
+    expect(screen.getAllByTestId("pack-row-orcia-pack-sdlc").length).toBe(1);
+    expect(screen.getByTestId("pack-row-orcia-pack-sdlc").textContent).toContain(
+      "Direction · Direction Produit",
+    );
+
+    // 2. Switch scope to "Plateforme entière" (GLOBAL) and activate -> automatically deduplicates the sub-scope activation
+    fireEvent.change(scopeSelect, { target: { value: "GLOBAL" } });
+    fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-sdlc"));
+    const rowsAfterGlobal = screen.getAllByTestId("pack-row-orcia-pack-sdlc");
+    expect(rowsAfterGlobal.length).toBe(1);
+    expect(rowsAfterGlobal[0]?.textContent).toContain("Plateforme entière");
+    expect(rowsAfterGlobal[0]?.textContent).not.toContain("Direction · Direction Produit");
 
     // 1-click deactivation from the card button
     fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-sdlc"));
@@ -1062,4 +1074,5 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).toBe("true");
   });
 });
+
 
