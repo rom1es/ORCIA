@@ -22,13 +22,19 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "iam-role-grants",
     title: "Règles d'accès : Qui ? et Sur quoi ?",
-    body: "Chaque règle associe un bénéficiaire (Rôle ou Utilisateur, ex. ROLE:Chef1) à un périmètre cible (Plateforme Globale, BU ou Espace, ex. aqwZSX) et précise les actions permises (créer, lire, modifier, supprimer, utiliser, déléguer).",
+    body: "Chaque règle associe un bénéficiaire (Rôle ou Utilisateur, ex. Rôle : Chef1) à un périmètre cible (Plateforme entière, Direction / BU ou Espace, ex. aqwZSX) et précise les habilitations attribuées (Créer, Lire / Voir les secrets, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits).",
+    category: "terms",
+  },
+  {
+    sectionId: "iam-target-scope",
+    title: "Qu'est-ce que le Périmètre cible (« Sur quoi ? ») ?",
+    body: "Le périmètre cible désigne l'endroit précis de votre organisation où s'applique la règle d'habilitation : soit toute la plateforme, soit une Direction (BU) entière et ses équipes, soit un seul Espace de travail (équipe/projet). Par exemple, donner un droit à « Product Manager » sur le périmètre cible « Espace : MonCompte » signifie que ce droit ne s'exercera que dans l'espace MonCompte, sans donner accès aux autres espaces de l'entreprise.",
     category: "terms",
   },
   {
     sectionId: "iam-inheritance-block",
-    title: "Effet de la règle (Autoriser, Interdire, Cloisonner)",
-    body: "« Autoriser » accorde les actions choisies. « Interdire » est toujours prioritaire. « Cloisonner l'héritage » (INHERITANCE_BLOCK) coupe les accès généraux hérités de la BU parente pour un espace confidentiel.",
+    title: "Effet de la règle (Autoriser, Interdire, Isoler ce périmètre)",
+    body: "« Autoriser » accorde les actions cochées. « Interdire » est toujours prioritaire. « Isoler ce périmètre » coupe les accès généraux hérités de la Direction parente pour un espace confidentiel.",
     category: "terms",
   },
   {
@@ -73,13 +79,19 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "iam-role-grants",
     title: "Access rules: Who? and On what?",
-    body: "Each rule links a beneficiary (Role or User, e.g. ROLE:Chef1) to a target scope (Global Platform, BU, or Workspace, e.g. aqwZSX) and specifies allowed actions (create, read, update, delete, execute, grant).",
+    body: "Each rule links a beneficiary (Role or User, e.g. Role: Chef1) to a target scope (Entire platform, BU, or Workspace, e.g. aqwZSX) and specifies granted permissions (Create, Read / View secrets, Update, Delete, Execute / Use, Delegate rights).",
+    category: "terms",
+  },
+  {
+    sectionId: "iam-target-scope",
+    title: "What is Target scope ('On what?')?",
+    body: "The target scope identifies the exact level of your organization where the permission rule applies: either the entire platform, a whole Division (BU) and its teams, or a single Workspace (team/project). For instance, granting a permission to 'Product Manager' on target scope 'Space: MyAccount' means that right only applies inside MyAccount, without granting access to other spaces.",
     category: "terms",
   },
   {
     sectionId: "iam-inheritance-block",
-    title: "Rule effect (Allow, Deny, Block inheritance)",
-    body: "'Allow' grants the selected actions. 'Deny' always takes priority. 'Block parent inheritance' (INHERITANCE_BLOCK) stops broad permissions inherited from a parent BU on a confidential workspace.",
+    title: "Rule effect (Allow, Deny, Isolate this scope)",
+    body: "'Allow' grants the selected actions. 'Deny' always takes priority. 'Isolate this scope' stops broad permissions inherited from a parent BU on a confidential workspace.",
     category: "terms",
   },
   {
@@ -204,48 +216,52 @@ export function buildContextualHelpArticle({
       packName: "orcia-core",
       boundRoutes: [pathname ?? "/settings"],
       summaryWhatFor: isFr
-        ? "Cet écran structure votre organisation (BU et Espaces), pilote vos règles d'habilitation (les 6 actions : create, read, update, delete, execute, grant), vos modèles IA et vos connecteurs."
-        : "This screen structures your organization (BUs and Workspaces), governs permission rules (the 6 actions: create, read, update, delete, execute, grant), AI models, and connectors.",
+        ? "Cet écran structure votre organisation (Directions / BU et Espaces), pilote vos règles d'habilitation (Créer, Lire / Voir les secrets, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits), vos modèles IA et vos connecteurs."
+        : "This screen structures your organization (BUs and Workspaces), governs permission rules (Create, Read / View secrets, Update, Delete, Execute / Use, Delegate rights), AI models, and connectors.",
       stepByStepItems: isFr
         ? [
-            "1. Créez vos BU (Directions / Pôles), puis créez vos Espaces (Équipes) en les rattachant à leur BU parente. La suppression est protégée tant que des éléments y sont rattachés.",
-            "2. Dans Habilitations, indiquez Qui ? (Bénéficiaire : Rôle ou Utilisateur, ex: ROLE:Chef1) et Sur quoi ? (Périmètre cible : GLOBAL, BU ou Espace, ex: aqwZSX).",
-            "3. Cochez les actions autorisées (ou Tous) et choisissez l'effet (ALLOW, DENY ou INHERITANCE_BLOCK). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
+            "1. Créez d'abord au moins une Direction (BU) ou un Espace (Équipe) dans la section 1. La section 2 se déverrouille dès qu'une unité d'organisation existe.",
+            "2. Dans Habilitations, indiquez Qui ? (Bénéficiaire : Rôle ou Utilisateur, ex: Rôle : Chef1) et choisissez Sur quoi ? (Périmètre cible : Plateforme entière, Direction / BU ou Espace, ex: aqwZSX).",
+            "3. Cochez les habilitations à attribuer (ou Tous) et choisissez l'effet de la règle (Autoriser, Interdire ou Isoler ce périmètre). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
           ]
         : [
-            "1. Create your BUs (Business Units), then create your Workspaces (Teams) linked to their parent BU. Deletion is protected while dependent items exist.",
-            "2. In Permissions, specify Who? (Beneficiary: Role or User, e.g. ROLE:Chef1) and On what? (Target scope: GLOBAL, BU, or Workspace, e.g. aqwZSX).",
-            "3. Check allowed actions (or All) and choose the effect (ALLOW, DENY, or INHERITANCE_BLOCK). Use the list checkboxes to delete one or more rules.",
+            "1. First create at least one Division (BU) or Workspace (Team) in section 1. Section 2 unlocks as soon as an organization unit exists.",
+            "2. In Permissions, specify Who? (Beneficiary: Role or User, e.g. Role: Chef1) and select On what? (Target scope: Entire platform, BU, or Workspace, e.g. aqwZSX).",
+            "3. Check the permissions to grant (or All) and choose the rule effect (Allow, Deny, or Isolate this scope). Use the list checkboxes to delete one or more rules.",
           ],
       keyTermsItems: isFr
         ? [
-            "BU vs Espace (Équipe) : Une BU est une direction ou pôle métier qui regroupe plusieurs Espaces. Un Espace correspond à une équipe ou un périmètre de travail rattaché à une BU.",
-            "Protection contre les suppressions accidentelles : Impossible de supprimer une BU ou un Espace tant que des sous-espaces ou des règles d'habilitation y sont rattachés.",
-            "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : Dans « ROLE:Chef1 → aqwZSX », Chef1 est le Bénéficiaire (le rôle ou l'utilisateur qui reçoit le droit) et aqwZSX est le Périmètre cible (la BU, l'Espace ou la ressource sur laquelle s'applique ce droit).",
-            "Les 6 actions d'habilitation : create (créer), read (consulter la configuration), update (modifier), delete (supprimer), execute (utiliser un agent/modèle/connecteur sans voir ses clés secrètes), grant (déléguer ses droits).",
-            "ALLOW (Autoriser) : Accorde explicitement les actions cochées au bénéficiaire sur le périmètre cible.",
-            "DENY (Interdire — prioritaire) : Refuse explicitement les actions cochées. Un refus l'emporte toujours sur une autorisation.",
-            "INHERITANCE_BLOCK (Bloquer l'héritage parent) : Coupe la transmission automatique des droits hérités des niveaux supérieurs (Plateforme Globale ou BU parente) sur ce périmètre, afin de repartir d'une feuille blanche locale.",
+            "BU vs Espace (Équipe) : Une Direction (BU) est un pôle métier qui regroupe plusieurs Espaces. Un Espace correspond à une équipe ou un projet rattaché à une Direction.",
+            "Protection contre les suppressions accidentelles : Impossible de supprimer une Direction (BU) ou un Espace tant que des sous-espaces ou des règles d'habilitation y sont rattachés.",
+            "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : Dans « Rôle : Chef1 → aqwZSX », Chef1 est le Bénéficiaire (le rôle ou l'utilisateur qui reçoit le droit) et aqwZSX est le Périmètre cible (la Direction, l'Espace ou toute la plateforme où s'applique ce droit).",
+            "Qu'est-ce que le Périmètre cible (« Sur quoi ? ») ? : Le périmètre cible désigne l'endroit précis de votre organisation où s'applique la règle d'habilitation : soit toute la plateforme, soit une Direction (BU) entière et ses équipes, soit un seul Espace de travail.",
+            "Les 6 habilitations : Créer, Lire / Voir les secrets (consulter la configuration), Modifier, Supprimer, Exécuter / Utiliser (utiliser un agent, modèle ou connecteur sans voir ses clés secrètes), Déléguer des droits.",
+            "Autoriser : Accorde explicitement les actions cochées au bénéficiaire sur le périmètre cible.",
+            "Interdire (prioritaire) : Bloque explicitement ces actions. Une interdiction l'emporte toujours sur une autorisation.",
+            "Isoler ce périmètre (INHERITANCE_BLOCK) : N'applique pas les droits hérités de la Direction parente ou de la plateforme sur cet espace confidentiel, afin de repartir d'une feuille blanche locale.",
           ]
         : [
             "BU vs Workspace (Team): A BU is a business division grouping multiple Workspaces. A Workspace is a team scope linked to a parent BU.",
             "Accidental deletion protection: A BU or Workspace cannot be deleted while child workspaces or permission rules still depend on it.",
-            "Who? (Beneficiary) vs On what? (Target scope): In 'ROLE:Chef1 → aqwZSX', Chef1 is the Beneficiary (the role or user receiving the right) and aqwZSX is the Target scope (the BU, Workspace, or resource).",
-            "The 6 permission actions: create, read (view configuration), update, delete, execute (run an agent/model/connector without viewing secret keys), grant (delegate rights).",
-            "ALLOW: Explicitly grants the checked actions to the beneficiary on the target scope.",
-            "DENY (Priority override): Explicitly denies the checked actions. DENY always overrides any ALLOW.",
-            "INHERITANCE_BLOCK (Block parent inheritance): Stops automatic inheritance of permissions from parent levels (Global Platform or parent BU) on this scope, starting from a clean local slate.",
+            "Who? (Beneficiary) vs On what? (Target scope): In 'Role: Chef1 → aqwZSX', Chef1 is the Beneficiary (the role or user receiving the right) and aqwZSX is the Target scope (the BU, Workspace, or entire platform).",
+            "What is Target scope ('On what?')?: The target scope identifies the exact level of your organization where the permission rule applies: the entire platform, a Division (BU), or a single Workspace.",
+            "The 6 permissions: Create, Read / View secrets, Update, Delete, Execute / Use (run an agent/model/connector without viewing secret keys), Delegate rights.",
+            "Allow: Explicitly grants the checked actions to the beneficiary on the target scope.",
+            "Deny (Priority override): Explicitly blocks the checked actions. Deny always overrides any Allow.",
+            "Isolate this scope (INHERITANCE_BLOCK): Stops automatic inheritance of permissions from parent levels (Entire platform or parent BU) on this scope, starting from a clean local slate.",
           ],
       faqItems: isFr
         ? [
+            "Pourquoi la section 2 est-elle grisée au démarrage ? → Tant qu'aucune Direction (BU) ni aucun Espace n'est créé dans la section 1, il n'existe aucun périmètre d'organisation sur lequel appliquer des règles.",
             "Pourquoi ne puis-je pas supprimer une BU ou un Espace ? → Pour éviter d'isoler des Espaces enfants ou des règles d'habilitation qui y font référence. Supprimez ou détachez d'abord les éléments dépendants.",
-            "Quelle est la différence entre execute et read ? → execute permet d'utiliser un modèle IA ou un connecteur dans un processus sans pouvoir afficher sa clé secrète (read).",
-            "Quand utiliser INHERITANCE_BLOCK ? → Lorsqu'un Espace confidentiel ne doit plus hériter des accès larges accordés au niveau de sa BU parente.",
+            "Quelle est la différence entre Exécuter / Utiliser et Lire / Voir les secrets ? → Exécuter / Utiliser permet de mobiliser un modèle IA ou un connecteur dans un processus sans pouvoir afficher sa clé secrète.",
+            "Quand choisir « Isoler ce périmètre » ? → Lorsqu'un Espace confidentiel ne doit plus hériter des accès larges accordés au niveau de sa Direction (BU) parente.",
           ]
         : [
+            "Why is section 2 greyed out initially? → Until at least one Division (BU) or Space is created in section 1, there is no organizational scope to attach rules to.",
             "Why can't I delete a BU or Workspace? → To prevent isolating child Workspaces or permission rules that reference it. Remove dependent items first.",
-            "What is the difference between execute and read? → execute lets a user run an AI model or connector without viewing its secret key (read).",
-            "When should I use INHERITANCE_BLOCK? → When a confidential Workspace must stop inheriting broad permissions granted at its parent BU level.",
+            "What is the difference between Execute / Use and Read / View secrets? → Execute / Use lets a user run an AI model or connector without viewing its secret key.",
+            "When should I use 'Isolate this scope'? → When a confidential Workspace must stop inheriting broad permissions granted at its parent BU level.",
           ],
       sections: isFr ? CONFIGURATION_SECTIONS_FR : CONFIGURATION_SECTIONS_EN,
       casKey: "cas/help_contextual_v1",
