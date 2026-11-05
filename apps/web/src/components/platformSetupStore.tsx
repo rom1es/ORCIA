@@ -130,6 +130,28 @@ function writeCachedPlatformAdmin(admin: ConfiguredPlatformAdmin | null): void {
   writeStorageItem(PLATFORM_ADMIN_STORAGE_KEY, admin === null ? null : JSON.stringify(admin));
 }
 
+export function deduplicateConfiguredPacks(
+  items: readonly ConfiguredPackItem[],
+): readonly ConfiguredPackItem[] {
+  const globalPackKeys = new Set(
+    items.filter((p) => p.scopePath === "GLOBAL").map((p) => p.packKey),
+  );
+  const seen = new Set<string>();
+  const result: ConfiguredPackItem[] = [];
+  for (const item of items) {
+    if (globalPackKeys.has(item.packKey) && item.scopePath !== "GLOBAL") {
+      continue;
+    }
+    const key = `${item.packKey}::${item.scopePath}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
+
 function readCachedPlatformSetupState(): CachedPlatformSetupState {
   try {
     const raw = readStorageItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
@@ -141,7 +163,7 @@ function readCachedPlatformSetupState(): CachedPlatformSetupState {
       llmTiers: Array.isArray(parsed.llmTiers) ? parsed.llmTiers : [],
       workspaces: Array.isArray(parsed.workspaces) ? parsed.workspaces : [],
       datasources: Array.isArray(parsed.datasources) ? parsed.datasources : [],
-      packs: Array.isArray(parsed.packs) ? parsed.packs : [],
+      packs: Array.isArray(parsed.packs) ? deduplicateConfiguredPacks(parsed.packs) : [],
       workflows: Array.isArray(parsed.workflows) ? parsed.workflows : [],
       runs: Array.isArray(parsed.runs) ? parsed.runs : [],
       catalogItems: Array.isArray(parsed.catalogItems) ? parsed.catalogItems : [],
@@ -440,7 +462,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
               })),
               workspaces: rWorkspaces as unknown as ControlCenterWorkspaceGovItem[],
               datasources: rDatasources as unknown as ControlCenterDatasourceItem[],
-              packs: rPacks as unknown as ConfiguredPackItem[],
+              packs: deduplicateConfiguredPacks(
+                rPacks as unknown as ConfiguredPackItem[],
+              ),
               workflows: rWorkflows as unknown as ConfiguredWorkflowItem[],
               runs: rRuns as unknown as ControlCenterRunItem[],
               catalogItems: rCatalogItems as unknown as UiCatalogExplorerItemView[],
@@ -730,12 +754,16 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   };
 
   const registerPack = (input: ConfiguredPackItem) => {
-    const nextPacks = [
+    const nextPacks = deduplicateConfiguredPacks([
       ...packs.filter(
-        (p) => !(p.packKey === input.packKey && p.scopePath === input.scopePath),
+        (p) =>
+          !(
+            p.packKey === input.packKey &&
+            (p.scopePath === input.scopePath || input.scopePath === "GLOBAL")
+          ),
       ),
       input,
-    ];
+    ]);
     const nextCatalogItems: readonly UiCatalogExplorerItemView[] = [
       ...catalogItems.filter((item) => item.resourceId !== `pack-${input.packKey}`),
       {

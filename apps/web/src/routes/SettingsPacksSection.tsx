@@ -68,7 +68,6 @@ export function SettingsPacksSection({
   const [installedPacks, setInstalledPacks] = useState<
     readonly InstalledBusinessPackItemResponse[]
   >(BUILTIN_INSTALLED_BUSINESS_PACKS);
-  const [selectedPackKey, setSelectedPackKey] = useState<string>("orcia-pack-sdlc");
   const [selectedScopePath, setSelectedScopePath] = useState<string>("GLOBAL");
 
   useEffect(() => {
@@ -119,8 +118,7 @@ export function SettingsPacksSection({
     return foundOption ? foundOption.label : scopePath;
   };
 
-  const selectedInstalledPack =
-    installedPacks.find((p) => p.pack_key === selectedPackKey) ?? installedPacks[0]!;
+  const selectedScopeLabel = formatScopeLabel(selectedScopePath);
 
   const selectStyle: React.CSSProperties = {
     padding: "7px 10px",
@@ -183,25 +181,14 @@ export function SettingsPacksSection({
           />
         </div>
 
-        <form
-          data-testid="register-pack-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!selectedInstalledPack) return;
-            registerPack({
-              packKey: selectedInstalledPack.pack_key,
-              version: selectedInstalledPack.version,
-              scopePath: selectedScopePath,
-              status: "PUBLISHED",
-            });
-          }}
+        <div
           style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}
         >
           <label
             htmlFor="settings-pack-scope-select"
             style={{ fontSize: "13px", fontWeight: 600 }}
           >
-            {isFr ? "Périmètre d'activation :" : "Target scope:"}
+            {isFr ? "Périmètre cible :" : "Target scope:"}
           </label>
           <select
             id="settings-pack-scope-select"
@@ -216,25 +203,7 @@ export function SettingsPacksSection({
               </option>
             ))}
           </select>
-
-          <select
-            aria-label={isFr ? "Pack métier installé" : "Installed Business Pack"}
-            data-testid="pack-key-input"
-            value={selectedPackKey}
-            onChange={(e) => setSelectedPackKey(e.target.value)}
-            style={selectStyle}
-          >
-            {installedPacks.map((item) => (
-              <option key={item.pack_key} value={item.pack_key}>
-                {isFr ? item.title : item.title_en} (v{item.version})
-              </option>
-            ))}
-          </select>
-
-          <button type="submit" data-testid="save-pack-btn" style={primaryBtnStyle}>
-            {isFr ? "Activer sur ce périmètre" : "Enable on this scope"}
-          </button>
-        </form>
+        </div>
       </div>
 
       <div
@@ -246,9 +215,13 @@ export function SettingsPacksSection({
         }}
       >
         {installedPacks.map((item) => {
-          const isActiveOnSelectedScope = packs.some(
-            (p) => p.packKey === item.pack_key && p.scopePath === selectedScopePath,
+          const activeScopesForPack = packs.filter((p) => p.packKey === item.pack_key);
+          const isActiveGlobally = activeScopesForPack.some(
+            (p) => p.scopePath === "GLOBAL",
           );
+          const isActiveOnSelectedScope =
+            isActiveGlobally ||
+            activeScopesForPack.some((p) => p.scopePath === selectedScopePath);
           const displayTitle = isFr ? item.title : item.title_en;
           const displayDesc = isFr ? item.description : item.description_en;
 
@@ -267,7 +240,7 @@ export function SettingsPacksSection({
                 gap: "10px",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <div
                   style={{
                     display: "flex",
@@ -287,6 +260,39 @@ export function SettingsPacksSection({
                 >
                   {displayDesc}
                 </span>
+
+                {activeScopesForPack.length > 0 && (
+                  <div
+                    data-testid={`pack-card-active-scopes-${item.pack_key}`}
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: "6px",
+                      paddingTop: "4px",
+                    }}
+                  >
+                    {activeScopesForPack.map((activeEntry) => (
+                      <StatusBadge
+                        key={`${activeEntry.packKey}:${activeEntry.scopePath}`}
+                        label={`${isFr ? "Actif" : "Active"} · ${formatScopeLabel(activeEntry.scopePath)}`}
+                        tone="emerald"
+                      />
+                    ))}
+                    {isActiveGlobally && selectedScopePath !== "GLOBAL" && (
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--color-muted-foreground)",
+                        }}
+                      >
+                        {isFr
+                          ? "(couvre déjà toutes les Directions et Espaces)"
+                          : "(already covers all Divisions and Workspaces)"}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div
@@ -310,10 +316,21 @@ export function SettingsPacksSection({
                   <button
                     type="button"
                     data-testid={`deactivate-pack-btn-${item.pack_key}`}
-                    onClick={() => removePack(item.pack_key, selectedScopePath)}
+                    onClick={() =>
+                      removePack(
+                        item.pack_key,
+                        isActiveGlobally ? "GLOBAL" : selectedScopePath,
+                      )
+                    }
                     style={secondaryBtnStyle}
                   >
-                    {isFr ? "Désactiver" : "Disable"}
+                    {isActiveGlobally && selectedScopePath !== "GLOBAL"
+                      ? isFr
+                        ? "Désactiver (Plateforme entière)"
+                        : "Disable (Entire Platform)"
+                      : isFr
+                        ? "Désactiver sur ce périmètre"
+                        : "Disable on this scope"}
                   </button>
                 ) : (
                   <button
@@ -329,7 +346,9 @@ export function SettingsPacksSection({
                     }
                     style={primaryBtnStyle}
                   >
-                    {isFr ? "Activer ce Pack" : "Enable Pack"}
+                    {isFr
+                      ? `Activer sur : ${selectedScopeLabel}`
+                      : `Enable on: ${selectedScopeLabel}`}
                   </button>
                 )}
               </div>
@@ -344,8 +363,8 @@ export function SettingsPacksSection({
           style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
         >
           {isFr
-            ? "Aucun Pack métier activé pour le moment. Choisissez un périmètre et cliquez sur « Activer ce Pack »."
-            : "No Business Pack enabled yet. Select a scope and click 'Enable Pack'."}
+            ? "Aucun Pack métier activé pour le moment. Choisissez un périmètre cible et cliquez sur le bouton d'activation d'une carte."
+            : "No Business Pack enabled yet. Select a target scope and click a card's activation button."}
         </p>
       ) : (
         <div style={{ display: "grid", gap: "8px" }}>
