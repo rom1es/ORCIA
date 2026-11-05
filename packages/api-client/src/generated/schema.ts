@@ -1495,6 +1495,26 @@ export interface components {
       workflow_uri: string;
       workspace_id: string;
     };
+    LlmConnectionTestRequest: {
+      api_key?: string | null;
+      api_key_configured?: boolean;
+      auth_mode?: "api_key" | "env_var" | "none_local";
+      endpoint_uri?: string;
+      model_name?: string;
+      provider_slug?: string;
+    };
+    LlmConnectionTestResponse: {
+      auth_mode: "api_key" | "env_var" | "none_local";
+      endpoint_uri: string;
+      latency_ms: number;
+      message_en: string;
+      message_fr: string;
+      model_name: string;
+      ok: boolean;
+      provider_slug: string;
+      status: "CONNECTED" | "INVALID_PARAMETERS" | "AUTH_REQUIRED";
+      trace_id: string;
+    };
     LlmModelEndpointItem: {
       connectivity_verified?: boolean;
       endpoint_key: string;
@@ -3362,6 +3382,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/bootstrap/welcome-setup/llm-test": {
+    post: {
+      responses: {
+        200: components["schemas"]["LlmConnectionTestResponse"];
+      };
+    };
+  };
   "/api/v1/bootstrap/welcome-setup/progressive-llm": {
     post: {
       responses: {
@@ -4292,6 +4319,8 @@ export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"]
 export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
 export type LaunchProcessFromFolderRequest = components["schemas"]["LaunchProcessFromFolderRequest"];
 export type LaunchProcessFromFolderResponse = components["schemas"]["LaunchProcessFromFolderResponse"];
+export type LlmConnectionTestRequest = components["schemas"]["LlmConnectionTestRequest"];
+export type LlmConnectionTestResponse = components["schemas"]["LlmConnectionTestResponse"];
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type LlmTierMappingResponse = components["schemas"]["LlmTierMappingResponse"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];

@@ -177,12 +177,17 @@ export interface ConfiguredRbacGrant {
   readonly effect: "ALLOW" | "DENY" | "INHERITANCE_BLOCK";
 }
 
+export type LlmAuthMode = "api_key" | "env_var" | "none_local";
+
 export interface ConfiguredLlmTierMapping {
   readonly tier: UiInferenceTier;
   readonly primaryModel: string;
   readonly secondaryModel: string;
   readonly modelFamily: string;
   readonly defaultEffort: UiInferenceEffort;
+  readonly endpointUrl?: string;
+  readonly authMode?: LlmAuthMode;
+  readonly apiKeyConfigured?: boolean;
 }
 
 export interface ConfiguredPackItem {
@@ -339,6 +344,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         defaultEffort: t.defaultEffort,
         provider: t.modelFamily,
         model: t.primaryModel,
+        endpointUrl: t.endpointUrl ?? "",
+        authMode: t.authMode ?? "api_key",
+        apiKeyConfigured: Boolean(t.apiKeyConfigured),
       })),
       workspaces: next.workspaces as unknown as Record<string, unknown>[],
       datasources: next.datasources as unknown as Record<string, unknown>[],
@@ -423,8 +431,11 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
                 tier: (raw.tier ?? raw.tierKey ?? "medium") as UiInferenceTier,
                 primaryModel: String(raw.primaryModel ?? raw.model ?? "claude-3-7-sonnet"),
                 secondaryModel: String(raw.secondaryModel ?? ""),
-                modelFamily: String(raw.modelFamily ?? raw.provider ?? "anthropic"),
+                modelFamily: String(raw.modelFamily ?? raw.provider ?? "Anthropic"),
                 defaultEffort: (raw.defaultEffort ?? "balanced") as UiInferenceEffort,
+                endpointUrl: raw.endpointUrl ? String(raw.endpointUrl) : undefined,
+                authMode: (raw.authMode ?? "api_key") as LlmAuthMode,
+                apiKeyConfigured: Boolean(raw.apiKeyConfigured),
               })),
               workspaces: rWorkspaces as unknown as ControlCenterWorkspaceGovItem[],
               datasources: rDatasources as unknown as ControlCenterDatasourceItem[],
@@ -617,7 +628,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextLlmTiers = [...llmTiers.filter((item) => item.tier !== input.tier), input];
     const nextAudit = appendAudit(
       "SettingsChanged",
-      `Palier IA "${input.tier}" associé à ${input.primaryModel} (famille ${input.modelFamily}, effort ${input.defaultEffort})`,
+      `Palier IA "${input.tier}" associé à ${input.primaryModel} (fournisseur ${input.modelFamily}, effort ${input.defaultEffort})`,
     );
     setLlmTiers(nextLlmTiers);
     setAuditEvents(nextAudit);
@@ -627,13 +638,18 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
     if (!isJsdom) {
       const client = createOrciaApiClient({ baseUrl: "" });
+      const resolvedUri =
+        input.endpointUrl &&
+        (input.endpointUrl.startsWith("http://") || input.endpointUrl.startsWith("https://"))
+          ? input.endpointUrl
+          : `https://api.${input.modelFamily.toLowerCase().replace(/[^a-z0-9-]+/g, "-")}.local/v1`;
       void client
         .registerProgressiveLlmEndpoint({
           endpoint_key: input.tier,
           provider_slug: input.modelFamily,
           model_family: input.modelFamily,
           model_name: input.primaryModel,
-          endpoint_uri: `https://api.${input.modelFamily}.local/v1`,
+          endpoint_uri: resolvedUri,
         })
         .catch(() => undefined);
     }

@@ -8,6 +8,8 @@ import type {
   InitUserResponse,
   InitWorkspaceRequest,
   InitWorkspaceResponse,
+  LlmConnectionTestRequest,
+  LlmConnectionTestResponse,
   PlatformSetupStatePutRequest,
   PlatformSetupStateResponse,
   ProgressiveLlmEndpointRequest,
@@ -57,6 +59,7 @@ export type ConnectorTestBenchReportResponse =
   components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
 export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
 export type HelpArticleValidationResponse = components["schemas"]["ValidateHelpArticleResponse"];
+export type { LlmConnectionTestRequest, LlmConnectionTestResponse };
 
 export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonFn) {
   return {
@@ -89,6 +92,15 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
     ): Promise<AccostageStatusResponse> {
       return requestJson<AccostageStatusResponse>(
         "/api/v1/bootstrap/welcome-setup/progressive-llm",
+        "POST",
+        payload,
+      );
+    },
+    testLlmEndpointConnection(
+      payload: LlmConnectionTestRequest,
+    ): Promise<LlmConnectionTestResponse> {
+      return requestJson<LlmConnectionTestResponse>(
+        "/api/v1/bootstrap/welcome-setup/llm-test",
         "POST",
         payload,
       );

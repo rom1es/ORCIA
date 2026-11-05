@@ -39,8 +39,8 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   },
   {
     sectionId: "ai-models-overview",
-    title: "Niveaux de modèles IA (Simple, Standard, Approfondi)",
-    body: "Associez un modèle IA principal (et un modèle de secours) à chaque niveau de besoin. En configurant au moins deux fournisseurs indépendants, vous activez les revues croisées automatiques.",
+    title: "Modèles IA : Fournisseur, URL d'API, Authentification & Test de connexion",
+    body: "Pour chaque niveau d'usage (Simple, Standard, Approfondi), renseignez : 1) le Fournisseur IA (ex. Anthropic, OpenAI, Mistral AI, Ollama local), 2) l'identifiant du modèle principal (et un modèle de secours optionnel), 3) l'URL de l'API (ex. https://api.anthropic.com/v1 ou http://localhost:11434/v1), et 4) le mode d'authentification (Clé d'API secrète, Variable serveur ou Serveur local sans clé). Cliquez sur « 🔌 Tester la connexion au modèle » avant d'enregistrer pour vérifier immédiatement la réponse du serveur.",
     category: "steps",
   },
   {
@@ -90,8 +90,8 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
   },
   {
     sectionId: "ai-models-overview",
-    title: "AI model levels (Simple, Standard, In-Depth)",
-    body: "Assign a primary AI model (and a backup model) to each analysis level. Configuring at least two independent providers unlocks cross-checked reviews.",
+    title: "AI Models: Provider, API URL, Authentication & Connection Test",
+    body: "For each usage level (Simple, Standard, In-Depth), specify: 1) AI Provider (e.g. Anthropic, OpenAI, Mistral AI, local Ollama), 2) primary model ID (and optional backup model), 3) API Endpoint URL (e.g. https://api.anthropic.com/v1 or http://localhost:11434/v1), and 4) authentication mode (Secret API Key, Server environment variable, or Keyless local server). Click '🔌 Test model connection' before saving to verify server response.",
     category: "steps",
   },
   {

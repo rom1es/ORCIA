@@ -298,6 +298,36 @@ class ProgressiveLlmEndpointRequest(BaseModel):
     endpoint_uri: str = Field(..., min_length=8, max_length=512)
 
 
+class LlmConnectionTestRequest(BaseModel):
+    """Request payload for `POST /api/v1/bootstrap/welcome-setup/llm-test`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    provider_slug: str = Field(default="", max_length=128)
+    model_name: str = Field(default="", max_length=128)
+    endpoint_uri: str = Field(default="", max_length=512)
+    auth_mode: Literal["api_key", "env_var", "none_local"] = Field(default="api_key")
+    api_key: str | None = Field(default=None, max_length=512)
+    api_key_configured: bool = Field(default=False)
+
+
+class LlmConnectionTestResponse(BaseModel):
+    """Response for `POST /api/v1/bootstrap/welcome-setup/llm-test`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    ok: bool
+    status: Literal["CONNECTED", "INVALID_PARAMETERS", "AUTH_REQUIRED"]
+    latency_ms: int = Field(..., ge=0, le=60000)
+    provider_slug: str
+    model_name: str
+    endpoint_uri: str
+    auth_mode: Literal["api_key", "env_var", "none_local"]
+    message_fr: str
+    message_en: str
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
 class AccostageStatusResponse(BaseModel):
     """Response for `GET /api/v1/bootstrap/accostage-status` & progressive LLM registration."""
 

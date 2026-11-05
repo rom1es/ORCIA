@@ -823,4 +823,86 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Hélène Admin",
     );
   });
+
+  it("configures AI Models with Provider, Model, Endpoint URL, Authentication Mode (API Key or Local), tests LLM connectivity via 'Tester la connexion au modèle', displays French labels without 'medium' or 'family-a', and pins contextual help at top with independent scroll", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // Verify independent scroll containers on Zone 3 (main) and Zone 4 (help column)
+    const mainZone = screen.getByTestId("four-zone-central-workspace");
+    const helpZone = screen.getByTestId("four-zone-contextual-help-column");
+    expect(mainZone.style.overflowY).toBe("auto");
+    expect(helpZone.style.overflowY).toBe("auto");
+
+    // Switch to AI Models tab
+    fireEvent.click(screen.getByTestId("settings-tab-ai-models"));
+    const aiSection = screen.getByTestId("settings-ai-models-section");
+    expect(aiSection.textContent).not.toContain("family-a");
+
+    // Default provider is "Anthropic", not "family-a"
+    const familyInput = screen.getByTestId("llm-family-input") as HTMLInputElement;
+    expect(familyInput.value).toBe("Anthropic");
+    const endpointInput = screen.getByTestId("llm-endpoint-url-input") as HTMLInputElement;
+    expect(endpointInput.value).toBe("https://api.anthropic.com/v1");
+
+    // 1. Click "Tester la connexion au modèle" while model is empty -> explicit error banner
+    fireEvent.click(screen.getByTestId("test-llm-connection-btn"));
+    expect(screen.getByTestId("llm-connection-test-result").getAttribute("data-ok")).toBe(
+      "false",
+    );
+    expect(screen.getByTestId("llm-connection-test-result").textContent).toContain(
+      "Échec du test",
+    );
+
+    // 2. Fill model name, keep authMode = "api_key" without key -> explicit error asking for API key
+    fireEvent.change(screen.getByTestId("llm-primary-model-input"), {
+      target: { value: "claude-3-7-sonnet" },
+    });
+    fireEvent.click(screen.getByTestId("test-llm-connection-btn"));
+    expect(screen.getByTestId("llm-connection-test-result").getAttribute("data-ok")).toBe(
+      "false",
+    );
+    expect(screen.getByTestId("llm-connection-test-result").textContent).toContain(
+      "clé d'API",
+    );
+
+    // 3. Enter API key and click "Tester la connexion au modèle" -> Success!
+    fireEvent.change(screen.getByTestId("llm-api-key-input"), {
+      target: { value: "sk-ant-test-key-12345" },
+    });
+    fireEvent.click(screen.getByTestId("test-llm-connection-btn"));
+    expect(screen.getByTestId("llm-connection-test-result").getAttribute("data-ok")).toBe(
+      "true",
+    );
+    expect(screen.getByTestId("llm-connection-test-result").textContent).toContain(
+      "Connexion réussie au modèle « claude-3-7-sonnet » (Anthropic) sur https://api.anthropic.com/v1",
+    );
+
+    // 4. Save the tier and verify human-readable French labels (no raw "medium", "balanced", "default", or "family-a")
+    fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
+    const savedRow = screen.getByTestId("llm-tier-row-medium");
+    expect(savedRow.textContent).toContain("Standard");
+    expect(savedRow.textContent).toContain("claude-3-7-sonnet");
+    expect(savedRow.textContent).toContain("Anthropic · Équilibré");
+    expect(savedRow.textContent).toContain("https://api.anthropic.com/v1");
+    expect(savedRow.textContent).toContain("Clé d'API enregistrée");
+    expect(savedRow.textContent).not.toContain("family-a");
+
+    // 5. Click 'i' (contextual-info-trigger-ai-models-overview) -> pins ai-models-overview to index 0 of contextual help sections
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-ai-models-overview"));
+    const helpSectionsList = screen.getByTestId("contextual-help-sections-list");
+    expect(helpSectionsList.children[0]?.getAttribute("data-testid")).toBe(
+      "help-section-ai-models-overview",
+    );
+    expect(helpSectionsList.children[0]?.getAttribute("data-active")).toBe("true");
+  });
 });
+

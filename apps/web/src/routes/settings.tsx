@@ -21,6 +21,7 @@ import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
+import { SettingsAiModelsSection } from "./SettingsAiModelsSection";
 
 export type SettingsSectionTab =
   | "iam"
@@ -875,120 +876,13 @@ export function SettingsHubView() {
           )}
 
           {activeTab === "ai-models" && (
-            <section
-              data-testid="settings-ai-models-section"
-              className="orcia-bento-card"
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <InferenceTierBadge
-                    tier={selectedTier}
-                    effort={selectedEffort}
-                    labels={tierAndEffortLabels}
-                  />
-                  <ContextualInfoTriggerButton
-                    sectionId="ai-models-overview"
-                    label={
-                      isFr
-                        ? "Comprendre les niveaux de modèles IA et les fournisseurs indépendants"
-                        : "Understand AI model levels and independent providers"
-                    }
-                    onOpenHelpSection={openHelpSection}
-                  />
-                </div>
-                <EffortSelector
-                  selectedTier={selectedTier}
-                  selectedEffort={selectedEffort}
-                  labels={tierAndEffortLabels}
-                  onTierChange={setSelectedTier}
-                  onEffortChange={setSelectedEffort}
-                />
-              </div>
-
-              <form
-                data-testid="configure-llm-tier-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!primaryModel.trim()) return;
-                  upsertLlmTier({
-                    tier: selectedTier,
-                    primaryModel: primaryModel.trim(),
-                    secondaryModel: secondaryModel.trim() || primaryModel.trim(),
-                    modelFamily: modelFamily.trim() || "family-a",
-                    defaultEffort: selectedEffort,
-                  });
-                  setPrimaryModel("");
-                  setSecondaryModel("");
-                }}
-                style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
-              >
-                <input
-                  type="text"
-                  data-testid="llm-primary-model-input"
-                  value={primaryModel}
-                  onChange={(e) => setPrimaryModel(e.target.value)}
-                  placeholder={isFr ? "Modèle principal (ex: fournisseur/modèle)..." : "Primary model..."}
-                  style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
-                />
-                <input
-                  type="text"
-                  data-testid="llm-secondary-model-input"
-                  value={secondaryModel}
-                  onChange={(e) => setSecondaryModel(e.target.value)}
-                  placeholder={isFr ? "Modèle secondaire de secours..." : "Backup model..."}
-                  style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
-                />
-                <input
-                  type="text"
-                  data-testid="llm-family-input"
-                  value={modelFamily}
-                  onChange={(e) => setModelFamily(e.target.value)}
-                  placeholder={isFr ? "Fournisseur IA (ex: Mistral, Anthropic)..." : "AI provider..."}
-                  style={inputStyle}
-                />
-                <button type="submit" data-testid="save-llm-tier-btn" style={primaryBtnStyle}>
-                  {isFr ? "Enregistrer le niveau" : "Save level"}
-                </button>
-              </form>
-
-              {llmTiers.length === 0 ? (
-                <p
-                  data-testid="llm-tiers-empty-state"
-                  style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
-                >
-                  {isFr
-                    ? "Aucun modèle IA configuré. Associez les niveaux simple / standard / approfondi à vos modèles IA."
-                    : "No AI model configured yet. Assign simple / standard / in-depth levels to your AI models."}
-                </p>
-              ) : (
-                <div style={{ display: "grid", gap: "8px" }}>
-                  {llmTiers.map((item) => (
-                    <div
-                      key={item.tier}
-                      data-testid={`llm-tier-row-${item.tier}`}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--color-border)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span>
-                        <strong>{item.tier}</strong> → <code>{item.primaryModel}</code> (secours: <code>{item.secondaryModel}</code>)
-                      </span>
-                      <StatusBadge
-                        label={`${item.modelFamily} · ${item.defaultEffort}`}
-                        tone="emerald"
-                        monospace
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
+            <SettingsAiModelsSection
+              isFr={isFr}
+              llmTiers={llmTiers}
+              tierAndEffortLabels={tierAndEffortLabels}
+              openHelpSection={openHelpSection}
+              upsertLlmTier={upsertLlmTier}
+            />
           )}
 
           {activeTab === "connectors" && (

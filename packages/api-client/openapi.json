@@ -9379,6 +9379,133 @@
         "title": "LaunchProcessFromFolderResponse",
         "type": "object"
       },
+      "LlmConnectionTestRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/llm-test`.",
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "api_key_configured": {
+            "default": false,
+            "title": "Api Key Configured",
+            "type": "boolean"
+          },
+          "auth_mode": {
+            "default": "api_key",
+            "enum": [
+              "api_key",
+              "env_var",
+              "none_local"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "endpoint_uri": {
+            "default": "",
+            "maxLength": 512,
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "model_name": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "provider_slug": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Provider Slug",
+            "type": "string"
+          }
+        },
+        "title": "LlmConnectionTestRequest",
+        "type": "object"
+      },
+      "LlmConnectionTestResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/bootstrap/welcome-setup/llm-test`.",
+        "properties": {
+          "auth_mode": {
+            "enum": [
+              "api_key",
+              "env_var",
+              "none_local"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "endpoint_uri": {
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "latency_ms": {
+            "maximum": 60000.0,
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "message_en": {
+            "title": "Message En",
+            "type": "string"
+          },
+          "message_fr": {
+            "title": "Message Fr",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "provider_slug": {
+            "title": "Provider Slug",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CONNECTED",
+              "INVALID_PARAMETERS",
+              "AUTH_REQUIRED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "status",
+          "latency_ms",
+          "provider_slug",
+          "model_name",
+          "endpoint_uri",
+          "auth_mode",
+          "message_fr",
+          "message_en",
+          "trace_id"
+        ],
+        "title": "LlmConnectionTestResponse",
+        "type": "object"
+      },
       "LlmModelEndpointItem": {
         "additionalProperties": false,
         "description": "Registered LLM model endpoint item (`AD-10`, `FR-28`).",
@@ -23265,6 +23392,81 @@
         ]
       }
     },
+    "/api/v1/bootstrap/welcome-setup/llm-test": {
+      "post": {
+        "operationId": "test_welcome_setup_llm_connection_api_v1_bootstrap_welcome_setup_llm_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LlmConnectionTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmConnectionTestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Test LLM endpoint connectivity, URL format, and authentication configuration",
+        "tags": [
+          "bootstrap"
+        ]
+      }
+    },
     "/api/v1/bootstrap/welcome-setup/progressive-llm": {
       "post": {
         "operationId": "register_welcome_setup_progressive_llm_api_v1_bootstrap_welcome_setup_progressive_llm_post",
@@ -27460,6 +27662,38 @@
               "description": "Use deterministic test fixture data",
               "title": "Fixture",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "seed_uri",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Seed Uri"
             }
           }
         ],
