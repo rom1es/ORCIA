@@ -216,3 +216,90 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         )
         assert inv_resp.status_code == 200
         assert inv_resp.json()["invalidated_keys_count"] >= 1
+
+
+def test_story_10_2_live_llm_bridge_ollama_and_openai_normalization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify live LLM bridge resolves configured tier (`Ollama Local` `/api` or `/v1`)."""
+    from typing import Any
+
+    import httpx
+
+    import orcia_core.bootstrap as bm
+    from orcia_api.routers.assistant_llm_bridge import (
+        _build_ollama_root_url,
+        _extract_tier_endpoint_from_dict,
+    )
+
+    assert _build_ollama_root_url("http://localhost:11434/api") == "http://localhost:11434"
+    assert _build_ollama_root_url("http://localhost:11434/v1") == "http://localhost:11434"
+
+    resolved = _extract_tier_endpoint_from_dict(
+        {
+            "tier": "medium",
+            "primaryModel": "gemma4:12b",
+            "modelFamily": "Ollama Local",
+            "endpointUrl": "http://localhost:11434/api",
+            "authMode": "none_local",
+        }
+    )
+    assert resolved is not None
+    assert resolved.model_name == "gemma4:12b"
+
+    class _FakeHttpResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, Any]:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Bonjour, je suis votre Assistant ORCIA propulsé par gemma4:12b.",
+                }
+            }
+
+    class _FakeHttpClient:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def __enter__(self) -> _FakeHttpClient:
+            return self
+
+        def __exit__(self, *args: Any) -> None:
+            return None
+
+        def post(self, url: str, **kwargs: Any) -> _FakeHttpResponse:
+            assert url == "http://localhost:11434/api/chat"
+            return _FakeHttpResponse()
+
+    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.setattr(httpx, "Client", _FakeHttpClient)
+
+    with TestClient(app) as client:
+        app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
+            first_admin_initialized=True,
+            first_admin_email="admin@orcia.io",
+            first_admin_display_name="Admin",
+            llm_tiers=[
+                {
+                    "tier": "medium",
+                    "primaryModel": "gemma4:12b",
+                    "modelFamily": "Ollama Local",
+                    "endpointUrl": "http://localhost:11434/api",
+                    "authMode": "none_local",
+                }
+            ],
+        )
+        r_live = client.post(
+            "/api/v1/assistant/three-speed/turn",
+            params={"persona_key": "claire"},
+            json={
+                "workspace_id": "ws-claims-alpha",
+                "user_prompt": "Bonjour",
+            },
+        )
+        assert r_live.status_code == 200
+        data_live = r_live.json()
+        assert "gemma4:12b" in data_live["response_text"]
+        assert any("gemma4:12b" in st["label"] for st in data_live["step_progress"])

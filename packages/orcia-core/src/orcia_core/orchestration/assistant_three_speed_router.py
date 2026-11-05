@@ -298,6 +298,9 @@ class AssistantThreeSpeedRouterService:
         hat: str | None = None,
         requested_speed: AssistantSpeedMode | None = None,
         deep_audit_pill_active: bool = False,
+        llm_response_override: str | None = None,
+        llm_step_label_override: str | None = None,
+        llm_latency_ms_override: float | None = None,
     ) -> ThreeSpeedTurnResult:
         """Execute a conversational turn routed across Speed 1, Speed 2, or Speed 3."""
         if user.platform_role == "OBSERVER":
@@ -320,6 +323,13 @@ class AssistantThreeSpeedRouterService:
         assert det_ms < MAX_NODES_1_TO_4_DETERMINISTIC_MS
 
         if speed_mode == "SPEED_1_FAST":
+            llm_ms = (
+                round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 380.0
+            )
+            step2_label = (
+                llm_step_label_override
+                or "💬 Nœud 5 — Appel LLM unique en streaming SSE (TTFT < 1,2 s)"
+            )
             steps: tuple[ThreeSpeedStepProgressItem, ...] = (
                 ThreeSpeedStepProgressItem(
                     step_code="NODES_1_TO_4_DETERMINISTIC",
@@ -331,12 +341,12 @@ class AssistantThreeSpeedRouterService:
                 ),
                 ThreeSpeedStepProgressItem(
                     step_code="NODE_5_SINGLE_STREAM_LLM",
-                    label="💬 Nœud 5 — Appel LLM unique en streaming SSE (TTFT < 1,2 s)",
-                    duration_ms=380.0,
+                    label=step2_label,
+                    duration_ms=llm_ms,
                 ),
             )
-            ttft_ms = round(det_ms + 380.0, 2)
-            response_text = (
+            ttft_ms = round(det_ms + llm_ms, 2)
+            response_text = llm_response_override or (
                 f"[⚡ Vitesse 1 · Casquette {active_hat}] Réponse directe générée avec "
                 f"prompt 5 couches ({'HIT' if cached_prompt.cache_hit else 'MISS'} Redis) : "
                 f"synthèse conforme pour « {user_prompt.strip()} » [S1] [G1]."
@@ -361,6 +371,9 @@ class AssistantThreeSpeedRouterService:
 
         if speed_mode == "SPEED_2_AGENT_TOOLS":
             effective_targets = targets or ("@jira-triage",)
+            llm_ms = (
+                round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 410.0
+            )
             steps = (
                 ThreeSpeedStepProgressItem(
                     step_code="NODES_1_TO_4_DETERMINISTIC",
@@ -375,13 +388,16 @@ class AssistantThreeSpeedRouterService:
                 ),
                 ThreeSpeedStepProgressItem(
                     step_code="CONNECTOR_INVOKER_EXEC",
-                    label=f"🛠️ Exécution ConnectorInvoker ({', '.join(effective_targets)})",
-                    duration_ms=410.0,
+                    label=(
+                        llm_step_label_override
+                        or f"🛠️ Exécution ConnectorInvoker ({', '.join(effective_targets)})"
+                    ),
+                    duration_ms=llm_ms,
                     connector_or_lens=effective_targets[0],
                 ),
             )
-            ttft_ms = round(det_ms + 930.0, 2)
-            response_text = (
+            ttft_ms = round(det_ms + 520.0 + llm_ms, 2)
+            response_text = llm_response_override or (
                 f"[🛠️ Vitesse 2 · {', '.join(effective_targets)}] Résultat d'interrogation "
                 f"outillée pour « {user_prompt.strip()} » [S1] [O1]."
             )
@@ -405,6 +421,7 @@ class AssistantThreeSpeedRouterService:
 
         # SPEED_3_DEEP_AUDIT (🧠 Approfondi)
         lenses = ("ARCHITECTURE_CONSISTENCY", "SECURITY_ZERO_TRUST", "FINOPS_CONTRAST")
+        llm_ms = round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 490.0
         steps = (
             ThreeSpeedStepProgressItem(
                 step_code="NODES_1_TO_4_DETERMINISTIC",
@@ -428,12 +445,12 @@ class AssistantThreeSpeedRouterService:
             ),
             ThreeSpeedStepProgressItem(
                 step_code="DEEP_SYNTHESIS_STREAM",
-                label="✍️ Synthèse contradictoire consolidée",
-                duration_ms=490.0,
+                label=llm_step_label_override or "✍️ Synthèse contradictoire consolidée",
+                duration_ms=llm_ms,
             ),
         )
         ttft_ms = round(det_ms + 1460.0, 2)
-        response_text = (
+        response_text = llm_response_override or (
             f"[🧠 Vitesse 3 Approfondi · Audit multi-facettes AD-10 ({', '.join(lenses)})] "
             f"Analyse approfondie vérifiée pour « {user_prompt.strip()} » [S1] [G1]."
         )
@@ -465,6 +482,9 @@ class AssistantThreeSpeedRouterService:
         hat: str | None = None,
         requested_speed: AssistantSpeedMode | None = None,
         deep_audit_pill_active: bool = False,
+        llm_response_override: str | None = None,
+        llm_step_label_override: str | None = None,
+        llm_latency_ms_override: float | None = None,
     ) -> Iterator[dict[str, object]]:
         """Yield SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`)."""
         turn = self.execute_three_speed_turn(
@@ -474,6 +494,9 @@ class AssistantThreeSpeedRouterService:
             hat=hat,
             requested_speed=requested_speed,
             deep_audit_pill_active=deep_audit_pill_active,
+            llm_response_override=llm_response_override,
+            llm_step_label_override=llm_step_label_override,
+            llm_latency_ms_override=llm_latency_ms_override,
         )
         yield {
             "event": "cache_status",

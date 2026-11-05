@@ -61,6 +61,7 @@ export interface AssistantFoldersAndCollaborativeThreadViewProps {
     mode: AssistantFolderVisibilityMode,
   ) => void;
   readonly onSendCollaborativeMessage?: (message: string) => void;
+  readonly onCreateFolder?: (title: string) => void;
 }
 
 /**
@@ -82,6 +83,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
   onLaunchProcessFromFolder,
   onChangeVisibility,
   onSendCollaborativeMessage,
+  onCreateFolder,
 }: AssistantFoldersAndCollaborativeThreadViewProps): React.JSX.Element {
   const [activeTab, setActiveTab] =
     useState<AssistantMainTabCode>("ACTIVE_DISCUSSION");
@@ -93,6 +95,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
   );
   const [draftMessage, setDraftMessage] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [newFolderTitle, setNewFolderTitle] = useState<string>("");
 
   const activeFolder =
     folders.find((f) => f.folderId === activeFolderId) ?? folders[0];
@@ -334,32 +337,63 @@ export function AssistantFoldersAndCollaborativeThreadView({
       {activeTab === "FOLDERS" && (
         <div
           data-testid="assistant-tab-panel-folders"
-          className="grid grid-cols-1 gap-2 md:grid-cols-2"
+          className="space-y-3"
         >
-          {folders.map((folder) => (
-            <div
-              key={folder.folderId}
-              data-testid={`assistant-folder-card-${folder.folderId}`}
-              className="rounded border border-border-subtle bg-surface-primary p-3 space-y-1.5"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  data-testid={`assistant-select-folder-btn-${folder.folderId}`}
-                  onClick={() => onSelectFolder?.(folder.folderId)}
-                  className="text-xs font-semibold hover:underline"
-                >
-                  📁 {folder.title}
-                </button>
-                <span className="rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px]">
-                  {folder.visibilityMode}
-                </span>
-              </div>
-              <p className="text-[11px] text-text-secondary">
-                {folder.consolidatedSummary}
-              </p>
+          {onCreateFolder && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
+                data-testid="assistant-new-folder-title-input"
+                value={newFolderTitle}
+                onChange={(e) => setNewFolderTitle(e.target.value)}
+                placeholder="Titre du nouveau dossier thématique..."
+                className="flex-1 rounded border border-border-subtle bg-surface-primary px-3 py-1.5 text-xs"
+              />
+              <button
+                type="button"
+                data-testid="assistant-create-folder-btn"
+                onClick={() => {
+                  const title = newFolderTitle.trim() || `Dossier thématique #${folders.length + 1}`;
+                  onCreateFolder(title);
+                  setNewFolderTitle("");
+                }}
+                className="rounded bg-action-primary px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                + Nouveau dossier
+              </button>
             </div>
-          ))}
+          )}
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {folders.map((folder) => (
+              <div
+                key={folder.folderId}
+                data-testid={`assistant-folder-card-${folder.folderId}`}
+                className="rounded border border-border-subtle bg-surface-primary p-3 space-y-1.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    data-testid={`assistant-select-folder-btn-${folder.folderId}`}
+                    onClick={() => onSelectFolder?.(folder.folderId)}
+                    className="text-xs font-semibold hover:underline"
+                  >
+                    📁 {folder.title}
+                  </button>
+                  <span className="rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px]">
+                    {folder.visibilityMode}
+                  </span>
+                </div>
+                <p className="text-[11px] text-text-secondary">
+                  {folder.consolidatedSummary}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

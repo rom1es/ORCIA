@@ -245,11 +245,22 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       "🔍 Interrogation de Jira...",
     );
 
+    // Clicking Send on an empty input populates a default test prompt and triggers onSendTurn immediately
+    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+    expect(onSendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedSpeed: "SPEED_1_FAST",
+        deepAuditPillActive: false,
+      }),
+    );
+
     // Typing @jira-triage switches to SPEED_2_AGENT_TOOLS automatically
     fireEvent.change(screen.getByTestId("assistant-three-speed-input"), {
       target: { value: "Vérifie @jira-triage sur le backlog" },
     });
-    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+    fireEvent.keyDown(screen.getByTestId("assistant-three-speed-input"), {
+      key: "Enter",
+    });
     expect(onSendTurn).toHaveBeenCalledWith({
       userPrompt: "Vérifie @jira-triage sur le backlog",
       requestedSpeed: "SPEED_2_AGENT_TOOLS",

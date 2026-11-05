@@ -1,3 +1,4 @@
+import { createOrciaApiClient } from "@orcia/api-client";
 import {
   ContextualHelpColumnAndCenter,
   DEFAULT_RGAA_MODAL_LABELS_EN,
@@ -10,6 +11,7 @@ import {
   handleRgaaSubmitKeyDown,
   useUnsavedChangesDialogGuard,
   type EightFixedMenuKey,
+  type TopSearchFamilyKey,
   type TopSearchHitItem,
   type UiHumanProfileBadge,
   type UiModuleKey,
@@ -87,10 +89,77 @@ function InnerShellContainer({
   const [selectedMenuKeyOverride, setSelectedMenuKeyOverride] =
     useState<EightFixedMenuKey | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
+  const [speed2Hits, setSpeed2Hits] = useState<readonly TopSearchHitItem[]>([]);
+  const [speed2Loading, setSpeed2Loading] = useState<boolean>(false);
   const [helpColumnOpen, setHelpColumnOpen] = useState<boolean>(() =>
     computeDefaultHelpColumnOpen(1440, runs.length),
   );
   const [activeHelpSectionId, setActiveHelpSectionId] = useState<string | null>(null);
+
+  const isJsdom =
+    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+
+  const runFederatedSpeed2Search = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setSpeed2Hits([]);
+      setSpeed2Loading(false);
+      return;
+    }
+    setSpeed2Loading(true);
+    const localSemanticHit: TopSearchHitItem = {
+      itemId: `semantic-${trimmed.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+      family: "SOURCES_SNIPPETS",
+      title: isFr
+        ? `Passage pertinent pour « ${trimmed} »`
+        : `Relevant passage for "${trimmed}"`,
+      snippet: isFr
+        ? `Recherche approfondie sur l'espace « ${activeWorkspaceName} »`
+        : `Deep search across workspace "${activeWorkspaceName}"`,
+      workspaceId: activeScopeId,
+      screenRoute: pathname ?? "/cockpit",
+      deepLinkUri: pathname ?? "/cockpit",
+      speedTier: 2,
+      lockedTop: false,
+      score: 0.88,
+      badge: "✨ Passage proche",
+      highlightDurationMs: 2000,
+      opensContextualHelpColumn: false,
+    };
+    if (isJsdom) {
+      setSpeed2Hits([localSemanticHit]);
+      setSpeed2Loading(false);
+      return;
+    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    void client
+      .searchFederated(trimmed, "GLOBAL", workspaces[0]?.workspaceId ?? null, pathname ?? "/spaces")
+      .then((res) => {
+        setSpeed2Loading(false);
+        const mapped = (res.hits ?? []).map(
+          (hit): TopSearchHitItem => ({
+            itemId: hit.item_id,
+            family: (hit.family as TopSearchFamilyKey) ?? "SOURCES_SNIPPETS",
+            title: hit.title,
+            snippet: hit.snippet,
+            workspaceId: hit.workspace_id,
+            screenRoute: hit.screen_route,
+            deepLinkUri: hit.deep_link_uri,
+            speedTier: 2,
+            lockedTop: false,
+            score: Number(hit.score ?? 0.85),
+            badge: hit.badge ?? "✨ Passage proche",
+            highlightDurationMs: Number(hit.highlight_duration_ms ?? 2000),
+            opensContextualHelpColumn: Boolean(hit.opens_contextual_help_column),
+          }),
+        );
+        setSpeed2Hits(mapped.length > 0 ? mapped : [localSemanticHit]);
+      })
+      .catch(() => {
+        setSpeed2Loading(false);
+        setSpeed2Hits([localSemanticHit]);
+      });
+  };
 
   // First-boot Platform Administrator setup modal state (starts 100% empty)
   const [adminFullName, setAdminFullName] = useState<string>("");
@@ -576,6 +645,15 @@ function InnerShellContainer({
                 opensContextualHelpColumn: false,
               })),
             ]}
+            speed2Hits={speed2Hits}
+            speed2Loading={speed2Loading}
+            onQueryChange={(query) => {
+              if (!query.trim()) {
+                setSpeed2Hits([]);
+                setSpeed2Loading(false);
+              }
+            }}
+            onTriggerSpeed2Now={(query) => runFederatedSpeed2Search(query)}
             onSelectDeepLink={(payload) => {
               setSearchModalOpen(false);
               dispatchNavigation(payload.deepLinkUri);

@@ -142,9 +142,23 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
         ) : (
           <div
             data-testid="dna-starlark-empty-state"
-            className="flex flex-col justify-center rounded border border-dashed border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-4 text-xs text-[var(--orcia-text-secondary)]"
+            className="flex flex-col justify-center gap-3 rounded border border-dashed border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-4 text-xs text-[var(--orcia-text-secondary)]"
           >
-            Aucun mécanisme Starlark compilé pour cet Espace. Ajoutez une norme métier pour compiler un contrôle déterministe.
+            <span>
+              Aucun contrôle automatique compilé pour cet Espace. Ajoutez une règle métier pour générer et vérifier automatiquement ce contrôle.
+            </span>
+            {onCompileFromNorm && (
+              <div>
+                <button
+                  type="button"
+                  data-testid="compile-starlark-btn"
+                  onClick={() => onCompileFromNorm("RULE-WORKSPACE-DEFAULT")}
+                  className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)]"
+                >
+                  {labels.generateStarlarkCta}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

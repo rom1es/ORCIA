@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-05",
+  "lastSyncedDate": "2026-11-06",
   "stats": {
     "activeRoutesCount": 20,
     "uiPrimitivesCount": 66,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 73
+    "techLeadReportsCount": 75
   },
   "activeRoutes": [
     "/",
@@ -400,6 +400,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-06",
+      "phaseOrStory": "Post-Epic 12 / Garde-Fou n°5",
+      "reportFile": "2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci-tech-lead-report.md",
+      "domain": "Audit Global des Anomalies d'Actions Silencieuses (A1 à A5), Câblage Exhaustif des Callbacks @orcia/ui dans apps/web, Pont LLM pour Mes Agents / Compétences & Garde-Fou CI Permanent (zero-dead-buttons-and-silent-catches-audit.test.tsx)",
+      "summary": "Analyse des 4 angles morts ayant masqué l'anomalie précédente, correction des 5 familles d'actions silencieuses (A1 Mes Agents/Compétences + banc de test MCP, A2 PackBuilder + HelpArticleGenerator, A3 compilateur Starlark + CommandPaletteModal + dérogations, A4 AssistantGovernanceModalAndStudio + création de dossier 📁, A5 recherche ⌘K Vitesse 2), suppression des .catch(() => undefined) sur actions utilisateur, et création du Garde-Fou n°5 bloquant en CI (zero-dead-buttons-and-silent-catches-audit.test.tsx)."
+    },
+    {
+      "date": "2026-11-05",
+      "phaseOrStory": "Post-Epic 12 / Epic 10",
+      "reportFile": "2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui-tech-lead-report.md",
+      "domain": "Câblage Réel du Modèle IA Configuré (Ollama / OpenAI / Anthropic) sur le Bouton « Envoyer à Mon Assistant » (/assistant), Normalisation /api/chat (gemma4:12b) & Retour Visuel Immédiat",
+      "summary": "Création de assistant_llm_bridge.py (invoke_configured_llm_for_assistant_turn avec résolution du palier configuré dans PostgreSQL 18 / platform_setup_snapshot et normalisation automatique Ollama /api → /api/chat avec \"think\": false), câblage dans assistant_workspace.py, support de la touche Entrée et d'une question de test automatique si le champ est vide dans AssistantSpeedSelectorAndStreamView.tsx, et retour visuel immédiat + affichage complet des étapes/métriques dans InboxFeaturePanel."
+    },
     {
       "date": "2026-11-05",
       "phaseOrStory": "Post-Epic 12 / AD-22",

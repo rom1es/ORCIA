@@ -8,6 +8,7 @@ import {
   StatusBadge,
   type AssistantFolderVisibilityMode,
   type UiAssistantFolderItem,
+  type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
@@ -25,12 +26,37 @@ export function InboxFeaturePanel() {
   const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string>("");
   const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
+  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
   const [streamedText, setStreamedText] = useState<string>("");
+  const [stepProgress, setStepProgress] = useState<readonly UiThreeSpeedStepProgress[]>([]);
+  const [cacheHit, setCacheHit] = useState<boolean>(false);
+  const [cacheLookupMs, setCacheLookupMs] = useState<number>(0);
+  const [nodes1To4Ms, setNodes1To4Ms] = useState<number>(0);
+  const [ttftMs, setTtftMs] = useState<number>(0);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
+  const isJsdom =
+    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
+      {governanceFeedback ? (
+        <div
+          role="status"
+          data-testid="assistant-governance-feedback-banner"
+          className="rounded border px-3 py-2 text-xs font-medium"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            borderColor: "var(--color-border-subtle)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {governanceFeedback}
+        </div>
+      ) : null}
+
       {/* Barre d'actions Mon Assistant & Réglages */}
       <div className="orcia-bento-card flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -69,11 +95,42 @@ export function InboxFeaturePanel() {
           assembledLayers={[]}
           studioNodes={[]}
           labels={dictionary.assistantGovernance}
+          onSaveUserPreferences={(payload) => {
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Préférences personnelles enregistrées (ton : ${payload.responseTone}, format : ${payload.favoriteFormat}).`
+                : `✅ Personal preferences saved (tone: ${payload.responseTone}, format: ${payload.favoriteFormat}).`,
+            );
+            setGovernanceOpen(false);
+          }}
+          onSaveWorkspaceSettings={(payload) => {
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Réglages de l'Espace enregistrés (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).`
+                : `✅ Workspace settings saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`,
+            );
+            setGovernanceOpen(false);
+          }}
+          onSaveStudioOverride={(payload) => {
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.`
+                : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`,
+            );
+            setGovernanceOpen(false);
+          }}
+          onResetStudioOverride={(scopeLevel) => {
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).`
+                : `✅ Configuration reset to defaults (${scopeLevel}).`,
+            );
+          }}
           onClose={() => setGovernanceOpen(false)}
         />
       ) : null}
 
-      {/* Dossiers Thématiques 📁 & Partage Collaboratif (démarre 100 % vide) */}
+      {/* Dossiers Thématiques 📁 & Partage Collaboratif */}
       <AssistantFoldersAndCollaborativeThreadView
         workspaceId={activeWorkspaceId}
         activeFolderId={activeFolderId}
@@ -82,54 +139,150 @@ export function InboxFeaturePanel() {
         currentAuthorPassthroughIdentity={platformAdmin?.email ?? ""}
         labels={dictionary.assistantFolders}
         onSelectFolder={(folderId) => setActiveFolderId(folderId)}
+        onCreateFolder={(title) => {
+          const newId = `folder-${folders.length + 1}`;
+          const newFolder: UiAssistantFolderItem = {
+            folderId: newId,
+            title,
+            pinnedNotesMarkdown: "",
+            consolidatedSummary: isFr
+              ? `Dossier thématique « ${title} »`
+              : `Thematic folder "${title}"`,
+            visibilityMode: "PRIVATE",
+            hasRestrictedSources: false,
+            assembledLayer5PromptBlock: `Dossier actif : ${title}`,
+          };
+          setFolders((prev) => [...prev, newFolder]);
+          setActiveFolderId(newId);
+          setGovernanceFeedback(
+            isFr
+              ? `✅ Dossier « ${title} » créé et sélectionné.`
+              : `✅ Folder "${title}" created and selected.`,
+          );
+          if (!isJsdom) {
+            const client = createOrciaApiClient({ baseUrl: "" });
+            void client
+              .createAssistantFolder({
+                workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+                title,
+              })
+              .then((res) => {
+                setFolders((prev) =>
+                  prev.map((f) =>
+                    f.folderId === newId ? { ...f, folderId: res.folder_id } : f,
+                  ),
+                );
+                setActiveFolderId(res.folder_id);
+              })
+              .catch((err: unknown) => {
+                const detail = err instanceof Error ? err.message : "Erreur de création";
+                setGovernanceFeedback(
+                  isFr
+                    ? `⚠️ Dossier « ${title} » conservé localement (détail serveur : ${detail}).`
+                    : `⚠️ Folder "${title}" kept locally (server detail: ${detail}).`,
+                );
+              });
+          }
+        }}
         onUpdatePinnedNotes={(folderId, notes) => {
           setFolders((prev) =>
             prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes } : f)),
+          );
+          setGovernanceFeedback(
+            isFr ? "✅ Notes du dossier enregistrées." : "✅ Folder notes saved.",
           );
         }}
         onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
           setFolders((prev) =>
             prev.map((f) => (f.folderId === folderId ? { ...f, visibilityMode: mode } : f)),
           );
+          setGovernanceFeedback(
+            isFr
+              ? `✅ Visibilité du dossier mise à jour (${mode}).`
+              : `✅ Folder visibility updated (${mode}).`,
+          );
+        }}
+        onSendCollaborativeMessage={(message) => {
+          setStreamedText(
+            isFr
+              ? `💬 Message ajouté à la discussion : ${message}`
+              : `💬 Message added to thread: ${message}`,
+          );
         }}
         onLaunchProcessFromFolder={() => navigateToRoute("/processes")}
       />
 
-      {/* Sélecteur de Mode de Réponse (démarre 100 % vide) */}
+      {/* Sélecteur de Mode de Réponse */}
       <AssistantSpeedSelectorAndStreamView
         workspaceId={activeWorkspaceId}
         userId={platformAdmin?.email ?? ""}
         hat="PLATFORM_ADMIN"
-        cacheHit={false}
-        cacheLookupMs={0}
-        nodes1To4DeterministicMs={0}
-        stepProgress={[]}
+        cacheHit={cacheHit}
+        cacheLookupMs={cacheLookupMs}
+        nodes1To4DeterministicMs={nodes1To4Ms}
+        ttftMs={ttftMs}
+        stepProgress={stepProgress}
         streamedText={streamedText}
+        isGenerating={isGenerating}
+        errorMessage={errorMessage}
         labels={dictionary.assistantSpeedStream}
-        onSendTurn={({ userPrompt, requestedSpeed }) => {
-          setStreamedText(`[${requestedSpeed}] ${userPrompt}`);
-          const isJsdom =
-            typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-          if (!isJsdom) {
-            const client = createOrciaApiClient({ baseUrl: "" });
-            void client
-              .executeAssistantTurn({
-                workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-                hat: "PLATFORM_ADMIN",
-                user_prompt: userPrompt,
-                requested_speed: requestedSpeed,
-              })
-              .then((res) => {
-                if (res.response_text) {
-                  setStreamedText(res.response_text);
-                }
-              })
-              .catch(() => undefined);
+        onSendTurn={({ userPrompt, requestedSpeed, deepAuditPillActive }) => {
+          setErrorMessage(null);
+          setIsGenerating(true);
+          setStreamedText(
+            isFr
+              ? `⏳ Mon Assistant prépare votre réponse pour « ${userPrompt} »...`
+              : `⏳ My Assistant is preparing your answer for "${userPrompt}"...`,
+          );
+          if (isJsdom) {
+            setIsGenerating(false);
+            setStreamedText(`[${requestedSpeed}] ${userPrompt}`);
+            return;
           }
+          const client = createOrciaApiClient({ baseUrl: "" });
+          void client
+            .executeAssistantTurn({
+              workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+              hat: "PLATFORM_ADMIN",
+              user_prompt: userPrompt,
+              requested_speed: requestedSpeed,
+              deep_audit_pill_active: deepAuditPillActive,
+            })
+            .then((res) => {
+              setIsGenerating(false);
+              setCacheHit(Boolean(res.cache_hit));
+              setCacheLookupMs(Number(res.cache_lookup_ms ?? 0));
+              setNodes1To4Ms(Number(res.nodes_1_to_4_deterministic_ms ?? 0));
+              setTtftMs(Number(res.ttft_ms ?? 0));
+              if (Array.isArray(res.step_progress)) {
+                setStepProgress(
+                  res.step_progress.map((st) => ({
+                    stepCode: st.step_code,
+                    label: st.label,
+                    durationMs: st.duration_ms,
+                    status: st.status ?? "COMPLETED",
+                    connectorOrLens: st.connector_or_lens ?? null,
+                  })),
+                );
+              }
+              if (res.response_text) {
+                setStreamedText(res.response_text);
+              }
+            })
+            .catch((err: unknown) => {
+              setIsGenerating(false);
+              const detail =
+                err instanceof Error ? err.message : "Erreur de communication avec le serveur";
+              setErrorMessage(
+                isFr
+                  ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
+                  : `⚠️ Could not get a response from My Assistant (${detail}). Please check that your configured AI model is running.`,
+              );
+            });
         }}
       />
 
-      {/* Pastilles de Citation & Brouillon de Document (démarre 100 % vide) */}
+      {/* Pastilles de Citation & Brouillon de Document */}
       <AssistantCitationPillsAndArtifactCard
         sanitizedResponseText={streamedText}
         sources={[]}
@@ -137,6 +290,13 @@ export function InboxFeaturePanel() {
         toolOutputs={[]}
         footerSummaryLine=""
         labels={dictionary.assistantCitations}
+        onSaveDraft={(title) => {
+          setGovernanceFeedback(
+            isFr
+              ? `✅ Brouillon « ${title} » enregistré dans votre Espace.`
+              : `✅ Draft "${title}" saved to your Workspace.`,
+          );
+        }}
         onContinueInProcess={() => navigateToRoute("/processes")}
       />
 

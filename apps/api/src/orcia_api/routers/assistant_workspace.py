@@ -14,7 +14,7 @@ import json
 from collections.abc import Iterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
@@ -23,6 +23,7 @@ from orcia_api.dependencies import (
     get_assistant_governance_service,
     get_assistant_three_speed_router_service,
 )
+from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
     ArtifactCardActionRequest,
@@ -299,10 +300,17 @@ def reset_assistant_studio_graph_endpoint(
 @router.post("/three-speed/turn", response_model=ThreeSpeedTurnResponse)
 def execute_three_speed_turn_endpoint(
     payload: ThreeSpeedTurnRequest,
+    request: Request,
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
+    live_outcome = invoke_configured_llm_for_assistant_turn(
+        request,
+        user_prompt=payload.user_prompt,
+        hat=payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN",
+        speed_mode=payload.requested_speed or "SPEED_1_FAST",
+    )
     turn = router_svc.execute_three_speed_turn(
         user,
         workspace_id=payload.workspace_id,
@@ -310,6 +318,9 @@ def execute_three_speed_turn_endpoint(
         hat=payload.hat,
         requested_speed=payload.requested_speed,
         deep_audit_pill_active=payload.deep_audit_pill_active,
+        llm_response_override=live_outcome.response_text if live_outcome is not None else None,
+        llm_step_label_override=live_outcome.step_label if live_outcome is not None else None,
+        llm_latency_ms_override=live_outcome.latency_ms if live_outcome is not None else None,
     )
     return ThreeSpeedTurnResponse(
         turn_id=turn.turn_id,
@@ -343,12 +354,19 @@ def execute_three_speed_turn_endpoint(
 @router.post("/three-speed/stream")
 def stream_three_speed_turn_endpoint(
     payload: ThreeSpeedTurnRequest,
+    request: Request,
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> StreamingResponse:
     """Stream SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`)."""
 
     def _generate() -> Iterator[str]:
+        live_outcome = invoke_configured_llm_for_assistant_turn(
+            request,
+            user_prompt=payload.user_prompt,
+            hat=payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN",
+            speed_mode=payload.requested_speed or "SPEED_1_FAST",
+        )
         for evt in router_svc.stream_three_speed_turn_sse(
             user,
             workspace_id=payload.workspace_id,
@@ -356,6 +374,9 @@ def stream_three_speed_turn_endpoint(
             hat=payload.hat,
             requested_speed=payload.requested_speed,
             deep_audit_pill_active=payload.deep_audit_pill_active,
+            llm_response_override=live_outcome.response_text if live_outcome is not None else None,
+            llm_step_label_override=live_outcome.step_label if live_outcome is not None else None,
+            llm_latency_ms_override=live_outcome.latency_ms if live_outcome is not None else None,
         ):
             event_name = evt["event"]
             data_json = json.dumps(evt["data"], ensure_ascii=False)

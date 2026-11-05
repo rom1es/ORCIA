@@ -255,6 +255,7 @@ class AgentsAndSkillsManagementService:
         input_text: str,
         parameters: dict[str, str] | None = None,
         instance: str | None = None,
+        llm_response_override: str | None = None,
     ) -> SkillExecutionOutcome:
         """Execute/test a Skill directly on a concrete input and return its formatted result."""
         skill = self.get_skill(skill_id, instance=instance)
@@ -276,16 +277,18 @@ class AgentsAndSkillsManagementService:
             if provided_params
             else "aucun paramètre additionnel"
         )
+        resolved_result = (
+            llm_response_override.strip()
+            if llm_response_override and llm_response_override.strip()
+            else f"Synthèse validée pour « {clean_input} »."
+        )
         output_lines = [
             f"✅ Compétence « {skill.name} » ({skill.command_handle}) exécutée avec succès.",
             f"• Objectif appliqué : {skill.objective}",
             f"• Entrée analysée : {clean_input}",
             f"• Paramètres pris en compte : {params_summary}",
             f"• Méthode exécutée : {skill.instructions}",
-            (
-                f"• Résultat ({skill.expected_output_format}) : "
-                f"Synthèse validée pour « {clean_input} »."
-            ),
+            f"• Résultat ({skill.expected_output_format}) :\n{resolved_result}",
         ]
         return SkillExecutionOutcome(
             skill_id=skill.skill_id,
@@ -396,6 +399,7 @@ class AgentsAndSkillsManagementService:
         *,
         prompt: str,
         instance: str | None = None,
+        llm_response_override: str | None = None,
     ) -> AgentExecutionOutcome:
         """Execute an Agent with its attached Skills on a user prompt."""
         agent = self.get_agent(agent_id, instance=instance)
@@ -429,18 +433,21 @@ class AgentsAndSkillsManagementService:
             if invoked_traces
             else "Aucune compétence externe mobilisée."
         )
-        llm_req = LlmPromptRequest(
-            system_prompt=(
-                f"Agent: {agent.name} ({agent.handle}) | Rôle: {agent.role_mission} | "
-                f"Instructions: {agent.instructions}"
-            ),
-            user_prompt=f"Demande: {clean_prompt}\nCompétences: {skills_block}",
-            model_family="anthropic",
-            model_id="anthropic/claude-3-7-sonnet",
-            execution_mode="COACHING",
-            metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
-        )
-        llm_text = _run_llm_sync(self._llm, llm_req)
+        if llm_response_override and llm_response_override.strip():
+            llm_text = llm_response_override.strip()
+        else:
+            llm_req = LlmPromptRequest(
+                system_prompt=(
+                    f"Agent: {agent.name} ({agent.handle}) | Rôle: {agent.role_mission} | "
+                    f"Instructions: {agent.instructions}"
+                ),
+                user_prompt=f"Demande: {clean_prompt}\nCompétences: {skills_block}",
+                model_family="anthropic",
+                model_id="anthropic/claude-3-7-sonnet",
+                execution_mode="COACHING",
+                metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
+            )
+            llm_text = _run_llm_sync(self._llm, llm_req)
 
         skills_names = (
             ", ".join(f"{t.skill_name} ({t.command_handle})" for t in invoked_traces)

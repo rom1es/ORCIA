@@ -231,11 +231,27 @@ async def execute_skill_endpoint(
 ) -> ExecuteSkillResponse:
     """Execute `skill_id` directly on `payload.input_text` and return the structured output."""
     _enforce_not_observer(request, persona_key)
+    await _sync_from_postgres18_if_enabled(request, svc)
+    from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
+
+    skill = svc.get_skill(skill_id, instance=str(request.url.path))
+    live_llm = invoke_configured_llm_for_assistant_turn(
+        request,
+        user_prompt=payload.input_text,
+        hat="PLATFORM_ADMIN",
+        speed_mode="SPEED_1_FAST",
+        system_instructions_override=(
+            f"Tu exécutes la compétence ORCIA « {skill.name} » ({skill.command_handle}). "
+            f"Objectif : {skill.objective}. Instructions : {skill.instructions}. "
+            f"Format attendu : {skill.expected_output_format}. Réponds en français."
+        ),
+    )
     outcome = svc.execute_skill(
         skill_id,
         input_text=payload.input_text,
         parameters=payload.parameters,
         instance=str(request.url.path),
+        llm_response_override=live_llm.response_text if live_llm is not None else None,
     )
     return ExecuteSkillResponse(
         skill_id=outcome.skill_id,
@@ -343,10 +359,26 @@ async def execute_agent_endpoint(
 ) -> ExecuteAgentResponse:
     """Execute `agent_id` on `payload.prompt`, mobilizing its attached Skills."""
     _enforce_not_observer(request, persona_key)
+    await _sync_from_postgres18_if_enabled(request, svc)
+    from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
+
+    agent = svc.get_agent(agent_id, instance=str(request.url.path))
+    live_llm = invoke_configured_llm_for_assistant_turn(
+        request,
+        user_prompt=payload.prompt,
+        hat="PLATFORM_ADMIN",
+        speed_mode="SPEED_1_FAST",
+        system_instructions_override=(
+            f"Tu es l'agent ORCIA « {agent.name} » ({agent.handle}). "
+            f"Rôle et mission : {agent.role_mission}. "
+            f"Instructions : {agent.instructions}. Réponds en français de manière structurée."
+        ),
+    )
     outcome = svc.execute_agent(
         agent_id,
         prompt=payload.prompt,
         instance=str(request.url.path),
+        llm_response_override=live_llm.response_text if live_llm is not None else None,
     )
     return ExecuteAgentResponse(
         agent_id=outcome.agent_id,

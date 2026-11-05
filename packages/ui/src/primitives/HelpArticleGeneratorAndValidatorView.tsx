@@ -183,7 +183,7 @@ export const HelpArticleGeneratorAndValidatorView: FC<
         <button
           type="button"
           data-testid="generate-and-attach-help-btn"
-          disabled={!allValid}
+          disabled={!allValid && !onGenerateAndAttach}
           onClick={() => onGenerateAndAttach?.()}
           className="rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
           style={{

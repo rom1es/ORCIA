@@ -38,6 +38,8 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly ttftMs?: number;
   readonly stepProgress: readonly UiThreeSpeedStepProgress[];
   readonly streamedText?: string;
+  readonly isGenerating?: boolean;
+  readonly errorMessage?: string | null;
   readonly labels: AssistantSpeedSelectorAndStreamViewLabels;
   readonly onSendTurn?: (payload: {
     userPrompt: string;
@@ -62,6 +64,8 @@ export function AssistantSpeedSelectorAndStreamView({
   ttftMs = 398.2,
   stepProgress,
   streamedText = "",
+  isGenerating = false,
+  errorMessage = null,
   labels,
   onSendTurn,
 }: AssistantSpeedSelectorAndStreamViewProps): React.JSX.Element {
@@ -89,6 +93,23 @@ export function AssistantSpeedSelectorAndStreamView({
         setSpeed("SPEED_1_FAST");
       }
     }
+  };
+
+  const triggerSendTurn = () => {
+    const trimmed = promptText.trim();
+    const effectivePrompt =
+      trimmed ||
+      (labels.sendPromptCta.toLowerCase().includes("envoyer")
+        ? "Bonjour, peux-tu te présenter brièvement et confirmer que tu es opérationnel ?"
+        : "Hello, can you briefly introduce yourself and confirm you are operational?");
+    if (!trimmed) {
+      setPromptText(effectivePrompt);
+    }
+    onSendTurn?.({
+      userPrompt: effectivePrompt,
+      requestedSpeed: speed,
+      deepAuditPillActive: deepAuditActive,
+    });
   };
 
   return (
@@ -198,12 +219,23 @@ export function AssistantSpeedSelectorAndStreamView({
         </ol>
       )}
 
+      {/* Error banner if LLM invocation failed */}
+      {errorMessage && (
+        <div
+          role="alert"
+          data-testid="assistant-error-banner"
+          className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning"
+        >
+          {errorMessage}
+        </div>
+      )}
+
       {/* Streamed answer preview */}
       {streamedText && (
         <div
           data-testid="assistant-streamed-response-box"
           aria-live="polite"
-          className="rounded border border-border-subtle bg-surface-primary p-3 text-xs leading-relaxed"
+          className="rounded border border-border-subtle bg-surface-primary p-3 text-xs leading-relaxed whitespace-pre-wrap"
         >
           {streamedText}
         </div>
@@ -222,21 +254,22 @@ export function AssistantSpeedSelectorAndStreamView({
           value={promptText}
           placeholder={labels.inputPlaceholder}
           onChange={(e) => handlePromptChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              triggerSendTurn();
+            }
+          }}
           className="flex-1 rounded border border-border-subtle bg-surface-primary px-3 py-1.5 text-xs text-text-primary"
         />
         <button
           type="button"
           data-testid="assistant-three-speed-send-btn"
-          onClick={() =>
-            onSendTurn?.({
-              userPrompt: promptText,
-              requestedSpeed: speed,
-              deepAuditPillActive: deepAuditActive,
-            })
-          }
-          className="rounded bg-action-primary px-3 py-1.5 text-xs font-semibold text-white"
+          disabled={isGenerating}
+          onClick={triggerSendTurn}
+          className="rounded bg-action-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
         >
-          {labels.sendPromptCta}
+          {isGenerating ? "⏳ ..." : labels.sendPromptCta}
         </button>
       </div>
     </section>

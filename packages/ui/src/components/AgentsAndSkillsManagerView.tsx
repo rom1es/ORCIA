@@ -404,6 +404,19 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                       onChange={(e) =>
                         setAgentTestInputs((p) => ({ ...p, [ag.agentId]: e.target.value }))
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const raw = (agentTestInputs[ag.agentId] ?? "").trim();
+                          const prompt =
+                            raw ||
+                            `Bonjour ${ag.name}, présente ton rôle (${ag.roleMission}) et confirme que tu es prêt.`;
+                          if (!raw) {
+                            setAgentTestInputs((p) => ({ ...p, [ag.agentId]: prompt }));
+                          }
+                          onExecuteAgent(ag.agentId, prompt);
+                        }
+                      }}
                       placeholder={labels.testAgentInputPlaceholder}
                       className="flex-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1"
                     />
@@ -411,8 +424,14 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                       type="button"
                       data-testid={`run-agent-btn-${ag.agentId}`}
                       onClick={() => {
-                        const prompt = (agentTestInputs[ag.agentId] ?? "").trim();
-                        if (prompt) onExecuteAgent(ag.agentId, prompt);
+                        const raw = (agentTestInputs[ag.agentId] ?? "").trim();
+                        const prompt =
+                          raw ||
+                          `Bonjour ${ag.name}, présente ton rôle (${ag.roleMission}) et confirme que tu es prêt.`;
+                        if (!raw) {
+                          setAgentTestInputs((p) => ({ ...p, [ag.agentId]: prompt }));
+                        }
+                        onExecuteAgent(ag.agentId, prompt);
                       }}
                       className="rounded bg-[var(--orcia-action-primary)] px-3 py-1 font-semibold text-[var(--orcia-text-on-action)]"
                     >
@@ -594,6 +613,19 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                       onChange={(e) =>
                         setSkillTestInputs((p) => ({ ...p, [sk.skillId]: e.target.value }))
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const raw = (skillTestInputs[sk.skillId] ?? "").trim();
+                          const txt =
+                            raw ||
+                            `Exécute la compétence ${sk.name} sur un cas d'exemple concret.`;
+                          if (!raw) {
+                            setSkillTestInputs((p) => ({ ...p, [sk.skillId]: txt }));
+                          }
+                          onExecuteSkill(sk.skillId, txt);
+                        }
+                      }}
                       placeholder={labels.testSkillInputPlaceholder}
                       className="flex-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1"
                     />
@@ -601,8 +633,14 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                       type="button"
                       data-testid={`run-skill-btn-${sk.skillId}`}
                       onClick={() => {
-                        const txt = (skillTestInputs[sk.skillId] ?? "").trim();
-                        if (txt) onExecuteSkill(sk.skillId, txt);
+                        const raw = (skillTestInputs[sk.skillId] ?? "").trim();
+                        const txt =
+                          raw ||
+                          `Exécute la compétence ${sk.name} sur un cas d'exemple concret.`;
+                        if (!raw) {
+                          setSkillTestInputs((p) => ({ ...p, [sk.skillId]: txt }));
+                        }
+                        onExecuteSkill(sk.skillId, txt);
                       }}
                       className="rounded bg-[var(--orcia-action-primary)] px-3 py-1 font-semibold text-[var(--orcia-text-on-action)]"
                     >
