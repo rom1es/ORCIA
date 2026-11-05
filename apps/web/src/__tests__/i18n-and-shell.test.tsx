@@ -442,7 +442,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(roleSelect.value).toBe("PLATFORM_ADMIN");
   });
 
-  it("supports TopHeader workspace dropdown, BU/Espace linkage with orphan-safe deletion, Beneficiary vs Target Scope labels, 'Tous' checkboxes with deletion, and contextual help on /settings", async () => {
+  it("supports TopHeader workspace dropdown, BU/Espace linkage with orphan-safe deletion, greyed-out section 2 until org exists, single scope selector, zero English parenthetical terms in FR, and contextual help on /settings", async () => {
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/settings"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -454,17 +454,60 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // 1. No "(IAM 6 verbes)" jargon in the tab or header
+    // 1. No "(IAM 6 verbes)" jargon in the tab or header, and no English parenthetical terms in French IAM section
     expect(screen.getByTestId("settings-tab-iam").textContent).toBe(
       "Organisation & Habilitations",
     );
+    const iamSectionInitialText = screen.getByTestId("settings-iam-section").textContent ?? "";
+    for (const forbiddenEnglishParen of [
+      "(ROLE)",
+      "(USER)",
+      "(ALLOW)",
+      "(DENY)",
+      "(INHERITANCE_BLOCK)",
+      "(create)",
+      "(read)",
+      "(update)",
+      "(delete)",
+      "(execute)",
+      "(grant)",
+      "GLOBAL (Plateforme)",
+      "BU (Business Unit / Direction)",
+    ]) {
+      expect(iamSectionInitialText).not.toContain(forbiddenEnglishParen);
+    }
 
-    // 2. Create a BU ("BU Finance") and a linked Espace ("Espace Comptabilité")
+    // 1b. Redundant free-text scope input and competing "Action principale" select are removed
+    expect(screen.queryByTestId("rbac-scope-input")).toBeNull();
+    expect(screen.queryByTestId("rbac-verb-select")).toBeNull();
+
+    // 1c. Section 2 is initially greyed out (disabled) when no organization (BU or Espace) exists in DB
+    expect(screen.getByTestId("rbac-grants-disabled-no-org-hint")).toBeDefined();
+    expect((screen.getByTestId("rbac-subject-type-select") as HTMLSelectElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByTestId("rbac-subject-input") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByTestId("rbac-scope-preset-select") as HTMLSelectElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByTestId("rbac-effect-select") as HTMLSelectElement).disabled).toBe(true);
+    expect((screen.getByTestId("rbac-verb-checkbox-all") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(true);
+
+    // 2. Create a BU ("BU Finance") and a linked Espace ("Espace Comptabilité") -> unlocks Section 2!
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "BU Finance" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain("BU Finance");
+
+    // Section 2 is now unlocked!
+    expect(screen.queryByTestId("rbac-grants-disabled-no-org-hint")).toBeNull();
+    expect((screen.getByTestId("rbac-subject-input") as HTMLInputElement).disabled).toBe(false);
+    expect((screen.getByTestId("rbac-scope-preset-select") as HTMLSelectElement).disabled).toBe(
+      false,
+    );
+    expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },
@@ -475,6 +518,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Espace Comptabilité" },
+    });
+    fireEvent.change(screen.getByTestId("org-unit-slug-input"), {
+      target: { value: "aqwZSX" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
 
@@ -495,11 +541,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(feedback.textContent).toContain("Suppression refusée");
     expect(screen.getByTestId("org-unit-row-org-1")).toBeDefined();
 
-    // 3 & 4. Habilitations: Beneficiary (Chef1) vs Target Scope (aqwZSX), "Tous" checkbox, and deletion
+    // 3 & 4. Habilitations: Beneficiary (Chef1) vs Target Scope selected from the single dropdown (aqwZSX), "Tous" checkbox, and French display
     fireEvent.change(screen.getByTestId("rbac-subject-input"), {
       target: { value: "Chef1" },
     });
-    fireEvent.change(screen.getByTestId("rbac-scope-input"), {
+    fireEvent.change(screen.getByTestId("rbac-scope-preset-select"), {
       target: { value: "aqwZSX" },
     });
     // Click "Tous" verb checkbox to select all 6 verbs
@@ -507,22 +553,26 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-rbac-grant-btn"));
 
     const grantRow = screen.getByTestId("rbac-grant-row-grant-1");
-    expect(grantRow.textContent).toContain("Rôle (ROLE:Chef1)");
-    expect(grantRow.textContent).toContain("Périmètre cible : aqwZSX");
+    expect(grantRow.textContent).toContain("Rôle : Chef1");
+    expect(grantRow.textContent).not.toContain("(ROLE:");
+    expect(grantRow.textContent).toContain("Périmètre cible :");
+    expect(grantRow.textContent).toContain("Espace : Espace Comptabilité (aqwZSX)");
+    expect(grantRow.textContent).toContain("Déléguer des droits · Autorisé");
+    expect(grantRow.textContent).not.toContain("(ALLOW)");
 
     // Select all grants via "Tous" checkbox and bulk delete
     fireEvent.click(screen.getByTestId("rbac-grants-select-all-checkbox"));
     fireEvent.click(screen.getByTestId("rbac-grants-bulk-delete-btn"));
     expect(screen.getByTestId("iam-grants-empty-state")).toBeDefined();
 
-    // 5. Right-hand contextual help explains INHERITANCE_BLOCK, 6 verbes, BU vs Espace, and Beneficiary vs Target Scope
+    // 5. Right-hand contextual help explains Target Scope, BU vs Espace, and Beneficiary vs Target Scope
     const helpTerms = screen.getByTestId("help-accordion-terms-content");
     expect(helpTerms.textContent).toContain("INHERITANCE_BLOCK");
-    expect(helpTerms.textContent).toContain("ROLE:Chef1");
+    expect(helpTerms.textContent).toContain("Rôle : Chef1");
     expect(helpTerms.textContent).toContain("aqwZSX");
     expect(helpTerms.textContent).toContain("BU vs Espace");
 
-    // 6. Clicking ContextualInfoTriggerButton ('i') re-opens the right-hand contextual help column if closed and highlights the targeted section
+    // 6. Clicking ContextualInfoTriggerButton ('i') re-opens the right-hand contextual help column if closed and highlights the targeted section (including iam-target-scope)
     fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
     expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
 
@@ -539,6 +589,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(
       screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
     ).toBe("false");
+
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-target-scope"));
+    const targetScopeHelpSection = screen.getByTestId("help-section-iam-target-scope");
+    expect(targetScopeHelpSection.getAttribute("data-active")).toBe("true");
+    expect(targetScopeHelpSection.textContent).toContain("Qu'est-ce que le Périmètre cible");
   });
 
   it("enforces zero internal ORCIA implementation jargon across all user-facing FR and EN i18n dictionaries", () => {
