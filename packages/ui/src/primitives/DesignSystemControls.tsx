@@ -55,19 +55,30 @@ export function OrciaInput({
   const mergedClassName = ["orcia-ds-input", className]
     .filter(Boolean)
     .join(" ");
+  const resolvedAutoComplete =
+    autoComplete ?? (allowPasswordManager ? "on" : "off");
   const antiPasswordManagerProps = allowPasswordManager
-    ? { autoComplete: autoComplete ?? "on" }
+    ? {
+        autoComplete: resolvedAutoComplete,
+        "data-lpignore": undefined,
+        "data-1p-ignore": undefined,
+        "data-bwignore": undefined,
+        "data-form-type": undefined,
+      }
     : {
-        autoComplete: autoComplete ?? "off",
-        "data-lpignore": "true",
-        "data-1p-ignore": "true",
-        "data-form-type": "other",
+        autoComplete: resolvedAutoComplete,
       };
 
   return (
     <input
       data-testid={testId}
       className={mergedClassName}
+      autoComplete="off"
+      data-lpignore="true"
+      data-1p-ignore="true"
+      data-bwignore="true"
+      data-form-type="other"
+      spellCheck={false}
       {...antiPasswordManagerProps}
       {...rest}
     />
@@ -97,6 +108,7 @@ export function OrciaSelect({
         autoComplete: autoComplete ?? "off",
         "data-lpignore": "true",
         "data-1p-ignore": "true",
+        "data-bwignore": "true",
         "data-form-type": "other",
       };
 
@@ -128,19 +140,30 @@ export function OrciaTextarea({
   const mergedClassName = ["orcia-ds-textarea", className]
     .filter(Boolean)
     .join(" ");
+  const resolvedAutoComplete =
+    autoComplete ?? (allowPasswordManager ? "on" : "off");
   const antiPasswordManagerProps = allowPasswordManager
-    ? { autoComplete: autoComplete ?? "on" }
+    ? {
+        autoComplete: resolvedAutoComplete,
+        "data-lpignore": undefined,
+        "data-1p-ignore": undefined,
+        "data-bwignore": undefined,
+        "data-form-type": undefined,
+      }
     : {
-        autoComplete: autoComplete ?? "off",
-        "data-lpignore": "true",
-        "data-1p-ignore": "true",
-        "data-form-type": "other",
+        autoComplete: resolvedAutoComplete,
       };
 
   return (
     <textarea
       data-testid={testId}
       className={mergedClassName}
+      autoComplete="off"
+      data-lpignore="true"
+      data-1p-ignore="true"
+      data-bwignore="true"
+      data-form-type="other"
+      spellCheck={false}
       {...antiPasswordManagerProps}
       {...rest}
     />
