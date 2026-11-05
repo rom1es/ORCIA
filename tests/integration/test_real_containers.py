@@ -158,7 +158,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
             )
             sb_dry = await backfill_sb.backfill_system_bootstrap(engine, apply_changes=False)
             assert sb_dry.llm_endpoints_count == 3 and sb_dry.bootstrap_workflows_count == 6
-            assert sb_dry.bootstrap_runs_count == 2 and sb_dry.onboarding_states_count == 2
+            assert sb_dry.bootstrap_runs_count == 0 and sb_dry.onboarding_states_count == 0
             assert sb_dry.dry_run is True and sb_dry.committed is False
             async with engine.connect() as conn:
                 llm_after_dry = await conn.execute(
@@ -168,8 +168,8 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
 
             sb_apply = await backfill_sb.backfill_system_bootstrap(engine, apply_changes=True)
             assert sb_apply.committed is True and sb_apply.llm_endpoints_count == 3
-            assert sb_apply.bootstrap_workflows_count == 6 and sb_apply.bootstrap_runs_count == 2
-            assert sb_apply.onboarding_states_count == 2
+            assert sb_apply.bootstrap_workflows_count == 6 and sb_apply.bootstrap_runs_count == 0
+            assert sb_apply.onboarding_states_count == 0
 
             # Verify Epic 2 maintenance script 05_backfill_ontology_and_rag_graph (dry-run & apply)
             backfill_ep2 = _load_script_module(

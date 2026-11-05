@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from orcia_api.main import create_app
 from orcia_core.rag.two_speed_search import (
+    DEFAULT_SEARCH_CANDIDATES,
     SEVEN_SEARCH_FAMILIES,
     FederatedSearchCandidate,
     TwoSpeedFederatedSearchService,
@@ -182,6 +183,9 @@ def test_story_9_3_speed2_semantic_3_words_rule_redis_cache_and_bottom_append() 
 def test_story_9_3_get_api_v1_search_endpoint() -> None:
     """Verify `GET /api/v1/search` endpoint contract and PermissionGuard filtering."""
     app = create_app()
+    app.state.two_speed_search_service = TwoSpeedFederatedSearchService(
+        candidates=DEFAULT_SEARCH_CANDIDATES
+    )
     client = TestClient(app)
 
     resp = client.get(

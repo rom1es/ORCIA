@@ -59,13 +59,22 @@ from orcia_pack_sdlc import activate_sdlc_pack
 
 
 def _resolve_default_llm_gateway() -> LLMPort:
-    """Resolve `LiteLLMAdapter` (`ORCIA_LLM_GATEWAY=litellm`) or `DeterministicCassetteLLM`."""
+    """Resolve `LiteLLMAdapter` by default in production (`ORCIA_USE_CASSETTE_LLM=true` for cassette)."""
+    use_cassette = os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if use_cassette:
+        return DeterministicCassetteLLM()
     mode = os.environ.get("ORCIA_LLM_GATEWAY", "").strip().lower()
-    if mode == "litellm":
-        return LiteLLMAdapter()
+    if mode == "cassette":
+        return DeterministicCassetteLLM()
     if mode == "litellm_plugin":
         return build_litellm_gateway_plugin()
-    return DeterministicCassetteLLM()
+    return LiteLLMAdapter(
+        fallback_cassette=DeterministicCassetteLLM(),
+    )
 
 
 def initialize_app_services(app: FastAPI) -> None:
