@@ -51,54 +51,6 @@ export function useShellNavigation(): ShellNavigationContextValue {
   return useContext(ShellNavigationContext);
 }
 
-const DEFAULT_SEARCH_HITS: readonly TopSearchHitItem[] = [
-  {
-    itemId: "hit-cockpit",
-    family: "HELP_ACTIONS",
-    title: "Cockpit & Décisions Prioritaires",
-    snippet: "Pilotez vos arbitrages Tie-Break, ancrages humains et revues 4 blocs.",
-    workspaceId: "scope-global",
-    screenRoute: "/cockpit",
-    deepLinkUri: "/cockpit",
-    speedTier: 1,
-    lockedTop: true,
-    score: 0.99,
-    badge: null,
-    highlightDurationMs: 2000,
-    opensContextualHelpColumn: false,
-  },
-  {
-    itemId: "hit-assistant",
-    family: "FOLDERS_DISCUSSIONS",
-    title: "Mon Assistant",
-    snippet: "Interrogez vos sources avec citations déterministes [S1] / [G1] / [O1].",
-    workspaceId: "scope-global",
-    screenRoute: "/assistant",
-    deepLinkUri: "/assistant",
-    speedTier: 1,
-    lockedTop: true,
-    score: 0.96,
-    badge: null,
-    highlightDurationMs: 2000,
-    opensContextualHelpColumn: false,
-  },
-  {
-    itemId: "hit-spaces",
-    family: "ONTOLOGY_GLOSSARY",
-    title: "Mes Espaces",
-    snippet: "Gérez vos sources, livrables, dérogations et règles métiers Starlark.",
-    workspaceId: "scope-global",
-    screenRoute: "/workspaces",
-    deepLinkUri: "/workspaces",
-    speedTier: 1,
-    lockedTop: true,
-    score: 0.94,
-    badge: null,
-    highlightDurationMs: 2000,
-    opensContextualHelpColumn: false,
-  },
-];
-
 function InnerShellContainer({
   children,
   onNavigate,
@@ -112,6 +64,8 @@ function InnerShellContainer({
     platformAdmin,
     scopes,
     workspaces,
+    catalogItems,
+    ontologyConcepts,
     llmTiers,
     runs,
     createPlatformAdmin,
@@ -512,7 +466,53 @@ function InnerShellContainer({
         >
           <TopHeaderSearchCommand
             labels={dictionary.topHeaderSearch}
-            speed1Hits={DEFAULT_SEARCH_HITS}
+            speed1Hits={[
+              ...workspaces.map((ws): TopSearchHitItem => ({
+                itemId: ws.id,
+                family: "FOLDERS_DISCUSSIONS",
+                title: ws.name,
+                snippet: ws.slug,
+                workspaceId: ws.id,
+                screenRoute: "/workspaces",
+                deepLinkUri: "/workspaces",
+                speedTier: 1,
+                lockedTop: true,
+                score: 0.99,
+                badge: null,
+                highlightDurationMs: 2000,
+                opensContextualHelpColumn: false,
+              })),
+              ...catalogItems.map((cat): TopSearchHitItem => ({
+                itemId: cat.id,
+                family: "PROCESSES_EXECUTIONS",
+                title: cat.title,
+                snippet: cat.uri,
+                workspaceId: activeScopeId,
+                screenRoute: "/catalog",
+                deepLinkUri: "/catalog",
+                speedTier: 1,
+                lockedTop: true,
+                score: 0.95,
+                badge: null,
+                highlightDurationMs: 2000,
+                opensContextualHelpColumn: false,
+              })),
+              ...ontologyConcepts.map((c): TopSearchHitItem => ({
+                itemId: c.id,
+                family: "GLOSSARY_RULES",
+                title: c.termKey,
+                snippet: c.definition,
+                workspaceId: activeScopeId,
+                screenRoute: "/ontology",
+                deepLinkUri: "/ontology",
+                speedTier: 1,
+                lockedTop: true,
+                score: 0.92,
+                badge: null,
+                highlightDurationMs: 2000,
+                opensContextualHelpColumn: false,
+              })),
+            ]}
             onSelectDeepLink={(payload) => {
               setSearchModalOpen(false);
               dispatchNavigation(payload.deepLinkUri);

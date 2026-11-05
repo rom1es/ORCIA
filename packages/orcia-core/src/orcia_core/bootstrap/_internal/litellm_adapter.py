@@ -22,7 +22,7 @@ from orcia_core.permissions.connector_invoker import (
     ConnectorInvoker,
 )
 from orcia_core.permissions.secret_manager import EnvelopeVaultSecretProvider
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+from orcia_core.testing.cassette_llm import CassetteEntry, DeterministicCassetteLLM
 from orcia_kernel.errors import (
     FunctionalConnectorError,
     OrciaDomainError,
@@ -156,6 +156,19 @@ class LiteLLMAdapter(LLMPort):
     def last_invocation_outcome(self) -> ConnectorInvocationOutcome | None:
         """Return the latest `ConnectorInvocationOutcome` when `connector_invoker` is used."""
         return self._last_invocation_outcome
+
+    def register(self, key_or_sha256: str, entry: CassetteEntry) -> None:
+        """Register or override a deterministic cassette entry on the offline fallback cassette."""
+        if self._fallback is None:
+            self._fallback = DeterministicCassetteLLM()
+        self._fallback.register(key_or_sha256, entry)
+
+    @property
+    def call_history(self) -> tuple[LlmPromptRequest, ...]:
+        """Return immutable tuple of all recorded requests on the fallback cassette."""
+        if self._fallback is None:
+            return ()
+        return self._fallback.call_history
 
     def _resolve_api_key(self) -> str:
         """Resolve API key on-the-fly from `SecretProviderPort` (`DEC-SEC-01`, `NFR-SEC-4`)."""

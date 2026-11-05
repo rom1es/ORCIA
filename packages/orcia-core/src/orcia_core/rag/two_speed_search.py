@@ -20,6 +20,7 @@ Implements (`Principe A.2`, `AD-8`, `AD-19`, `AD-21`, Component 17 `top-header-s
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -156,7 +157,7 @@ class TwoSpeedFederatedSearchService:
     def __init__(
         self,
         *,
-        candidates: tuple[FederatedSearchCandidate, ...] = DEFAULT_SEARCH_CANDIDATES,
+        candidates: Sequence[FederatedSearchCandidate] = (),
     ) -> None:
         self._candidates: list[FederatedSearchCandidate] = list(candidates)
         self._speed2_cache: dict[str, tuple[FederatedSearchHit, ...]] = {}

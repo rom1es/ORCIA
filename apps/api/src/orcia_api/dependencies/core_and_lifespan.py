@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -9,6 +10,7 @@ from fastapi import FastAPI, Request
 
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
+    LiteLLMAdapter,
     SystemBootstrapWorkflowService,
     build_default_system_bootstrap_service,
 )
@@ -58,7 +60,17 @@ def initialize_app_services(app: FastAPI) -> None:
     """Wire and attach all domain services to `app.state` (idempotent Composition Root)."""
     activate_sdlc_pack()
     if getattr(app.state, "llm_gateway", None) is None:
-        app.state.llm_gateway = DeterministicCassetteLLM()
+        use_cassette = os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if use_cassette:
+            app.state.llm_gateway = DeterministicCassetteLLM()
+        else:
+            app.state.llm_gateway = LiteLLMAdapter(
+                fallback_cassette=DeterministicCassetteLLM(),
+            )
     if getattr(app.state, "connector_invoker", None) is None:
         app.state.connector_invoker = ConnectorInvoker()
     register_default_step_executors(
