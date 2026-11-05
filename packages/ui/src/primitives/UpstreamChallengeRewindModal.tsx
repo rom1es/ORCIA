@@ -262,6 +262,11 @@ export function UpstreamChallengeRewindModal({
       >
         {labels.reasonLabel}
         <textarea
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder={labels.reasonPlaceholder}

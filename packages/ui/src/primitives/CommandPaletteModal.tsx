@@ -155,6 +155,11 @@ export function CommandPaletteModal({
 
         <input
           type="search"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="command-palette-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

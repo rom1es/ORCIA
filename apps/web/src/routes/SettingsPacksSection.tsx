@@ -185,6 +185,9 @@ export function SettingsPacksSection({
 
         <form
           data-testid="register-pack-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           onSubmit={(e) => {
             e.preventDefault();
             if (!selectedInstalledPack) return;

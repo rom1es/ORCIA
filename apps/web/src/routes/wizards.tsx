@@ -198,6 +198,11 @@ function WizardsRouteComponent() {
               </span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="wizard-input-org-unit"
                 value={orgUnitName}
                 onChange={(e) => setOrgUnitName(e.target.value)}
@@ -214,6 +219,11 @@ function WizardsRouteComponent() {
               </span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="wizard-input-workspace-name"
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
@@ -227,6 +237,11 @@ function WizardsRouteComponent() {
             <div style={{ display: "grid", gap: "8px" }}>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="wizard-input-connector-alias"
                 value={connectorAlias}
                 onChange={(e) => setConnectorAlias(e.target.value)}
@@ -235,6 +250,11 @@ function WizardsRouteComponent() {
               />
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="wizard-input-connector-uri"
                 value={connectorUri}
                 onChange={(e) => setConnectorUri(e.target.value)}
@@ -251,6 +271,11 @@ function WizardsRouteComponent() {
               </span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="wizard-input-primary-model"
                 value={primaryModelId}
                 onChange={(e) => setPrimaryModelId(e.target.value)}

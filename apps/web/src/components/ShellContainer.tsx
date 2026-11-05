@@ -361,13 +361,24 @@ function InnerShellContainer({
               />
             ) : null}
 
-            <form onSubmit={handleFirstBootAdminSubmit} className="space-y-3 text-xs">
+            <form
+              onSubmit={handleFirstBootAdminSubmit}
+              autoComplete="off"
+              data-lpignore="true"
+              data-form-type="other"
+              className="space-y-3 text-xs"
+            >
               <label className="flex flex-col gap-1">
                 <span className="font-medium">
                   {isFr ? "Nom complet" : "Full name"}
                 </span>
                 <input
                   type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   data-testid="first-boot-admin-name-input"
                   value={adminFullName}
                   onChange={(e) => setAdminFullName(e.target.value)}
@@ -386,6 +397,11 @@ function InnerShellContainer({
                 </span>
                 <input
                   type="email"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   data-testid="first-boot-admin-email-input"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
@@ -403,16 +419,25 @@ function InnerShellContainer({
                   {isFr ? "Mot de passe" : "Password"}
                 </span>
                 <input
-                  type="password"
+                  type="text"
+                  spellCheck={false}
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   data-testid="first-boot-admin-password-input"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="rounded border px-3 py-1.5"
-                  style={{
-                    backgroundColor: "var(--color-bg-canvas)",
-                    borderColor: "var(--color-border-subtle)",
-                  }}
+                  className="rounded border px-3 py-1.5 orcia-masked-secret-input"
+                  style={
+                    {
+                      backgroundColor: "var(--color-bg-canvas)",
+                      borderColor: "var(--color-border-subtle)",
+                      WebkitTextSecurity: "disc",
+                    } as React.CSSProperties
+                  }
                 />
               </label>
 

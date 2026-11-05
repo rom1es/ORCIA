@@ -157,20 +157,30 @@ export function SecretField({
           style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
         >
           <input
-            type="password"
+            type="text"
+            className="orcia-masked-secret-input"
+            spellCheck={false}
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="secret-field-write-only-input"
             aria-label={labels.fieldLabel}
             value={draftValue}
             placeholder={labels.inputPlaceholder}
             onChange={(e) => setDraftValue(e.target.value)}
-            style={{
-              flex: 1,
-              minHeight: "38px",
-              padding: "0.375rem 0.625rem",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border-strong)",
-              fontFamily: "var(--font-mono)",
-            }}
+            style={
+              {
+                flex: 1,
+                minHeight: "38px",
+                padding: "0.375rem 0.625rem",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border-strong)",
+                fontFamily: "var(--font-mono)",
+                WebkitTextSecurity: "disc",
+              } as React.CSSProperties
+            }
           />
           <button
             type="button"

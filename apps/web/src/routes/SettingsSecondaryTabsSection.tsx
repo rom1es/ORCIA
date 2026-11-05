@@ -90,7 +90,7 @@ export function SettingsSecondaryTabsSection({
   const [selectedEffort, setSelectedEffort] = useState<UiInferenceEffort>("balanced");
   const [primaryModel, setPrimaryModel] = useState("");
   const [secondaryModel, setSecondaryModel] = useState("");
-  const [modelFamily, setModelFamily] = useState("family-a");
+  const [modelFamily, setModelFamily] = useState("Anthropic");
 
   const [packKey, setPackKey] = useState("");
   const [packVersion, setPackVersion] = useState("1.0.0");
@@ -131,6 +131,9 @@ export function SettingsSecondaryTabsSection({
         </div>
         <form
           data-testid="configure-llm-tier-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           onSubmit={(e) => {
             e.preventDefault();
             if (!primaryModel.trim()) return;
@@ -138,7 +141,7 @@ export function SettingsSecondaryTabsSection({
               tier: selectedTier,
               primaryModel: primaryModel.trim(),
               secondaryModel: secondaryModel.trim() || primaryModel.trim(),
-              modelFamily: modelFamily.trim() || "family-a",
+              modelFamily: modelFamily.trim() || "Anthropic",
               defaultEffort: selectedEffort,
             });
             setPrimaryModel("");
@@ -146,9 +149,9 @@ export function SettingsSecondaryTabsSection({
           }}
           style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
         >
-          <input type="text" data-testid="llm-primary-model-input" value={primaryModel} onChange={(e) => setPrimaryModel(e.target.value)} placeholder={isFr ? "Modèle principal (ex: fournisseur/modèle)..." : "Primary model..."} style={{ ...inputStyle, flex: 1, minWidth: "200px" }} />
-          <input type="text" data-testid="llm-secondary-model-input" value={secondaryModel} onChange={(e) => setSecondaryModel(e.target.value)} placeholder={isFr ? "Modèle secondaire de secours..." : "Backup model..."} style={{ ...inputStyle, flex: 1, minWidth: "200px" }} />
-          <input type="text" data-testid="llm-family-input" value={modelFamily} onChange={(e) => setModelFamily(e.target.value)} placeholder={isFr ? "Fournisseur IA (ex: Mistral, Anthropic)..." : "AI provider..."} style={inputStyle} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="llm-primary-model-input" value={primaryModel} onChange={(e) => setPrimaryModel(e.target.value)} placeholder={isFr ? "Modèle principal (ex: fournisseur/modèle)..." : "Primary model..."} style={{ ...inputStyle, flex: 1, minWidth: "200px" }} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="llm-secondary-model-input" value={secondaryModel} onChange={(e) => setSecondaryModel(e.target.value)} placeholder={isFr ? "Modèle secondaire de secours..." : "Backup model..."} style={{ ...inputStyle, flex: 1, minWidth: "200px" }} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="llm-family-input" value={modelFamily} onChange={(e) => setModelFamily(e.target.value)} placeholder={isFr ? "Fournisseur IA (ex: Mistral, Anthropic)..." : "AI provider..."} style={inputStyle} />
           <button type="submit" data-testid="save-llm-tier-btn" style={primaryBtnStyle}>{isFr ? "Enregistrer le niveau" : "Save level"}</button>
         </form>
         {llmTiers.length === 0 ? (
@@ -157,12 +160,24 @@ export function SettingsSecondaryTabsSection({
           </p>
         ) : (
           <div style={{ display: "grid", gap: "8px" }}>
-            {llmTiers.map((item) => (
-              <div key={item.tier} data-testid={`llm-tier-row-${item.tier}`} style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span><strong>{item.tier}</strong> → <code>{item.primaryModel}</code> (secours: <code>{item.secondaryModel}</code>)</span>
-                <StatusBadge label={`${item.modelFamily} · ${item.defaultEffort}`} tone="emerald" monospace />
-              </div>
-            ))}
+            {llmTiers.map((item) => {
+              const readableFamily =
+                item.modelFamily === "family-a"
+                  ? isFr
+                    ? "Fournisseur principal"
+                    : "Primary provider"
+                  : item.modelFamily === "family-b"
+                    ? isFr
+                      ? "Fournisseur secondaire"
+                      : "Secondary provider"
+                    : item.modelFamily;
+              return (
+                <div key={item.tier} data-testid={`llm-tier-row-${item.tier}`} style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span><strong>{item.tier}</strong> → <code>{item.primaryModel}</code> (secours: <code>{item.secondaryModel}</code>)</span>
+                  <StatusBadge label={`${readableFamily} · ${item.defaultEffort}`} tone="emerald" monospace />
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -205,6 +220,9 @@ export function SettingsSecondaryTabsSection({
         />
         <form
           data-testid="register-connector-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           onSubmit={(e) => {
             e.preventDefault();
             if (!connAlias.trim() || !connUri.trim()) return;
@@ -227,8 +245,8 @@ export function SettingsSecondaryTabsSection({
             <option value="jira">jira</option>
             <option value="db">db</option>
           </select>
-          <input type="text" data-testid="connector-alias-input" value={connAlias} onChange={(e) => setConnAlias(e.target.value)} placeholder={isFr ? "Alias du connecteur..." : "Connector alias..."} style={inputStyle} />
-          <input type="text" data-testid="connector-uri-input" value={connUri} onChange={(e) => setConnUri(e.target.value)} placeholder={isFr ? "URI (ex: git://...)" : "URI (e.g. git://...)"} style={{ ...inputStyle, flex: 1, minWidth: "220px" }} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="connector-alias-input" value={connAlias} onChange={(e) => setConnAlias(e.target.value)} placeholder={isFr ? "Alias du connecteur..." : "Connector alias..."} style={inputStyle} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="connector-uri-input" value={connUri} onChange={(e) => setConnUri(e.target.value)} placeholder={isFr ? "URI (ex: git://...)" : "URI (e.g. git://...)"} style={{ ...inputStyle, flex: 1, minWidth: "220px" }} />
           <select data-testid="connector-identity-select" value={connIdentity} onChange={(e) => setConnIdentity(e.target.value as "passthrough" | "service_account")} style={inputStyle}>
             <option value="passthrough">passthrough</option>
             <option value="service_account">service_account</option>
@@ -256,6 +274,9 @@ export function SettingsSecondaryTabsSection({
       <section data-testid="settings-packs-section" className="orcia-bento-card" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         <form
           data-testid="register-pack-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           onSubmit={(e) => {
             e.preventDefault();
             if (!packKey.trim()) return;
@@ -264,9 +285,9 @@ export function SettingsSecondaryTabsSection({
           }}
           style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
         >
-          <input type="text" data-testid="pack-key-input" value={packKey} onChange={(e) => setPackKey(e.target.value)} placeholder={isFr ? "Identifiant du Pack (ex: orcia-pack-sdlc)..." : "Pack key..."} style={{ ...inputStyle, flex: 1, minWidth: "220px" }} />
-          <input type="text" data-testid="pack-version-input" value={packVersion} onChange={(e) => setPackVersion(e.target.value)} placeholder="SemVer (1.0.0)" style={inputStyle} />
-          <input type="text" data-testid="pack-scope-input" value={packScope} onChange={(e) => setPackScope(e.target.value)} placeholder="Périmètre (GLOBAL)" style={inputStyle} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="pack-key-input" value={packKey} onChange={(e) => setPackKey(e.target.value)} placeholder={isFr ? "Identifiant du Pack (ex: orcia-pack-sdlc)..." : "Pack key..."} style={{ ...inputStyle, flex: 1, minWidth: "220px" }} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="pack-version-input" value={packVersion} onChange={(e) => setPackVersion(e.target.value)} placeholder="SemVer (1.0.0)" style={inputStyle} />
+          <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="pack-scope-input" value={packScope} onChange={(e) => setPackScope(e.target.value)} placeholder="Périmètre (GLOBAL)" style={inputStyle} />
           <button type="submit" data-testid="save-pack-btn" style={primaryBtnStyle}>{isFr ? "+ Activer le Pack" : "+ Activate Pack"}</button>
         </form>
         {packs.length === 0 ? (

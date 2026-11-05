@@ -174,6 +174,11 @@ export function ProgressiveDay0AccostageBanner({
           <div className="text-xs font-semibold">{labels.step1AdminTitle}</div>
           <input
             type="email"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="welcome-setup-admin-email"
             value={adminEmail}
             onChange={(e) => setAdminEmail(e.target.value)}
@@ -185,17 +190,26 @@ export function ProgressiveDay0AccostageBanner({
           />
           {orciaEnv !== "local" && (
             <input
-              type="password"
+              type="text"
+              spellCheck={false}
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="welcome-setup-bootstrap-token-input"
               value={bootstrapToken}
               onChange={(e) => setBootstrapToken(e.target.value)}
               placeholder={labels.bootstrapTokenPlaceholder}
               aria-label={labels.bootstrapTokenLabel}
-              className="rounded border px-2 py-1 font-mono text-xs"
-              style={{
-                backgroundColor: "var(--color-bg-canvas)",
-                borderColor: "var(--color-border-subtle)",
-              }}
+              className="rounded border px-2 py-1 font-mono text-xs orcia-masked-secret-input"
+              style={
+                {
+                  backgroundColor: "var(--color-bg-canvas)",
+                  borderColor: "var(--color-border-subtle)",
+                  WebkitTextSecurity: "disc",
+                } as React.CSSProperties
+              }
             />
           )}
           <button

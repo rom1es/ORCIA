@@ -170,6 +170,9 @@ export function SettingsIamOrganizationSection({
 
         <form
           data-testid="create-rbac-grant-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           aria-disabled={hasNoKnownOrganization}
           onSubmit={(e) => {
             e.preventDefault();
@@ -193,6 +196,11 @@ export function SettingsIamOrganizationSection({
               <span style={{ fontWeight: 600 }}>{isFr ? "Qui ? (Bénéficiaire : Rôle ou Utilisateur)" : "Who? (Beneficiary: Role or User)"}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="rbac-subject-input"
                 disabled={hasNoKnownOrganization}
                 value={grantSubjectId}
@@ -263,6 +271,11 @@ export function SettingsIamOrganizationSection({
             <label style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: 600, cursor: hasNoKnownOrganization ? "not-allowed" : "pointer" }}>
               <input
                 type="checkbox"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="rbac-verb-checkbox-all"
                 disabled={hasNoKnownOrganization}
                 checked={allVerbsChecked}
@@ -274,6 +287,11 @@ export function SettingsIamOrganizationSection({
               <label key={v} style={{ display: "inline-flex", alignItems: "center", gap: "5px", cursor: hasNoKnownOrganization ? "not-allowed" : "pointer" }}>
                 <input
                   type="checkbox"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   data-testid={`rbac-verb-checkbox-${v}`}
                   disabled={hasNoKnownOrganization}
                   checked={grantSelectedVerbs.includes(v)}
@@ -300,6 +318,11 @@ export function SettingsIamOrganizationSection({
               <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontWeight: 600, cursor: "pointer" }}>
                 <input
                   type="checkbox"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   data-testid="rbac-grants-select-all-checkbox"
                   checked={allGrantsChecked}
                   onChange={(e) => setSelectedGrantIds(e.target.checked ? rbacGrants.map((g) => g.id) : [])}
@@ -330,6 +353,11 @@ export function SettingsIamOrganizationSection({
                 <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                   <input
                     type="checkbox"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     data-testid={`rbac-grant-checkbox-${g.id}`}
                     checked={selectedGrantIds.includes(g.id)}
                     onChange={(e) =>

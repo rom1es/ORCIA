@@ -330,6 +330,9 @@ export function SettingsAiModelsSection({
 
       <form
         data-testid="configure-llm-tier-form"
+        autoComplete="off"
+        data-lpignore="true"
+        data-form-type="other"
         onSubmit={(e) => {
           e.preventDefault();
           if (!primaryModel.trim()) return;
@@ -364,6 +367,11 @@ export function SettingsAiModelsSection({
           </span>
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="llm-family-input"
             value={modelFamily}
             onChange={(e) => setModelFamily(e.target.value)}
@@ -382,6 +390,11 @@ export function SettingsAiModelsSection({
           </span>
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="llm-primary-model-input"
             value={primaryModel}
             onChange={(e) => setPrimaryModel(e.target.value)}
@@ -400,6 +413,11 @@ export function SettingsAiModelsSection({
           </span>
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="llm-secondary-model-input"
             value={secondaryModel}
             onChange={(e) => setSecondaryModel(e.target.value)}
@@ -418,6 +436,11 @@ export function SettingsAiModelsSection({
           </span>
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="llm-endpoint-url-input"
             value={endpointUrl}
             onChange={(e) => setEndpointUrl(e.target.value)}
@@ -452,14 +475,26 @@ export function SettingsAiModelsSection({
               {isFr ? "Clé d'API / Jeton secret" : "API Key / Secret token"}
             </span>
             <input
-              type="password"
+              type="text"
+              className="orcia-masked-secret-input"
+              spellCheck={false}
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="llm-api-key-input"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder={
                 isFr ? "Saisir la clé d'API (ex: sk-...)..." : "Enter API key (e.g. sk-...)..."
               }
-              style={inputStyle}
+              style={
+                {
+                  ...inputStyle,
+                  WebkitTextSecurity: "disc",
+                } as React.CSSProperties
+              }
             />
           </label>
         )}
@@ -533,6 +568,16 @@ export function SettingsAiModelsSection({
             const readableTier = tierDisplayLabels[item.tier] ?? item.tier;
             const readableEffort =
               effortDisplayLabels[item.defaultEffort] ?? item.defaultEffort;
+            const readableFamily =
+              item.modelFamily === "family-a"
+                ? isFr
+                  ? "Fournisseur principal"
+                  : "Primary provider"
+                : item.modelFamily === "family-b"
+                  ? isFr
+                    ? "Fournisseur secondaire"
+                    : "Secondary provider"
+                  : item.modelFamily;
             const itemAuthMode: LlmAuthMode = item.authMode ?? "api_key";
             const itemEndpoint =
               item.endpointUrl ?? "https://api.anthropic.com/v1";
@@ -580,7 +625,7 @@ export function SettingsAiModelsSection({
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <StatusBadge
-                    label={`${item.modelFamily} · ${readableEffort}`}
+                    label={`${readableFamily} · ${readableEffort}`}
                     tone="emerald"
                     monospace
                   />
@@ -589,7 +634,7 @@ export function SettingsAiModelsSection({
                     data-testid={`test-saved-llm-tier-btn-${item.tier}`}
                     onClick={() =>
                       void evaluateConnectionTest({
-                        provider: item.modelFamily,
+                        provider: readableFamily,
                         model: item.primaryModel,
                         uri: itemEndpoint,
                         mode: itemAuthMode,

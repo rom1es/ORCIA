@@ -384,6 +384,11 @@ export function AssistantGovernanceModalAndStudio({
                   </span>
                   <input
                     type="text"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     data-testid="assistant-user-hat-input"
                     value={defaultHat}
                     onChange={(e) => {
@@ -400,6 +405,11 @@ export function AssistantGovernanceModalAndStudio({
                 </span>
                 <textarea
                   rows={2}
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   data-testid="assistant-user-instructions-input"
                   value={personalInstructions}
                   onChange={(e) => {
@@ -440,6 +450,11 @@ export function AssistantGovernanceModalAndStudio({
                 </span>
                 <textarea
                   rows={2}
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   disabled={!canEditWorkspaceLayer}
                   data-testid="assistant-workspace-instructions-input"
                   value={workspaceInstructions}
@@ -457,6 +472,11 @@ export function AssistantGovernanceModalAndStudio({
                   <label className="flex items-center gap-2 font-medium">
                     <input
                       type="checkbox"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       disabled={!canEditWorkspaceLayer || mcpFrozenByUpperLayer}
                       checked={mcpExposed}
                       data-testid="assistant-workspace-mcp-expose-toggle"

@@ -71,6 +71,9 @@ export function OntologyFeaturePanel() {
         </div>
         <form
           data-testid="ontology-create-concept-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           onSubmit={handleAddConcept}
           style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
         >
@@ -102,6 +105,11 @@ export function OntologyFeaturePanel() {
           </select>
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="ontology-concept-name-input"
             value={conceptName}
             onChange={(e) => setConceptName(e.target.value)}
@@ -116,6 +124,11 @@ export function OntologyFeaturePanel() {
           />
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="ontology-concept-def-input"
             value={conceptDef}
             onChange={(e) => setConceptDef(e.target.value)}

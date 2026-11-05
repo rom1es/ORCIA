@@ -59,7 +59,11 @@ function LoginRouteComponent() {
   }, [apiClient]);
 
   return (
-    <div data-authenticated-user={authenticatedEmail ?? ""}>
+    <div
+      data-testid="login-page-container"
+      data-allow-password-manager="true"
+      data-authenticated-user={authenticatedEmail ?? ""}
+    >
       <BiModeLoginView
         labels={dictionary.biModeLogin}
         error={loginError}

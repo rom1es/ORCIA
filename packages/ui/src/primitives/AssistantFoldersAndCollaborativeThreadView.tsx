@@ -205,6 +205,11 @@ export function AssistantFoldersAndCollaborativeThreadView({
           className="rounded border border-border-subtle bg-surface-primary p-3 space-y-2"
         >
           <textarea
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="assistant-folder-pinned-notes-textarea"
             rows={2}
             value={draftNotes}
@@ -311,6 +316,11 @@ export function AssistantFoldersAndCollaborativeThreadView({
           <div className="flex items-center gap-2">
             <input
               type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="assistant-collaborative-message-input"
               value={draftMessage}
               onChange={(e) => setDraftMessage(e.target.value)}
@@ -373,6 +383,11 @@ export function AssistantFoldersAndCollaborativeThreadView({
         >
           <input
             type="search"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="assistant-history-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

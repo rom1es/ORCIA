@@ -1061,5 +1061,211 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.getByTestId("help-section-packs-overview").getAttribute("data-active"),
     ).toBe("true");
   });
+
+  it("enforces anti-LastPass / password-manager attributes on 100% of <form>, <input>, and <textarea> elements across @orcia/ui and apps/web while explicitly preserving /login (BiModeLoginView)", async () => {
+    const webSrcDir = path.resolve(__dirname, "..");
+    const uiSrcDir = path.resolve(__dirname, "../../../../packages/ui/src");
+    const allTsxFiles = [...walkTsFiles(webSrcDir), ...walkTsFiles(uiSrcDir)].filter((f) =>
+      f.endsWith(".tsx"),
+    );
+
+    const extractOpeningTags = (source: string, tagName: "input" | "textarea" | "form"): string[] => {
+      const results: string[] = [];
+      const regex = new RegExp(`<${tagName}\\b`, "g");
+      let match: RegExpExecArray | null = null;
+      while ((match = regex.exec(source)) !== null) {
+        const startIdx = match.index;
+        let idx = startIdx + match[0].length;
+        let braceDepth = 0;
+        let inSingleQuote = false;
+        let inDoubleQuote = false;
+        let inTemplate = false;
+        while (idx < source.length) {
+          const ch = source[idx];
+          const prev = source[idx - 1];
+          if (inSingleQuote) {
+            if (ch === "'" && prev !== "\\") inSingleQuote = false;
+          } else if (inDoubleQuote) {
+            if (ch === '"' && prev !== "\\") inDoubleQuote = false;
+          } else if (inTemplate) {
+            if (ch === "`" && prev !== "\\") inTemplate = false;
+          } else {
+            if (ch === "'") inSingleQuote = true;
+            else if (ch === '"') inDoubleQuote = true;
+            else if (ch === "`") inTemplate = true;
+            else if (ch === "{") braceDepth++;
+            else if (ch === "}") braceDepth = Math.max(0, braceDepth - 1);
+            else if (ch === ">" && braceDepth === 0) {
+              idx++;
+              break;
+            }
+          }
+          idx++;
+        }
+        results.push(source.slice(startIdx, idx));
+      }
+      return results;
+    };
+
+    let auditedFormsCount = 0;
+    let auditedInputsCount = 0;
+    let auditedTextareasCount = 0;
+
+    for (const filePath of allTsxFiles) {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const relPath = path.relative(path.resolve(__dirname, "../../../.."), filePath);
+      const isLoginView = filePath.endsWith("BiModeLoginView.tsx");
+
+      if (isLoginView) {
+        // /login MUST preserve type="password", autoComplete="current-password", autoComplete="username", and data-allow-password-manager="true"
+        expect(content).toContain('type="password"');
+        expect(content).toContain('autoComplete="current-password"');
+        expect(content).toContain('autoComplete="username"');
+        expect(content).toContain('data-allow-password-manager="true"');
+        expect(content).not.toContain('data-lpignore="true"');
+        continue;
+      }
+
+      // Zero type="password" allowed outside BiModeLoginView.tsx
+      expect(
+        content.includes('type="password"'),
+        `Forbidden type="password" outside BiModeLoginView.tsx in ${relPath}`,
+      ).toBe(false);
+
+      const forms = extractOpeningTags(content, "form");
+      for (const formTag of forms) {
+        auditedFormsCount++;
+        expect(
+          formTag.includes('autoComplete="off"'),
+          `Missing autoComplete="off" on <form> in ${relPath}: ${formTag}`,
+        ).toBe(true);
+        expect(
+          formTag.includes('data-lpignore="true"'),
+          `Missing data-lpignore="true" on <form> in ${relPath}: ${formTag}`,
+        ).toBe(true);
+        expect(
+          formTag.includes('data-form-type="other"'),
+          `Missing data-form-type="other" on <form> in ${relPath}: ${formTag}`,
+        ).toBe(true);
+      }
+
+      const inputs = extractOpeningTags(content, "input");
+      for (const inputTag of inputs) {
+        auditedInputsCount++;
+        expect(
+          inputTag.includes('autoComplete="off"'),
+          `Missing autoComplete="off" on <input> in ${relPath}: ${inputTag}`,
+        ).toBe(true);
+        expect(
+          inputTag.includes('data-lpignore="true"'),
+          `Missing data-lpignore="true" on <input> in ${relPath}: ${inputTag}`,
+        ).toBe(true);
+        expect(
+          inputTag.includes('data-1p-ignore="true"'),
+          `Missing data-1p-ignore="true" on <input> in ${relPath}: ${inputTag}`,
+        ).toBe(true);
+        expect(
+          inputTag.includes('data-bwignore="true"'),
+          `Missing data-bwignore="true" on <input> in ${relPath}: ${inputTag}`,
+        ).toBe(true);
+        expect(
+          inputTag.includes('data-form-type="other"'),
+          `Missing data-form-type="other" on <input> in ${relPath}: ${inputTag}`,
+        ).toBe(true);
+      }
+
+      const textareas = extractOpeningTags(content, "textarea");
+      for (const textareaTag of textareas) {
+        auditedTextareasCount++;
+        expect(
+          textareaTag.includes('autoComplete="off"'),
+          `Missing autoComplete="off" on <textarea> in ${relPath}: ${textareaTag}`,
+        ).toBe(true);
+        expect(
+          textareaTag.includes('data-lpignore="true"'),
+          `Missing data-lpignore="true" on <textarea> in ${relPath}: ${textareaTag}`,
+        ).toBe(true);
+        expect(
+          textareaTag.includes('data-1p-ignore="true"'),
+          `Missing data-1p-ignore="true" on <textarea> in ${relPath}: ${textareaTag}`,
+        ).toBe(true);
+        expect(
+          textareaTag.includes('data-bwignore="true"'),
+          `Missing data-bwignore="true" on <textarea> in ${relPath}: ${textareaTag}`,
+        ).toBe(true);
+        expect(
+          textareaTag.includes('data-form-type="other"'),
+          `Missing data-form-type="other" on <textarea> in ${relPath}: ${textareaTag}`,
+        ).toBe(true);
+      }
+    }
+
+    expect(auditedFormsCount).toBeGreaterThanOrEqual(14);
+    expect(auditedInputsCount).toBeGreaterThanOrEqual(65);
+    expect(auditedTextareasCount).toBeGreaterThanOrEqual(8);
+
+    // Runtime verification on /settings (Modèles IA) + legacy "family-a" normalization
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    const { unmount } = render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("settings-tab-ai-models"));
+    const primaryModelInput = screen.getByTestId("llm-primary-model-input") as HTMLInputElement;
+    const apiKeyInput = screen.getByTestId("llm-api-key-input") as HTMLInputElement;
+
+    expect(primaryModelInput.getAttribute("data-lpignore")).toBe("true");
+    expect(primaryModelInput.getAttribute("autocomplete")).toBe("off");
+    expect(apiKeyInput.getAttribute("type")).toBe("text");
+    expect(apiKeyInput.getAttribute("data-lpignore")).toBe("true");
+    expect(apiKeyInput.getAttribute("autocomplete")).toBe("off");
+    expect(apiKeyInput.className).toContain("orcia-masked-secret-input");
+
+    // Submit a tier with legacy "family-a" value and verify it normalizes to "Fournisseur principal"
+    fireEvent.change(screen.getByTestId("llm-family-input"), {
+      target: { value: "family-a" },
+    });
+    fireEvent.change(primaryModelInput, {
+      target: { value: "mistral-small-latest" },
+    });
+    fireEvent.change(apiKeyInput, {
+      target: { value: "sk-test-12345" },
+    });
+    fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
+
+    const mediumRow = screen.getByTestId("llm-tier-row-medium");
+    expect(mediumRow.textContent).toContain("Fournisseur principal");
+    expect(mediumRow.textContent).not.toContain("family-a");
+    unmount();
+
+    // Runtime verification on /login (BiModeLoginView)
+    const loginHistory = createMemoryHistory({ initialEntries: ["/login"] });
+    const loginRouter = createOrciaRouter({ queryClient, history: loginHistory });
+    await loginRouter.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={loginRouter} />
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.getByTestId("login-page-container").getAttribute("data-allow-password-manager"),
+    ).toBe("true");
+    fireEvent.click(screen.getByTestId("login-local-accordion-toggle"));
+    const loginEmailInput = screen.getByTestId("login-local-email");
+    const loginPasswordInput = screen.getByTestId("login-local-password");
+    expect(loginEmailInput.getAttribute("autocomplete")).toBe("username");
+    expect(loginPasswordInput.getAttribute("type")).toBe("password");
+    expect(loginPasswordInput.getAttribute("autocomplete")).toBe("current-password");
+    expect(loginPasswordInput.getAttribute("data-lpignore")).toBeNull();
+  });
 });
+
 

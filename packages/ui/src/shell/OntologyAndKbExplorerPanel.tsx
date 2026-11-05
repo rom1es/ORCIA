@@ -301,6 +301,11 @@ export function OntologyAndKbExplorerPanel({
               </strong>
               <input
                 type="search"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="hybrid-rag-search-input"
                 value={ragQuery}
                 onChange={(e) => setRagQuery(e.target.value)}

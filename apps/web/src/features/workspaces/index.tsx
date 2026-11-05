@@ -93,11 +93,19 @@ export function WorkspacesFeaturePanel() {
 
         <form
           data-testid="create-workspace-form"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           onSubmit={handleCreateWorkspace}
           style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
         >
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="workspace-name-input"
             value={wsName}
             onChange={(e) => setWsName(e.target.value)}
@@ -108,6 +116,11 @@ export function WorkspacesFeaturePanel() {
           />
           <input
             type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="workspace-slug-input"
             value={wsSlug}
             onChange={(e) => setWsSlug(e.target.value)}

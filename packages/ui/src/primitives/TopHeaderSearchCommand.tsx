@@ -212,6 +212,11 @@ export function TopHeaderSearchCommand({
           </span>
           <input
             type="search"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             value={query}
             onChange={(e) => {
               const nextQ = e.target.value;

@@ -399,3 +399,22 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* Masked Technical Secret Input (replaces type="password" outside /login to prevent password-manager heuristics) */
+.orcia-masked-secret-input {
+  -webkit-text-security: disc;
+  text-security: disc;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+/* Neutralize LastPass DOM icon injection everywhere outside /login */
+*:not([data-allow-password-manager="true"]):not([data-testid="bi-mode-login-view"]):not([data-testid="login-page-container"]) > div[data-lastpass-icon-root],
+input[data-lpignore="true"] + div[data-lastpass-icon-root],
+textarea[data-lpignore="true"] + div[data-lastpass-icon-root],
+form[data-lpignore="true"] div[data-lastpass-icon-root],
+form[data-lpignore="true"] div[data-lastpass-root] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
