@@ -300,11 +300,7 @@ function InnerShellContainer({
               }}
             >
               <span aria-hidden="true">🌐</span>
-              <span>
-                {isFr
-                  ? "Site de Présentation ORCIA (Vision, Fonctionnalités & Architecture)"
-                  : "ORCIA Product & Architecture Site"}
-              </span>
+              <span>Documentation</span>
             </button>
           )
         }

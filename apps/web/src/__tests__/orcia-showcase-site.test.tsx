@@ -47,7 +47,7 @@ describe("ORCIA Product & Architecture Showcase Site (/showcase) — 3 Strictly 
     );
 
     const openShowcaseBtn = screen.getByTestId("open-orcia-showcase-site-btn");
-    expect(openShowcaseBtn.textContent).toContain("Site de Présentation ORCIA");
+    expect(openShowcaseBtn.textContent?.replace("🌐", "").trim()).toBe("Documentation");
 
     fireEvent.click(openShowcaseBtn);
     await act(async () => {
@@ -56,6 +56,13 @@ describe("ORCIA Product & Architecture Showcase Site (/showcase) — 3 Strictly 
 
     expect(screen.getByTestId("orcia-product-showcase-site-view")).toBeDefined();
     expect(screen.getByTestId("showcase-pillar-macro")).toBeDefined();
+
+    fireEvent.click(screen.getByTestId("showcase-export-standalone-btn"));
+    const exportBanner = screen.getByTestId("showcase-standalone-export-banner");
+    expect(exportBanner.textContent).toContain(
+      "ouvrez directement `docs/site-catalog/index.html`.",
+    );
+    expect(exportBanner.textContent).not.toContain("dist/orcia-site/index.html");
   });
 
   it("enforces strict editorial separation (non-mixing gate): Space 1 (Macro) and Space 2 (Features) contain zero implementation terms, while Space 3 (Architecture) explains all of them", async () => {

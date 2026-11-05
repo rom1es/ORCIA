@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 21,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 71
+    "techLeadReportsCount": 72
   },
   "activeRoutes": [
     "/",
@@ -396,6 +396,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-05",
+      "phaseOrStory": "Post-Epic 12",
+      "reportFile": "2026-11-05-renommage-icone-documentation-et-message-export-html-tech-lead-report.md",
+      "domain": "Renommage de l'Icône de Documentation (« Documentation ») & Simplification du Message d'Export HTML (docs/site-catalog/index.html)",
+      "summary": "Simplification du libellé de l'icône/bouton d'accès à la documentation (open-orcia-showcase-site-btn dans ShellContainer.tsx et features/ontology/index.tsx) en Documentation uniquement, et épuration du message d'export HTML autonome (showcase-standalone-export-banner dans OrciaProductShowcaseSiteView.tsx) en ouvrez directement docs/site-catalog/index.html.."
+    },
     {
       "date": "2026-11-05",
       "phaseOrStory": "Post-Epic 12",

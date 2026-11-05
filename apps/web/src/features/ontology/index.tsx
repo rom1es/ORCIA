@@ -77,9 +77,7 @@ export function OntologyFeaturePanel() {
           onClick={() => navigateToRoute("/showcase")}
           className="orcia-ds-btn orcia-ds-btn-primary"
         >
-          {isFr
-            ? "🌐 Site de Présentation ORCIA (Vision, Fonctionnalités & Architecture)"
-            : "🌐 ORCIA Product & Architecture Site"}
+          <span aria-hidden="true">🌐</span> <span>Documentation</span>
         </button>
       </section>
 

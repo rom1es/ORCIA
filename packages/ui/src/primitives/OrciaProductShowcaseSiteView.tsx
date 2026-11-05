@@ -361,8 +361,8 @@ export function OrciaProductShowcaseSiteView({
             className="orcia-ds-alert orcia-ds-alert-success"
           >
             {isFr
-              ? "Export HTML5 autonome prêt : ouvrez directement `docs/site-catalog/index.html` ou `dist/orcia-site/index.html` dans n'importe quel navigateur (zéro serveur requis, synchronisé via `pnpm site:sync`)."
-              : "Standalone HTML5 export ready: open `docs/site-catalog/index.html` or `dist/orcia-site/index.html` directly in any browser (zero server required, synced via `pnpm site:sync`)."}
+              ? "Export HTML5 autonome prêt : ouvrez directement `docs/site-catalog/index.html`."
+              : "Standalone HTML5 export ready: open `docs/site-catalog/index.html` directly."}
           </div>
         )}
 
