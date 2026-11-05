@@ -517,4 +517,104 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(helpTerms.textContent).toContain("aqwZSX");
     expect(helpTerms.textContent).toContain("BU vs Espace");
   });
+
+  it("supports creating Skills, creating Agents, attaching Skills in 1 click, executing both, and surviving F5 reload on /agents", async () => {
+    const { resetCachedAgentsAndSkillsForTest } = await import(
+      "../features/catalog/index"
+    );
+    resetCachedAgentsAndSkillsForTest();
+
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/agents"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    const firstRender = render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("agents-and-skills-manager-view")).toBeDefined();
+    expect(screen.getByTestId("agents-empty-state")).toBeDefined();
+
+    // 1. Switch to Skills tab and create a Skill
+    fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
+    fireEvent.change(screen.getByTestId("skill-name-input"), {
+      target: { value: "Analyse Conformité Fournisseur" },
+    });
+    fireEvent.change(screen.getByTestId("skill-objective-input"), {
+      target: { value: "Détecter les clauses contractuelles à risque" },
+    });
+    fireEvent.change(screen.getByTestId("skill-instructions-input"), {
+      target: { value: "Vérifier la responsabilité, la réversibilité et la juridiction." },
+    });
+    fireEvent.click(screen.getByTestId("create-skill-submit-btn"));
+
+    const skillId = "skill-analyse-conformite-fournisseur";
+    expect(screen.getByTestId(`skill-card-${skillId}`)).toBeDefined();
+
+    // Execute Skill in 1 click
+    fireEvent.change(screen.getByTestId(`skill-test-input-${skillId}`), {
+      target: { value: "Article 12 : plafond de responsabilité limité à 1 mois" },
+    });
+    fireEvent.click(screen.getByTestId(`run-skill-btn-${skillId}`));
+    expect(screen.getByTestId(`skill-execution-output-${skillId}`).textContent).toContain(
+      "Analyse Conformité Fournisseur",
+    );
+
+    // 2. Switch to Agents tab, create an Agent with the Skill attached, and execute it
+    fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
+    fireEvent.change(screen.getByTestId("agent-name-input"), {
+      target: { value: "Expert Achats IT" },
+    });
+    fireEvent.change(screen.getByTestId("agent-role-input"), {
+      target: { value: "Sécuriser les contrats logiciels et cloud" },
+    });
+    fireEvent.change(screen.getByTestId("agent-instructions-input"), {
+      target: { value: "Toujours produire une synthèse claire avec recommandations." },
+    });
+    fireEvent.click(screen.getByTestId(`create-agent-skill-checkbox-${skillId}`));
+    fireEvent.click(screen.getByTestId("create-agent-submit-btn"));
+
+    const agentId = "agent-expert-achats-it";
+    expect(screen.getByTestId(`agent-card-${agentId}`)).toBeDefined();
+
+    fireEvent.change(screen.getByTestId(`agent-test-input-${agentId}`), {
+      target: { value: "Examine le contrat SaaS Acme" },
+    });
+    fireEvent.click(screen.getByTestId(`run-agent-btn-${agentId}`));
+    expect(screen.getByTestId(`agent-execution-output-${agentId}`).textContent).toContain(
+      "Analyse Conformité Fournisseur",
+    );
+
+    // 3. Simulate F5 reload: unmount and re-render on /agents
+    firstRender.unmount();
+
+    const queryClientAfterF5 = createOrciaQueryClient();
+    const historyAfterF5 = createMemoryHistory({ initialEntries: ["/agents"] });
+    const routerAfterF5 = createOrciaRouter({
+      queryClient: queryClientAfterF5,
+      history: historyAfterF5,
+    });
+    await routerAfterF5.load();
+
+    render(
+      <QueryClientProvider client={queryClientAfterF5}>
+        <RouterProvider router={routerAfterF5} />
+      </QueryClientProvider>,
+    );
+
+    // Verify Agent and its execution output survived F5
+    expect(screen.getByTestId(`agent-card-${agentId}`)).toBeDefined();
+    expect(screen.getByTestId(`agent-execution-output-${agentId}`).textContent).toContain(
+      "Examine le contrat SaaS Acme",
+    );
+
+    // Verify Skill also survived F5
+    fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
+    expect(screen.getByTestId(`skill-card-${skillId}`)).toBeDefined();
+
+    resetCachedAgentsAndSkillsForTest();
+  });
 });

@@ -271,6 +271,15 @@ export {
   type HelpArticleGeneratorAndValidatorViewProps,
   type UiHelpValidationSummary,
 } from "./primitives/HelpArticleGeneratorAndValidatorView";
+export {
+  AgentsAndSkillsManagerView,
+  type AgentsAndSkillsManagerLabels,
+  type AgentsAndSkillsManagerViewProps,
+  type AgentsAndSkillsSubTab,
+  type UiAgentThinkingLevel,
+  type UiManagedAgentItem,
+  type UiManagedSkillItem,
+} from "./components/AgentsAndSkillsManagerView";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

@@ -9,6 +9,7 @@ from orcia_api.middleware.trace_and_error import (
     TraceContextMiddleware,
     register_exception_handlers,
 )
+from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
 from orcia_api.routers.assistant import router as assistant_router
 from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
 from orcia_api.routers.auth import router as auth_router
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
     application.include_router(dna_and_glossary_router)
     application.include_router(mcp_and_test_bench_router)
     application.include_router(pack_builder_router)
+    application.include_router(agents_and_skills_router)
     return application
 
 

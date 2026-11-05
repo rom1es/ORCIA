@@ -212,6 +212,96 @@
         "title": "AcquireResourceLeasesResponse",
         "type": "object"
       },
+      "AgentItemResponse": {
+        "additionalProperties": false,
+        "description": "Transport schema for a configured Agent (`🤖 Agent`).",
+        "properties": {
+          "agent_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "handle": {
+            "maxLength": 130,
+            "minLength": 2,
+            "title": "Handle",
+            "type": "string"
+          },
+          "instructions": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "role_mission": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Role Mission",
+            "type": "string"
+          },
+          "sha256": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "skill_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skill Ids",
+            "type": "array"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Slug",
+            "type": "string"
+          },
+          "thinking_level": {
+            "default": "medium",
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Thinking Level",
+            "type": "string"
+          },
+          "uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "slug",
+          "handle",
+          "uri",
+          "name",
+          "role_mission",
+          "instructions"
+        ],
+        "title": "AgentItemResponse",
+        "type": "object"
+      },
       "AgenticGateEvaluateRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`, `AD-10`, `FR-18`).",
@@ -415,6 +505,35 @@
           "trace_id"
         ],
         "title": "AgenticGateEvaluateResponse",
+        "type": "object"
+      },
+      "AgentsAndSkillsListResponse": {
+        "additionalProperties": false,
+        "description": "Combined list of user-created Agents and Skills (`GET /api/v1/agents-and-skills`).",
+        "properties": {
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/AgentItemResponse"
+            },
+            "title": "Agents",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillItemResponse"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trace_id"
+        ],
+        "title": "AgentsAndSkillsListResponse",
         "type": "object"
       },
       "ArbitrationOptionSchemaItem": {
@@ -4034,6 +4153,33 @@
         "title": "DelegateGrantRequest",
         "type": "object"
       },
+      "DeleteSkillOrAgentResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after deleting a Skill or an Agent.",
+        "properties": {
+          "deleted_id": {
+            "title": "Deleted Id",
+            "type": "string"
+          },
+          "detached_from_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Detached From Agent Ids",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deleted_id",
+          "trace_id"
+        ],
+        "title": "DeleteSkillOrAgentResponse",
+        "type": "object"
+      },
       "DemoWorkspaceProvisionResponse": {
         "additionalProperties": false,
         "description": "Zero Empty-State Demo Workspace provision response (`Story 8.6`).",
@@ -5269,6 +5415,170 @@
           "created_at"
         ],
         "title": "ExceptionWaiverResponse",
+        "type": "object"
+      },
+      "ExecuteAgentRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to execute/test an Agent in 1 click.",
+        "properties": {
+          "prompt": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "ExecuteAgentRequest",
+        "type": "object"
+      },
+      "ExecuteAgentResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after testing/executing an Agent in 1 click.",
+        "properties": {
+          "agent_handle": {
+            "title": "Agent Handle",
+            "type": "string"
+          },
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "agent_name": {
+            "title": "Agent Name",
+            "type": "string"
+          },
+          "invoked_skills": {
+            "items": {
+              "$ref": "#/components/schemas/InvokedSkillTraceResponseItem"
+            },
+            "title": "Invoked Skills",
+            "type": "array"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "response_text": {
+            "title": "Response Text",
+            "type": "string"
+          },
+          "status": {
+            "const": "SUCCEEDED",
+            "default": "SUCCEEDED",
+            "title": "Status",
+            "type": "string"
+          },
+          "thinking_level": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Thinking Level",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "agent_name",
+          "agent_handle",
+          "thinking_level",
+          "prompt",
+          "response_text",
+          "trace_id"
+        ],
+        "title": "ExecuteAgentResponse",
+        "type": "object"
+      },
+      "ExecuteSkillRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to execute/test a Skill in 1 click.",
+        "properties": {
+          "input_text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Input Text",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Parameters",
+            "type": "object"
+          }
+        },
+        "required": [
+          "input_text"
+        ],
+        "title": "ExecuteSkillRequest",
+        "type": "object"
+      },
+      "ExecuteSkillResponse": {
+        "additionalProperties": false,
+        "description": "Response payload after testing/executing a Skill in 1 click.",
+        "properties": {
+          "applied_parameters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Applied Parameters",
+            "type": "object"
+          },
+          "command_handle": {
+            "title": "Command Handle",
+            "type": "string"
+          },
+          "expected_output_format": {
+            "title": "Expected Output Format",
+            "type": "string"
+          },
+          "input_text": {
+            "title": "Input Text",
+            "type": "string"
+          },
+          "output_text": {
+            "title": "Output Text",
+            "type": "string"
+          },
+          "skill_id": {
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "skill_name": {
+            "title": "Skill Name",
+            "type": "string"
+          },
+          "status": {
+            "const": "SUCCEEDED",
+            "default": "SUCCEEDED",
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_id",
+          "skill_name",
+          "command_handle",
+          "input_text",
+          "applied_parameters",
+          "output_text",
+          "expected_output_format",
+          "trace_id"
+        ],
+        "title": "ExecuteSkillResponse",
         "type": "object"
       },
       "ExecuteTierRoutingRequest": {
@@ -8620,6 +8930,36 @@
           "outbox_event_id"
         ],
         "title": "InvalidatePromptCacheResponse",
+        "type": "object"
+      },
+      "InvokedSkillTraceResponseItem": {
+        "additionalProperties": false,
+        "description": "Trace item of a Skill mobilized during Agent execution.",
+        "properties": {
+          "command_handle": {
+            "title": "Command Handle",
+            "type": "string"
+          },
+          "output_summary": {
+            "title": "Output Summary",
+            "type": "string"
+          },
+          "skill_id": {
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "skill_name": {
+            "title": "Skill Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_id",
+          "skill_name",
+          "command_handle",
+          "output_summary"
+        ],
+        "title": "InvokedSkillTraceResponseItem",
         "type": "object"
       },
       "JiraIssueUpdatedWebhookRequest": {
@@ -13206,6 +13546,92 @@
         "title": "ShellNavigationResponse",
         "type": "object"
       },
+      "SkillItemResponse": {
+        "additionalProperties": false,
+        "description": "Transport schema for a reusable Skill (`🛠️ Compétence`).",
+        "properties": {
+          "command_handle": {
+            "maxLength": 130,
+            "minLength": 2,
+            "title": "Command Handle",
+            "type": "string"
+          },
+          "expected_output_format": {
+            "default": "Synthèse structurée",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Expected Output Format",
+            "type": "string"
+          },
+          "input_parameters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Input Parameters",
+            "type": "array"
+          },
+          "instructions": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "objective": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "sha256": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "skill_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Slug",
+            "type": "string"
+          },
+          "uri": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Uri",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_id",
+          "slug",
+          "command_handle",
+          "uri",
+          "name",
+          "objective",
+          "instructions"
+        ],
+        "title": "SkillItemResponse",
+        "type": "object"
+      },
       "SseEventEnvelopeResponse": {
         "additionalProperties": false,
         "description": "SSE event envelope published to `channel:workspace:{ws_id}` (`AD-4`, `< 500 ms`).",
@@ -15595,6 +16021,21 @@
         "title": "TwoSpeedSearchResponse",
         "type": "object"
       },
+      "UpdateAgentSkillsRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to attach/detach Skills on an Agent in 1 click.",
+        "properties": {
+          "skill_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skill Ids",
+            "type": "array"
+          }
+        },
+        "title": "UpdateAgentSkillsRequest",
+        "type": "object"
+      },
       "UpdateUserLayerPreferencesRequest": {
         "additionalProperties": false,
         "description": "Request payload for `PUT /api/v1/assistant/governance/mode-a/user` (`Story 10.1`).",
@@ -15725,6 +16166,138 @@
           "lifecycle_phase"
         ],
         "title": "UpdateWorkspaceLifecycleRequest",
+        "type": "object"
+      },
+      "UpsertAgentRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to create or update an Agent (`POST /api/v1/agents-and-skills/agents`).",
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "instructions": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "role_mission": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Role Mission",
+            "type": "string"
+          },
+          "skill_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skill Ids",
+            "type": "array"
+          },
+          "thinking_level": {
+            "default": "medium",
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Thinking Level",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role_mission",
+          "instructions"
+        ],
+        "title": "UpsertAgentRequest",
+        "type": "object"
+      },
+      "UpsertSkillRequest": {
+        "additionalProperties": false,
+        "description": "Request payload to create or update a reusable Skill.",
+        "properties": {
+          "expected_output_format": {
+            "default": "Synthèse structurée",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Expected Output Format",
+            "type": "string"
+          },
+          "input_parameters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Input Parameters",
+            "type": "array"
+          },
+          "instructions": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "objective": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "skill_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Id"
+          },
+          "version": {
+            "default": "1.0.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "objective",
+          "instructions"
+        ],
+        "title": "UpsertSkillRequest",
         "type": "object"
       },
       "UpstreamChallengePreviewRequest": {
@@ -18970,6 +19543,799 @@
         "summary": "Replay Outbox Events",
         "tags": [
           "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills": {
+      "get": {
+        "description": "Return all user-configured Agents and Skills (starts empty at Day 0).",
+        "operationId": "list_agents_and_skills_api_v1_agents_and_skills_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentsAndSkillsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "List user-configured Agents and reusable Skills (`🤖 Mes Agents`)",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/agents": {
+      "post": {
+        "description": "Create or update an Agent with its attached `skill_ids` and persist in PostgreSQL 18.",
+        "operationId": "upsert_agent_endpoint_api_v1_agents_and_skills_agents_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create or update an Agent (`🤖 Agent`) with its attached Skills",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/agents/{agent_id}": {
+      "delete": {
+        "description": "Delete `agent_id` from memory and PostgreSQL 18 `catalog_items`.",
+        "operationId": "delete_agent_endpoint_api_v1_agents_and_skills_agents__agent_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSkillOrAgentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Delete an Agent",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/agents/{agent_id}/execute": {
+      "post": {
+        "description": "Execute `agent_id` on `payload.prompt`, mobilizing its attached Skills.",
+        "operationId": "execute_agent_endpoint_api_v1_agents_and_skills_agents__agent_id__execute_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecuteAgentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute/test an Agent with its attached Skills in 1 click",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/agents/{agent_id}/skills": {
+      "patch": {
+        "description": "Update the list of Skills attached to `agent_id` in 1 click.",
+        "operationId": "update_agent_skills_endpoint_api_v1_agents_and_skills_agents__agent_id__skills_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentSkillsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Attach or detach Skills on an Agent in 1 click",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/skills": {
+      "post": {
+        "description": "Create or update a Skill and persist it in PostgreSQL 18 `catalog_items`.",
+        "operationId": "upsert_skill_endpoint_api_v1_agents_and_skills_skills_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertSkillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create or update a reusable Skill (`🛠️ Compétence`)",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/skills/{skill_id}": {
+      "delete": {
+        "description": "Delete `skill_id` and automatically remove it from any Agents that referenced it.",
+        "operationId": "delete_skill_endpoint_api_v1_agents_and_skills_skills__skill_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Skill Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSkillOrAgentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Delete a Skill and detach it from all referencing Agents",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/skills/{skill_id}/execute": {
+      "post": {
+        "description": "Execute `skill_id` directly on `payload.input_text` and return the structured output.",
+        "operationId": "execute_skill_endpoint_api_v1_agents_and_skills_skills__skill_id__execute_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Skill Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteSkillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecuteSkillResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Execute/test a Skill in 1 click on a concrete input",
+        "tags": [
+          "agents-and-skills"
         ]
       }
     },

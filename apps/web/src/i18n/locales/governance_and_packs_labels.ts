@@ -1,4 +1,5 @@
 import type {
+  AgentsAndSkillsManagerLabels,
   DnaStarlarkAndGlossaryLabels,
   HelpArticleGeneratorAndValidatorLabels,
   PackBuilderProcessesStudioLabels,
@@ -12,6 +13,7 @@ export interface GovernanceAndPacksDictionarySection {
   readonly remoteServiceTestBench: RemoteServiceTestBenchLabels;
   readonly packBuilderStudio: PackBuilderProcessesStudioLabels;
   readonly helpArticleGenerator: HelpArticleGeneratorAndValidatorLabels;
+  readonly agentsAndSkillsManager: AgentsAndSkillsManagerLabels;
 }
 
 export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection = {
@@ -87,6 +89,63 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     authorityReferenceBadge: "📚 Autorité : REFERENCE (HELP_ARTICLE)",
     generateAndAttachCta: "⚡ Générer, Valider & Rattacher à chaud",
   },
+  agentsAndSkillsManager: {
+    heading: "🤖 Mes Agents & Compétences (Skills)",
+    subtitle:
+      "Créez vos compétences réutilisables, rattachez-les en 1 clic à vos agents spécialisés et exécutez-les immédiatement sur un cas concret.",
+    tabAgents: "🤖 Mes Agents",
+    tabSkills: "🛠️ Compétences (Skills)",
+    tabConnections: "🔌 Connexions externes",
+    emptyAgentsTitle: "Aucun agent configuré",
+    emptyAgentsDescription:
+      "Créez votre premier agent ci-dessus pour lui confier des compétences et l'exécuter en 1 clic.",
+    emptySkillsTitle: "Aucune compétence enregistrée",
+    emptySkillsDescription:
+      "Créez votre première compétence ci-dessus pour pouvoir l'exécuter ou la rattacher à vos agents.",
+    createAgentSectionTitle: "Créer un Agent spécialisé",
+    agentNameLabel: "Nom de l'agent",
+    agentNamePlaceholder: "Ex: Analyste Risques Fournisseurs",
+    agentRoleLabel: "Rôle & mission métier",
+    agentRolePlaceholder:
+      "Ex: Évaluer la conformité et les risques contractuels d'un dossier fournisseur",
+    agentInstructionsLabel: "Instructions de travail",
+    agentInstructionsPlaceholder:
+      "Précisez la posture, les étapes d'analyse et les critères de qualité attendus...",
+    agentThinkingLevelLabel: "Niveau de réflexion par défaut",
+    thinkingLevels: {
+      simple: "⚡ Rapide (Tâches directes)",
+      medium: "⚖️ Équilibré (Analyse standard)",
+      complex: "🧠 Approfondi (Arbitrages complexes)",
+      auto: "✨ Automatique (Adaptatif)",
+    },
+    attachedSkillsLabel: "Compétences (Skills) rattachées",
+    noSkillsAvailableHint:
+      "Aucune compétence créée pour le moment. Ouvrez l'onglet « 🛠️ Compétences (Skills) » pour en créer une.",
+    createAgentButtonLabel: "+ Enregistrer l'Agent",
+    testAgentInputPlaceholder: "Saisissez une demande concrète à confier à cet agent...",
+    runAgentButtonLabel: "▶ Exécuter l'Agent",
+    deleteAgentButtonLabel: "Supprimer",
+    mobilizedSkillsLabel: "Compétences mobilisées",
+    createSkillSectionTitle: "Créer une Compétence (Skill) réutilisable",
+    skillUsageBanner:
+      "💡 Une Compétence (Skill) est un savoir-faire métier modulaire. Une fois enregistrée, vous pouvez la rattacher en 1 clic à un ou plusieurs Agents, ou l'invoquer directement dans Mon Assistant et vos Processus.",
+    skillNameLabel: "Nom de la compétence",
+    skillNamePlaceholder: "Ex: Synthèse de conformité fournisseur",
+    skillObjectiveLabel: "Objectif métier (Quand utiliser cette compétence ?)",
+    skillObjectivePlaceholder:
+      "Ex: Vérifier les clauses critiques d'un contrat et signaler les écarts...",
+    skillParamsLabel: "Paramètres d'entrée attendus (séparés par des virgules)",
+    skillParamsPlaceholder: "Ex: contrat, conditions_particulieres",
+    skillInstructionsLabel: "Méthode & instructions d'exécution",
+    skillInstructionsPlaceholder:
+      "Décrivez étape par étape comment traiter la demande et quelles règles vérifier...",
+    skillOutputFormatLabel: "Format de résultat attendu",
+    skillOutputFormatPlaceholder: "Ex: Tableau des risques + recommandation Go / No-Go",
+    createSkillButtonLabel: "+ Enregistrer la Compétence",
+    testSkillInputPlaceholder: "Saisissez un cas de test pour vérifier cette compétence...",
+    runSkillButtonLabel: "▶ Tester la Compétence",
+    deleteSkillButtonLabel: "Supprimer",
+  },
 };
 
 export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection = {
@@ -161,5 +220,61 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     hotAttachmentHeading: "Hot Attachment & Git Export",
     authorityReferenceBadge: "📚 Authority: REFERENCE (HELP_ARTICLE)",
     generateAndAttachCta: "⚡ Generate, Validate & Hot-Attach",
+  },
+  agentsAndSkillsManager: {
+    heading: "🤖 My Agents & Skills",
+    subtitle:
+      "Create reusable business skills, attach them in 1 click to your specialized agents, and execute them immediately on concrete tasks.",
+    tabAgents: "🤖 My Agents",
+    tabSkills: "🛠️ Skills",
+    tabConnections: "🔌 External Connections",
+    emptyAgentsTitle: "No agent configured yet",
+    emptyAgentsDescription:
+      "Create your first agent above to attach skills and run it in 1 click.",
+    emptySkillsTitle: "No skills saved yet",
+    emptySkillsDescription:
+      "Create your first skill above to test it or attach it to your agents.",
+    createAgentSectionTitle: "Create a specialized Agent",
+    agentNameLabel: "Agent name",
+    agentNamePlaceholder: "e.g., Supplier Risk Analyst",
+    agentRoleLabel: "Business role & mission",
+    agentRolePlaceholder: "e.g., Evaluate compliance and contractual risks in supplier files",
+    agentInstructionsLabel: "Working instructions",
+    agentInstructionsPlaceholder:
+      "Specify the posture, analysis steps, and expected quality criteria...",
+    agentThinkingLevelLabel: "Default thinking depth",
+    thinkingLevels: {
+      simple: "⚡ Fast (Direct tasks)",
+      medium: "⚖️ Balanced (Standard analysis)",
+      complex: "🧠 Deep (Complex trade-offs)",
+      auto: "✨ Automatic (Adaptive)",
+    },
+    attachedSkillsLabel: "Attached Skills",
+    noSkillsAvailableHint:
+      "No skills created yet. Open the '🛠️ Skills' tab to create your first reusable skill.",
+    createAgentButtonLabel: "+ Save Agent",
+    testAgentInputPlaceholder: "Enter a concrete request to assign to this agent...",
+    runAgentButtonLabel: "▶ Run Agent",
+    deleteAgentButtonLabel: "Delete",
+    mobilizedSkillsLabel: "Mobilized skills",
+    createSkillSectionTitle: "Create a reusable Skill",
+    skillUsageBanner:
+      "💡 A Skill is a modular business capability. Once saved, you can attach it in 1 click to one or more Agents, or invoke it directly in My Assistant and your Processes.",
+    skillNameLabel: "Skill name",
+    skillNamePlaceholder: "e.g., Supplier compliance summary",
+    skillObjectiveLabel: "Business goal (When to use this skill?)",
+    skillObjectivePlaceholder:
+      "e.g., Check critical contract clauses and highlight deviations...",
+    skillParamsLabel: "Expected input parameters (comma-separated)",
+    skillParamsPlaceholder: "e.g., contract, special_terms",
+    skillInstructionsLabel: "Execution method & instructions",
+    skillInstructionsPlaceholder:
+      "Describe step by step how to process the input and which rules to verify...",
+    skillOutputFormatLabel: "Expected output format",
+    skillOutputFormatPlaceholder: "e.g., Risk summary table + Go / No-Go recommendation",
+    createSkillButtonLabel: "+ Save Skill",
+    testSkillInputPlaceholder: "Enter a sample input to test this skill...",
+    runSkillButtonLabel: "▶ Test Skill",
+    deleteSkillButtonLabel: "Delete",
   },
 };

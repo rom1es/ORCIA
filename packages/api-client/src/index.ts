@@ -1,4 +1,5 @@
 import createClient from "openapi-fetch";
+import { createAgentsAndSkillsDomainClient } from "./domains/agentsAndSkills";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
@@ -7,6 +8,7 @@ import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from
 
 export type * from "./generated/schema";
 export {
+  createAgentsAndSkillsDomainClient,
   createAuthAndShellDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
@@ -38,5 +40,6 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createAuthAndShellDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
     ...createBootstrapAndOntologyDomainClient(requestJson),
+    ...createAgentsAndSkillsDomainClient(requestJson),
   };
 }

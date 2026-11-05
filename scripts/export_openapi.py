@@ -34,6 +34,7 @@ for rel_src in (
 from orcia_api.main import create_app  # noqa: E402
 
 SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
+    "agents_and_skills",
     "auth_and_org",
     "blackboard",
     "bootstrap",

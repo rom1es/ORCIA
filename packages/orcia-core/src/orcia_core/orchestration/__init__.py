@@ -5,6 +5,22 @@ from __future__ import annotations
 from typing import Any
 
 from orcia_core.orchestration import seeds as _seeds
+from orcia_core.orchestration._internal.sql_agents_and_skills import (
+    delete_agent_from_postgres18,
+    delete_skill_from_postgres18,
+    load_agents_and_skills_from_postgres18,
+    persist_agent_to_postgres18,
+    persist_skill_to_postgres18,
+)
+from orcia_core.orchestration.agents_and_skills_manager import (
+    AgentExecutionOutcome,
+    AgentsAndSkillsManagementService,
+    AgentThinkingLevel,
+    InvokedSkillTraceItem,
+    ManagedAgentRecord,
+    ManagedSkillRecord,
+    SkillExecutionOutcome,
+)
 from orcia_core.orchestration.assistant_agent import (
     ASSISTANT_WORKFLOW_URI,
     AssistantAgentService,
@@ -185,11 +201,18 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "ASSISTANT_WORKFLOW_URI",
+    "AgentExecutionOutcome",
+    "AgentThinkingLevel",
+    "AgentsAndSkillsManagementService",
     "DEFAULT_CLAIM_TTL_SECONDS",
     "DEFAULT_GUIDANCE_DRAWER_STEPS",
     "GOVERNED_MCP_TOOLS",
+    "InvokedSkillTraceItem",
     "LIFECYCLE_SUGGESTED_WORKFLOWS",
     "MIN_HUMAN_ANCHOR_CHARS",
+    "ManagedAgentRecord",
+    "ManagedSkillRecord",
+    "SkillExecutionOutcome",
     "AgentStepExecutor",
     "ArbitrationOptionItem",
     "ArtifactTemplateDefinition",
@@ -315,6 +338,11 @@ __all__ = [
     "build_default_orchestration_setup_service",
     "build_default_tier_mappings",
     "compute_text_sha256",
+    "delete_agent_from_postgres18",
+    "delete_skill_from_postgres18",
+    "load_agents_and_skills_from_postgres18",
+    "persist_agent_to_postgres18",
+    "persist_skill_to_postgres18",
     "register_default_step_executors",
     "register_memlog_marker_plugin",
     "register_workflow_policy_plugin",
