@@ -60,6 +60,10 @@ export type ConnectorTestBenchReportResponse =
 export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
 export type HelpArticleValidationResponse = components["schemas"]["ValidateHelpArticleResponse"];
 export type { LlmConnectionTestRequest, LlmConnectionTestResponse };
+export type InstalledBusinessPackItemResponse =
+  components["schemas"]["InstalledBusinessPackItemResponse"];
+export type InstalledBusinessPackListResponse =
+  components["schemas"]["InstalledBusinessPackListResponse"];
 
 export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonFn) {
   return {
@@ -306,6 +310,11 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
         "/api/v1/pack-builder/processes/validate-help-article",
         "POST",
         payload,
+      );
+    },
+    listInstalledBusinessPacks(): Promise<InstalledBusinessPackListResponse> {
+      return requestJson<InstalledBusinessPackListResponse>(
+        "/api/v1/pack-builder/installed-packs",
       );
     },
   };

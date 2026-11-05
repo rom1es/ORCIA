@@ -208,6 +208,12 @@ async def test_pack_builder_fastapi_endpoints() -> None:
         assert manifest_resp.status_code == 200
         assert len(manifest_resp.json()["agents"]) == 4
 
+        installed_before = await client.get("/api/v1/pack-builder/installed-packs")
+        assert installed_before.status_code == 200
+        before_keys = [p["pack_key"] for p in installed_before.json()["packs"]]
+        assert "orcia-pack-sdlc" in before_keys
+        assert "orcia-pack-builder" in before_keys
+
         create_resp = await client.post(
             "/api/v1/pack-builder/processes/create-pack",
             json={
@@ -238,3 +244,8 @@ async def test_pack_builder_fastapi_endpoints() -> None:
         )
         assert create_resp.status_code == 201
         assert create_resp.json()["kernel_or_core_touched"] is False
+
+        installed_after = await client.get("/api/v1/pack-builder/installed-packs")
+        assert installed_after.status_code == 200
+        after_keys = [p["pack_key"] for p in installed_after.json()["packs"]]
+        assert "orcia-pack-legal-contracts" in after_keys

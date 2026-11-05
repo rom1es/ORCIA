@@ -272,6 +272,7 @@ export interface PlatformSetupContextValue {
     freshnessTtlDays: number;
   }) => void;
   readonly registerPack: (input: ConfiguredPackItem) => void;
+  readonly removePack: (packKey: string, scopePath?: string) => void;
   readonly upsertWorkflow: (input: ConfiguredWorkflowItem) => void;
   readonly launchRun: (input: {
     workspaceId: string;
@@ -730,7 +731,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
 
   const registerPack = (input: ConfiguredPackItem) => {
     const nextPacks = [
-      ...packs.filter((p) => !(p.packKey === input.packKey && p.version === input.version)),
+      ...packs.filter(
+        (p) => !(p.packKey === input.packKey && p.scopePath === input.scopePath),
+      ),
       input,
     ];
     const nextCatalogItems: readonly UiCatalogExplorerItemView[] = [
@@ -754,6 +757,34 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextAudit = appendAudit(
       "PackRegistered",
       `Pack "${input.packKey}@${input.version}" (${input.status}) activé sur ${input.scopePath}`,
+    );
+    setPacks(nextPacks);
+    setCatalogItems(nextCatalogItems);
+    setAuditEvents(nextAudit);
+    persistSnapshot(
+      buildSnapshot({
+        packs: nextPacks,
+        catalogItems: nextCatalogItems,
+        auditEvents: nextAudit,
+      }),
+    );
+  };
+
+  const removePack = (packKey: string, scopePath?: string) => {
+    const nextPacks = packs.filter(
+      (p) =>
+        !(
+          p.packKey === packKey &&
+          (scopePath === undefined || p.scopePath === scopePath)
+        ),
+    );
+    const stillActiveSomewhere = nextPacks.some((p) => p.packKey === packKey);
+    const nextCatalogItems = stillActiveSomewhere
+      ? catalogItems
+      : catalogItems.filter((item) => item.resourceId !== `pack-${packKey}`);
+    const nextAudit = appendAudit(
+      "PackDeactivated",
+      `Pack "${packKey}" désactivé sur ${scopePath ?? "GLOBAL"}`,
     );
     setPacks(nextPacks);
     setCatalogItems(nextCatalogItems);
@@ -917,6 +948,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         updateWorkspacePhase,
         registerDatasource,
         registerPack,
+        removePack,
         upsertWorkflow,
         launchRun,
         addOntologyConcept,

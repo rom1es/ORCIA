@@ -236,3 +236,29 @@ class GenerateAndAttachHelpResponse(BaseModel):
     exported_git_paths: list[str]
     hot_attach_elapsed_ms: float
     authority_role: Literal["REFERENCE"] = "REFERENCE"
+
+
+class InstalledBusinessPackItemResponse(BaseModel):
+    """Installed Business Pack descriptor returned by `/api/v1/pack-builder/installed-packs`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pack_key: str
+    pack_slug: str
+    title: str
+    title_en: str
+    version: str
+    domain_name: str
+    description: str
+    description_en: str
+    workflows_count: int
+    agents_count: int
+    is_system_pack: bool = True
+
+
+class InstalledBusinessPackListResponse(BaseModel):
+    """Catalog of installed Business Packs known to the ORCIA backend."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    packs: list[InstalledBusinessPackItemResponse]

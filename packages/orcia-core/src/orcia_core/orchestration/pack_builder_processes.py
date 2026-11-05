@@ -231,6 +231,10 @@ class PackBuilderSystemService:
         """Return the 4 specialized agents of `orcia-pack-builder`."""
         return PACK_BUILDER_AGENTS
 
+    def list_created_packs(self) -> tuple[CreatedBusinessPackResult, ...]:
+        """Return all custom Business Packs created via Process 1 (`create-business-pack`)."""
+        return tuple(self._created_packs.values())
+
     async def create_business_pack(
         self,
         *,

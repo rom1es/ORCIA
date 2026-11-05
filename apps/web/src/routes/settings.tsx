@@ -12,6 +12,7 @@ import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 import { SettingsAiModelsSection } from "./SettingsAiModelsSection";
 import { SettingsIamOrganizationSection } from "./SettingsIamOrganizationSection";
+import { SettingsPacksSection } from "./SettingsPacksSection";
 import { SettingsSecondaryTabsSection } from "./SettingsSecondaryTabsSection";
 
 export type SettingsSectionTab =
@@ -44,6 +45,7 @@ export function SettingsHubView() {
     upsertLlmTier,
     registerDatasource,
     registerPack,
+    removePack,
     upsertWorkflow,
   } = usePlatformSetup();
 
@@ -163,6 +165,16 @@ export function SettingsHubView() {
               llmTiers={llmTiers}
               openHelpSection={openHelpSection}
               upsertLlmTier={upsertLlmTier}
+            />
+          ) : activeTab === "packs" ? (
+            <SettingsPacksSection
+              isFr={isFr}
+              packs={packs}
+              orgUnits={orgUnits}
+              workspaces={workspaces}
+              registerPack={registerPack}
+              removePack={removePack}
+              openHelpSection={openHelpSection}
             />
           ) : (
             <SettingsSecondaryTabsSection

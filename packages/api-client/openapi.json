@@ -8860,6 +8860,89 @@
         "title": "InitWorkspaceResponse",
         "type": "object"
       },
+      "InstalledBusinessPackItemResponse": {
+        "additionalProperties": false,
+        "description": "Installed Business Pack descriptor returned by `/api/v1/pack-builder/installed-packs`.",
+        "properties": {
+          "agents_count": {
+            "title": "Agents Count",
+            "type": "integer"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "description_en": {
+            "title": "Description En",
+            "type": "string"
+          },
+          "domain_name": {
+            "title": "Domain Name",
+            "type": "string"
+          },
+          "is_system_pack": {
+            "default": true,
+            "title": "Is System Pack",
+            "type": "boolean"
+          },
+          "pack_key": {
+            "title": "Pack Key",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "title_en": {
+            "title": "Title En",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workflows_count": {
+            "title": "Workflows Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pack_key",
+          "pack_slug",
+          "title",
+          "title_en",
+          "version",
+          "domain_name",
+          "description",
+          "description_en",
+          "workflows_count",
+          "agents_count"
+        ],
+        "title": "InstalledBusinessPackItemResponse",
+        "type": "object"
+      },
+      "InstalledBusinessPackListResponse": {
+        "additionalProperties": false,
+        "description": "Catalog of installed Business Packs known to the ORCIA backend.",
+        "properties": {
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/InstalledBusinessPackItemResponse"
+            },
+            "title": "Packs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "packs"
+        ],
+        "title": "InstalledBusinessPackListResponse",
+        "type": "object"
+      },
       "InvalidatePromptCacheRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`).",
@@ -29509,6 +29592,28 @@
         "summary": "Validate a Workflow-as-Code YAML/JSON manifest with exact line numbers",
         "tags": [
           "orchestration-setup"
+        ]
+      }
+    },
+    "/api/v1/pack-builder/installed-packs": {
+      "get": {
+        "description": "Return the catalog of Business Packs installed and known in the ORCIA backend.",
+        "operationId": "list_installed_business_packs_endpoint_api_v1_pack_builder_installed_packs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstalledBusinessPackListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Installed Business Packs Endpoint",
+        "tags": [
+          "pack-builder"
         ]
       }
     },
