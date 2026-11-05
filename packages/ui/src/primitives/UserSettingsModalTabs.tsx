@@ -210,6 +210,13 @@ export function UserSettingsModalTabs({
             type="button"
             data-testid="mcp-generate-token-btn"
             onClick={onIssueMcpToken}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                onIssueMcpToken();
+              }
+            }}
             className="px-3 py-1.5 rounded bg-brand-primary text-surface-elevated font-medium"
           >
             {labels.generateMcpTokenCta}

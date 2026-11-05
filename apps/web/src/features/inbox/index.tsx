@@ -69,6 +69,7 @@ export function InboxFeaturePanel() {
           assembledLayers={[]}
           studioNodes={[]}
           labels={dictionary.assistantGovernance}
+          onClose={() => setGovernanceOpen(false)}
         />
       ) : null}
 

@@ -59,7 +59,7 @@ from orcia_pack_sdlc import activate_sdlc_pack
 
 
 def _resolve_default_llm_gateway() -> LLMPort:
-    """Resolve `LiteLLMAdapter` by default in production (`ORCIA_USE_CASSETTE_LLM=true` for cassette)."""
+    """Resolve `LiteLLMAdapter` by default (`ORCIA_USE_CASSETTE_LLM=true` for cassette)."""
     use_cassette = os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in (
         "1",
         "true",

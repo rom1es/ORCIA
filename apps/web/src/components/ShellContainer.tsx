@@ -1,9 +1,14 @@
 import {
   ContextualHelpColumnAndCenter,
+  DEFAULT_RGAA_MODAL_LABELS_EN,
+  DEFAULT_RGAA_MODAL_LABELS_FR,
   FourZoneDirectionCShell,
+  RgaaUnsavedChangesAlert,
   TopHeaderSearchCommand,
   UserAccountDropdownAndSettingsModal,
   computeDefaultHelpColumnOpen,
+  handleRgaaSubmitKeyDown,
+  useUnsavedChangesDialogGuard,
   type EightFixedMenuKey,
   type TopSearchHitItem,
   type UiHumanProfileBadge,
@@ -91,6 +96,7 @@ function InnerShellContainer({
   const [adminFullName, setAdminFullName] = useState<string>("");
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [adminPassword, setAdminPassword] = useState<string>("");
+  const [adminModalDismissed, setAdminModalDismissed] = useState<boolean>(false);
 
   useEffect(() => {
     setSelectedModuleOverride(null);
@@ -190,9 +196,32 @@ function InnerShellContainer({
     defaultSummary: dictionary.modulePages[safeModuleKey].description,
   });
 
-  const handleFirstBootAdminSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adminFullName.trim() || !adminEmail.trim()) {
+  const isAdminModalOpen = platformAdmin === null && !adminModalDismissed;
+  const isAdminModalDirty = Boolean(
+    adminFullName.trim() || adminEmail.trim() || adminPassword.trim(),
+  );
+  const canCreateAdmin = Boolean(adminFullName.trim() && adminEmail.trim());
+  const rgaaLabels = isFr ? DEFAULT_RGAA_MODAL_LABELS_FR : DEFAULT_RGAA_MODAL_LABELS_EN;
+
+  const {
+    showUnsavedConfirm: showAdminUnsavedConfirm,
+    requestClose: requestCloseAdminModal,
+    confirmDiscardAndClose: confirmDiscardAdminModal,
+    cancelDiscardAndStay: cancelDiscardAdminModal,
+    handleDialogKeyDown: handleAdminDialogKeyDown,
+  } = useUnsavedChangesDialogGuard({
+    isOpen: isAdminModalOpen,
+    isDirty: isAdminModalDirty,
+    onClose: () => setAdminModalDismissed(true),
+    onDiscardUnsavedChanges: () => {
+      setAdminFullName("");
+      setAdminEmail("");
+      setAdminPassword("");
+    },
+  });
+
+  const submitFirstBootAdmin = () => {
+    if (!canCreateAdmin) {
       return;
     }
     createPlatformAdmin({
@@ -200,6 +229,11 @@ function InnerShellContainer({
       email: adminEmail.trim(),
       password: adminPassword,
     });
+  };
+
+  const handleFirstBootAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitFirstBootAdmin();
   };
 
   return (
@@ -278,12 +312,13 @@ function InnerShellContainer({
       </FourZoneDirectionCShell>
 
       {/* Modale d'initialisation au 1er démarrage : Création du compte Administrateur de la plateforme */}
-      {platformAdmin === null && (
+      {isAdminModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="first-boot-admin-modal-title"
           data-testid="first-boot-admin-setup-modal"
+          onKeyDown={handleAdminDialogKeyDown}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: "rgba(15, 23, 42, 0.45)" }}
         >
@@ -316,6 +351,15 @@ function InnerShellContainer({
                   : "No administrator account is registered yet. Create the first Administrator account to configure your organization."}
               </p>
             </div>
+
+            {showAdminUnsavedConfirm ? (
+              <RgaaUnsavedChangesAlert
+                testIdPrefix="first-boot-admin"
+                labels={rgaaLabels}
+                onStay={cancelDiscardAdminModal}
+                onDiscard={confirmDiscardAdminModal}
+              />
+            ) : null}
 
             <form onSubmit={handleFirstBootAdminSubmit} className="space-y-3 text-xs">
               <label className="flex flex-col gap-1">
@@ -372,7 +416,7 @@ function InnerShellContainer({
                 />
               </label>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between gap-2 pt-2 flex-wrap">
                 <span
                   data-testid="first-boot-admin-role-badge"
                   className="text-[11px] font-medium"
@@ -380,23 +424,39 @@ function InnerShellContainer({
                 >
                   {isFr ? "Rôle attribué : Administrateur de la plateforme" : "Assigned role: Platform Administrator"}
                 </span>
-                <button
-                  type="submit"
-                  data-testid="first-boot-admin-submit-btn"
-                  disabled={!adminFullName.trim() || !adminEmail.trim()}
-                  className="rounded px-4 py-1.5 font-semibold"
-                  style={{
-                    backgroundColor: "var(--color-action-primary)",
-                    color: "var(--color-bg-surface)",
-                    opacity: !adminFullName.trim() || !adminEmail.trim() ? 0.5 : 1,
-                    cursor:
-                      !adminFullName.trim() || !adminEmail.trim()
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  {isFr ? "Créer le compte Administrateur" : "Create Administrator Account"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="first-boot-admin-cancel-btn"
+                    onClick={requestCloseAdminModal}
+                    className="rounded border px-3 py-1.5 font-medium"
+                    style={{
+                      backgroundColor: "var(--color-bg-canvas)",
+                      borderColor: "var(--color-border-subtle)",
+                      color: "var(--color-text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {rgaaLabels.cancelCta} (Esc)
+                  </button>
+                  <button
+                    type="submit"
+                    data-testid="first-boot-admin-submit-btn"
+                    disabled={!canCreateAdmin}
+                    onKeyDown={(e) =>
+                      handleRgaaSubmitKeyDown(e, submitFirstBootAdmin, !canCreateAdmin)
+                    }
+                    className="rounded px-4 py-1.5 font-semibold"
+                    style={{
+                      backgroundColor: "var(--color-action-primary)",
+                      color: "var(--color-bg-surface)",
+                      opacity: !canCreateAdmin ? 0.5 : 1,
+                      cursor: !canCreateAdmin ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {isFr ? "Créer le compte Administrateur" : "Create Administrator Account"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -413,11 +473,11 @@ function InnerShellContainer({
             labels={dictionary.topHeaderSearch}
             speed1Hits={[
               ...workspaces.map((ws): TopSearchHitItem => ({
-                itemId: ws.id,
+                itemId: ws.workspaceId,
                 family: "FOLDERS_DISCUSSIONS",
                 title: ws.name,
-                snippet: ws.slug,
-                workspaceId: ws.id,
+                snippet: ws.lifecyclePhase,
+                workspaceId: ws.workspaceId,
                 screenRoute: "/workspaces",
                 deepLinkUri: "/workspaces",
                 speedTier: 1,
@@ -428,7 +488,7 @@ function InnerShellContainer({
                 opensContextualHelpColumn: false,
               })),
               ...catalogItems.map((cat): TopSearchHitItem => ({
-                itemId: cat.id,
+                itemId: cat.resourceId,
                 family: "PROCESSES_EXECUTIONS",
                 title: cat.title,
                 snippet: cat.uri,
@@ -443,10 +503,10 @@ function InnerShellContainer({
                 opensContextualHelpColumn: false,
               })),
               ...ontologyConcepts.map((c): TopSearchHitItem => ({
-                itemId: c.id,
-                family: "GLOSSARY_RULES",
-                title: c.termKey,
-                snippet: c.definition,
+                itemId: c.conceptKey,
+                family: "ONTOLOGY_GLOSSARY",
+                title: c.canonicalTerm,
+                snippet: c.definitionText,
                 workspaceId: activeScopeId,
                 screenRoute: "/ontology",
                 deepLinkUri: "/ontology",

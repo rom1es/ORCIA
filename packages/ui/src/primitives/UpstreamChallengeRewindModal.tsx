@@ -1,4 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import {
+  DEFAULT_RGAA_MODAL_LABELS_FR,
+  RgaaUnsavedChangesAlert,
+  handleRgaaSubmitKeyDown,
+  useUnsavedChangesDialogGuard,
+  type RgaaModalDialogLabels,
+} from "../components/RgaaModalDialog.js";
 
 export interface UpstreamChallengeWhatIfPreview {
   readonly runId: string;
@@ -39,6 +46,7 @@ export interface UpstreamChallengeRewindModalProps {
   readonly preview: UpstreamChallengeWhatIfPreview;
   readonly labels: UpstreamChallengeModalLabels;
   readonly subWorkflowStepKey?: string;
+  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
   readonly onSubmitChallenge?: (payload: {
     targetUpstreamStepKey: string;
     challengedSectionKey: string;
@@ -50,6 +58,9 @@ export interface UpstreamChallengeRewindModalProps {
   }) => void;
   readonly onClose?: () => void;
 }
+
+const DEFAULT_INITIAL_REASON =
+  "La règle métier de garantie FX 48h du PRD contredit le contrat API partenaire v3 (fenêtre max 15 min).";
 
 /**
  * UpstreamChallengeRewindModal (`UX-DR7`, `FR-7`, `FR-16`, `FR-30`, `AD-2`, `AD-7`).
@@ -64,26 +75,38 @@ export function UpstreamChallengeRewindModal({
   preview,
   labels,
   subWorkflowStepKey,
+  rgaaLabels,
   onSubmitChallenge,
   onTriggerReplay,
   onClose,
 }: UpstreamChallengeRewindModalProps): React.ReactElement | null {
-  const [reason, setReason] = useState(
-    "La règle métier de garantie FX 48h du PRD contredit le contrat API partenaire v3 (fenêtre max 15 min)."
-  );
+  const [initialReason, setInitialReason] = useState(DEFAULT_INITIAL_REASON);
+  const [reason, setReason] = useState(DEFAULT_INITIAL_REASON);
   const [submittedChallenge, setSubmittedChallenge] = useState(false);
   const [replayed, setReplayed] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (ev: KeyboardEvent): void => {
-      if (ev.key === "Escape" && onClose) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  const isDirty = reason !== initialReason && !submittedChallenge;
+  const resolvedRgaaLabels: RgaaModalDialogLabels = {
+    ...DEFAULT_RGAA_MODAL_LABELS_FR,
+    cancelCta: labels.closeCta,
+    submitCta: labels.submitChallengeCta,
+    ...rgaaLabels,
+  };
+
+  const {
+    showUnsavedConfirm,
+    requestClose,
+    confirmDiscardAndClose,
+    cancelDiscardAndStay,
+    handleDialogKeyDown,
+  } = useUnsavedChangesDialogGuard({
+    isOpen,
+    isDirty,
+    onClose: () => onClose?.(),
+    onDiscardUnsavedChanges: () => {
+      setReason(initialReason);
+    },
+  });
 
   if (!isOpen) {
     return null;
@@ -94,6 +117,7 @@ export function UpstreamChallengeRewindModal({
   const handleSubmitChallenge = (): void => {
     if (!canSubmit) return;
     setSubmittedChallenge(true);
+    setInitialReason(reason);
     onSubmitChallenge?.({
       targetUpstreamStepKey: preview.targetUpstreamStepKey,
       challengedSectionKey: preview.challengedSectionKey,
@@ -115,6 +139,7 @@ export function UpstreamChallengeRewindModal({
       aria-modal="true"
       aria-label={labels.modalTitle}
       data-ux-component="upstream-challenge-rewind-modal"
+      onKeyDown={handleDialogKeyDown}
       style={{
         backgroundColor: "var(--color-surface-card)",
         border: "1px solid var(--color-border-subtle)",
@@ -159,7 +184,7 @@ export function UpstreamChallengeRewindModal({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={requestClose}
           data-testid="upstream-challenge-close-btn"
           style={{
             padding: "4px 10px",
@@ -174,6 +199,15 @@ export function UpstreamChallengeRewindModal({
           {labels.closeCta} (Esc)
         </button>
       </div>
+
+      {showUnsavedConfirm ? (
+        <RgaaUnsavedChangesAlert
+          testIdPrefix="upstream-challenge"
+          labels={resolvedRgaaLabels}
+          onStay={cancelDiscardAndStay}
+          onDiscard={confirmDiscardAndClose}
+        />
+      ) : null}
 
       <div
         style={{
@@ -307,8 +341,26 @@ export function UpstreamChallengeRewindModal({
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
         <button
           type="button"
+          onClick={requestClose}
+          data-testid="upstream-challenge-cancel-btn"
+          style={{
+            padding: "6px 12px",
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--color-border-subtle)",
+            backgroundColor: "var(--color-surface-canvas)",
+            color: "var(--color-text-secondary)",
+            cursor: "pointer",
+          }}
+        >
+          {resolvedRgaaLabels.cancelCta}
+        </button>
+        <button
+          type="button"
           disabled={!canSubmit}
           onClick={handleSubmitChallenge}
+          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleSubmitChallenge, !canSubmit)}
           data-testid="upstream-challenge-submit-btn"
           style={{
             padding: "6px 12px",
@@ -327,6 +379,7 @@ export function UpstreamChallengeRewindModal({
         <button
           type="button"
           onClick={handleReplay}
+          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleReplay)}
           data-testid="upstream-replay-trigger-btn"
           style={{
             padding: "6px 12px",
