@@ -277,6 +277,37 @@ function InnerShellContainer({
         }}
         onOpenWorkspaceSwitcher={() => undefined}
         onOpenSearchCommand={() => setSearchModalOpen(true)}
+        sidebarSecondarySlot={
+          pathname?.startsWith("/help") || pathname?.startsWith("/ontology") ? null : (
+            <button
+              type="button"
+              data-testid="open-orcia-showcase-site-btn"
+              onClick={() => {
+                setSelectedMenuKeyOverride("help");
+                setSelectedModuleOverride("ontology");
+                dispatchNavigation("/showcase");
+              }}
+              className="mt-1 flex items-center gap-2 rounded border px-2.5 py-1.5 text-left text-[11px] font-semibold"
+              style={{
+                backgroundColor: pathname?.startsWith("/showcase")
+                  ? "var(--color-action-primary-subtle)"
+                  : "var(--color-bg-elevated)",
+                borderColor: "var(--color-border-subtle)",
+                color: pathname?.startsWith("/showcase")
+                  ? "var(--color-action-primary)"
+                  : "var(--color-text-primary)",
+                cursor: "pointer",
+              }}
+            >
+              <span aria-hidden="true">🌐</span>
+              <span>
+                {isFr
+                  ? "Site de Présentation ORCIA (Vision, Fonctionnalités & Architecture)"
+                  : "ORCIA Product & Architecture Site"}
+              </span>
+            </button>
+          )
+        }
         headerUserControl={
           <UserAccountDropdownAndSettingsModal
             userDisplayName={effectiveProfile.displayName}

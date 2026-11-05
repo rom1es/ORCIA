@@ -12,7 +12,7 @@ import { useI18n } from "../../i18n";
 export function OntologyFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { ontologyConcepts, addOntologyConcept } = usePlatformSetup();
-  const { openHelpSection } = useShellNavigation();
+  const { openHelpSection, navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
 
   const [conceptName, setConceptName] = useState("");
@@ -48,6 +48,41 @@ export function OntologyFeaturePanel() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <section
+        data-testid="help-showcase-site-banner"
+        className="orcia-bento-card"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <strong>
+            {isFr
+              ? "🌐 Site de Présentation & Documentation Vivante d'ORCIA"
+              : "🌐 ORCIA Living Product & Architecture Showcase Site"}
+          </strong>
+          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            {isFr
+              ? "Découvrez la vision Human-Led, la double barrière anti-hallucination, le guide des 9 écrans et les choix d'architecture en 3 espaces séparés."
+              : "Explore the Human-Led vision, double anti-hallucination barrier, 9-screen functional guide, and engineering architecture across 3 separated spaces."}
+          </span>
+        </div>
+        <button
+          type="button"
+          data-testid="open-orcia-showcase-site-btn"
+          onClick={() => navigateToRoute("/showcase")}
+          className="orcia-ds-btn orcia-ds-btn-primary"
+        >
+          {isFr
+            ? "🌐 Site de Présentation ORCIA (Vision, Fonctionnalités & Architecture)"
+            : "🌐 ORCIA Product & Architecture Site"}
+        </button>
+      </section>
+
       <section
         data-testid="ontology-create-concept-card"
         className="orcia-bento-card"

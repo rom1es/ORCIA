@@ -326,6 +326,17 @@ export {
   type UiHelpValidationSummary,
 } from "./primitives/HelpArticleGeneratorAndValidatorView";
 export {
+  OrciaProductShowcaseSiteView,
+  type OrciaProductShowcaseSiteViewProps,
+  type OrciaShowcaseArchitectureDecisionItem,
+  type OrciaShowcaseInstalledPackItem,
+  type OrciaShowcaseManifestData,
+  type OrciaShowcaseManifestStats,
+  type OrciaShowcasePillarTabKey,
+  type OrciaShowcaseStackComponentItem,
+  type OrciaShowcaseTechLeadReportItem,
+} from "./primitives/OrciaProductShowcaseSiteView";
+export {
   AgentsAndSkillsManagerView,
   type AgentsAndSkillsManagerLabels,
   type AgentsAndSkillsManagerViewProps,
