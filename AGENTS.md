@@ -39,6 +39,7 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 - Python commands must run through `.venv/bin/`: `.venv/bin/ruff check .`, `.venv/bin/ruff format --check .`, `.venv/bin/mypy --strict packages/orcia-kernel packages/orcia-core apps/api apps/worker`, `.venv/bin/lint-imports`, `.venv/bin/pytest --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90`.
 - TypeScript commands run via `pnpm`: `pnpm turbo run lint typecheck test`.
 - Reset database to Day-0 initial boot state (`0` users, system bootstrap preserved): `pnpm db:reset` (or `.venv/bin/python infra/scripts/maintenance/09_reset_db_first_boot.py --apply`).
+- Living Product & Architecture Showcase Site synchronization (`/showcase`, `apps/web/src/generated/orciaSiteManifest.ts` & standalone `docs/site-catalog/index.html` / `dist/orcia-site/index.html`): `pnpm site:sync` (and `pnpm site:check` for CI verification).
 - Architecture spine lint: `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24`.
 - GitNexus index refresh: `npx gitnexus analyze` (run after structural changes and before `gitnexus_detect_changes()`).
 
@@ -87,7 +88,7 @@ Pour **chaque User Story (`Story N.M`)** ET pour **chaque demande d'ajustement, 
   - Pour une User Story du sprint : **`docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`** (ou `{YYYY-MM-DD}-{story-key}-tech-lead-report.md`).
 - **Cycle de rédaction en 2 phases** :
   1. **AVANT toute modification de code** : créer le fichier du rapport avec la **Section 1 (`Analyse du Besoin & Étude d'Impact Tech Lead`)** et la **Section 2 (`Plan d'Implémentation` : `2.1` Alembic, `2.2` Noyau hexagonal & workers, `2.3` Backend FastAPI & SDK OpenAPI, `2.4` Interface SPA Vite + TanStack Router Direction C)**.
-  2. **APRÈS implémentation et passage des 5 couches de tests** : compléter la **Section 3 (`Bilan des Modifications & Résultats`)** (tableau des fichiers créés/modifiés, métriques chiffrées & couverture $\ge 90\%$, validation des 5 couches `AD-17` et résultat de `gitnexus_detect_changes()`).
+  2. **APRÈS implémentation et passage des 5 couches de tests** : compléter la **Section 3 (`Bilan des Modifications & Résultats`)** (tableau des fichiers créés/modifiés, métriques chiffrées & couverture $\ge 90\%$, validation des 5 couches `AD-17` et résultat de `gitnexus_detect_changes()`), enregistrer le rapport dans `docs/implementation-artifacts/tech-lead-reports/README.md`, puis exécuter **`pnpm site:sync`** (`.venv/bin/python infra/scripts/sync_site_catalog.py`) pour synchroniser automatiquement le manifeste `/showcase` et le site statique autonome `docs/site-catalog/index.html`.
 
 ## 3. Quatre Garde-Fous Obligatoires de Câblage Vertical (Anti-Silos UI / API / SQL)
 Pour éviter toute fonctionnalité partiellement câblée (syndrome de l'adaptateur SQL orphelin ou du store React purement en mémoire `useState` perdu au rechargement `F5`) :

@@ -4,6 +4,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@orcia/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@orcia/api-client": [
+        "../../packages/api-client/src/index.ts"
       ]
     },
     "incremental": true,

@@ -57,7 +57,13 @@ export function resolveModuleFromPathname(pathname: string | null): UiModuleKey 
   }
   if (pathname.startsWith("/inbox") || pathname.startsWith("/assistant")) return "inbox";
   if (pathname.startsWith("/catalog") || pathname.startsWith("/agents")) return "catalog";
-  if (pathname.startsWith("/ontology") || pathname.startsWith("/help")) return "ontology";
+  if (
+    pathname.startsWith("/ontology") ||
+    pathname.startsWith("/help") ||
+    pathname.startsWith("/showcase")
+  ) {
+    return "ontology";
+  }
   if (pathname.startsWith("/gates") || pathname.startsWith("/processes")) return "gates";
   if (pathname.startsWith("/finops") || pathname.startsWith("/activity")) return "finops";
   if (
@@ -82,7 +88,7 @@ export function resolveEightMenuKeyFromModule(
   moduleKey: UiModuleKey,
   pathname: string | null,
 ): EightFixedMenuKey {
-  if (pathname?.startsWith("/help")) return "help";
+  if (pathname?.startsWith("/help") || pathname?.startsWith("/showcase")) return "help";
   if (pathname?.startsWith("/agents")) return "agents";
   if (pathname?.startsWith("/processes")) return "processes";
   if (pathname?.startsWith("/assistant")) return "assistant";

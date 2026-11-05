@@ -15,6 +15,7 @@ import { Route as loginRoute } from "./routes/login";
 import { Route as ontologyRoute } from "./routes/ontology";
 import { validateOrciaRouteSearch } from "./routes/searchSchema";
 import { Route as settingsRoute, SettingsHubView } from "./routes/settings";
+import { Route as showcaseRoute } from "./routes/showcase";
 import { Route as wizardsRoute } from "./routes/wizards";
 import { Route as workspacesRoute } from "./routes/workspaces";
 
@@ -83,6 +84,7 @@ export const routeTree = rootRoute.addChildren([
   workspacesRoute,
   bootstrapRoute,
   settingsRoute,
+  showcaseRoute,
   wizardsRoute,
   assistantRoute,
   processesRoute,
