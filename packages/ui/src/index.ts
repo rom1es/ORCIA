@@ -228,6 +228,15 @@ export {
   type ContextualInfoTriggerButtonProps,
 } from "./components/ContextualInfoTriggerButton";
 export {
+  ActivityLogExplorerView,
+  type ActivityLogExplorerLabels,
+  type ActivityLogExplorerViewProps,
+  type ActivityMaxLimitOption,
+  type ActivityTimeWindowOption,
+  type UiActivityLogEventItem,
+  type UiActivityScopeFilterOption,
+} from "./primitives/ActivityLogExplorerView";
+export {
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,

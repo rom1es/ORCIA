@@ -36,7 +36,7 @@ export interface SettingsSecondaryTabsSectionProps {
   readonly datasources: readonly ControlCenterDatasourceItem[];
   readonly packs: readonly ConfiguredPackItem[];
   readonly workflows: readonly ConfiguredWorkflowItem[];
-  readonly auditEvents: readonly ConfiguredAuditEvent[];
+  readonly auditEvents?: readonly ConfiguredAuditEvent[];
   readonly openHelpSection: (sectionId: string) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
   readonly registerDatasource: PlatformSetupContextValue["registerDatasource"];
@@ -72,7 +72,7 @@ export function SettingsSecondaryTabsSection({
   datasources,
   packs,
   workflows,
-  auditEvents,
+  auditEvents = [],
   openHelpSection,
   upsertLlmTier,
   registerDatasource,
