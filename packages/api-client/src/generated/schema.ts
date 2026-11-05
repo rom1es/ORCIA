@@ -1404,6 +1404,22 @@ export interface components {
       trace_id: string;
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
     };
+    InstalledBusinessPackItemResponse: {
+      agents_count: number;
+      description: string;
+      description_en: string;
+      domain_name: string;
+      is_system_pack?: boolean;
+      pack_key: string;
+      pack_slug: string;
+      title: string;
+      title_en: string;
+      version: string;
+      workflows_count: number;
+    };
+    InstalledBusinessPackListResponse: {
+      packs: (components["schemas"]["InstalledBusinessPackItemResponse"])[];
+    };
     InvalidatePromptCacheRequest: {
       reason?: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       user_id?: string | null;
@@ -3782,6 +3798,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/pack-builder/installed-packs": {
+    get: {
+      responses: {
+        200: components["schemas"]["InstalledBusinessPackListResponse"];
+      };
+    };
+  };
   "/api/v1/pack-builder/manifest": {
     get: {
       responses: {
@@ -4281,6 +4304,8 @@ export type InitUserRequest = components["schemas"]["InitUserRequest"];
 export type InitUserResponse = components["schemas"]["InitUserResponse"];
 export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"];
 export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
+export type InstalledBusinessPackItemResponse = components["schemas"]["InstalledBusinessPackItemResponse"];
+export type InstalledBusinessPackListResponse = components["schemas"]["InstalledBusinessPackListResponse"];
 export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
 export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
 export type InvokedSkillTraceResponseItem = components["schemas"]["InvokedSkillTraceResponseItem"];

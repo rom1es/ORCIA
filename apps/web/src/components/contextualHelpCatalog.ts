@@ -46,7 +46,7 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "packs-overview",
     title: "Packs métiers prêts à l'emploi",
-    body: "Un Pack métier regroupe des modèles de processus, des agents spécialisés et un glossaire adaptés à un métier (ex. Ingénierie logicielle, Finance, Juridique).",
+    body: "Les Packs métiers sont fournis par la plateforme (ou conçus dans Mes Processus) et regroupent des processus, des agents spécialisés et un glossaire métier. Choisissez un périmètre (Plateforme entière, Direction ou Espace) puis activez ou désactivez le Pack en 1 clic.",
     category: "terms",
   },
   {
@@ -97,7 +97,7 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "packs-overview",
     title: "Ready-to-use Business Packs",
-    body: "A Business Pack bundles process templates, specialized agents, and a glossary tailored to a domain (e.g. Software Engineering, Finance, Legal).",
+    body: "Business Packs are provided by the platform (or authored in My Processes) and bundle processes, specialized agents, and a domain glossary. Select a target scope (Entire Platform, Division, or Workspace) and enable or disable a Pack in 1 click.",
     category: "terms",
   },
   {

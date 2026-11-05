@@ -21,6 +21,7 @@ import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
+import { SettingsPacksSection } from "./SettingsPacksSection";
 
 export type SettingsSectionTab =
   | "iam"
@@ -52,6 +53,7 @@ export function SettingsHubView() {
     upsertLlmTier,
     registerDatasource,
     registerPack,
+    removePack,
     upsertWorkflow,
   } = usePlatformSetup();
 
@@ -1145,88 +1147,15 @@ export function SettingsHubView() {
           )}
 
           {activeTab === "packs" && (
-            <section
-              data-testid="settings-packs-section"
-              className="orcia-bento-card"
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-            >
-              <form
-                data-testid="register-pack-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!packKey.trim()) return;
-                  registerPack({
-                    packKey: packKey.trim(),
-                    version: packVersion.trim() || "1.0.0",
-                    scopePath: packScope.trim() || "GLOBAL",
-                    status: "PUBLISHED",
-                  });
-                  setPackKey("");
-                }}
-                style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
-              >
-                <input
-                  type="text"
-                  data-testid="pack-key-input"
-                  value={packKey}
-                  onChange={(e) => setPackKey(e.target.value)}
-                  placeholder={isFr ? "Identifiant du Pack (ex: orcia-pack-sdlc)..." : "Pack key..."}
-                  style={{ ...inputStyle, flex: 1, minWidth: "220px" }}
-                />
-                <input
-                  type="text"
-                  data-testid="pack-version-input"
-                  value={packVersion}
-                  onChange={(e) => setPackVersion(e.target.value)}
-                  placeholder="SemVer (1.0.0)"
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  data-testid="pack-scope-input"
-                  value={packScope}
-                  onChange={(e) => setPackScope(e.target.value)}
-                  placeholder="Périmètre (GLOBAL)"
-                  style={inputStyle}
-                />
-                <button type="submit" data-testid="save-pack-btn" style={primaryBtnStyle}>
-                  {isFr ? "+ Activer le Pack" : "+ Activate Pack"}
-                </button>
-              </form>
-
-              {packs.length === 0 ? (
-                <p
-                  data-testid="packs-empty-state"
-                  style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
-                >
-                  {isFr
-                    ? "Aucun Pack métier activé sur ce périmètre."
-                    : "No business Pack activated on this scope yet."}
-                </p>
-              ) : (
-                <div style={{ display: "grid", gap: "8px" }}>
-                  {packs.map((p) => (
-                    <div
-                      key={`${p.packKey}@${p.version}`}
-                      data-testid={`pack-row-${p.packKey}`}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--color-border)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <strong>
-                        {p.packKey}@{p.version}
-                      </strong>
-                      <StatusBadge label={`${p.status} · ${p.scopePath}`} tone="emerald" monospace />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
+            <SettingsPacksSection
+              isFr={isFr}
+              packs={packs}
+              orgUnits={orgUnits}
+              workspaces={workspaces}
+              registerPack={registerPack}
+              removePack={removePack}
+              openHelpSection={openHelpSection}
+            />
           )}
 
           {activeTab === "workflows" && (

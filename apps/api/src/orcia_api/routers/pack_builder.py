@@ -21,6 +21,8 @@ from orcia_api.schemas.pack_builder import (
     ExportFromWorkspaceToPackResponse,
     GenerateAndAttachHelpRequest,
     GenerateAndAttachHelpResponse,
+    InstalledBusinessPackItemResponse,
+    InstalledBusinessPackListResponse,
     ValidateHelpArticleRequest,
     ValidateHelpArticleResponse,
     WhatIfWorkspaceImpactItemResponse,
@@ -32,9 +34,90 @@ from orcia_core.orchestration.pack_builder_processes import (
     DnaChainPackSeedSpec,
     PackBuilderSystemService,
 )
-from orcia_pack_builder import get_pack_builder_manifest
+from orcia_pack_builder import (
+    PACK_BUILDER_AGENTS,
+    PACK_BUILDER_PROCESSES,
+    get_pack_builder_manifest,
+)
+from orcia_pack_builder import (
+    __version__ as pack_builder_version,
+)
+from orcia_pack_sdlc import __version__ as pack_sdlc_version
 
 router = APIRouter(tags=["pack-builder"])
+
+
+@router.get(
+    "/api/v1/pack-builder/installed-packs",
+    response_model=InstalledBusinessPackListResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def list_installed_business_packs_endpoint(
+    svc: Annotated[PackBuilderSystemService, Depends(get_pack_builder_system_service)],
+) -> InstalledBusinessPackListResponse:
+    """Return the catalog of Business Packs installed and known in the ORCIA backend."""
+    installed: list[InstalledBusinessPackItemResponse] = [
+        InstalledBusinessPackItemResponse(
+            pack_key="orcia-pack-sdlc",
+            pack_slug="sdlc",
+            title="Ingénierie Logicielle & Cycle de Vie Produit",
+            title_en="Software Engineering & Product Lifecycle",
+            version=pack_sdlc_version or "1.0.0",
+            domain_name="INGÉNIERIE LOGICIELLE & PRODUIT",
+            description=(
+                "Connecteurs Git, Jira, Confluence et Nexus, processus guidés de spécification "
+                "et réalisation, revues croisées et suivi de cohérence documentaire."
+            ),
+            description_en=(
+                "Git, Jira, Confluence, and Nexus connectors, guided specification and delivery "
+                "processes, cross-checked reviews, and documentation consistency tracking."
+            ),
+            workflows_count=4,
+            agents_count=6,
+            is_system_pack=True,
+        ),
+        InstalledBusinessPackItemResponse(
+            pack_key="orcia-pack-builder",
+            pack_slug="pack-builder",
+            title="Atelier de Création & Gouvernance de Packs Métiers",
+            title_en="Business Pack Authoring & Governance Studio",
+            version=pack_builder_version or "1.0.0",
+            domain_name="GOUVERNANCE & MÉTHODOLOGIE",
+            description=(
+                "Conception guidée de nouveaux Packs métiers, simulation d'impact avant "
+                "évolution, certification des règles métiers et génération de fiches d'aide."
+            ),
+            description_en=(
+                "Guided creation of new Business Packs, impact simulation before evolution, "
+                "business rule certification, and help article generation."
+            ),
+            workflows_count=len(PACK_BUILDER_PROCESSES),
+            agents_count=len(PACK_BUILDER_AGENTS),
+            is_system_pack=True,
+        ),
+    ]
+    seen_keys = {item.pack_key for item in installed}
+    for custom in svc.list_created_packs():
+        custom_key = f"orcia-pack-{custom.pack_slug}"
+        if custom_key in seen_keys:
+            continue
+        seen_keys.add(custom_key)
+        installed.append(
+            InstalledBusinessPackItemResponse(
+                pack_key=custom_key,
+                pack_slug=custom.pack_slug,
+                title=custom.title,
+                title_en=custom.title,
+                version=custom.version,
+                domain_name="PACK MÉTIER PERSONNALISÉ",
+                description=custom.human_anchor_intent,
+                description_en=custom.human_anchor_intent,
+                workflows_count=max(1, custom.starlark_rules_certified_count),
+                agents_count=1,
+                is_system_pack=False,
+            )
+        )
+    return InstalledBusinessPackListResponse(packs=installed)
 
 
 @router.get(

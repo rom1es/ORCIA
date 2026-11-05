@@ -823,4 +823,62 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Hélène Admin",
     );
   });
+
+  it("presents the backend-known Business Packs catalog in /settings (Packs Métiers tab) without free-text SemVer or raw 'GLOBAL' input, and supports 1-click activation and deactivation across scopes", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // Create a BU so it appears in the scope selector
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Produit" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    // Switch to Packs Métiers tab
+    fireEvent.click(screen.getByTestId("settings-tab-packs"));
+    expect(screen.getByTestId("settings-packs-section")).toBeDefined();
+
+    // Free-text version input is completely eliminated
+    expect(screen.queryByTestId("pack-version-input")).toBeNull();
+
+    // Installed packs catalog cards are directly displayed with human-readable titles
+    const sdlcCard = screen.getByTestId("installed-pack-card-orcia-pack-sdlc");
+    expect(sdlcCard.textContent).toContain("Ingénierie Logicielle & Cycle de Vie Produit");
+    expect(sdlcCard.textContent).toContain("4 processus · 6 agents spécialisés");
+
+    const builderCard = screen.getByTestId("installed-pack-card-orcia-pack-builder");
+    expect(builderCard.textContent).toContain(
+      "Atelier de Création & Gouvernance de Packs Métiers",
+    );
+
+    // Scope selector displays "Plateforme entière" (not raw "GLOBAL" in visible text) and the created BU
+    const scopeSelect = screen.getByTestId("pack-scope-input") as HTMLSelectElement;
+    expect(scopeSelect.textContent).toContain("Plateforme entière");
+    expect(scopeSelect.textContent).toContain("Direction · Direction Produit");
+
+    // 1-click activation of orcia-pack-sdlc on Plateforme entière
+    expect(screen.getByTestId("packs-empty-state")).toBeDefined();
+    fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-sdlc"));
+    const packRow = screen.getByTestId("pack-row-orcia-pack-sdlc");
+    expect(packRow.textContent).toContain("Ingénierie Logicielle & Cycle de Vie Produit");
+    expect(packRow.textContent).toContain("Plateforme entière");
+
+    // 1-click deactivation from the card button
+    fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-sdlc"));
+    expect(screen.getByTestId("packs-empty-state")).toBeDefined();
+
+    // Contextual info trigger ('i') opens the right-hand help column on 'packs-overview'
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-packs-overview"));
+    expect(
+      screen.getByTestId("help-section-packs-overview").getAttribute("data-active"),
+    ).toBe("true");
+  });
 });
