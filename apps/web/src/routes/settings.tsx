@@ -10,6 +10,7 @@ import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
+import { SettingsAiModelsSection } from "./SettingsAiModelsSection";
 import { SettingsIamOrganizationSection } from "./SettingsIamOrganizationSection";
 import { SettingsSecondaryTabsSection } from "./SettingsSecondaryTabsSection";
 
@@ -154,6 +155,14 @@ export function SettingsHubView() {
               removeOrgUnit={removeOrgUnit}
               addRbacGrant={addRbacGrant}
               removeRbacGrant={removeRbacGrant}
+            />
+          ) : activeTab === "ai-models" ? (
+            <SettingsAiModelsSection
+              isFr={isFr}
+              tierAndEffortLabels={tierAndEffortLabels}
+              llmTiers={llmTiers}
+              openHelpSection={openHelpSection}
+              upsertLlmTier={upsertLlmTier}
             />
           ) : (
             <SettingsSecondaryTabsSection

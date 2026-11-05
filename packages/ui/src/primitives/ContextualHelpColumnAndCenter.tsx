@@ -81,7 +81,23 @@ export function ContextualHelpColumnAndCenter({
   const [rolledBackToVersion, setRolledBackToVersion] = useState<string | null>(
     null,
   );
+  const panelRef = useRef<HTMLElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const orderedSections = React.useMemo(() => {
+    const sections = article.sections ?? [];
+    if (!activeSectionId) {
+      return sections;
+    }
+    const activeItem = sections.find((sec) => sec.sectionId === activeSectionId);
+    if (!activeItem) {
+      return sections;
+    }
+    return [
+      activeItem,
+      ...sections.filter((sec) => sec.sectionId !== activeSectionId),
+    ];
+  }, [article.sections, activeSectionId]);
 
   useEffect(() => {
     if (!activeSectionId) {
@@ -97,9 +113,20 @@ export function ContextualHelpColumnAndCenter({
     } else if (matchingSection?.category === "faq") {
       setOpenFaq(true);
     }
-    const targetEl = sectionRefs.current[activeSectionId];
-    if (targetEl && typeof targetEl.scrollIntoView === "function") {
-      targetEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Scroll ONLY the contextual help column container to top (never scroll window or main workspace)
+    const helpAside = panelRef.current?.closest(
+      '[data-testid="four-zone-contextual-help-column"]',
+    ) as HTMLElement | null;
+    if (helpAside) {
+      helpAside.scrollTop = 0;
+      if (typeof helpAside.scrollTo === "function") {
+        helpAside.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } else if (panelRef.current) {
+      panelRef.current.scrollTop = 0;
+      if (typeof panelRef.current.scrollTo === "function") {
+        panelRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   }, [activeSectionId, article.sections]);
 
@@ -113,6 +140,7 @@ export function ContextualHelpColumnAndCenter({
 
   return (
     <section
+      ref={panelRef}
       aria-label={
         mode === "COLUMN_340PX"
           ? labels.columnHeaderTitle
@@ -122,7 +150,7 @@ export function ContextualHelpColumnAndCenter({
       data-mode={mode}
       data-active-section={activeSectionId ?? ""}
       className={`${
-        mode === "COLUMN_340PX" ? "w-[340px]" : "w-full max-w-4xl"
+        mode === "COLUMN_340PX" ? "w-full" : "w-full max-w-4xl"
       } rounded-xl border border-surface-border bg-surface-elevated p-3.5 text-xs text-text-primary space-y-3`}
     >
       {/* Header + Version */}
@@ -164,13 +192,13 @@ export function ContextualHelpColumnAndCenter({
         </p>
       </div>
 
-      {/* Targeted Contextual Help Sections (opened via ⓘ ContextualInfoTriggerButton) */}
-      {article.sections && article.sections.length > 0 && (
+      {/* Targeted Contextual Help Sections (opened via ⓘ ContextualInfoTriggerButton — active section pinned at top) */}
+      {orderedSections.length > 0 && (
         <div
           data-testid="contextual-help-sections-list"
           className="space-y-2"
         >
-          {article.sections.map((sec) => {
+          {orderedSections.map((sec) => {
             const isActive = activeSectionId === sec.sectionId;
             return (
               <div
@@ -185,9 +213,23 @@ export function ContextualHelpColumnAndCenter({
                   isActive ? "orcia-help-section-card--active" : ""
                 } space-y-1`}
               >
-                <div className="font-semibold text-text-primary flex items-center gap-1.5">
-                  <span aria-hidden="true">ⓘ</span>
-                  <span>{sec.title}</span>
+                <div className="font-semibold text-text-primary flex items-center justify-between gap-1.5 flex-wrap">
+                  <span className="flex items-center gap-1.5">
+                    <span aria-hidden="true">ⓘ</span>
+                    <span>{sec.title}</span>
+                  </span>
+                  {isActive && (
+                    <span
+                      data-testid="contextual-help-pinned-active-badge"
+                      className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                      style={{
+                        backgroundColor: "var(--color-action-primary-subtle)",
+                        color: "var(--color-action-primary)",
+                      }}
+                    >
+                      {article.lang === "en" ? "Targeted help" : "Aide ciblée"}
+                    </span>
+                  )}
                 </div>
                 <p className="text-text-secondary leading-relaxed">
                   {sec.body}

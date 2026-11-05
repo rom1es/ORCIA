@@ -755,7 +755,12 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     fireEvent.click(triggerBtn);
 
     // Right-hand contextual help column is now open and the targeted section is highlighted
-    expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
+    const helpColumn = screen.getByTestId("four-zone-contextual-help-column");
+    const centralWorkspace = screen.getByTestId("four-zone-central-workspace");
+    expect(helpColumn).toBeDefined();
+    expect(centralWorkspace.style.overflowY).toBe("auto");
+    expect(helpColumn.style.overflowY).toBe("auto");
+
     const activeSection = screen.getByTestId("help-section-iam-org-tree");
     expect(activeSection.getAttribute("data-active")).toBe("true");
     expect(activeSection.textContent).toContain("Organigramme (BU & Équipes)");
@@ -763,4 +768,124 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     const inactiveSection = screen.getByTestId("help-section-iam-role-grants");
     expect(inactiveSection.getAttribute("data-active")).toBe("false");
   });
+
+  it("isolates vertical scrolling between Zone 3 (main workspace) and Zone 4 (contextual help) and pins the activeSectionId triggered via 'i' to the top of the help sections list without scrolling window", () => {
+    const helpLabels: ContextualHelpColumnAndCenterLabels = {
+      columnHeaderTitle: "Aide Contextuelle",
+      centerHeaderTitle: "Centre d'Aide",
+      whatForSectionTitle: "À quoi sert cet écran ?",
+      stepByStepAccordionTitle: "Guide pas-à-pas",
+      keyTermsAccordionTitle: "Points clés",
+      faqAccordionTitle: "Questions fréquentes",
+      askAssistantOnScreenCta: "Poser une question à Mon Assistant",
+      rollbackButtonLabel: "Revenir à la version précédente",
+      rollbackCompletedPrefix: "Version précédente restaurée :",
+      mergedLayersPrefix: "Origine :",
+    };
+
+    const windowScrollSpy = vi.spyOn(window, "scrollTo");
+
+    function PinnedHelpHarness() {
+      const [activeSectionId, setActiveSectionId] = React.useState<string | null>(null);
+      return (
+        <FourZoneDirectionCShell
+          activeMenuKey="configuration"
+          activeWorkspaceName="Plateforme Globale"
+          activePackKey="orcia-core"
+          availablePacks={[]}
+          userDisplayName="Romain"
+          userHatLabel="Administrateur"
+          pendingDecisionsTotal={0}
+          viewportWidth={1440}
+          helpColumnOpen={true}
+          onSelectMenu={vi.fn()}
+          labels={SHELL_LABELS}
+          helpColumnContent={
+            <ContextualHelpColumnAndCenter
+              mode="COLUMN_340PX"
+              route="/settings"
+              pack="orcia-core"
+              redisCacheKey="help:route:/settings:core:fr"
+              mergedLayers={["BASE", "PACK"]}
+              activeSectionId={activeSectionId}
+              article={{
+                resourceId: "help-configuration",
+                uri: "orcia://packs/core/help/configuration/fr",
+                title: "Configuration",
+                version: "1.0.0",
+                lang: "fr",
+                layer: "PACK",
+                packName: "orcia-core",
+                boundRoutes: ["/settings"],
+                summaryWhatFor: "Paramétrez votre plateforme.",
+                stepByStepItems: ["Étape 1"],
+                keyTermsItems: ["Terme 1"],
+                faqItems: ["FAQ 1"],
+                sections: [
+                  {
+                    sectionId: "iam-org-tree",
+                    title: "Structure de l'organisation",
+                    body: "Directions et Espaces.",
+                    category: "steps",
+                  },
+                  {
+                    sectionId: "ai-models-overview",
+                    title: "Modèles IA : Fournisseur & URL API",
+                    body: "Configurez et testez vos modèles IA.",
+                    category: "steps",
+                  },
+                  {
+                    sectionId: "audit-overview",
+                    title: "Journal d'activité",
+                    body: "Consultez l'historique.",
+                    category: "faq",
+                  },
+                ],
+                casKey: "cas/help_v1",
+                sha256: "c".repeat(64),
+              }}
+              labels={helpLabels}
+            />
+          }
+        >
+          <div>
+            <ContextualInfoTriggerButton
+              sectionId="audit-overview"
+              label="Voir l'aide sur le journal d'activité"
+              onOpenHelpSection={(secId) => setActiveSectionId(secId)}
+            />
+          </div>
+        </FourZoneDirectionCShell>
+      );
+    }
+
+    render(<PinnedHelpHarness />);
+
+    const sectionsList = screen.getByTestId("contextual-help-sections-list");
+    // Before clicking 'i', sections are in original order: iam-org-tree first, audit-overview last
+    expect(sectionsList.children[0]?.getAttribute("data-testid")).toBe(
+      "help-section-iam-org-tree",
+    );
+    expect(sectionsList.children[2]?.getAttribute("data-testid")).toBe(
+      "help-section-audit-overview",
+    );
+
+    windowScrollSpy.mockClear();
+
+    // Click 'i' for audit-overview (originally at the bottom)
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-audit-overview"));
+
+    // 1. audit-overview is now pinned at the very top (index 0) of contextual-help-sections-list with the "Aide ciblée" badge
+    expect(sectionsList.children[0]?.getAttribute("data-testid")).toBe(
+      "help-section-audit-overview",
+    );
+    expect(sectionsList.children[0]?.getAttribute("data-active")).toBe("true");
+    expect(screen.getByTestId("contextual-help-pinned-active-badge").textContent).toBe(
+      "Aide ciblée",
+    );
+
+    // 2. Window scroll was NEVER called (main screen never loses its scroll position)
+    expect(windowScrollSpy).not.toHaveBeenCalled();
+  });
 });
+

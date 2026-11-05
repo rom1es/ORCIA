@@ -161,8 +161,10 @@ export function FourZoneDirectionCShell({
   return (
     <div
       data-testid="four-zone-direction-c-shell"
-      className="flex min-h-screen flex-col"
+      className="flex h-screen min-h-screen flex-col overflow-hidden"
       style={{
+        height: "100vh",
+        overflow: "hidden",
         backgroundColor: "var(--color-bg-canvas)",
         color: "var(--color-text-primary)",
         fontFamily: "var(--font-sans)",
@@ -171,7 +173,7 @@ export function FourZoneDirectionCShell({
       {/* Zone 1: TopHeaderBar (52px) */}
       <header
         data-testid="four-zone-top-header-bar"
-        className="flex items-center justify-between border-b px-4"
+        className="flex shrink-0 items-center justify-between border-b px-4"
         style={{
           height: "52px",
           backgroundColor: "var(--color-bg-surface)",
@@ -365,15 +367,20 @@ export function FourZoneDirectionCShell({
       )}
 
       {/* Body with Zone 2 (Sidebar), Zone 3 (Central 1fr), and Zone 4 (Contextual Help 340px) */}
-      <div className="flex flex-1">
+      <div
+        className="flex min-h-0 flex-1 overflow-hidden"
+        style={{ height: "calc(100vh - 52px)", overflow: "hidden" }}
+      >
         {/* Zone 2: Sidebar (240px / 68px Rail) with 8 fixed unnumbered entries */}
         <aside
           data-testid="four-zone-sidebar"
           data-rail-collapsed={railCollapsed ? "true" : "false"}
           aria-label={labels.sidebarAriaLabel}
-          className="flex flex-col justify-between border-r p-2 transition-all"
+          className="flex shrink-0 flex-col justify-between overflow-y-auto border-r p-2 transition-all"
           style={{
             width: sidebarWidth,
+            maxHeight: "calc(100vh - 52px)",
+            overflowY: "auto",
             backgroundColor: "var(--color-bg-surface)",
             borderColor: "var(--color-border-subtle)",
           }}
@@ -467,22 +474,30 @@ export function FourZoneDirectionCShell({
           )}
         </aside>
 
-        {/* Zone 3: Central Zone (1fr) */}
+        {/* Zone 3: Central Zone (1fr) — Independent vertical scrollbar */}
         <main
           data-testid="four-zone-central-workspace"
-          className="min-w-0 flex-1 p-6"
-          style={{ backgroundColor: "var(--color-bg-canvas)" }}
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
+          style={{
+            maxHeight: "calc(100vh - 52px)",
+            overflowY: "auto",
+            backgroundColor: "var(--color-bg-canvas)",
+          }}
         >
           {children}
         </main>
 
-        {/* Zone 4: Contextual Help Column (340px) */}
+        {/* Zone 4: Contextual Help Column (340px) — Independent vertical scrollbar */}
         {helpColumnOpen && (
           <aside
             data-testid="four-zone-contextual-help-column"
-            className="border-l p-4"
+            className="min-h-0 shrink-0 overflow-y-auto border-l p-4"
             style={{
               width: "340px",
+              maxHeight: "calc(100vh - 52px)",
+              overflowY: "auto",
+              position: "sticky",
+              top: "52px",
               backgroundColor: "var(--color-bg-surface)",
               borderColor: "var(--color-border-subtle)",
             }}
