@@ -11,7 +11,7 @@ Conçue pour les équipes informatiques et métiers (développeurs, architectes,
 Lorsqu'une organisation déploie l'IA à l'échelle d'une équipe ou d'un département, elle se heurte rapidement à quatre difficultés majeures auxquelles ORCIA apporte une réponse directe :
 
 ### 1.1. Éviter l'effet « boîte noire » grâce à la validation humaine et à la traçabilité des sources
-- **Le problème** : Les assistants IA classiques génèrent de longs documents ou du code sans expliquer leurs choix, sans citer précisément leurs sources et sans laisser à l'humain la possibilité de cadrer les décisions structurantes avant la génération.
+- **Le problème** : Les assistants IA ne doivent pas générer de longs documents ou du code sans expliquer leurs choix, sans citer précisément leurs sources et sans laisser à l'humain la possibilité de cadrer les décisions structurantes avant la génération.
 - **La réponse d'ORCIA** :
   - Chaque réponse ou livrable produit par l'IA s'accompagne de **citations explicites et vérifiables** pointant vers les documents, tickets ou fichiers de code de l'entreprise.
   - Les décisions d'orientation (objectifs métier, choix d'architecture, arbitrages entre plusieurs options) restent **explicitement validées par l'humain**.
@@ -28,12 +28,12 @@ Lorsqu'une organisation déploie l'IA à l'échelle d'une équipe ou d'un dépar
 - **Le problème** : Dans la plupart des outils, tout se mélange dans de simples prompts copiés d'un utilisateur à l'autre, difficiles à maintenir, à tester et à partager.
 - **La réponse d'ORCIA** : ORCIA sépare clairement quatre briques complémentaires :
 
-| Concept | Rôle concret pour l'équipe | Exemple d'usage |
-| :--- | :--- | :--- |
+| Concept                       | Rôle concret pour l'équipe                                                                                                                                                                  | Exemple d'usage                                                                                                            |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------- |
 | **Assistant conversationnel** | Interlocuteur quotidien pour explorer les sources d'un espace, poser des questions avec citations vérifiées, rédiger des notes et collaborer avec ses collègues dans des dossiers partagés. | « Synthétise les impacts de ce ticket Jira sur notre API de facturation en citant la documentation et le code concernés. » |
-| **Agents** | Rôles spécialisés dotés d'instructions métier précises, d'un périmètre d'action défini et d'un accès contrôlé aux outils de l'espace. | Agent *Architecte Logiciel*, Agent *Analyste Fonctionnel*, Agent *Auditeur Sécurité*. |
-| **Compétences (*Skills*)** | Savoir-faire atomiques, testables et réutilisables par plusieurs agents ou processus (analyse de code, vérification de règles métiers, génération de schéma, etc.). | Compétence *Vérifier la conformité d'un contrat OpenAPI*, Compétence *Extraire les critères d'acceptation d'un ticket*. |
-| **Processus** | Chaînes d'étapes orchestrées combinant travail humain, intervention d'agents, exécution de compétences et jalons de validation jusqu'à la publication d'un livrable. | Processus *Transformer un ticket fonctionnel en spécification technique validée*, Processus *Revue de mise en production*. |
+| **Agents**                    | Rôles spécialisés dotés d'instructions métier précises, d'un périmètre d'action défini et d'un accès contrôlé aux outils de l'espace.                                                       | Agent *Architecte Logiciel*, Agent *Analyste Fonctionnel*, Agent *Auditeur Sécurité*.                                      |
+| **Compétences (*Skills*)**    | Savoir-faire atomiques, testables et réutilisables par plusieurs agents ou processus (analyse de code, vérification de règles métiers, génération de schéma, etc.).                         | Compétence *Vérifier la conformité d'un contrat OpenAPI*, Compétence *Extraire les critères d'acceptation d'un ticket*.    |
+| **Processus**                 | Chaînes d'étapes orchestrées combinant travail humain, intervention d'agents, exécution de compétences et jalons de validation jusqu'à la publication d'un livrable.                        | Processus *Transformer un ticket fonctionnel en spécification technique validée*, Processus *Revue de mise en production*. |
 
 ### 1.4. Maîtriser la sécurité et les coûts d'utilisation des modèles IA
 - **Le problème** : Ouvrir des accès IA sur le système d'information soulève des risques de fuite de données, d'actions non autorisées sur les outils de production et de dérive budgétaire liée à la consommation de jetons (*tokens*).
@@ -112,16 +112,16 @@ flowchart TD
 
 ### Principaux choix technologiques
 
-| Couche | Technologies standards utilisées | Rôle dans la plateforme |
-| :--- | :--- | :--- |
-| **Frontend Web** | **React 19**, **TypeScript 5.8**, **Vite 6**, **TanStack Router**, **TanStack Query**, **Tailwind CSS 4** | Application web monopage (SPA) réactive, typée de bout en bout et disponible en français et en anglais. |
-| **Client API** | **OpenAPI 3.1**, `openapi-typescript`, `openapi-fetch` | Client HTTP TypeScript généré automatiquement à partir des schémas de l'API Python pour garantir la cohérence entre le frontend et le backend. |
-| **API Backend** | **Python 3.12+**, **FastAPI**, **Pydantic v2**, **Uvicorn**, **OpenTelemetry** | Exposition des routes REST, flux d'événements temps réel (*Server-Sent Events*), serveur compatible **MCP** et traçabilité distribuée. |
-| **Traitements asynchrones & Workflows** | **DBOS Transact**, **Dramatiq**, **Docling**, **LiteLLM** | Exécution de workflows résilients aux pannes (capables de reprendre exactement à l'étape interrompue ou de rejouer une étape spécifique), indexation documentaire en tâche de fond et routage multi-fournisseurs vers les modèles IA. |
-| **Base de données** | **PostgreSQL 18**, **pgvector**, **SQLAlchemy 2.1 (Asyncio)**, **Alembic** | Stockage transactionnel, recherche documentaire hybride combinant recherche vectorielle sémantique (`pgvector`) et recherche plein texte (`tsvector`), et journalisation d'audit. |
-| **Cache & Temps réel** | **Redis 7.4** | Cache applicatif, gestion des verrous de prise en charge simultanée entre utilisateurs et file de messages pour les notifications en temps réel. |
-| **Stockage objet** | **SeaweedFS** (API compatible Amazon S3) | Archivage versionné et vérifiable par empreinte cryptographique (`SHA-256`) des documents sources et des livrables produits. |
-| **Exécution isolée (*Sandbox*)** | **Wasmtime**, **Starlark**, **Conteneurs isolés sans réseau** | Exécution sécurisée des scripts de validation métier, des analyseurs statiques et des tests automatisés. |
+| Couche                                  | Technologies standards utilisées                                                                          | Rôle dans la plateforme                                                                                                                                                                                                               |
+| :-------------------------------------- | :-------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Frontend Web**                        | **React 19**, **TypeScript 5.8**, **Vite 6**, **TanStack Router**, **TanStack Query**, **Tailwind CSS 4** | Application web monopage (SPA) réactive, typée de bout en bout et disponible en français et en anglais.                                                                                                                               |
+| **Client API**                          | **OpenAPI 3.1**, `openapi-typescript`, `openapi-fetch`                                                    | Client HTTP TypeScript généré automatiquement à partir des schémas de l'API Python pour garantir la cohérence entre le frontend et le backend.                                                                                        |
+| **API Backend**                         | **Python 3.12+**, **FastAPI**, **Pydantic v2**, **Uvicorn**, **OpenTelemetry**                            | Exposition des routes REST, flux d'événements temps réel (*Server-Sent Events*), serveur compatible **MCP** et traçabilité distribuée.                                                                                                |
+| **Traitements asynchrones & Workflows** | **DBOS Transact**, **Dramatiq**, **Docling**, **LiteLLM**                                                 | Exécution de workflows résilients aux pannes (capables de reprendre exactement à l'étape interrompue ou de rejouer une étape spécifique), indexation documentaire en tâche de fond et routage multi-fournisseurs vers les modèles IA. |
+| **Base de données**                     | **PostgreSQL 18**, **pgvector**, **SQLAlchemy 2.1 (Asyncio)**, **Alembic**                                | Stockage transactionnel, recherche documentaire hybride combinant recherche vectorielle sémantique (`pgvector`) et recherche plein texte (`tsvector`), et journalisation d'audit.                                                     |
+| **Cache & Temps réel**                  | **Redis 7.4**                                                                                             | Cache applicatif, gestion des verrous de prise en charge simultanée entre utilisateurs et file de messages pour les notifications en temps réel.                                                                                      |
+| **Stockage objet**                      | **SeaweedFS** (API compatible Amazon S3)                                                                  | Archivage versionné et vérifiable par empreinte cryptographique (`SHA-256`) des documents sources et des livrables produits.                                                                                                          |
+| **Exécution isolée (*Sandbox*)**        | **Wasmtime**, **Starlark**, **Conteneurs isolés sans réseau**                                             | Exécution sécurisée des scripts de validation métier, des analyseurs statiques et des tests automatisés.                                                                                                                              |
 
 ---
 
@@ -247,14 +247,14 @@ pnpm db:reset
 
 ### Gestion des services locaux (`./manage.sh` et `pnpm`)
 
-| Action | Commande |
-| :--- | :--- |
-| Démarrer toute la plateforme (Docker + API + Worker + Web) | `./manage.sh start all` |
-| Vérifier l'état des services et les ports actifs | `./manage.sh status` |
-| Consulter les journaux d'exécution (tous les services ou un seul) | `./manage.sh logs all -n 50` ou `./manage.sh logs api -n 100` |
-| Redémarrer un service spécifique (`api`, `worker`, `web`, `infra`) | `./manage.sh restart api` |
-| Arrêter tous les services | `./manage.sh stop all` |
-| Réinitialiser la base de données à l'état du premier lancement | `pnpm db:reset` |
+| Action                                                             | Commande                                                      |
+| :----------------------------------------------------------------- | :------------------------------------------------------------ |
+| Démarrer toute la plateforme (Docker + API + Worker + Web)         | `./manage.sh start all`                                       |
+| Vérifier l'état des services et les ports actifs                   | `./manage.sh status`                                          |
+| Consulter les journaux d'exécution (tous les services ou un seul)  | `./manage.sh logs all -n 50` ou `./manage.sh logs api -n 100` |
+| Redémarrer un service spécifique (`api`, `worker`, `web`, `infra`) | `./manage.sh restart api`                                     |
+| Arrêter tous les services                                          | `./manage.sh stop all`                                        |
+| Réinitialiser la base de données à l'état du premier lancement     | `pnpm db:reset`                                               |
 
 ### Qualité du code et exécution des tests
 
