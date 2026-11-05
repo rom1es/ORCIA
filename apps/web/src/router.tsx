@@ -3,6 +3,7 @@ import { createRoute, createRouter, type RouterHistory } from "@tanstack/react-r
 import React from "react";
 import { ModuleWorkspaceView } from "./components/ModuleWorkspaceView";
 import { Route as rootRoute } from "./routes/__root";
+import { Route as activityRoute } from "./routes/activity";
 import { Route as bootstrapRoute } from "./routes/bootstrap";
 import { Route as catalogRoute } from "./routes/catalog";
 import { Route as cockpitRoute } from "./routes/cockpit";
@@ -78,6 +79,7 @@ export const routeTree = rootRoute.addChildren([
   ontologyRoute,
   gatesRoute,
   finopsRoute,
+  activityRoute,
   workspacesRoute,
   bootstrapRoute,
   settingsRoute,

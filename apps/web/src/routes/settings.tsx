@@ -20,8 +20,7 @@ export type SettingsSectionTab =
   | "connectors"
   | "ai-models"
   | "packs"
-  | "workflows"
-  | "audit";
+  | "workflows";
 
 export function SettingsHubView() {
   const { dictionary, locale } = useI18n();
@@ -37,7 +36,6 @@ export function SettingsHubView() {
     datasources,
     packs,
     workflows,
-    auditEvents,
     addOrgUnit,
     removeOrgUnit,
     addRbacGrant,
@@ -78,7 +76,6 @@ export function SettingsHubView() {
     { key: "connectors", label: copy.tabs.connectors },
     { key: "packs", label: copy.tabs.packs },
     { key: "workflows", label: copy.tabs.workflows },
-    { key: "audit", label: copy.tabs.audit },
   ];
 
   return (
@@ -187,7 +184,6 @@ export function SettingsHubView() {
               datasources={datasources}
               packs={packs}
               workflows={workflows}
-              auditEvents={auditEvents}
               openHelpSection={openHelpSection}
               upsertLlmTier={upsertLlmTier}
               registerDatasource={registerDatasource}

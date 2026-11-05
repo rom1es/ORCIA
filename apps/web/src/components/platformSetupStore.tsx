@@ -152,11 +152,82 @@ export function deduplicateConfiguredPacks(
   return result;
 }
 
+export function formatHumanReadableScopePath(rawScopePath: string | undefined): string {
+  const trimmed = (rawScopePath ?? "").trim();
+  if (!trimmed || trimmed === "GLOBAL" || trimmed === "scope-global") {
+    return "Plateforme entière";
+  }
+  return trimmed;
+}
+
+export function cleanAuditSummaryJargon(rawSummary: string): string {
+  return rawSummary
+    .replace(/\bsur GLOBAL\b/g, "sur Plateforme entière")
+    .replace(/\(PUBLISHED\)/g, "(Publié)")
+    .replace(/\(DRAFT\)/g, "(Brouillon)")
+    .replace(/\(VALIDATED\)/g, "(Validé)")
+    .replace(/\bmode passthrough\b/gi, "mode Identité personnelle")
+    .replace(/\bmode service_account\b/gi, "mode Compte technique partagé");
+}
+
+export function normalizeConfiguredAuditEvent(
+  raw: Partial<ConfiguredAuditEvent> & Record<string, unknown>,
+  fallbackActor?: ConfiguredPlatformAdmin | null,
+): ConfiguredAuditEvent {
+  const id = typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : "evt-1";
+  const timestampIso =
+    typeof raw.timestampIso === "string" && raw.timestampIso.trim()
+      ? raw.timestampIso.trim()
+      : new Date().toISOString();
+  const eventType =
+    typeof raw.eventType === "string" && raw.eventType.trim()
+      ? raw.eventType.trim()
+      : "SettingsChanged";
+  const summary = cleanAuditSummaryJargon(
+    typeof raw.summary === "string" ? raw.summary : "",
+  );
+  const actorName =
+    typeof raw.actorName === "string" && raw.actorName.trim()
+      ? raw.actorName.trim()
+      : (fallbackActor?.displayName ?? "Administrateur de la plateforme");
+  const actorEmail =
+    typeof raw.actorEmail === "string" && raw.actorEmail.trim()
+      ? raw.actorEmail.trim()
+      : fallbackActor?.email;
+  const rawScopePath =
+    typeof raw.scopePath === "string" && raw.scopePath.trim()
+      ? raw.scopePath.trim()
+      : "GLOBAL";
+  const scopeLabel =
+    typeof raw.scopeLabel === "string" && raw.scopeLabel.trim()
+      ? formatHumanReadableScopePath(raw.scopeLabel)
+      : formatHumanReadableScopePath(rawScopePath);
+  const scopeId =
+    typeof raw.scopeId === "string" && raw.scopeId.trim()
+      ? raw.scopeId.trim()
+      : rawScopePath === "GLOBAL"
+        ? "scope-global"
+        : undefined;
+
+  return {
+    id,
+    timestampIso,
+    eventType,
+    summary,
+    actorName,
+    ...(actorEmail ? { actorEmail } : {}),
+    ...(scopeId ? { scopeId } : {}),
+    scopePath: rawScopePath,
+    scopeLabel,
+  };
+}
+
 function readCachedPlatformSetupState(): CachedPlatformSetupState {
   try {
     const raw = readStorageItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
     if (!raw) return EMPTY_PLATFORM_SETUP_STATE;
     const parsed = JSON.parse(raw) as Partial<CachedPlatformSetupState>;
+    const cachedAdmin = readCachedPlatformAdmin();
     return {
       orgUnits: Array.isArray(parsed.orgUnits) ? parsed.orgUnits : [],
       rbacGrants: Array.isArray(parsed.rbacGrants) ? parsed.rbacGrants : [],
@@ -168,7 +239,14 @@ function readCachedPlatformSetupState(): CachedPlatformSetupState {
       runs: Array.isArray(parsed.runs) ? parsed.runs : [],
       catalogItems: Array.isArray(parsed.catalogItems) ? parsed.catalogItems : [],
       ontologyConcepts: Array.isArray(parsed.ontologyConcepts) ? parsed.ontologyConcepts : [],
-      auditEvents: Array.isArray(parsed.auditEvents) ? parsed.auditEvents : [],
+      auditEvents: Array.isArray(parsed.auditEvents)
+        ? parsed.auditEvents.map((ev) =>
+            normalizeConfiguredAuditEvent(
+              ev as Partial<ConfiguredAuditEvent> & Record<string, unknown>,
+              cachedAdmin,
+            ),
+          )
+        : [],
     };
   } catch {
     return EMPTY_PLATFORM_SETUP_STATE;
@@ -237,6 +315,11 @@ export interface ConfiguredAuditEvent {
   readonly timestampIso: string;
   readonly eventType: string;
   readonly summary: string;
+  readonly actorName?: string;
+  readonly actorEmail?: string;
+  readonly scopeId?: string;
+  readonly scopePath?: string;
+  readonly scopeLabel?: string;
 }
 
 export interface ConfiguredPlatformAdmin {
@@ -469,7 +552,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
               runs: rRuns as unknown as ControlCenterRunItem[],
               catalogItems: rCatalogItems as unknown as UiCatalogExplorerItemView[],
               ontologyConcepts: rOntologyConcepts as unknown as UiOntologyConceptView[],
-              auditEvents: rAuditEvents as unknown as ConfiguredAuditEvent[],
+              auditEvents: (rAuditEvents as unknown as Array<Partial<ConfiguredAuditEvent> & Record<string, unknown>>).map(
+                (ev) => normalizeConfiguredAuditEvent(ev, platformAdmin),
+              ),
             };
             writeCachedPlatformSetupState(hydrated);
             setOrgUnits(hydrated.orgUnits);
@@ -513,13 +598,28 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const appendAudit = (
     eventType: string,
     summary: string,
-  ): readonly ConfiguredAuditEvent[] => [
-    {
-      id: `evt-${auditEvents.length + 1}`,
-      timestampIso: new Date().toISOString(),
-      eventType,
-      summary,
+    meta?: {
+      readonly actorName?: string;
+      readonly actorEmail?: string;
+      readonly scopeId?: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
     },
+  ): readonly ConfiguredAuditEvent[] => [
+    normalizeConfiguredAuditEvent(
+      {
+        id: `evt-${auditEvents.length + 1}`,
+        timestampIso: new Date().toISOString(),
+        eventType,
+        summary,
+        actorName: meta?.actorName ?? platformAdmin?.displayName ?? "Administrateur de la plateforme",
+        actorEmail: meta?.actorEmail ?? platformAdmin?.email,
+        scopeId: meta?.scopeId,
+        scopePath: meta?.scopePath ?? "GLOBAL",
+        scopeLabel: meta?.scopeLabel ?? formatHumanReadableScopePath(meta?.scopePath ?? "GLOBAL"),
+      },
+      platformAdmin,
+    ),
     ...auditEvents,
   ];
 
@@ -538,6 +638,13 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextAudit = appendAudit(
       "PlatformAdminInitialized",
       `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
+      {
+        actorName: admin.displayName,
+        actorEmail: admin.email,
+        scopeId: "scope-global",
+        scopePath: "GLOBAL",
+        scopeLabel: "Plateforme entière",
+      },
     );
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
@@ -580,7 +687,16 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const addOrgUnit = (input: Omit<ConfiguredOrgUnit, "id">) => {
     const id = orgUnits.length === 0 ? "org-1" : `org-${orgUnits.length + 1}`;
     const nextOrgUnits = [...orgUnits, { ...input, id }];
-    const nextAudit = appendAudit("OrgUnitCreated", `${input.level} "${input.name}" (${input.slug})`);
+    const levelLabel = input.level === "BU" ? "Direction (BU)" : "Équipe";
+    const nextAudit = appendAudit(
+      "OrgUnitCreated",
+      `${levelLabel} "${input.name}" (${input.slug}) créée`,
+      {
+        scopeId: id,
+        scopePath: input.slug,
+        scopeLabel: `${levelLabel} · ${input.name}`,
+      },
+    );
     setOrgUnits(nextOrgUnits);
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
@@ -614,9 +730,15 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       };
     }
     const nextOrgUnits = orgUnits.filter((u) => u.id !== orgUnitId);
+    const levelLabel = target.level === "BU" ? "Direction (BU)" : "Équipe";
     const nextAudit = appendAudit(
       "OrgUnitDeleted",
-      `${target.level} "${target.name}" (${target.slug}) supprimé`,
+      `${levelLabel} "${target.name}" (${target.slug}) supprimée`,
+      {
+        scopeId: target.id,
+        scopePath: target.slug,
+        scopeLabel: `${levelLabel} · ${target.name}`,
+      },
     );
     setOrgUnits(nextOrgUnits);
     setAuditEvents(nextAudit);
@@ -627,9 +749,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const addRbacGrant = (input: Omit<ConfiguredRbacGrant, "id">) => {
     const id = rbacGrants.length === 0 ? "grant-1" : `grant-${rbacGrants.length + 1}`;
     const nextRbacGrants = [...rbacGrants, { ...input, id }];
+    const readableScope = formatHumanReadableScopePath(input.scopePath);
     const nextAudit = appendAudit(
       "PermissionGranted",
-      `${input.subjectType}:${input.subjectId} -> ${input.verb} (${input.effect}) sur ${input.scopePath}`,
+      `${input.subjectType === "ROLE" ? "Rôle" : "Utilisateur"} ${input.subjectId} → ${input.verb} sur ${readableScope}`,
+      {
+        scopePath: input.scopePath,
+        scopeLabel: readableScope,
+      },
     );
     setRbacGrants(nextRbacGrants);
     setAuditEvents(nextAudit);
@@ -640,9 +767,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const target = rbacGrants.find((g) => g.id === grantId);
     if (!target) return;
     const nextRbacGrants = rbacGrants.filter((g) => g.id !== grantId);
+    const readableScope = formatHumanReadableScopePath(target.scopePath);
     const nextAudit = appendAudit(
       "PermissionRevoked",
-      `${target.subjectType}:${target.subjectId} -> ${target.verb} (${target.effect}) révoqué sur ${target.scopePath}`,
+      `${target.subjectType === "ROLE" ? "Rôle" : "Utilisateur"} ${target.subjectId} → ${target.verb} révoqué sur ${readableScope}`,
+      {
+        scopePath: target.scopePath,
+        scopeLabel: readableScope,
+      },
     );
     setRbacGrants(nextRbacGrants);
     setAuditEvents(nextAudit);
@@ -653,7 +785,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextLlmTiers = [...llmTiers.filter((item) => item.tier !== input.tier), input];
     const nextAudit = appendAudit(
       "SettingsChanged",
-      `Palier IA "${input.tier}" associé à ${input.primaryModel} (fournisseur ${input.modelFamily}, effort ${input.defaultEffort})`,
+      `Niveau IA "${input.tier}" associé au modèle ${input.primaryModel} (${input.modelFamily})`,
+      {
+        scopeId: "scope-global",
+        scopePath: "GLOBAL",
+        scopeLabel: "Plateforme entière",
+      },
     );
     setLlmTiers(nextLlmTiers);
     setAuditEvents(nextAudit);
@@ -699,7 +836,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextWorkspaces = [...workspaces, newWs];
     const nextAudit = appendAudit(
       "WorkspaceCreated",
-      `Workspace "${input.name}" (${input.slug}, ${input.lifecyclePhase}) créé`,
+      `Espace de travail "${input.name}" (${input.slug}) créé`,
+      {
+        scopeId: workspaceId,
+        scopePath: input.slug,
+        scopeLabel: `Espace · ${input.name}`,
+      },
     );
     setWorkspaces(nextWorkspaces);
     setAuditEvents(nextAudit);
@@ -710,12 +852,18 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     workspaceId: string,
     phase: ProductLifecyclePhaseType,
   ) => {
+    const targetWs = workspaces.find((w) => w.workspaceId === workspaceId);
     const nextWorkspaces = workspaces.map((ws) =>
       ws.workspaceId === workspaceId ? { ...ws, lifecyclePhase: phase } : ws,
     );
     const nextAudit = appendAudit(
       "WorkspacePhaseUpdated",
-      `Workspace ${workspaceId} -> phase ${phase}`,
+      `Espace "${targetWs?.name ?? workspaceId}" passé en phase ${phase}`,
+      {
+        scopeId: workspaceId,
+        scopePath: targetWs?.name ?? workspaceId,
+        scopeLabel: `Espace · ${targetWs?.name ?? workspaceId}`,
+      },
     );
     setWorkspaces(nextWorkspaces);
     setAuditEvents(nextAudit);
@@ -744,9 +892,17 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         tripartiteStatus: "ALIGNED",
       },
     ];
+    const identityLabel =
+      input.executionIdentity === "passthrough"
+        ? "Identité personnelle"
+        : "Compte technique partagé";
     const nextAudit = appendAudit(
       "ConnectorConfigured",
-      `Connecteur "${input.alias}" (${input.uri}) enregistré en mode ${input.executionIdentity}`,
+      `Connecteur "${input.alias}" (${input.uri}) enregistré (${identityLabel})`,
+      {
+        scopePath: input.workspaceName,
+        scopeLabel: formatHumanReadableScopePath(input.workspaceName),
+      },
     );
     setDatasources(nextDatasources);
     setAuditEvents(nextAudit);
@@ -782,9 +938,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         sourceMasked: false,
       },
     ];
+    const readableScope = formatHumanReadableScopePath(input.scopePath);
     const nextAudit = appendAudit(
       "PackRegistered",
-      `Pack "${input.packKey}@${input.version}" (${input.status}) activé sur ${input.scopePath}`,
+      `Pack "${input.packKey}@${input.version}" activé sur ${readableScope}`,
+      {
+        scopePath: input.scopePath,
+        scopeLabel: readableScope,
+      },
     );
     setPacks(nextPacks);
     setCatalogItems(nextCatalogItems);
@@ -810,9 +971,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextCatalogItems = stillActiveSomewhere
       ? catalogItems
       : catalogItems.filter((item) => item.resourceId !== `pack-${packKey}`);
+    const readableScope = formatHumanReadableScopePath(scopePath ?? "GLOBAL");
     const nextAudit = appendAudit(
       "PackDeactivated",
-      `Pack "${packKey}" désactivé sur ${scopePath ?? "GLOBAL"}`,
+      `Pack "${packKey}" désactivé sur ${readableScope}`,
+      {
+        scopePath: scopePath ?? "GLOBAL",
+        scopeLabel: readableScope,
+      },
     );
     setPacks(nextPacks);
     setCatalogItems(nextCatalogItems);
@@ -849,9 +1015,15 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         sourceMasked: false,
       },
     ];
+    const statusLabel = input.status === "PUBLISHED" ? "Publié" : "Brouillon";
     const nextAudit = appendAudit(
       "WorkflowSaved",
-      `Workflow "${input.workflowKey}@${input.version}" (${input.status}) enregistré`,
+      `Processus "${input.title || input.workflowKey}" (${statusLabel}) enregistré`,
+      {
+        scopeId: "scope-global",
+        scopePath: "GLOBAL",
+        scopeLabel: "Plateforme entière",
+      },
     );
     setWorkflows(nextWorkflows);
     setCatalogItems(nextCatalogItems);
@@ -889,7 +1061,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     ];
     const nextAudit = appendAudit(
       "RunLaunched",
-      `Run "${input.title}" (${runId}) démarré sur ${input.workspaceName}`,
+      `Exécution "${input.title}" (${runId}) démarrée sur ${input.workspaceName}`,
+      {
+        scopeId: input.workspaceId,
+        scopePath: input.workspaceName,
+        scopeLabel: `Espace · ${input.workspaceName}`,
+      },
     );
     setRuns(nextRuns);
     setAuditEvents(nextAudit);
@@ -900,7 +1077,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     const nextConcepts = [...ontologyConcepts, input];
     const nextAudit = appendAudit(
       "OntologyConceptCreated",
-      `Concept "${input.canonicalTerm}" (${input.level}) créé`,
+      `Terme métier "${input.canonicalTerm}" (${input.level}) créé`,
+      {
+        scopeId: "scope-global",
+        scopePath: "GLOBAL",
+        scopeLabel: "Plateforme entière",
+      },
     );
     setOntologyConcepts(nextConcepts);
     setAuditEvents(nextAudit);

@@ -81,8 +81,8 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   },
   {
     sectionId: "audit-overview",
-    title: "Journal d'activité et suivi budgétaire",
-    body: "Consultez l'historique horodaté des décisions validées et définissez un plafond de dépense par espace pour éviter tout dépassement imprévu.",
+    title: "Journal d'activité : auteurs, horodatage et filtres d'observation",
+    body: "Le Journal d'Activité (accessible depuis le menu de gauche 📜 Journal d'Activité) trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Vous pouvez filtrer par utilisateur, sur les 50 / 100 / 200 / 500 derniers événements ou sur une fenêtre temporelle. Le suivi des coûts et des budgets par espace est quant à lui géré séparément dans l'écran 📊 Coûts & Activité.",
     category: "faq",
   },
 ];
@@ -156,8 +156,8 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
   },
   {
     sectionId: "audit-overview",
-    title: "Activity log and budget tracking",
-    body: "Review the timestamped history of validated decisions and set a spending cap per workspace to prevent unexpected overruns.",
+    title: "Activity log: authors, timestamps, and observation filters",
+    body: "The Activity Log (accessible from the left menu 📜 Activity Log) tracks who performed each action, when, and on which scope (filtered by default to your active observation level). Filter by user, by the last 50 / 100 / 200 / 500 events, or by time window. Cost tracking and workspace budgets are managed separately in 📊 Costs & Activity.",
     category: "faq",
   },
 ];
@@ -217,6 +217,12 @@ const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Chaque processus s'exécute en 3 temps : 1) Collecte des documents et du contexte de votre Espace, 2) Analyse par les agents IA et vérification croisée des règles métiers, 3) Validation humaine finale avant diffusion du livrable.",
     category: "steps",
   },
+  {
+    sectionId: "audit-overview",
+    title: "Journal d'activité : auteurs, horodatage et filtres d'observation",
+    body: "Le Journal d'Activité (accessible depuis le menu de gauche 📜 Journal d'Activité) trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Vous pouvez filtrer par utilisateur, sur les 50 / 100 / 200 / 500 derniers événements ou sur une fenêtre temporelle. Le suivi des coûts et des budgets par espace est quant à lui géré séparément dans l'écran 📊 Coûts & Activité.",
+    category: "faq",
+  },
 ];
 
 const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -273,6 +279,12 @@ const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     title: "The 3 main execution steps of a process",
     body: "Each process runs in 3 stages: 1) Gather documents and Workspace context, 2) AI agent analysis and cross-checking of business rules, 3) Final human approval before sharing the deliverable.",
     category: "steps",
+  },
+  {
+    sectionId: "audit-overview",
+    title: "Activity log: authors, timestamps, and observation filters",
+    body: "The Activity Log (accessible from the left menu 📜 Activity Log) tracks who performed each action, when, and on which scope (filtered by default to your active observation level). Filter by user, by the last 50 / 100 / 200 / 500 events, or by time window. Cost tracking and workspace budgets are managed separately in 📊 Costs & Activity.",
+    category: "faq",
   },
 ];
 

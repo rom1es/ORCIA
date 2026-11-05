@@ -42,6 +42,7 @@ export interface FourZoneDirectionCShellLabels {
   readonly helpColumnExpectedTitle: string;
   readonly helpColumnExpectedBody: string;
   readonly menuEntries: Record<EightFixedMenuKey, string>;
+  readonly activityMenuLabel?: string;
 }
 
 export interface WorkspaceSwitcherOption {
@@ -52,6 +53,7 @@ export interface WorkspaceSwitcherOption {
 
 export interface FourZoneDirectionCShellProps {
   readonly activeMenuKey: EightFixedMenuKey;
+  readonly activityMenuActive?: boolean;
   readonly activeWorkspaceName: string;
   readonly activeScopeId?: string;
   readonly workspaceOptions?: readonly WorkspaceSwitcherOption[];
@@ -64,6 +66,7 @@ export interface FourZoneDirectionCShellProps {
   readonly labels: FourZoneDirectionCShellLabels;
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
+  readonly onSelectActivityMenu?: (route: string) => void;
   readonly onOpenWorkspaceSwitcher?: () => void;
   readonly onSelectWorkspace?: (scopeId: string) => void;
   readonly onOpenSearchCommand?: () => void;
@@ -94,6 +97,7 @@ export function computeDefaultHelpColumnOpen(
 
 export function FourZoneDirectionCShell({
   activeMenuKey,
+  activityMenuActive = false,
   activeWorkspaceName,
   activeScopeId,
   workspaceOptions,
@@ -106,6 +110,7 @@ export function FourZoneDirectionCShell({
   labels,
   disabledMenuKeys,
   onSelectMenu,
+  onSelectActivityMenu,
   onOpenWorkspaceSwitcher,
   onSelectWorkspace,
   onOpenSearchCommand,
@@ -371,7 +376,7 @@ export function FourZoneDirectionCShell({
         className="flex min-h-0 flex-1 overflow-hidden"
         style={{ height: "calc(100vh - 52px)", overflow: "hidden" }}
       >
-        {/* Zone 2: Sidebar (240px / 68px Rail) with 8 fixed unnumbered entries */}
+        {/* Zone 2: Sidebar (240px / 68px Rail) with 8 fixed unnumbered entries + dedicated Activity Log entry */}
         <aside
           data-testid="four-zone-sidebar"
           data-rail-collapsed={railCollapsed ? "true" : "false"}
@@ -397,40 +402,71 @@ export function FourZoneDirectionCShell({
             </button>
 
             {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.map((entry) => {
-              const isActive = entry.key === activeMenuKey;
+              const isActive = !activityMenuActive && entry.key === activeMenuKey;
               const entryLabel = labels.menuEntries[entry.key];
               const disabledReason = disabledMenuKeys?.[entry.key];
               const isDisabled = Boolean(disabledReason);
               return (
-                <button
-                  key={entry.key}
-                  type="button"
-                  data-testid={`eight-menu-item-${entry.key}`}
-                  disabled={isDisabled}
-                  aria-disabled={isDisabled ? "true" : undefined}
-                  title={disabledReason}
-                  data-disabled-reason={disabledReason}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={() => {
-                    if (!isDisabled) {
-                      onSelectMenu(entry.key, entry.route);
-                    }
-                  }}
-                  className="flex items-center gap-2.5 rounded px-2.5 py-2 text-left text-xs font-medium"
-                  style={{
-                    backgroundColor: isActive
-                      ? "var(--color-action-primary-subtle)"
-                      : "transparent",
-                    color: isActive
-                      ? "var(--color-action-primary)"
-                      : "var(--color-text-primary)",
-                    opacity: isDisabled ? 0.45 : 1,
-                    cursor: isDisabled ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <span aria-hidden="true">{entry.icon}</span>
-                  {!railCollapsed && <span>{entryLabel}</span>}
-                </button>
+                <React.Fragment key={entry.key}>
+                  <button
+                    type="button"
+                    data-testid={`eight-menu-item-${entry.key}`}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled ? "true" : undefined}
+                    title={disabledReason}
+                    data-disabled-reason={disabledReason}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => {
+                      if (!isDisabled) {
+                        onSelectMenu(entry.key, entry.route);
+                      }
+                    }}
+                    className="flex items-center gap-2.5 rounded px-2.5 py-2 text-left text-xs font-medium"
+                    style={{
+                      backgroundColor: isActive
+                        ? "var(--color-action-primary-subtle)"
+                        : "transparent",
+                      color: isActive
+                        ? "var(--color-action-primary)"
+                        : "var(--color-text-primary)",
+                      opacity: isDisabled ? 0.45 : 1,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <span aria-hidden="true">{entry.icon}</span>
+                    {!railCollapsed && <span>{entryLabel}</span>}
+                  </button>
+
+                  {entry.key === "finops" && (
+                    <button
+                      type="button"
+                      data-testid="eight-menu-item-activity"
+                      aria-current={activityMenuActive ? "page" : undefined}
+                      onClick={() => {
+                        if (onSelectActivityMenu) {
+                          onSelectActivityMenu("/activity");
+                        } else {
+                          onSelectMenu("finops", "/activity");
+                        }
+                      }}
+                      className="flex items-center gap-2.5 rounded px-2.5 py-2 text-left text-xs font-medium"
+                      style={{
+                        backgroundColor: activityMenuActive
+                          ? "var(--color-action-primary-subtle)"
+                          : "transparent",
+                        color: activityMenuActive
+                          ? "var(--color-action-primary)"
+                          : "var(--color-text-primary)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span aria-hidden="true">📜</span>
+                      {!railCollapsed && (
+                        <span>{labels.activityMenuLabel ?? "Journal d'Activité"}</span>
+                      )}
+                    </button>
+                  )}
+                </React.Fragment>
               );
             })}
 

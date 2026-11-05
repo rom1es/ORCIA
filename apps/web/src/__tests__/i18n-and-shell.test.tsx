@@ -220,7 +220,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("cockpit-launch-run-form")).toBeDefined();
   });
 
-  it("initializes entities across the 6 dedicated /settings tabs and records Outbox audit events", async () => {
+  it("initializes entities across the 5 dedicated /settings tabs and records Outbox audit events visible in the dedicated left-menu Activity Log (/activity)", async () => {
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/settings"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -231,6 +231,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
         <RouterProvider router={router} />
       </QueryClientProvider>,
     );
+
+    // Journal d'Activité is no longer a tab inside /settings
+    expect(screen.queryByTestId("settings-tab-audit")).toBeNull();
 
     // Tab 1: IAM (starts empty, create Org Unit)
     expect(screen.getByTestId("iam-org-units-empty-state")).toBeDefined();
@@ -261,8 +264,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("save-connector-btn"));
     expect(screen.getByTestId("connector-row-ds-1").textContent).toContain("git-principal");
 
-    // Tab 6: Audit shows the recorded configuration events
-    fireEvent.click(screen.getByTestId("settings-tab-audit"));
+    // Dedicated left-menu entry eight-menu-item-activity navigates to /activity and displays the recorded events
+    fireEvent.click(screen.getByTestId("eight-menu-item-activity"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("activity-log-explorer-page")).toBeDefined();
     expect(screen.getByTestId("audit-event-row-evt-1")).toBeDefined();
   });
 
@@ -1277,6 +1284,145 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(loginPasswordInput.getAttribute("type")).toBe("password");
     expect(loginPasswordInput.getAttribute("autocomplete")).toBe("current-password");
     expect(loginPasswordInput.getAttribute("data-lpignore")).toBeNull();
+  });
+
+  it("mounts dedicated left-menu '📜 Journal d'Activité' (/activity), removes it from /settings tabs, displays timestamps & author names in French without PackDeactivated/PackRegistered/GLOBAL, filters by default to the connected login's observation scope, supports user / max 100-200 / time-window filters, and separates contextual help from spending caps", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // 1. Initialize connected administrator login ("Romain Admin", "romain@orcia.fr")
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Romain Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "romain@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+
+    // 2. Verify Journal d'Activité is removed from /settings tabs and has its own left-menu entry
+    expect(screen.queryByTestId("settings-tab-audit")).toBeNull();
+    const activityMenuBtn = screen.getByTestId("eight-menu-item-activity");
+    expect(activityMenuBtn.textContent).toContain("Journal d'Activité");
+
+    // 3. Perform actions on two different scopes: a BU ("Direction Produit") and Global Platform (activate/deactivate pack)
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Produit" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    fireEvent.click(screen.getByTestId("settings-tab-packs"));
+    fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-builder"));
+    fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-builder"));
+
+    // 4. Click the dedicated left-menu entry '📜 Journal d'Activité' -> navigates to /activity
+    fireEvent.click(activityMenuBtn);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const activityPage = screen.getByTestId("activity-log-explorer-page");
+    expect(activityPage).toBeDefined();
+    expect(activityMenuBtn.getAttribute("aria-current")).toBe("page");
+
+    // 5. Verify zero raw English eventType badges ("PackDeactivated", "PackRegistered", "OrgUnitCreated") or raw "GLOBAL"
+    const pageText = activityPage.textContent ?? "";
+    for (const forbiddenRaw of [
+      "PackDeactivated",
+      "PackRegistered",
+      "OrgUnitCreated",
+      "PlatformAdminInitialized",
+      "sur GLOBAL",
+      "(PUBLISHED)",
+    ]) {
+      expect(pageText).not.toContain(forbiddenRaw);
+    }
+    expect(pageText).toContain("Pack désactivé");
+    expect(pageText).toContain("Pack activé");
+    expect(pageText).toContain("Plateforme entière");
+
+    // 6. Verify every row displays its timestamp, author name ("Romain Admin (romain@orcia.fr)"), and scope
+    const latestEvtTimestamp = screen.getByTestId("activity-event-timestamp-evt-4");
+    const latestEvtActor = screen.getByTestId("activity-event-actor-evt-4");
+    const latestEvtScope = screen.getByTestId("activity-event-scope-evt-4");
+    expect(latestEvtTimestamp.textContent).toMatch(/\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}/);
+    expect(latestEvtActor.textContent).toContain("Romain Admin (romain@orcia.fr)");
+    expect(latestEvtScope.textContent).toContain("Plateforme entière");
+
+    // 7. Verify default filtering at the connected login's observation level (topbar workspace/scope selector)
+    expect(screen.getByTestId("activity-observation-scope-badge").textContent).toContain(
+      "Filtré sur votre niveau d'observation : Plateforme entière",
+    );
+    expect(
+      (screen.getByTestId("activity-scope-filter-select") as HTMLSelectElement).value,
+    ).toBe("scope-global");
+
+    // Switch the connected user's observation level in the top header bar to "Direction Produit" (org-1)
+    fireEvent.click(screen.getByTestId("topbar-fixed-workspace-selector"));
+    fireEvent.click(screen.getByTestId("topbar-workspace-option-org-1"));
+
+    // The Activity Log automatically filters to the observed BU ("Direction · Direction Produit")!
+    expect(
+      (screen.getByTestId("activity-scope-filter-select") as HTMLSelectElement).value,
+    ).toBe("org-1");
+    expect(screen.getByTestId("activity-observation-scope-badge").textContent).toContain(
+      "Direction · Direction Produit",
+    );
+    // Only the event on Direction Produit (evt-2) is shown; global pack events (evt-3, evt-4) are filtered out
+    expect(screen.getByTestId("audit-event-row-evt-2")).toBeDefined();
+    expect(screen.queryByTestId("audit-event-row-evt-4")).toBeNull();
+
+    // User can broaden the filter to "Plateforme entière" and reset back to their observation scope in 1 click
+    fireEvent.change(screen.getByTestId("activity-scope-filter-select"), {
+      target: { value: "scope-global" },
+    });
+    expect(screen.getByTestId("audit-event-row-evt-4")).toBeDefined();
+    fireEvent.click(screen.getByTestId("activity-reset-observation-scope-btn"));
+    expect(
+      (screen.getByTestId("activity-scope-filter-select") as HTMLSelectElement).value,
+    ).toBe("org-1");
+
+    // Switch back to Plateforme entière to test User, Max Limit (100 / 200), and Time Window filters
+    fireEvent.change(screen.getByTestId("activity-scope-filter-select"), {
+      target: { value: "scope-global" },
+    });
+
+    // 8. Test User filter & search, Max Limit (50 / 100 / 200 / 500), and Time Window filter
+    const maxLimitSelect = screen.getByTestId("activity-max-limit-select") as HTMLSelectElement;
+    expect(maxLimitSelect.value).toBe("100");
+    expect(maxLimitSelect.textContent).toContain("100 derniers");
+    expect(maxLimitSelect.textContent).toContain("200 derniers");
+    fireEvent.change(maxLimitSelect, { target: { value: "200" } });
+    expect(maxLimitSelect.value).toBe("200");
+
+    const timeWindowSelect = screen.getByTestId("activity-time-window-select") as HTMLSelectElement;
+    expect(timeWindowSelect.value).toBe("ALL");
+    fireEvent.change(timeWindowSelect, { target: { value: "24H" } });
+    expect(screen.getByTestId("audit-event-row-evt-4")).toBeDefined();
+
+    const userSelect = screen.getByTestId("activity-user-filter-select") as HTMLSelectElement;
+    expect(userSelect.textContent).toContain("Romain Admin");
+    fireEvent.change(userSelect, { target: { value: "Romain Admin" } });
+    expect(screen.getByTestId("audit-event-row-evt-4")).toBeDefined();
+
+    fireEvent.change(screen.getByTestId("activity-user-search-input"), {
+      target: { value: "utilisateur-inexistant" },
+    });
+    expect(screen.getByTestId("audit-events-empty-state")).toBeDefined();
+
+    // 9. Verify the contextual help icon 'i' (audit-overview) explains Activity Log without confusing it with spending caps
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-audit-overview"));
+    const auditHelpSection = screen.getByTestId("help-section-audit-overview");
+    expect(auditHelpSection.getAttribute("data-active")).toBe("true");
+    expect(auditHelpSection.textContent).toContain("auteurs, horodatage et filtres d'observation");
+    expect(auditHelpSection.textContent).not.toContain("définissez un plafond de dépense par espace");
   });
 });
 

@@ -42,6 +42,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
       configuration: "Configuration",
       help: "Aide",
     },
+    activityMenuLabel: "Journal d'Activité",
   },
   streamlinedCockpit: {
     zeroDecisionsBanner: "✅ Aucune décision en attente",
@@ -181,6 +182,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       configuration: "Configuration",
       help: "Help",
     },
+    activityMenuLabel: "Activity Log",
   },
   streamlinedCockpit: {
     zeroDecisionsBanner: "✅ No pending decisions",

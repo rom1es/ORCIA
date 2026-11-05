@@ -250,6 +250,7 @@ function InnerShellContainer({
     >
       <FourZoneDirectionCShell
         activeMenuKey={activeMenuKey}
+        activityMenuActive={Boolean(pathname?.startsWith("/activity"))}
         activeWorkspaceName={activeWorkspaceName}
         activeScopeId={selectedScope.id}
         workspaceOptions={workspaceOptions}
@@ -268,6 +269,11 @@ function InnerShellContainer({
           setSelectedMenuKeyOverride(menuKey);
           setSelectedModuleOverride(mapped.moduleKey);
           dispatchNavigation(mapped.route);
+        }}
+        onSelectActivityMenu={(route) => {
+          setSelectedMenuKeyOverride("finops");
+          setSelectedModuleOverride("finops");
+          dispatchNavigation(route);
         }}
         onOpenWorkspaceSwitcher={() => undefined}
         onOpenSearchCommand={() => setSearchModalOpen(true)}
