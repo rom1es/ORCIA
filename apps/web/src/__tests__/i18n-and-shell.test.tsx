@@ -355,12 +355,56 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
 
-    // Navigate to /processes -> PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
+    // Navigate to /processes -> SimplifiedProcessBuilderSection + PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
     await act(async () => {
       await router.navigate({ to: "/processes" });
     });
+    const processStudioSection = screen.getByTestId("settings-workflows-section");
+    expect(processStudioSection).toBeDefined();
     expect(screen.getByTestId("pack-builder-studio-view")).toBeDefined();
     expect(screen.getByTestId("help-article-generator-validator-view")).toBeDefined();
+
+    // Zero raw English lifecycle badges or cryptic counters in the Process Studio
+    const processStudioText = processStudioSection.textContent ?? "";
+    for (const forbiddenRawBadge of [
+      "PUBLISHED 0",
+      "DRAFT 0",
+      "TRASH 0",
+      "ACTIVE_RUNS",
+      "PAUSED_ARBITRATION",
+      "(0p / 0s)",
+      "e3b0c44298fc",
+    ]) {
+      expect(processStudioText).not.toContain(forbiddenRawBadge);
+    }
+
+    // Clicking the ⓘ contextual help buttons opens the right-hand contextual help column on the targeted section
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-workflows-overview"));
+    expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
+    expect(
+      screen.getByTestId("help-section-workflows-overview").getAttribute("data-active"),
+    ).toBe("true");
+
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-workflows-instructions"));
+    expect(
+      screen.getByTestId("help-section-workflows-instructions").getAttribute("data-active"),
+    ).toBe("true");
+
+    fireEvent.click(screen.getByTestId("contextual-info-trigger-workflows-deliverable-contract"));
+    expect(
+      screen
+        .getByTestId("help-section-workflows-deliverable-contract")
+        .getAttribute("data-active"),
+    ).toBe("true");
+
+    // Creating a process directly from /processes by entering only the title auto-generates the key and saves it
+    fireEvent.change(screen.getByTestId("workflow-title-input"), {
+      target: { value: "Revue de contrat fournisseur" },
+    });
+    fireEvent.click(screen.getByTestId("save-workflow-btn"));
+    expect(screen.getByTestId("workflow-row-revue-de-contrat-fournisseur").textContent).toContain(
+      "Revue de contrat fournisseur",
+    );
 
     // Navigate to /help -> ContextualHelpColumnAndCenter (HELP_MENU_CENTER)
     await act(async () => {

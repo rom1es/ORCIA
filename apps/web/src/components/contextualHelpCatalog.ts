@@ -57,8 +57,26 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   },
   {
     sectionId: "workflows-overview",
-    title: "Atelier de processus et règles de qualité",
-    body: "Visualisez et adaptez l'enchaînement des étapes d'un processus. Les étapes marquées en violet demandent obligatoirement une rédaction personnelle avant de poursuivre.",
+    title: "À quoi sert l'Atelier de Processus ?",
+    body: "Un Processus est une suite d'étapes réutilisable qui combine vos agents IA et vos points de validation humaine pour produire un livrable fiable (ex. revue de contrat, analyse de demande client). Créez-le en brouillon puis publiez-le lorsqu'il est prêt à être lancé.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-instructions",
+    title: "Comment rédiger l'objectif et les instructions du processus ?",
+    body: "Décrivez en langage naturel ce que vos agents doivent accomplir étape par étape : quelles sources consulter, quels points de vigilance vérifier et quel ton adopter dans la synthèse.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-deliverable-contract",
+    title: "Informations demandées au lancement et structure du livrable (optionnel)",
+    body: "Indiquez les informations qui seront demandées à l'utilisateur au lancement du processus (ex. nom du fournisseur, montant) ainsi que les grandes rubriques qui devront obligatoirement figurer dans le document final.",
+    category: "terms",
+  },
+  {
+    sectionId: "workflows-steps-layers",
+    title: "Les 3 grandes étapes d'exécution d'un processus",
+    body: "Chaque processus s'exécute en 3 temps : 1) Collecte des documents et du contexte de votre Espace, 2) Analyse par les agents IA et vérification croisée des règles métiers, 3) Validation humaine finale avant diffusion du livrable.",
     category: "steps",
   },
   {
@@ -114,8 +132,26 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
   },
   {
     sectionId: "workflows-overview",
-    title: "Process studio and quality rules",
-    body: "Inspect and tailor the sequence of process steps. Steps highlighted in violet require personal human authoring before the process can continue.",
+    title: "What is the Process Studio for?",
+    body: "A Process is a reusable sequence of steps combining your AI agents and human approval checkpoints to produce a reliable deliverable (e.g. contract review, customer request analysis). Save it as a draft and publish it when ready to run.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-instructions",
+    title: "How to write the process goal and instructions?",
+    body: "Describe in plain language what your agents should accomplish step by step: which sources to consult, which points of attention to verify, and what tone to use in the summary.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-deliverable-contract",
+    title: "Launch inputs and deliverable structure (optional)",
+    body: "Specify the inputs requested from the user when launching the process (e.g. supplier name, amount) as well as the main headings required in the final deliverable.",
+    category: "terms",
+  },
+  {
+    sectionId: "workflows-steps-layers",
+    title: "The 3 main execution steps of a process",
+    body: "Each process runs in 3 stages: 1) Gather documents and Workspace context, 2) AI agent analysis and cross-checking of business rules, 3) Final human approval before sharing the deliverable.",
     category: "steps",
   },
   {
@@ -157,6 +193,30 @@ const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Définissez les termes clés de votre équipe et transformez vos règles métiers en vérifications automatiques exécutées à chaque étape.",
     category: "terms",
   },
+  {
+    sectionId: "workflows-overview",
+    title: "À quoi sert l'Atelier de Processus ?",
+    body: "Un Processus est une suite d'étapes réutilisable qui combine vos agents IA et vos points de validation humaine pour produire un livrable fiable (ex. revue de contrat, analyse de demande client). Créez-le en brouillon puis publiez-le lorsqu'il est prêt à être lancé.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-instructions",
+    title: "Comment rédiger l'objectif et les instructions du processus ?",
+    body: "Décrivez en langage naturel ce que vos agents doivent accomplir étape par étape : quelles sources consulter, quels points de vigilance vérifier et quel ton adopter dans la synthèse.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-deliverable-contract",
+    title: "Informations demandées au lancement et structure du livrable (optionnel)",
+    body: "Indiquez les informations qui seront demandées à l'utilisateur au lancement du processus (ex. nom du fournisseur, montant) ainsi que les grandes rubriques qui devront obligatoirement figurer dans le document final.",
+    category: "terms",
+  },
+  {
+    sectionId: "workflows-steps-layers",
+    title: "Les 3 grandes étapes d'exécution d'un processus",
+    body: "Chaque processus s'exécute en 3 temps : 1) Collecte des documents et du contexte de votre Espace, 2) Analyse par les agents IA et vérification croisée des règles métiers, 3) Validation humaine finale avant diffusion du livrable.",
+    category: "steps",
+  },
 ];
 
 const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -189,6 +249,30 @@ const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     title: "Business glossary and automated rules",
     body: "Define your team's key terms and turn business rules into automated checks executed at every step.",
     category: "terms",
+  },
+  {
+    sectionId: "workflows-overview",
+    title: "What is the Process Studio for?",
+    body: "A Process is a reusable sequence of steps combining your AI agents and human approval checkpoints to produce a reliable deliverable (e.g. contract review, customer request analysis). Save it as a draft and publish it when ready to run.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-instructions",
+    title: "How to write the process goal and instructions?",
+    body: "Describe in plain language what your agents should accomplish step by step: which sources to consult, which points of attention to verify, and what tone to use in the summary.",
+    category: "steps",
+  },
+  {
+    sectionId: "workflows-deliverable-contract",
+    title: "Launch inputs and deliverable structure (optional)",
+    body: "Specify the inputs requested from the user when launching the process (e.g. supplier name, amount) as well as the main headings required in the final deliverable.",
+    category: "terms",
+  },
+  {
+    sectionId: "workflows-steps-layers",
+    title: "The 3 main execution steps of a process",
+    body: "Each process runs in 3 stages: 1) Gather documents and Workspace context, 2) AI agent analysis and cross-checking of business rules, 3) Final human approval before sharing the deliverable.",
+    category: "steps",
   },
 ];
 
