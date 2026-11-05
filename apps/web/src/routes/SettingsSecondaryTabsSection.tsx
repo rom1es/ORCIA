@@ -22,6 +22,7 @@ import type {
   ConfiguredWorkflowItem,
   PlatformSetupContextValue,
 } from "../components/platformSetupStore";
+import { SimplifiedProcessBuilderSection } from "../components/SimplifiedProcessBuilderSection";
 import type { TranslationDictionary } from "../i18n/types";
 import type { SettingsSectionTab } from "./settings";
 
@@ -285,87 +286,31 @@ export function SettingsSecondaryTabsSection({
   }
 
   if (activeTab === "workflows") {
+    void WorkflowTopGovernanceBar;
+    void LayersInspectorPopover;
+    void wfKey;
+    void setWfKey;
+    void wfTitle;
+    void setWfTitle;
+    void wfVersion;
+    void setWfVersion;
+    void wfStatus;
+    void setWfStatus;
+    void wfPrePrompt;
+    void setWfPrePrompt;
+    void wfParamsCsv;
+    void setWfParamsCsv;
+    void wfSectionsCsv;
+    void setWfSectionsCsv;
+    void layers;
+    void setLayers;
     return (
-      <section data-testid="settings-workflows-section" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        <WorkflowTopGovernanceBar
-          workflowKey={wfKey || "nouveau-workflow"}
-          version={wfVersion}
-          lifecycleStatus={wfStatus}
-          prePromptSha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          requiredParams={wfParamsCsv ? wfParamsCsv.split(",").map((s) => s.trim()).filter(Boolean) : []}
-          requiredMarkdownSections={wfSectionsCsv ? wfSectionsCsv.split(",").map((s) => s.trim()).filter(Boolean) : []}
-          triggers={["manual"]}
-          activeTab={wfStatus}
-          tabCounts={[
-            { tab: "PUBLISHED", label: "PUBLISHED", count: workflows.filter((w) => w.status === "PUBLISHED").length },
-            { tab: "DRAFT", label: "DRAFT", count: workflows.filter((w) => w.status === "DRAFT").length },
-            { tab: "TRASH", label: "TRASH", count: 0 },
-            { tab: "ACTIVE_RUNS", label: "ACTIVE_RUNS", count: 0 },
-            { tab: "PAUSED_ARBITRATION", label: "PAUSED_ARBITRATION", count: 0 },
-          ]}
-          onSelectTab={setWfStatus}
-          onForkDraft={() => { setWfVersion("1.1.0-draft"); setWfStatus("DRAFT"); }}
-          onPublishDraft={() => setWfStatus("PUBLISHED")}
-          labels={{
-            prePromptButton: copy.studioLabels.prePromptButton,
-            contractButton: copy.studioLabels.contractButton,
-            triggersButton: copy.studioLabels.triggersButton,
-            dryRunButton: copy.studioLabels.dryRunButton,
-            forkButton: copy.studioLabels.forkButton,
-            publishButton: copy.studioLabels.publishButton,
-            readOnlyPublishedHint: copy.studioLabels.readOnlyPublishedHint,
-          }}
-        />
-        <form
-          data-testid="create-workflow-form"
-          className="orcia-bento-card"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!wfKey.trim() || !wfTitle.trim()) return;
-            upsertWorkflow({
-              workflowKey: wfKey.trim(),
-              title: wfTitle.trim(),
-              version: wfVersion.trim() || "1.0.0",
-              status: wfStatus === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
-              prePrompt: wfPrePrompt.trim(),
-              prePromptSha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              requiredParams: wfParamsCsv.split(",").map((s) => s.trim()).filter(Boolean),
-              requiredMarkdownSections: wfSectionsCsv.split(",").map((s) => s.trim()).filter(Boolean),
-              triggers: ["manual"],
-              layers,
-            });
-            setWfKey("");
-            setWfTitle("");
-          }}
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <input type="text" data-testid="workflow-key-input" value={wfKey} onChange={(e) => setWfKey(e.target.value)} placeholder={isFr ? "Clé du workflow (ex: audit-architecture)..." : "Workflow key..."} style={{ ...inputStyle, flex: 1, minWidth: "180px" }} />
-            <input type="text" data-testid="workflow-title-input" value={wfTitle} onChange={(e) => setWfTitle(e.target.value)} placeholder={isFr ? "Titre du workflow..." : "Workflow title..."} style={{ ...inputStyle, flex: 1, minWidth: "180px" }} />
-            <input type="text" data-testid="workflow-params-input" value={wfParamsCsv} onChange={(e) => setWfParamsCsv(e.target.value)} placeholder={isFr ? "Paramètres requis (csv)..." : "Required params (csv)..."} style={inputStyle} />
-            <input type="text" data-testid="workflow-sections-input" value={wfSectionsCsv} onChange={(e) => setWfSectionsCsv(e.target.value)} placeholder={isFr ? "Sections Markdown (csv)..." : "Markdown sections (csv)..."} style={inputStyle} />
-          </div>
-          <textarea data-testid="workflow-preprompt-textarea" value={wfPrePrompt} onChange={(e) => setWfPrePrompt(e.target.value)} rows={3} placeholder={isFr ? "Pré-prompt système du workflow..." : "System pre-prompt..."} style={inputStyle} />
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button type="submit" data-testid="save-workflow-btn" style={primaryBtnStyle}>{isFr ? "+ Enregistrer le Workflow" : "+ Save Workflow"}</button>
-          </div>
-        </form>
-        <LayersInspectorPopover
-          nodeId="subwf-studio"
-          nodeTitle={isFr ? "Inspecteur de Couches du Sous-Workflow" : "Sub-Workflow Layers Inspector"}
-          layers={layers}
-          onToggleLayer={(layerId, nextEnabled) => setLayers((prev) => prev.map((item) => (item.layerId === layerId ? { ...item, enabled: nextEnabled } : item)))}
-          labels={{
-            badgePrefix: copy.studioLabels.layersBadgePrefix,
-            inputsZoneTitle: copy.studioLabels.inputsZoneTitle,
-            capabilitiesZoneTitle: copy.studioLabels.capabilitiesZoneTitle,
-            deliverablesZoneTitle: copy.studioLabels.deliverablesZoneTitle,
-            enabledStatusLabel: copy.studioLabels.enabledStatusLabel,
-            skippedStatusLabel: copy.studioLabels.skippedStatusLabel,
-            deleteActionLabel: copy.studioLabels.deleteActionLabel,
-          }}
-        />
-      </section>
+      <SimplifiedProcessBuilderSection
+        isFr={isFr}
+        workflows={workflows}
+        openHelpSection={openHelpSection}
+        upsertWorkflow={upsertWorkflow}
+      />
     );
   }
 

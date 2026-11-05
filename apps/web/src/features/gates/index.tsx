@@ -5,16 +5,25 @@ import {
 import React from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { SimplifiedProcessBuilderSection } from "../../components/SimplifiedProcessBuilderSection";
 import { useI18n } from "../../i18n";
 
 export function GatesFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { packs } = usePlatformSetup();
-  const { navigateToRoute } = useShellNavigation();
+  const { packs, workflows, upsertWorkflow } = usePlatformSetup();
+  const { navigateToRoute, openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Atelier simplifié de conception et gestion des processus métiers */}
+      <SimplifiedProcessBuilderSection
+        isFr={isFr}
+        workflows={workflows}
+        openHelpSection={openHelpSection}
+        upsertWorkflow={upsertWorkflow}
+      />
+
       <div
         data-testid="gates-empty-state-panel"
         className="orcia-bento-card"
@@ -40,8 +49,8 @@ export function GatesFeaturePanel() {
             }}
           >
             {isFr
-              ? "Les contrôles automatiques, revues croisées et étapes de validation humaine s'affichent lors de l'exécution d'un processus. Vous pouvez adapter vos processus dans la Configuration."
-              : "Automated checks, cross-checked reviews, and human approval steps are displayed while a process runs. You can tailor your processes in Configuration."}
+              ? "Les contrôles automatiques, revues croisées et étapes de validation humaine s'affichent lors de l'exécution d'un processus. Vous pouvez adapter vos processus ci-dessus ou dans la Configuration."
+              : "Automated checks, cross-checked reviews, and human approval steps are displayed while a process runs. You can tailor your processes above or in Configuration."}
           </p>
         </div>
         <button
