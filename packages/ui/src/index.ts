@@ -228,6 +228,25 @@ export {
   type ContextualInfoTriggerButtonProps,
 } from "./components/ContextualInfoTriggerButton";
 export {
+  OrciaAlertBanner,
+  OrciaButton,
+  OrciaInput,
+  OrciaSectionCard,
+  OrciaSelect,
+  OrciaTabBar,
+  OrciaTextarea,
+  type OrciaAlertBannerProps,
+  type OrciaAlertTone,
+  type OrciaButtonProps,
+  type OrciaButtonVariant,
+  type OrciaInputProps,
+  type OrciaSectionCardProps,
+  type OrciaSelectProps,
+  type OrciaTabBarProps,
+  type OrciaTabItem,
+  type OrciaTextareaProps,
+} from "./primitives/DesignSystemControls";
+export {
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,

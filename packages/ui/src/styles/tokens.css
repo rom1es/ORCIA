@@ -27,6 +27,8 @@
   --color-bg-canvas: var(--color-surface-bg);
   --color-bg-surface: var(--color-surface-card);
   --color-bg-elevated: #F8FAFC;
+  --color-surface: var(--color-surface-card);
+  --color-surface-canvas: var(--color-surface-bg);
   --color-surface-elevated: var(--color-surface-card);
   --color-surface-base: #F8FAFC;
   --color-surface-muted: #F1F5F9;
@@ -34,8 +36,13 @@
   --color-surface-secondary: #F8FAFC;
   --color-surface-border: var(--color-border);
   --color-border-subtle: var(--color-border);
+  --color-border-strong: #CBD5E1;
+  --color-border-focus: #2563EB;
   --color-text-primary: var(--color-foreground);
   --color-text-secondary: var(--color-muted-foreground);
+  --color-text-muted: var(--color-muted-foreground);
+  --color-text-inverse: #FFFFFF;
+  --color-modal-backdrop: rgba(15, 23, 42, 0.45);
 
   /* Governance & Semantic Accent Tokens */
   --color-primary-cobalt: #2563EB;
@@ -55,6 +62,10 @@
 
   --color-gate-emerald: #059669;
   --color-gate-emerald-bg: #ECFDF5;
+  --color-gate-pass: var(--color-gate-emerald);
+  --color-gate-pass-bg: var(--color-gate-emerald-bg);
+  --color-verified-emerald: var(--color-gate-emerald);
+  --color-verified-bg: var(--color-gate-emerald-bg);
 
   --color-ontology-cyan: #0284C7;
   --color-ontology-bg: #F0F9FF;
@@ -67,9 +78,25 @@
   --color-state-warning: var(--color-arbitration-amber);
   --color-state-danger: var(--color-stale-crimson);
   --color-status-success: var(--color-gate-emerald);
+  --color-status-success-subtle: var(--color-gate-emerald-bg);
+  --color-status-completed: var(--color-gate-emerald);
   --color-status-warning: var(--color-arbitration-amber);
   --color-status-danger: var(--color-stale-crimson);
   --color-status-error: var(--color-stale-crimson);
+  --color-status-failed: var(--color-stale-crimson);
+
+  /* Legacy @orcia/ui Primitives Token Aliases (--orcia-*) */
+  --orcia-surface-primary: var(--color-surface-primary);
+  --orcia-surface-secondary: var(--color-surface-secondary);
+  --orcia-surface-elevated: var(--color-surface-elevated);
+  --orcia-border-subtle: var(--color-border-subtle);
+  --orcia-text-primary: var(--color-text-primary);
+  --orcia-text-secondary: var(--color-text-secondary);
+  --orcia-text-muted: var(--color-text-muted);
+  --orcia-action-primary: var(--color-action-primary);
+  --orcia-text-on-action: var(--color-primary-foreground);
+  --orcia-status-warning: var(--color-status-warning);
+  --orcia-font-mono: var(--font-mono);
 
   /* Elevations */
   --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.04);
@@ -82,6 +109,7 @@
   --font-mono: "JetBrains Mono", "Geist Mono", monospace;
 
   --font-size-body: 13.5px;
+  --font-size-h3: 15px;
   --font-size-h2: 18px;
   --font-size-display: 22px;
   --font-size-hero: 26px;
@@ -93,11 +121,17 @@
   --dock-width: 340px;
   --canvas-min-width: 640px;
 
-  /* Radii */
+  /* Radii & Control Geometry (Centralized Look & Feel Dials) */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-full: 9999px;
+  --control-padding-y: 7px;
+  --control-padding-x: 10px;
+  --control-font-size: 13px;
+  --btn-padding-y: 7px;
+  --btn-padding-x: 14px;
+  --card-padding: 20px;
 }
 
 [data-theme="dark"] {
@@ -117,7 +151,10 @@
   --color-foreground: #F8FAFC;
   --color-muted-foreground: #94A3B8;
   --color-border: #1E293B;
+  --color-border-strong: #334155;
+  --color-border-focus: #60A5FA;
   --color-primary-cobalt: #6366F1;
+  --color-modal-backdrop: rgba(2, 6, 23, 0.72);
 
   --color-bg-elevated: #1E293B;
   --color-surface-base: #0F172A;
@@ -326,7 +363,7 @@ button {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 20px;
+  padding: var(--card-padding);
 }
 
 .orcia-info-trigger-btn {
@@ -372,6 +409,182 @@ button {
 .orcia-help-section-card--active {
   border-color: var(--color-action-primary);
   background-color: var(--color-action-primary-subtle);
+}
+
+/* ==========================================================================
+ * ORCIA Design System Unified Control Primitives (.orcia-ds-*)
+ * Modifying these rules or the :root tokens above updates the Look & Feel
+ * across every screen without touching business logic or i18n content.
+ * ========================================================================== */
+
+.orcia-ds-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.orcia-ds-card {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.orcia-ds-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.orcia-ds-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.orcia-ds-tab {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.orcia-ds-tab[aria-selected="true"] {
+  border-color: var(--color-primary-cobalt);
+  background-color: var(--color-primary-cobalt);
+  color: var(--color-primary-foreground);
+}
+
+.orcia-ds-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.orcia-ds-input,
+.orcia-ds-select,
+.orcia-ds-textarea {
+  padding: var(--control-padding-y) var(--control-padding-x);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  box-sizing: border-box;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.orcia-ds-input:focus-visible,
+.orcia-ds-select:focus-visible,
+.orcia-ds-textarea:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+  border-color: var(--color-border-focus);
+}
+
+.orcia-ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--btn-padding-y) var(--btn-padding-x);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.orcia-ds-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.orcia-ds-btn-primary {
+  border: 1px solid var(--color-primary-cobalt);
+  background-color: var(--color-primary-cobalt);
+  color: var(--color-primary-foreground);
+}
+
+.orcia-ds-btn-secondary {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  color: var(--color-foreground);
+}
+
+.orcia-ds-btn-danger {
+  border: 1px solid var(--color-stale-crimson);
+  background-color: var(--color-stale-bg);
+  color: var(--color-stale-crimson);
+}
+
+.orcia-ds-btn-ghost {
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--color-muted-foreground);
+}
+
+.orcia-ds-row {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.orcia-ds-alert {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.orcia-ds-alert-success {
+  border-color: var(--color-gate-emerald);
+  background-color: var(--color-gate-emerald-bg);
+  color: var(--color-gate-emerald);
+}
+
+.orcia-ds-alert-warning {
+  border-color: var(--color-arbitration-amber);
+  background-color: var(--color-arbitration-bg);
+  color: var(--color-arbitration-amber);
+}
+
+.orcia-ds-alert-error {
+  border-color: var(--color-stale-crimson);
+  background-color: var(--color-stale-bg);
+  color: var(--color-stale-crimson);
+}
+
+.orcia-ds-alert-info {
+  border-color: var(--color-primary-cobalt);
+  background-color: var(--color-action-primary-subtle);
+  color: var(--color-foreground);
 }
 
 @media (min-width: 769px) {
