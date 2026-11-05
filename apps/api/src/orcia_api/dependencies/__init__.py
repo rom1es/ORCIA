@@ -40,6 +40,7 @@ from orcia_api.dependencies.portal_and_assistant import (
     get_user_preferences_and_mcp_token_service,
 )
 from orcia_api.dependencies.workspace_and_packs import (
+    get_agents_and_skills_service,
     get_dna_starlark_and_glossary_service,
     get_help_generation_and_attachment_service,
     get_pack_builder_system_service,
@@ -50,6 +51,7 @@ from orcia_api.dependencies.workspace_and_packs import (
 __all__ = [
     "app_lifespan",
     "get_accostage_service",
+    "get_agents_and_skills_service",
     "get_assistant_citation_and_v5_guard_service",
     "get_assistant_folders_and_sharing_service",
     "get_assistant_governance_service",

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from orcia_core.orchestration.agents_and_skills_manager import (
+    AgentsAndSkillsManagementService,
+)
 from orcia_core.orchestration.dna_starlark_and_glossary_lifecycle import (
     DnaStarlarkAndGlossaryLifecycleService,
 )
@@ -85,4 +88,18 @@ def get_help_generation_and_attachment_service(
         session_maker = getattr(request.app.state, "session_maker", None)
         svc = HelpGenerationAndHotAttachmentService(session_factory=session_maker)
         request.app.state.help_generation_and_attachment_service = svc
+    return svc
+
+
+def get_agents_and_skills_service(
+    request: Request,
+) -> AgentsAndSkillsManagementService:
+    """Return `AgentsAndSkillsManagementService`."""
+    svc: AgentsAndSkillsManagementService | None = getattr(
+        request.app.state, "agents_and_skills_service", None
+    )
+    if svc is None:
+        llm = getattr(request.app.state, "llm_gateway", None)
+        svc = AgentsAndSkillsManagementService(llm_gateway=llm)
+        request.app.state.agents_and_skills_service = svc
     return svc

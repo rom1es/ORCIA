@@ -34,6 +34,19 @@ export interface components {
       leases: (components["schemas"]["ResourceLeaseItemResponse"])[];
       trace_id: string;
     };
+    AgentItemResponse: {
+      agent_id: string;
+      handle: string;
+      instructions: string;
+      name: string;
+      role_mission: string;
+      sha256?: string;
+      skill_ids?: (string)[];
+      slug: string;
+      thinking_level?: "simple" | "medium" | "complex" | "auto";
+      uri: string;
+      version?: string;
+    };
     AgenticGateEvaluateRequest: {
       anonymize_pii_reversible?: boolean;
       candidate_artifact?: Record<string, unknown>;
@@ -64,6 +77,11 @@ export interface components {
       routed_model_family: string;
       routed_model_id: string;
       routed_to_local_sovereign_model: boolean;
+      trace_id: string;
+    };
+    AgentsAndSkillsListResponse: {
+      agents?: (components["schemas"]["AgentItemResponse"])[];
+      skills?: (components["schemas"]["SkillItemResponse"])[];
       trace_id: string;
     };
     ArbitrationOptionSchemaItem: {
@@ -635,6 +653,11 @@ export interface components {
       verbs?: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
       workspace_id?: string | null;
     };
+    DeleteSkillOrAgentResponse: {
+      deleted_id: string;
+      detached_from_agent_ids?: (string)[];
+      trace_id: string;
+    };
     DemoWorkspaceProvisionResponse: {
       kb_documents_indexed: number;
       ontology_concepts_seeded: number;
@@ -837,6 +860,35 @@ export interface components {
       status: "ACTIVE" | "INVALIDATED_SHA_DRIFT" | "EXPIRED" | "REVOKED";
       waiver_id: string;
       workspace_id: string;
+    };
+    ExecuteAgentRequest: {
+      prompt: string;
+    };
+    ExecuteAgentResponse: {
+      agent_handle: string;
+      agent_id: string;
+      agent_name: string;
+      invoked_skills?: (components["schemas"]["InvokedSkillTraceResponseItem"])[];
+      prompt: string;
+      response_text: string;
+      status?: "SUCCEEDED";
+      thinking_level: "simple" | "medium" | "complex" | "auto";
+      trace_id: string;
+    };
+    ExecuteSkillRequest: {
+      input_text: string;
+      parameters?: Record<string, string>;
+    };
+    ExecuteSkillResponse: {
+      applied_parameters: Record<string, string>;
+      command_handle: string;
+      expected_output_format: string;
+      input_text: string;
+      output_text: string;
+      skill_id: string;
+      skill_name: string;
+      status?: "SUCCEEDED";
+      trace_id: string;
     };
     ExecuteTierRoutingRequest: {
       effort?: "default" | "fast" | "balanced" | "deep";
@@ -1362,6 +1414,12 @@ export interface components {
       outbox_event_id: string;
       reason: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       workspace_id: string;
+    };
+    InvokedSkillTraceResponseItem: {
+      command_handle: string;
+      output_summary: string;
+      skill_id: string;
+      skill_name: string;
     };
     JiraIssueUpdatedWebhookRequest: {
       issue_key: string;
@@ -2115,6 +2173,19 @@ export interface components {
       scopes: (components["schemas"]["ScopeNode"])[];
       trace_id: string;
     };
+    SkillItemResponse: {
+      command_handle: string;
+      expected_output_format?: string;
+      input_parameters?: (string)[];
+      instructions: string;
+      name: string;
+      objective: string;
+      sha256?: string;
+      skill_id: string;
+      slug: string;
+      uri: string;
+      version?: string;
+    };
     SseEventEnvelopeResponse: {
       channel: string;
       dispatch_latency_ms: number;
@@ -2474,6 +2545,9 @@ export interface components {
       speed2_redis_key?: string | null;
       trace_id?: string | null;
     };
+    UpdateAgentSkillsRequest: {
+      skill_ids?: (string)[];
+    };
     UpdateUserLayerPreferencesRequest: {
       default_hat?: string;
       favorite_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP";
@@ -2492,6 +2566,24 @@ export interface components {
     };
     UpdateWorkspaceLifecycleRequest: {
       lifecycle_phase: "RUN" | "BUILD" | "MIGRATION";
+    };
+    UpsertAgentRequest: {
+      agent_id?: string | null;
+      instructions: string;
+      name: string;
+      role_mission: string;
+      skill_ids?: (string)[];
+      thinking_level?: "simple" | "medium" | "complex" | "auto";
+      version?: string;
+    };
+    UpsertSkillRequest: {
+      expected_output_format?: string;
+      input_parameters?: (string)[];
+      instructions: string;
+      name: string;
+      objective: string;
+      skill_id?: string | null;
+      version?: string;
     };
     UpstreamChallengePreviewRequest: {
       challenge_reason: string;
@@ -2961,6 +3053,62 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["OutboxReplayResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills": {
+    get: {
+      responses: {
+        200: components["schemas"]["AgentsAndSkillsListResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/agents": {
+    post: {
+      responses: {
+        200: components["schemas"]["AgentItemResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/agents/{agent_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["DeleteSkillOrAgentResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/agents/{agent_id}/execute": {
+    post: {
+      responses: {
+        200: components["schemas"]["ExecuteAgentResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/agents/{agent_id}/skills": {
+    patch: {
+      responses: {
+        200: components["schemas"]["AgentItemResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/skills": {
+    post: {
+      responses: {
+        200: components["schemas"]["SkillItemResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/skills/{skill_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["DeleteSkillOrAgentResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/skills/{skill_id}/execute": {
+    post: {
+      responses: {
+        200: components["schemas"]["ExecuteSkillResponse"];
       };
     };
   };
@@ -3981,8 +4129,10 @@ export interface paths {
 export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourceLeasesRequest"];
 export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];
+export type AgentItemResponse = components["schemas"]["AgentItemResponse"];
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
 export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];
+export type AgentsAndSkillsListResponse = components["schemas"]["AgentsAndSkillsListResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactCardActionRequest = components["schemas"]["ArtifactCardActionRequest"];
 export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActionResponse"];
@@ -4048,6 +4198,7 @@ export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["Create
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DelegateGrantRequest = components["schemas"]["DelegateGrantRequest"];
+export type DeleteSkillOrAgentResponse = components["schemas"]["DeleteSkillOrAgentResponse"];
 export type DemoWorkspaceProvisionResponse = components["schemas"]["DemoWorkspaceProvisionResponse"];
 export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSchemaItem"];
 export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
@@ -4071,6 +4222,10 @@ export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceTool
 export type EvolveBusinessPackWhatIfRequest = components["schemas"]["EvolveBusinessPackWhatIfRequest"];
 export type EvolveBusinessPackWhatIfResponse = components["schemas"]["EvolveBusinessPackWhatIfResponse"];
 export type ExceptionWaiverResponse = components["schemas"]["ExceptionWaiverResponse"];
+export type ExecuteAgentRequest = components["schemas"]["ExecuteAgentRequest"];
+export type ExecuteAgentResponse = components["schemas"]["ExecuteAgentResponse"];
+export type ExecuteSkillRequest = components["schemas"]["ExecuteSkillRequest"];
+export type ExecuteSkillResponse = components["schemas"]["ExecuteSkillResponse"];
 export type ExecuteTierRoutingRequest = components["schemas"]["ExecuteTierRoutingRequest"];
 export type ExportFromWorkspaceToPackRequest = components["schemas"]["ExportFromWorkspaceToPackRequest"];
 export type ExportFromWorkspaceToPackResponse = components["schemas"]["ExportFromWorkspaceToPackResponse"];
@@ -4128,6 +4283,7 @@ export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"]
 export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
 export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
 export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
+export type InvokedSkillTraceResponseItem = components["schemas"]["InvokedSkillTraceResponseItem"];
 export type JiraIssueUpdatedWebhookRequest = components["schemas"]["JiraIssueUpdatedWebhookRequest"];
 export type JiraIssueUpdatedWebhookResponse = components["schemas"]["JiraIssueUpdatedWebhookResponse"];
 export type JiraJqlSearchRequest = components["schemas"]["JiraJqlSearchRequest"];
@@ -4218,6 +4374,7 @@ export type SendCollaborativeThreadTurnRequest = components["schemas"]["SendColl
 export type SendCollaborativeThreadTurnResponse = components["schemas"]["SendCollaborativeThreadTurnResponse"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
+export type SkillItemResponse = components["schemas"]["SkillItemResponse"];
 export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeResponse"];
 export type StageJiraActionRequest = components["schemas"]["StageJiraActionRequest"];
 export type StageJiraActionResponse = components["schemas"]["StageJiraActionResponse"];
@@ -4255,9 +4412,12 @@ export type TwoPassExtractionRequest = components["schemas"]["TwoPassExtractionR
 export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtractionResponse"];
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
+export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
 export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
 export type UpdateWorkspaceLifecycleRequest = components["schemas"]["UpdateWorkspaceLifecycleRequest"];
+export type UpsertAgentRequest = components["schemas"]["UpsertAgentRequest"];
+export type UpsertSkillRequest = components["schemas"]["UpsertSkillRequest"];
 export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
 export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];
 export type UpstreamChallengePreviewSchemaItem = components["schemas"]["UpstreamChallengePreviewSchemaItem"];
