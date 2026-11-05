@@ -113,6 +113,11 @@ export function HumanLedAnchorCard({
       </h3>
 
       <textarea
+        autoComplete="off"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-bwignore="true"
+        data-form-type="other"
         data-testid={justificationTestId}
         aria-label={sectionTitle}
         value={value}
@@ -135,6 +140,11 @@ export function HumanLedAnchorCard({
       {signatureLabel && (
         <input
           type="text"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid={signatureTestId}
           aria-label={signatureLabel}
           value={signatureValue ?? ""}

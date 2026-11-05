@@ -180,6 +180,11 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
                   <label className="inline-flex items-center gap-2">
                     <input
                       type="checkbox"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       defaultChecked={cand.preCheckedForInFlowPromotion}
                       aria-label={`${labels.promoteInFlowCheckboxLabel} ${cand.canonicalTerm}`}
                     />

@@ -78,6 +78,9 @@ export function SettingsOrganizationUnitsBlock({
       </div>
       <form
         data-testid="create-org-unit-form"
+        autoComplete="off"
+        data-lpignore="true"
+        data-form-type="other"
         onSubmit={(e) => {
           e.preventDefault();
           if (!orgName.trim()) return;
@@ -134,6 +137,11 @@ export function SettingsOrganizationUnitsBlock({
 
         <input
           type="text"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="org-unit-name-input"
           value={orgName}
           onChange={(e) => setOrgName(e.target.value)}
@@ -150,6 +158,11 @@ export function SettingsOrganizationUnitsBlock({
         />
         <input
           type="text"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="org-unit-slug-input"
           value={orgSlug}
           onChange={(e) => setOrgSlug(e.target.value)}

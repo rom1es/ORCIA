@@ -148,6 +148,11 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
           <label className="inline-flex items-center gap-2 text-xs font-medium">
             <input
               type="checkbox"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               checked={mcpExposed}
               data-testid="toggle-mcp-exposure-checkbox"
               onChange={(e) => onToggleMcpExposure?.(e.target.checked)}

@@ -45,6 +45,7 @@ export function BiModeLoginView({
   return (
     <section
       data-testid="bi-mode-login-view"
+      data-allow-password-manager="true"
       style={{
         maxWidth: "460px",
         margin: "24px auto",
@@ -149,6 +150,7 @@ export function BiModeLoginView({
         {accordionOpen ? (
           <form
             data-testid="login-local-form"
+            data-allow-password-manager="true"
             onSubmit={(e) => {
               e.preventDefault();
               onSubmitLocalLogin?.({ email, password, totpCode });
@@ -164,6 +166,9 @@ export function BiModeLoginView({
               {labels.emailLabel}
               <input
                 type="email"
+                name="username"
+                autoComplete="username"
+                data-allow-password-manager="true"
                 data-testid="login-local-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -183,6 +188,9 @@ export function BiModeLoginView({
               {labels.passwordLabel}
               <input
                 type="password"
+                name="password"
+                autoComplete="current-password"
+                data-allow-password-manager="true"
                 data-testid="login-local-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -203,6 +211,7 @@ export function BiModeLoginView({
               <input
                 type="text"
                 inputMode="numeric"
+                autoComplete="one-time-code"
                 data-testid="login-local-totp"
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}

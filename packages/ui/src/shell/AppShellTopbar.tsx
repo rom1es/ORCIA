@@ -92,6 +92,11 @@ export function AppShellTopbar({
         </span>
         <input
           type="search"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="topbar-search-input"
           aria-label={searchAriaLabel}
           placeholder={searchPlaceholder}

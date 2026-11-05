@@ -146,6 +146,11 @@ export function ScopedPromptBox({
       <div style={{ display: "flex", gap: "8px" }}>
         <input
           type="text"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="scoped-prompt-input"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}

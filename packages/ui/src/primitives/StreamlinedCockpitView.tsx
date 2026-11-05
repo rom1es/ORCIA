@@ -176,6 +176,11 @@ export function StreamlinedCockpitView({
             <div className="flex gap-2">
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="cockpit-quick-assistant-input"
                 value={quickPrompt}
                 onChange={(e) => setQuickPrompt(e.target.value)}

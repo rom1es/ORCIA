@@ -228,6 +228,9 @@ export function CockpitFeaturePanel() {
         ) : (
           <form
             data-testid="cockpit-launch-run-form"
+            autoComplete="off"
+            data-lpignore="true"
+            data-form-type="other"
             onSubmit={handleLaunchRun}
             style={{
               display: "flex",
@@ -279,6 +282,11 @@ export function CockpitFeaturePanel() {
 
             <input
               type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="cockpit-run-title-input"
               value={runTitle}
               onChange={(e) => setRunTitle(e.target.value)}

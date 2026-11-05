@@ -377,6 +377,11 @@ export function ChunkValidationCard({
           >
             <input
               type="checkbox"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="rubber-stamp-confirm-checkbox"
               checked={hypothesesConfirmed}
               onChange={(e) => setHypothesesConfirmed(e.target.checked)}

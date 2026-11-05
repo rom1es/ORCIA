@@ -111,6 +111,11 @@ export const PackBuilderProcessesStudioView: React.FC<
         </label>
         <textarea
           id="pack-builder-anchor-textarea"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="pack-builder-anchor-input"
           value={anchorIntent}
           onChange={(e) => setAnchorIntent(e.target.value)}

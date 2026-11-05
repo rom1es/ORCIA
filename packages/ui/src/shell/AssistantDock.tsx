@@ -159,6 +159,9 @@ export function AssistantDock({
       </div>
 
       <form
+        autoComplete="off"
+        data-lpignore="true"
+        data-form-type="other"
         onSubmit={(e) => {
           e.preventDefault();
           if (promptValue.trim()) {
@@ -176,6 +179,11 @@ export function AssistantDock({
       >
         <input
           type="text"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           data-testid="assistant-prompt-input"
           aria-label={labels.assistantInputPlaceholder}
           placeholder={labels.assistantInputPlaceholder}

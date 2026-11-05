@@ -166,6 +166,9 @@ export function SimplifiedProcessBuilderSection({
       {/* Formulaire guidé en 3 étapes claires */}
       <form
         data-testid="create-workflow-form"
+        autoComplete="off"
+        data-lpignore="true"
+        data-form-type="other"
         className="orcia-bento-card"
         onSubmit={(e) => {
           e.preventDefault();
@@ -212,6 +215,11 @@ export function SimplifiedProcessBuilderSection({
             <span>{isFr ? "1. Nom du processus *" : "1. Process name *"}</span>
             <input
               type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="workflow-title-input"
               value={wfTitle}
               onChange={(e) => setWfTitle(e.target.value)}
@@ -232,6 +240,11 @@ export function SimplifiedProcessBuilderSection({
             </span>
             <input
               type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="workflow-key-input"
               value={wfKey}
               onChange={(e) => setWfKey(e.target.value)}
@@ -281,6 +294,11 @@ export function SimplifiedProcessBuilderSection({
           </div>
           <textarea
             id="workflow-preprompt-textarea"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
             data-testid="workflow-preprompt-textarea"
             value={wfPrePrompt}
             onChange={(e) => setWfPrePrompt(e.target.value)}
@@ -321,6 +339,11 @@ export function SimplifiedProcessBuilderSection({
           >
             <input
               type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="workflow-params-input"
               value={wfParamsCsv}
               onChange={(e) => setWfParamsCsv(e.target.value)}
@@ -333,6 +356,11 @@ export function SimplifiedProcessBuilderSection({
             />
             <input
               type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               data-testid="workflow-sections-input"
               value={wfSectionsCsv}
               onChange={(e) => setWfSectionsCsv(e.target.value)}

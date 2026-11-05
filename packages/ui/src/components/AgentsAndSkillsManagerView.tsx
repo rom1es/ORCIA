@@ -207,6 +207,9 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
         <div data-testid="agents-subview-panel" className="space-y-4">
           <form
             onSubmit={handleSubmitAgent}
+            autoComplete="off"
+            data-lpignore="true"
+            data-form-type="other"
             data-testid="create-agent-form"
             className="grid grid-cols-1 gap-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3 text-xs md:grid-cols-2"
           >
@@ -215,6 +218,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.agentNameLabel}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="agent-name-input"
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
@@ -241,6 +249,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.agentRoleLabel}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="agent-role-input"
                 value={agentRole}
                 onChange={(e) => setAgentRole(e.target.value)}
@@ -252,6 +265,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.agentInstructionsLabel}</span>
               <textarea
                 rows={2}
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="agent-instructions-input"
                 value={agentInstructions}
                 onChange={(e) => setAgentInstructions(e.target.value)}
@@ -276,6 +294,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                       >
                         <input
                           type="checkbox"
+                          autoComplete="off"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          data-bwignore="true"
+                          data-form-type="other"
                           data-testid={`create-agent-skill-checkbox-${sk.skillId}`}
                           checked={checked}
                           onChange={(e) =>
@@ -355,6 +378,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                           >
                             <input
                               type="checkbox"
+                              autoComplete="off"
+                              data-lpignore="true"
+                              data-1p-ignore="true"
+                              data-bwignore="true"
+                              data-form-type="other"
                               data-testid={`agent-attach-skill-${ag.agentId}-${sk.skillId}`}
                               checked={attached}
                               onChange={(e) =>
@@ -370,6 +398,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                   <div className="flex flex-wrap gap-2 pt-1">
                     <input
                       type="text"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       data-testid={`agent-test-input-${ag.agentId}`}
                       value={agentTestInputs[ag.agentId] ?? ""}
                       onChange={(e) =>
@@ -415,6 +448,9 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
           </div>
           <form
             onSubmit={handleSubmitSkill}
+            autoComplete="off"
+            data-lpignore="true"
+            data-form-type="other"
             data-testid="create-skill-form"
             className="grid grid-cols-1 gap-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3 text-xs md:grid-cols-2"
           >
@@ -423,6 +459,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.skillNameLabel}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="skill-name-input"
                 value={skillName}
                 onChange={(e) => setSkillName(e.target.value)}
@@ -434,6 +475,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.skillOutputFormatLabel}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="skill-output-format-input"
                 value={skillOutputFormat}
                 onChange={(e) => setSkillOutputFormat(e.target.value)}
@@ -445,6 +491,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.skillObjectiveLabel}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="skill-objective-input"
                 value={skillObjective}
                 onChange={(e) => setSkillObjective(e.target.value)}
@@ -456,6 +507,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.skillParamsLabel}</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="skill-params-input"
                 value={skillParamsRaw}
                 onChange={(e) => setSkillParamsRaw(e.target.value)}
@@ -467,6 +523,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
               <span>{labels.skillInstructionsLabel}</span>
               <textarea
                 rows={2}
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="skill-instructions-input"
                 value={skillInstructions}
                 onChange={(e) => setSkillInstructions(e.target.value)}
@@ -527,6 +588,11 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                   <div className="flex flex-wrap gap-2 pt-1">
                     <input
                       type="text"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       data-testid={`skill-test-input-${sk.skillId}`}
                       value={skillTestInputs[sk.skillId] ?? ""}
                       onChange={(e) =>

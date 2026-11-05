@@ -71,6 +71,11 @@ export function UserSettingsModalTabs({
             <span>Ouverture automatique de l&apos;Aide ❓</span>
             <input
               type="checkbox"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               checked={autoOpenHelp}
               onChange={(e) => {
                 onChangeAutoOpenHelp(e.target.checked);
@@ -84,6 +89,11 @@ export function UserSettingsModalTabs({
             <span>Notifications 🔔 actives</span>
             <input
               type="checkbox"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               checked={notificationsEnabled}
               onChange={(e) => {
                 onChangeNotificationsEnabled(e.target.checked);
@@ -173,6 +183,11 @@ export function UserSettingsModalTabs({
               <span className="text-text-secondary">Slug (Espace ou Agent)</span>
               <input
                 type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="mcp-target-slug-input"
                 value={mcpTargetSlug}
                 onChange={(e) => onChangeMcpTargetSlug(e.target.value)}
@@ -198,6 +213,11 @@ export function UserSettingsModalTabs({
               <span className="text-text-secondary">Plafond RPM</span>
               <input
                 type="number"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 data-testid="mcp-rpm-limit-input"
                 value={mcpRpmLimit}
                 onChange={(e) => onChangeMcpRpmLimit(Number(e.target.value))}
