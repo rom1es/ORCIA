@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export interface UiHelpValidationSummary {
   articleId: string;
@@ -185,13 +186,18 @@ export const HelpArticleGeneratorAndValidatorView: FC<
           data-testid="generate-and-attach-help-btn"
           disabled={!allValid && !onGenerateAndAttach}
           onClick={() => onGenerateAndAttach?.()}
-          className="rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
           style={{
             backgroundColor: "var(--color-accent-primary)",
             color: "var(--color-surface-elevated)",
           }}
         >
-          {labels.generateAndAttachCta}
+          <span>{labels.generateAndAttachCta}</span>
+          <DisabledButtonAlertIndicator
+            disabled={!allValid && !onGenerateAndAttach}
+            reason="Corrigez les contrôles de validation pour publier la fiche d'aide."
+            testIdSuffix="generate-and-attach-help-btn"
+          />
         </button>
       </div>
     </section>

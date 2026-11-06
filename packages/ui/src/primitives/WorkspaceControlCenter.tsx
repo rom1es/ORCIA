@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import {
   GuidanceDrawer,
   type GuidanceDrawerLabels,
@@ -55,7 +56,10 @@ export interface ControlCenterOverrideItem {
 export interface ControlCenterWorkspaceGovItem {
   readonly workspaceId: string;
   readonly name: string;
-  readonly visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+  readonly visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
+  readonly ownerOrgUnitId?: string;
+  readonly ownerOrgUnitName?: string;
+  readonly ownerUserId?: string;
   readonly lifecyclePhase: ProductLifecyclePhaseType;
   readonly suggestedWorkflows: readonly string[];
   readonly accessMode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
@@ -289,6 +293,9 @@ export function WorkspaceControlCenter({
               disabled={isReadOnlyObserver}
               data-testid="launch-run-btn"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
                 padding: "4px 10px",
                 borderRadius: "6px",
                 fontSize: "0.75rem",
@@ -299,7 +306,12 @@ export function WorkspaceControlCenter({
                 color: "var(--orcia-text-primary)",
               }}
             >
-              {labels.launchRunButton}
+              <span>{labels.launchRunButton}</span>
+              <DisabledButtonAlertIndicator
+                disabled={isReadOnlyObserver}
+                reason={labels.observerBannerDefault}
+                testIdSuffix="launch-run-btn"
+              />
             </button>
           </div>
           {contributorRuns.map((run) => (
@@ -361,6 +373,9 @@ export function WorkspaceControlCenter({
               disabled={isReadOnlyObserver}
               data-testid="attach-datasource-btn"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
                 padding: "4px 10px",
                 borderRadius: "6px",
                 fontSize: "0.75rem",
@@ -371,7 +386,12 @@ export function WorkspaceControlCenter({
                 color: "var(--orcia-text-primary)",
               }}
             >
-              + {labels.attachDatasourceButton}
+              <span>+ {labels.attachDatasourceButton}</span>
+              <DisabledButtonAlertIndicator
+                disabled={isReadOnlyObserver}
+                reason={labels.observerBannerDefault}
+                testIdSuffix="attach-datasource-btn"
+              />
             </button>
           </div>
           {datasources.map((ds) => (
@@ -440,6 +460,7 @@ export function WorkspaceControlCenter({
               workspaceId={ws.workspaceId}
               workspaceName={ws.name}
               visibilityMode={ws.visibilityMode}
+              ownerOrgUnitName={ws.ownerOrgUnitName}
               lifecyclePhase={ws.lifecyclePhase}
               suggestedWorkflows={ws.suggestedWorkflows}
               isReadOnlyObserver={

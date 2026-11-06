@@ -101,23 +101,38 @@ export function ActivityLogRouteView(): React.ReactElement {
     },
     ...orgUnits.map((u): UiActivityScopeFilterOption => {
       const childUnits = orgUnits.filter((c) => c.parentId === u.id);
+      const childTeamIds = new Set([u.id, ...childUnits.map((c) => c.id)]);
+      const childWorkspaces = workspaces.filter(
+        (w) => w.ownerOrgUnitId && childTeamIds.has(w.ownerOrgUnitId),
+      );
       const prefix = u.level === "BU" ? (isFr ? "Direction · " : "Division · ") : (isFr ? "Équipe · " : "Team · ");
       return {
         id: u.id,
         label: `${prefix}${u.name}`,
         scopePath: u.slug,
         level: u.level,
-        childScopeIds: childUnits.map((c) => c.id),
+        childScopeIds: [
+          ...childUnits.map((c) => c.id),
+          ...childWorkspaces.map((w) => w.workspaceId),
+        ],
         childScopePaths: [
           u.slug,
           u.name,
           `${prefix}${u.name}`,
           ...childUnits.flatMap((c) => [c.slug, c.name]),
+          ...childWorkspaces.flatMap((w) => [w.workspaceId, w.name]),
         ],
       };
     }),
     ...workspaces.map((ws): UiActivityScopeFilterOption => {
-      const prefix = isFr ? "Espace · " : "Space · ";
+      const prefix =
+        ws.visibilityMode === "PRIVATE_USER"
+          ? isFr
+            ? "Espace privé · "
+            : "Private space · "
+          : isFr
+            ? "Espace · "
+            : "Space · ";
       return {
         id: ws.workspaceId,
         label: `${prefix}${ws.name}`,

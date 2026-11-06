@@ -1,4 +1,5 @@
 import React from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export interface UiTestBenchStepItem {
   readonly stepNumber: 1 | 2 | 3 | 4;
@@ -88,9 +89,14 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
             disabled={!canActivate}
             data-testid="activate-remote-service-btn"
             onClick={onActivateService}
-            className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)] disabled:opacity-50"
           >
-            {labels.activateConnectorCta}
+            <span>{labels.activateConnectorCta}</span>
+            <DisabledButtonAlertIndicator
+              disabled={!canActivate}
+              reason="Validez les 4 étapes du banc d'essai pour activer ce connecteur."
+              testIdSuffix="activate-remote-service-btn"
+            />
           </button>
         </div>
       </header>

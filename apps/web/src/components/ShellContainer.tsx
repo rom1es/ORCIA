@@ -3,6 +3,7 @@ import {
   ContextualHelpColumnAndCenter,
   DEFAULT_RGAA_MODAL_LABELS_EN,
   DEFAULT_RGAA_MODAL_LABELS_FR,
+  DisabledButtonAlertIndicator,
   FourZoneDirectionCShell,
   RgaaUnsavedChangesAlert,
   TopHeaderSearchCommand,
@@ -15,6 +16,7 @@ import {
   type TopSearchHitItem,
   type UiHumanProfileBadge,
   type UiModuleKey,
+  type UiNotificationCenterItem,
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useI18n } from "../i18n";
@@ -77,6 +79,7 @@ function InnerShellContainer({
   const {
     platformAdmin,
     scopes,
+    orgUnits,
     workspaces,
     catalogItems,
     ontologyConcepts,
@@ -215,47 +218,158 @@ function InnerShellContainer({
     selectedScope.name ?? workspaces[0]?.name ?? "Plateforme Globale ORCIA";
 
   const isFr = locale === "fr";
-  const workspaceOptions = scopes.map((s) => ({
-    id: s.id,
-    label: s.name,
-    groupLabel:
-      s.level === "GLOBAL"
-        ? isFr
-          ? "Plateforme Globale"
-          : "Global Platform"
-        : s.level === "BU"
-          ? "BU"
-          : isFr
-            ? "Espace"
-            : "Workspace",
-  }));
+  const privateWorkspaces = workspaces.filter((ws) => ws.visibilityMode === "PRIVATE_USER");
+  const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
+  const buUnits = orgUnits.filter((u) => u.level === "BU");
+  const sharedOrConfidentialWorkspaces = workspaces.filter(
+    (ws) => ws.visibilityMode !== "PRIVATE_USER",
+  );
+  const memberTeamIds = platformAdmin?.memberTeamIds ?? [];
+  const hasBillingTeam =
+    memberTeamIds.length > 0 || teamUnits.length > 0 || workspaces.length > 0;
+
+  const groupPrivateLabel = isFr ? "🔒 Mes Espaces Privés" : "🔒 My Private Spaces";
+  const groupTeamsLabel = isFr ? "👥 Mes Équipes & Espaces" : "👥 My Teams & Spaces";
+  const groupSupervisionLabel = isFr
+    ? "🏢 Supervision Organisation"
+    : "🏢 Organization Supervision";
+
+  const workspaceOptions = [
+    ...privateWorkspaces.map((ws) => ({
+      id: ws.workspaceId,
+      label: ws.ownerOrgUnitName ? `${ws.name} · ${ws.ownerOrgUnitName}` : ws.name,
+      groupLabel: groupPrivateLabel,
+    })),
+    ...teamUnits.map((team) => ({
+      id: team.id,
+      label: team.name,
+      groupLabel: groupTeamsLabel,
+    })),
+    ...sharedOrConfidentialWorkspaces.map((ws) => ({
+      id: ws.workspaceId,
+      label: ws.ownerOrgUnitName ? `${ws.name} · ${ws.ownerOrgUnitName}` : ws.name,
+      groupLabel: groupTeamsLabel,
+    })),
+    ...buUnits.map((bu) => ({
+      id: bu.id,
+      label: bu.name,
+      groupLabel: groupSupervisionLabel,
+    })),
+    ...scopes
+      .filter((s) => s.level === "GLOBAL")
+      .map((s) => ({
+        id: s.id,
+        label: s.name,
+        groupLabel: groupSupervisionLabel,
+      })),
+  ];
 
   const disabledMenuKeys: Partial<Record<EightFixedMenuKey, string>> = {
     ...(llmTiers.length === 0
       ? {
           assistant: isFr
-            ? "Configurez au moins un modèle IA dans Configuration pour activer Mon Assistant."
-            : "Configure at least one AI model in Configuration to enable My Assistant.",
+            ? "Configurez au moins un modèle IA et rattachez une Équipe de facturation dans Configuration pour activer Mon Assistant."
+            : "Configure at least one AI model and attach a billing Team in Configuration to enable My Assistant.",
           agents: isFr
-            ? "Configurez un modèle IA ou activez un Pack dans Configuration pour déverrouiller Mes Agents."
-            : "Configure an AI model or enable a Pack in Configuration to unlock My Agents.",
+            ? "Configurez un modèle IA ou activez un Pack et rattachez une Équipe de facturation dans Configuration pour déverrouiller Mes Agents."
+            : "Configure an AI model or enable a Pack and attach a billing Team in Configuration to unlock My Agents.",
         }
       : {}),
     ...(workspaces.length === 0 || llmTiers.length === 0
       ? {
           processes: isFr
-            ? "Créez un Espace de Travail et configurez un modèle IA pour activer Mes Processus."
-            : "Create a Workspace and configure an AI model to enable My Processes.",
+            ? "Créez un Espace de Travail rattaché à une Équipe de facturation et configurez un modèle IA pour activer Mes Processus."
+            : "Create a Workspace attached to a billing Team and configure an AI model to enable My Processes.",
         }
       : {}),
     ...(workspaces.length === 0 && llmTiers.length === 0
       ? {
           finops: isFr
-            ? "Configurez un modèle IA ou créez un Espace de Travail pour consulter le suivi des coûts."
-            : "Configure an AI model or create a Workspace to view cost tracking.",
+            ? "Configurez un modèle IA ou créez un Espace de Travail rattaché à une Équipe pour consulter le suivi des coûts."
+            : "Configure an AI model or create a Workspace attached to a Team to view cost tracking.",
         }
       : {}),
   };
+
+  const notificationItems: readonly UiNotificationCenterItem[] = [
+    ...(llmTiers.length === 0
+      ? [
+          {
+            id: "setup-llm-missing",
+            kind: "SETUP_PREREQUISITE" as const,
+            badgeLabel: isFr ? "Prérequis requis" : "Prerequisite required",
+            title: isFr
+              ? "Aucun modèle IA configuré (menus Mon Assistant & Mes Agents verrouillés)"
+              : "No AI model configured (My Assistant & My Agents menus locked)",
+            description: isFr
+              ? "Enregistrez au moins un fournisseur et un modèle IA dans Configuration pour déverrouiller Mon Assistant, Mes Agents et Mes Processus."
+              : "Register at least one AI provider and model in Configuration to unlock My Assistant, My Agents, and My Processes.",
+            targetRoute: "/settings",
+            ctaLabel: isFr ? "Configurer →" : "Configure →",
+          },
+        ]
+      : []),
+    ...(!hasBillingTeam
+      ? [
+          {
+            id: "setup-billing-team-missing",
+            kind: "SETUP_PREREQUISITE" as const,
+            badgeLabel: isFr ? "Équipe de facturation" : "Billing Team",
+            title: isFr
+              ? "Aucune Équipe de facturation rattachée (appels IA verrouillés)"
+              : "No billing Team attached (AI calls locked)",
+            description: isFr
+              ? "Tout appel IA doit être rattaché à une Équipe de facturation et un Espace de Travail. Créez une Équipe dans Configuration › Organisation et rattachez-y votre compte."
+              : "Every AI call must be attached to a billing Team and a Workspace. Create a Team in Configuration › Organization and attach your account.",
+            targetRoute: "/settings",
+            ctaLabel: isFr ? "Créer une Équipe →" : "Create a Team →",
+          },
+        ]
+      : []),
+    ...(orgUnits.length === 0
+      ? [
+          {
+            id: "setup-org-missing",
+            kind: "SETUP_PREREQUISITE" as const,
+            badgeLabel: isFr ? "Organisation" : "Organization",
+            title: isFr
+              ? "Structure d'organisation (Directions / BU & Équipes) à définir"
+              : "Organization structure (Divisions / BUs & Teams) to define",
+            description: isFr
+              ? "Créez au moins une Direction (BU) ou une Équipe dans Configuration pour déverrouiller l'attribution des règles d'habilitation."
+              : "Create at least one Division (BU) or Team in Configuration to unlock permission rule grants.",
+            targetRoute: "/settings",
+            ctaLabel: isFr ? "Structurer →" : "Structure →",
+          },
+        ]
+      : []),
+    ...(workspaces.length === 0
+      ? [
+          {
+            id: "setup-workspace-missing",
+            kind: "SETUP_PREREQUISITE" as const,
+            badgeLabel: isFr ? "Espace requis" : "Workspace required",
+            title: isFr
+              ? "Aucun Espace de travail créé (menu Mes Processus verrouillé)"
+              : "No Workspace created (My Processes menu locked)",
+            description: isFr
+              ? "Créez votre premier Espace de travail (collectif ou privé rattaché à une Équipe de facturation) dans 📦 Mes Espaces pour rattacher vos sources documentaires et lancer des processus."
+              : "Create your first Workspace (team or private attached to a billing Team) in 📦 My Spaces to attach document sources and launch processes.",
+            targetRoute: "/workspaces",
+            ctaLabel: isFr ? "Créer un Espace →" : "Create Workspace →",
+          },
+        ]
+      : []),
+    ...runs.map((run) => ({
+      id: `run-decision-${run.runId}`,
+      kind: "DECISION_WAITING" as const,
+      badgeLabel: isFr ? "Décision attendue" : "Decision pending",
+      title: run.title,
+      description: `${run.workspaceName} • ${run.currentStepKey} — ${run.blackboardSummary}`,
+      targetRoute: "/cockpit",
+      ctaLabel: isFr ? "Ouvrir →" : "Open →",
+    })),
+  ];
 
   const contextualHelpArticle = buildContextualHelpArticle({
     activeMenuKey,
@@ -329,6 +443,12 @@ function InnerShellContainer({
         userDisplayName={effectiveProfile.displayName}
         userHatLabel="Administrateur de la plateforme"
         pendingDecisionsTotal={runs.length}
+        notifications={notificationItems}
+        onSelectNotification={(item) => {
+          if (item.targetRoute) {
+            dispatchNavigation(item.targetRoute);
+          }
+        }}
         labels={dictionary.fourZoneShell}
         disabledMenuKeys={disabledMenuKeys}
         helpColumnOpen={helpColumnOpen}
@@ -570,18 +690,36 @@ function InnerShellContainer({
                     type="submit"
                     data-testid="first-boot-admin-submit-btn"
                     disabled={!canCreateAdmin}
+                    title={
+                      !canCreateAdmin
+                        ? isFr
+                          ? "Renseignez le nom complet et l'adresse e-mail pour créer le compte Administrateur."
+                          : "Enter full name and email address to create the Administrator account."
+                        : undefined
+                    }
                     onKeyDown={(e) =>
                       handleRgaaSubmitKeyDown(e, submitFirstBootAdmin, !canCreateAdmin)
                     }
-                    className="rounded px-4 py-1.5 font-semibold"
+                    className="inline-flex items-center gap-1.5 rounded px-4 py-1.5 font-semibold"
                     style={{
                       backgroundColor: "var(--color-action-primary)",
                       color: "var(--color-bg-surface)",
-                      opacity: !canCreateAdmin ? 0.5 : 1,
+                      opacity: !canCreateAdmin ? 0.55 : 1,
                       cursor: !canCreateAdmin ? "not-allowed" : "pointer",
                     }}
                   >
-                    {isFr ? "Créer le compte Administrateur" : "Create Administrator Account"}
+                    <span>
+                      {isFr ? "Créer le compte Administrateur" : "Create Administrator Account"}
+                    </span>
+                    <DisabledButtonAlertIndicator
+                      disabled={!canCreateAdmin}
+                      reason={
+                        isFr
+                          ? "Renseignez le nom complet et l'adresse e-mail pour créer le compte Administrateur."
+                          : "Enter full name and email address to create the Administrator account."
+                      }
+                      testIdSuffix="first-boot-admin-submit-btn"
+                    />
                   </button>
                 </div>
               </div>

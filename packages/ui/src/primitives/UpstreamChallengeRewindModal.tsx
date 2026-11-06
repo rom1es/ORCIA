@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
@@ -368,6 +369,9 @@ export function UpstreamChallengeRewindModal({
           onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleSubmitChallenge, !canSubmit)}
           data-testid="upstream-challenge-submit-btn"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
             padding: "6px 12px",
             fontSize: "0.75rem",
             fontWeight: 600,
@@ -379,7 +383,12 @@ export function UpstreamChallengeRewindModal({
             opacity: canSubmit ? 1 : 0.5,
           }}
         >
-          {labels.submitChallengeCta}
+          <span>{labels.submitChallengeCta}</span>
+          <DisabledButtonAlertIndicator
+            disabled={!canSubmit}
+            reason="Saisissez le motif de remise en cause pour activer l'envoi."
+            testIdSuffix="upstream-challenge-submit-btn"
+          />
         </button>
         <button
           type="button"

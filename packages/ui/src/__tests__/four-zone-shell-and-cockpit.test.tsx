@@ -7,8 +7,10 @@ import {
   type ContextualHelpColumnAndCenterLabels,
   ContextualInfoTriggerButton,
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
+  DisabledButtonAlertIndicator,
   FourZoneDirectionCShell,
   type FourZoneDirectionCShellLabels,
+  OrciaButton,
   ProgressiveDay0AccostageBanner,
   type ProgressiveDay0AccostageLabels,
   StreamlinedCockpitView,
@@ -887,5 +889,43 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     // 2. Window scroll was NEVER called (main screen never loses its scroll position)
     expect(windowScrollSpy).not.toHaveBeenCalled();
   });
-});
 
+  it("renders DisabledButtonAlertIndicator (red '!' circle badge + red tooltip) only when disabled=true and enriches FourZoneDirectionCShell Notification Center with badge, items, and Activity Log link", () => {
+    const { rerender } = render(
+      <OrciaButton
+        data-testid="sample-action-btn"
+        disabled={true}
+        disabledReason="Complétez d'abord les champs obligatoires."
+      >
+        Valider l'étape
+      </OrciaButton>,
+    );
+
+    const btn = screen.getByTestId("sample-action-btn") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    const alertIcon = screen.getByTestId("disabled-button-alert-icon-sample-action-btn");
+    const alertTooltip = screen.getByTestId("disabled-button-alert-tooltip-sample-action-btn");
+    expect(alertIcon.textContent).toBe("!");
+    expect(alertTooltip.style.color).toBe("var(--color-status-error)");
+    expect(alertTooltip.getAttribute("data-tooltip-text")).toBe(
+      "Complétez d'abord les champs obligatoires.",
+    );
+
+    // Enable button -> both red '!' circle badge and red tooltip disappear completely from DOM
+    rerender(
+      <OrciaButton
+        data-testid="sample-action-btn"
+        disabled={false}
+        disabledReason="Complétez d'abord les champs obligatoires."
+      >
+        Valider l'étape
+      </OrciaButton>,
+    );
+    expect(btn.disabled).toBe(false);
+    expect(screen.queryByTestId("disabled-button-alert-icon-sample-action-btn")).toBeNull();
+    expect(screen.queryByTestId("disabled-button-alert-tooltip-sample-action-btn")).toBeNull();
+    expect(
+      render(<DisabledButtonAlertIndicator disabled={false} reason="Inactif" />).container.firstChild,
+    ).toBeNull();
+  });
+});

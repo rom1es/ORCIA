@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export interface PackBuilderAgentItem {
   slug: string;
@@ -129,9 +130,14 @@ export const PackBuilderProcessesStudioView: React.FC<
             data-testid="process1-create-pack-btn"
             disabled={!isAnchorValid}
             onClick={() => onCreateBusinessPack?.(anchorIntent)}
-            className="rounded bg-[var(--color-accent-primary)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-inverse)] disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded bg-[var(--color-accent-primary)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-inverse)] disabled:opacity-40"
           >
-            {labels.process1CreatePackButtonLabel}
+            <span>{labels.process1CreatePackButtonLabel}</span>
+            <DisabledButtonAlertIndicator
+              disabled={!isAnchorValid}
+              reason={labels.humanAnchorPlaceholder}
+              testIdSuffix="process1-create-pack-btn"
+            />
           </button>
         </div>
       </div>

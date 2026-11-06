@@ -1,3 +1,5 @@
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+
 export type DurableWizardProfileType =
   | "sdlc_tech_lead"
   | "ops_manager"
@@ -151,9 +153,14 @@ export function DurableWizardRunnerView({
               data-testid="wizard-complete-step-btn"
               disabled={!lastStepCheckPassed}
               onClick={() => onCompleteStep(currentStep)}
-              className="rounded bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--color-surface-elevated)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--color-surface-elevated)] disabled:opacity-50"
             >
-              {labels.validateAndContinueButton}
+              <span>{labels.validateAndContinueButton}</span>
+              <DisabledButtonAlertIndicator
+                disabled={!lastStepCheckPassed}
+                reason="Complétez la vérification de l'étape en cours pour continuer."
+                testIdSuffix="wizard-complete-step-btn"
+              />
             </button>
           </div>
         </div>

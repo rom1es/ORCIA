@@ -29,5 +29,6 @@ This screen lets you connect your team's knowledge sources (code repositories, d
 
 ## Frequently asked questions
 
+- **What is the link between an organization entity (Business Unit, Team) and a Workspace?** The organization (Enterprise $\rightarrow$ Business Unit $\rightarrow$ Team) represents *who you are* (the organizational chart to which members belong), whereas a **Workspace** represents *what you are working on* (a project, product, or initiative where your document sources are connected and your processes run). Every Workspace is owned by a primary Team or Business Unit (a single team can manage multiple workspaces), can invite other teams to collaborate, and inherits governance rules from its parent team and business unit (unless configured in isolated confidential mode).
 - **How do I view the explanation for a specific setting?** Click the `ⓘ` icon next to any heading: this help column opens and highlights the matching explanation section.
 - **What happens if a document is edited directly in our external tool?** Your direct edits are always preserved and never overwritten by an automated draft.

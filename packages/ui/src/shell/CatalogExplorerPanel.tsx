@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import { StatusBadge } from "../primitives/StatusBadge";
 import { FederatedUriBadge } from "./FederatedUriBadge";
 import type {
@@ -203,6 +204,9 @@ export function CatalogExplorerPanel({
                     disabled={!canMutateScope}
                     onClick={() => handlePromote(item)}
                     style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
                       padding: "4px 10px", borderRadius: "var(--radius-sm)",
                       border: "1px solid var(--color-gate-emerald)",
                       backgroundColor: "var(--color-gate-emerald-bg)",
@@ -211,7 +215,12 @@ export function CatalogExplorerPanel({
                       opacity: canMutateScope ? 1 : 0.6,
                     }}
                   >
-                    {`${labels.promoteScopeButtonLabel} -> ${nextScope}`}
+                    <span>{`${labels.promoteScopeButtonLabel} -> ${nextScope}`}</span>
+                    <DisabledButtonAlertIndicator
+                      disabled={!canMutateScope}
+                      reason="Action réservée aux contributeurs disposant des droits de promotion."
+                      testIdSuffix={`promote-btn-${item.resourceId}`}
+                    />
                   </button>
                 )}
               </div>

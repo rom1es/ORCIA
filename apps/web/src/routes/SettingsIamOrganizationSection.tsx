@@ -1,21 +1,30 @@
 import {
   ContextualInfoTriggerButton,
+  DisabledButtonAlertIndicator,
   StatusBadge,
   type ControlCenterWorkspaceGovItem,
   type UiPermissionVerb,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import type { ConfiguredOrgUnit, ConfiguredRbacGrant } from "../components/platformSetupStore";
+import type {
+  ConfiguredOrgUnit,
+  ConfiguredPlatformAdmin,
+  ConfiguredRbacGrant,
+} from "../components/platformSetupStore";
 import { SettingsOrganizationUnitsBlock } from "./SettingsOrganizationUnitsBlock";
 
 export interface SettingsIamOrganizationSectionProps {
   readonly isFr: boolean;
   readonly allowedVerbs: readonly UiPermissionVerb[];
+  readonly platformAdmin?: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly rbacGrants: readonly ConfiguredRbacGrant[];
   readonly openHelpSection: (sectionId: string) => void;
-  readonly addOrgUnit: (input: Omit<ConfiguredOrgUnit, "id">) => void;
+  readonly toggleAdminTeamMembership?: (teamId: string) => void;
+  readonly addOrgUnit: (
+    input: Omit<ConfiguredOrgUnit, "id"> & { readonly attachCurrentAdmin?: boolean },
+  ) => void;
   readonly removeOrgUnit: (orgUnitId: string) => {
     readonly deleted: boolean;
     readonly blockedReason: string | null;
@@ -56,10 +65,12 @@ const dangerBtnStyle: React.CSSProperties = {
 export function SettingsIamOrganizationSection({
   isFr,
   allowedVerbs,
+  platformAdmin,
   orgUnits,
   workspaces,
   rbacGrants,
   openHelpSection,
+  toggleAdminTeamMembership,
   addOrgUnit,
   removeOrgUnit,
   addRbacGrant,
@@ -73,6 +84,14 @@ export function SettingsIamOrganizationSection({
   const [selectedGrantIds, setSelectedGrantIds] = useState<readonly string[]>([]);
 
   const hasNoKnownOrganization = orgUnits.length === 0 && workspaces.length === 0;
+  const grantDisabled = hasNoKnownOrganization || grantSelectedVerbs.length === 0;
+  const grantDisabledReason = hasNoKnownOrganization
+    ? isFr
+      ? "Créez d'abord au moins une Direction (BU) ou une Équipe dans la section 1 ci-dessus."
+      : "Create at least one Division (BU) or Team in section 1 above first."
+    : isFr
+      ? "Sélectionnez au moins une habilitation à attribuer."
+      : "Select at least one permission verb to grant.";
 
   const verbDescriptions: Record<UiPermissionVerb, string> = isFr
     ? {
@@ -115,11 +134,11 @@ export function SettingsIamOrganizationSection({
     if (scopePath === "GLOBAL") return isFr ? "Plateforme entière" : "Entire platform";
     const matchedUnit = orgUnits.find((u) => u.slug === scopePath || u.id === scopePath);
     if (matchedUnit) {
-      const kind = matchedUnit.level === "TEAM" ? (isFr ? "Espace" : "Space") : "BU";
+      const kind = matchedUnit.level === "TEAM" ? (isFr ? "Équipe" : "Team") : "BU";
       return `${kind} : ${matchedUnit.name} (${matchedUnit.slug})`;
     }
     const matchedWs = workspaces.find((w) => w.name === scopePath);
-    if (matchedWs) return `${isFr ? "Espace" : "Space"} : ${matchedWs.name}`;
+    if (matchedWs) return `${isFr ? "Espace de travail" : "Workspace"} : ${matchedWs.name}`;
     return scopePath;
   };
 
@@ -131,8 +150,10 @@ export function SettingsIamOrganizationSection({
     >
       <SettingsOrganizationUnitsBlock
         isFr={isFr}
+        platformAdmin={platformAdmin}
         orgUnits={orgUnits}
         openHelpSection={openHelpSection}
+        toggleAdminTeamMembership={toggleAdminTeamMembership}
         addOrgUnit={addOrgUnit}
         removeOrgUnit={removeOrgUnit}
       />
@@ -163,8 +184,8 @@ export function SettingsIamOrganizationSection({
             }}
           >
             {isFr
-              ? "Créez d'abord au moins une Direction (BU) ou un Espace dans la section 1 ci-dessus avant de pouvoir attribuer des règles d'habilitation."
-              : "Create at least one Division (BU) or Space in section 1 above before granting permission rules."}
+              ? "Créez d'abord au moins une Direction (BU) ou une Équipe dans la section 1 ci-dessus avant de pouvoir attribuer des règles d'habilitation."
+              : "Create at least one Division (BU) or Team in section 1 above before granting permission rules."}
           </p>
         )}
 
@@ -232,14 +253,14 @@ export function SettingsIamOrganizationSection({
                 {orgUnits.map((u) => (
                   <option key={u.id} value={u.slug}>
                     {u.level === "TEAM"
-                      ? isFr ? `Espace : ${u.name} (${u.slug})` : `Space: ${u.name} (${u.slug})`
+                      ? isFr ? `Équipe : ${u.name} (${u.slug})` : `Team: ${u.name} (${u.slug})`
                       : isFr ? `Direction (BU) : ${u.name} (${u.slug})` : `Division (BU): ${u.name} (${u.slug})`}
                   </option>
                 ))}
                 {workspaces
                   .filter((ws) => !orgUnits.some((u) => u.name === ws.name || u.slug === ws.name))
                   .map((ws) => (
-                    <option key={ws.name} value={ws.name}>{isFr ? `Espace : ${ws.name}` : `Space: ${ws.name}`}</option>
+                    <option key={ws.name} value={ws.name}>{isFr ? `Espace de travail : ${ws.name}` : `Workspace: ${ws.name}`}</option>
                   ))}
               </select>
             </div>
@@ -256,10 +277,22 @@ export function SettingsIamOrganizationSection({
             <button
               type="submit"
               data-testid="create-rbac-grant-btn"
-              disabled={hasNoKnownOrganization || grantSelectedVerbs.length === 0}
-              style={{ ...primaryBtnStyle, cursor: hasNoKnownOrganization ? "not-allowed" : "pointer" }}
+              disabled={grantDisabled}
+              title={grantDisabled ? grantDisabledReason : undefined}
+              style={{
+                ...primaryBtnStyle,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                cursor: grantDisabled ? "not-allowed" : "pointer",
+              }}
             >
-              {isFr ? "+ Ajouter la règle" : "+ Add rule"}
+              <span>{isFr ? "+ Ajouter la règle" : "+ Add rule"}</span>
+              <DisabledButtonAlertIndicator
+                disabled={grantDisabled}
+                reason={grantDisabledReason}
+                testIdSuffix="create-rbac-grant-btn"
+              />
             </button>
           </div>
 

@@ -81,11 +81,16 @@ export interface UiWorkspaceDatasourceView {
   role: string;
 }
 
+export type WorkspaceVisibilityMode =
+  | "STANDARD"
+  | "CONFIDENTIAL_RESTRICTED"
+  | "PRIVATE_USER";
+
 export interface UiWorkspaceCardView {
   id: string;
   name: string;
   ownerOrgUnitName: string;
-  visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+  visibilityMode: WorkspaceVisibilityMode;
   effectiveRole: string;
   accessMode: UiAccessMode;
   accessOrigin: "DIRECT_TEAM" | "ROLLUP_PARENT" | "PARTNER_INVITE" | "GLOBAL_ADMIN";

@@ -1,11 +1,9 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   CommandPaletteModal,
-  ContextualInfoTriggerButton,
   DnaStarlarkCompilerAndGlossaryLifecycleView,
   type ControlCenterScopeType,
   type ExceptionWaiverItem,
-  type ProductLifecyclePhaseType,
   type UiCompiledStarlarkMechanism,
   type UiDatasourceScheme,
   type UiGlossaryCandidateItem,
@@ -18,17 +16,20 @@ import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 
 export function WorkspacesFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { navigateToRoute, openHelpSection } = useShellNavigation();
+  const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
   const {
+    orgUnits,
     workspaces,
     datasources,
     runs,
     ontologyConcepts,
     workflowOverrides,
+    scopes,
     createWorkspace,
     updateWorkspacePhase,
     addOntologyConcept,
@@ -45,42 +46,46 @@ export function WorkspacesFeaturePanel() {
     [],
   );
 
-  // Create Workspace form state (starts 100% empty)
-  const [wsName, setWsName] = useState("");
-  const [wsSlug, setWsSlug] = useState("");
-  const [wsVisibility, setWsVisibility] = useState<
-    "STANDARD" | "CONFIDENTIAL_RESTRICTED"
-  >("STANDARD");
-  const [wsPhase, setWsPhase] = useState<ProductLifecyclePhaseType>("BUILD");
-
   const isJsdom =
     typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
 
-  const handleCreateWorkspace = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!wsName.trim()) return;
-    createWorkspace({
-      name: wsName.trim(),
-      slug: wsSlug.trim() || wsName.trim().toLowerCase().replace(/\s+/g, "-"),
-      visibilityMode: wsVisibility,
-      lifecyclePhase: wsPhase,
-    });
-    setWsName("");
-    setWsSlug("");
-  };
+  const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
+  const activeScopeName =
+    activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform ORCIA");
 
-  const consolidatedFinopsUsd = workspaces.reduce(
+  const selectedPrivateOrTeamWs = workspaces.find((w) => w.workspaceId === activeScopeId);
+  const activeScopeCategoryLabel = selectedPrivateOrTeamWs
+    ? selectedPrivateOrTeamWs.visibilityMode === "PRIVATE_USER"
+      ? isFr
+        ? "🔒 Mon Espace Privé"
+        : "🔒 My Private Space"
+      : isFr
+        ? "👥 Espace d'Équipe"
+        : "👥 Team Space"
+    : activeScopeNode?.level === "TEAM"
+      ? isFr
+        ? "👥 Équipe active"
+        : "👥 Active Team"
+      : isFr
+        ? "🏢 Supervision Organisation"
+        : "🏢 Organization Supervision";
+
+  const scopedWorkspaces =
+    activeScopeNode?.level === "WORKSPACE"
+      ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
+      : activeScopeNode?.level === "TEAM"
+        ? workspaces.filter(
+            (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
+          )
+        : workspaces;
+
+  const displayedWorkspaces =
+    scopedWorkspaces.length > 0 ? scopedWorkspaces : workspaces;
+
+  const consolidatedFinopsUsd = displayedWorkspaces.reduce(
     (sum, ws) => sum + (ws.finopsCostUsd ?? 0),
     0,
   );
-
-  const inputStyle: React.CSSProperties = {
-    padding: "7px 10px",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid var(--color-border)",
-    backgroundColor: "var(--color-surface-card)",
-    color: "var(--color-foreground)",
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -99,113 +104,20 @@ export function WorkspacesFeaturePanel() {
         </div>
       ) : null}
 
-      <section
-        data-testid="create-workspace-panel"
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
-            {isFr
-              ? "Créer un Nouvel Espace de Travail"
-              : "Create a New Workspace"}
-          </h2>
-          <ContextualInfoTriggerButton
-            sectionId="workspace-sources"
-            label={
-              isFr
-                ? "Comprendre la création d'un Espace de travail et ses sources"
-                : "Understand how to create a Workspace and connect sources"
-            }
-            onOpenHelpSection={openHelpSection}
-          />
-        </div>
-
-        <form
-          data-testid="create-workspace-form"
-          autoComplete="off"
-          data-lpignore="true"
-          data-form-type="other"
-          onSubmit={handleCreateWorkspace}
-          style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
-        >
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="workspace-name-input"
-            value={wsName}
-            onChange={(e) => setWsName(e.target.value)}
-            placeholder={
-              isFr ? "Nom de l'Espace de Travail..." : "Workspace name..."
-            }
-            style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
-          />
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="workspace-slug-input"
-            value={wsSlug}
-            onChange={(e) => setWsSlug(e.target.value)}
-            placeholder={isFr ? "Identifiant court (optionnel)..." : "Short ID (optional)..."}
-            style={inputStyle}
-          />
-          <select
-            data-testid="workspace-visibility-select"
-            value={wsVisibility}
-            onChange={(e) =>
-              setWsVisibility(
-                e.target.value as "STANDARD" | "CONFIDENTIAL_RESTRICTED",
-              )
-            }
-            style={inputStyle}
-          >
-            <option value="STANDARD">{isFr ? "Standard" : "Standard"}</option>
-            <option value="CONFIDENTIAL_RESTRICTED">
-              {isFr ? "Confidentiel (isolé)" : "Confidential (isolated)"}
-            </option>
-          </select>
-          <select
-            data-testid="workspace-phase-select"
-            value={wsPhase}
-            onChange={(e) =>
-              setWsPhase(e.target.value as ProductLifecyclePhaseType)
-            }
-            style={inputStyle}
-          >
-            <option value="BUILD">{isFr ? "Construction" : "Build"}</option>
-            <option value="RUN">{isFr ? "Exploitation" : "Operations"}</option>
-            <option value="MIGRATION">{isFr ? "Évolution" : "Evolution"}</option>
-          </select>
-          <button
-            type="submit"
-            data-testid="create-workspace-submit-btn"
-            style={{
-              padding: "7px 14px",
-              borderRadius: "var(--radius-sm)",
-              border: "none",
-              backgroundColor: "var(--color-primary-cobalt)",
-              color: "var(--color-primary-foreground)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {isFr ? "+ Créer l'Espace" : "+ Create Workspace"}
-          </button>
-        </form>
-      </section>
+      <CreateWorkspaceCard
+        isFr={isFr}
+        orgUnits={orgUnits}
+        activeScopeName={activeScopeName}
+        activeScopeCategoryLabel={activeScopeCategoryLabel}
+        openHelpSection={openHelpSection}
+        onNavigateToSettings={() => navigateToRoute("/settings")}
+        onCreateWorkspace={(input) => createWorkspace(input)}
+      />
 
       <div className="orcia-bento-card">
         <WorkspaceControlCenter
           scopeType={scopeType}
-          scopeLabel={`Périmètre ${scopeType}`}
+          scopeLabel={`Périmètre ${scopeType} · ${activeScopeName}`}
           isReadOnlyObserver={false}
           consolidatedFinopsUsd={consolidatedFinopsUsd}
           contributorRuns={runs}
@@ -244,7 +156,7 @@ export function WorkspacesFeaturePanel() {
             },
           ]}
           workflowOverrides={workflowOverrides}
-          workspacesGovernance={workspaces}
+          workspacesGovernance={displayedWorkspaces}
           labels={dictionary.controlCenter}
           onChangeScopeType={setScopeType}
           onSelectPhase={updateWorkspacePhase}
@@ -292,10 +204,10 @@ export function WorkspacesFeaturePanel() {
       <div className="orcia-bento-card">
         <WorkspaceTopologyPanel
           activePersona="marc"
-          workspaces={workspaces.map((ws) => ({
+          workspaces={displayedWorkspaces.map((ws) => ({
             id: ws.workspaceId,
             name: ws.name,
-            ownerOrgUnitName: "Plateforme Globale ORCIA",
+            ownerOrgUnitName: ws.ownerOrgUnitName ?? "Plateforme Globale ORCIA",
             visibilityMode: ws.visibilityMode,
             effectiveRole: "PLATFORM_ADMIN",
             accessMode: ws.accessMode,
@@ -321,7 +233,7 @@ export function WorkspacesFeaturePanel() {
 
       {/* Story 11.1 — Mes Espaces à 5 Sous-Onglets */}
       <WorkspaceFiveTabsAndExternalRebaseView
-        workspaceSlug={workspaces[0]?.workspaceId ?? ""}
+        workspaceSlug={displayedWorkspaces[0]?.workspaceId ?? ""}
         activeTab={activeSubTab}
         defaultArtifactDestinationUri={datasources[0]?.uri ?? ""}
         pendingGlossaryCandidatesCount={ontologyConcepts.length + glossaryCandidates.length}
@@ -390,7 +302,7 @@ export function WorkspacesFeaturePanel() {
           if (!isJsdom) {
             const client = createOrciaApiClient({ baseUrl: "" });
             const targetWsId =
-              workspaces[0]?.workspaceId || "0195f000-0000-7000-8000-000000000301";
+              displayedWorkspaces[0]?.workspaceId || "0195f000-0000-7000-8000-000000000301";
             void client
               .compileDnaStarlark(targetWsId, {
                 rule_id: ruleId,
@@ -445,7 +357,7 @@ export function WorkspacesFeaturePanel() {
               conceptKey: item.candidateId,
               canonicalTerm: item.canonicalTerm,
               level: "3_WORKSPACE",
-              scopeId: workspaces[0]?.workspaceId ?? "scope-global",
+              scopeId: displayedWorkspaces[0]?.workspaceId ?? "scope-global",
               definitionText: item.definitionFr,
               immutable: false,
               synonyms: [],

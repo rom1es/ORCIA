@@ -33,7 +33,7 @@ export function buildCockpitWorkflowPreviewGraph(): {
 
 export function CockpitFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { navigateToRoute, openHelpSection } = useShellNavigation();
+  const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const {
     llmTiers,
     orgUnits,
@@ -43,6 +43,7 @@ export function CockpitFeaturePanel() {
     workflows,
     packs,
     runs,
+    scopes,
     completedSetupStepsCount,
     launchRun,
   } = usePlatformSetup();
@@ -52,6 +53,29 @@ export function CockpitFeaturePanel() {
   const [runTitle, setRunTitle] = useState<string>("");
 
   const isFr = locale === "fr";
+  const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
+  const activeScopeName =
+    activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform ORCIA");
+
+  const scopedWorkspaces =
+    activeScopeNode?.level === "WORKSPACE"
+      ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
+      : activeScopeNode?.level === "TEAM"
+        ? workspaces.filter(
+            (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
+          )
+        : workspaces;
+  const availableWorkspaces =
+    scopedWorkspaces.length > 0 ? scopedWorkspaces : workspaces;
+
+  const scopedRuns =
+    activeScopeNode?.level === "WORKSPACE"
+      ? runs.filter((r) => r.workspaceId === activeScopeId)
+      : activeScopeNode?.level === "TEAM"
+        ? runs.filter((r) =>
+            availableWorkspaces.some((ws) => ws.workspaceId === r.workspaceId),
+          )
+        : runs;
 
   const milestones = [
     {
@@ -104,7 +128,8 @@ export function CockpitFeaturePanel() {
   const handleLaunchRun = (event: React.FormEvent) => {
     event.preventDefault();
     const targetWs =
-      workspaces.find((w) => w.workspaceId === selectedWsId) ?? workspaces[0];
+      availableWorkspaces.find((w) => w.workspaceId === selectedWsId) ??
+      availableWorkspaces[0];
     if (!targetWs || !runTitle.trim()) {
       return;
     }
@@ -123,7 +148,7 @@ export function CockpitFeaturePanel() {
       data-testid="cockpit-empty-first-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span
             data-testid="onboarding-progress-badge"
@@ -145,10 +170,21 @@ export function CockpitFeaturePanel() {
             onOpenHelpSection={openHelpSection}
           />
         </div>
+        <span
+          data-testid="cockpit-active-scope-badge"
+          className="rounded border px-2.5 py-0.5 text-xs font-medium"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            borderColor: "var(--color-border-subtle)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {isFr ? `Contexte actif : ${activeScopeName}` : `Active context: ${activeScopeName}`}
+        </span>
       </div>
 
       <StreamlinedCockpitView
-        decisions={runs.map((r) => ({
+        decisions={scopedRuns.map((r) => ({
           decisionId: `dec-${r.runId}`,
           kind: "REVIEW_BRIEFING" as const,
           runId: r.runId,
@@ -245,7 +281,7 @@ export function CockpitFeaturePanel() {
           >
             <select
               data-testid="cockpit-select-workspace"
-              value={selectedWsId || workspaces[0]?.workspaceId || ""}
+              value={selectedWsId || availableWorkspaces[0]?.workspaceId || ""}
               onChange={(e) => setSelectedWsId(e.target.value)}
               style={{
                 padding: "7px 10px",
@@ -253,7 +289,7 @@ export function CockpitFeaturePanel() {
                 border: "1px solid var(--color-border)",
               }}
             >
-              {workspaces.map((ws) => (
+              {availableWorkspaces.map((ws) => (
                 <option key={ws.workspaceId} value={ws.workspaceId}>
                   {ws.name}
                 </option>
@@ -320,12 +356,12 @@ export function CockpitFeaturePanel() {
           </form>
         )}
 
-        {runs.length > 0 && (
+        {scopedRuns.length > 0 && (
           <div
             data-testid="cockpit-active-runs-list"
             style={{ display: "grid", gap: "8px" }}
           >
-            {runs.map((run) => (
+            {scopedRuns.map((run) => (
               <div
                 key={run.runId}
                 data-testid={`cockpit-run-card-${run.runId}`}

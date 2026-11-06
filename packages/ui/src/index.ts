@@ -178,6 +178,8 @@ export {
   type EightFixedMenuKey,
   type FourZoneDirectionCShellLabels,
   type FourZoneDirectionCShellProps,
+  type UiNotificationCenterItem,
+  type UiNotificationCenterItemKind,
   type WorkspaceSwitcherOption,
 } from "./primitives/FourZoneDirectionCShell";
 export {
@@ -227,6 +229,10 @@ export {
   ContextualInfoTriggerButton,
   type ContextualInfoTriggerButtonProps,
 } from "./components/ContextualInfoTriggerButton";
+export {
+  DisabledButtonAlertIndicator,
+  type DisabledButtonAlertIndicatorProps,
+} from "./components/DisabledButtonAlertIndicator";
 export {
   OrciaAlertBanner,
   OrciaButton,
@@ -412,4 +418,5 @@ export type {
   UiWorkspaceCardView,
   UiWorkspaceDatasourceView,
   UiWorkspaceTopologyLabels,
+  WorkspaceVisibilityMode,
 } from "./shell/types";

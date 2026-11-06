@@ -164,7 +164,13 @@ export function WorkspaceTopologyPanel({
               <strong>{ws.name}</strong>
               <StatusBadge
                 label={ws.visibilityMode}
-                tone={ws.visibilityMode === "CONFIDENTIAL_RESTRICTED" ? "crimson" : "emerald"}
+                tone={
+                  ws.visibilityMode === "CONFIDENTIAL_RESTRICTED"
+                    ? "crimson"
+                    : ws.visibilityMode === "PRIVATE_USER"
+                      ? "cobalt"
+                      : "emerald"
+                }
                 monospace
               />
             </div>

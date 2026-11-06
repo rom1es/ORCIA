@@ -29,6 +29,7 @@ export function SettingsHubView() {
   const isFr = locale === "fr";
 
   const {
+    platformAdmin,
     orgUnits,
     rbacGrants,
     llmTiers,
@@ -36,6 +37,7 @@ export function SettingsHubView() {
     datasources,
     packs,
     workflows,
+    toggleAdminTeamMembership,
     addOrgUnit,
     removeOrgUnit,
     addRbacGrant,
@@ -133,10 +135,12 @@ export function SettingsHubView() {
             <SettingsIamOrganizationSection
               isFr={isFr}
               allowedVerbs={allowedVerbs}
+              platformAdmin={platformAdmin}
               orgUnits={orgUnits}
               workspaces={workspaces}
               rbacGrants={rbacGrants}
               openHelpSection={openHelpSection}
+              toggleAdminTeamMembership={toggleAdminTeamMembership}
               addOrgUnit={addOrgUnit}
               removeOrgUnit={removeOrgUnit}
               addRbacGrant={addRbacGrant}

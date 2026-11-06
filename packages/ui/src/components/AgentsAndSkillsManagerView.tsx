@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
 
 export type AgentsAndSkillsSubTab = "AGENTS" | "SKILLS" | "CONNECTIONS";
 export type UiAgentThinkingLevel = "simple" | "medium" | "complex" | "auto";
@@ -319,9 +320,19 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                 type="submit"
                 data-testid="create-agent-submit-btn"
                 disabled={!agentName.trim() || !agentRole.trim() || !agentInstructions.trim()}
-                className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--orcia-text-on-action)] disabled:opacity-50"
+                title={
+                  !agentName.trim() || !agentRole.trim() || !agentInstructions.trim()
+                    ? "Renseignez le nom, le rôle et les instructions de l'agent pour activer sa création."
+                    : undefined
+                }
+                className="inline-flex items-center gap-2 rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--orcia-text-on-action)] disabled:opacity-50"
               >
-                {labels.createAgentButtonLabel}
+                <span>{labels.createAgentButtonLabel}</span>
+                <DisabledButtonAlertIndicator
+                  disabled={!agentName.trim() || !agentRole.trim() || !agentInstructions.trim()}
+                  reason="Renseignez le nom, le rôle et les instructions de l'agent pour activer sa création."
+                  testIdSuffix="create-agent-submit-btn"
+                />
               </button>
             </div>
           </form>
@@ -555,9 +566,19 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
                 type="submit"
                 data-testid="create-skill-submit-btn"
                 disabled={!skillName.trim() || !skillObjective.trim() || !skillInstructions.trim()}
-                className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--orcia-text-on-action)] disabled:opacity-50"
+                title={
+                  !skillName.trim() || !skillObjective.trim() || !skillInstructions.trim()
+                    ? "Renseignez le nom, l'objectif et les instructions du skill pour activer sa création."
+                    : undefined
+                }
+                className="inline-flex items-center gap-2 rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--orcia-text-on-action)] disabled:opacity-50"
               >
-                {labels.createSkillButtonLabel}
+                <span>{labels.createSkillButtonLabel}</span>
+                <DisabledButtonAlertIndicator
+                  disabled={!skillName.trim() || !skillObjective.trim() || !skillInstructions.trim()}
+                  reason="Renseignez le nom, l'objectif et les instructions du skill pour activer sa création."
+                  testIdSuffix="create-skill-submit-btn"
+                />
               </button>
             </div>
           </form>

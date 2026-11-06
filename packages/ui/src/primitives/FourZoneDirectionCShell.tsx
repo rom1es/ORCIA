@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type EightFixedMenuKey =
   | "cockpit"
@@ -27,6 +28,22 @@ export const DEFAULT_EIGHT_FIXED_MENU_ENTRIES: readonly EightFixedMenuEntrySpec[
   { key: "help", icon: "❓", route: "/help" },
 ] as const;
 
+export type UiNotificationCenterItemKind =
+  | "SETUP_PREREQUISITE"
+  | "ACTION_REQUIRED"
+  | "DECISION_WAITING"
+  | "INFO";
+
+export interface UiNotificationCenterItem {
+  readonly id: string;
+  readonly kind: UiNotificationCenterItemKind;
+  readonly badgeLabel: string;
+  readonly title: string;
+  readonly description: string;
+  readonly targetRoute?: string;
+  readonly ctaLabel?: string;
+}
+
 export interface FourZoneDirectionCShellLabels {
   readonly workspacePrefix: string;
   readonly searchTriggerPlaceholder: string;
@@ -34,6 +51,8 @@ export interface FourZoneDirectionCShellLabels {
   readonly notificationsButtonLabel: string;
   readonly notificationsDrawerTitle: string;
   readonly notificationsEmptyText: string;
+  readonly notificationsVsActivityHint?: string;
+  readonly notificationsOpenActivityCta?: string;
   readonly sidebarAriaLabel: string;
   readonly railCollapseLabel: string;
   readonly railExpandLabel: string;
@@ -62,6 +81,8 @@ export interface FourZoneDirectionCShellProps {
   readonly userDisplayName: string;
   readonly userHatLabel: string;
   readonly pendingDecisionsTotal: number;
+  readonly notifications?: readonly UiNotificationCenterItem[];
+  readonly onSelectNotification?: (item: UiNotificationCenterItem) => void;
   readonly viewportWidth?: number;
   readonly labels: FourZoneDirectionCShellLabels;
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
@@ -106,6 +127,8 @@ export function FourZoneDirectionCShell({
   userDisplayName,
   userHatLabel,
   pendingDecisionsTotal,
+  notifications = [],
+  onSelectNotification,
   viewportWidth = 1440,
   labels,
   disabledMenuKeys,
@@ -162,6 +185,8 @@ export function FourZoneDirectionCShell({
   }, []);
 
   const sidebarWidth = railCollapsed ? "68px" : "240px";
+  const effectiveNotificationCount =
+    notifications.length > 0 ? notifications.length : pendingDecisionsTotal;
 
   return (
     <div
@@ -303,14 +328,30 @@ export function FourZoneDirectionCShell({
             data-testid="topbar-notifications-toggle"
             onClick={() => setNotificationsOpen((prev) => !prev)}
             aria-expanded={notificationsOpen}
-            className="rounded border px-2.5 py-1 text-xs font-medium"
+            className="flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-medium"
             style={{
-              backgroundColor: "var(--color-bg-elevated)",
+              backgroundColor: notificationsOpen
+                ? "var(--color-action-primary-subtle)"
+                : "var(--color-bg-elevated)",
               borderColor: "var(--color-border-subtle)",
               color: "var(--color-text-primary)",
             }}
           >
-            {labels.notificationsButtonLabel}
+            <span>{labels.notificationsButtonLabel}</span>
+            {effectiveNotificationCount > 0 && (
+              <span
+                data-testid="topbar-notifications-badge"
+                className="inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+                style={{
+                  backgroundColor: "var(--color-arbitration-amber)",
+                  color: "var(--color-surface-card)",
+                  minWidth: "18px",
+                  lineHeight: 1,
+                }}
+              >
+                {effectiveNotificationCount}
+              </span>
+            )}
           </button>
 
           {headerUserControl ?? (
@@ -350,6 +391,8 @@ export function FourZoneDirectionCShell({
           className="fixed right-0 top-[52px] z-30 border-b border-l p-4 shadow-md"
           style={{
             width: "420px",
+            maxHeight: "calc(100vh - 52px)",
+            overflowY: "auto",
             backgroundColor: "var(--color-bg-surface)",
             borderColor: "var(--color-border-subtle)",
           }}
@@ -365,9 +408,124 @@ export function FourZoneDirectionCShell({
               ✕
             </button>
           </div>
-          <p className="mt-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
-            {labels.notificationsEmptyText}
-          </p>
+          {notifications.length === 0 ? (
+            <p
+              data-testid="topbar-notifications-empty-text"
+              className="mt-2 text-xs"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {labels.notificationsEmptyText}
+            </p>
+          ) : (
+            <ul
+              data-testid="topbar-notifications-list"
+              className="mt-3 flex flex-col gap-2"
+              style={{ listStyle: "none", margin: 0, padding: 0 }}
+            >
+              {notifications.map((item) => {
+                const isAlert =
+                  item.kind === "SETUP_PREREQUISITE" || item.kind === "ACTION_REQUIRED";
+                return (
+                  <li
+                    key={item.id}
+                    data-testid={`notification-center-item-${item.id}`}
+                    className="rounded-lg border p-2.5 text-xs"
+                    style={{
+                      backgroundColor: isAlert
+                        ? "var(--color-stale-bg)"
+                        : "var(--color-bg-elevated)",
+                      borderColor: isAlert
+                        ? "var(--color-status-error)"
+                        : "var(--color-border-subtle)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: isAlert
+                            ? "var(--color-status-error)"
+                            : "var(--color-action-primary-subtle)",
+                          color: isAlert
+                            ? "var(--color-surface-card)"
+                            : "var(--color-action-primary)",
+                        }}
+                      >
+                        {item.badgeLabel}
+                      </span>
+                      {item.targetRoute && item.ctaLabel && (
+                        <button
+                          type="button"
+                          data-testid={`notification-center-cta-${item.id}`}
+                          onClick={() => {
+                            onSelectNotification?.(item);
+                            setNotificationsOpen(false);
+                          }}
+                          className="rounded px-2 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "var(--color-action-primary)",
+                            color: "var(--color-primary-foreground)",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {item.ctaLabel}
+                        </button>
+                      )}
+                    </div>
+                    <strong
+                      className="mt-1.5 block font-semibold"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {item.title}
+                    </strong>
+                    <p
+                      className="mt-0.5 text-[11px]"
+                      style={{ color: "var(--color-text-secondary)", margin: 0 }}
+                    >
+                      {item.description}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div
+            data-testid="notifications-vs-activity-log-box"
+            className="mt-3 rounded border p-2.5 text-[11px]"
+            style={{
+              backgroundColor: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border-subtle)",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              {labels.notificationsVsActivityHint ??
+                "🔔 Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le 📜 Journal d'Activité."}
+            </p>
+            <button
+              type="button"
+              data-testid="notifications-open-activity-log-btn"
+              onClick={() => {
+                setNotificationsOpen(false);
+                if (onSelectActivityMenu) {
+                  onSelectActivityMenu("/activity");
+                } else {
+                  onSelectMenu("finops", "/activity");
+                }
+              }}
+              className="mt-1.5 rounded border px-2 py-1 text-[11px] font-semibold"
+              style={{
+                backgroundColor: "var(--color-bg-surface)",
+                borderColor: "var(--color-border-subtle)",
+                color: "var(--color-action-primary)",
+                cursor: "pointer",
+              }}
+            >
+              {labels.notificationsOpenActivityCta ?? "📜 Ouvrir le Journal d'Activité →"}
+            </button>
+          </div>
         </aside>
       )}
 
@@ -421,7 +579,7 @@ export function FourZoneDirectionCShell({
                         onSelectMenu(entry.key, entry.route);
                       }
                     }}
-                    className="flex items-center gap-2.5 rounded px-2.5 py-2 text-left text-xs font-medium"
+                    className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-xs font-medium"
                     style={{
                       backgroundColor: isActive
                         ? "var(--color-action-primary-subtle)"
@@ -429,12 +587,17 @@ export function FourZoneDirectionCShell({
                       color: isActive
                         ? "var(--color-action-primary)"
                         : "var(--color-text-primary)",
-                      opacity: isDisabled ? 0.45 : 1,
+                      opacity: isDisabled ? 0.55 : 1,
                       cursor: isDisabled ? "not-allowed" : "pointer",
                     }}
                   >
                     <span aria-hidden="true">{entry.icon}</span>
-                    {!railCollapsed && <span>{entryLabel}</span>}
+                    {!railCollapsed && <span className="flex-1">{entryLabel}</span>}
+                    <DisabledButtonAlertIndicator
+                      disabled={isDisabled}
+                      reason={disabledReason}
+                      testIdSuffix={`eight-menu-item-${entry.key}`}
+                    />
                   </button>
 
                   {entry.key === "finops" && (

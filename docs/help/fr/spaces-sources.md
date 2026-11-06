@@ -29,5 +29,6 @@ Cet écran vous permet de rattacher les sources de connaissances de votre équip
 
 ## Questions fréquentes
 
+- **Quel est le lien entre une entité de l'organisation (Direction, Équipe) et un Espace de travail ?** L'organisation (Entreprise $\rightarrow$ Direction $\rightarrow$ Équipe) décrit *qui vous êtes* (l'organigramme auquel sont rattachés les membres), tandis que l'**Espace de travail** décrit *sur quoi vous travaillez* (un projet, un produit ou un chantier où sont connectées vos sources documentaires et exécutés vos processus). Chaque Espace de travail appartient à une Équipe ou une Direction propriétaire (une même équipe peut gérer plusieurs espaces), peut inviter d'autres équipes à collaborer, et hérite des règles de son équipe et de sa direction (sauf s'il est configuré en mode confidentiel isolé).
 - **Comment accéder à l'explication d'un réglage précis ?** Cliquez sur l'icône `ⓘ` située à côté de l'intitulé : cette colonne d'aide s'ouvre et met directement en évidence la section correspondante.
 - **Que se passe-t-il si un document est modifié directement dans notre outil externe ?** Vos modifications directes sont toujours préservées et ne sont jamais écrasées par un brouillon automatique.

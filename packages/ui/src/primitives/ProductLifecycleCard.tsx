@@ -1,4 +1,5 @@
 import React from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type ProductLifecyclePhaseType = "RUN" | "BUILD" | "MIGRATION";
 
@@ -14,7 +15,8 @@ export interface ProductLifecycleCardLabels {
 export interface ProductLifecycleCardProps {
   readonly workspaceId: string;
   readonly workspaceName: string;
-  readonly visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+  readonly visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
+  readonly ownerOrgUnitName?: string;
   readonly lifecyclePhase: ProductLifecyclePhaseType;
   readonly suggestedWorkflows: readonly string[];
   readonly isReadOnlyObserver: boolean;
@@ -37,6 +39,7 @@ export function ProductLifecycleCard({
   workspaceId,
   workspaceName,
   visibilityMode,
+  ownerOrgUnitName,
   lifecyclePhase,
   suggestedWorkflows,
   isReadOnlyObserver,
@@ -84,6 +87,7 @@ export function ProductLifecycleCard({
             }}
           >
             {visibilityMode}
+            {ownerOrgUnitName ? ` • ${ownerOrgUnitName}` : ""}
             {finopsCostUsd !== null ? ` • $${finopsCostUsd.toFixed(2)}` : ""}
             {payloadMasked ? " • 🔒 Payload Masqué" : ""}
           </div>
@@ -104,6 +108,9 @@ export function ProductLifecycleCard({
                 data-testid={`lifecycle-btn-${workspaceId}-${phase}`}
                 onClick={() => onSelectPhase?.(workspaceId, phase)}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
                   padding: "3px 8px",
                   borderRadius: "9999px",
                   fontSize: "0.75rem",
@@ -120,7 +127,12 @@ export function ProductLifecycleCard({
                     : "var(--orcia-text-secondary)",
                 }}
               >
-                {phaseLabel(phase)}
+                <span>{phaseLabel(phase)}</span>
+                <DisabledButtonAlertIndicator
+                  disabled={isReadOnlyObserver}
+                  reason={labels.readOnlyHint}
+                  testIdSuffix={`lifecycle-btn-${workspaceId}-${phase}`}
+                />
               </button>
             );
           })}

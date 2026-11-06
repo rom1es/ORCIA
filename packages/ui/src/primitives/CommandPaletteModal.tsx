@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
@@ -299,6 +300,9 @@ export function CommandPaletteModal({
               handleRgaaSubmitKeyDown(e, handleConfirmActiveItem, !activeItem)
             }
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
               padding: "4px 10px",
               borderRadius: "6px",
               fontSize: "0.75rem",
@@ -310,7 +314,12 @@ export function CommandPaletteModal({
               opacity: activeItem ? 1 : 0.5,
             }}
           >
-            {resolvedRgaaLabels.submitCta}
+            <span>{resolvedRgaaLabels.submitCta}</span>
+            <DisabledButtonAlertIndicator
+              disabled={!activeItem}
+              reason="Sélectionnez un résultat pour l'ouvrir."
+              testIdSuffix="command-palette-submit-btn"
+            />
           </button>
         </div>
       </div>

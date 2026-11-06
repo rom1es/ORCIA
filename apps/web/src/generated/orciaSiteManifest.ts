@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-06",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 66,
+    "uiPrimitivesCount": 67,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 75
+    "techLeadReportsCount": 78
   },
   "activeRoutes": [
     "/",
@@ -58,6 +58,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "CommandPaletteModal",
     "ContextualHelpColumnAndCenter",
     "ContextualInfoTriggerButton",
+    "DisabledButtonAlertIndicator",
     "DnaStarlarkCompilerAndGlossaryLifecycleView",
     "DurableWizardRunnerView",
     "EffortSelector",
@@ -400,6 +401,27 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-06",
+      "phaseOrStory": "Post-Epic 12 / Gouvernance FinOps & Modèle Métier",
+      "reportFile": "2026-11-06-rattachement-equipe-facturation-espaces-prives-et-selecteur-contexte-tech-lead-report.md",
+      "domain": "Rattachement Multi-Équipes (memberTeamIds), Parcours Jour 0 du 1er Administrateur en 2 Étapes (Option 1), Espaces de Travail Privés Facturés à l'Équipe (PRIVATE_USER — Option 2 FinOps), Chaîne de Verrouillage Stricte des Appels IA & Sélecteur de Contexte à 3 Groupes",
+      "summary": "Parcours Jour 0 en 2 étapes (création du 1er Admin sans équipe pré-imposée puis rattachement 1-clic multi-équipes dans /settings), extraction de CreateWorkspaceCard.tsx avec sélecteur d'équipe de facturation (workspace-owner-team-select) et 3 modes de visibilité (STANDARD, PRIVATE_USER, CONFIDENTIAL_RESTRICTED), verrouillage FinOps (setup-billing-team-missing), structuration du sélecteur TopHeaderBar en 3 groupes (🔒 Mes Espaces Privés, 👥 Mes Équipes & Espaces, 🏢 Supervision Organisation) avec filtrage contextuel dynamique, et enrichissement de la FAQ d'architecture (Q2 à Q4)."
+    },
+    {
+      "date": "2026-11-06",
+      "phaseOrStory": "Post-Epic 12 / UX & Design System",
+      "reportFile": "2026-11-06-centre-notifications-equipes-org-et-boutons-grises-tech-lead-report.md",
+      "domain": "Centre des Notifications (🔔 Notifications) vs Journal d'Activité (📜 Journal d'Activité), Clarification Sémantique « Équipe » (TEAM) vs « Espace de Travail » (WORKSPACE) & Indicateur ! Rouge Cerclé + Infobulle Rouge sur tous les Boutons Grisés (DisabledButtonAlertIndicator)",
+      "summary": "Enrichissement du tiroir 🔔 Notifications (FourZoneDirectionCShell.tsx, ShellContainer.tsx) avec badge compteur actif (topbar-notifications-badge), notifications actionnables et encart explicatif + CTA vers 📜 Journal d'Activité (/activity) ; remplacement de « Espace » par « Équipe » pour le niveau TEAM dans la gestion de l'Organisation (/settings) ; et création de la primitive @orcia/ui DisabledButtonAlertIndicator (badge ! rouge cerclé aligné à droite + infobulle à texte rouge présents uniquement tant que disabled=true) déployée sur tous les boutons désactivables d'ORCIA."
+    },
+    {
+      "date": "2026-11-06",
+      "phaseOrStory": "Post-Epic 12 / Doc Architecture",
+      "reportFile": "2026-11-06-documentation-faq-lien-workspace-org-unit-tech-lead-report.md",
+      "domain": "FAQ Architecture & Modèle Métier (Winston) — Lien entre Espace de Travail (Workspace / workspaces) et Entités de l'Organisation (OrgUnit / org_units)",
+      "summary": "Ajout de la Section 8 FAQ Architecture & Modèle Métier (Winston) dans architecture.md, création de la fiche dédiée faq-architecture-modele-metier.md (termes internes OrgUnit vs Workspace, double lien SQL owner_org_unit_id N -> 1 ON DELETE RESTRICT et workspace_memberships N -> N, diagramme ER Mermaid, cascade 4 niveaux GLOBAL -> BU -> TEAM -> WORKSPACE et isolation CONFIDENTIAL_RESTRICTED) et enrichissement bilingue de docs/help/{fr,en}/spaces-sources.md."
+    },
     {
       "date": "2026-11-06",
       "phaseOrStory": "Post-Epic 12 / Garde-Fou n°5",

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type CognitiveTierChoice =
   | "TIER_1_FAST"
@@ -95,6 +96,9 @@ export function ScopedPromptBox({
                 data-testid={`rag-source-toggle-${src.alias}`}
                 onClick={() => toggleSource(src.sourceUri)}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
                   padding: "3px 8px",
                   borderRadius: "9999px",
                   fontSize: "0.75rem",
@@ -109,7 +113,14 @@ export function ScopedPromptBox({
                   color: "var(--orcia-text-primary)",
                 }}
               >
-                {src.alias} ({src.sourceUri})
+                <span>
+                  {src.alias} ({src.sourceUri})
+                </span>
+                <DisabledButtonAlertIndicator
+                  disabled={!src.authorized}
+                  reason="Source non autorisée dans ce périmètre."
+                  testIdSuffix={`rag-source-toggle-${src.alias}`}
+                />
               </button>
             );
           })}

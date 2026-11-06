@@ -24,6 +24,9 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     notificationsButtonLabel: "🔔 Notifications",
     notificationsDrawerTitle: "Centre de Notifications",
     notificationsEmptyText: "Aucune notification non lue.",
+    notificationsVsActivityHint:
+      "🔔 Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le 📜 Journal d'Activité.",
+    notificationsOpenActivityCta: "📜 Ouvrir le Journal d'Activité →",
     sidebarAriaLabel: "Navigation principale",
     railCollapseLabel: "Replier le menu ([)",
     railExpandLabel: "Déplier le menu ([)",
@@ -164,6 +167,9 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     notificationsButtonLabel: "🔔 Notifications",
     notificationsDrawerTitle: "Notification Center",
     notificationsEmptyText: "No unread notifications.",
+    notificationsVsActivityHint:
+      "🔔 The Notification Center groups your pending actions and setup prerequisites. To browse the complete audit history of your scope, open the 📜 Activity Log.",
+    notificationsOpenActivityCta: "📜 Open Activity Log →",
     sidebarAriaLabel: "Main navigation",
     railCollapseLabel: "Collapse menu ([)",
     railExpandLabel: "Expand menu ([)",

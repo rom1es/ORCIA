@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
 
 export interface RgaaModalGuardLabels {
   readonly cancelButtonLabel?: string;
@@ -316,15 +317,19 @@ export function RgaaDialogFooterActions({
           disabled={submitDisabled}
           onClick={onSubmit}
           onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSubmit, submitDisabled)}
-          className="rounded px-3 py-1.5 text-xs font-semibold"
+          className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold"
           style={{
             backgroundColor: "var(--color-action-primary)",
             color: "var(--color-primary-foreground)",
-            opacity: submitDisabled ? 0.5 : 1,
+            opacity: submitDisabled ? 0.55 : 1,
             cursor: submitDisabled ? "not-allowed" : "pointer",
           }}
         >
-          {submitLabel}
+          <span>{submitLabel}</span>
+          <DisabledButtonAlertIndicator
+            disabled={submitDisabled}
+            testIdSuffix={`${testIdPrefix}-submit-btn`}
+          />
         </button>
       )}
     </div>

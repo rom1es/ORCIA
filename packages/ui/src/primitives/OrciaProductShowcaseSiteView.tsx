@@ -766,8 +766,8 @@ export function OrciaProductShowcaseSiteView({
               >
                 <div className="font-bold text-sm">
                   {isFr
-                    ? "🏢 Hiérarchie d'Organisation : Plateforme entière ➔ Directions (BU) ➔ Espaces"
-                    : "🏢 Organization Hierarchy: Entire Platform ➔ Divisions (BUs) ➔ Workspaces"}
+                    ? "🏢 Hiérarchie d'Organisation : Plateforme entière ➔ Directions (BU) ➔ Équipes"
+                    : "🏢 Organization Hierarchy: Entire Platform ➔ Divisions (BUs) ➔ Teams"}
                 </div>
                 <p style={{ color: "var(--color-text-secondary)" }}>
                   {isFr

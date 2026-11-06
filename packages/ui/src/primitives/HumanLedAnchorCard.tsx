@@ -1,4 +1,5 @@
 import React from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export interface HumanLedAnchorCardLabels {
   badgeTitle: string;
@@ -177,6 +178,9 @@ export function HumanLedAnchorCard({
               }
             }}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
               backgroundColor: "var(--color-human-led-violet)",
               color: "var(--color-primary-foreground)",
               border: "none",
@@ -187,7 +191,12 @@ export function HumanLedAnchorCard({
               opacity: isLocked ? 0.55 : 1,
             }}
           >
-            {labels.submitLabel}
+            <span>{labels.submitLabel}</span>
+            <DisabledButtonAlertIndicator
+              disabled={isLocked}
+              reason={labels.placeholderText}
+              testIdSuffix={`human-anchor-submit-${sectionKey}`}
+            />
           </button>
         </div>
       )}

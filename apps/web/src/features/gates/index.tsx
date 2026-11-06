@@ -14,9 +14,16 @@ import { useI18n } from "../../i18n";
 
 export function GatesFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { packs, workflows, workspaces, registerPack, upsertWorkflow } = usePlatformSetup();
-  const { navigateToRoute, openHelpSection } = useShellNavigation();
+  const { packs, workflows, workspaces, scopes, registerPack, upsertWorkflow } = usePlatformSetup();
+  const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
+  const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
+  const activeWorkspace =
+    activeScopeNode?.level === "WORKSPACE"
+      ? workspaces.find((w) => w.workspaceId === activeScopeId) ?? workspaces[0]
+      : activeScopeNode?.level === "TEAM"
+        ? workspaces.find((w) => w.ownerOrgUnitId === activeScopeId) ?? workspaces[0]
+        : workspaces[0];
 
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [whatIfImpacts, setWhatIfImpacts] = useState<PackWhatIfImpactItem[]>([]);
@@ -66,6 +73,23 @@ export function GatesFeaturePanel() {
           {actionFeedback}
         </div>
       ) : null}
+
+      <div
+        data-testid="gates-active-scope-badge"
+        className="flex flex-wrap items-center justify-between gap-2 rounded border px-3 py-1.5 text-xs"
+        style={{
+          backgroundColor: "var(--color-bg-elevated)",
+          borderColor: "var(--color-border-subtle)",
+          color: "var(--color-text-secondary)",
+        }}
+      >
+        <span>
+          {isFr ? "Contexte de processus actif :" : "Active process context:"}{" "}
+          <strong style={{ color: "var(--color-text-primary)" }}>
+            {activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform")}
+          </strong>
+        </span>
+      </div>
 
       {/* Atelier simplifié de conception et gestion des processus métiers */}
       <SimplifiedProcessBuilderSection
@@ -139,7 +163,7 @@ export function GatesFeaturePanel() {
           });
           setWhatIfImpacts([
             {
-              workspaceKey: workspaces[0]?.workspaceId ?? "workspace-default",
+              workspaceKey: activeWorkspace?.workspaceId ?? "workspace-default",
               impactedWorkflows: workflows.map((w) => w.workflowKey),
               breakingNorms: [],
               activeRunsCount: 0,

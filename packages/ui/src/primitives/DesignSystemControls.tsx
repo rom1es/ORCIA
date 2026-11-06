@@ -1,5 +1,6 @@
 import React from "react";
 import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type OrciaButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
@@ -7,6 +8,7 @@ export interface OrciaButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: OrciaButtonVariant;
   readonly testId?: string;
+  readonly disabledReason?: string;
 }
 
 const BUTTON_VARIANT_CLASS: Record<OrciaButtonVariant, string> = {
@@ -19,6 +21,9 @@ const BUTTON_VARIANT_CLASS: Record<OrciaButtonVariant, string> = {
 export function OrciaButton({
   variant = "primary",
   testId,
+  disabledReason,
+  disabled,
+  title,
   className,
   type = "button",
   children,
@@ -27,14 +32,29 @@ export function OrciaButton({
   const mergedClassName = [BUTTON_VARIANT_CLASS[variant], className]
     .filter(Boolean)
     .join(" ");
+  const resolvedTestId =
+    testId ??
+    (typeof (rest as Record<string, unknown>)["data-testid"] === "string"
+      ? ((rest as Record<string, unknown>)["data-testid"] as string)
+      : undefined);
+  const resolvedDisabledReason =
+    disabledReason ??
+    (typeof title === "string" && title.trim().length > 0 ? title : undefined);
   return (
     <button
       type={type}
-      data-testid={testId}
+      disabled={disabled}
+      title={disabled ? resolvedDisabledReason : title}
+      data-testid={resolvedTestId}
       className={mergedClassName}
       {...rest}
     >
       {children}
+      <DisabledButtonAlertIndicator
+        disabled={Boolean(disabled)}
+        reason={resolvedDisabledReason}
+        testIdSuffix={resolvedTestId}
+      />
     </button>
   );
 }

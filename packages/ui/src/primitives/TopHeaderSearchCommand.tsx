@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
@@ -504,9 +505,14 @@ export function TopHeaderSearchCommand({
                 !activeHit,
               )
             }
-            className="px-2.5 py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium disabled:opacity-50"
           >
-            {resolvedRgaaLabels.submitCta}
+            <span>{resolvedRgaaLabels.submitCta}</span>
+            <DisabledButtonAlertIndicator
+              disabled={!activeHit}
+              reason="Sélectionnez un élément dans la recherche pour l'ouvrir."
+              testIdSuffix="cmdk-submit-btn"
+            />
           </button>
         </div>
       </div>

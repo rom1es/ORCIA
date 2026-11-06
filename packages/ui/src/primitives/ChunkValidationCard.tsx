@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type UiChunkStatus = "PENDING" | "APPROVED" | "CO_EDITED" | "CHALLENGED";
 export type UiChunkDecisionAction = "APPROVE" | "CO_EDIT" | "CHALLENGE";
@@ -232,6 +233,9 @@ export function ChunkValidationCard({
                     onDecideChunk(chunk.chunkKey, "APPROVE");
                   }}
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
                     backgroundColor: "var(--color-gate-emerald)",
                     color: "var(--color-primary-foreground)",
                     border: "none",
@@ -241,7 +245,12 @@ export function ChunkValidationCard({
                     cursor: readOnly ? "not-allowed" : "pointer",
                   }}
                 >
-                  ✓ {labels.approveSectionLabel}
+                  <span>✓ {labels.approveSectionLabel}</span>
+                  <DisabledButtonAlertIndicator
+                    disabled={Boolean(readOnly)}
+                    reason="Mode lecture seule : validation réservée aux contributeurs."
+                    testIdSuffix={`chunk-approve-btn-${chunk.chunkKey}`}
+                  />
                 </button>
 
                 <button
@@ -257,6 +266,9 @@ export function ChunkValidationCard({
                     );
                   }}
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
                     backgroundColor: "var(--color-surface-card)",
                     color: "var(--color-foreground)",
                     border: "1px solid var(--color-border)",
@@ -266,7 +278,12 @@ export function ChunkValidationCard({
                     cursor: readOnly ? "not-allowed" : "pointer",
                   }}
                 >
-                  ✍️ {labels.coEditSectionLabel}
+                  <span>✍️ {labels.coEditSectionLabel}</span>
+                  <DisabledButtonAlertIndicator
+                    disabled={Boolean(readOnly)}
+                    reason="Mode lecture seule : co-édition réservée aux contributeurs."
+                    testIdSuffix={`chunk-coedit-btn-${chunk.chunkKey}`}
+                  />
                 </button>
 
                 <button
@@ -278,6 +295,9 @@ export function ChunkValidationCard({
                     onDecideChunk(chunk.chunkKey, "CHALLENGE");
                   }}
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
                     backgroundColor: "var(--color-stale-bg)",
                     color: "var(--color-stale-crimson)",
                     border: "1px solid var(--color-stale-crimson)",
@@ -287,7 +307,12 @@ export function ChunkValidationCard({
                     cursor: readOnly ? "not-allowed" : "pointer",
                   }}
                 >
-                  ⏪ {labels.challengeSectionLabel}
+                  <span>⏪ {labels.challengeSectionLabel}</span>
+                  <DisabledButtonAlertIndicator
+                    disabled={Boolean(readOnly)}
+                    reason="Mode lecture seule : remise en cause réservée aux contributeurs."
+                    testIdSuffix={`chunk-challenge-btn-${chunk.chunkKey}`}
+                  />
                 </button>
               </div>
             </article>
@@ -324,6 +349,9 @@ export function ChunkValidationCard({
           disabled={!canFinalize}
           onClick={handleFinalizeClick}
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
             backgroundColor: canFinalize
               ? "var(--color-primary-cobalt)"
               : "var(--color-surface-hover)",
@@ -337,7 +365,12 @@ export function ChunkValidationCard({
             cursor: canFinalize ? "pointer" : "not-allowed",
           }}
         >
-          🛡️ {labels.finalizeGateButtonLabel}
+          <span>🛡️ {labels.finalizeGateButtonLabel}</span>
+          <DisabledButtonAlertIndicator
+            disabled={!canFinalize}
+            reason={labels.pendingSectionsNotice}
+            testIdSuffix="finalize-human-gate-btn"
+          />
         </button>
       </footer>
 
@@ -395,6 +428,9 @@ export function ChunkValidationCard({
               disabled={!hypothesesConfirmed}
               onClick={handleGuardConfirm}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
                 backgroundColor: "var(--color-arbitration-amber)",
                 color: "var(--color-primary-foreground)",
                 border: "none",
@@ -404,7 +440,12 @@ export function ChunkValidationCard({
                 cursor: hypothesesConfirmed ? "pointer" : "not-allowed",
               }}
             >
-              {labels.guardConfirmButtonLabel}
+              <span>{labels.guardConfirmButtonLabel}</span>
+              <DisabledButtonAlertIndicator
+                disabled={!hypothesesConfirmed}
+                reason={labels.guardConfirmCheckboxLabel}
+                testIdSuffix="rubber-stamp-confirm-submit-btn"
+              />
             </button>
             <button
               type="button"

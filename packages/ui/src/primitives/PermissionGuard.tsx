@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type UiPermissionVerb = "create" | "read" | "update" | "delete" | "execute" | "grant";
 export type UiPermissionFallbackMode = "passive-lock" | "disabled" | "hidden";
@@ -44,14 +45,26 @@ export function PermissionGuard({
   }
 
   if (fallbackMode === "disabled") {
+    const disabledReason = `${labels.disabledHint} (${verb})`;
     return (
       <div
         data-testid="permission-guard-disabled"
         aria-disabled="true"
-        title={`${labels.disabledHint} (${verb})`}
-        style={{ opacity: 0.55, pointerEvents: "none" }}
+        title={disabledReason}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          opacity: 0.55,
+          pointerEvents: "none",
+        }}
       >
         {children}
+        <DisabledButtonAlertIndicator
+          disabled={true}
+          reason={disabledReason}
+          testIdSuffix="permission-guard-disabled"
+        />
       </div>
     );
   }

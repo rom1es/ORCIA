@@ -380,7 +380,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "ACTIVE_RUNS",
       "PAUSED_ARBITRATION",
       "(0p / 0s)",
-      "e3b0c44298fc",
+      "e3b0c44298fc", // pragma: allowlist secret
     ]) {
       expect(processStudioText).not.toContain(forbiddenRawBadge);
     }
@@ -607,7 +607,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(grantRow.textContent).toContain("Rôle : Chef1");
     expect(grantRow.textContent).not.toContain("(ROLE:");
     expect(grantRow.textContent).toContain("Périmètre cible :");
-    expect(grantRow.textContent).toContain("Espace : Espace Comptabilité (aqwZSX)");
+    expect(grantRow.textContent).toContain("Équipe : Espace Comptabilité (aqwZSX)");
     expect(grantRow.textContent).toContain("Déléguer des droits · Autorisé");
     expect(grantRow.textContent).not.toContain("(ALLOW)");
 
@@ -616,12 +616,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("rbac-grants-bulk-delete-btn"));
     expect(screen.getByTestId("iam-grants-empty-state")).toBeDefined();
 
-    // 5. Right-hand contextual help explains Target Scope, BU vs Espace, and Beneficiary vs Target Scope
+    // 5. Right-hand contextual help explains Target Scope, BU vs Équipe vs Espace de travail, and Beneficiary vs Target Scope
     const helpTerms = screen.getByTestId("help-accordion-terms-content");
     expect(helpTerms.textContent).toContain("INHERITANCE_BLOCK");
     expect(helpTerms.textContent).toContain("Rôle : Chef1");
     expect(helpTerms.textContent).toContain("aqwZSX");
-    expect(helpTerms.textContent).toContain("BU vs Espace");
+    expect(helpTerms.textContent).toContain("BU vs Équipe vs Espace de travail");
 
     // 6. Clicking ContextualInfoTriggerButton ('i') re-opens the right-hand contextual help column if closed and highlights the targeted section (including iam-target-scope)
     fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
@@ -1426,6 +1426,294 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(auditHelpSection.textContent).toContain("auteurs, horodatage et filtres d'observation");
     expect(auditHelpSection.textContent).not.toContain("définissez un plafond de dépense par espace");
   });
+
+  it("displays right-aligned red '!' circle badge and red tooltip on all disabled buttons until enabled, populates the Notification Center vs Activity Log, and uses 'Équipe' instead of 'Espace' in Organization management", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // 1. On Day 0, the First-Boot Admin Submit button is disabled and shows the red '!' badge + red tooltip
+    const adminSubmitBtn = screen.getByTestId("first-boot-admin-submit-btn") as HTMLButtonElement;
+    expect(adminSubmitBtn.disabled).toBe(true);
+    const adminAlertIcon = screen.getByTestId(
+      "disabled-button-alert-icon-first-boot-admin-submit-btn",
+    );
+    const adminAlertTooltip = screen.getByTestId(
+      "disabled-button-alert-tooltip-first-boot-admin-submit-btn",
+    );
+    expect(adminAlertIcon.textContent).toContain("!");
+    expect(adminAlertTooltip.style.color).toBe("var(--color-status-error)");
+    expect(adminAlertTooltip.getAttribute("data-tooltip-text")).toContain(
+      "Renseignez le nom complet et l'adresse e-mail",
+    );
+
+    // Fill admin form -> button becomes enabled and the red '!' badge + red tooltip disappear!
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Romain Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "romain@orcia.fr" },
+    });
+    expect(adminSubmitBtn.disabled).toBe(false);
+    expect(
+      screen.queryByTestId("disabled-button-alert-icon-first-boot-admin-submit-btn"),
+    ).toBeNull();
+    expect(
+      screen.queryByTestId("disabled-button-alert-tooltip-first-boot-admin-submit-btn"),
+    ).toBeNull();
+    fireEvent.click(adminSubmitBtn);
+
+    // 2. Sidebar disabled buttons (assistant, agents, processes, finops) display red '!' circle badge + red tooltip
+    const assistantMenuBtn = screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement;
+    expect(assistantMenuBtn.disabled).toBe(true);
+    expect(
+      screen.getByTestId("disabled-button-alert-icon-eight-menu-item-assistant"),
+    ).toBeDefined();
+    expect(
+      screen
+        .getByTestId("disabled-button-alert-tooltip-eight-menu-item-assistant")
+        .getAttribute("data-tooltip-text"),
+    ).toContain("Configurez au moins un modèle IA");
+
+    // 3. In /settings > Organisation & Habilitations:
+    // - Section 1 uses "Directions / BU & Équipes" and "Équipe" (never "Espace (Équipe)")
+    const iamSection = screen.getByTestId("settings-iam-section");
+    expect(iamSection.textContent).toContain(
+      "1. Structure de l'Organisation (Directions / BU & Équipes)",
+    );
+    expect(iamSection.textContent).not.toContain("Espace (Équipe)");
+    const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
+    expect(levelSelect.textContent).toContain("Équipe");
+    expect(levelSelect.textContent).not.toContain("Espace");
+
+    // - Section 2 "+ Ajouter la règle" button is disabled and shows the red '!' circle badge + red tooltip
+    const createGrantBtn = screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement;
+    expect(createGrantBtn.disabled).toBe(true);
+    expect(
+      screen.getByTestId("disabled-button-alert-icon-create-rbac-grant-btn"),
+    ).toBeDefined();
+    expect(
+      screen
+        .getByTestId("disabled-button-alert-tooltip-create-rbac-grant-btn")
+        .getAttribute("data-tooltip-text"),
+    ).toContain("Créez d'abord au moins une Direction (BU) ou une Équipe");
+
+    // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") -> createGrantBtn becomes enabled and its red '!' badge disappears!
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Tech" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect(createGrantBtn.disabled).toBe(false);
+    expect(
+      screen.queryByTestId("disabled-button-alert-icon-create-rbac-grant-btn"),
+    ).toBeNull();
+
+    fireEvent.change(levelSelect, { target: { value: "TEAM" } });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Équipe Plateforme" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect(screen.getByTestId("org-unit-row-org-2").textContent).toContain("ÉQUIPE");
+    expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain(
+      "1 Équipe(s) rattachée(s)",
+    );
+
+    // 4. Notification Center (🔔 Notifications) displays active counter badge, actionable setup prerequisites, and distinction vs Journal d'Activité
+    const notifBadge = screen.getByTestId("topbar-notifications-badge");
+    expect(Number(notifBadge.textContent)).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByTestId("topbar-notifications-toggle"));
+    const notifDrawer = screen.getByTestId("topbar-notifications-drawer");
+    expect(notifDrawer.textContent).toContain("Aucun modèle IA configuré");
+    expect(notifDrawer.textContent).toContain("Aucun Espace de travail créé");
+    expect(
+      screen.getByTestId("notifications-vs-activity-log-box").textContent,
+    ).toContain("Journal d'Activité");
+
+    // Configure an AI model -> assistant & agents menu buttons become enabled and their red '!' badges disappear!
+    fireEvent.click(screen.getByTestId("topbar-notifications-close"));
+    fireEvent.click(screen.getByTestId("settings-tab-ai-models"));
+    fireEvent.change(screen.getByTestId("llm-primary-model-input"), {
+      target: { value: "claude-3-7-sonnet" },
+    });
+    fireEvent.change(screen.getByTestId("llm-api-key-input"), {
+      target: { value: "sk-ant-test" },
+    });
+    fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
+
+    expect(assistantMenuBtn.disabled).toBe(false);
+    expect(
+      screen.queryByTestId("disabled-button-alert-icon-eight-menu-item-assistant"),
+    ).toBeNull();
+    expect(
+      screen.queryByTestId("disabled-button-alert-tooltip-eight-menu-item-assistant"),
+    ).toBeNull();
+
+    // Open Notifications drawer and click "📜 Ouvrir le Journal d'Activité →" -> navigates to /activity
+    fireEvent.click(screen.getByTestId("topbar-notifications-toggle"));
+    fireEvent.click(screen.getByTestId("notifications-open-activity-log-btn"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("activity-log-explorer-page")).toBeDefined();
+  });
+
+  it("supports Day-0 1st Admin 2-step onboarding (Option 1), multi-team membership, Private Workspaces billed to a Team (Option 2 FinOps), orphan-safe Team deletion, and 3-group TopHeader context switcher", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // 1. Step A: Create Day-0 1st Admin without any pre-existing Team -> memberTeamIds starts empty
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Romain Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "romain@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+
+    // Verify the warning badge in /settings > Organisation & Habilitations shows 0 billing Team attached
+    const membershipSummaryBadge = screen.getByTestId("admin-team-membership-summary-badge");
+    expect(membershipSummaryBadge.textContent).toContain(
+      "Aucune Équipe de facturation rattachée",
+    );
+
+    // Verify Notification Center includes the "setup-billing-team-missing" alert
+    fireEvent.click(screen.getByTestId("topbar-notifications-toggle"));
+    expect(
+      screen.getByTestId("notification-center-item-setup-billing-team-missing").textContent,
+    ).toContain("Aucune Équipe de facturation rattachée");
+    fireEvent.click(screen.getByTestId("topbar-notifications-close"));
+
+    // 2. Step B: Create a BU ("Direction Produit") and two Teams ("Équipe Core IA" & "Équipe Data")
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Produit" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
+    fireEvent.change(levelSelect, { target: { value: "TEAM" } });
+
+    // Verify the "Rattacher mon compte à cette équipe" checkbox appears and is checked by default
+    const attachCheckbox = screen.getByTestId(
+      "org-unit-attach-admin-checkbox",
+    ) as HTMLInputElement;
+    expect(attachCheckbox.checked).toBe(true);
+
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Équipe Core IA" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    // Admin is now attached to "Équipe Core IA" (org-2)
+    expect(screen.getByTestId("admin-team-membership-summary-badge").textContent).toContain(
+      "Équipe Core IA",
+    );
+    expect(screen.getByTestId("org-unit-member-badge-org-2").textContent).toContain(
+      "Membre (Facturation active)",
+    );
+
+    // Create a second Team ("Équipe Data", org-3) with attachCheckbox unchecked, then attach in 1 click (Multi-Teams!)
+    fireEvent.click(screen.getByTestId("org-unit-attach-admin-checkbox"));
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Équipe Data" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect(screen.getByTestId("org-unit-member-badge-org-3").textContent).toContain(
+      "Non rattaché",
+    );
+
+    // Click "+ Rattacher mon compte" on org-3 -> Admin now belongs to BOTH teams!
+    fireEvent.click(screen.getByTestId("toggle-team-membership-btn-org-3"));
+    expect(screen.getByTestId("org-unit-member-badge-org-3").textContent).toContain(
+      "Membre (Facturation active)",
+    );
+    expect(screen.getByTestId("admin-team-membership-summary-badge").textContent).toContain(
+      "Équipe Core IA, Équipe Data",
+    );
+
+    // 3. Navigate to /workspaces and create both a Collective Workspace (STANDARD) and a Private Workspace (PRIVATE_USER, Option 2 FinOps)
+    fireEvent.click(screen.getByTestId("eight-menu-item-spaces"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Verify create-workspace-submit-btn has DisabledButtonAlertIndicator when name is empty
+    const createWsBtn = screen.getByTestId("create-workspace-submit-btn") as HTMLButtonElement;
+    expect(createWsBtn.disabled).toBe(true);
+    expect(
+      screen.getByTestId("disabled-button-alert-icon-create-workspace-submit-btn"),
+    ).toBeDefined();
+
+    // Select billing team "Équipe Core IA" (org-2) and visibility "PRIVATE_USER"
+    const ownerTeamSelect = screen.getByTestId(
+      "workspace-owner-team-select",
+    ) as HTMLSelectElement;
+    expect(ownerTeamSelect.textContent).toContain("Équipe Core IA");
+    expect(ownerTeamSelect.textContent).toContain("Équipe Data");
+    fireEvent.change(ownerTeamSelect, { target: { value: "org-2" } });
+
+    const visibilitySelect = screen.getByTestId(
+      "workspace-visibility-select",
+    ) as HTMLSelectElement;
+    expect(visibilitySelect.textContent).toContain("Privé personnel (Facturé à l'équipe)");
+    fireEvent.change(visibilitySelect, { target: { value: "PRIVATE_USER" } });
+
+    fireEvent.change(screen.getByTestId("workspace-name-input"), {
+      target: { value: "Mon Bac à Sable R&D" },
+    });
+    expect(createWsBtn.disabled).toBe(false);
+    fireEvent.click(createWsBtn);
+
+    // Also create a collective workspace ("Projet Socle IA", STANDARD) under "Équipe Core IA" (org-2)
+    fireEvent.change(ownerTeamSelect, { target: { value: "org-2" } });
+    fireEvent.change(visibilitySelect, { target: { value: "STANDARD" } });
+    fireEvent.change(screen.getByTestId("workspace-name-input"), {
+      target: { value: "Projet Socle IA" },
+    });
+    fireEvent.click(createWsBtn);
+
+    // 4. Open TopHeader Context Switcher and verify the 3 explicit groups:
+    // - 🔒 Mes Espaces Privés
+    // - 👥 Mes Équipes & Espaces
+    // - 🏢 Supervision Organisation
+    fireEvent.click(screen.getByTestId("topbar-fixed-workspace-selector"));
+    const dropdownMenu = screen.getByTestId("topbar-workspace-dropdown-menu");
+    expect(dropdownMenu.textContent).toContain("🔒 Mes Espaces Privés");
+    expect(dropdownMenu.textContent).toContain("👥 Mes Équipes & Espaces");
+    expect(dropdownMenu.textContent).toContain("🏢 Supervision Organisation");
+    expect(dropdownMenu.textContent).toContain("Mon Bac à Sable R&D · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("Projet Socle IA · Équipe Core IA");
+
+    // Select the Private Workspace ("ws-1") in the TopHeader -> filters /workspaces to that private workspace
+    fireEvent.click(screen.getByTestId("topbar-workspace-option-ws-1"));
+    expect(screen.getByTestId("workspace-active-scope-banner").textContent).toContain(
+      "Mon Bac à Sable R&D",
+    );
+
+    // 5. Verify orphan protection in /settings: cannot delete "Équipe Core IA" (org-2) while workspaces are attached to it
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
+    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-2"));
+    expect(screen.getByTestId("org-unit-delete-feedback").textContent).toContain(
+      "2 Espace(s) de Travail sont rattachés à « Équipe Core IA »",
+    );
+    expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
+  });
 });
-
-

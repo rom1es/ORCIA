@@ -100,13 +100,13 @@ export function SettingsPacksSection({
     },
     ...orgUnits.map((unit) => ({
       value: unit.slug,
-      label: `${unit.level === "BU" ? (isFr ? "Direction" : "Division") : isFr ? "Espace" : "Team"} · ${unit.name}`,
+      label: `${unit.level === "BU" ? (isFr ? "Direction" : "Division") : isFr ? "Équipe" : "Team"} · ${unit.name}`,
     })),
     ...workspaces
       .filter((ws) => !orgUnits.some((u) => u.name === ws.name))
       .map((ws) => ({
         value: ws.workspaceId,
-        label: `${isFr ? "Espace" : "Workspace"} · ${ws.name}`,
+        label: `${isFr ? "Espace de travail" : "Workspace"} · ${ws.name}`,
       })),
   ];
 

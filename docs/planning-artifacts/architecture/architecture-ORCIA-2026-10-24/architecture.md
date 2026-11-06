@@ -433,3 +433,154 @@ Exigence de couverture minimale de **90 %** sur le code de la plateforme (`packa
 
 ### 7.5. Couche 5 — Tests End-to-End Multi-Utilisateurs & Multi-Device (`@playwright/test 1.64.1`)
 - Exécution de parcours complets ouvrant simultanément deux sessions navigateur (ex. Nadia en *Contributeur* et un coéquipier en *Observateur* dans `UJ-4`) pour valider la latence SSE `< 500ms` des verrous de présence, tant sur **Desktop (`1440x900`)** que sur **Mobile Companion (`390x844`)**.
+
+---
+
+## 8. FAQ Architecture & Modèle Métier (Winston)
+
+### Q1. Quel est le lien entre l'objet Espace de Travail (quel est son terme interne dans ORCIA) et les entités de l'organisation ?
+
+> **Réponse de Winston (Architecte Système ORCIA)** — Références : [`0002_story_1_2_auth_org_workspaces_permissions.py`](file:///home/romain/Documents/Projects/ORCIA/infra/migrations/versions/0002_story_1_2_auth_org_workspaces_permissions.py), `AD-6`, `AD-14`, `AD-21`, `FR-3`, `FR-21`.
+
+#### 1. Termes internes dans ORCIA (Modèle de données & Domaine)
+
+Dans ORCIA, l'**Organisation** et l'**Espace de Travail** sont volontairement découplés en deux concepts distincts afin qu'une même équipe puisse gérer plusieurs produits/projets et que plusieurs équipes puissent collaborer sur un même espace :
+
+| Concept Métier (UI FR) | Terme Interne Domaine (`orcia_core`) | Table PostgreSQL 18 | Granularité & Niveaux | Rôle Fondamental |
+| :--- | :--- | :--- | :--- | :--- |
+| **Entité de l'Organisation** *(Entreprise, Direction / BU, Tribu, Équipe, Sous-Équipe)* | **`OrgUnit`** | `org_units` | `unit_type IN ('ENTERPRISE', 'BU', 'TRIBE', 'TEAM', 'SUB_TEAM')` (arbre hiérarchique récursif via `parent_id`) | **« Qui nous sommes »** *(l'organigramme de l'entreprise)* : rattachement RH/organisationnel des utilisateurs (`users.primary_org_unit_id`), porteur des directives et habilitations d'organisation. |
+| **Espace de Travail** *(Projet, Produit, Solution logicielle, Chantier)* | **`Workspace`** | `workspaces` | Unité opérationnelle (`visibility_mode IN ('STANDARD', 'CONFIDENTIAL_RESTRICTED')`) | **« Sur quoi nous travaillons »** *(l'environnement opérationnel de travail)* : conteneur où sont connectées les sources documentaires (`workspace_datasources` : Git, Confluence, Jira, DB), où s'exécutent les processus (`workflow_runs`), où s'accumule le contexte (`kb_documents`, `blackboard_snapshots`) et où sont imputés les coûts IA (`finops_cost_usd`). |
+
+#### 2. Les deux liens relationnels entre `Workspace` et `OrgUnit` (`0002_story_1_2_auth_org_workspaces_permissions.py`)
+
+Le modèle relationnel PostgreSQL 18 établit **deux liens complémentaires** entre `workspaces` et `org_units` :
+
+- **A. Lien de Propriété / Rattachement principal (`owner_org_unit_id` : `N ➔ 1`)** :
+  Chaque `Workspace` appartient obligatoirement à une `OrgUnit` propriétaire (généralement une Équipe `TEAM` ou une Direction `BU`) via la clé étrangère `workspaces.owner_org_unit_id`. Une même Équipe (`TEAM`) peut ainsi posséder `0, 1` ou plusieurs Espaces de Travail (`Workspace`). La contrainte `ON DELETE RESTRICT` empêche structurellement la suppression d'une Direction ou d'une Équipe tant qu'au moins un Espace de Travail lui est rattaché.
+
+  ```sql
+  CREATE TABLE org_units (
+      id UUID PRIMARY KEY,
+      slug VARCHAR(128) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      unit_type VARCHAR(32) NOT NULL CHECK (
+          unit_type IN ('ENTERPRISE', 'BU', 'TRIBE', 'TEAM', 'SUB_TEAM')
+      ),
+      parent_id UUID NULL REFERENCES org_units(id) ON DELETE RESTRICT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE TABLE workspaces (
+      id UUID PRIMARY KEY,
+      slug VARCHAR(128) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      owner_org_unit_id UUID NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
+      visibility_mode VARCHAR(32) NOT NULL DEFAULT 'STANDARD' CHECK (
+          visibility_mode IN ('STANDARD', 'CONFIDENTIAL_RESTRICTED')
+      ),
+      settings_jsonb JSONB NOT NULL DEFAULT '{}'::jsonb,
+      finops_cost_usd NUMERIC(12, 4) NOT NULL DEFAULT 0.0000,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  ```
+
+- **B. Lien de Collaboration / Invitation inter-équipes (`workspace_memberships` : `N ➔ N`)** :
+  Au-delà de l'équipe propriétaire (`owner_org_unit_id`), la table d'association `workspace_memberships` permet d'inviter dans un `Workspace` soit des utilisateurs nominatifs (`user_id`), soit **toute une autre Équipe ou Direction de l'organisation** (`invited_org_unit_id REFERENCES org_units(id)`) avec un rôle précis (`TEAM_LEAD`, `CONTRIBUTOR`, `GATE_REVIEWER`, `ONTOLOGY_STEWARD_L3`, `OBSERVER`) et un mode d'accès (`CONTRIBUTOR_ACTION_REQUIRED` ou `READ_ONLY_OBSERVER`). La contrainte `CHECK (num_nonnulls(user_id, invited_org_unit_id) = 1)` garantit qu'une entrée cible exactement soit un individu, soit une entité d'organisation.
+
+  ```sql
+  CREATE TABLE workspace_memberships (
+      id UUID PRIMARY KEY,
+      workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      user_id UUID NULL REFERENCES users(id) ON DELETE CASCADE,
+      invited_org_unit_id UUID NULL REFERENCES org_units(id) ON DELETE CASCADE,
+      role VARCHAR(64) NOT NULL CHECK (
+          role IN (
+              'TEAM_LEAD',
+              'CONTRIBUTOR',
+              'GATE_REVIEWER',
+              'ONTOLOGY_STEWARD_L3',
+              'OBSERVER'
+          )
+      ),
+      access_mode VARCHAR(64) NOT NULL CHECK (
+          access_mode IN ('CONTRIBUTOR_ACTION_REQUIRED', 'READ_ONLY_OBSERVER')
+      ),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CHECK (num_nonnulls(user_id, invited_org_unit_id) = 1)
+  );
+  ```
+
+#### 3. Diagramme Entité-Relation (ER Mermaid)
+
+```mermaid
+erDiagram
+    ORG_UNITS ||--o{ ORG_UNITS : "parent_id (Arbre ENTERPRISE > BU > TRIBE > TEAM > SUB_TEAM)"
+    ORG_UNITS ||--o{ USERS : "primary_org_unit_id (Rattachement RH principal)"
+    ORG_UNITS ||--o{ WORKSPACES : "owner_org_unit_id (Propriété N -> 1, ON DELETE RESTRICT)"
+    ORG_UNITS ||--o{ WORKSPACE_MEMBERSHIPS : "invited_org_unit_id (Équipe invitée N -> N)"
+    USERS ||--o{ WORKSPACE_MEMBERSHIPS : "user_id (Membre nominatif invité)"
+    WORKSPACES ||--o{ WORKSPACE_MEMBERSHIPS : "workspace_id (Habilitations & Rôles sur l'Espace)"
+    WORKSPACES ||--o{ WORKSPACE_DATASOURCES : "workspace_id (Sources Git, Jira, Confluence, DB)"
+    WORKSPACES ||--o{ WORKFLOW_RUNS : "workspace_id (Exécutions de processus & Coûts IA)"
+
+    ORG_UNITS {
+        uuid id PK
+        varchar slug UK
+        varchar name
+        varchar unit_type "ENTERPRISE | BU | TRIBE | TEAM | SUB_TEAM"
+        uuid parent_id FK
+    }
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar platform_role
+        uuid primary_org_unit_id FK
+    }
+    WORKSPACES {
+        uuid id PK
+        varchar slug UK
+        varchar name
+        uuid owner_org_unit_id FK
+        varchar visibility_mode "STANDARD | CONFIDENTIAL_RESTRICTED"
+        numeric finops_cost_usd
+    }
+    WORKSPACE_MEMBERSHIPS {
+        uuid id PK
+        uuid workspace_id FK
+        uuid user_id FK "Nullable (exclusif avec invited_org_unit_id)"
+        uuid invited_org_unit_id FK "Nullable (exclusif avec user_id)"
+        varchar role "TEAM_LEAD | CONTRIBUTOR | GATE_REVIEWER | ONTOLOGY_STEWARD_L3 | OBSERVER"
+        varchar access_mode "CONTRIBUTOR_ACTION_REQUIRED | READ_ONLY_OBSERVER"
+    }
+    WORKSPACE_DATASOURCES {
+        uuid id PK
+        uuid workspace_id FK
+        varchar alias
+        varchar scheme "git | jira | confluence | db | nexus"
+        text uri
+    }
+    WORKFLOW_RUNS {
+        uuid id PK
+        uuid workspace_id FK
+        uuid workflow_def_id FK
+        varchar status
+        numeric budget_max_usd
+    }
+```
+
+#### 4. Cascade d'héritage de gouvernance à 4 niveaux (`GLOBAL ➔ BU ➔ TEAM ➔ WORKSPACE`), Modèle Multi-Équipes / Espaces Privés & Chaîne de Verrouillage FinOps
+
+Toute la gouvernance d'ORCIA (habilitations RBAC/ABAC `AD-21`, surcharges déclaratives du catalogue `AD-14`, ontologie `AD-7`, paramètres `platform_settings` et routage de modèles IA) s'applique selon une **cascade hiérarchique à 4 niveaux** :
+
+$$\text{GLOBAL (Plateforme)} \longrightarrow \text{BU (Direction)} \longrightarrow \text{TEAM (Équipe)} \longrightarrow \text{WORKSPACE (Espace de Travail)}$$
+
+1. **Les 3 premiers niveaux (`GLOBAL ➔ BU ➔ TEAM`) constituent l'Organisation (`org_units`)** : ils portent les directives d'entreprise (`1_ENTERPRISE`), les règles de Direction (`BU`), les conventions d'Équipe (`TEAM`) et les budgets FinOps. Un même utilisateur peut être rattaché à **plusieurs Équipes (`Multi-Équipes`)** simultanément, et une même Équipe peut posséder **plusieurs Espaces de Travail (`Multi-Espaces`)**.
+2. **Le 4ᵉ niveau (`WORKSPACE`) est l'Espace de Travail (`workspaces`)**, obligatoirement rattaché à son `owner_org_unit_id` (aucun espace ni aucun coût IA orphelin), selon **3 modes de visibilité** :
+   - **En mode `STANDARD` (Collectif d'équipe — par défaut)** : l'Espace de Travail hérite automatiquement des règles, du glossaire, des packs métiers et des habilitations de son Équipe (`TEAM`) et de sa Direction (`BU`) parentes, tout en permettant la supervision consolidée (*Roll-up* en lecture seule `READ_ONLY_OBSERVER`) par les responsables de l'équipe ou de la BU parente.
+   - **En mode `PRIVATE_USER` (Privé personnel — Facturé à l'équipe, Option 2 FinOps)** : l'Espace de Travail est personnel et confiné à son créateur pour l'idéation et l'expérimentation, mais **demeure rattaché à une Équipe de facturation (`owner_org_unit_id`)** afin que chaque jeton LLM consommé soit imputé au budget de l'équipe choisie.
+   - **En mode `CONFIDENTIAL_RESTRICTED` (Confidentiel / Isolé)** : l'Espace de Travail active une coupure d'héritage d'observation descendante (`INHERITANCE_BLOCK`). Les responsables des niveaux parents (`BU_DIRECTOR`, équipes parentes) conservent uniquement la visibilité sur les compteurs techniques et budgétaires globaux (`finops_cost_usd`), mais le contenu métier des documents, du *Blackboard* et des *Runs* reste strictement confiné aux membres explicitement habilités dans `workspace_memberships`.
+3. **Amorçage Jour 0 en 2 étapes (`Option 1`) & Chaîne stricte de verrouillage LLM** :
+   - Lors du premier démarrage (`Jour 0`), le compte du **1er Administrateur** est créé sans équipe pré-imposée (`memberTeamIds = []`), puis rattaché en 1 clic lors de la création de ses Équipes (`TEAM`) dans `/settings`.
+   - **Invariant FinOps strict** : *Zéro appel LLM sans Équipe de facturation (`TEAM`) + Espace de Travail (`WORKSPACE`) + Modèle IA configuré*.
+4. **Sélecteur de Contexte (`TopHeaderBar`) en 3 groupes** :
+   - La barre supérieure regroupe les périmètres dans 3 sections explicites : **`🔒 Mes Espaces Privés`** (`PRIVATE_USER`), **`👥 Mes Équipes & Espaces`** (`TEAM` + espaces `STANDARD`/`CONFIDENTIAL_RESTRICTED`) et **`🏢 Supervision Organisation`** (`BU` + `Plateforme Globale ORCIA`), filtrant dynamiquement `/cockpit`, `/workspaces`, `/processes` et `/activity`.

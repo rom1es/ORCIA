@@ -1,4 +1,5 @@
 import React from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export type UiClaimPresenceState = "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
 
@@ -59,6 +60,9 @@ export function PresenceClaimPill({
           disabled={readOnlyObserver}
           onClick={() => onClaim?.(taskId)}
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
             padding: "5px 12px",
             borderRadius: "var(--radius-full)",
             border: "1px solid var(--color-primary-cobalt)",
@@ -74,7 +78,12 @@ export function PresenceClaimPill({
             cursor: readOnlyObserver ? "not-allowed" : "pointer",
           }}
         >
-          {labels.claimActionLabel}
+          <span>{labels.claimActionLabel}</span>
+          <DisabledButtonAlertIndicator
+            disabled={readOnlyObserver}
+            reason={labels.readOnlyObserverNotice}
+            testIdSuffix={`claim-task-btn-${taskId}`}
+          />
         </button>
       ) : null}
 
@@ -103,6 +112,9 @@ export function PresenceClaimPill({
             disabled={readOnlyObserver}
             onClick={() => onRelease?.(taskId, false)}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
               padding: "4px 10px",
               borderRadius: "var(--radius-sm)",
               border: "1px solid var(--color-border)",
@@ -113,7 +125,12 @@ export function PresenceClaimPill({
               cursor: readOnlyObserver ? "not-allowed" : "pointer",
             }}
           >
-            {labels.releaseActionLabel}
+            <span>{labels.releaseActionLabel}</span>
+            <DisabledButtonAlertIndicator
+              disabled={readOnlyObserver}
+              reason={labels.readOnlyObserverNotice}
+              testIdSuffix={`release-claim-btn-${taskId}`}
+            />
           </button>
         </>
       ) : null}

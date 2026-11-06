@@ -118,6 +118,9 @@ function readCachedPlatformAdmin(): ConfiguredPlatformAdmin | null {
         displayName: parsed.displayName.trim(),
         email: parsed.email.trim(),
         role: parsed.role ?? "PLATFORM_ADMIN",
+        memberTeamIds: Array.isArray(parsed.memberTeamIds)
+          ? parsed.memberTeamIds.filter((id): id is string => typeof id === "string")
+          : [],
       };
     }
   } catch {
@@ -326,6 +329,7 @@ export interface ConfiguredPlatformAdmin {
   readonly displayName: string;
   readonly email: string;
   readonly role: string;
+  readonly memberTeamIds?: readonly string[];
 }
 
 export interface PlatformSetupContextValue {
@@ -350,7 +354,10 @@ export interface PlatformSetupContextValue {
     email: string;
     password?: string;
   }) => void;
-  readonly addOrgUnit: (input: Omit<ConfiguredOrgUnit, "id">) => void;
+  readonly toggleAdminTeamMembership: (teamId: string) => void;
+  readonly addOrgUnit: (
+    input: Omit<ConfiguredOrgUnit, "id"> & { readonly attachCurrentAdmin?: boolean },
+  ) => void;
   readonly removeOrgUnit: (orgUnitId: string) => {
     readonly deleted: boolean;
     readonly blockedReason: string | null;
@@ -361,8 +368,9 @@ export interface PlatformSetupContextValue {
   readonly createWorkspace: (input: {
     name: string;
     slug: string;
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
     lifecyclePhase: ProductLifecyclePhaseType;
+    ownerOrgUnitId?: string;
   }) => void;
   readonly updateWorkspacePhase: (
     workspaceId: string,
@@ -632,6 +640,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       displayName: input.displayName.trim(),
       email: input.email.trim().toLowerCase(),
       role: "PLATFORM_ADMIN",
+      memberTeamIds: [],
     };
     writeCachedPlatformAdmin(admin);
     setPlatformAdmin(admin);
@@ -674,6 +683,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
                     status.first_admin_display_name ?? status.first_admin_email,
                   email: status.first_admin_email,
                   role: "PLATFORM_ADMIN",
+                  memberTeamIds: admin.memberTeamIds ?? [],
                 };
                 writeCachedPlatformAdmin(existing);
                 setPlatformAdmin(existing);
@@ -684,9 +694,66 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  const addOrgUnit = (input: Omit<ConfiguredOrgUnit, "id">) => {
+  const toggleAdminTeamMembership = (teamId: string) => {
+    const targetTeam = orgUnits.find((u) => u.id === teamId && u.level === "TEAM");
+    if (!targetTeam) return;
+    const baseAdmin: ConfiguredPlatformAdmin = platformAdmin ?? {
+      displayName: "Administrateur de la plateforme",
+      email: "admin@orcia.local",
+      role: "PLATFORM_ADMIN",
+      memberTeamIds: [],
+    };
+    const currentTeamIds = baseAdmin.memberTeamIds ?? [];
+    const isMember = currentTeamIds.includes(teamId);
+    const nextTeamIds = isMember
+      ? currentTeamIds.filter((id) => id !== teamId)
+      : [...currentTeamIds, teamId];
+    const updatedAdmin: ConfiguredPlatformAdmin = {
+      ...baseAdmin,
+      memberTeamIds: nextTeamIds,
+    };
+    writeCachedPlatformAdmin(updatedAdmin);
+    setPlatformAdmin(updatedAdmin);
+    const nextAudit = appendAudit(
+      isMember ? "PermissionRevoked" : "PermissionGranted",
+      isMember
+        ? `Rattachement à l'Équipe "${targetTeam.name}" retiré pour ${updatedAdmin.displayName}`
+        : `Compte ${updatedAdmin.displayName} rattaché à l'Équipe de facturation "${targetTeam.name}"`,
+      {
+        scopeId: targetTeam.id,
+        scopePath: targetTeam.slug,
+        scopeLabel: `Équipe · ${targetTeam.name}`,
+      },
+    );
+    setAuditEvents(nextAudit);
+    persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
+  };
+
+  const addOrgUnit = (
+    input: Omit<ConfiguredOrgUnit, "id"> & { readonly attachCurrentAdmin?: boolean },
+  ) => {
     const id = orgUnits.length === 0 ? "org-1" : `org-${orgUnits.length + 1}`;
-    const nextOrgUnits = [...orgUnits, { ...input, id }];
+    const newUnit: ConfiguredOrgUnit = {
+      id,
+      name: input.name,
+      slug: input.slug,
+      level: input.level,
+      parentId: input.parentId,
+    };
+    const nextOrgUnits = [...orgUnits, newUnit];
+    const shouldAttachAdmin =
+      input.level === "TEAM" && input.attachCurrentAdmin !== false;
+    if (shouldAttachAdmin && platformAdmin) {
+      const currentTeamIds = platformAdmin.memberTeamIds ?? [];
+      if (!currentTeamIds.includes(id)) {
+        const updatedAdmin: ConfiguredPlatformAdmin = {
+          ...platformAdmin,
+          memberTeamIds: [...currentTeamIds, id],
+        };
+        writeCachedPlatformAdmin(updatedAdmin);
+        setPlatformAdmin(updatedAdmin);
+      }
+    }
     const levelLabel = input.level === "BU" ? "Direction (BU)" : "Équipe";
     const nextAudit = appendAudit(
       "OrgUnitCreated",
@@ -713,7 +780,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     if (childUnits.length > 0) {
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${childUnits.length} sous-unité(s) / Espace(s) sont rattachés à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
+        blockedReason: `Suppression refusée : ${childUnits.length} sous-unité(s) / Équipe(s) sont rattachées à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
+      };
+    }
+    const attachedWorkspaces = workspaces.filter((w) => w.ownerOrgUnitId === target.id);
+    if (attachedWorkspaces.length > 0) {
+      return {
+        deleted: false,
+        blockedReason: `Suppression refusée : ${attachedWorkspaces.length} Espace(s) de Travail sont rattachés à « ${target.name} » (${attachedWorkspaces.map((w) => w.name).join(", ")}). Supprimez ou réattribuez d'abord ces espaces.`,
       };
     }
     const dependentGrants = rbacGrants.filter(
@@ -730,6 +804,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       };
     }
     const nextOrgUnits = orgUnits.filter((u) => u.id !== orgUnitId);
+    if (platformAdmin?.memberTeamIds?.includes(orgUnitId)) {
+      const updatedAdmin: ConfiguredPlatformAdmin = {
+        ...platformAdmin,
+        memberTeamIds: platformAdmin.memberTeamIds.filter((id) => id !== orgUnitId),
+      };
+      writeCachedPlatformAdmin(updatedAdmin);
+      setPlatformAdmin(updatedAdmin);
+    }
     const levelLabel = target.level === "BU" ? "Direction (BU)" : "Équipe";
     const nextAudit = appendAudit(
       "OrgUnitDeleted",
@@ -820,23 +902,43 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const createWorkspace = (input: {
     name: string;
     slug: string;
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
     lifecyclePhase: ProductLifecyclePhaseType;
+    ownerOrgUnitId?: string;
   }) => {
     const workspaceId = `ws-${workspaces.length + 1}`;
+    const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
+    const resolvedOwnerUnit =
+      orgUnits.find((u) => u.id === input.ownerOrgUnitId) ??
+      teamUnits[0] ??
+      orgUnits[orgUnits.length - 1];
+    const ownerOrgUnitId = resolvedOwnerUnit?.id;
+    const ownerOrgUnitName =
+      resolvedOwnerUnit?.name ?? "Plateforme Globale ORCIA";
     const newWs: ControlCenterWorkspaceGovItem = {
       workspaceId,
       name: input.name,
       visibilityMode: input.visibilityMode,
+      ...(ownerOrgUnitId ? { ownerOrgUnitId } : {}),
+      ownerOrgUnitName,
+      ...(input.visibilityMode === "PRIVATE_USER"
+        ? { ownerUserId: platformAdmin?.email ?? "local-operator" }
+        : {}),
       lifecyclePhase: input.lifecyclePhase,
       suggestedWorkflows: workflows.map((w) => w.workflowKey),
       accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
       finopsCostUsd: 0,
     };
     const nextWorkspaces = [...workspaces, newWs];
+    const modeLabel =
+      input.visibilityMode === "PRIVATE_USER"
+        ? "Privé personnel"
+        : input.visibilityMode === "CONFIDENTIAL_RESTRICTED"
+          ? "Confidentiel"
+          : "Collectif d'équipe";
     const nextAudit = appendAudit(
       "WorkspaceCreated",
-      `Espace de travail "${input.name}" (${input.slug}) créé`,
+      `Espace de travail "${input.name}" (${input.slug}, ${modeLabel}, facturé à ${ownerOrgUnitName}) créé`,
       {
         scopeId: workspaceId,
         scopePath: input.slug,
@@ -1104,7 +1206,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       id: ws.workspaceId,
       level: "WORKSPACE" as const,
       name: ws.name,
-      parentId: orgUnits[orgUnits.length - 1]?.id ?? BASE_GLOBAL_SCOPE.id,
+      parentId: ws.ownerOrgUnitId ?? orgUnits[orgUnits.length - 1]?.id ?? BASE_GLOBAL_SCOPE.id,
       accessMode: ws.accessMode,
     })),
   ];
@@ -1149,6 +1251,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         isDay0Complete,
         completedSetupStepsCount,
         createPlatformAdmin,
+        toggleAdminTeamMembership,
         addOrgUnit,
         removeOrgUnit,
         addRbacGrant,

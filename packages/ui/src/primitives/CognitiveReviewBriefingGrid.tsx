@@ -1,4 +1,5 @@
 import React from "react";
+import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 
 export interface CognitiveReviewBriefingLabels {
   gridTitle: string;
@@ -215,6 +216,9 @@ export function CognitiveReviewBriefingGrid({
               disabled={readOnly}
               onClick={onInspectHypotheses}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
                 alignSelf: "flex-start",
                 backgroundColor: "var(--color-arbitration-amber)",
                 color: "var(--color-primary-foreground)",
@@ -225,7 +229,12 @@ export function CognitiveReviewBriefingGrid({
                 cursor: readOnly ? "not-allowed" : "pointer",
               }}
             >
-              {labels.inspectHypothesesButtonLabel}
+              <span>{labels.inspectHypothesesButtonLabel}</span>
+              <DisabledButtonAlertIndicator
+                disabled={Boolean(readOnly)}
+                reason="Mode lecture seule : inspection réservée aux contributeurs."
+                testIdSuffix="inspect-hypotheses-btn"
+              />
             </button>
           )}
         </article>
