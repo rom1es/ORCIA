@@ -274,6 +274,7 @@ export {
   AssistantSpeedSelectorAndStreamView,
   type AssistantSpeedSelectorAndStreamViewLabels,
   type AssistantSpeedSelectorAndStreamViewProps,
+  type UiAssistantModelOption,
   type UiAssistantSpeedMode,
   type UiThreeSpeedStepProgress,
 } from "./primitives/AssistantSpeedSelectorAndStreamView";

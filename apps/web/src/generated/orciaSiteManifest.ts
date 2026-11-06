@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 78
+    "techLeadReportsCount": 79
   },
   "activeRoutes": [
     "/",
@@ -401,6 +401,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-06",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 UX & LLM",
+      "reportFile": "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations-tech-lead-report.md",
+      "domain": "Refonte Épurée de 💬 Mon Assistant (« *Par quoi voulez-vous commencer ?* »), Sélecteur Unifié Modèle IA & Niveau de Réflexion (Bas / Moyen / Élevé), Routage Backend Réel par Palier (assistant_llm_bridge.py) & Conversations Sauvegardées Reprises en 1 Clic",
+      "summary": "Suppression de l'encombrement visuel et des clés Redis sur /assistant, barre de saisie unifiée avec bouton + et menu déroulant Modèle IA (Rapide, Polyvalent, Raisonnement avancé) + sous-menu Niveau de réflexion ▸ (Bas, Moyen, Élevé), différenciation réelle du modèle et des consignes système dans assistant_llm_bridge.py, et sauvegarde automatique + reprise en 1 clic des conversations (savedConversationsStore.ts, SavedConversationsAndThreadView.tsx) survivant au rechargement F5."
+    },
     {
       "date": "2026-11-06",
       "phaseOrStory": "Post-Epic 12 / Gouvernance FinOps & Modèle Métier",

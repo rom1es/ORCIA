@@ -50,7 +50,8 @@ export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
     cacheMissBadge: "🔄 Préparation du contexte",
     nodesDeterministicLabel: "Recherche dans vos sources :",
     ttftBadgePrefix: "Temps de réponse :",
-    inputPlaceholder: "Posez votre question, mentionnez un @agent ou activez 🧠 Analyse approfondie...",
+    inputPlaceholder:
+      "Tapez @ pour les agents, / pour les compétences ou posez votre question...",
     sendPromptCta: "Envoyer à Mon Assistant",
   },
   assistantCitations: {
@@ -122,7 +123,8 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     cacheMissBadge: "🔄 Preparing context",
     nodesDeterministicLabel: "Searching your sources:",
     ttftBadgePrefix: "Response time:",
-    inputPlaceholder: "Ask a question, mention an @agent, or toggle 🧠 In-depth analysis...",
+    inputPlaceholder:
+      "Type @ for agents, / for skills, or ask your question...",
     sendPromptCta: "Send to My Assistant",
   },
   assistantCitations: {

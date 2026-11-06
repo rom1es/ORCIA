@@ -2485,6 +2485,8 @@ export interface components {
       deep_audit_pill_active?: boolean;
       hat?: string | null;
       requested_speed?: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT" | null;
+      requested_tier?: "simple" | "medium" | "complex" | "auto" | null;
+      thinking_effort?: "fast" | "balanced" | "deep" | null;
       user_prompt: string;
       workspace_id: string;
     };

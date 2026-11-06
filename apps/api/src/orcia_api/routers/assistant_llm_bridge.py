@@ -3,8 +3,10 @@
 Resolves the active LLM tier configured by the administrator in `Modèles IA`
 (`request.app.state.platform_setup_snapshot` / `accostage_service` / PostgreSQL 18) and
 invokes the configured endpoint (Ollama `/api/chat` or `/v1/chat/completions`, OpenAI,
-Mistral, Anthropic) when running in live mode. Falls back deterministically in CI/TestClient
-when no live LLM endpoint is reachable or when `ORCIA_USE_CASSETTE_LLM=1`.
+Mistral, Anthropic) when running in live mode. Supports explicit tier selection
+(`simple`, `medium`, `complex`, `auto`) and thinking effort (`fast`, `balanced`, `deep`).
+Falls back deterministically in CI/TestClient when no live LLM endpoint is reachable or
+when `ORCIA_USE_CASSETTE_LLM=1`.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ class ResolvedLiveLlmEndpoint:
     model_name: str
     endpoint_uri: str
     auth_mode: str
+    tier: str = "medium"
     api_key: str | None = None
 
 
@@ -49,6 +52,7 @@ def _extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEnd
         return None
     provider = str(item.get("modelFamily") or item.get("provider") or "OpenAI").strip()
     auth_mode = str(item.get("authMode") or "api_key").strip()
+    tier_key = str(item.get("tier") or item.get("tierKey") or "medium").strip().lower()
     raw_key = item.get("apiKey")
     api_key = str(raw_key).strip() if isinstance(raw_key, str) and raw_key.strip() else None
     return ResolvedLiveLlmEndpoint(
@@ -56,11 +60,36 @@ def _extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEnd
         model_name=model_name,
         endpoint_uri=endpoint_uri.rstrip("/"),
         auth_mode=auth_mode,
+        tier=tier_key or "medium",
         api_key=api_key,
     )
 
 
-def resolve_configured_llm_endpoint(request: Request) -> ResolvedLiveLlmEndpoint | None:
+def _select_endpoint_from_tiers(
+    llm_tiers: list[Any],
+    requested_tier: str | None = None,
+) -> ResolvedLiveLlmEndpoint | None:
+    target = (requested_tier or "").strip().lower()
+    valid_endpoints: list[ResolvedLiveLlmEndpoint] = []
+    for item in llm_tiers:
+        if isinstance(item, dict):
+            resolved = _extract_tier_endpoint_from_dict(item)
+            if resolved is not None:
+                valid_endpoints.append(resolved)
+    if not valid_endpoints:
+        return None
+    if target and target != "auto":
+        for ep in valid_endpoints:
+            if ep.tier == target:
+                return ep
+    return valid_endpoints[0]
+
+
+def resolve_configured_llm_endpoint(
+    request: Request,
+    *,
+    requested_tier: str | None = None,
+) -> ResolvedLiveLlmEndpoint | None:
     """Resolve the active configured LLM endpoint from app state or PostgreSQL 18."""
     use_cassette = os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in (
         "1",
@@ -73,11 +102,9 @@ def resolve_configured_llm_endpoint(request: Request) -> ResolvedLiveLlmEndpoint
     # 1. Check in-memory snapshot on app.state
     snap = getattr(request.app.state, "platform_setup_snapshot", None)
     if snap is not None and getattr(snap, "llm_tiers", None):
-        for item in snap.llm_tiers:
-            if isinstance(item, dict):
-                resolved = _extract_tier_endpoint_from_dict(item)
-                if resolved is not None:
-                    return resolved
+        chosen = _select_endpoint_from_tiers(list(snap.llm_tiers), requested_tier)
+        if chosen is not None:
+            return chosen
 
     # 2. Lazy load from PostgreSQL 18 if snapshot was not yet hydrated in this worker
     if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
@@ -108,11 +135,9 @@ def resolve_configured_llm_endpoint(request: Request) -> ResolvedLiveLlmEndpoint
 
             if db_snap is not None:
                 request.app.state.platform_setup_snapshot = db_snap
-                for item in db_snap.llm_tiers:
-                    if isinstance(item, dict):
-                        resolved = _extract_tier_endpoint_from_dict(item)
-                        if resolved is not None:
-                            return resolved
+                chosen = _select_endpoint_from_tiers(list(db_snap.llm_tiers), requested_tier)
+                if chosen is not None:
+                    return chosen
         except Exception:
             pass
 
@@ -139,12 +164,72 @@ def _is_ollama_endpoint(ep: ResolvedLiveLlmEndpoint) -> bool:
     )
 
 
+def build_assistant_system_instructions(
+    *,
+    hat: str,
+    speed_mode: str,
+    requested_tier: str | None = None,
+    thinking_effort: str | None = None,
+    system_instructions_override: str | None = None,
+) -> str:
+    """Build differentiated system instructions according to model tier & thinking effort."""
+    if system_instructions_override and system_instructions_override.strip():
+        return system_instructions_override.strip()
+
+    effort = (thinking_effort or "").strip().lower()
+    if not effort:
+        if speed_mode == "SPEED_3_DEEP_AUDIT":
+            effort = "deep"
+        elif speed_mode == "SPEED_2_AGENT_TOOLS":
+            effort = "balanced"
+        else:
+            effort = "fast"
+
+    tier_key = (requested_tier or "medium").strip().lower()
+    tier_guidance = {
+        "simple": "Palier Rapide : privilégie l'essentiel, la concision et une réponse immédiate.",
+        "medium": (
+            "Palier Polyvalent : équilibre clarté pédagogique, exemples concrets et structure."
+        ),
+        "complex": (
+            "Palier Raisonnement avancé : traite les nuances métiers, cas limites et arbitrages."
+        ),
+    }.get(tier_key, "Palier Polyvalent : équilibre clarté pédagogique et structure.")
+
+    if effort == "deep":
+        effort_guidance = (
+            "Niveau de réflexion Élevé (Analyse approfondie multi-points de vue) : "
+            "structure impérativement ta réponse en 3 volets : "
+            "1) Synthèse exécutive, 2) Risques, conformité & points de vigilance, "
+            "3) Faisabilité technique & plan d'action recommandé."
+        )
+    elif effort == "balanced":
+        effort_guidance = (
+            "Niveau de réflexion Moyen (Équilibré — Sources & Compétences) : "
+            "organise ta réponse avec des points clés structurés en mobilisant le contexte "
+            "de l'espace de travail et les compétences mentionnées."
+        )
+    else:
+        effort_guidance = (
+            "Niveau de réflexion Bas (Rapide et efficace) : "
+            "réponds de manière directe, synthétique et immédiatement actionnable, sans détour."
+        )
+
+    return (
+        f"Tu es Mon Assistant ORCIA (rôle actif : {hat}). "
+        f"{tier_guidance} {effort_guidance} "
+        "Réponds toujours en français de manière claire et précise."
+    )
+
+
 def invoke_configured_llm_for_assistant_turn(
     request: Request,
     *,
     user_prompt: str,
     hat: str,
     speed_mode: str,
+    requested_tier: str | None = None,
+    thinking_effort: str | None = None,
     system_instructions_override: str | None = None,
 ) -> LiveLlmTurnOutcome | None:
     """Call the configured LLM endpoint and return its response text and latency."""
@@ -153,18 +238,31 @@ def invoke_configured_llm_for_assistant_turn(
     if client_host == "testclient" and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1":
         return None
 
-    ep = resolve_configured_llm_endpoint(request)
+    ep = resolve_configured_llm_endpoint(request, requested_tier=requested_tier)
     if ep is None:
         return None
 
-    system_msg = (
-        system_instructions_override.strip()
-        if system_instructions_override and system_instructions_override.strip()
-        else (
-            f"Tu es Mon Assistant ORCIA (rôle actif : {hat}). "
-            "Réponds en français de manière claire, structurée, précise et "
-            "directement utile à l'utilisateur."
+    effort = (thinking_effort or "").strip().lower()
+    if not effort:
+        effort = (
+            "deep"
+            if speed_mode == "SPEED_3_DEEP_AUDIT"
+            else "balanced"
+            if speed_mode == "SPEED_2_AGENT_TOOLS"
+            else "fast"
         )
+    effort_fr = {
+        "fast": "Réflexion Basse",
+        "balanced": "Réflexion Moyenne",
+        "deep": "Réflexion Élevée",
+    }.get(effort, "Réflexion Standard")
+
+    system_msg = build_assistant_system_instructions(
+        hat=hat,
+        speed_mode=speed_mode,
+        requested_tier=requested_tier or ep.tier,
+        thinking_effort=effort,
+        system_instructions_override=system_instructions_override,
     )
     t0 = time.perf_counter()
 
@@ -196,7 +294,9 @@ def invoke_configured_llm_for_assistant_turn(
                 return None
             return LiveLlmTurnOutcome(
                 response_text=content,
-                step_label=f"💬 Modèle IA {ep.model_name} ({ep.provider}) — réponse générée",
+                step_label=(
+                    f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_fr}) — réponse générée"
+                ),
                 latency_ms=elapsed_ms,
             )
 
@@ -225,7 +325,10 @@ def invoke_configured_llm_for_assistant_turn(
             if content:
                 return LiveLlmTurnOutcome(
                     response_text=content,
-                    step_label=f"💬 Modèle IA {ep.model_name} ({ep.provider}) — réponse générée",
+                    step_label=(
+                        f"💬 Modèle IA {ep.model_name} "
+                        f"({ep.provider} · {effort_fr}) — réponse générée"
+                    ),
                     latency_ms=elapsed_ms,
                 )
     except Exception:

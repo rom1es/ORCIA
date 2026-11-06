@@ -303,3 +303,131 @@ def test_story_10_2_live_llm_bridge_ollama_and_openai_normalization(
         data_live = r_live.json()
         assert "gemma4:12b" in data_live["response_text"]
         assert any("gemma4:12b" in st["label"] for st in data_live["step_progress"])
+
+
+def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify `requested_tier` and `thinking_effort` routing in `assistant_llm_bridge`."""
+    from typing import Any
+
+    import httpx
+
+    import orcia_core.bootstrap as bm
+    from orcia_api.routers.assistant_llm_bridge import (
+        _select_endpoint_from_tiers,
+        build_assistant_system_instructions,
+    )
+
+    tiers_cfg = [
+        {
+            "tier": "simple",
+            "primaryModel": "gemma4:4b-fast",
+            "modelFamily": "Ollama Local",
+            "endpointUrl": "http://localhost:11434/api",
+            "authMode": "none_local",
+        },
+        {
+            "tier": "medium",
+            "primaryModel": "gemma4:12b",
+            "modelFamily": "Ollama Local",
+            "endpointUrl": "http://localhost:11434/api",
+            "authMode": "none_local",
+        },
+        {
+            "tier": "complex",
+            "primaryModel": "gemma4:27b-pro",
+            "modelFamily": "Ollama Local",
+            "endpointUrl": "http://localhost:11434/api",
+            "authMode": "none_local",
+        },
+    ]
+
+    ep_simple = _select_endpoint_from_tiers(tiers_cfg, "simple")
+    ep_medium = _select_endpoint_from_tiers(tiers_cfg, "medium")
+    ep_complex = _select_endpoint_from_tiers(tiers_cfg, "complex")
+    assert ep_simple is not None and ep_simple.model_name == "gemma4:4b-fast"
+    assert ep_medium is not None and ep_medium.model_name == "gemma4:12b"
+    assert ep_complex is not None and ep_complex.model_name == "gemma4:27b-pro"
+
+    sys_fast = build_assistant_system_instructions(
+        hat="PM",
+        speed_mode="SPEED_1_FAST",
+        requested_tier="simple",
+        thinking_effort="fast",
+    )
+    sys_deep = build_assistant_system_instructions(
+        hat="PM",
+        speed_mode="SPEED_3_DEEP_AUDIT",
+        requested_tier="complex",
+        thinking_effort="deep",
+    )
+    assert "Palier Rapide" in sys_fast
+    assert "Niveau de réflexion Bas" in sys_fast
+    assert "Palier Raisonnement avancé" in sys_deep
+    assert "Niveau de réflexion Élevé" in sys_deep
+
+    captured_models: list[str] = []
+    captured_sys_prompts: list[str] = []
+
+    class _FakeHttpResponse:
+        def __init__(self, model: str) -> None:
+            self._model = model
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, Any]:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": f"Réponse générée par {self._model}.",
+                }
+            }
+
+    class _FakeHttpClient:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def __enter__(self) -> _FakeHttpClient:
+            return self
+
+        def __exit__(self, *args: Any) -> None:
+            return None
+
+        def post(self, url: str, **kwargs: Any) -> _FakeHttpResponse:
+            json_body = kwargs.get("json", {})
+            model = str(json_body.get("model", ""))
+            msgs = json_body.get("messages", [])
+            captured_models.append(model)
+            if msgs:
+                captured_sys_prompts.append(str(msgs[0].get("content", "")))
+            return _FakeHttpResponse(model)
+
+    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.setattr(httpx, "Client", _FakeHttpClient)
+
+    with TestClient(app) as client:
+        app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
+            first_admin_initialized=True,
+            first_admin_email="admin@orcia.io",
+            first_admin_display_name="Admin",
+            llm_tiers=tiers_cfg,
+        )
+        r_complex_deep = client.post(
+            "/api/v1/assistant/three-speed/turn",
+            params={"persona_key": "claire"},
+            json={
+                "workspace_id": "ws-claims-alpha",
+                "user_prompt": "Analyse critique complète du dossier",
+                "requested_tier": "complex",
+                "thinking_effort": "deep",
+            },
+        )
+        assert r_complex_deep.status_code == 200
+        d_complex = r_complex_deep.json()
+        assert d_complex["speed_mode"] == "SPEED_3_DEEP_AUDIT"
+        assert "gemma4:27b-pro" in d_complex["response_text"]
+        assert captured_models[-1] == "gemma4:27b-pro"
+        assert "Niveau de réflexion Élevé" in captured_sys_prompts[-1]
+        assert any("Réflexion Élevée" in st["label"] for st in d_complex["step_progress"])

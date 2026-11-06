@@ -15843,6 +15843,39 @@
             ],
             "title": "Requested Speed"
           },
+          "requested_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "simple",
+                  "medium",
+                  "complex",
+                  "auto"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Tier"
+          },
+          "thinking_effort": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fast",
+                  "balanced",
+                  "deep"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thinking Effort"
+          },
           "user_prompt": {
             "minLength": 1,
             "title": "User Prompt",

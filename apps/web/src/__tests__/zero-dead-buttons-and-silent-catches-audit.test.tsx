@@ -131,7 +131,56 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     expect(missingWiring).toEqual([]);
   });
 
-  it("dynamically verifies that clicking 'Envoyer à Mon Assistant' and '+ Nouveau dossier' in InboxFeaturePanel updates the DOM", async () => {
+  it("dynamically verifies that clicking 'Envoyer à Mon Assistant', selecting Model & Thinking Level, saving/resuming conversations across F5 reloads, and '+ Nouveau dossier' in InboxFeaturePanel updates the DOM", async () => {
+    const firstRender = render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <InboxFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    // 0. Minimalist Welcome Hero ("Par quoi voulez-vous commencer ?") is shown initially without Cockpit clutter or Redis keys
+    expect(screen.getByTestId("assistant-welcome-hero-title").textContent).toContain(
+      "Par quoi voulez-vous commencer ?",
+    );
+    expect(screen.queryByTestId("inbox-empty-state")).toBeNull();
+    expect(screen.queryByTestId("inbox-amber-counter")).toBeNull();
+    expect(screen.queryByTestId("assistant-prompt-cache-badge")).toBeNull();
+
+    // 1. Open Model & Thinking Level dropdown popover and select 'complex' + 'deep'
+    fireEvent.click(screen.getByTestId("assistant-model-and-effort-picker-trigger"));
+    expect(screen.getByTestId("assistant-model-picker-popover")).toBeDefined();
+    fireEvent.click(screen.getByTestId("assistant-model-option-complex"));
+    fireEvent.click(screen.getByTestId("assistant-effort-option-deep"));
+
+    // 2. Send a first question -> auto-creates a saved conversation
+    fireEvent.change(screen.getByTestId("assistant-three-speed-input"), {
+      target: { value: "Quels sont les points critiques de l'architecture ?" },
+    });
+    const sendBtn = screen.getByTestId("assistant-three-speed-send-btn");
+    fireEvent.click(sendBtn);
+
+    await waitFor(() => {
+      const output = screen.getByTestId("assistant-streamed-response-box");
+      expect(output.textContent).toContain("[SPEED_3_DEEP_AUDIT]");
+      expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
+        "Quels sont les points critiques de l'architecture ?",
+      );
+    });
+
+    // Verify Saved Conversations button counter incremented to (1)
+    expect(
+      screen.getByTestId("assistant-saved-conversations-toggle-btn").textContent,
+    ).toContain("(1)");
+
+    // 3. Click '+ Nouvelle conversation' -> returns to the clean welcome screen ("Par quoi voulez-vous commencer ?")
+    fireEvent.click(screen.getByTestId("assistant-new-conversation-btn"));
+    expect(screen.getByTestId("assistant-welcome-hero-title")).toBeDefined();
+
+    // 4. Simulate F5 browser reload (unmount -> render) and resume the saved conversation in 1 click
+    firstRender.unmount();
+
     render(
       <I18nProvider initialLocale="fr">
         <ShellContainer>
@@ -140,16 +189,24 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       </I18nProvider>,
     );
 
-    // 1. Clicking 'Envoyer à Mon Assistant' with an empty input still triggers a response
-    const sendBtn = screen.getByTestId("assistant-three-speed-send-btn");
-    fireEvent.click(sendBtn);
+    // Open '🕒 Conversations sauvegardées (1)' and click the saved conversation to resume it
+    fireEvent.click(screen.getByTestId("assistant-saved-conversations-toggle-btn"));
+    const savedList = screen.getByTestId("assistant-saved-conversations-list");
+    expect(savedList.textContent).toContain(
+      "Quels sont les points critiques de l'architecture ?",
+    );
+    const resumeBtn = savedList.querySelector(
+      '[data-testid^="assistant-resume-conversation-"]',
+    ) as HTMLButtonElement;
+    expect(resumeBtn).not.toBeNull();
+    fireEvent.click(resumeBtn);
 
-    await waitFor(() => {
-      const output = screen.getByTestId("assistant-streamed-response-box");
-      expect(output.textContent).toContain("[SPEED_1_FAST]");
-    });
+    // Full conversation thread is restored and can be continued!
+    expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
+      "Quels sont les points critiques de l'architecture ?",
+    );
 
-    // 2. Switching to FOLDERS tab and clicking '+ Nouveau dossier' creates and selects a folder
+    // 5. Switching to FOLDERS tab and clicking '+ Nouveau dossier' creates and selects a folder
     fireEvent.click(screen.getByTestId("assistant-main-tab-FOLDERS"));
     fireEvent.click(screen.getByTestId("assistant-create-folder-btn"));
 

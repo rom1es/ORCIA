@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import {
+  ASSISTANT_EFFORT_OPTIONS,
+  AssistantModelAndEffortPopover,
+  DEFAULT_ASSISTANT_MODEL_OPTIONS,
+  type UiAssistantModelOption,
+} from "./AssistantModelAndEffortPopover";
+import type { UiInferenceEffort, UiInferenceTier } from "./InferenceTierAndEffortSelector";
+
+export type { UiAssistantModelOption };
 
 export type UiAssistantSpeedMode =
   | "SPEED_1_FAST"
@@ -33,6 +42,12 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly hat: string;
   readonly activeSpeed?: UiAssistantSpeedMode;
   readonly deepAuditPillActive?: boolean;
+  readonly selectedTier?: UiInferenceTier;
+  readonly selectedEffort?: UiInferenceEffort;
+  readonly modelOptions?: readonly UiAssistantModelOption[];
+  readonly welcomeTitle?: string;
+  readonly showWelcomeHero?: boolean;
+  readonly hideTechnicalCacheHeader?: boolean;
   readonly cacheHit?: boolean;
   readonly cacheLookupMs?: number;
   readonly nodes1To4DeterministicMs?: number;
@@ -42,23 +57,28 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly isGenerating?: boolean;
   readonly errorMessage?: string | null;
   readonly labels: AssistantSpeedSelectorAndStreamViewLabels;
+  readonly onOpenFoldersFromPlus?: () => void;
   readonly onSendTurn?: (payload: {
     userPrompt: string;
     requestedSpeed: UiAssistantSpeedMode;
     deepAuditPillActive: boolean;
+    requestedTier?: UiInferenceTier;
+    thinkingEffort?: UiInferenceEffort;
   }) => void;
 }
 
-/**
- * Story 10.2 — 3-Speed Conversational Selector (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`),
- * Redis 5-Layer Prompt Cache (`TTL 300s`, `< 5 ms`) & Real-Time Step Progress Stream View.
- */
 export function AssistantSpeedSelectorAndStreamView({
   workspaceId,
   userId,
   hat,
   activeSpeed: initialSpeed = "SPEED_1_FAST",
   deepAuditPillActive: initialDeepAudit = false,
+  selectedTier: initialTier = "medium",
+  selectedEffort: initialEffort,
+  modelOptions = DEFAULT_ASSISTANT_MODEL_OPTIONS,
+  welcomeTitle = "Par quoi voulez-vous commencer ?",
+  showWelcomeHero = true,
+  hideTechnicalCacheHeader = false,
   cacheHit = true,
   cacheLookupMs = 1.4,
   nodes1To4DeterministicMs = 18.2,
@@ -68,6 +88,7 @@ export function AssistantSpeedSelectorAndStreamView({
   isGenerating = false,
   errorMessage = null,
   labels,
+  onOpenFoldersFromPlus,
   onSendTurn,
 }: AssistantSpeedSelectorAndStreamViewProps): React.JSX.Element {
   const [speed, setSpeed] = useState<UiAssistantSpeedMode>(
@@ -75,23 +96,62 @@ export function AssistantSpeedSelectorAndStreamView({
   );
   const [deepAuditActive, setDeepAuditActive] =
     useState<boolean>(initialDeepAudit);
+  const [tier, setTier] = useState<UiInferenceTier>(initialTier);
+  const [effort, setEffort] = useState<UiInferenceEffort>(
+    initialEffort ??
+      (initialDeepAudit
+        ? "deep"
+        : initialSpeed === "SPEED_2_AGENT_TOOLS"
+          ? "balanced"
+          : "fast"),
+  );
+  const [pickerOpen, setPickerOpen] = useState<boolean>(false);
+  const [thinkingSubmenuOpen, setThinkingSubmenuOpen] = useState<boolean>(true);
+  const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
   const [promptText, setPromptText] = useState<string>("");
+  const [userEditedTierOrEffort, setUserEditedTierOrEffort] =
+    useState<boolean>(false);
 
   const cacheKey = `assistant:prompt:${workspaceId}:${userId}:${hat}`;
+  const activeModelOption =
+    modelOptions.find((m) => m.tier === tier) ??
+    modelOptions[1] ??
+    DEFAULT_ASSISTANT_MODEL_OPTIONS[1]!;
+  const activeEffortOption =
+    ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === effort) ??
+    ASSISTANT_EFFORT_OPTIONS[0]!;
 
   const handleToggleDeepAudit = () => {
     const next = !deepAuditActive;
     setDeepAuditActive(next);
     setSpeed(next ? "SPEED_3_DEEP_AUDIT" : "SPEED_1_FAST");
+    setEffort(next ? "deep" : "fast");
+  };
+
+  const handleSelectEffort = (nextEffort: UiInferenceEffort) => {
+    setUserEditedTierOrEffort(true);
+    setEffort(nextEffort);
+    if (nextEffort === "deep") {
+      setDeepAuditActive(true);
+      setSpeed("SPEED_3_DEEP_AUDIT");
+    } else if (nextEffort === "balanced") {
+      setDeepAuditActive(false);
+      setSpeed("SPEED_2_AGENT_TOOLS");
+    } else {
+      setDeepAuditActive(false);
+      setSpeed("SPEED_1_FAST");
+    }
   };
 
   const handlePromptChange = (val: string) => {
     setPromptText(val);
-    if (!deepAuditActive) {
+    if (!deepAuditActive && !userEditedTierOrEffort) {
       if (/(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(val)) {
         setSpeed("SPEED_2_AGENT_TOOLS");
+        setEffort("balanced");
       } else {
         setSpeed("SPEED_1_FAST");
+        setEffort("fast");
       }
     }
   };
@@ -106,48 +166,235 @@ export function AssistantSpeedSelectorAndStreamView({
     if (!trimmed) {
       setPromptText(effectivePrompt);
     }
+    setPickerOpen(false);
+    setPlusMenuOpen(false);
     onSendTurn?.({
       userPrompt: effectivePrompt,
       requestedSpeed: speed,
       deepAuditPillActive: deepAuditActive,
+      ...(userEditedTierOrEffort ? { requestedTier: tier, thinkingEffort: effort } : {}),
     });
   };
+
+  const displayModelBadge = activeModelOption.configuredModelName
+    ? `${activeModelOption.title} (${activeModelOption.configuredModelName})`
+    : activeModelOption.title;
 
   return (
     <section
       data-testid="assistant-speed-selector-and-stream"
-      className="rounded-lg border border-border-subtle bg-surface-elevated p-4 text-text-primary space-y-3"
+      className="rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary space-y-4"
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">
-        <h3 className="text-sm font-semibold">{labels.headerTitle}</h3>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span
-            data-testid="assistant-prompt-cache-badge"
-            className="rounded border border-border-subtle bg-surface-secondary px-2 py-0.5 font-mono text-[11px]"
-          >
-            {cacheHit ? labels.cacheHitBadge : labels.cacheMissBadge} ·{" "}
-            {cacheLookupMs} ms · {cacheKey}
-          </span>
-          <span
-            data-testid="assistant-nodes-deterministic-badge"
-            className="rounded bg-surface-secondary px-2 py-0.5 font-mono text-[11px] text-text-secondary"
-          >
-            {labels.nodesDeterministicLabel}: {nodes1To4DeterministicMs} ms
-          </span>
-          <span
-            data-testid="assistant-ttft-badge"
-            className="rounded bg-action-primary/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-action-primary"
-          >
-            {labels.ttftBadgePrefix}: {ttftMs} ms
-          </span>
-        </div>
-      </header>
+      {!hideTechnicalCacheHeader && (
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">
+          <h3 className="text-sm font-semibold">{labels.headerTitle}</h3>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span
+              data-testid="assistant-prompt-cache-badge"
+              className="rounded border border-border-subtle bg-surface-secondary px-2 py-0.5 font-mono text-[11px]"
+            >
+              {cacheHit ? labels.cacheHitBadge : labels.cacheMissBadge} ·{" "}
+              {cacheLookupMs} ms · {cacheKey}
+            </span>
+            <span
+              data-testid="assistant-nodes-deterministic-badge"
+              className="rounded bg-surface-secondary px-2 py-0.5 font-mono text-[11px] text-text-secondary"
+            >
+              {labels.nodesDeterministicLabel}: {nodes1To4DeterministicMs} ms
+            </span>
+            <span
+              data-testid="assistant-ttft-badge"
+              className="rounded bg-action-primary/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-action-primary"
+            >
+              {labels.ttftBadgePrefix}: {ttftMs} ms
+            </span>
+          </div>
+        </header>
+      )}
 
-      {/* Speed selector bar + 🧠 Approfondi pill */}
+      {showWelcomeHero && !streamedText && (
+        <div className="py-6 text-center space-y-1.5">
+          <h2
+            data-testid="assistant-welcome-hero-title"
+            className="text-xl font-semibold tracking-tight text-text-primary"
+          >
+            {welcomeTitle}
+          </h2>
+        </div>
+      )}
+
+      {stepProgress.length > 0 && (
+        <ol
+          data-testid="assistant-step-progress-list"
+          aria-live="polite"
+          className="space-y-1 rounded border border-border-subtle bg-surface-primary p-2.5 text-xs"
+        >
+          {stepProgress.map((st) => (
+            <li
+              key={st.stepCode}
+              data-testid={`assistant-step-item-${st.stepCode}`}
+              className="flex items-center justify-between gap-2"
+            >
+              <span>{st.label}</span>
+              <span className="font-mono text-[11px] text-text-secondary">
+                {st.durationMs} ms
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {errorMessage && (
+        <div
+          role="alert"
+          data-testid="assistant-error-banner"
+          className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning"
+        >
+          {errorMessage}
+        </div>
+      )}
+
+      {streamedText && (
+        <div
+          data-testid="assistant-streamed-response-box"
+          aria-live="polite"
+          className="rounded-lg border border-border-subtle bg-surface-primary p-4 text-xs leading-relaxed whitespace-pre-wrap"
+        >
+          {streamedText}
+        </div>
+      )}
+
+      <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm">
+          <button
+            type="button"
+            data-testid="assistant-prompt-plus-btn"
+            aria-label="Actions rapides et dossiers"
+            onClick={() => {
+              setPlusMenuOpen((prev) => !prev);
+              setPickerOpen(false);
+            }}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated"
+          >
+            +
+          </button>
+
+          <input
+            type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            data-testid="assistant-three-speed-input"
+            value={promptText}
+            placeholder={labels.inputPlaceholder}
+            onChange={(e) => handlePromptChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                triggerSendTurn();
+              }
+            }}
+            className="flex-1 min-w-[200px] border-0 bg-transparent px-2 py-1 text-xs text-text-primary focus:outline-none"
+          />
+
+          <button
+            type="button"
+            data-testid="assistant-model-and-effort-picker-trigger"
+            aria-expanded={pickerOpen}
+            onClick={() => {
+              setPickerOpen((prev) => !prev);
+              setPlusMenuOpen(false);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-surface-elevated"
+          >
+            <span>{displayModelBadge}</span>
+            <span className="text-text-secondary">· {activeEffortOption.title}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="assistant-three-speed-send-btn"
+            disabled={isGenerating}
+            onClick={triggerSendTurn}
+            className="inline-flex items-center gap-1.5 rounded-full bg-action-primary px-3.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+          >
+            <span>{isGenerating ? "⏳ ..." : labels.sendPromptCta}</span>
+            <DisabledButtonAlertIndicator
+              disabled={Boolean(isGenerating)}
+              reason="Une réponse est déjà en cours de génération."
+              testIdSuffix="assistant-three-speed-send-btn"
+            />
+          </button>
+        </div>
+
+        {plusMenuOpen && (
+          <div
+            data-testid="assistant-prompt-plus-popover"
+            className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-border-subtle bg-surface-primary p-2.5 text-xs shadow-md"
+          >
+            <button
+              type="button"
+              data-testid="assistant-plus-insert-agent-btn"
+              onClick={() => {
+                handlePromptChange(`${promptText ? `${promptText} ` : ""}@`);
+                setPlusMenuOpen(false);
+              }}
+              className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium"
+            >
+              @ Mentionner un agent
+            </button>
+            <button
+              type="button"
+              data-testid="assistant-plus-insert-skill-btn"
+              onClick={() => {
+                handlePromptChange(`${promptText ? `${promptText} ` : ""}/`);
+                setPlusMenuOpen(false);
+              }}
+              className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium"
+            >
+              / Utiliser une compétence
+            </button>
+            {onOpenFoldersFromPlus && (
+              <button
+                type="button"
+                data-testid="assistant-plus-open-folders-btn"
+                onClick={() => {
+                  onOpenFoldersFromPlus();
+                  setPlusMenuOpen(false);
+                }}
+                className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium"
+              >
+                📁 Gérer les dossiers thématiques
+              </button>
+            )}
+          </div>
+        )}
+
+        {pickerOpen && (
+          <AssistantModelAndEffortPopover
+            modelOptions={modelOptions}
+            selectedTier={tier}
+            selectedEffort={effort}
+            thinkingSubmenuOpen={thinkingSubmenuOpen}
+            onSelectTier={(nextTier) => {
+              setUserEditedTierOrEffort(true);
+              setTier(nextTier);
+            }}
+            onToggleThinkingSubmenu={() =>
+              setThinkingSubmenuOpen((prev) => !prev)
+            }
+            onSelectEffort={handleSelectEffort}
+          />
+        )}
+      </div>
+
       <div
         role="group"
         aria-label={labels.headerTitle}
-        className="flex flex-wrap items-center gap-2"
+        className="flex flex-wrap items-center justify-center gap-2 pt-1"
       >
         <button
           type="button"
@@ -156,6 +403,7 @@ export function AssistantSpeedSelectorAndStreamView({
           onClick={() => {
             setDeepAuditActive(false);
             setSpeed("SPEED_1_FAST");
+            setEffort("fast");
           }}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             speed === "SPEED_1_FAST"
@@ -173,6 +421,7 @@ export function AssistantSpeedSelectorAndStreamView({
           onClick={() => {
             setDeepAuditActive(false);
             setSpeed("SPEED_2_AGENT_TOOLS");
+            setEffort("balanced");
           }}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             speed === "SPEED_2_AGENT_TOOLS"
@@ -195,87 +444,6 @@ export function AssistantSpeedSelectorAndStreamView({
           }`}
         >
           {labels.speed3DeepAuditPillLabel}
-        </button>
-      </div>
-
-      {/* Real-time step progress stream */}
-      {stepProgress.length > 0 && (
-        <ol
-          data-testid="assistant-step-progress-list"
-          aria-live="polite"
-          className="space-y-1 rounded border border-border-subtle bg-surface-primary p-2.5 text-xs"
-        >
-          {stepProgress.map((st) => (
-            <li
-              key={st.stepCode}
-              data-testid={`assistant-step-item-${st.stepCode}`}
-              className="flex items-center justify-between gap-2"
-            >
-              <span>{st.label}</span>
-              <span className="font-mono text-[11px] text-text-secondary">
-                {st.durationMs} ms
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      {/* Error banner if LLM invocation failed */}
-      {errorMessage && (
-        <div
-          role="alert"
-          data-testid="assistant-error-banner"
-          className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning"
-        >
-          {errorMessage}
-        </div>
-      )}
-
-      {/* Streamed answer preview */}
-      {streamedText && (
-        <div
-          data-testid="assistant-streamed-response-box"
-          aria-live="polite"
-          className="rounded border border-border-subtle bg-surface-primary p-3 text-xs leading-relaxed whitespace-pre-wrap"
-        >
-          {streamedText}
-        </div>
-      )}
-
-      {/* Conversational input bar */}
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          autoComplete="off"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-bwignore="true"
-          data-form-type="other"
-          data-testid="assistant-three-speed-input"
-          value={promptText}
-          placeholder={labels.inputPlaceholder}
-          onChange={(e) => handlePromptChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              triggerSendTurn();
-            }
-          }}
-          className="flex-1 rounded border border-border-subtle bg-surface-primary px-3 py-1.5 text-xs text-text-primary"
-        />
-        <button
-          type="button"
-          data-testid="assistant-three-speed-send-btn"
-          disabled={isGenerating}
-          onClick={triggerSendTurn}
-          className="inline-flex items-center gap-1.5 rounded bg-action-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-        >
-          <span>{isGenerating ? "⏳ ..." : labels.sendPromptCta}</span>
-          <DisabledButtonAlertIndicator
-            disabled={Boolean(isGenerating)}
-            reason="Une réponse est déjà en cours de génération."
-            testIdSuffix="assistant-three-speed-send-btn"
-          />
         </button>
       </div>
     </section>

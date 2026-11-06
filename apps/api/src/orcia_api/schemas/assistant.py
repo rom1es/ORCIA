@@ -311,6 +311,8 @@ class ThreeSpeedTurnRequest(BaseModel):
         None
     )
     deep_audit_pill_active: bool = False
+    requested_tier: Literal["simple", "medium", "complex", "auto"] | None = None
+    thinking_effort: Literal["fast", "balanced", "deep"] | None = None
 
 
 class ThreeSpeedTurnResponse(BaseModel):

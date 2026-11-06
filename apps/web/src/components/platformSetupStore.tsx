@@ -30,6 +30,7 @@ export function clearPlatformSetupStorage(): void {
     try {
       window.localStorage.removeItem(PLATFORM_ADMIN_STORAGE_KEY);
       window.localStorage.removeItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
+      window.localStorage.removeItem("orcia.assistant_saved_conversations.v1");
     } catch {
       // Ignore
     }

@@ -4,31 +4,58 @@ import {
   AssistantFoldersAndCollaborativeThreadView,
   AssistantGovernanceModalAndStudio,
   AssistantSpeedSelectorAndStreamView,
-  ContextualInfoTriggerButton,
-  StatusBadge,
   type AssistantFolderVisibilityMode,
   type UiAssistantFolderItem,
+  type UiInferenceEffort,
+  type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import {
+  ActiveConversationMessagesView,
+  AssistantTopToolbar,
+  SavedConversationsPanel,
+} from "./SavedConversationsAndThreadView";
+import {
+  buildAssistantModelOptions,
+  readSavedAssistantConversations,
+  upsertTurnIntoSavedConversations,
+  writeSavedAssistantConversations,
+  type SavedAssistantConversation,
+} from "./savedConversationsStore";
 
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { navigateToRoute, openHelpSection } = useShellNavigation();
-  const { platformAdmin, workspaces } = usePlatformSetup();
-  const inboxCopy = dictionary.inboxAndClaims;
+  const { platformAdmin, workspaces, llmTiers } = usePlatformSetup();
   const isFr = locale === "fr";
 
-  const [scopeFilter, setScopeFilter] = useState<"ALL" | "PERSONAL" | "TEAM">("ALL");
   const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string>("");
+  const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(true);
+  const [savedConversationsOpen, setSavedConversationsOpen] =
+    useState<boolean>(false);
+  const [savedConversations, setSavedConversations] = useState<
+    readonly SavedAssistantConversation[]
+  >(() => readSavedAssistantConversations());
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(() => readSavedAssistantConversations()[0]?.id ?? null);
   const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
-  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
-  const [streamedText, setStreamedText] = useState<string>("");
-  const [stepProgress, setStepProgress] = useState<readonly UiThreeSpeedStepProgress[]>([]);
+  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(
+    null,
+  );
+  const [streamedText, setStreamedText] = useState<string>(() => {
+    const firstConv = readSavedAssistantConversations()[0];
+    const lastTurn = firstConv?.turns[firstConv.turns.length - 1];
+    return lastTurn?.assistantReply ?? "";
+  });
+  const [stepProgress, setStepProgress] = useState<
+    readonly UiThreeSpeedStepProgress[]
+  >([]);
   const [cacheHit, setCacheHit] = useState<boolean>(false);
   const [cacheLookupMs, setCacheLookupMs] = useState<number>(0);
   const [nodes1To4Ms, setNodes1To4Ms] = useState<number>(0);
@@ -38,7 +65,57 @@ export function InboxFeaturePanel() {
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
   const isJsdom =
-    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    typeof navigator !== "undefined" &&
+    /jsdom/i.test(navigator.userAgent ?? "");
+  const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
+  const activeConversation =
+    savedConversations.find((c) => c.id === activeConversationId) ?? null;
+
+  const appendTurnToSavedConversation = (params: {
+    userPrompt: string;
+    assistantReply: string;
+    requestedTier: UiInferenceTier;
+    thinkingEffort: UiInferenceEffort;
+  }) => {
+    setSavedConversations((prev) => {
+      const outcome = upsertTurnIntoSavedConversations({
+        prevConversations: prev,
+        activeConversationId,
+        activeWorkspaceId,
+        activeFolderId,
+        modelOptions,
+        isFr,
+        userPrompt: params.userPrompt,
+        assistantReply: params.assistantReply,
+        requestedTier: params.requestedTier,
+        thinkingEffort: params.thinkingEffort,
+      });
+      if (outcome.isNewConversation) {
+        setActiveConversationId(outcome.resolvedConversationId);
+        if (!isJsdom) {
+          const client = createOrciaApiClient({ baseUrl: "" });
+          void client
+            .createAssistantThread({
+              workspace_id:
+                activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+              ...(activeFolderId ? { folder_id: activeFolderId } : {}),
+              title: outcome.createdTitle,
+              initial_summary: params.assistantReply.slice(0, 240),
+            })
+            .catch((err: unknown) => {
+              const detail =
+                err instanceof Error ? err.message : "Synchronisation différée";
+              setGovernanceFeedback(
+                isFr
+                  ? `ℹ️ Conversation sauvegardée localement (${detail}).`
+                  : `ℹ️ Conversation saved locally (${detail}).`,
+              );
+            });
+        }
+      }
+      return outcome.nextConversations;
+    });
+  };
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
@@ -57,34 +134,52 @@ export function InboxFeaturePanel() {
         </div>
       ) : null}
 
-      {/* Barre d'actions Mon Assistant & Réglages */}
-      <div className="orcia-bento-card flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <StatusBadge
-            testId="inbox-amber-counter"
-            label={`${inboxCopy.amberCounterPrefix} 0`}
-            tone="amber"
-            pill
-          />
-          <ContextualInfoTriggerButton
-            sectionId="assistant-modes"
-            label={
-              isFr
-                ? "Comprendre les 3 modes de réponse de Mon Assistant"
-                : "Understand My Assistant's 3 response modes"
+      <AssistantTopToolbar
+        isFr={isFr}
+        savedCount={savedConversations.length}
+        foldersCount={folders.length}
+        savedConversationsOpen={savedConversationsOpen}
+        foldersPanelOpen={foldersPanelOpen}
+        governanceModalTitle={dictionary.assistantGovernance.modalTitle}
+        onNewConversation={() => {
+          setActiveConversationId(null);
+          setStreamedText("");
+          setStepProgress([]);
+          setErrorMessage(null);
+        }}
+        onToggleSavedConversations={() =>
+          setSavedConversationsOpen((prev) => !prev)
+        }
+        onToggleFoldersPanel={() => setFoldersPanelOpen((prev) => !prev)}
+        onToggleGovernanceModal={() => setGovernanceOpen((prev) => !prev)}
+        onOpenHelpSection={openHelpSection}
+      />
+
+      {/* Saved Conversations Drawer (Consult & Resume in 1 click) */}
+      {savedConversationsOpen && (
+        <SavedConversationsPanel
+          conversations={savedConversations}
+          activeConversationId={activeConversationId}
+          isFr={isFr}
+          onResumeConversation={(convId) => {
+            const target = savedConversations.find((c) => c.id === convId);
+            if (!target) return;
+            setActiveConversationId(target.id);
+            const latestTurn = target.turns[target.turns.length - 1];
+            setStreamedText(latestTurn?.assistantReply ?? "");
+            setSavedConversationsOpen(false);
+          }}
+          onDeleteConversation={(convId) => {
+            const next = savedConversations.filter((c) => c.id !== convId);
+            setSavedConversations(next);
+            writeSavedAssistantConversations(next);
+            if (activeConversationId === convId) {
+              setActiveConversationId(null);
+              setStreamedText("");
             }
-            onOpenHelpSection={openHelpSection}
-          />
-        </div>
-        <button
-          type="button"
-          data-testid="assistant-open-governance-btn"
-          onClick={() => setGovernanceOpen((prev) => !prev)}
-          className="rounded border border-border-subtle bg-surface-elevated px-3 py-1 text-xs font-semibold text-text-primary"
-        >
-          {dictionary.assistantGovernance.modalTitle}
-        </button>
-      </div>
+          }}
+        />
+      )}
 
       {/* Modale Réglages de l'Assistant */}
       {governanceOpen ? (
@@ -130,93 +225,29 @@ export function InboxFeaturePanel() {
         />
       ) : null}
 
-      {/* Dossiers Thématiques 📁 & Partage Collaboratif */}
-      <AssistantFoldersAndCollaborativeThreadView
-        workspaceId={activeWorkspaceId}
-        activeFolderId={activeFolderId}
-        folders={folders}
-        historyHits={[]}
-        currentAuthorPassthroughIdentity={platformAdmin?.email ?? ""}
-        labels={dictionary.assistantFolders}
-        onSelectFolder={(folderId) => setActiveFolderId(folderId)}
-        onCreateFolder={(title) => {
-          const newId = `folder-${folders.length + 1}`;
-          const newFolder: UiAssistantFolderItem = {
-            folderId: newId,
-            title,
-            pinnedNotesMarkdown: "",
-            consolidatedSummary: isFr
-              ? `Dossier thématique « ${title} »`
-              : `Thematic folder "${title}"`,
-            visibilityMode: "PRIVATE",
-            hasRestrictedSources: false,
-            assembledLayer5PromptBlock: `Dossier actif : ${title}`,
-          };
-          setFolders((prev) => [...prev, newFolder]);
-          setActiveFolderId(newId);
-          setGovernanceFeedback(
-            isFr
-              ? `✅ Dossier « ${title} » créé et sélectionné.`
-              : `✅ Folder "${title}" created and selected.`,
-          );
-          if (!isJsdom) {
-            const client = createOrciaApiClient({ baseUrl: "" });
-            void client
-              .createAssistantFolder({
-                workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-                title,
-              })
-              .then((res) => {
-                setFolders((prev) =>
-                  prev.map((f) =>
-                    f.folderId === newId ? { ...f, folderId: res.folder_id } : f,
-                  ),
-                );
-                setActiveFolderId(res.folder_id);
-              })
-              .catch((err: unknown) => {
-                const detail = err instanceof Error ? err.message : "Erreur de création";
-                setGovernanceFeedback(
-                  isFr
-                    ? `⚠️ Dossier « ${title} » conservé localement (détail serveur : ${detail}).`
-                    : `⚠️ Folder "${title}" kept locally (server detail: ${detail}).`,
-                );
-              });
-          }
-        }}
-        onUpdatePinnedNotes={(folderId, notes) => {
-          setFolders((prev) =>
-            prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes } : f)),
-          );
-          setGovernanceFeedback(
-            isFr ? "✅ Notes du dossier enregistrées." : "✅ Folder notes saved.",
-          );
-        }}
-        onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
-          setFolders((prev) =>
-            prev.map((f) => (f.folderId === folderId ? { ...f, visibilityMode: mode } : f)),
-          );
-          setGovernanceFeedback(
-            isFr
-              ? `✅ Visibilité du dossier mise à jour (${mode}).`
-              : `✅ Folder visibility updated (${mode}).`,
-          );
-        }}
-        onSendCollaborativeMessage={(message) => {
-          setStreamedText(
-            isFr
-              ? `💬 Message ajouté à la discussion : ${message}`
-              : `💬 Message added to thread: ${message}`,
-          );
-        }}
-        onLaunchProcessFromFolder={() => navigateToRoute("/processes")}
-      />
+      {/* Active Conversation Full Thread History (when a conversation is active) */}
+      {activeConversation && activeConversation.turns.length > 0 && (
+        <ActiveConversationMessagesView
+          conversation={activeConversation}
+          isFr={isFr}
+        />
+      )}
 
-      {/* Sélecteur de Mode de Réponse */}
+      {/* Central Welcome Hero ("Par quoi voulez-vous commencer ?") + Unified Input & Model/Thinking Picker */}
       <AssistantSpeedSelectorAndStreamView
         workspaceId={activeWorkspaceId}
         userId={platformAdmin?.email ?? ""}
         hat="PLATFORM_ADMIN"
+        modelOptions={modelOptions}
+        welcomeTitle={
+          isFr
+            ? "Par quoi voulez-vous commencer ?"
+            : "Where would you like to start?"
+        }
+        showWelcomeHero={
+          !activeConversation || activeConversation.turns.length === 0
+        }
+        hideTechnicalCacheHeader={true}
         cacheHit={cacheHit}
         cacheLookupMs={cacheLookupMs}
         nodes1To4DeterministicMs={nodes1To4Ms}
@@ -226,7 +257,22 @@ export function InboxFeaturePanel() {
         isGenerating={isGenerating}
         errorMessage={errorMessage}
         labels={dictionary.assistantSpeedStream}
-        onSendTurn={({ userPrompt, requestedSpeed, deepAuditPillActive }) => {
+        onOpenFoldersFromPlus={() => setFoldersPanelOpen(true)}
+        onSendTurn={({
+          userPrompt,
+          requestedSpeed,
+          deepAuditPillActive,
+          requestedTier,
+          thinkingEffort,
+        }) => {
+          const effectiveTier: UiInferenceTier = requestedTier ?? "medium";
+          const effectiveEffort: UiInferenceEffort =
+            thinkingEffort ??
+            (deepAuditPillActive
+              ? "deep"
+              : requestedSpeed === "SPEED_2_AGENT_TOOLS"
+                ? "balanced"
+                : "fast");
           setErrorMessage(null);
           setIsGenerating(true);
           setStreamedText(
@@ -236,17 +282,28 @@ export function InboxFeaturePanel() {
           );
           if (isJsdom) {
             setIsGenerating(false);
-            setStreamedText(`[${requestedSpeed}] ${userPrompt}`);
+            const jsdomReply = `[${requestedSpeed}] ${userPrompt}`;
+            setStreamedText(jsdomReply);
+            appendTurnToSavedConversation({
+              userPrompt,
+              assistantReply: jsdomReply,
+              requestedTier: effectiveTier,
+              thinkingEffort: effectiveEffort,
+            });
             return;
           }
           const client = createOrciaApiClient({ baseUrl: "" });
           void client
             .executeAssistantTurn({
-              workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+              workspace_id:
+                activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
               hat: "PLATFORM_ADMIN",
               user_prompt: userPrompt,
               requested_speed: requestedSpeed,
               deep_audit_pill_active: deepAuditPillActive,
+              requested_tier: effectiveTier,
+              thinking_effort:
+                effectiveEffort === "default" ? "fast" : effectiveEffort,
             })
             .then((res) => {
               setIsGenerating(false);
@@ -267,12 +324,20 @@ export function InboxFeaturePanel() {
               }
               if (res.response_text) {
                 setStreamedText(res.response_text);
+                appendTurnToSavedConversation({
+                  userPrompt,
+                  assistantReply: res.response_text,
+                  requestedTier: effectiveTier,
+                  thinkingEffort: effectiveEffort,
+                });
               }
             })
             .catch((err: unknown) => {
               setIsGenerating(false);
               const detail =
-                err instanceof Error ? err.message : "Erreur de communication avec le serveur";
+                err instanceof Error
+                  ? err.message
+                  : "Erreur de communication avec le serveur";
               setErrorMessage(
                 isFr
                   ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
@@ -282,116 +347,121 @@ export function InboxFeaturePanel() {
         }}
       />
 
-      {/* Pastilles de Citation & Brouillon de Document */}
-      <AssistantCitationPillsAndArtifactCard
-        sanitizedResponseText={streamedText}
-        sources={[]}
-        glossaryItems={[]}
-        toolOutputs={[]}
-        footerSummaryLine=""
-        labels={dictionary.assistantCitations}
-        onSaveDraft={(title) => {
-          setGovernanceFeedback(
-            isFr
-              ? `✅ Brouillon « ${title} » enregistré dans votre Espace.`
-              : `✅ Draft "${title}" saved to your Workspace.`,
-          );
-        }}
-        onContinueInProcess={() => navigateToRoute("/processes")}
-      />
-
-      {/* Boîte de notifications et filtres de périmètre */}
-      <div className="orcia-bento-card">
-        <div
-          role="group"
-          aria-label="Scope filters"
-          style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}
-        >
-          {(["ALL", "PERSONAL", "TEAM"] as const).map((scopeKey) => {
-            const label =
-              scopeKey === "ALL"
-                ? inboxCopy.filterAllLabel
-                : scopeKey === "PERSONAL"
-                  ? inboxCopy.filterPersonalLabel
-                  : inboxCopy.filterTeamLabel;
-            const active = scopeFilter === scopeKey;
-            return (
-              <button
-                key={scopeKey}
-                type="button"
-                data-testid={`inbox-filter-${scopeKey.toLowerCase()}`}
-                onClick={() => setScopeFilter(scopeKey)}
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: "var(--radius-full)",
-                  border: active
-                    ? "1px solid var(--color-primary-cobalt)"
-                    : "1px solid var(--color-border)",
-                  backgroundColor: active
-                    ? "var(--color-sidebar-active-bg)"
-                    : "var(--color-surface-card)",
-                  color: active ? "var(--color-primary-cobalt)" : "var(--color-foreground)",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "var(--font-size-mono)",
-                  fontWeight: active ? 600 : 500,
-                  cursor: "pointer",
-                }}
-              >
-                {label}
-              </button>
+      {/* Dossiers Thématiques 📁 & Partage Collaboratif */}
+      {foldersPanelOpen && (
+        <AssistantFoldersAndCollaborativeThreadView
+          workspaceId={activeWorkspaceId}
+          activeFolderId={activeFolderId}
+          folders={folders}
+          historyHits={[]}
+          currentAuthorPassthroughIdentity={platformAdmin?.email ?? ""}
+          labels={dictionary.assistantFolders}
+          onSelectFolder={(folderId) => setActiveFolderId(folderId)}
+          onCreateFolder={(title) => {
+            const newId = `folder-${folders.length + 1}`;
+            const newFolder: UiAssistantFolderItem = {
+              folderId: newId,
+              title,
+              pinnedNotesMarkdown: "",
+              consolidatedSummary: isFr
+                ? `Dossier thématique « ${title} »`
+                : `Thematic folder "${title}"`,
+              visibilityMode: "PRIVATE",
+              hasRestrictedSources: false,
+              assembledLayer5PromptBlock: `Dossier actif : ${title}`,
+            };
+            setFolders((prev) => [...prev, newFolder]);
+            setActiveFolderId(newId);
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Dossier « ${title} » créé et sélectionné.`
+                : `✅ Folder "${title}" created and selected.`,
             );
-          })}
-        </div>
-
-        <div
-          data-testid="inbox-empty-state"
-          style={{
-            padding: "20px",
-            borderRadius: "var(--radius-md)",
-            border: "1px dashed var(--color-border)",
-            backgroundColor: "var(--color-surface-bg)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "12px",
+            if (!isJsdom) {
+              const client = createOrciaApiClient({ baseUrl: "" });
+              void client
+                .createAssistantFolder({
+                  workspace_id:
+                    activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+                  title,
+                })
+                .then((res) => {
+                  setFolders((prev) =>
+                    prev.map((f) =>
+                      f.folderId === newId ? { ...f, folderId: res.folder_id } : f,
+                    ),
+                  );
+                  setActiveFolderId(res.folder_id);
+                })
+                .catch((err: unknown) => {
+                  const detail =
+                    err instanceof Error ? err.message : "Erreur de création";
+                  setGovernanceFeedback(
+                    isFr
+                      ? `⚠️ Dossier « ${title} » conservé localement (détail serveur : ${detail}).`
+                      : `⚠️ Folder "${title}" kept locally (server detail: ${detail}).`,
+                  );
+                });
+            }
           }}
-        >
-          <div>
-            <strong>
-              {isFr
-                ? "Aucune demande ni décision en attente"
-                : "No pending request or decision"}
-            </strong>
-            <p
-              style={{
-                margin: "4px 0 0 0",
-                fontSize: "13px",
-                color: "var(--color-muted-foreground)",
-              }}
-            >
-              {isFr
-                ? "Les demandes d'arbitrage, rédactions attendues et étapes de validation apparaîtront ici dès qu'un processus en aura besoin."
-                : "Decisions, required authoring entries, and review steps will appear here as soon as a process requests them."}
-            </p>
-          </div>
-          <button
-            type="button"
-            data-testid="inbox-go-cockpit-btn"
-            onClick={() => navigateToRoute("/cockpit")}
-            style={{
-              padding: "7px 14px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-surface-card)",
-              color: "var(--color-foreground)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {isFr ? "Retour au Cockpit" : "Back to Cockpit"}
-          </button>
-        </div>
+          onUpdatePinnedNotes={(folderId, notes) => {
+            setFolders((prev) =>
+              prev.map((f) =>
+                f.folderId === folderId
+                  ? { ...f, pinnedNotesMarkdown: notes }
+                  : f,
+              ),
+            );
+            setGovernanceFeedback(
+              isFr
+                ? "✅ Notes du dossier enregistrées."
+                : "✅ Folder notes saved.",
+            );
+          }}
+          onChangeVisibility={(
+            folderId,
+            mode: AssistantFolderVisibilityMode,
+          ) => {
+            setFolders((prev) =>
+              prev.map((f) =>
+                f.folderId === folderId ? { ...f, visibilityMode: mode } : f,
+              ),
+            );
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Visibilité du dossier mise à jour (${mode}).`
+                : `✅ Folder visibility updated (${mode}).`,
+            );
+          }}
+          onSendCollaborativeMessage={(message) => {
+            setStreamedText(
+              isFr
+                ? `💬 Message ajouté à la discussion : ${message}`
+                : `💬 Message added to thread: ${message}`,
+            );
+          }}
+          onLaunchProcessFromFolder={() => navigateToRoute("/processes")}
+        />
+      )}
+
+      {/* Pastilles de Citation & Brouillon de Document */}
+      <div className={streamedText ? "" : "sr-only"}>
+        <AssistantCitationPillsAndArtifactCard
+          sanitizedResponseText={streamedText}
+          sources={[]}
+          glossaryItems={[]}
+          toolOutputs={[]}
+          footerSummaryLine=""
+          labels={dictionary.assistantCitations}
+          onSaveDraft={(title) => {
+            setGovernanceFeedback(
+              isFr
+                ? `✅ Brouillon « ${title} » enregistré dans votre Espace.`
+                : `✅ Draft "${title}" saved to your Workspace.`,
+            );
+          }}
+          onContinueInProcess={() => navigateToRoute("/processes")}
+        />
       </div>
     </div>
   );

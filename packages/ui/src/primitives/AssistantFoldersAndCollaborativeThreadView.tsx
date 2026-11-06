@@ -286,7 +286,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
         >
           <div className="flex items-center justify-between gap-2 text-[11px] text-text-secondary">
             <span data-testid="assistant-author-passthrough-badge">
-              Identité Passthrough auteur :{" "}
+              Compte actif :{" "}
               <code className="font-mono">{currentAuthorPassthroughIdentity}</code>
             </span>
             <button

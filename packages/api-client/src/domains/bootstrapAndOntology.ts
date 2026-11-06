@@ -50,6 +50,13 @@ export type AssistantWorkspaceOverviewResponse =
 export type CreateAssistantFolderRequest =
   components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
 export type AssistantFolderResponse = components["schemas"]["AssistantFolderSchemaItem"];
+export type CreateAssistantThreadRequest =
+  components["schemas"]["CreateAssistantThreadRequest"];
+export type AssistantThreadResponse = components["schemas"]["AssistantThreadSchemaItem"];
+export type SendCollaborativeThreadTurnRequest =
+  components["schemas"]["SendCollaborativeThreadTurnRequest"];
+export type SendCollaborativeThreadTurnResponse =
+  components["schemas"]["SendCollaborativeThreadTurnResponse"];
 export type CompileStarlarkMechanismRequest =
   components["schemas"]["CompileStarlarkMechanismRequest"];
 export type StarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
@@ -283,6 +290,21 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
       payload: CreateAssistantFolderRequest,
     ): Promise<AssistantFolderResponse> {
       return requestJson<AssistantFolderResponse>("/api/v1/assistant/folders", "POST", payload);
+    },
+    createAssistantThread(
+      payload: CreateAssistantThreadRequest,
+    ): Promise<AssistantThreadResponse> {
+      return requestJson<AssistantThreadResponse>("/api/v1/assistant/threads", "POST", payload);
+    },
+    sendCollaborativeThreadTurn(
+      threadId: string,
+      payload: SendCollaborativeThreadTurnRequest,
+    ): Promise<SendCollaborativeThreadTurnResponse> {
+      return requestJson<SendCollaborativeThreadTurnResponse>(
+        `/api/v1/assistant/threads/${encodeURIComponent(threadId)}/turns`,
+        "POST",
+        payload,
+      );
     },
     compileDnaStarlark(
       workspaceId: string,
