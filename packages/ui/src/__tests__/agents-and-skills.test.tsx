@@ -229,8 +229,169 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
       "Réponse Juriste Conformité IA [skills=] : Analyse le contrat fournisseur BetaCorp",
     );
 
-    // Switch to Connections tab
+    // Switch to Connections tab (hidden in DOM for backward compatibility)
+    expect(screen.getByTestId("agents-subview-tab-connections").style.display).toBe("none");
     fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
     expect(screen.getByTestId("custom-connections-slot")).toBeDefined();
+  });
+
+  it("displays only 2 visible main tabs (🤖 Agents & 🛠️ Compétences), supports PRIVATE vs TEAM visibility selection, inline thinking level & visibility auto-save ('✓ Enregistré'), FormattedMarkdownContent rendering, and '💬 Utiliser dans Mon Assistant'", () => {
+    const usedInAssistant: string[] = [];
+
+    function RichStudioHarness() {
+      const [skills, setSkills] = useState<UiManagedSkillItem[]>([
+        {
+          skillId: "skill-revue-architecture",
+          slug: "revue-architecture",
+          commandHandle: "/revue-architecture",
+          name: "Revue d'Architecture",
+          objective: "Vérifier la cohérence des choix d'architecture",
+          inputParameters: ["dossier"],
+          instructions: "Analyser les composants",
+          expectedOutputFormat: "Synthèse Markdown",
+          lastExecutionOutput: "### Verdict\n- **Conforme**",
+          visibilityScope: "PACK",
+          sourcePackKey: "orcia-pack-sdlc",
+        },
+      ]);
+      const [agents, setAgents] = useState<UiManagedAgentItem[]>([]);
+
+      return (
+        <AgentsAndSkillsManagerView
+          agents={agents}
+          skills={skills}
+          labels={TEST_LABELS}
+          onCreateSkill={(draft) => {
+            setSkills((prev) => [
+              ...prev,
+              {
+                skillId: `skill-${prev.length + 1}`,
+                slug: `skill-${prev.length + 1}`,
+                commandHandle: `/skill-${prev.length + 1}`,
+                name: draft.name,
+                objective: draft.objective,
+                inputParameters: draft.inputParameters,
+                instructions: draft.instructions,
+                expectedOutputFormat: draft.expectedOutputFormat,
+                visibilityScope: draft.visibilityScope ?? "TEAM",
+              },
+            ]);
+          }}
+          onDeleteSkill={(id) => setSkills((prev) => prev.filter((s) => s.skillId !== id))}
+          onExecuteSkill={() => undefined}
+          onUpdateSkillVisibility={(skillId, nextScope) => {
+            setSkills((prev) =>
+              prev.map((s) =>
+                s.skillId === skillId ? { ...s, visibilityScope: nextScope } : s,
+              ),
+            );
+          }}
+          onUseSkillInAssistant={(skill) => usedInAssistant.push(skill.commandHandle)}
+          onCreateAgent={(draft) => {
+            setAgents((prev) => [
+              ...prev,
+              {
+                agentId: "agent-perso-1",
+                slug: "perso-1",
+                handle: "@perso-1",
+                name: draft.name,
+                roleMission: draft.roleMission,
+                instructions: draft.instructions,
+                thinkingLevel: draft.thinkingLevel,
+                skillIds: draft.skillIds,
+                visibilityScope: draft.visibilityScope ?? "TEAM",
+                lastExecutionOutput: "### Analyse prête\n- **Point 1** : RAS",
+              },
+            ]);
+          }}
+          onToggleAgentSkill={(agentId, skillId, nextChecked) => {
+            setAgents((prev) =>
+              prev.map((a) =>
+                a.agentId === agentId
+                  ? {
+                      ...a,
+                      skillIds: nextChecked
+                        ? [...a.skillIds, skillId]
+                        : a.skillIds.filter((id) => id !== skillId),
+                    }
+                  : a,
+              ),
+            );
+          }}
+          onUpdateAgentThinkingLevel={(agentId, nextLvl) => {
+            setAgents((prev) =>
+              prev.map((a) =>
+                a.agentId === agentId ? { ...a, thinkingLevel: nextLvl } : a,
+              ),
+            );
+          }}
+          onUpdateAgentVisibility={(agentId, nextScope) => {
+            setAgents((prev) =>
+              prev.map((a) =>
+                a.agentId === agentId ? { ...a, visibilityScope: nextScope } : a,
+              ),
+            );
+          }}
+          onDeleteAgent={(id) => setAgents((prev) => prev.filter((a) => a.agentId !== id))}
+          onExecuteAgent={() => undefined}
+          onUseAgentInAssistant={(agent) => usedInAssistant.push(agent.handle)}
+        />
+      );
+    }
+
+    render(<RichStudioHarness />);
+
+    // 1. Only 2 visible tabs (Connections tab has display: none)
+    expect(screen.getByTestId("agents-subview-tab-agents").style.display).not.toBe("none");
+    expect(screen.getByTestId("agents-subview-tab-skills").style.display).not.toBe("none");
+    expect(screen.getByTestId("agents-subview-tab-connections").style.display).toBe("none");
+
+    // 2. Create an Agent with PRIVATE visibility
+    fireEvent.change(screen.getByTestId("agent-visibility-select"), {
+      target: { value: "PRIVATE" },
+    });
+    fireEvent.change(screen.getByTestId("agent-name-input"), {
+      target: { value: "Assistant Veille Personnelle" },
+    });
+    fireEvent.change(screen.getByTestId("agent-role-input"), {
+      target: { value: "Synthétiser mes notes privées" },
+    });
+    fireEvent.change(screen.getByTestId("agent-instructions-input"), {
+      target: { value: "Rester synthétique et structuré." },
+    });
+    fireEvent.click(screen.getByTestId("create-agent-submit-btn"));
+
+    const badge = screen.getByTestId("agent-visibility-badge-agent-perso-1");
+    expect(badge.textContent).toContain("🔒 Privé");
+
+    // 3. Toggle visibility PRIVATE -> TEAM in 1 click and verify auto-save badge '✓ Enregistré'
+    fireEvent.click(badge);
+    expect(badge.textContent).toContain("👥 Équipe");
+    expect(screen.getByTestId("agent-autosaved-badge-agent-perso-1").textContent).toContain(
+      "✓ Enregistré",
+    );
+
+    // 4. Change thinking level inline and verify FormattedMarkdownContent is rendered
+    fireEvent.change(screen.getByTestId("agent-card-thinking-select-agent-perso-1"), {
+      target: { value: "complex" },
+    });
+    expect(
+      screen
+        .getByTestId("agent-execution-output-agent-perso-1")
+        .querySelector('[data-testid="formatted-markdown-content"]'),
+    ).not.toBeNull();
+
+    // 5. Click '💬 Utiliser dans Mon Assistant' on Agent and Skill
+    fireEvent.click(screen.getByTestId("use-agent-in-assistant-btn-agent-perso-1"));
+    expect(usedInAssistant).toContain("@perso-1");
+
+    fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
+    expect(
+      screen.getByTestId("skill-visibility-badge-skill-revue-architecture").textContent,
+    ).toContain("📦 Pack Métier (orcia-pack-sdlc)");
+    fireEvent.click(
+      screen.getByTestId("use-skill-in-assistant-btn-skill-revue-architecture"),
+    );
+    expect(usedInAssistant).toContain("/revue-architecture");
   });
 });

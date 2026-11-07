@@ -876,6 +876,37 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
     expect(screen.getByTestId(`skill-card-${skillId}`)).toBeDefined();
 
+    // Verify visual removal of Connections tab, CatalogExplorerPanel, and RemoteServiceTestBench at bottom of /agents
+    expect(screen.getByTestId("agents-subview-tab-connections").style.display).toBe("none");
+    expect(screen.getByTestId("catalog-explorer-panel-wrapper").style.display).toBe("none");
+    expect(screen.getByTestId("remote-service-test-bench-wrapper").style.display).toBe("none");
+
+    // 4. Load Business Pack Agents & Skills in 1 click and verify 📦 Pack Métier badges appear
+    fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
+    fireEvent.click(screen.getByTestId("load-pack-agents-templates-btn"));
+    expect(screen.getByTestId("agent-card-agent-architecte-solution")).toBeDefined();
+    expect(
+      screen.getByTestId("agent-visibility-badge-agent-architecte-solution").textContent,
+    ).toContain("📦 Pack Métier (orcia-pack-sdlc)");
+
+    // 5. Click '💬 Utiliser dans Mon Assistant' -> redirects to /assistant with @architecte-solution pre-filled!
+    fireEvent.click(
+      screen.getByTestId("use-agent-in-assistant-btn-agent-architecte-solution"),
+    );
+
+    const assistantInput = screen.getByTestId(
+      "assistant-three-speed-input",
+    ) as HTMLInputElement;
+    expect(assistantInput.value).toBe("@architecte-solution ");
+
+    // Verify @ autocomplete dropdown works with created agents in Mon Assistant
+    fireEvent.change(assistantInput, { target: { value: "@expert" } });
+    expect(screen.getByTestId("assistant-autocomplete-dropdown")).toBeDefined();
+    fireEvent.click(
+      screen.getByTestId("assistant-autocomplete-option-expert-achats-it"),
+    );
+    expect(assistantInput.value).toBe("@expert-achats-it ");
+
     resetCachedAgentsAndSkillsForTest();
   });
 

@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-07",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 69,
+    "uiPrimitivesCount": 71,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 81
+    "techLeadReportsCount": 82
   },
   "activeRoutes": [
     "/",
@@ -41,6 +41,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "uiPrimitives": [
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
+    "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
     "AppShell",
     "ArbitrationTieBreakCard",
@@ -96,6 +97,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ScopeSwitcher",
     "ScopedPromptBox",
     "SecretField",
+    "SkillStudioCardItem",
     "SprintContextWidget",
     "StatusBadge",
     "StreamlinedCockpitView",
@@ -403,6 +405,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / UX & Studio Agents & Compétences",
+      "reportFile": "2026-11-07-refonte-menu-mes-agents-visibilite-packs-et-pont-assistant-tech-lead-report.md",
+      "domain": "Refonte du Menu « 🤖 Mes Agents », Choix de Visibilité (🔒 Privé vs 👥 Équipe), Intégration des Packs Métiers (📦 Pack) & Pont 1-Clic vers « 💬 Mon Assistant »",
+      "summary": "Épuration de /agents (2 onglets visibles 🤖 Agents / 🛠️ Compétences, masquage des blocs techniques parasites), gouvernance de visibilité (🔒 Privé, 👥 Équipe, 📦 Pack Métier) avec bascule 1-clic et badge ✓ Enregistré, fusion automatique des agents/compétences des Packs Métiers actifs (orcia-pack-sdlc, orcia-pack-builder), rendu Markdown via FormattedMarkdownContent, pont 1-clic 💬 Utiliser dans Mon Assistant (orcia.assistant_prefill_prompt.v1) + autocomplétion @ et /, et découpage modulaire < 350 lignes."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 UX/UI & Markdown",

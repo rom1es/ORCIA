@@ -19,7 +19,9 @@ import {
   SavedConversationsPanel,
 } from "./SavedConversationsAndThreadView";
 import {
+  buildAssistantAutocompleteSuggestions,
   buildAssistantModelOptions,
+  consumeAssistantPrefillFromStorage,
   readSavedAssistantConversations,
   upsertTurnIntoSavedConversations,
   writeSavedAssistantConversations,
@@ -30,9 +32,12 @@ import { useAssistantStreamingTurn } from "./useAssistantStreamingTurn";
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { navigateToRoute, openHelpSection } = useShellNavigation();
-  const { platformAdmin, workspaces, llmTiers } = usePlatformSetup();
+  const { platformAdmin, workspaces, llmTiers, packs } = usePlatformSetup();
   const isFr = locale === "fr";
 
+  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(() =>
+    consumeAssistantPrefillFromStorage(),
+  );
   const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string>("");
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
@@ -54,6 +59,7 @@ export function InboxFeaturePanel() {
     typeof navigator !== "undefined" &&
     /jsdom/i.test(navigator.userAgent ?? "");
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
+  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
   const activeConversation =
     savedConversations.find((c) => c.id === activeConversationId) ?? null;
 
@@ -245,6 +251,9 @@ export function InboxFeaturePanel() {
         userId={platformAdmin?.email ?? ""}
         hat="PLATFORM_ADMIN"
         modelOptions={modelOptions}
+        autocompleteSuggestions={autocompleteSuggestions}
+        prefillPrompt={prefillPrompt}
+        onPrefillConsumed={() => setPrefillPrompt(null)}
         welcomeTitle={
           isFr
             ? "Par quoi voulez-vous commencer ?"

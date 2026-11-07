@@ -1,15 +1,19 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FormattedMarkdownContent } from "../components/FormattedMarkdownContent";
 import {
+  applyAutocompleteSuggestionToPrompt,
   ASSISTANT_EFFORT_OPTIONS,
+  AssistantAutocompleteDropdown,
   AssistantModelAndEffortPopover,
   DEFAULT_ASSISTANT_MODEL_OPTIONS,
+  extractAutocompleteTrigger,
+  type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
 } from "./AssistantModelAndEffortPopover";
 import { AssistantThinkingSubWindow } from "./AssistantThinkingSubWindow";
 import type { UiInferenceEffort, UiInferenceTier } from "./InferenceTierAndEffortSelector";
 
-export type { UiAssistantModelOption };
+export type { UiAssistantAutocompleteSuggestion, UiAssistantModelOption };
 export type UiAssistantSpeedMode = "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT";
 
 export interface UiThreeSpeedStepProgress {
@@ -43,6 +47,9 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly selectedTier?: UiInferenceTier;
   readonly selectedEffort?: UiInferenceEffort;
   readonly modelOptions?: readonly UiAssistantModelOption[];
+  readonly autocompleteSuggestions?: readonly UiAssistantAutocompleteSuggestion[];
+  readonly prefillPrompt?: string | null;
+  readonly onPrefillConsumed?: () => void;
   readonly welcomeTitle?: string;
   readonly showWelcomeHero?: boolean;
   readonly hideTechnicalCacheHeader?: boolean;
@@ -78,6 +85,9 @@ export function AssistantSpeedSelectorAndStreamView({
   selectedTier: initialTier = "medium",
   selectedEffort: initialEffort,
   modelOptions = DEFAULT_ASSISTANT_MODEL_OPTIONS,
+  autocompleteSuggestions = [],
+  prefillPrompt = null,
+  onPrefillConsumed,
   welcomeTitle = "Par quoi voulez-vous commencer ?",
   showWelcomeHero = true,
   hideTechnicalCacheHeader = false,
@@ -110,7 +120,7 @@ export function AssistantSpeedSelectorAndStreamView({
   const [pickerOpen, setPickerOpen] = useState<boolean>(false);
   const [thinkingSubmenuOpen, setThinkingSubmenuOpen] = useState<boolean>(true);
   const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
-  const [promptText, setPromptText] = useState<string>("");
+  const [promptText, setPromptText] = useState<string>(() => prefillPrompt ?? "");
   const [lastSubmittedPrompt, setLastSubmittedPrompt] = useState<string>("");
   const [userEditedTierOrEffort, setUserEditedTierOrEffort] = useState<boolean>(false);
   const [localStoppedFlag, setLocalStoppedFlag] = useState<boolean>(false);
@@ -120,6 +130,16 @@ export function AssistantSpeedSelectorAndStreamView({
     modelOptions.find((m) => m.tier === tier) ?? modelOptions[1] ?? DEFAULT_ASSISTANT_MODEL_OPTIONS[1]!;
   const activeEffortOption =
     ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === effort) ?? ASSISTANT_EFFORT_OPTIONS[0]!;
+
+  useEffect(() => {
+    if (prefillPrompt) {
+      setPromptText(prefillPrompt);
+      setSpeed("SPEED_2_AGENT_TOOLS");
+      setEffort("balanced");
+      onPrefillConsumed?.();
+      inputRef.current?.focus();
+    }
+  }, [prefillPrompt, onPrefillConsumed]);
 
   const handleToggleDeepAudit = () => {
     const next = !deepAuditActive;
@@ -149,6 +169,16 @@ export function AssistantSpeedSelectorAndStreamView({
       setEffort(hasAgentOrSkill ? "balanced" : "fast");
     }
   };
+
+  const triggerInfo = extractAutocompleteTrigger(promptText);
+  const matchingSuggestions = triggerInfo
+    ? autocompleteSuggestions.filter(
+        (s) =>
+          s.kind === triggerInfo.kind &&
+          (s.token.toLowerCase().includes(triggerInfo.query) ||
+            s.name.toLowerCase().includes(triggerInfo.query)),
+      )
+    : [];
 
   const triggerSendTurn = () => {
     const trimmed = promptText.trim();
@@ -311,6 +341,14 @@ export function AssistantSpeedSelectorAndStreamView({
             )}
           </button>
         </div>
+
+        <AssistantAutocompleteDropdown
+          suggestions={matchingSuggestions}
+          onSelectSuggestion={(item) => {
+            handlePromptChange(applyAutocompleteSuggestionToPrompt(promptText, item.token));
+            inputRef.current?.focus();
+          }}
+        />
 
         {plusMenuOpen && (
           <div data-testid="assistant-prompt-plus-popover" className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-border-subtle bg-surface-primary p-2.5 text-xs shadow-md">
