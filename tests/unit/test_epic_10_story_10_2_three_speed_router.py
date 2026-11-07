@@ -175,6 +175,7 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         d1 = r1.json()
         assert d1["speed_mode"] == "SPEED_1_FAST"
         assert d1["ttft_ms"] < 1200.0
+        assert all(st.get("intermediate_output") for st in d1["step_progress"])
 
         # 2nd turn (HIT)
         r2 = client.post(
@@ -189,6 +190,7 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         d2 = r2.json()
         assert d2["cache_hit"] is True
         assert d2["speed_mode"] == "SPEED_2_AGENT_TOOLS"
+        assert all(st.get("intermediate_output") for st in d2["step_progress"])
 
         # SSE stream endpoint
         stream_resp = client.post(
@@ -203,6 +205,9 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         assert stream_resp.status_code == 200
         assert "event: cache_status" in stream_resp.text
         assert "event: step_progress" in stream_resp.text
+        assert "event: thinking_delta" in stream_resp.text
+        assert "event: token_delta" in stream_resp.text
+        assert "event: turn_completed" in stream_resp.text
         assert "SPEED_3_DEEP_AUDIT" in stream_resp.text
 
         # Invalidate cache on GLOSSARY_PROMOTED

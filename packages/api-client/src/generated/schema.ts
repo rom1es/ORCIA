@@ -2477,6 +2477,7 @@ export interface components {
     ThreeSpeedStepProgressSchemaItem: {
       connector_or_lens?: string | null;
       duration_ms: number;
+      intermediate_output?: string | null;
       label: string;
       status?: "COMPLETED" | "RUNNING";
       step_code: string;

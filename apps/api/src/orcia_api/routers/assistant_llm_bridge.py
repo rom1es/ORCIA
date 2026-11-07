@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -39,6 +40,7 @@ class LiveLlmTurnOutcome:
     response_text: str
     step_label: str
     latency_ms: float
+    thinking_text: str | None = None
 
 
 def _extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEndpoint | None:
@@ -286,18 +288,29 @@ def invoke_configured_llm_for_assistant_turn(
             elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
             msg_obj = data.get("message") if isinstance(data, dict) else {}
             content = ""
+            thinking_val: str | None = None
             if isinstance(msg_obj, dict):
                 content = str(msg_obj.get("content") or "").strip()
-                if not content and msg_obj.get("thinking"):
-                    content = str(msg_obj.get("thinking")).strip()
+                raw_think = str(msg_obj.get("thinking") or "").strip()
+                if raw_think:
+                    thinking_val = raw_think
+                if not content and raw_think:
+                    content = raw_think
             if not content:
                 return None
+            if not thinking_val:
+                thinking_val = (
+                    f"Modèle {ep.model_name} ({ep.provider} · {effort_fr}) : "
+                    f"analyse de la question « {user_prompt.strip()[:120]} » et structuration "
+                    "de la réponse."
+                )
             return LiveLlmTurnOutcome(
                 response_text=content,
                 step_label=(
                     f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_fr}) — réponse générée"
                 ),
                 latency_ms=elapsed_ms,
+                thinking_text=thinking_val,
             )
 
         # OpenAI-compatible (`/v1/chat/completions`)
@@ -321,7 +334,10 @@ def invoke_configured_llm_for_assistant_turn(
         choices = data.get("choices") if isinstance(data, dict) else None
         if isinstance(choices, list) and choices:
             first_msg = choices[0].get("message", {})
-            content = str(first_msg.get("content") or first_msg.get("reasoning") or "").strip()
+            raw_reasoning = str(
+                first_msg.get("reasoning") or first_msg.get("thinking") or ""
+            ).strip()
+            content = str(first_msg.get("content") or raw_reasoning or "").strip()
             if content:
                 return LiveLlmTurnOutcome(
                     response_text=content,
@@ -330,8 +346,66 @@ def invoke_configured_llm_for_assistant_turn(
                         f"({ep.provider} · {effort_fr}) — réponse générée"
                     ),
                     latency_ms=elapsed_ms,
+                    thinking_text=raw_reasoning
+                    or (
+                        f"Modèle {ep.model_name} ({ep.provider} · {effort_fr}) : "
+                        f"élaboration de la réponse pour « {user_prompt.strip()[:120]} »."
+                    ),
                 )
     except Exception:
         return None
 
     return None
+
+
+def stream_configured_llm_for_assistant_turn(
+    request: Request,
+    *,
+    user_prompt: str,
+    hat: str,
+    speed_mode: str,
+    requested_tier: str | None = None,
+    thinking_effort: str | None = None,
+    fallback_response_text: str | None = None,
+) -> Iterator[dict[str, object]]:
+    """Yield incremental SSE events (`thinking_delta`, `token_delta`, `turn_completed`)."""
+    outcome = invoke_configured_llm_for_assistant_turn(
+        request,
+        user_prompt=user_prompt,
+        hat=hat,
+        speed_mode=speed_mode,
+        requested_tier=requested_tier,
+        thinking_effort=thinking_effort,
+    )
+    thinking_text = (
+        outcome.thinking_text
+        if outcome is not None and outcome.thinking_text
+        else f"Analyse de la demande « {user_prompt.strip()[:120]} » et préparation des éléments."
+    )
+    yield {
+        "event": "thinking_delta",
+        "data": {
+            "step_code": "NODE_5_SINGLE_STREAM_LLM",
+            "thinking_text": thinking_text,
+        },
+    }
+    full_text = outcome.response_text if outcome is not None else (fallback_response_text or "")
+    words = full_text.split(" ")
+    chunk_size = max(1, min(4, len(words) // 6 or 1))
+    for idx in range(0, len(words), chunk_size):
+        piece = " ".join(words[idx : idx + chunk_size])
+        suffix = " " if idx + chunk_size < len(words) else ""
+        yield {
+            "event": "token_delta",
+            "data": {
+                "delta": f"{piece}{suffix}",
+            },
+        }
+    yield {
+        "event": "turn_completed",
+        "data": {
+            "response_text": full_text,
+            "thinking_text": thinking_text,
+            "latency_ms": outcome.latency_ms if outcome is not None else 380.0,
+        },
+    }

@@ -15781,6 +15781,17 @@
             "title": "Duration Ms",
             "type": "number"
           },
+          "intermediate_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intermediate Output"
+          },
           "label": {
             "title": "Label",
             "type": "string"
@@ -21826,7 +21837,7 @@
     },
     "/api/v1/assistant/three-speed/stream": {
       "post": {
-        "description": "Stream SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`).",
+        "description": "Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`).",
         "operationId": "stream_three_speed_turn_endpoint_api_v1_assistant_three_speed_stream_post",
         "parameters": [
           {

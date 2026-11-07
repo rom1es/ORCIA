@@ -59,7 +59,7 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
 
   it("verifies that every interactive @orcia/ui primitive mounted in apps/web receives its action callbacks", () => {
     const requiredPropsByComponent: Record<string, readonly string[]> = {
-      AssistantSpeedSelectorAndStreamView: ["onSendTurn"],
+      AssistantSpeedSelectorAndStreamView: ["onSendTurn", "onStopGeneration"],
       AssistantGovernanceModalAndStudio: [
         "onSaveUserPreferences",
         "onSaveWorkspaceSettings",
@@ -154,12 +154,21 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     fireEvent.click(screen.getByTestId("assistant-model-option-complex"));
     fireEvent.click(screen.getByTestId("assistant-effort-option-deep"));
 
-    // 2. Send a first question -> auto-creates a saved conversation
-    fireEvent.change(screen.getByTestId("assistant-three-speed-input"), {
+    // Verify bottom folders panel is collapsed by default (sr-only) until user clicks '📁 Dossiers'
+    expect(
+      screen.getByTestId("assistant-folders-panel-wrapper").className,
+    ).toContain("sr-only");
+
+    // 2. Send a first question -> auto-creates a saved conversation and clears the input
+    const promptInput = screen.getByTestId(
+      "assistant-three-speed-input",
+    ) as HTMLInputElement;
+    fireEvent.change(promptInput, {
       target: { value: "Quels sont les points critiques de l'architecture ?" },
     });
     const sendBtn = screen.getByTestId("assistant-three-speed-send-btn");
     fireEvent.click(sendBtn);
+    expect(promptInput.value).toBe("");
 
     await waitFor(() => {
       const output = screen.getByTestId("assistant-streamed-response-box");
@@ -167,6 +176,11 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
         "Quels sont les points critiques de l'architecture ?",
       );
+      // Once turn is completed and displayed in ActiveConversationMessagesView, the duplicate stream box & citations card are visually hidden (sr-only) so the reply appears only once on screen
+      expect(output.className).toContain("sr-only");
+      expect(
+        screen.getByTestId("assistant-citations-card-wrapper").className,
+      ).toContain("sr-only");
     });
 
     // Verify Saved Conversations button counter incremented to (1)

@@ -230,6 +230,12 @@ export {
   type ContextualInfoTriggerButtonProps,
 } from "./components/ContextualInfoTriggerButton";
 export {
+  FormattedMarkdownContent,
+  parseMarkdownBlocks,
+  renderInlineMarkdownNodes,
+  type FormattedMarkdownContentProps,
+} from "./components/FormattedMarkdownContent";
+export {
   DisabledButtonAlertIndicator,
   type DisabledButtonAlertIndicatorProps,
 } from "./components/DisabledButtonAlertIndicator";
@@ -278,6 +284,11 @@ export {
   type UiAssistantSpeedMode,
   type UiThreeSpeedStepProgress,
 } from "./primitives/AssistantSpeedSelectorAndStreamView";
+export {
+  AssistantThinkingSubWindow,
+  formatStepDurationSeconds,
+  type AssistantThinkingSubWindowProps,
+} from "./primitives/AssistantThinkingSubWindow";
 export {
   AssistantCitationPillsAndArtifactCard,
   type AssistantCitationPillsAndArtifactCardLabels,

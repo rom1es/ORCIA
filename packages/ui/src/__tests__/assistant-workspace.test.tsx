@@ -277,6 +277,206 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     });
   });
 
+  it("Story 10.2b — toggles Play (▶) and Stop (■) button, displays collapsible AssistantThinkingSubWindow with live second counter and intermediate outputs, auto-collapses when response streams, and preserves partial output on Stop", () => {
+    vi.useFakeTimers();
+    try {
+      const onSendTurn = vi.fn();
+      const onStopGeneration = vi.fn();
+      const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+        headerTitle: "Routage Conversationnel à 3 Vitesses",
+        speed1PillLabel: "⚡ Rapide",
+        speed2PillLabel: "🛠️ Outils",
+        speed3DeepAuditPillLabel: "🧠 Approfondi",
+        cacheHitBadge: "HIT",
+        cacheMissBadge: "MISS",
+        nodesDeterministicLabel: "Nœuds 1–4",
+        ttftBadgePrefix: "TTFT",
+        inputPlaceholder: "Posez votre question...",
+        sendPromptCta: "Envoyer",
+      };
+
+      const { rerender } = render(
+        <AssistantSpeedSelectorAndStreamView
+          workspaceId="ws-claims-alpha"
+          userId="u-claire-01"
+          hat="PM"
+          isGenerating={false}
+          stepProgress={[]}
+          streamedText=""
+          labels={speedLabels}
+          onSendTurn={onSendTurn}
+          onStopGeneration={onStopGeneration}
+        />,
+      );
+
+      // 1. When idle (!isGenerating), send button displays triangle play icon (▶)
+      expect(screen.getByTestId("assistant-send-play-icon").textContent).toBe("▶");
+      expect(screen.queryByTestId("assistant-stop-square-icon")).toBeNull();
+
+      // 2. When generating starts (isGenerating=true), button is NOT disabled and shows filled square (■)
+      rerender(
+        <AssistantSpeedSelectorAndStreamView
+          workspaceId="ws-claims-alpha"
+          userId="u-claire-01"
+          hat="PM"
+          isGenerating={true}
+          stepProgress={[
+            {
+              stepCode: "NODES_1_TO_4_DETERMINISTIC",
+              label: "Analyse de la question & cadrage",
+              durationMs: 18,
+              status: "COMPLETED",
+              intermediateOutput: "Demande cadrée : synthèse des risques.",
+            },
+            {
+              stepCode: "NODE_5_SINGLE_STREAM_LLM",
+              label: "Réflexion intermédiaire du modèle",
+              durationMs: 1200,
+              status: "RUNNING",
+              intermediateOutput: "Vérification des règles de gestion...",
+            },
+          ]}
+          streamedText=""
+          labels={speedLabels}
+          onSendTurn={onSendTurn}
+          onStopGeneration={onStopGeneration}
+        />,
+      );
+
+      const actionBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
+      expect(actionBtn.disabled).toBe(false);
+      expect(screen.getByTestId("assistant-stop-square-icon").textContent).toBe("■");
+
+      // Thinking sub-window is open by default while thinking (data-expanded="true")
+      const subWindow = screen.getByTestId("assistant-thinking-subwindow");
+      expect(subWindow.getAttribute("data-expanded")).toBe("true");
+      expect(
+        screen.getByTestId("assistant-step-intermediate-output-NODES_1_TO_4_DETERMINISTIC")
+          .textContent,
+      ).toContain("Demande cadrée : synthèse des risques.");
+      expect(
+        screen.getByTestId("assistant-step-intermediate-output-NODE_5_SINGLE_STREAM_LLM")
+          .textContent,
+      ).toContain("Vérification des règles de gestion...");
+
+      // 3. Live timer increments every second while isGenerating === true
+      expect(screen.getByTestId("assistant-thinking-subwindow-header-label").textContent).toContain(
+        "0s",
+      );
+      vi.advanceTimersByTime(2000);
+      rerender(
+        <AssistantSpeedSelectorAndStreamView
+          workspaceId="ws-claims-alpha"
+          userId="u-claire-01"
+          hat="PM"
+          isGenerating={true}
+          stepProgress={[
+            {
+              stepCode: "NODES_1_TO_4_DETERMINISTIC",
+              label: "Analyse de la question & cadrage",
+              durationMs: 18,
+              status: "COMPLETED",
+              intermediateOutput: "Demande cadrée : synthèse des risques.",
+            },
+            {
+              stepCode: "NODE_5_SINGLE_STREAM_LLM",
+              label: "Réflexion intermédiaire du modèle",
+              durationMs: 2000,
+              status: "RUNNING",
+              intermediateOutput: "Vérification des règles de gestion...",
+            },
+          ]}
+          streamedText=""
+          labels={speedLabels}
+          onSendTurn={onSendTurn}
+          onStopGeneration={onStopGeneration}
+        />,
+      );
+      expect(
+        screen.getByTestId("assistant-step-live-timer-NODE_5_SINGLE_STREAM_LLM").textContent,
+      ).toContain("s");
+
+      // 4. When streamedText starts arriving in the main box, sub-window auto-collapses (data-expanded="false")
+      rerender(
+        <AssistantSpeedSelectorAndStreamView
+          workspaceId="ws-claims-alpha"
+          userId="u-claire-01"
+          hat="PM"
+          isGenerating={true}
+          stepProgress={[
+            {
+              stepCode: "NODES_1_TO_4_DETERMINISTIC",
+              label: "Analyse de la question & cadrage",
+              durationMs: 18,
+              status: "COMPLETED",
+              intermediateOutput: "Demande cadrée : synthèse des risques.",
+            },
+            {
+              stepCode: "NODE_5_SINGLE_STREAM_LLM",
+              label: "Réflexion intermédiaire du modèle",
+              durationMs: 2400,
+              status: "COMPLETED",
+              intermediateOutput: "Vérification terminée.",
+            },
+          ]}
+          streamedText="Voici le début de la réponse générée progressivement..."
+          labels={speedLabels}
+          onSendTurn={onSendTurn}
+          onStopGeneration={onStopGeneration}
+        />,
+      );
+      expect(screen.getByTestId("assistant-thinking-subwindow").getAttribute("data-expanded")).toBe(
+        "false",
+      );
+      expect(screen.getByTestId("assistant-streamed-response-box").textContent).toContain(
+        "Voici le début de la réponse générée progressivement...",
+      );
+
+      // Clicking the sub-window toggle re-expands it so the user can inspect intermediate outputs
+      fireEvent.click(screen.getByTestId("assistant-thinking-subwindow-toggle"));
+      expect(screen.getByTestId("assistant-thinking-subwindow").getAttribute("data-expanded")).toBe(
+        "true",
+      );
+
+      // 5. Clicking the Stop square button (■) calls onStopGeneration, preserves text, and shows stopped badge
+      fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+      expect(onStopGeneration).toHaveBeenCalledTimes(1);
+
+      rerender(
+        <AssistantSpeedSelectorAndStreamView
+          workspaceId="ws-claims-alpha"
+          userId="u-claire-01"
+          hat="PM"
+          isGenerating={false}
+          generationStopped={true}
+          stepProgress={[
+            {
+              stepCode: "NODES_1_TO_4_DETERMINISTIC",
+              label: "Analyse de la question & cadrage",
+              durationMs: 18,
+              status: "COMPLETED",
+              intermediateOutput: "Demande cadrée : synthèse des risques.",
+            },
+          ]}
+          streamedText="Voici le début de la réponse générée progressivement..."
+          labels={speedLabels}
+          onSendTurn={onSendTurn}
+          onStopGeneration={onStopGeneration}
+        />,
+      );
+
+      expect(screen.getByTestId("assistant-send-play-icon").textContent).toBe("▶");
+      expect(screen.getByTestId("assistant-generation-stopped-badge").textContent).toContain(
+        "⏹ Génération interrompue par l'utilisateur",
+      );
+      expect(screen.getByTestId("assistant-streamed-response-box").textContent).toContain(
+        "Voici le début de la réponse générée progressivement...",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("Story 10.3 — renders deterministic [S1]/[G1]/[O1] pills, filters restricted sources for shared readers without leaking snippets, highlights phantom citations, and enforces Verrou V5 on artifact cards", () => {
     const onInspectSource = vi.fn();
     const onRequestRestrictedAccess = vi.fn();
@@ -495,5 +695,109 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(
       screen.getByTestId("assistant-history-hit-hit-thread-01").textContent,
     ).toContain("Arbitrage PSP Checkout");
+  });
+
+  it("Story 10.2c — renders FormattedMarkdownContent (headings, fenced code blocks with python language header & Copy button, bold/inline code, lists), clears input on send, strips internal jargon in AssistantThinkingSubWindow, and shows a single clean duration in seconds", () => {
+    const onSendTurn = vi.fn();
+    const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      headerTitle: "Routage Conversationnel",
+      speed1PillLabel: "⚡ Rapide",
+      speed2PillLabel: "🛠️ Outils",
+      speed3DeepAuditPillLabel: "🧠 Approfondi",
+      cacheHitBadge: "HIT",
+      cacheMissBadge: "MISS",
+      nodesDeterministicLabel: "Préparation",
+      ttftBadgePrefix: "TTFT",
+      inputPlaceholder: "Posez votre question...",
+      sendPromptCta: "Envoyer",
+    };
+
+    const markdownResponse =
+      "Voici deux façons de coder la fonction factorielle en Python. ### 1. Méthode Itérative ```python def factorielle_iterative(n): if n < 0: return \"Erreur\" resultat = 1 return resultat ``` ### 2. Résumé * **Complexité** : `O(n)` optimale * *Recommandation* : privilégier la boucle.";
+
+    render(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        isGenerating={false}
+        stepProgress={[
+          {
+            stepCode: "NODES_1_TO_4_DETERMINISTIC",
+            label:
+              "⚡ Nœuds 1–4 déterministes (Intention, RBAC, RAG SQL/pgvector & Cache 5 couches)",
+            durationMs: 14.51,
+            status: "COMPLETED",
+            intermediateOutput:
+              "Demande analysée pour l'espace « ws-1 » (rôle : PLATFORM_ADMIN) : « code la fonction factorielle en python ».",
+          },
+          {
+            stepCode: "NODE_5_SINGLE_STREAM_LLM",
+            label: "💬 Modèle IA gemma4:12b — réponse générée",
+            durationMs: 33786.39,
+            status: "COMPLETED",
+            intermediateOutput: "Structuration de la réponse avec exemples Python.",
+          },
+        ]}
+        streamedText={markdownResponse}
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    // 1. Markdown headings, code block, bold, and lists are converted into structured HTML elements
+    const responseBox = screen.getByTestId("assistant-streamed-response-box");
+    const headings = responseBox.querySelectorAll("h3");
+    expect(headings.length).toBe(2);
+    expect(headings[0]?.textContent).toContain("1. Méthode Itérative");
+    expect(headings[1]?.textContent).toContain("2. Résumé");
+
+    const codeBlock = screen.getByTestId("markdown-code-block");
+    expect(codeBlock.querySelector("pre code")?.textContent).toContain(
+      "def factorielle_iterative(n):",
+    );
+    expect(codeBlock.textContent).toContain("python");
+    expect(responseBox.querySelectorAll("strong").length).toBeGreaterThanOrEqual(1);
+    expect(responseBox.querySelectorAll("ul li").length).toBe(2);
+
+    // 2. Legacy speed pills row is hidden via sr-only when hideLegacySpeedPills=true
+    expect(
+      screen.getByTestId("assistant-legacy-speed-pills-row").className,
+    ).toContain("sr-only");
+
+    // 3. Thinking sub-window strips internal jargon (pgvector, RBAC, PLATFORM_ADMIN, ws-1) and shows single duration in seconds
+    const stepListText =
+      screen.getByTestId("assistant-step-progress-list").textContent ?? "";
+    expect(stepListText).toContain(
+      "Analyse de la question et préparation du contexte",
+    );
+    expect(stepListText).toContain(
+      "Analyse de votre demande : « code la fonction factorielle en python ».",
+    );
+    expect(stepListText).not.toContain("pgvector");
+    expect(stepListText).not.toContain("RBAC");
+    expect(stepListText).not.toContain("PLATFORM_ADMIN");
+    expect(stepListText).not.toContain("33786.39 ms");
+    expect(
+      screen.getByTestId("assistant-step-live-timer-NODES_1_TO_4_DETERMINISTIC")
+        .textContent,
+    ).toBe("< 1s");
+    expect(
+      screen.getByTestId("assistant-step-live-timer-NODE_5_SINGLE_STREAM_LLM")
+        .textContent,
+    ).toBe("34s");
+
+    // 4. Typing a question and clicking Send clears the input field immediately
+    const input = screen.getByTestId(
+      "assistant-three-speed-input",
+    ) as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { value: "code la fonction factorielle en python" },
+    });
+    expect(input.value).toBe("code la fonction factorielle en python");
+    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+    expect(input.value).toBe("");
   });
 });

@@ -6,15 +6,15 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-06",
+  "lastSyncedDate": "2026-11-07",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 67,
+    "uiPrimitivesCount": 69,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 79
+    "techLeadReportsCount": 81
   },
   "activeRoutes": [
     "/",
@@ -49,6 +49,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AssistantFoldersAndCollaborativeThreadView",
     "AssistantGovernanceModalAndStudio",
     "AssistantSpeedSelectorAndStreamView",
+    "AssistantThinkingSubWindow",
     "BiModeLoginView",
     "BootstrapOnboardingPanel",
     "CatalogExplorerPanel",
@@ -63,6 +64,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "DurableWizardRunnerView",
     "EffortSelector",
     "FederatedUriBadge",
+    "FormattedMarkdownContent",
     "FourZoneDirectionCShell",
     "GlobalSidebar",
     "GuidanceDrawer",
@@ -401,6 +403,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 UX/UI & Markdown",
+      "reportFile": "2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant-tech-lead-report.md",
+      "domain": "Suppression du Triplon de Réponse de 💬 Mon Assistant, Composant @orcia/ui FormattedMarkdownContent (Titres, Blocs de Code Python/Multi-Langages avec Bouton Copier, Listes & Gras), Fermeture par Défaut des Onglets Redondants, Vidage Automatique de l'Input & Purge du Jargon dans AssistantThinkingSubWindow",
+      "summary": "Création de FormattedMarkdownContent.tsx dans @orcia/ui (data-testid=\"formatted-markdown-content\", zéro dangerouslySetInnerHTML) interprétant les titres #..####, blocs  lang ...   avec bouton Copier, listes et gras/code inline ; affichage unique de la réponse de l'Assistant sans triplon ; repli par défaut des onglets du bas (foldersPanelOpen = false) et masquage des 3 anciennes pastilles de vitesse ; vidage immédiat du champ de saisie après envoi ; et humanisation des étapes de réflexion (Analyse de la question et préparation du contexte, compteur unique < 1s / 34s sans pgvector/RBAC/PLATFORM_ADMIN)."
+    },
+    {
+      "date": "2026-11-06",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 Streaming & Stop",
+      "reportFile": "2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion-tech-lead-report.md",
+      "domain": "Streaming Progressif de 💬 Mon Assistant, Bouton d'Action à Bascule Play/Stop (▶ / ■) & Sous-Fenêtre de Réflexion (AssistantThinkingSubWindow) avec Compteur Temps Réel en Secondes (Xs) et Réponses Intermédiaires (intermediateOutput)",
+      "summary": "Création de AssistantThinkingSubWindow.tsx (accordéon ouvert pendant la réflexion puis replié automatiquement à l'arrivée de la réponse, compteur temps réel 0s -> 1s -> 2s… et affichage des réponses intermédiaires intermediateOutput), bascule du bouton d'envoi entre triangle ▶ (!isGenerating) et carré plein ■ actif (isGenerating) interrompant immédiatement le flux via AbortController (useAssistantStreamingTurn.ts) avec badge ⏹ Génération interrompue par l'utilisateur, et streaming SSE enrichi (thinking_delta, token_delta, turn_completed) dans assistant_llm_bridge.py / assistant_workspace.py."
+    },
     {
       "date": "2026-11-06",
       "phaseOrStory": "Post-Epic 12 / Epic 10 UX & LLM",

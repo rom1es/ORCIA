@@ -1,4 +1,7 @@
-import { ContextualInfoTriggerButton } from "@orcia/ui";
+import {
+  ContextualInfoTriggerButton,
+  FormattedMarkdownContent,
+} from "@orcia/ui";
 import React from "react";
 import type { SavedAssistantConversation } from "./savedConversationsStore";
 
@@ -227,12 +230,13 @@ export function ActiveConversationMessagesView({
             </div>
             <p className="text-text-primary whitespace-pre-wrap">{turn.userPrompt}</p>
             <div className="border-t border-border-subtle pt-2 mt-1.5">
-              <div className="font-semibold text-action-primary mb-0.5">
+              <div className="font-semibold text-action-primary mb-1">
                 🤖 {isFr ? "Mon Assistant" : "My Assistant"}
               </div>
-              <p className="text-text-primary whitespace-pre-wrap leading-relaxed">
-                {turn.assistantReply}
-              </p>
+              <FormattedMarkdownContent
+                content={turn.assistantReply}
+                testId={`assistant-turn-markdown-${idx + 1}`}
+              />
             </div>
           </div>
         ))}

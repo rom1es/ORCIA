@@ -297,6 +297,7 @@ class ThreeSpeedStepProgressSchemaItem(BaseModel):
     duration_ms: float
     status: Literal["COMPLETED", "RUNNING"] = "COMPLETED"
     connector_or_lens: str | None = None
+    intermediate_output: str | None = None
 
 
 class ThreeSpeedTurnRequest(BaseModel):

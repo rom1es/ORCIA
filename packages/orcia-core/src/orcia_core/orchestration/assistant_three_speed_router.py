@@ -133,6 +133,7 @@ class ThreeSpeedStepProgressItem:
     duration_ms: float
     status: Literal["COMPLETED", "RUNNING"] = "COMPLETED"
     connector_or_lens: str | None = None
+    intermediate_output: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -301,6 +302,7 @@ class AssistantThreeSpeedRouterService:
         llm_response_override: str | None = None,
         llm_step_label_override: str | None = None,
         llm_latency_ms_override: float | None = None,
+        llm_thinking_override: str | None = None,
     ) -> ThreeSpeedTurnResult:
         """Execute a conversational turn routed across Speed 1, Speed 2, or Speed 3."""
         if user.platform_role == "OBSERVER":
@@ -321,6 +323,11 @@ class AssistantThreeSpeedRouterService:
         # Nodes 1..4 always run deterministically in < 80 ms
         det_ms = round(14.5 + cached_prompt.lookup_latency_ms, 2)
         assert det_ms < MAX_NODES_1_TO_4_DETERMINISTIC_MS
+        prompt_excerpt = user_prompt.strip()[:140]
+        cadrage_summary = (
+            f"Demande analysée pour l'espace « {workspace_id} » (rôle : {active_hat}) : "
+            f"« {prompt_excerpt} »."
+        )
 
         if speed_mode == "SPEED_1_FAST":
             llm_ms = (
@@ -330,6 +337,9 @@ class AssistantThreeSpeedRouterService:
                 llm_step_label_override
                 or "💬 Nœud 5 — Appel LLM unique en streaming SSE (TTFT < 1,2 s)"
             )
+            step2_thinking = llm_thinking_override or (
+                f"Formulation d'une réponse directe et synthétique pour « {prompt_excerpt} »."
+            )
             steps: tuple[ThreeSpeedStepProgressItem, ...] = (
                 ThreeSpeedStepProgressItem(
                     step_code="NODES_1_TO_4_DETERMINISTIC",
@@ -338,11 +348,13 @@ class AssistantThreeSpeedRouterService:
                         "(Intention, RBAC, RAG SQL/pgvector & Cache 5 couches)"
                     ),
                     duration_ms=det_ms,
+                    intermediate_output=cadrage_summary,
                 ),
                 ThreeSpeedStepProgressItem(
                     step_code="NODE_5_SINGLE_STREAM_LLM",
                     label=step2_label,
                     duration_ms=llm_ms,
+                    intermediate_output=step2_thinking,
                 ),
             )
             ttft_ms = round(det_ms + llm_ms, 2)
@@ -379,12 +391,17 @@ class AssistantThreeSpeedRouterService:
                     step_code="NODES_1_TO_4_DETERMINISTIC",
                     label="⚡ Nœuds 1–4 déterministes & vérification RBAC/Passthrough",
                     duration_ms=det_ms,
+                    intermediate_output=cadrage_summary,
                 ),
                 ThreeSpeedStepProgressItem(
                     step_code="CONNECTOR_INTERROGATION",
                     label="🔍 Interrogation de Jira...",
                     duration_ms=520.0,
                     connector_or_lens=", ".join(effective_targets),
+                    intermediate_output=(
+                        f"Mobilisation des compétences et connecteurs ciblés : "
+                        f"{', '.join(effective_targets)}."
+                    ),
                 ),
                 ThreeSpeedStepProgressItem(
                     step_code="CONNECTOR_INVOKER_EXEC",
@@ -394,6 +411,11 @@ class AssistantThreeSpeedRouterService:
                     ),
                     duration_ms=llm_ms,
                     connector_or_lens=effective_targets[0],
+                    intermediate_output=llm_thinking_override
+                    or (
+                        f"Consolidation des éléments retournés par {', '.join(effective_targets)} "
+                        f"pour « {prompt_excerpt} »."
+                    ),
                 ),
             )
             ttft_ms = round(det_ms + 520.0 + llm_ms, 2)
@@ -427,12 +449,17 @@ class AssistantThreeSpeedRouterService:
                 step_code="NODES_1_TO_4_DETERMINISTIC",
                 label="⚡ Nœuds 1–4 déterministes & assemblage 5 couches",
                 duration_ms=det_ms,
+                intermediate_output=cadrage_summary,
             ),
             ThreeSpeedStepProgressItem(
                 step_code="DEEP_PLANNING_LLM",
                 label="📋 Planification LLM intermédiaire & décomposition causale N1–N3...",
                 duration_ms=640.0,
                 connector_or_lens="PLANNER_LLM",
+                intermediate_output=(
+                    f"Décomposition de la problématique « {prompt_excerpt} » en 3 axes : "
+                    "1) Synthèse exécutive, 2) Risques & conformité, 3) Plan d'action."
+                ),
             ),
             ThreeSpeedStepProgressItem(
                 step_code="ORTHOGONAL_MULTI_LENS_AD10",
@@ -442,11 +469,17 @@ class AssistantThreeSpeedRouterService:
                 ),
                 duration_ms=820.0,
                 connector_or_lens="ORTHOGONAL_JUDGE_AD10",
+                intermediate_output=llm_thinking_override
+                or (
+                    "Revue croisée des 3 facettes : cohérence fonctionnelle, "
+                    "sécurité des accès et maîtrise des coûts."
+                ),
             ),
             ThreeSpeedStepProgressItem(
                 step_code="DEEP_SYNTHESIS_STREAM",
                 label=llm_step_label_override or "✍️ Synthèse contradictoire consolidée",
                 duration_ms=llm_ms,
+                intermediate_output="Rédaction de la synthèse structurée finale.",
             ),
         )
         ttft_ms = round(det_ms + 1460.0, 2)
@@ -485,6 +518,7 @@ class AssistantThreeSpeedRouterService:
         llm_response_override: str | None = None,
         llm_step_label_override: str | None = None,
         llm_latency_ms_override: float | None = None,
+        llm_thinking_override: str | None = None,
     ) -> Iterator[dict[str, object]]:
         """Yield SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`)."""
         turn = self.execute_three_speed_turn(
@@ -497,6 +531,7 @@ class AssistantThreeSpeedRouterService:
             llm_response_override=llm_response_override,
             llm_step_label_override=llm_step_label_override,
             llm_latency_ms_override=llm_latency_ms_override,
+            llm_thinking_override=llm_thinking_override,
         )
         yield {
             "event": "cache_status",
@@ -517,6 +552,7 @@ class AssistantThreeSpeedRouterService:
                     "duration_ms": step.duration_ms,
                     "status": step.status,
                     "connector_or_lens": step.connector_or_lens,
+                    "intermediate_output": step.intermediate_output,
                 },
             }
         yield {

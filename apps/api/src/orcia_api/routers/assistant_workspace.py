@@ -23,7 +23,10 @@ from orcia_api.dependencies import (
     get_assistant_governance_service,
     get_assistant_three_speed_router_service,
 )
-from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
+from orcia_api.routers.assistant_llm_bridge import (
+    invoke_configured_llm_for_assistant_turn,
+    stream_configured_llm_for_assistant_turn,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
     ArtifactCardActionRequest,
@@ -330,6 +333,7 @@ def execute_three_speed_turn_endpoint(
         llm_response_override=live_outcome.response_text if live_outcome is not None else None,
         llm_step_label_override=live_outcome.step_label if live_outcome is not None else None,
         llm_latency_ms_override=live_outcome.latency_ms if live_outcome is not None else None,
+        llm_thinking_override=live_outcome.thinking_text if live_outcome is not None else None,
     )
     return ThreeSpeedTurnResponse(
         turn_id=turn.turn_id,
@@ -351,6 +355,7 @@ def execute_three_speed_turn_endpoint(
                 duration_ms=st.duration_ms,
                 status=st.status,
                 connector_or_lens=st.connector_or_lens,
+                intermediate_output=st.intermediate_output,
             )
             for st in turn.step_progress
         ],
@@ -367,7 +372,7 @@ def stream_three_speed_turn_endpoint(
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> StreamingResponse:
-    """Stream SSE events (`cache_status`, `step_progress`, `token`, `done`) (`Story 10.2`)."""
+    """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
 
     def _generate() -> Iterator[str]:
         effective_deep_audit = payload.deep_audit_pill_active or payload.thinking_effort == "deep"
@@ -377,10 +382,11 @@ def stream_three_speed_turn_endpoint(
         elif effective_speed is None and payload.thinking_effort == "balanced":
             effective_speed = "SPEED_2_AGENT_TOOLS"
 
+        active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
         live_outcome = invoke_configured_llm_for_assistant_turn(
             request,
             user_prompt=payload.user_prompt,
-            hat=payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN",
+            hat=active_hat,
             speed_mode=effective_speed or "SPEED_1_FAST",
             requested_tier=payload.requested_tier,
             thinking_effort=payload.thinking_effort,
@@ -395,10 +401,38 @@ def stream_three_speed_turn_endpoint(
             llm_response_override=live_outcome.response_text if live_outcome is not None else None,
             llm_step_label_override=live_outcome.step_label if live_outcome is not None else None,
             llm_latency_ms_override=live_outcome.latency_ms if live_outcome is not None else None,
+            llm_thinking_override=live_outcome.thinking_text if live_outcome is not None else None,
         ):
             event_name = evt["event"]
             data_json = json.dumps(evt["data"], ensure_ascii=False)
             yield f"event: {event_name}\ndata: {data_json}\n\n"
+            if event_name == "step_progress":
+                step_data = evt["data"]
+                if isinstance(step_data, dict) and step_data.get("intermediate_output"):
+                    think_json = json.dumps(
+                        {
+                            "step_code": step_data.get("step_code"),
+                            "thinking_text": step_data.get("intermediate_output"),
+                        },
+                        ensure_ascii=False,
+                    )
+                    yield f"event: thinking_delta\ndata: {think_json}\n\n"
+            elif event_name == "token":
+                token_data = evt["data"]
+                full_txt = str(token_data.get("text") or "") if isinstance(token_data, dict) else ""
+                for stream_evt in stream_configured_llm_for_assistant_turn(
+                    request,
+                    user_prompt=payload.user_prompt,
+                    hat=active_hat,
+                    speed_mode=effective_speed or "SPEED_1_FAST",
+                    requested_tier=payload.requested_tier,
+                    thinking_effort=payload.thinking_effort,
+                    fallback_response_text=full_txt,
+                ):
+                    if stream_evt["event"] in ("token_delta", "turn_completed"):
+                        s_name = stream_evt["event"]
+                        s_json = json.dumps(stream_evt["data"], ensure_ascii=False)
+                        yield f"event: {s_name}\ndata: {s_json}\n\n"
 
     return StreamingResponse(_generate(), media_type="text/event-stream")
 
