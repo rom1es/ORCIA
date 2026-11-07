@@ -581,6 +581,12 @@ export interface components {
       workflow_overrides: (components["schemas"]["DeclarativeOverrideLayerResponse"])[];
       workspaces_governance: (components["schemas"]["WorkspaceGovernanceItemResponse"])[];
     };
+    ConversationTurnMessageItem: {
+      content: string;
+      name?: string | null;
+      role: "user" | "assistant" | "tool";
+      tool_call_id?: string | null;
+    };
     CreateAssistantThreadRequest: {
       folder_id?: string | null;
       initial_summary?: string;
@@ -2483,13 +2489,22 @@ export interface components {
       step_code: string;
     };
     ThreeSpeedTurnRequest: {
+      conversation_history?: (components["schemas"]["ConversationTurnMessageItem"])[];
       deep_audit_pill_active?: boolean;
+      folder_id?: string | null;
+      folder_pinned_notes?: string | null;
       hat?: string | null;
+      locale?: string | null;
+      personal_instructions?: string | null;
       requested_speed?: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT" | null;
       requested_tier?: "simple" | "medium" | "complex" | "auto" | null;
+      response_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP" | null;
+      response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE" | null;
       thinking_effort?: "fast" | "balanced" | "deep" | null;
+      thread_id?: string | null;
       user_prompt: string;
       workspace_id: string;
+      workspace_instructions?: string | null;
     };
     ThreeSpeedTurnResponse: {
       assembled_prompt_sha256: string;
@@ -4244,6 +4259,7 @@ export type ContextualHelpPublishRequest = components["schemas"]["ContextualHelp
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
 export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
 export type ControlCenterOverviewResponse = components["schemas"]["ControlCenterOverviewResponse"];
+export type ConversationTurnMessageItem = components["schemas"]["ConversationTurnMessageItem"];
 export type CreateAssistantThreadRequest = components["schemas"]["CreateAssistantThreadRequest"];
 export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPackRequest"];
 export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];

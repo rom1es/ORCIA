@@ -2,18 +2,24 @@ import { createOrciaApiClient } from "@orcia/api-client";
 import {
   sanitizeAssistantDisplayReply,
   type UiAssistantAttachedFileItem,
+  type UiAssistantFolderItem,
   type UiAssistantSpeedMode,
   type UiInferenceEffort,
   type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
 import { useEffect, useRef, useState } from "react";
+import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
+import type { SavedAssistantConversation } from "./savedConversationsStore";
 
 export interface UseAssistantStreamingTurnOptions {
   readonly activeWorkspaceId: string;
   readonly isFr: boolean;
   readonly isJsdom: boolean;
   readonly initialStreamedText: string;
+  readonly activeConversation?: SavedAssistantConversation | null;
+  readonly activeFolder?: UiAssistantFolderItem | null;
+  readonly governancePrefs?: SavedAssistantGovernancePrefs;
   readonly onTurnCompleted: (params: {
     userPrompt: string;
     assistantReply: string;
@@ -97,11 +103,30 @@ export function shouldUseProgressiveStepThinking(params: {
   return /(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(params.userPrompt);
 }
 
+export function buildConversationHistoryPayload(
+  conversation?: SavedAssistantConversation | null,
+): Array<{ role: "user" | "assistant"; content: string }> {
+  if (!conversation || !conversation.turns.length) return [];
+  const history: Array<{ role: "user" | "assistant"; content: string }> = [];
+  for (const turn of conversation.turns) {
+    if (turn.userPrompt.trim()) {
+      history.push({ role: "user", content: turn.userPrompt.trim() });
+    }
+    if (turn.assistantReply.trim()) {
+      history.push({ role: "assistant", content: turn.assistantReply.trim() });
+    }
+  }
+  return history;
+}
+
 export function useAssistantStreamingTurn({
   activeWorkspaceId,
   isFr,
   isJsdom,
   initialStreamedText,
+  activeConversation = null,
+  activeFolder = null,
+  governancePrefs,
   onTurnCompleted,
 }: UseAssistantStreamingTurnOptions) {
   const [streamedText, setStreamedText] = useState<string>(() =>
@@ -156,21 +181,22 @@ export function useAssistantStreamingTurn({
   };
 
   const streamTextProgressively = (fullText: string, onDone: () => void, signal: AbortSignal) => {
-    const words = fullText.split(" ");
-    if (words.length <= 2) {
+    // Preserve 100% of newlines (\n) and Markdown indentation by slicing line-preserving segments
+    const segments = fullText.match(/[^\n]*\n|[^\n]+/g) ?? [fullText];
+    if (segments.length <= 1) {
       setStreamedText(fullText);
       onDone();
       return;
     }
-    const chunkCount = Math.min(8, Math.max(2, Math.ceil(words.length / 4)));
-    const wordsPerChunk = Math.max(1, Math.ceil(words.length / chunkCount));
+    const chunkCount = Math.min(8, Math.max(2, segments.length));
+    const segmentsPerChunk = Math.max(1, Math.ceil(segments.length / chunkCount));
     let currentIndex = 0;
 
     const pushNextChunk = () => {
       if (signal.aborted) return;
-      currentIndex = Math.min(words.length, currentIndex + wordsPerChunk);
-      setStreamedText(words.slice(0, currentIndex).join(" "));
-      if (currentIndex < words.length) {
+      currentIndex = Math.min(segments.length, currentIndex + segmentsPerChunk);
+      setStreamedText(segments.slice(0, currentIndex).join(""));
+      if (currentIndex < segments.length) {
         timersRef.current.push(setTimeout(pushNextChunk, 35));
       } else {
         onDone();
@@ -253,16 +279,40 @@ export function useAssistantStreamingTurn({
       timersRef.current.push(tStep2, tStep3);
     }
 
+    const attachmentContext =
+      attachedFiles && attachedFiles.length > 0
+        ? "\n\n[Pièces jointes fournies par l'utilisateur]\n" +
+          attachedFiles
+            .map((f) => `- ${f.name}${f.uri ? ` (${f.uri})` : ""}${f.contentExcerpt ? ` : ${f.contentExcerpt}` : ""}`)
+            .join("\n")
+        : "";
+    const enrichedPrompt = `${userPrompt}${attachmentContext}`;
+    const historyPayload = buildConversationHistoryPayload(activeConversation);
+    const activeHat = governancePrefs?.defaultHat || "PM";
+    const pinnedNotes = activeFolder?.pinnedNotesMarkdown?.trim() || undefined;
+
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
       .executeAssistantTurn({
         workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-        hat: "PLATFORM_ADMIN",
-        user_prompt: userPrompt,
+        hat: activeHat,
+        user_prompt: enrichedPrompt,
         requested_speed: requestedSpeed,
         deep_audit_pill_active: deepAuditPillActive,
         requested_tier: effectiveTier,
         thinking_effort: effectiveEffort === "default" ? "balanced" : effectiveEffort,
+        conversation_history: historyPayload,
+        ...(activeFolder?.folderId ? { folder_id: activeFolder.folderId } : {}),
+        ...(pinnedNotes ? { folder_pinned_notes: pinnedNotes } : {}),
+        ...(governancePrefs?.responseTone ? { response_tone: governancePrefs.responseTone } : {}),
+        ...(governancePrefs?.favoriteFormat ? { response_format: governancePrefs.favoriteFormat } : {}),
+        ...(governancePrefs?.personalInstructions
+          ? { personal_instructions: governancePrefs.personalInstructions }
+          : {}),
+        ...(governancePrefs?.workspaceInstructions
+          ? { workspace_instructions: governancePrefs.workspaceInstructions }
+          : {}),
+        locale: isFr ? "fr" : "en",
       })
       .then((res) => {
         if (controller.signal.aborted) return;

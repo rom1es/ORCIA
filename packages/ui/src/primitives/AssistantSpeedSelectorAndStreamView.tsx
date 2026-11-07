@@ -70,6 +70,9 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly autocompleteSuggestions?: readonly UiAssistantAutocompleteSuggestion[];
   readonly prefillPrompt?: string | null;
   readonly onPrefillConsumed?: () => void;
+  readonly activeFolderTitle?: string | null;
+  readonly activeFolderNotes?: string | null;
+  readonly onClearActiveFolder?: () => void;
   readonly welcomeTitle?: string;
   readonly showWelcomeHero?: boolean;
   readonly hideTechnicalCacheHeader?: boolean;
@@ -117,6 +120,9 @@ export function AssistantSpeedSelectorAndStreamView({
   autocompleteSuggestions = [],
   prefillPrompt = null,
   onPrefillConsumed,
+  activeFolderTitle = null,
+  activeFolderNotes = null,
+  onClearActiveFolder,
   welcomeTitle = "Par quoi voulez-vous commencer ?",
   showWelcomeHero = true,
   hideTechnicalCacheHeader = false,
@@ -145,9 +151,7 @@ export function AssistantSpeedSelectorAndStreamView({
   const [speed, setSpeed] = useState<UiAssistantSpeedMode>(initialDeepAudit ? "SPEED_3_DEEP_AUDIT" : initialSpeed);
   const [deepAuditActive, setDeepAuditActive] = useState<boolean>(initialDeepAudit);
   const [tier, setTier] = useState<UiInferenceTier>(initialTier);
-  const [effort, setEffort] = useState<UiInferenceEffort>(
-    initialEffort ?? (initialDeepAudit ? "deep" : "balanced"),
-  );
+  const [effort, setEffort] = useState<UiInferenceEffort>(initialEffort ?? (initialDeepAudit ? "deep" : "balanced"));
   const [pickerOpen, setPickerOpen] = useState<boolean>(false);
   const [thinkingSubmenuOpen, setThinkingSubmenuOpen] = useState<boolean>(true);
   const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
@@ -182,10 +186,10 @@ export function AssistantSpeedSelectorAndStreamView({
     }
   }, [prefillPrompt, onPrefillConsumed]);
 
-  const extraAgents: readonly UiAssistantAutocompleteOption[] = autocompleteSuggestions
+  const extraAgents = autocompleteSuggestions
     .filter((s) => s.kind === "agent")
     .map((s) => ({ slug: s.token.replace(/^@/, ""), label: s.name, description: s.description, kind: "agent" as const }));
-  const extraSkills: readonly UiAssistantAutocompleteOption[] = autocompleteSuggestions
+  const extraSkills = autocompleteSuggestions
     .filter((s) => s.kind === "skill")
     .map((s) => ({ slug: s.token.replace(/^\//, ""), label: s.name, description: s.description, kind: "skill" as const }));
   const mergedAgentOptions = [...extraAgents, ...agentOptions.filter((a) => !extraAgents.some((e) => e.slug === a.slug))];
@@ -204,8 +208,7 @@ export function AssistantSpeedSelectorAndStreamView({
     setPromptText(val);
     setForcedAutocompleteKind(null);
     if (!deepAuditActive && !userEditedTierOrEffort) {
-      const hasAgentOrSkill = /(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(val);
-      setSpeed(hasAgentOrSkill ? "SPEED_2_AGENT_TOOLS" : "SPEED_1_FAST");
+      setSpeed(/(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(val) ? "SPEED_2_AGENT_TOOLS" : "SPEED_1_FAST");
       setEffort("balanced");
     }
   };
@@ -288,36 +291,22 @@ export function AssistantSpeedSelectorAndStreamView({
           </div>
         </header>
       )}
-
       {showWelcomeHero && !cleanStreamedText && !isGenerating && (
         <div className="py-6 text-center"><h2 data-testid="assistant-welcome-hero-title" className="text-xl font-semibold tracking-tight text-text-primary">{welcomeTitle}</h2></div>
       )}
-
       <div data-testid="assistant-central-scrollable-stream" className="max-h-[62vh] overflow-y-auto space-y-3 pr-1">
         {shownUserQuestion && (!hideDuplicateCompletedStream || isGenerating) ? (
           <AssistantUserQuestionBubble userPrompt={shownUserQuestion} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} attachedFiles={lastSubmittedFiles} />
         ) : null}
-
-        {isGenerating && !cleanStreamedText ? (
-          <div className="py-2 my-1">
-            <AssistantThinkingSliderIndicator />
-          </div>
-        ) : null}
-
+        {isGenerating && !cleanStreamedText ? <div className="py-2 my-1"><AssistantThinkingSliderIndicator /></div> : null}
         {!hideDuplicateCompletedStream ? (
           <div data-testid="assistant-active-research-zone" className="py-1 flex flex-col items-start justify-center gap-2">
-            <AssistantThinkingSubWindow
-              stepProgress={stepProgress}
-              isGenerating={isGenerating}
-              hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))}
-            />
+            <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))} />
           </div>
         ) : null}
-
         {errorMessage && (
           <div role="alert" data-testid="assistant-error-banner" className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning">{errorMessage}</div>
         )}
-
         {(cleanStreamedText || isStoppedVisible) && (
           <div
             data-testid="assistant-streamed-response-box"
@@ -362,7 +351,17 @@ export function AssistantSpeedSelectorAndStreamView({
           onRemoveAttachedFile={(fileId) => setAttachedFiles((prev) => prev.filter((f) => f.id !== fileId))}
           onOpenFoldersAndCloseMenus={onOpenFoldersFromPlus ? () => { setPlusMenuOpen(false); setForcedAutocompleteKind(null); setPromptText((prev) => prev.replace(/(?:^|\s)[@/][a-zA-Z0-9_-]*$/, "")); onOpenFoldersFromPlus(); } : undefined}
         />
-
+        {activeFolderTitle ? (
+          <div data-testid="assistant-prompt-active-folder-badge" className="mb-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-action-primary/30 bg-action-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-action-primary">
+            <span>📁 Dossier actif : <strong>{activeFolderTitle}</strong></span>
+            {activeFolderNotes && activeFolderNotes.trim() ? (
+              <span data-testid="assistant-prompt-active-folder-note-indicator" className="text-text-secondary">· 📌 Note active prise en compte par l&apos;Assistant</span>
+            ) : null}
+            {onClearActiveFolder ? (
+              <button type="button" data-testid="assistant-prompt-clear-active-folder-btn" onClick={onClearActiveFolder} aria-label="Détacher le dossier actif" className="ml-1 font-bold hover:opacity-80">×</button>
+            ) : null}
+          </div>
+        ) : null}
         <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
           <AssistantAttachedFilesInlineBar attachedFiles={attachedFiles} onRemoveAttachedFile={(fileId) => setAttachedFiles((prev) => prev.filter((f) => f.id !== fileId))} />
           <div className="flex flex-wrap items-center gap-2">
@@ -377,7 +376,6 @@ export function AssistantSpeedSelectorAndStreamView({
             </button>
           </div>
         </div>
-
         {pickerOpen && (
           <AssistantModelAndEffortPopover
             modelOptions={modelOptions}

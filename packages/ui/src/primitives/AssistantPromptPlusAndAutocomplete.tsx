@@ -18,6 +18,7 @@ export interface UiAssistantAttachedFileItem {
   readonly name: string;
   readonly sourceKind: "LOCAL_PC" | "ORCIA_WORKSPACE";
   readonly uri?: string;
+  readonly contentExcerpt?: string;
 }
 
 export const DEFAULT_ASSISTANT_AGENT_OPTIONS: readonly UiAssistantAutocompleteOption[] = [

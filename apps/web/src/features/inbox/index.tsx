@@ -4,6 +4,7 @@ import {
   AssistantFoldersAndCollaborativeThreadView,
   AssistantGovernanceModalAndStudio,
   AssistantSpeedSelectorAndStreamView,
+  formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,
   type UiAssistantAttachedFileItem,
   type UiAssistantFolderItem,
@@ -15,10 +16,15 @@ import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 import {
-  ActiveConversationMessagesView,
-  AssistantTopToolbar,
-  SavedConversationsPanel,
-} from "./SavedConversationsAndThreadView";
+  readSavedActiveFolderId,
+  readSavedAssistantFolders,
+  readSavedAssistantGovernancePrefs,
+  writeSavedActiveFolderId,
+  writeSavedAssistantFolders,
+  writeSavedAssistantGovernancePrefs,
+  type SavedAssistantGovernancePrefs,
+} from "./assistantFoldersAndPrefsStore";
+import { ActiveConversationMessagesView, AssistantTopToolbar, SavedConversationsPanel } from "./SavedConversationsAndThreadView";
 import {
   buildAssistantAutocompleteAndRagOptions,
   buildAssistantAutocompleteSuggestions,
@@ -38,19 +44,14 @@ export function InboxFeaturePanel() {
   const { platformAdmin, workspaces, llmTiers, datasources, catalogItems, packs } = usePlatformSetup();
   const isFr = locale === "fr";
 
-  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(() =>
-    consumeAssistantPrefillFromStorage(),
-  );
-  const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>([]);
-  const [activeFolderId, setActiveFolderId] = useState<string>("");
+  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(() => consumeAssistantPrefillFromStorage());
+  const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>(() => readSavedAssistantFolders());
+  const [activeFolderId, setActiveFolderId] = useState<string>(() => readSavedActiveFolderId());
+  const [governancePrefs, setGovernancePrefs] = useState<SavedAssistantGovernancePrefs>(() => readSavedAssistantGovernancePrefs());
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
   const [savedConversationsOpen, setSavedConversationsOpen] = useState<boolean>(false);
-  const [savedConversations, setSavedConversations] = useState<readonly SavedAssistantConversation[]>(
-    () => readSavedAssistantConversations(),
-  );
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(
-    () => readSavedAssistantConversations()[0]?.id ?? null,
-  );
+  const [savedConversations, setSavedConversations] = useState<readonly SavedAssistantConversation[]>(() => readSavedAssistantConversations());
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => readSavedAssistantConversations()[0]?.id ?? null);
   const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
@@ -58,9 +59,17 @@ export function InboxFeaturePanel() {
   const isJsdom = typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
   const activeConversation = savedConversations.find((c) => c.id === activeConversationId) ?? null;
-  const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
-    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
+  const activeFolder = folders.find((f) => f.folderId === activeFolderId) ?? null;
+  const { agentOptions, skillOptions, orciaDocuments, ragCitations } = buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
   const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
+
+  const updateFoldersAndPersist = (updater: (prev: readonly UiAssistantFolderItem[]) => readonly UiAssistantFolderItem[]) => {
+    setFolders((prev) => { const next = updater(prev); writeSavedAssistantFolders(next); return next; });
+  };
+  const selectActiveFolderAndPersist = (nextFolderId: string) => {
+    setActiveFolderId(nextFolderId);
+    writeSavedActiveFolderId(nextFolderId);
+  };
 
   const appendTurnToSavedConversation = (params: {
     userPrompt: string;
@@ -92,9 +101,7 @@ export function InboxFeaturePanel() {
         ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
         usedSources,
         ...(params.stepProgress ? { stepProgress: params.stepProgress } : {}),
-        ...(params.thinkingElapsedSeconds !== undefined
-          ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds }
-          : {}),
+        ...(params.thinkingElapsedSeconds !== undefined ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds } : {}),
       });
       if (outcome.isNewConversation) {
         setActiveConversationId(outcome.resolvedConversationId);
@@ -109,9 +116,7 @@ export function InboxFeaturePanel() {
             })
             .catch((err: unknown) => {
               const detail = err instanceof Error ? err.message : "Synchronisation différée";
-              setGovernanceFeedback(
-                isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`,
-              );
+              setGovernanceFeedback(isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`);
             });
         }
       }
@@ -141,14 +146,15 @@ export function InboxFeaturePanel() {
     isFr,
     isJsdom,
     initialStreamedText: initialLastReply,
+    activeConversation,
+    activeFolder,
+    governancePrefs,
     onTurnCompleted: appendTurnToSavedConversation,
   });
 
   const handleSaveDraftAction = (content: string) => {
     const excerpt = content.slice(0, 42).replace(/\s+/g, " ").trim();
-    setGovernanceFeedback(
-      isFr ? `✅ Brouillon « ${excerpt || "Réponse"} » enregistré dans votre Espace.` : `✅ Draft "${excerpt || "Reply"}" saved to your Workspace.`,
-    );
+    setGovernanceFeedback(isFr ? `✅ Brouillon « ${excerpt || "Réponse"} » enregistré dans votre Espace.` : `✅ Draft "${excerpt || "Reply"}" saved to your Workspace.`);
   };
 
   return (
@@ -158,11 +164,7 @@ export function InboxFeaturePanel() {
           role="status"
           data-testid="assistant-governance-feedback-banner"
           className="rounded border px-3 py-2 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
-          }}
+          style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
         >
           {governanceFeedback}
         </div>
@@ -199,10 +201,7 @@ export function InboxFeaturePanel() {
             const next = savedConversations.filter((c) => c.id !== convId);
             setSavedConversations(next);
             writeSavedAssistantConversations(next);
-            if (activeConversationId === convId) {
-              setActiveConversationId(null);
-              resetStreamState("");
-            }
+            if (activeConversationId === convId) { setActiveConversationId(null); resetStreamState(""); }
           }}
         />
       )}
@@ -212,29 +211,39 @@ export function InboxFeaturePanel() {
           workspaceId={activeWorkspaceId}
           canEditWorkspaceLayer={true}
           canOpenStudioModeB={true}
+          initialUserTone={governancePrefs.responseTone}
+          initialUserFormat={governancePrefs.favoriteFormat}
+          initialDefaultHat={governancePrefs.defaultHat}
+          initialPersonalInstructions={governancePrefs.personalInstructions}
+          initialWorkspaceInstructions={governancePrefs.workspaceInstructions}
+          initialMcpExposed={governancePrefs.mcpExposeAssistant}
           assembledLayers={[]}
           studioNodes={[]}
           labels={dictionary.assistantGovernance}
-          onSaveUserPreferences={(payload) =>
-            setGovernanceFeedback(
-              isFr ? `✅ Préférences personnelles enregistrées automatiquement (rôle : ${payload.defaultHat}).` : `✅ Personal preferences auto-saved (role: ${payload.defaultHat}).`,
-            )
-          }
-          onSaveWorkspaceSettings={(payload) =>
-            setGovernanceFeedback(
-              isFr ? `✅ Réglages de l'Espace enregistrés automatiquement (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).` : `✅ Workspace settings auto-saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`,
-            )
-          }
-          onSaveStudioOverride={(payload) =>
-            setGovernanceFeedback(
-              isFr ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.` : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`,
-            )
-          }
-          onResetStudioOverride={(scopeLevel) =>
-            setGovernanceFeedback(
-              isFr ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).` : `✅ Configuration reset to defaults (${scopeLevel}).`,
-            )
-          }
+          onSaveUserPreferences={(payload) => {
+            setGovernancePrefs((prev) => {
+              const next: SavedAssistantGovernancePrefs = {
+                ...prev,
+                responseTone: payload.responseTone,
+                favoriteFormat: payload.favoriteFormat,
+                defaultHat: payload.defaultHat,
+                personalInstructions: payload.personalInstructions,
+              };
+              writeSavedAssistantGovernancePrefs(next);
+              return next;
+            });
+            setGovernanceFeedback(isFr ? `✅ Préférences personnelles enregistrées automatiquement (rôle : ${payload.defaultHat}).` : `✅ Personal preferences auto-saved (role: ${payload.defaultHat}).`);
+          }}
+          onSaveWorkspaceSettings={(payload) => {
+            setGovernancePrefs((prev) => {
+              const next: SavedAssistantGovernancePrefs = { ...prev, workspaceInstructions: payload.workspaceInstructions, mcpExposeAssistant: payload.mcpExposeAssistant };
+              writeSavedAssistantGovernancePrefs(next);
+              return next;
+            });
+            setGovernanceFeedback(isFr ? `✅ Réglages de l'Espace enregistrés automatiquement (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).` : `✅ Workspace settings auto-saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`);
+          }}
+          onSaveStudioOverride={(payload) => setGovernanceFeedback(isFr ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.` : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`)}
+          onResetStudioOverride={(scopeLevel) => setGovernanceFeedback(isFr ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).` : `✅ Configuration reset to defaults (${scopeLevel}).`)}
           onClose={() => setGovernanceOpen(false)}
         />
       ) : null}
@@ -254,7 +263,7 @@ export function InboxFeaturePanel() {
         <AssistantSpeedSelectorAndStreamView
           workspaceId={activeWorkspaceId}
           userId={platformAdmin?.email ?? ""}
-          hat="PLATFORM_ADMIN"
+          hat={governancePrefs.defaultHat}
           modelOptions={modelOptions}
           agentOptions={agentOptions}
           skillOptions={skillOptions}
@@ -263,6 +272,9 @@ export function InboxFeaturePanel() {
           autocompleteSuggestions={autocompleteSuggestions}
           prefillPrompt={prefillPrompt}
           onPrefillConsumed={() => setPrefillPrompt(null)}
+          activeFolderTitle={activeFolder?.title ?? null}
+          activeFolderNotes={activeFolder?.pinnedNotesMarkdown ?? null}
+          onClearActiveFolder={() => selectActiveFolderAndPersist("")}
           welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
           showWelcomeHero={!activeConversation || activeConversation.turns.length === 0}
           hideTechnicalCacheHeader={true}
@@ -286,11 +298,7 @@ export function InboxFeaturePanel() {
         />
       </div>
 
-      <div
-        data-testid="assistant-folders-panel-wrapper"
-        style={foldersPanelOpen ? undefined : { display: "none" }}
-        className={foldersPanelOpen ? "" : "sr-only"}
-      >
+      <div data-testid="assistant-folders-panel-wrapper" style={foldersPanelOpen ? undefined : { display: "none" }} className={foldersPanelOpen ? "" : "sr-only"}>
         <AssistantFoldersAndCollaborativeThreadView
           workspaceId={activeWorkspaceId}
           activeFolderId={activeFolderId}
@@ -298,9 +306,11 @@ export function InboxFeaturePanel() {
           historyHits={[]}
           currentAuthorPassthroughIdentity={platformAdmin?.email ?? ""}
           labels={dictionary.assistantFolders}
-          onSelectFolder={(folderId) => setActiveFolderId(folderId)}
+          defaultNotesOpen={true}
+          onOpenHelpSection={openHelpSection}
+          onSelectFolder={(folderId) => selectActiveFolderAndPersist(folderId)}
           onCreateFolder={(title) => {
-            const newId = `folder-${folders.length + 1}`;
+            const newId = `folder-${folders.length + 1}-${Date.now()}`;
             const newFolder: UiAssistantFolderItem = {
               folderId: newId,
               title,
@@ -310,34 +320,39 @@ export function InboxFeaturePanel() {
               hasRestrictedSources: false,
               assembledLayer5PromptBlock: `Dossier actif : ${title}`,
             };
-            setFolders((prev) => [...prev, newFolder]);
-            setActiveFolderId(newId);
+            updateFoldersAndPersist((prev) => [...prev, newFolder]);
+            selectActiveFolderAndPersist(newId);
             setGovernanceFeedback(isFr ? `✅ Dossier « ${title} » créé et sélectionné.` : `✅ Folder "${title}" created and selected.`);
             if (!isJsdom) {
               const client = createOrciaApiClient({ baseUrl: "" });
               void client
                 .createAssistantFolder({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301", title })
                 .then((res) => {
-                  setFolders((prev) => prev.map((f) => (f.folderId === newId ? { ...f, folderId: res.folder_id } : f)));
-                  setActiveFolderId(res.folder_id);
+                  updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === newId ? { ...f, folderId: res.folder_id } : f)));
+                  selectActiveFolderAndPersist(res.folder_id);
                 })
                 .catch((err: unknown) => {
                   const detail = err instanceof Error ? err.message : "Erreur de création";
-                  setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (détail serveur : ${detail}).` : `⚠️ Folder "${title}" kept locally (server detail: ${detail}).`);
+                  setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (${detail}).` : `⚠️ Folder "${title}" kept locally (${detail}).`);
                 });
             }
           }}
           onUpdatePinnedNotes={(folderId, notes) => {
-            setFolders((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes } : f)));
-            setGovernanceFeedback(isFr ? "✅ Notes du dossier enregistrées." : "✅ Folder notes saved.");
+            updateFoldersAndPersist((prev) =>
+              prev.map((f) =>
+                f.folderId === folderId
+                  ? { ...f, pinnedNotesMarkdown: notes, assembledLayer5PromptBlock: notes.trim() ? `📌 Notes actives : ${notes.trim()}` : `Dossier actif : ${f.title}` }
+                  : f,
+              ),
+            );
+            setGovernanceFeedback(isFr ? "✅ Notes du dossier enregistrées et activées pour vos prochaines questions." : "✅ Folder notes saved and activated for your next questions.");
           }}
           onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
-            setFolders((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, visibilityMode: mode } : f)));
-            setGovernanceFeedback(isFr ? `✅ Visibilité du dossier mise à jour (${mode}).` : `✅ Folder visibility updated (${mode}).`);
+            const humanLabel = formatFolderVisibilityLabel(mode, isFr);
+            updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, visibilityMode: mode } : f)));
+            setGovernanceFeedback(isFr ? `✅ Visibilité du dossier mise à jour (${humanLabel}).` : `✅ Folder visibility updated (${humanLabel}).`);
           }}
-          onSendCollaborativeMessage={(message) => {
-            setStreamedText(isFr ? `💬 Message ajouté à la discussion : ${message}` : `💬 Message added to thread: ${message}`);
-          }}
+          onSendCollaborativeMessage={(message) => setStreamedText(isFr ? `💬 Message ajouté à la discussion : ${message}` : `💬 Message added to thread: ${message}`)}
           onLaunchProcessFromFolder={() => navigateToRoute("/processes")}
         />
       </div>

@@ -230,15 +230,71 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       "Quels sont les points critiques de l'architecture ?",
     );
 
-    // 5. Switching to FOLDERS tab and clicking '+ Nouveau dossier' creates and selects a folder
-    fireEvent.click(screen.getByTestId("assistant-main-tab-FOLDERS"));
+    // 5. Open '📁 Dossiers' and click '+ Nouveau dossier' -> creates and selects a folder without raw PRIVATE or ': :'
+    fireEvent.click(screen.getByTestId("assistant-folders-toggle-btn"));
+    expect(screen.getByTestId("assistant-folders-and-notes-explainer")).toBeDefined();
+    expect(screen.getByTestId("assistant-main-tab-ACTIVE_DISCUSSION").parentElement?.style.display).toBe("none");
+
+    const folderInput = screen.getByTestId("assistant-new-folder-title-input");
+    fireEvent.change(folderInput, { target: { value: "Audit DORA 2026" } });
     fireEvent.click(screen.getByTestId("assistant-create-folder-btn"));
 
     await waitFor(() => {
       expect(screen.getByTestId("assistant-governance-feedback-banner").textContent).toContain(
-        "Dossier",
+        "Audit DORA 2026",
+      );
+      const pillText = screen.getByTestId("assistant-active-folder-pill").textContent ?? "";
+      expect(pillText).toContain("📁 Dossier actif : Audit DORA 2026");
+      expect(pillText).not.toContain(": :");
+      expect(screen.getByTestId("assistant-prompt-active-folder-badge").textContent).toContain(
+        "Audit DORA 2026",
       );
     });
+
+    // Save pinned notes on the active folder and verify visibility label has zero raw PRIVATE enum
+    const notesTextarea = screen.getByTestId("assistant-folder-pinned-notes-textarea");
+    fireEvent.change(notesTextarea, {
+      target: { value: "Toujours vérifier l'article 28 DORA sur les prestataires TIC critiques." },
+    });
+    fireEvent.click(screen.getByTestId("assistant-save-pinned-notes-btn"));
+    expect(screen.getByTestId("assistant-prompt-active-folder-note-indicator").textContent).toContain(
+      "Note active prise en compte",
+    );
+
+    const foldersSectionText = screen.getByTestId("assistant-tab-panel-folders").textContent ?? "";
+    expect(foldersSectionText).toContain("🔒 Privé (Moi uniquement)");
+    expect(foldersSectionText).not.toContain("PRIVATE");
+
+    // 6. Open '⚙️ Réglages de Mon Assistant' and customize tone + personal instructions
+    fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
+    expect(screen.getByTestId("assistant-gov-explainer-banner")).toBeDefined();
+    fireEvent.change(screen.getByTestId("assistant-gov-tone-select"), {
+      target: { value: "SYNTHETIC" },
+    });
+    const personalInput = screen.getByTestId("assistant-user-instructions-input");
+    fireEvent.change(personalInput, {
+      target: { value: "Toujours structurer avec des exemples concrets." },
+    });
+
+    // 7. Unmount and re-render (F5 reload) -> verify folder, pinned notes, and governance settings survive F5!
+    cleanup();
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <InboxFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+    expect(screen.getByTestId("assistant-prompt-active-folder-badge").textContent).toContain(
+      "Audit DORA 2026",
+    );
+    expect(screen.getByTestId("assistant-prompt-active-folder-note-indicator").textContent).toContain(
+      "Note active prise en compte",
+    );
+    fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
+    expect(
+      (screen.getByTestId("assistant-user-instructions-input") as HTMLTextAreaElement).value,
+    ).toContain("Toujours structurer avec des exemples concrets.");
   });
 
   it("dynamically verifies that clicking 'Lancer le test & Découvrir' and 'Activer le service' in CatalogFeaturePanel updates the DOM", async () => {

@@ -86,6 +86,25 @@ def _resolve_effective_speed(
     return effective_deep_audit, effective_speed, resolved_for_llm
 
 
+def _resolve_folder_notes(request: Request, payload: ThreeSpeedTurnRequest) -> str | None:
+    if payload.folder_pinned_notes and payload.folder_pinned_notes.strip():
+        return payload.folder_pinned_notes.strip()
+    if payload.folder_id:
+        try:
+            folders_svc = get_assistant_folders_and_sharing_service(request)
+            overview = folders_svc.get_workspace_overview(workspace_id=payload.workspace_id)
+            for f in overview.folders:
+                if f.folder_id == payload.folder_id and f.pinned_notes_markdown.strip():
+                    return f.pinned_notes_markdown.strip()
+        except Exception as exc:
+            from orcia_core.observability.logging import get_logger
+
+            get_logger("orcia.assistant.llm").warning(
+                "assistant_folder_notes_resolution_fallback", error_type=type(exc).__name__
+            )
+    return None
+
+
 @router.post("/three-speed/turn", response_model=ThreeSpeedTurnResponse)
 async def execute_three_speed_turn_endpoint(
     payload: ThreeSpeedTurnRequest,
@@ -95,6 +114,7 @@ async def execute_three_speed_turn_endpoint(
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
+    resolved_notes = _resolve_folder_notes(request, payload)
     live_outcome = await invoke_configured_llm_for_assistant_turn(
         request,
         user_prompt=payload.user_prompt,
@@ -105,6 +125,11 @@ async def execute_three_speed_turn_endpoint(
         requested_tier=payload.requested_tier,
         thinking_effort=payload.thinking_effort,
         conversation_history=_resolve_turn_history(request, payload),
+        response_tone=payload.response_tone,
+        response_format=payload.response_format,
+        personal_instructions=payload.personal_instructions,
+        workspace_instructions=payload.workspace_instructions,
+        folder_pinned_notes=resolved_notes,
         locale=payload.locale,
     )
     turn = router_svc.execute_three_speed_turn(
@@ -160,6 +185,7 @@ async def stream_three_speed_turn_endpoint(
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
     history = _resolve_turn_history(request, payload)
+    resolved_notes = _resolve_folder_notes(request, payload)
 
     async def _event_generator() -> AsyncIterator[str]:
         for evt in router_svc.stream_three_speed_turn_sse(
@@ -196,6 +222,11 @@ async def stream_three_speed_turn_endpoint(
                     requested_tier=payload.requested_tier,
                     thinking_effort=payload.thinking_effort,
                     conversation_history=history,
+                    response_tone=payload.response_tone,
+                    response_format=payload.response_format,
+                    personal_instructions=payload.personal_instructions,
+                    workspace_instructions=payload.workspace_instructions,
+                    folder_pinned_notes=resolved_notes,
                     locale=payload.locale,
                     fallback_response_text=full_txt,
                 ):

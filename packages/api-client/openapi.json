@@ -3726,6 +3726,54 @@
         "title": "ControlCenterOverviewResponse",
         "type": "object"
       },
+      "ConversationTurnMessageItem": {
+        "additionalProperties": false,
+        "description": "Single message item in multi-turn `conversation_history` (`Story 10.2`, `AD-15`).",
+        "properties": {
+          "content": {
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant",
+              "tool"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ConversationTurnMessageItem",
+        "type": "object"
+      },
       "CreateAssistantThreadRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/threads` (`Story 10.4`).",
@@ -15822,10 +15870,39 @@
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`).",
         "properties": {
+          "conversation_history": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationTurnMessageItem"
+            },
+            "title": "Conversation History",
+            "type": "array"
+          },
           "deep_audit_pill_active": {
             "default": false,
             "title": "Deep Audit Pill Active",
             "type": "boolean"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "folder_pinned_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Pinned Notes"
           },
           "hat": {
             "anyOf": [
@@ -15837,6 +15914,28 @@
               }
             ],
             "title": "Hat"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "personal_instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personal Instructions"
           },
           "requested_speed": {
             "anyOf": [
@@ -15871,6 +15970,38 @@
             ],
             "title": "Requested Tier"
           },
+          "response_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "BULLETS_SUMMARY",
+                  "STRUCTURED_SECTIONS",
+                  "STEP_BY_STEP"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Format"
+          },
+          "response_tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "SYNTHETIC",
+                  "BALANCED",
+                  "DETAILED_CODE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Tone"
+          },
           "thinking_effort": {
             "anyOf": [
               {
@@ -15887,6 +16018,17 @@
             ],
             "title": "Thinking Effort"
           },
+          "thread_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread Id"
+          },
           "user_prompt": {
             "minLength": 1,
             "title": "User Prompt",
@@ -15896,6 +16038,17 @@
             "minLength": 1,
             "title": "Workspace Id",
             "type": "string"
+          },
+          "workspace_instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Instructions"
           }
         },
         "required": [

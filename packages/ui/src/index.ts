@@ -325,6 +325,7 @@ export {
 } from "./primitives/AssistantCitationPillsAndArtifactCard";
 export {
   AssistantFoldersAndCollaborativeThreadView,
+  formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,
   type AssistantFoldersAndCollaborativeThreadViewLabels,
   type AssistantFoldersAndCollaborativeThreadViewProps,

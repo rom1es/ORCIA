@@ -65,6 +65,12 @@ export function AssistantGovernanceModeATabs({
 }: AssistantGovernanceModeATabsProps): React.JSX.Element {
   return (
     <div data-testid="assistant-governance-mode-a" className="space-y-4">
+      <div
+        data-testid="assistant-gov-explainer-banner"
+        className="rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-[11px] text-text-secondary leading-relaxed"
+      >
+        💡 Ces réglages personnalisent directement le rôle métier, le ton, le format et les consignes permanentes (Couches 4 et 5) transmis automatiquement au modèle IA à chaque question posée dans Mon Assistant.
+      </div>
       <div role="tablist" className="grid grid-cols-3 gap-2">
         {(
           [

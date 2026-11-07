@@ -1,14 +1,4 @@
-"""Prompt Assembly, Multilingual Thinking Steps & Tool Schema Helpers (`AD-15`, `AD-19`).
-
-Implements:
-- `resolve_request_locale` & `detect_adaptive_thinking_steps_for_question` (`fr`, `en`, `es`).
-- `build_assistant_system_instructions` & `_resolve_5_layers_and_ontology_from_request`:
-  integrates the 5-layer `AssistantHarness` prompt (`AssistantThreeSpeedRouterService`) and
-  `OntologyGovernanceService` (`L1–L4`) with `resolve_profile_adaptation(hat)` (zero hardcoded
-  `hat` dictionary in the API router).
-- `build_workspace_tools_schema` & `build_multi_turn_messages`: multi-turn `conversation_history`
-  and governed JSON Schema `tools` for `SPEED_2_AGENT_TOOLS` and `SPEED_3_DEEP_AUDIT`.
-"""
+"""Prompt Assembly, Multilingual Thinking Steps & Tool Schema Helpers (`AD-15`, `AD-19`)."""
 
 from __future__ import annotations
 
@@ -141,6 +131,44 @@ def detect_adaptive_thinking_steps_for_question(
     return templates["default"]
 
 
+def _format_user_governance_and_folder_block(
+    *,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
+    locale: str = "fr",
+) -> str:
+    """Build explicit prompt sections for Layer 4 Workspace, Layer 5 User prefs & Folder Notes."""
+    sections: list[str] = []
+    is_en = locale.startswith("en")
+    if workspace_instructions and workspace_instructions.strip():
+        sections.append(f"[LAYER_4_WORKSPACE_INSTRUCTIONS]\n{workspace_instructions.strip()}")
+    tone_map = {
+        "SYNTHETIC": "Concise & Direct" if is_en else "Synthétique & Direct (Aller à l'essentiel)",
+        "BALANCED": "Balanced & Structured" if is_en else "Équilibré & Structuré",
+        "DETAILED_CODE": "Detailed & Illustrated" if is_en else "Détaillé & Illustré",
+    }
+    fmt_map = {
+        "BULLETS_SUMMARY": "Key points (Bullet list)" if is_en else "Points clés (Liste à puces)",
+        "STRUCTURED_SECTIONS": "Structured sections" if is_en else "Sections structurées",
+        "STEP_BY_STEP": "Step-by-step guide" if is_en else "Guide étape par étape",
+    }
+    user_lines: list[str] = []
+    if response_tone and response_tone.upper() in tone_map:
+        user_lines.append(f"- Ton attendu : {tone_map[response_tone.upper()]}")
+    if response_format and response_format.upper() in fmt_map:
+        user_lines.append(f"- Format attendu : {fmt_map[response_format.upper()]}")
+    if personal_instructions and personal_instructions.strip():
+        user_lines.append(f"- Instructions personnelles : {personal_instructions.strip()}")
+    if user_lines:
+        sections.append("[LAYER_5_USER_PREFERENCES]\n" + "\n".join(user_lines))
+    if folder_pinned_notes and folder_pinned_notes.strip():
+        sections.append(f"[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]\n{folder_pinned_notes.strip()}")
+    return ("\n\n" + "\n\n".join(sections)) if sections else ""
+
+
 def build_assistant_system_instructions(
     *,
     hat: str,
@@ -150,9 +178,14 @@ def build_assistant_system_instructions(
     system_instructions_override: str | None = None,
     assembled_5_layers_prompt: str | None = None,
     ontology_concepts_summary: str | None = None,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
     locale: str = "fr",
 ) -> str:
-    """Assemble the 5-layer `AssistantHarness` + Ontology `L1–L4` system prompt (`AD-15`)."""
+    """Assemble the 5-layer `AssistantHarness` + Ontology `L1–L4` + Folder Notes system prompt."""
     if system_instructions_override and system_instructions_override.strip():
         return system_instructions_override.strip()
 
@@ -217,11 +250,18 @@ def build_assistant_system_instructions(
         if ontology_concepts_summary and ontology_concepts_summary.strip()
         else ""
     )
+    custom_block = _format_user_governance_and_folder_block(
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
+        locale=locale,
+    )
     return (
-        f"{layers_block}{ontology_block}\n\n"
+        f"{layers_block}{ontology_block}{custom_block}\n\n"
         f"[COGNITIVE_ROUTING_DIRECTIVES]\n"
-        f"Profil adaptatif : {profile_spec.register_label}. "
-        f"{tier_guidance} {effort_guidance}\n"
+        f"Profil adaptatif : {profile_spec.register_label}. {tier_guidance} {effort_guidance}\n"
         "Ne mentionne jamais d'identifiant technique interne dans ta réponse. "
         "Respond in the exact same language as the user's message "
         "(unless the user explicitly asks for another language)."
@@ -247,9 +287,7 @@ def resolve_5_layers_and_ontology_from_request(
 
             router_svc = get_assistant_three_speed_router_service(request)
         cached = router_svc.get_or_assemble_cached_prompt(
-            workspace_id=workspace_id,
-            user_id=user_id,
-            hat=hat,
+            workspace_id=workspace_id, user_id=user_id, hat=hat
         )
         assembled_text = cached.assembled_prompt_text
     except Exception as exc:
@@ -258,28 +296,24 @@ def resolve_5_layers_and_ontology_from_request(
         get_logger("orcia.assistant.llm").warning(
             "assistant_5_layer_prompt_resolution_fallback", error_type=type(exc).__name__
         )
-        assembled_text = None
-
     try:
         from orcia_api.dependencies import get_ontology_and_rag_services
 
         ont_svc, _, _ = get_ontology_and_rag_services(request)
         concepts = getattr(ont_svc, "concepts", ())
-        if concepts:
-            lines = [
-                f"- [{c.level}] {c.canonical_term}: {c.definition_text}"
-                for c in list(concepts)[:8]
-                if getattr(c, "snapshot_branch_status", "ACTIVE") == "ACTIVE"
-            ]
-            if lines:
-                ontology_summary = "\n".join(lines)
+        lines = [
+            f"- [{c.level}] {c.canonical_term}: {c.definition_text}"
+            for c in list(concepts)[:8]
+            if getattr(c, "snapshot_branch_status", "ACTIVE") == "ACTIVE"
+        ]
+        if lines:
+            ontology_summary = "\n".join(lines)
     except Exception as exc:
         from orcia_core.observability.logging import get_logger
 
         get_logger("orcia.assistant.llm").warning(
             "assistant_ontology_l1_l4_resolution_fallback", error_type=type(exc).__name__
         )
-        ontology_summary = None
     return assembled_text, ontology_summary
 
 
@@ -292,14 +326,10 @@ def build_workspace_tools_schema(request: Request | None, speed_mode: str) -> li
             "type": "function",
             "function": {
                 "name": "query_workspace_knowledge_and_glossary",
-                "description": (
-                    "Search workspace documents, L1-L4 ontology concepts, and Jira/Git sources."
-                ),
+                "description": "Search workspace documents, L1-L4 ontology concepts, and sources.",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "query": {"type": "string", "description": "Search query"},
-                    },
+                    "properties": {"query": {"type": "string", "description": "Search query"}},
                     "required": ["query"],
                 },
             },

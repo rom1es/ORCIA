@@ -145,6 +145,11 @@ async def invoke_configured_llm_for_assistant_turn(
     thinking_effort: str | None = None,
     system_instructions_override: str | None = None,
     conversation_history: list[dict[str, Any]] | None = None,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
     locale: str | None = None,
 ) -> LiveLlmTurnOutcome | None:
     """Asynchronously invoke the configured LLM endpoint with 5-layer prompt, history & tools."""
@@ -180,6 +185,11 @@ async def invoke_configured_llm_for_assistant_turn(
         system_instructions_override=system_instructions_override,
         assembled_5_layers_prompt=assembled_5_layers,
         ontology_concepts_summary=ontology_summary,
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
         locale=resolved_locale,
     )
     default_thinking = " · ".join(
@@ -240,6 +250,11 @@ async def stream_configured_llm_for_assistant_turn(
     requested_tier: str | None = None,
     thinking_effort: str | None = None,
     conversation_history: list[dict[str, Any]] | None = None,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
     locale: str | None = None,
     fallback_response_text: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
@@ -271,6 +286,11 @@ async def stream_configured_llm_for_assistant_turn(
             thinking_effort=thinking_effort,
             assembled_5_layers_prompt=assembled_5_layers,
             ontology_concepts_summary=ontology_summary,
+            response_tone=response_tone,
+            response_format=response_format,
+            personal_instructions=personal_instructions,
+            workspace_instructions=workspace_instructions,
+            folder_pinned_notes=folder_pinned_notes,
             locale=resolved_locale,
         )
         messages = build_multi_turn_messages(

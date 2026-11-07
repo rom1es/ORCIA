@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 88
+    "techLeadReportsCount": 89
   },
   "activeRoutes": [
     "/",
@@ -411,6 +411,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 Dossiers, Notes, Réglages & Contexte Multi-Tours LLM",
+      "reportFile": "2026-11-07-assistant-dossiers-notes-reglages-et-contexte-multi-tours-llm-tech-lead-report.md",
+      "domain": "Refonte Épurée de 📁 Dossiers & 📌 Notes, Suppression de PRIVATE Brut et du Double : :, Badge de Dossier/Note Actifs au-dessus du Prompt, Persistance (Survie au F5) des Dossiers & ⚙️ Réglages, Suppression du .split(\" \") Frontend & Câblage Complet du Contexte Multi-Tours dans l'Appel LLM",
+      "summary": "Masquage (display: none) des 3 faux onglets redondants dans AssistantFoldersAndCollaborativeThreadView.tsx (296 lignes), libellés de visibilité 100 % humains (formatFolderVisibilityLabel : 🔒 Privé, 👥 Partagé, 📦 Visible par tout l'Espace), correction de 📁 Dossier actif : :, encadré pédagogique avec icône ⓘ (assistant-folders) et badge assistant-prompt-active-folder-badge au-dessus de la saisie ; persistance Survie au F5 des dossiers, notes épinglées et réglages (assistantFoldersAndPrefsStore.ts) ; suppression du .split(\" \") dans useAssistantStreamingTurn.ts ; et injection effective dans build_assistant_system_instructions + executeAssistantTurn du rôle (defaultHat), du ton, du format, des instructions (LAYER_4/LAYER_5), des notes du dossier actif (LAYER_5_ACTIVE_FOLDER_PINNED_NOTES) et de l'historique multi-tours complet (conversation_history)."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 Architecture & LLM Bridge",

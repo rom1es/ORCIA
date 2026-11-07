@@ -158,6 +158,27 @@ def test_pillar_1_and_2_multilingual_locale_and_5_layers_ontology_prompt() -> No
     assert "Respond in the exact same language as the user's message" in prompt_en
     assert "Réponds toujours en français" not in prompt_en
 
+    prompt_fr_gov = build_assistant_system_instructions(
+        hat="TECH_LEAD",
+        speed_mode="SPEED_1_FAST",
+        requested_tier="medium",
+        thinking_effort="balanced",
+        response_tone="SYNTHETIC",
+        response_format="BULLETS_SUMMARY",
+        personal_instructions="Toujours inclure un exemple SQL PostgreSQL 18.",
+        workspace_instructions="Prioriser les règles de conformité DORA.",
+        folder_pinned_notes="Contexte du dossier : migration API v2 et audit SLA.",
+        locale="fr",
+    )
+    assert "[LAYER_4_WORKSPACE_INSTRUCTIONS]" in prompt_fr_gov
+    assert "Prioriser les règles de conformité DORA." in prompt_fr_gov
+    assert "[LAYER_5_USER_PREFERENCES]" in prompt_fr_gov
+    assert "Synthétique & Direct" in prompt_fr_gov
+    assert "Points clés (Liste à puces)" in prompt_fr_gov
+    assert "Toujours inclure un exemple SQL PostgreSQL 18." in prompt_fr_gov
+    assert "[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]" in prompt_fr_gov
+    assert "Contexte du dossier : migration API v2 et audit SLA." in prompt_fr_gov
+
 
 def test_pillar_4_reasoning_channel_separation_never_leaks_draft_as_final_content() -> None:
     """Verify `<think>` and `reasoning_content` never leak into `content` when empty."""

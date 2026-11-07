@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Query
 
 from orcia_api.dependencies import get_assistant_folders_and_sharing_service
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.schemas.assistant import (
+from orcia_api.schemas.assistant_citations_and_folders import (
     AssistantFolderSchemaItem,
     AssistantHistorySearchHitSchemaItem,
     AssistantThreadSchemaItem,
