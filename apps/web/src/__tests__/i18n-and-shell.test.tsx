@@ -9,6 +9,8 @@ import { ModuleWorkspaceView } from "../components/ModuleWorkspaceView";
 import { clearPlatformSetupStorage } from "../components/platformSetupStore";
 import { resolveModuleFromPathname, ShellContainer } from "../components/ShellContainer";
 import { buildCockpitWorkflowPreviewGraph } from "../features/cockpit";
+import { InboxFeaturePanel } from "../features/inbox";
+import { resetBackgroundAssistantStreamForTests } from "../features/inbox/useAssistantStreamingTurn";
 import { I18nProvider } from "../i18n";
 import { enDictionary } from "../i18n/locales/en";
 import { frDictionary } from "../i18n/locales/fr";
@@ -52,6 +54,8 @@ function walkTsFiles(dir: string): string[] {
 describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () => {
   beforeEach(() => {
     clearPlatformSetupStorage();
+    resetBackgroundAssistantStreamForTests();
+    delete (globalThis as Record<string, unknown>).__ORCIA_TEST_KEEP_STREAM_PENDING__;
   });
 
   it("enforces 100% recursive key parity between fr.ts and en.ts", () => {
@@ -1962,5 +1966,52 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(
       screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
     ).toContain("🏛️ Direction (BU)");
+  });
+
+  it("preserves the user question bubble, animated ThinkingDots spinner, and ongoing thinking counter when navigating away from Mon Assistant (/assistant) and returning while thinking is in progress", () => {
+    (globalThis as Record<string, unknown>).__ORCIA_TEST_KEEP_STREAM_PENDING__ = true;
+
+    const { unmount } = render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={mockPush}>
+          <InboxFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    const promptInput = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
+    fireEvent.change(promptInput, {
+      target: { value: "affiche une solution du jeu du déplacement du cavalier" },
+    });
+    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+
+    // Verify question bubble and ThinkingDots spinner are active before navigating away
+    expect(screen.getByTestId("assistant-user-question-bubble").textContent).toBe(
+      "affiche une solution du jeu du déplacement du cavalier",
+    );
+    expect(screen.getByTestId("assistant-thinking-pulsing-dots")).toBeDefined();
+    expect(screen.getByTestId("assistant-stop-square-icon").textContent).toBe("■");
+
+    // Simulate navigating to another ORCIA screen (unmount InboxFeaturePanel) and returning (remount)
+    unmount();
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={mockPush}>
+          <InboxFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    // Question bubble, ThinkingDots spinner, and in-progress thinking state are preserved!
+    expect(screen.getByTestId("assistant-user-question-bubble").textContent).toBe(
+      "affiche une solution du jeu du déplacement du cavalier",
+    );
+    const pulsingDots = screen.getByTestId("assistant-thinking-pulsing-dots");
+    expect(pulsingDots.querySelectorAll(".orcia-thinking-dot").length).toBe(3);
+    expect(screen.getByTestId("assistant-stop-square-icon").textContent).toBe("■");
+    expect(
+      screen.getByTestId("assistant-thinking-subwindow-header-label").textContent,
+    ).toContain("Réflexion en cours");
   });
 });

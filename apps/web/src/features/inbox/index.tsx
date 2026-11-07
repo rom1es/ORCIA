@@ -86,42 +86,41 @@ export function InboxFeaturePanel() {
       datasources,
       ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
     });
-    setSavedConversations((prev) => {
-      const outcome = upsertTurnIntoSavedConversations({
-        prevConversations: prev,
-        activeConversationId,
-        activeWorkspaceId,
-        activeFolderId,
-        modelOptions,
-        isFr,
-        userPrompt: params.userPrompt,
-        assistantReply: params.assistantReply,
-        requestedTier: params.requestedTier,
-        thinkingEffort: params.thinkingEffort,
-        ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
-        usedSources,
-        ...(params.stepProgress ? { stepProgress: params.stepProgress } : {}),
-        ...(params.thinkingElapsedSeconds !== undefined ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds } : {}),
-      });
-      if (outcome.isNewConversation) {
-        setActiveConversationId(outcome.resolvedConversationId);
-        if (!isJsdom) {
-          const client = createOrciaApiClient({ baseUrl: "" });
-          void client
-            .createAssistantThread({
-              workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-              ...(activeFolderId ? { folder_id: activeFolderId } : {}),
-              title: outcome.createdTitle,
-              initial_summary: params.assistantReply.slice(0, 240),
-            })
-            .catch((err: unknown) => {
-              const detail = err instanceof Error ? err.message : "Synchronisation différée";
-              setGovernanceFeedback(isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`);
-            });
-        }
-      }
-      return outcome.nextConversations;
+    const latestStored = readSavedAssistantConversations();
+    const outcome = upsertTurnIntoSavedConversations({
+      prevConversations: latestStored.length >= savedConversations.length ? latestStored : savedConversations,
+      activeConversationId,
+      activeWorkspaceId,
+      activeFolderId,
+      modelOptions,
+      isFr,
+      userPrompt: params.userPrompt,
+      assistantReply: params.assistantReply,
+      requestedTier: params.requestedTier,
+      thinkingEffort: params.thinkingEffort,
+      ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
+      usedSources,
+      ...(params.stepProgress ? { stepProgress: params.stepProgress } : {}),
+      ...(params.thinkingElapsedSeconds !== undefined ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds } : {}),
     });
+    setSavedConversations(outcome.nextConversations);
+    if (outcome.isNewConversation) {
+      setActiveConversationId(outcome.resolvedConversationId);
+      if (!isJsdom) {
+        const client = createOrciaApiClient({ baseUrl: "" });
+        void client
+          .createAssistantThread({
+            workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+            ...(activeFolderId ? { folder_id: activeFolderId } : {}),
+            title: outcome.createdTitle,
+            initial_summary: params.assistantReply.slice(0, 240),
+          })
+          .catch((err: unknown) => {
+            const detail = err instanceof Error ? err.message : "Synchronisation différée";
+            setGovernanceFeedback(isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`);
+          });
+      }
+    }
   };
 
   const firstConv = savedConversations[0];
@@ -130,12 +129,14 @@ export function InboxFeaturePanel() {
   const {
     streamedText,
     setStreamedText,
+    activeUserPrompt,
     stepProgress,
     cacheHit,
     cacheLookupMs,
     nodes1To4Ms,
     ttftMs,
     isGenerating,
+    initialElapsedSeconds,
     generationStopped,
     errorMessage,
     sendTurn,
@@ -286,7 +287,9 @@ export function InboxFeaturePanel() {
           ttftMs={ttftMs}
           stepProgress={stepProgress}
           streamedText={streamedText}
+          activeUserPrompt={activeUserPrompt}
           isGenerating={isGenerating}
+          initialElapsedSeconds={initialElapsedSeconds}
           generationStopped={generationStopped}
           errorMessage={errorMessage}
           labels={dictionary.assistantSpeedStream}

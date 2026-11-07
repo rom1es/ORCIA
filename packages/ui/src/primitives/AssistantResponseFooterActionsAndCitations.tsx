@@ -89,6 +89,15 @@ export function AssistantUserQuestionBubble({
   );
 }
 
+const THINKING_DOT_BASE_STYLE: React.CSSProperties = {
+  display: "inline-block",
+  width: "6px",
+  height: "6px",
+  borderRadius: "9999px",
+  backgroundColor: "var(--color-action-primary)",
+  animation: "orciaThinkingBounce 1.1s infinite ease-in-out",
+};
+
 export function ThinkingDots({
   className = "text-action-primary",
 }: {
@@ -99,17 +108,21 @@ export function ThinkingDots({
       role="status"
       aria-label="Réflexion en cours"
       data-testid="assistant-thinking-pulsing-dots"
+      style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
       className={`inline-flex items-center gap-1 ${className}`}
     >
       <span
-        style={{ animationDelay: "-0.3s" }}
-        className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]"
+        style={{ ...THINKING_DOT_BASE_STYLE, animationDelay: "-0.3s" }}
+        className="orcia-thinking-dot h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]"
       />
       <span
-        style={{ animationDelay: "-0.15s" }}
-        className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]"
+        style={{ ...THINKING_DOT_BASE_STYLE, animationDelay: "-0.15s" }}
+        className="orcia-thinking-dot h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]"
       />
-      <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
+      <span
+        style={THINKING_DOT_BASE_STYLE}
+        className="orcia-thinking-dot h-1.5 w-1.5 rounded-full bg-current animate-bounce"
+      />
     </span>
   );
 }

@@ -117,6 +117,68 @@ export function buildConversationHistoryPayload(
   return history;
 }
 
+interface BackgroundAssistantStreamSnapshot {
+  streamedText: string;
+  activeUserPrompt: string;
+  stepProgress: readonly UiThreeSpeedStepProgress[];
+  cacheHit: boolean;
+  cacheLookupMs: number;
+  nodes1To4Ms: number;
+  ttftMs: number;
+  isGenerating: boolean;
+  thinkingStartedAtMs: number | null;
+  generationStopped: boolean;
+  errorMessage: string | null;
+}
+
+const bgListeners = new Set<() => void>();
+let bgAbortController: AbortController | null = null;
+let bgTimers: ReturnType<typeof setTimeout>[] = [];
+let bgOnTurnCompletedCallback: UseAssistantStreamingTurnOptions["onTurnCompleted"] | null = null;
+
+let bgSnapshot: BackgroundAssistantStreamSnapshot = {
+  streamedText: "",
+  activeUserPrompt: "",
+  stepProgress: [],
+  cacheHit: false,
+  cacheLookupMs: 0,
+  nodes1To4Ms: 0,
+  ttftMs: 0,
+  isGenerating: false,
+  thinkingStartedAtMs: null,
+  generationStopped: false,
+  errorMessage: null,
+};
+
+function clearBgTimers() {
+  for (const t of bgTimers) clearTimeout(t);
+  bgTimers = [];
+}
+
+function updateBgSnapshot(patch: Partial<BackgroundAssistantStreamSnapshot>) {
+  bgSnapshot = { ...bgSnapshot, ...patch };
+  for (const listener of bgListeners) listener();
+}
+
+export function resetBackgroundAssistantStreamForTests() {
+  bgAbortController?.abort();
+  bgAbortController = null;
+  clearBgTimers();
+  bgSnapshot = {
+    streamedText: "",
+    activeUserPrompt: "",
+    stepProgress: [],
+    cacheHit: false,
+    cacheLookupMs: 0,
+    nodes1To4Ms: 0,
+    ttftMs: 0,
+    isGenerating: false,
+    thinkingStartedAtMs: null,
+    generationStopped: false,
+    errorMessage: null,
+  };
+}
+
 export function useAssistantStreamingTurn({
   activeWorkspaceId,
   isFr,
@@ -127,54 +189,60 @@ export function useAssistantStreamingTurn({
   governancePrefs,
   onTurnCompleted,
 }: UseAssistantStreamingTurnOptions) {
-  const [streamedText, setStreamedText] = useState<string>(() =>
-    sanitizeAssistantDisplayReply(initialStreamedText),
-  );
-  const [stepProgress, setStepProgress] = useState<readonly UiThreeSpeedStepProgress[]>([]);
-  const [cacheHit, setCacheHit] = useState<boolean>(false);
-  const [cacheLookupMs, setCacheLookupMs] = useState<number>(0);
-  const [nodes1To4Ms, setNodes1To4Ms] = useState<number>(0);
-  const [ttftMs, setTtftMs] = useState<number>(0);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [generationStopped, setGenerationStopped] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  bgOnTurnCompletedCallback = onTurnCompleted;
+  const initializedRef = useRef(false);
+  if (!initializedRef.current) {
+    initializedRef.current = true;
+    if (!bgSnapshot.isGenerating && !bgSnapshot.streamedText && initialStreamedText) {
+      bgSnapshot = {
+        ...bgSnapshot,
+        streamedText: sanitizeAssistantDisplayReply(initialStreamedText),
+      };
+    }
+  }
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const clearPendingTimers = () => {
-    for (const t of timersRef.current) clearTimeout(t);
-    timersRef.current = [];
-  };
-
+  const [, setTick] = useState(0);
   useEffect(() => {
+    const listener = () => setTick((n) => n + 1);
+    bgListeners.add(listener);
+    // Intentionally DO NOT abort bgAbortController on unmount so thinking continues across ORCIA screens!
     return () => {
-      abortControllerRef.current?.abort();
-      clearPendingTimers();
+      bgListeners.delete(listener);
     };
   }, []);
 
+  const setStreamedText = (next: string) => {
+    updateBgSnapshot({ streamedText: sanitizeAssistantDisplayReply(next) });
+  };
+
   const stopGeneration = () => {
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    clearPendingTimers();
-    setIsGenerating(false);
-    setGenerationStopped(true);
-    setStepProgress((prev) =>
-      prev.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
-    );
+    bgAbortController?.abort();
+    bgAbortController = null;
+    clearBgTimers();
+    updateBgSnapshot({
+      isGenerating: false,
+      thinkingStartedAtMs: null,
+      generationStopped: true,
+      stepProgress: bgSnapshot.stepProgress.map((st) =>
+        st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st,
+      ),
+    });
   };
 
   const resetStreamState = (nextText = "") => {
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    clearPendingTimers();
-    setIsGenerating(false);
-    setGenerationStopped(false);
-    setStreamedText(sanitizeAssistantDisplayReply(nextText));
-    setStepProgress([]);
-    setNodes1To4Ms(0);
-    setErrorMessage(null);
+    bgAbortController?.abort();
+    bgAbortController = null;
+    clearBgTimers();
+    updateBgSnapshot({
+      isGenerating: false,
+      thinkingStartedAtMs: null,
+      generationStopped: false,
+      activeUserPrompt: "",
+      streamedText: sanitizeAssistantDisplayReply(nextText),
+      stepProgress: [],
+      nodes1To4Ms: 0,
+      errorMessage: null,
+    });
   };
 
   const sendTurn = ({
@@ -185,11 +253,11 @@ export function useAssistantStreamingTurn({
     thinkingEffort,
     attachedFiles,
   }: SendAssistantTurnPayload) => {
-    abortControllerRef.current?.abort();
-    clearPendingTimers();
+    bgAbortController?.abort();
+    clearBgTimers();
 
     const controller = new AbortController();
-    abortControllerRef.current = controller;
+    bgAbortController = controller;
 
     const effectiveTier: UiInferenceTier = requestedTier ?? "medium";
     const effectiveEffort: UiInferenceEffort =
@@ -201,25 +269,31 @@ export function useAssistantStreamingTurn({
       thinkingEffort: effectiveEffort,
     });
     const plannedSteps = useSteps ? detectAdaptiveThinkingStepsForQuestion(userPrompt, isFr) : [];
+    const tStart = Date.now();
 
-    setErrorMessage(null);
-    setGenerationStopped(false);
-    setIsGenerating(true);
-    setStreamedText("");
+    updateBgSnapshot({
+      errorMessage: null,
+      generationStopped: false,
+      isGenerating: true,
+      thinkingStartedAtMs: tStart,
+      activeUserPrompt: userPrompt,
+      streamedText: "",
+      stepProgress:
+        useSteps && plannedSteps.length > 0
+          ? [{ ...plannedSteps[0]!, status: "RUNNING", durationMs: 0 }]
+          : [],
+    });
 
-    if (!useSteps) {
-      setStepProgress([]);
-    } else if (plannedSteps.length > 0) {
-      setStepProgress([{ ...plannedSteps[0]!, status: "RUNNING", durationMs: 0 }]);
-    }
-
-    if (isJsdom) {
+    if (isJsdom && !(globalThis as Record<string, unknown>).__ORCIA_TEST_KEEP_STREAM_PENDING__) {
       const jsdomReply = `[${requestedSpeed}] ${userPrompt}`;
       const completedSteps = plannedSteps.map((st) => ({ ...st, status: "COMPLETED" as const }));
-      setStepProgress(completedSteps);
-      setIsGenerating(false);
-      setStreamedText(jsdomReply);
-      onTurnCompleted({
+      updateBgSnapshot({
+        stepProgress: completedSteps,
+        isGenerating: false,
+        thinkingStartedAtMs: null,
+        streamedText: jsdomReply,
+      });
+      bgOnTurnCompletedCallback?.({
         userPrompt,
         assistantReply: jsdomReply,
         requestedTier: effectiveTier,
@@ -231,14 +305,17 @@ export function useAssistantStreamingTurn({
       return;
     }
 
-    const tStart = Date.now();
+    if (isJsdom && (globalThis as Record<string, unknown>).__ORCIA_TEST_KEEP_STREAM_PENDING__) {
+      return;
+    }
+
     if (useSteps && plannedSteps.length >= 3) {
       const advanceStep = (idx: 1 | 2) => {
         if (controller.signal.aborted) return;
-        setStepProgress((prev) =>
-          prev.some((s) => s.stepCode === "LIVE_MODEL_REASONING")
-            ? prev
-            : idx === 1
+        if (bgSnapshot.stepProgress.some((s) => s.stepCode === "LIVE_MODEL_REASONING")) return;
+        updateBgSnapshot({
+          stepProgress:
+            idx === 1
               ? [
                   { ...plannedSteps[0]!, status: "COMPLETED", durationMs: 1200 },
                   { ...plannedSteps[1]!, status: "RUNNING", durationMs: 0 },
@@ -248,9 +325,9 @@ export function useAssistantStreamingTurn({
                   { ...plannedSteps[1]!, status: "COMPLETED", durationMs: 1400 },
                   { ...plannedSteps[2]!, status: "RUNNING", durationMs: 0 },
                 ],
-        );
+        });
       };
-      timersRef.current.push(
+      bgTimers.push(
         setTimeout(() => advanceStep(1), 1200),
         setTimeout(() => advanceStep(2), 2600),
       );
@@ -303,42 +380,52 @@ export function useAssistantStreamingTurn({
         onEvent: (eventName, data) => {
           if (controller.signal.aborted) return;
           if (eventName === "cache_status") {
-            setCacheHit(Boolean(data.cache_hit));
-            setCacheLookupMs(Number(data.cache_lookup_ms ?? 0));
+            updateBgSnapshot({
+              cacheHit: Boolean(data.cache_hit),
+              cacheLookupMs: Number(data.cache_lookup_ms ?? 0),
+            });
           } else if (eventName === "thinking_delta") {
             const txt = String(data.thinking_text ?? "").trim();
             if (!txt) return;
-            clearPendingTimers();
+            clearBgTimers();
             latestThinking = txt;
-            setStepProgress([
-              {
-                stepCode: "LIVE_MODEL_REASONING",
-                label: isFr ? "Raisonnement du modèle en cours" : "Model reasoning in progress",
-                durationMs: Number(data.elapsed_ms ?? Date.now() - tStart),
-                status: "RUNNING",
-                intermediateOutput: txt,
-              },
-            ]);
+            updateBgSnapshot({
+              stepProgress: [
+                {
+                  stepCode: "LIVE_MODEL_REASONING",
+                  label: isFr ? "Raisonnement du modèle en cours" : "Model reasoning in progress",
+                  durationMs: Number(data.elapsed_ms ?? Date.now() - tStart),
+                  status: "RUNNING",
+                  intermediateOutput: txt,
+                },
+              ],
+            });
           } else if (eventName === "token_delta") {
-            clearPendingTimers();
+            clearBgTimers();
             const acc = sanitizeAssistantDisplayReply(String(data.accumulated_text ?? ""));
             if (!acc) return;
-            if (!latestReply) setTtftMs(Date.now() - tStart);
+            const nextTtft = !latestReply ? Date.now() - tStart : bgSnapshot.ttftMs;
             latestReply = acc;
-            setStreamedText(acc);
-            setStepProgress((prev) =>
-              prev.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
-            );
+            updateBgSnapshot({
+              ttftMs: nextTtft,
+              streamedText: acc,
+              stepProgress: bgSnapshot.stepProgress.map((st) =>
+                st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st,
+              ),
+            });
           } else if (eventName === "stream_error") {
             hasStreamError = true;
-            clearPendingTimers();
-            setIsGenerating(false);
-            setStepProgress((prev) =>
-              prev.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
-            );
-            setErrorMessage(`⚠️ ${String(data.message ?? "Erreur du fournisseur IA")}`);
+            clearBgTimers();
+            updateBgSnapshot({
+              isGenerating: false,
+              thinkingStartedAtMs: null,
+              stepProgress: bgSnapshot.stepProgress.map((st) =>
+                st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st,
+              ),
+              errorMessage: `⚠️ ${String(data.message ?? "Erreur du fournisseur IA")}`,
+            });
           } else if (eventName === "turn_completed") {
-            clearPendingTimers();
+            clearBgTimers();
             const finalRaw = sanitizeAssistantDisplayReply(
               String(data.response_text ?? latestReply),
             );
@@ -357,11 +444,14 @@ export function useAssistantStreamingTurn({
               : useSteps
                 ? plannedSteps.map((st) => ({ ...st, status: "COMPLETED" as const }))
                 : [];
-            setStepProgress(finalSteps);
-            setStreamedText(finalReply);
-            setIsGenerating(false);
+            updateBgSnapshot({
+              stepProgress: finalSteps,
+              streamedText: finalReply,
+              isGenerating: false,
+              thinkingStartedAtMs: null,
+            });
             if (finalReply && !/^synthèse conforme pour\s*«/i.test(finalReply)) {
-              onTurnCompleted({
+              bgOnTurnCompletedCallback?.({
                 userPrompt,
                 assistantReply: finalReply,
                 requestedTier: effectiveTier,
@@ -375,32 +465,42 @@ export function useAssistantStreamingTurn({
         },
       })
       .then(() => {
-        if (!controller.signal.aborted && !hasStreamError) setIsGenerating(false);
+        if (!controller.signal.aborted && !hasStreamError) {
+          updateBgSnapshot({ isGenerating: false, thinkingStartedAtMs: null });
+        }
       })
       .catch((err: unknown) => {
-        clearPendingTimers();
+        clearBgTimers();
         if (controller.signal.aborted) return;
-        setIsGenerating(false);
         const detail = err instanceof Error ? err.message : "Erreur de communication avec le serveur";
-        setErrorMessage(
-          isFr
+        updateBgSnapshot({
+          isGenerating: false,
+          thinkingStartedAtMs: null,
+          errorMessage: isFr
             ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
             : `⚠️ Could not get a response from My Assistant (${detail}). Please check that your configured AI model is running.`,
-        );
+        });
       });
   };
 
+  const initialElapsedSeconds =
+    bgSnapshot.isGenerating && bgSnapshot.thinkingStartedAtMs !== null
+      ? Math.max(0, Math.floor((Date.now() - bgSnapshot.thinkingStartedAtMs) / 1000))
+      : 0;
+
   return {
-    streamedText,
+    streamedText: bgSnapshot.streamedText,
     setStreamedText,
-    stepProgress,
-    cacheHit,
-    cacheLookupMs,
-    nodes1To4Ms,
-    ttftMs,
-    isGenerating,
-    generationStopped,
-    errorMessage,
+    activeUserPrompt: bgSnapshot.activeUserPrompt,
+    stepProgress: bgSnapshot.stepProgress,
+    cacheHit: bgSnapshot.cacheHit,
+    cacheLookupMs: bgSnapshot.cacheLookupMs,
+    nodes1To4Ms: bgSnapshot.nodes1To4Ms,
+    ttftMs: bgSnapshot.ttftMs,
+    isGenerating: bgSnapshot.isGenerating,
+    initialElapsedSeconds,
+    generationStopped: bgSnapshot.generationStopped,
+    errorMessage: bgSnapshot.errorMessage,
     sendTurn,
     stopGeneration,
     resetStreamState,

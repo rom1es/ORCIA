@@ -86,6 +86,7 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly streamedText?: string;
   readonly activeUserPrompt?: string;
   readonly isGenerating?: boolean;
+  readonly initialElapsedSeconds?: number;
   readonly generationStopped?: boolean;
   readonly errorMessage?: string | null;
   readonly labels: AssistantSpeedSelectorAndStreamViewLabels;
@@ -136,6 +137,7 @@ export function AssistantSpeedSelectorAndStreamView({
   streamedText = "",
   activeUserPrompt,
   isGenerating = false,
+  initialElapsedSeconds = 0,
   generationStopped = false,
   errorMessage = null,
   labels,
@@ -301,7 +303,7 @@ export function AssistantSpeedSelectorAndStreamView({
         {isGenerating && !cleanStreamedText ? <div className="py-2 my-1"><AssistantThinkingSliderIndicator /></div> : null}
         {!hideDuplicateCompletedStream ? (
           <div data-testid="assistant-active-research-zone" className="py-1 flex flex-col items-start justify-center gap-2">
-            <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))} />
+            <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} initialElapsedSeconds={initialElapsedSeconds} hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))} />
           </div>
         ) : null}
         {errorMessage && (

@@ -1172,5 +1172,47 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(
       screen.getByTestId("assistant-step-item-STEP_2_IMPLEMENTATION_DESIGN").getAttribute("data-step-expanded"),
     ).toBe("false");
+
+    // 5. LIVE_MODEL_REASONING (delta.reasoning) starts in collapse hide (data-expanded="false" and data-step-expanded="false") while timer ticks, and opens on click
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        modelOptions={singleModelOptions}
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        isGenerating={true}
+        initialElapsedSeconds={14}
+        stepProgress={[
+          {
+            stepCode: "LIVE_MODEL_REASONING",
+            label: "Raisonnement du modèle en cours",
+            durationMs: 14000,
+            status: "RUNNING",
+            intermediateOutput: "Analyse combinatoire du déplacement du cavalier sur un échiquier 8x8...",
+          },
+        ]}
+        streamedText=""
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    const reasoningSubWindow = screen.getByTestId("assistant-thinking-subwindow");
+    expect(reasoningSubWindow.getAttribute("data-expanded")).toBe("false");
+    expect(screen.getByTestId("assistant-thinking-subwindow-header-label").textContent).toContain(
+      "Réflexion en cours · 14s",
+    );
+    expect(
+      screen.getByTestId("assistant-step-item-LIVE_MODEL_REASONING").getAttribute("data-step-expanded"),
+    ).toBe("false");
+
+    // Clicking the header toggle opens both the subwindow and LIVE_MODEL_REASONING (collapse show)
+    fireEvent.click(screen.getByTestId("assistant-thinking-subwindow-toggle"));
+    expect(reasoningSubWindow.getAttribute("data-expanded")).toBe("true");
+    expect(
+      screen.getByTestId("assistant-step-item-LIVE_MODEL_REASONING").getAttribute("data-step-expanded"),
+    ).toBe("true");
   });
 });

@@ -7,6 +7,7 @@ export interface AssistantThinkingSubWindowProps {
   readonly isGenerating: boolean;
   readonly hasStreamedResponse: boolean;
   readonly elapsedSecondsOverride?: number;
+  readonly initialElapsedSeconds?: number;
 }
 
 export function formatStepDurationSeconds(
@@ -64,31 +65,46 @@ export function AssistantThinkingSubWindow({
   isGenerating,
   hasStreamedResponse,
   elapsedSecondsOverride,
+  initialElapsedSeconds = 0,
 }: AssistantThinkingSubWindowProps): React.JSX.Element | null {
   const hasSteps = stepProgress.length > 0;
+  const isLiveReasoningOnly =
+    stepProgress.length === 1 &&
+    stepProgress[0]?.stepCode === "LIVE_MODEL_REASONING";
   const [expanded, setExpanded] = useState<boolean>(
-    isGenerating && !hasStreamedResponse,
+    isGenerating && !hasStreamedResponse && !isLiveReasoningOnly,
   );
   const [userToggledManually, setUserToggledManually] =
     useState<boolean>(false);
   const [userExpandedSteps, setUserExpandedSteps] = useState<
     Readonly<Record<string, boolean>>
   >({});
-  const [liveSeconds, setLiveSeconds] = useState<number>(0);
+  const [liveSeconds, setLiveSeconds] = useState<number>(() =>
+    Math.max(0, Math.floor(initialElapsedSeconds)),
+  );
   const [stepLiveTimers, setStepLiveTimers] = useState<
     Readonly<Record<string, number>>
   >({});
   const prevIsGeneratingRef = useRef<boolean>(isGenerating);
   const prevHasStreamedRef = useRef<boolean>(hasStreamedResponse);
 
-  // Automatic open on generation start and automatic collapse when final response starts arriving
+  useEffect(() => {
+    if (initialElapsedSeconds > liveSeconds && isGenerating) {
+      setLiveSeconds(Math.floor(initialElapsedSeconds));
+    }
+  }, [initialElapsedSeconds, isGenerating, liveSeconds]);
+
+  // Automatic open on generation start (except LIVE_MODEL_REASONING which stays collapse hide by default)
+  // and automatic collapse when final response starts arriving
   useEffect(() => {
     if (isGenerating && !prevIsGeneratingRef.current) {
-      setExpanded(true);
+      setExpanded(!isLiveReasoningOnly);
       setUserToggledManually(false);
       setUserExpandedSteps({});
-      setLiveSeconds(0);
+      setLiveSeconds(Math.max(0, Math.floor(initialElapsedSeconds)));
       setStepLiveTimers({});
+    } else if (isGenerating && isLiveReasoningOnly && !userToggledManually) {
+      setExpanded(false);
     } else if (
       !userToggledManually &&
       ((hasStreamedResponse && !prevHasStreamedRef.current) ||
@@ -98,7 +114,13 @@ export function AssistantThinkingSubWindow({
     }
     prevIsGeneratingRef.current = isGenerating;
     prevHasStreamedRef.current = hasStreamedResponse;
-  }, [isGenerating, hasStreamedResponse, userToggledManually]);
+  }, [
+    isGenerating,
+    hasStreamedResponse,
+    userToggledManually,
+    isLiveReasoningOnly,
+    initialElapsedSeconds,
+  ]);
 
   // Live 1-second counter while generating (overall + per RUNNING step)
   useEffect(() => {
@@ -154,6 +176,7 @@ export function AssistantThinkingSubWindow({
   }
 
   const toggleIndividualStep = (stepCode: string, currentlyOpen: boolean) => {
+    setUserToggledManually(true);
     setUserExpandedSteps((prev) => ({
       ...prev,
       [stepCode]: !currentlyOpen,
@@ -175,7 +198,14 @@ export function AssistantThinkingSubWindow({
         aria-expanded={expanded}
         onClick={() => {
           setUserToggledManually(true);
-          setExpanded((prev) => !prev);
+          const nextExpanded = !expanded;
+          setExpanded(nextExpanded);
+          if (isLiveReasoningOnly && stepProgress[0]) {
+            setUserExpandedSteps((prev) => ({
+              ...prev,
+              [stepProgress[0]!.stepCode]: nextExpanded,
+            }));
+          }
         }}
         className="inline-flex items-center gap-1.5 py-0.5 text-xs font-normal text-text-secondary hover:text-text-primary transition-colors"
       >
@@ -194,6 +224,7 @@ export function AssistantThinkingSubWindow({
       <ol
         data-testid="assistant-step-progress-list"
         aria-live="polite"
+        style={expanded ? undefined : { display: "none" }}
         className={
           expanded
             ? "pl-3 border-l border-border-subtle/60 space-y-1 mt-1 text-[11px] text-text-secondary"
@@ -204,10 +235,13 @@ export function AssistantThinkingSubWindow({
           const isRunning = st.status === "RUNNING";
           const manualState = userExpandedSteps[st.stepCode];
           // Progressive collapse rule:
-          // - RUNNING step is automatically in collapse show (data-step-expanded="true") unless manually collapsed
-          // - COMPLETED step automatically transitions to collapse hide (data-step-expanded="false") unless manually expanded by user
+          // - LIVE_MODEL_REASONING (delta.reasoning) starts in collapse hide (false) by default unless manually expanded by user
+          // - Other RUNNING steps are automatically in collapse show (true) unless manually collapsed
+          // - COMPLETED steps automatically transition to collapse hide (false) unless manually expanded by user
+          const defaultStepExpanded =
+            st.stepCode === "LIVE_MODEL_REASONING" ? false : isRunning;
           const isStepExpanded =
-            manualState !== undefined ? manualState : isRunning;
+            manualState !== undefined ? manualState : defaultStepExpanded;
           const stepElapsed =
             stepLiveTimers[st.stepCode] ?? displayHeaderSeconds;
           const stepTimerText = formatStepDurationSeconds(
