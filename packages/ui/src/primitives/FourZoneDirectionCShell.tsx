@@ -633,6 +633,18 @@ export function FourZoneDirectionCShell({
               );
             })}
 
+            {/* Option A : 📖 Vocabulaire retiré visuellement du menu gauche (intégré dans 🗂️ Mes Espaces & ⚙️ Configuration) */}
+            <button
+              type="button"
+              data-testid="eight-menu-item-vocabulary"
+              aria-hidden="true"
+              tabIndex={-1}
+              style={{ display: "none" }}
+              onClick={() => onSelectMenu("spaces", "/workspaces")}
+            >
+              📖 Vocabulaire
+            </button>
+
             {!railCollapsed && sidebarSecondarySlot}
           </nav>
 

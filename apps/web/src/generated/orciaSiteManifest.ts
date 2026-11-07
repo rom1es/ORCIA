@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 83
+    "techLeadReportsCount": 84
   },
   "activeRoutes": [
     "/",
@@ -410,6 +410,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epics 9, 11 & 12 UX/UI",
+      "reportFile": "2026-11-07-refonte-mes-espaces-et-integration-glossaire-ontologie-option-a-tech-lead-report.md",
+      "domain": "Refonte Épurée de 🗂️ Mes Espaces (/workspaces & /spaces), Partage 1-Clic d'Espace Privé vers l'Équipe (✓ Enregistré), Connexion Inline de Sources Documentaires, Intégration Directe du Glossaire & Règles Métiers Multi-Niveaux avec Promotion 1-Clic (⬆️) et Option A (Retrait de 📖 Vocabulaire du Menu Latéral Gauche)",
+      "summary": "Création de WorkspaceStudioCardsAndDetailView.tsx, WorkspaceDetailTabsPanel.tsx et WorkspaceGlossaryAndOntologyTab.tsx (< 400 lignes chacun) : filtres rapides (Tous, 👥 Espaces d'Équipe, 🔒 Mes Espaces Privés), grille de cartes avec auto-save Phase/Visibilité et partage 1-clic vers l'équipe, panneau de détail unifié en 3 onglets (📚 Sources & Documents avec formulaire inline, 📖 Glossaire & Règles Métiers avec cascade à 4 niveaux 🏢 Entreprise ➔ 🏛️ Direction ➔ 👥 Équipe ➔ 🗂️ Cet Espace et promotion 1-clic ⬆️, 👥 Membres, Accès & Consignes), retrait visuel de toute entrée séparée 📖 Vocabulaire du menu gauche (Option A) et ajout de l'onglet 📖 Glossaire & Règles dans ⚙️ Configuration (/settings)."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / UX & Studio Agents & Compétences",

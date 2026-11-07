@@ -7,6 +7,7 @@ import { createRoute } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
+import { WorkspaceGlossaryAndOntologyTab } from "../features/workspaces/WorkspaceGlossaryAndOntologyTab";
 import { useI18n } from "../i18n";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
@@ -20,7 +21,8 @@ export type SettingsSectionTab =
   | "connectors"
   | "ai-models"
   | "packs"
-  | "workflows";
+  | "workflows"
+  | "glossary";
 
 export function SettingsHubView() {
   const { dictionary, locale } = useI18n();
@@ -37,6 +39,7 @@ export function SettingsHubView() {
     datasources,
     packs,
     workflows,
+    ontologyConcepts,
     toggleAdminTeamMembership,
     addOrgUnit,
     removeOrgUnit,
@@ -47,6 +50,8 @@ export function SettingsHubView() {
     registerPack,
     removePack,
     upsertWorkflow,
+    addOntologyConcept,
+    promoteOntologyConcept,
   } = usePlatformSetup();
 
   const [activeTab, setActiveTab] = useState<SettingsSectionTab>("iam");
@@ -78,6 +83,10 @@ export function SettingsHubView() {
     { key: "connectors", label: copy.tabs.connectors },
     { key: "packs", label: copy.tabs.packs },
     { key: "workflows", label: copy.tabs.workflows },
+    {
+      key: "glossary",
+      label: isFr ? "📖 Glossaire & Règles" : "📖 Glossary & Rules",
+    },
   ];
 
   return (
@@ -164,6 +173,18 @@ export function SettingsHubView() {
               removePack={removePack}
               openHelpSection={openHelpSection}
             />
+          ) : activeTab === "glossary" ? (
+            <section className="orcia-bento-card">
+              <WorkspaceGlossaryAndOntologyTab
+                isFr={isFr}
+                selectedWorkspace={workspaces[0] ?? null}
+                orgUnits={orgUnits}
+                ontologyConcepts={ontologyConcepts}
+                openHelpSection={openHelpSection}
+                onAddConcept={addOntologyConcept}
+                onPromoteConcept={promoteOntologyConcept}
+              />
+            </section>
           ) : (
             <SettingsSecondaryTabsSection
               activeTab={activeTab}
