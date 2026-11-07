@@ -233,7 +233,12 @@ async def read_sql_blackboard_if_available(
         return None, (), ()
     try:
         status = await sql_repo.get_run_status(run_id)
-    except Exception:
+    except Exception as exc:
+        from orcia_core.observability.logging import get_logger
+
+        get_logger("orcia.api.orchestration").warning(
+            "sql_blackboard_get_run_status_fallback", run_id=run_id, error_type=type(exc).__name__
+        )
         return None, (), ()
     steps = await sql_repo.list_step_executions(run_id)
     snapshots = await sql_repo.list_snapshots(run_id)
@@ -255,7 +260,12 @@ async def sync_replay_fork_to_sql(
         return None
     try:
         status = await sql_repo.get_run_status(run.id)
-    except Exception:
+    except Exception as exc:
+        from orcia_core.observability.logging import get_logger
+
+        get_logger("orcia.api.orchestration").warning(
+            "sql_replay_fork_get_run_status_fallback", run_id=run.id, error_type=type(exc).__name__
+        )
         return None
     snapshots = await sql_repo.list_snapshots(run.id)
     parent_id = snapshots[-1].id if snapshots else None

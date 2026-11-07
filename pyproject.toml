@@ -199,7 +199,18 @@ src = [
 extend-exclude = [".agent", "_bmad", ".venv", "node_modules", ".gitnexus"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"httpx.Client".msg = "Interdit dans l'event loop ASGI : utiliser `httpx.AsyncClient` (`request.app.state.http_client`)."
+"requests".msg = "Interdit dans ORCIA : utiliser `httpx.AsyncClient` non bloquant."
+"urllib.request".msg = "Interdit dans ORCIA : utiliser `httpx.AsyncClient` non bloquant."
+
+[tool.ruff.lint.per-file-ignores]
+"packages/orcia-core/src/orcia_core/catalog/_internal/seaweedfs_adapter.py" = ["TID251"]
+"tests/**" = ["TID251"]
+"infra/**" = ["TID251"]
+"scripts/**" = ["TID251"]
 
 [tool.mypy]
 python_version = "3.12"

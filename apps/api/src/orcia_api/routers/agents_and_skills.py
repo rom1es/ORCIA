@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from orcia_api.dependencies import get_agents_and_skills_service
+from orcia_api.dependencies import get_agents_and_skills_service, get_or_create_shared_db_engine
+from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.agents_and_skills import (
     AgentItemResponse,
@@ -24,7 +27,7 @@ from orcia_api.schemas.agents_and_skills import (
     UpsertSkillRequest,
 )
 from orcia_core.catalog.errors import ObserverModeReadOnlyError
-from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
     AgentsAndSkillsManagementService,
     ManagedAgentRecord,
@@ -36,6 +39,7 @@ from orcia_core.orchestration import (
     persist_skill_to_postgres18,
 )
 
+logger = get_logger("orcia.api.agents_skills")
 router = APIRouter(prefix="/api/v1/agents-and-skills", tags=["agents-and-skills"])
 
 AgentsAndSkillsSvcDep = Annotated[
@@ -50,10 +54,7 @@ def _trace(request: Request) -> str:
 
 def _enforce_not_observer(request: Request, persona_key: str | None) -> None:
     user = resolve_request_user(request, persona_key=persona_key)
-    if user.platform_role in ("OBSERVER", "BU_DIRECTOR") or persona_key in (
-        "claire",
-        "observer",
-    ):
+    if user.platform_role in ("OBSERVER", "BU_DIRECTOR") or persona_key in ("claire", "observer"):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
 
@@ -89,55 +90,26 @@ def _serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
     )
 
 
-async def _sync_from_postgres18_if_enabled(
-    request: Request, svc: AgentsAndSkillsManagementService
+async def _run_pg_persistence(
+    request: Request, fn: Callable[[AsyncEngine], Awaitable[None]]
 ) -> None:
     if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
         return
     try:
-        from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
-        from orcia_core.config import resolve_database_url
-
-        shared_engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
-        engine = shared_engine or create_async_engine(
-            resolve_database_url(),
-            connect_args={"timeout": 1.5},
-        )
-        try:
-            skills, agents = await load_agents_and_skills_from_postgres18(engine)
-            svc.sync_from_records(skills=skills, agents=agents)
-        finally:
-            if shared_engine is None:
-                await engine.dispose()
-    except Exception:
-        return
+        engine = get_or_create_shared_db_engine(request)
+        await fn(engine)
+    except Exception as exc:
+        logger.warning("agents_skills_pg_persistence_failed", error_type=type(exc).__name__)
 
 
-async def _run_pg_persistence(request: Request, coro_fn: object) -> None:
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return
-    try:
-        from collections.abc import Awaitable, Callable
+async def _sync_from_postgres18_if_enabled(
+    request: Request, svc: AgentsAndSkillsManagementService
+) -> None:
+    async def _load(eng: AsyncEngine) -> None:
+        skills, agents = await load_agents_and_skills_from_postgres18(eng)
+        svc.sync_from_records(skills=skills, agents=agents)
 
-        from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
-        from orcia_core.config import resolve_database_url
-
-        typed_fn = coro_fn
-        fn: Callable[[AsyncEngine], Awaitable[None]] = typed_fn  # type: ignore[assignment]
-        shared_engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
-        engine = shared_engine or create_async_engine(
-            resolve_database_url(),
-            connect_args={"timeout": 1.5},
-        )
-        try:
-            await fn(engine)
-        finally:
-            if shared_engine is None:
-                await engine.dispose()
-    except Exception:
-        return
+    await _run_pg_persistence(request, _load)
 
 
 @router.get(
@@ -206,8 +178,7 @@ async def delete_skill_endpoint(
     removed, detached_agent_ids = svc.delete_skill(skill_id, instance=str(request.url.path))
     updated_agents = tuple(svc.get_agent(aid) for aid in detached_agent_ids)
     await _run_pg_persistence(
-        request,
-        lambda eng: delete_skill_from_postgres18(eng, removed.skill_id, updated_agents),
+        request, lambda eng: delete_skill_from_postgres18(eng, removed.skill_id, updated_agents)
     )
     return DeleteSkillOrAgentResponse(
         deleted_id=removed.skill_id,
@@ -232,10 +203,8 @@ async def execute_skill_endpoint(
     """Execute `skill_id` directly on `payload.input_text` and return the structured output."""
     _enforce_not_observer(request, persona_key)
     await _sync_from_postgres18_if_enabled(request, svc)
-    from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
-
     skill = svc.get_skill(skill_id, instance=str(request.url.path))
-    live_llm = invoke_configured_llm_for_assistant_turn(
+    live_llm = await invoke_configured_llm_for_assistant_turn(
         request,
         user_prompt=payload.input_text,
         hat="PLATFORM_ADMIN",
@@ -243,7 +212,9 @@ async def execute_skill_endpoint(
         system_instructions_override=(
             f"Tu exécutes la compétence ORCIA « {skill.name} » ({skill.command_handle}). "
             f"Objectif : {skill.objective}. Instructions : {skill.instructions}. "
-            f"Format attendu : {skill.expected_output_format}. Réponds en français."
+            f"Format attendu : {skill.expected_output_format}. "
+            "Respond in the exact same language as the user's message "
+            "(unless the user explicitly asks for another language)."
         ),
     )
     outcome = svc.execute_skill(
@@ -310,9 +281,7 @@ async def update_agent_skills_endpoint(
     """Update the list of Skills attached to `agent_id` in 1 click."""
     _enforce_not_observer(request, persona_key)
     agent = svc.set_agent_skills(
-        agent_id,
-        skill_ids=payload.skill_ids,
-        instance=str(request.url.path),
+        agent_id, skill_ids=payload.skill_ids, instance=str(request.url.path)
     )
     await _run_pg_persistence(request, lambda eng: persist_agent_to_postgres18(eng, agent))
     return _serialize_agent(agent)
@@ -334,8 +303,7 @@ async def delete_agent_endpoint(
     _enforce_not_observer(request, persona_key)
     removed = svc.delete_agent(agent_id, instance=str(request.url.path))
     await _run_pg_persistence(
-        request,
-        lambda eng: delete_agent_from_postgres18(eng, removed.agent_id),
+        request, lambda eng: delete_agent_from_postgres18(eng, removed.agent_id)
     )
     return DeleteSkillOrAgentResponse(
         deleted_id=removed.agent_id,
@@ -360,10 +328,8 @@ async def execute_agent_endpoint(
     """Execute `agent_id` on `payload.prompt`, mobilizing its attached Skills."""
     _enforce_not_observer(request, persona_key)
     await _sync_from_postgres18_if_enabled(request, svc)
-    from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
-
     agent = svc.get_agent(agent_id, instance=str(request.url.path))
-    live_llm = invoke_configured_llm_for_assistant_turn(
+    live_llm = await invoke_configured_llm_for_assistant_turn(
         request,
         user_prompt=payload.prompt,
         hat="PLATFORM_ADMIN",
@@ -371,7 +337,9 @@ async def execute_agent_endpoint(
         system_instructions_override=(
             f"Tu es l'agent ORCIA « {agent.name} » ({agent.handle}). "
             f"Rôle et mission : {agent.role_mission}. "
-            f"Instructions : {agent.instructions}. Réponds en français de manière structurée."
+            f"Instructions : {agent.instructions}. "
+            "Respond in the exact same language as the user's message "
+            "(unless the user explicitly asks for another language)."
         ),
     )
     outcome = svc.execute_agent(

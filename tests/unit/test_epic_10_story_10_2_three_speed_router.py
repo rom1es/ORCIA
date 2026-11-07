@@ -223,22 +223,30 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         assert inv_resp.json()["invalidated_keys_count"] >= 1
 
 
-def test_story_10_2_live_llm_bridge_ollama_and_openai_normalization(
+def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verify live LLM bridge resolves configured tier (`Ollama Local` `/api` or `/v1`)."""
-    from typing import Any
-
+    """Verify agnostic LLM bridge resolves configured tier and normalizes URLs properly."""
     import httpx
 
     import orcia_core.bootstrap as bm
     from orcia_api.routers.assistant_llm_bridge import (
-        _build_ollama_root_url,
         _extract_tier_endpoint_from_dict,
+        normalize_chat_completions_url,
     )
 
-    assert _build_ollama_root_url("http://localhost:11434/api") == "http://localhost:11434"
-    assert _build_ollama_root_url("http://localhost:11434/v1") == "http://localhost:11434"
+    assert (
+        normalize_chat_completions_url("http://localhost:11434/api", "Ollama Local")
+        == "http://localhost:11434/v1/chat/completions"
+    )
+    assert (
+        normalize_chat_completions_url("https://api.openai.com", "OpenAI")
+        == "https://api.openai.com/v1/chat/completions"
+    )
+    assert (
+        normalize_chat_completions_url("https://api.anthropic.com", "Anthropic")
+        == "https://api.anthropic.com/v1/messages"
+    )
 
     resolved = _extract_tier_endpoint_from_dict(
         {
@@ -252,36 +260,28 @@ def test_story_10_2_live_llm_bridge_ollama_and_openai_normalization(
     assert resolved is not None
     assert resolved.model_name == "gemma4:12b"
 
-    class _FakeHttpResponse:
-        def raise_for_status(self) -> None:
-            return None
-
-        def json(self) -> dict[str, Any]:
-            return {
-                "message": {
-                    "role": "assistant",
-                    "content": "Bonjour, je suis votre Assistant ORCIA propulsé par gemma4:12b.",
-                }
-            }
-
-    class _FakeHttpClient:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            pass
-
-        def __enter__(self) -> _FakeHttpClient:
-            return self
-
-        def __exit__(self, *args: Any) -> None:
-            return None
-
-        def post(self, url: str, **kwargs: Any) -> _FakeHttpResponse:
-            assert url == "http://localhost:11434/api/chat"
-            return _FakeHttpResponse()
+    def _mock_handler(req: httpx.Request) -> httpx.Response:
+        assert str(req.url) == "http://localhost:11434/v1/chat/completions"
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": (
+                                "Bonjour, je suis votre Assistant ORCIA propulsé par gemma4:12b."
+                            ),
+                        }
+                    }
+                ]
+            },
+        )
 
     monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
-    monkeypatch.setattr(httpx, "Client", _FakeHttpClient)
 
     with TestClient(app) as client:
+        app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_mock_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
             first_admin_email="admin@orcia.io",
@@ -313,8 +313,8 @@ def test_story_10_2_live_llm_bridge_ollama_and_openai_normalization(
 def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verify `requested_tier` and `thinking_effort` routing in `assistant_llm_bridge`."""
-    from typing import Any
+    """Verify `requested_tier`, `thinking_effort`, 5-layer prompt & multilingual steps."""
+    import json
 
     import httpx
 
@@ -323,16 +323,17 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         _select_endpoint_from_tiers,
         build_assistant_system_instructions,
         detect_adaptive_thinking_steps_for_question,
-        humanize_hat_label_fr,
     )
 
-    assert humanize_hat_label_fr("PLATFORM_ADMIN") == "Administrateur"
-    assert humanize_hat_label_fr("PM") == "Chef de Projet"
-    code_steps = detect_adaptive_thinking_steps_for_question(
-        "code la fonction factorielle en python"
+    code_steps_fr = detect_adaptive_thinking_steps_for_question(
+        "code la fonction factorielle en python", locale="fr"
     )
-    assert len(code_steps) == 3
-    assert code_steps[0][0] == "Spécification et cas limites"
+    code_steps_en = detect_adaptive_thinking_steps_for_question(
+        "implement a python function for factorial", locale="en"
+    )
+    assert len(code_steps_fr) == 3
+    assert code_steps_fr[0][0] == "Spécification et cas limites"
+    assert code_steps_en[0][0] == "Specification & edge cases"
 
     tiers_cfg = [
         {
@@ -366,7 +367,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     assert ep_complex is not None and ep_complex.model_name == "gemma4:27b-pro"
 
     sys_fast = build_assistant_system_instructions(
-        hat="PLATFORM_ADMIN",
+        hat="ARCHITECT",
         speed_mode="SPEED_1_FAST",
         requested_tier="simple",
         thinking_effort="fast",
@@ -379,53 +380,40 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     )
     assert "Palier Rapide" in sys_fast
     assert "Niveau de réflexion Bas" in sys_fast
-    assert "PLATFORM_ADMIN" not in sys_fast
-    assert "Administrateur" in sys_fast
+    assert "CONSTITUTIONAL_IMMUTABLE_LAYER_1" in sys_fast
+    assert "Respond in the exact same language as the user's message" in sys_fast
     assert "Palier Raisonnement avancé" in sys_deep
     assert "Niveau de réflexion Élevé" in sys_deep
-    assert "Chef de Projet" in sys_deep
+    assert "Règles de Gestion" in sys_deep
 
     captured_models: list[str] = []
     captured_sys_prompts: list[str] = []
 
-    class _FakeHttpResponse:
-        def __init__(self, model: str) -> None:
-            self._model = model
-
-        def raise_for_status(self) -> None:
-            return None
-
-        def json(self) -> dict[str, Any]:
-            return {
-                "message": {
-                    "role": "assistant",
-                    "content": f"Réponse générée par {self._model}.",
-                }
-            }
-
-    class _FakeHttpClient:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            pass
-
-        def __enter__(self) -> _FakeHttpClient:
-            return self
-
-        def __exit__(self, *args: Any) -> None:
-            return None
-
-        def post(self, url: str, **kwargs: Any) -> _FakeHttpResponse:
-            json_body = kwargs.get("json", {})
-            model = str(json_body.get("model", ""))
-            msgs = json_body.get("messages", [])
-            captured_models.append(model)
-            if msgs:
-                captured_sys_prompts.append(str(msgs[0].get("content", "")))
-            return _FakeHttpResponse(model)
+    def _mock_handler(req: httpx.Request) -> httpx.Response:
+        json_body = json.loads(req.content.decode("utf-8"))
+        model = str(json_body.get("model", ""))
+        msgs = json_body.get("messages", [])
+        captured_models.append(model)
+        if msgs:
+            captured_sys_prompts.append(str(msgs[0].get("content", "")))
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": f"Réponse générée par {model}.",
+                        }
+                    }
+                ]
+            },
+        )
 
     monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
-    monkeypatch.setattr(httpx, "Client", _FakeHttpClient)
 
     with TestClient(app) as client:
+        app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_mock_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
             first_admin_email="admin@orcia.io",
@@ -448,4 +436,5 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         assert "gemma4:27b-pro" in d_complex["response_text"]
         assert captured_models[-1] == "gemma4:27b-pro"
         assert "Niveau de réflexion Élevé" in captured_sys_prompts[-1]
+        assert "1. 🔒 Constitution (AssistantHarness Socle)" in captured_sys_prompts[-1]
         assert any("Réflexion Élevée" in st["label"] for st in d_complex["step_progress"])

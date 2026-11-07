@@ -48,7 +48,7 @@ class MemlogMarkerPluginProtocol(Protocol):
         ...
 
 
-_MARKER_PLUGIN_LOCK = threading.Lock()
+_MARKER_PLUGIN_LOCK = threading.RLock()
 _MARKER_PLUGIN: MemlogMarkerPluginProtocol | None = None
 _MARKER_ENTRY_POINTS_LOADED: bool = False
 
@@ -73,8 +73,12 @@ def get_memlog_marker_plugin() -> MemlogMarkerPluginProtocol | None:
                     instance = loaded() if callable(loaded) else loaded
                     if isinstance(instance, MemlogMarkerPluginProtocol):
                         _MARKER_PLUGIN = instance
-            except Exception:
-                pass
+            except Exception as exc:
+                from orcia_core.observability.logging import get_logger
+
+                get_logger("orcia.core.jit_hydrator").warning(
+                    "memlog_marker_plugin_load_failed", error_type=type(exc).__name__
+                )
         return _MARKER_PLUGIN
 
 

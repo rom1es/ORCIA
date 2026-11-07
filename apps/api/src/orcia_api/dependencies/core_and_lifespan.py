@@ -5,8 +5,12 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from typing import TYPE_CHECKING
 
 from fastapi import FastAPI, Request
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
@@ -217,7 +221,15 @@ def initialize_app_services(app: FastAPI) -> None:
             workflow_engine=app.state.orchestration_service.engine,
         )
 
-    import os
+    if getattr(app.state, "http_client", None) is None or getattr(
+        app.state.http_client, "is_closed", False
+    ):
+        import httpx
+
+        app.state.http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+        )
 
     if (
         getattr(app.state, "session_maker", None) is None
@@ -231,8 +243,30 @@ def initialize_app_services(app: FastAPI) -> None:
             db_engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
             app.state.db_engine = db_engine
             app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
-        except Exception:
-            pass
+        except Exception as exc:
+            from orcia_core.observability.logging import get_logger
+
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_pg_session_maker_init_skipped", error_type=type(exc).__name__
+            )
+
+
+def get_or_create_shared_db_engine(request: Request) -> AsyncEngine:
+    """Return shared `AsyncEngine` from `request.app.state.db_engine`, creating it if absent."""
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    from orcia_core.config import resolve_database_url
+
+    engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
+    if engine is None:
+        engine = create_async_engine(
+            resolve_database_url(),
+            poolclass=NullPool,
+            connect_args={"timeout": 1.5},
+        )
+        request.app.state.db_engine = engine
+    return engine
 
 
 @asynccontextmanager
@@ -242,6 +276,10 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        http_client = getattr(app.state, "http_client", None)
+        if http_client is not None:
+            with suppress(Exception):
+                await http_client.aclose()
         db_engine = getattr(app.state, "db_engine", None)
         if db_engine is not None:
             with suppress(Exception):

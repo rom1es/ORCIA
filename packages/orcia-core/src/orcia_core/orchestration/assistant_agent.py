@@ -403,12 +403,10 @@ class AssistantAgentService:
                     "summary": tr.summary,
                 },
             }
-        words = turn.response_text.split(" ")
-        chunk_size = max(1, len(words) // 4)
-        for idx in range(0, len(words), chunk_size):
-            token_chunk = " ".join(words[idx : idx + chunk_size])
-            if idx + chunk_size < len(words):
-                token_chunk += " "
+        lines = turn.response_text.splitlines(keepends=True) or [turn.response_text]
+        chunk_size = max(1, len(lines) // 4)
+        for idx in range(0, len(lines), chunk_size):
+            token_chunk = "".join(lines[idx : idx + chunk_size])
             yield {
                 "event": "token",
                 "data": {

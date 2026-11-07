@@ -13,6 +13,7 @@ from orcia_api.dependencies.core_and_lifespan import (
     get_bootstrap_service,
     get_catalog_service,
     get_ontology_and_rag_services,
+    get_or_create_shared_db_engine,
     get_permission_broker_service,
     initialize_app_services,
 )
@@ -70,6 +71,7 @@ __all__ = [
     "get_hierarchical_rbac_service",
     "get_notification_service",
     "get_ontology_and_rag_services",
+    "get_or_create_shared_db_engine",
     "get_orchestration_service",
     "get_pack_builder_system_service",
     "get_permission_broker_service",

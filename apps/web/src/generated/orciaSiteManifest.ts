@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 87
+    "techLeadReportsCount": 88
   },
   "activeRoutes": [
     "/",
@@ -411,6 +411,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 Architecture & LLM Bridge",
+      "reportFile": "2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse-tech-lead-report.md",
+      "domain": "Refactorisation Agnostique Async LLM (httpx.AsyncClient partagé), Ontologie L1–L4 & AssistantHarness 5 Couches, Internationalisation (locale), Modèles de Raisonnement (<think> / reasoning_content), Continuité Multi-Tours Outillée (conversation_history + tools), Vrai Streaming HTTP SSE (resp.aiter_lines()) & 4 Invariants Anti-Régression (GEMINI.md + TID251 + Audit AST)",
+      "summary": "Correction chirurgicale des 8 défauts architecturaux de assistant_llm_bridge.py et assistant_workspace.py (découpés en modules < 390 lignes), normalisation multi-provider agnostique (OpenAI, Anthropic, Azure, vLLM, Ollama) avec garde-fou SSRF is_safe_llm_endpoint_url, séparation stricte thinking vs content sans \"think\": False en dur, prompt 5 couches branché sur AssistantHarness + OntologyGovernanceService et répondant dans la langue de l'utilisateur, vrai streaming SSE asynchrone préservant les \\n et l'indentation Markdown, suppression des 7 create_async_engine() à la volée et des except Exception: muets dans tout le dépôt, et création du garde-fou AST test_codebase_architectural_anti_patterns_audit.py."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 Réflexion Progressive & Flux Unifié",

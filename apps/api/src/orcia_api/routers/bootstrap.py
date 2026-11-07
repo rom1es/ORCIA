@@ -8,6 +8,7 @@ from fastapi import APIRouter, Query, Request
 
 from orcia_api.dependencies import get_bootstrap_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.routers.bootstrap_accostage import router as accostage_router
 from orcia_api.schemas import bootstrap as bs
 from orcia_api.schemas.auth_and_org import (
     PassthroughSecretMetadataResponse,
@@ -28,10 +29,15 @@ def _trace(request: Request) -> str:
 
 def _serialize_workflow(wf: bm.SystemBootstrapWorkflowSpec) -> bs.SystemBootstrapWorkflowItem:
     return bs.SystemBootstrapWorkflowItem(
-        id=wf.id, uri=wf.uri, title=wf.title, description=wf.description,
-        required_role=wf.required_role, scope_level=wf.scope_level,
-        deterministic_gate_rules=list(wf.deterministic_gate_rules), sha256=wf.sha256,
-    )  # fmt: skip
+        id=wf.id,
+        uri=wf.uri,
+        title=wf.title,
+        description=wf.description,
+        required_role=wf.required_role,
+        scope_level=wf.scope_level,
+        deterministic_gate_rules=list(wf.deterministic_gate_rules),
+        sha256=wf.sha256,
+    )
 
 
 def _serialize_run(run: bm.SystemBootstrapRunRecord) -> bs.SystemBootstrapRunItem:
@@ -40,12 +46,17 @@ def _serialize_run(run: bm.SystemBootstrapRunRecord) -> bs.SystemBootstrapRunIte
 
 def _serialize_onboarding(st: bm.UserOnboardingState) -> bs.UserOnboardingStateItem:
     return bs.UserOnboardingStateItem(
-        id=st.id, user_email=st.user_email, user_id=st.user_id,
-        invited_by_user_id=st.invited_by_user_id, org_unit_id=st.org_unit_id,
-        human_profile_archetype=st.human_profile_archetype, assigned_role=st.assigned_role,
-        workspace_ids=list(st.workspace_ids), init_user_completed=st.init_user_completed,
+        id=st.id,
+        user_email=st.user_email,
+        user_id=st.user_id,
+        invited_by_user_id=st.invited_by_user_id,
+        org_unit_id=st.org_unit_id,
+        human_profile_archetype=st.human_profile_archetype,
+        assigned_role=st.assigned_role,
+        workspace_ids=list(st.workspace_ids),
+        init_user_completed=st.init_user_completed,
         linked_connectors=list(st.linked_connectors),
-    )  # fmt: skip
+    )
 
 
 @router.get(
@@ -123,7 +134,9 @@ async def execute_init_workspace(
     svc = get_bootstrap_service(request)
     ws_inputs = tuple(
         bm.WorkspaceBootstrapInput(
-            slug=w.slug, name=w.name, visibility_mode=w.visibility_mode,
+            slug=w.slug,
+            name=w.name,
+            visibility_mode=w.visibility_mode,
             notification_channel=w.notification_channel,
             workspace_override_scalars=dict(w.workspace_override_scalars),
             workspace_ontology_terms=tuple(
@@ -132,7 +145,7 @@ async def execute_init_workspace(
             ),
         )
         for w in payload.workspaces
-    )  # fmt: skip
+    )
     outcome = svc.execute_init_workspace(
         user,
         bm.InitWorkspaceInput(
@@ -156,14 +169,19 @@ async def execute_init_workspace(
     )
     ws_items = [
         WorkspaceSummaryItem(
-            id=w.id, slug=w.slug, name=w.name, owner_org_unit_id=w.owner_org_unit_id,
-            visibility_mode=w.visibility_mode, effective_role=user.platform_role,
-            access_mode="CONTRIBUTOR_ACTION_REQUIRED", access_origin="DIRECT_TEAM",
+            id=w.id,
+            slug=w.slug,
+            name=w.name,
+            owner_org_unit_id=w.owner_org_unit_id,
+            visibility_mode=w.visibility_mode,
+            effective_role=user.platform_role,
+            access_mode="CONTRIBUTOR_ACTION_REQUIRED",
+            access_origin="DIRECT_TEAM",
             finops_cost_usd=w.finops_cost_usd,
             datasources=[WorkspaceDatasourceItem(**asdict(d)) for d in w.datasources],
         )
         for w in outcome.workspaces
-    ]  # fmt: skip
+    ]
     return bs.InitWorkspaceResponse(
         run=_serialize_run(outcome.run),
         workspaces=ws_items,
@@ -196,16 +214,24 @@ async def execute_init_datasource(
         datasource=WorkspaceDatasourceItem(**asdict(ds)),
         policy=PermissionBrokerPolicyItem(**asdict(pol)),
         catalog_item=CatalogItemResponse(
-            id=item.id, resource_id=item.resource_id, uri=item.uri, scheme=item.scheme,
-            title=item.title, description=item.description, resource_type=item.resource_type,
-            source_format=item.source_format, version=item.version, sha256=item.sha256,
-            sha256_short=item.sha256_short, cas_key=item.cas_key,
+            id=item.id,
+            resource_id=item.resource_id,
+            uri=item.uri,
+            scheme=item.scheme,
+            title=item.title,
+            description=item.description,
+            resource_type=item.resource_type,
+            source_format=item.source_format,
+            version=item.version,
+            sha256=item.sha256,
+            sha256_short=item.sha256_short,
+            cas_key=item.cas_key,
             visibility_scope=item.visibility_scope,
             granted_permissions=["DISCOVER", "EXECUTE", "READ_SOURCE", "EDIT", "ADMIN"],
             source_masked=False,
         ),
         trace_id=_trace(request),
-    )  # fmt: skip
+    )
 
 
 @router.post(
@@ -237,12 +263,16 @@ async def execute_init_user(
     )
     creds = [
         PassthroughSecretMetadataResponse(
-            id=c.id, user_id=c.user_id, connector_scheme=c.connector_scheme,
-            target_host=c.target_host, key_version=c.key_version,
-            encrypted_at_rest=True, trace_id=_trace(request),
+            id=c.id,
+            user_id=c.user_id,
+            connector_scheme=c.connector_scheme,
+            target_host=c.target_host,
+            key_version=c.key_version,
+            encrypted_at_rest=True,
+            trace_id=_trace(request),
         )
         for c in outcome.credentials
-    ]  # fmt: skip
+    ]
     return bs.InitUserResponse(
         run=_serialize_run(outcome.run),
         onboarding_state=_serialize_onboarding(outcome.onboarding_state),
@@ -251,400 +281,4 @@ async def execute_init_user(
     )
 
 
-async def _sync_first_admin_with_postgres18(
-    svc: bm.ProgressiveDay0AccostageService,
-) -> None:
-    """Synchronize `svc.first_admin` with PostgreSQL 18 `users` table when reachable."""
-    import os
-
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return
-    try:
-        from sqlalchemy.ext.asyncio import create_async_engine
-
-        from orcia_core.config import resolve_database_url
-
-        engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
-        try:
-            db_record = await bm.get_first_platform_admin_from_postgres18(
-                engine, orcia_env=svc.orcia_env
-            )
-            svc.set_first_platform_admin_record(db_record)
-        finally:
-            await engine.dispose()
-    except Exception:
-        return
-
-
-def _serialize_accostage_status(
-    rep: bm.AccostageStatusReport, trace_id: str
-) -> bs.AccostageStatusResponse:
-    return bs.AccostageStatusResponse(
-        completed_count=rep.completed_count, total_count=rep.total_count,
-        badge_label=rep.badge_label, llm_tier_mode=rep.llm_tier_mode,
-        distinct_families=list(rep.distinct_families),
-        assistant_trial_enabled=rep.assistant_trial_enabled,
-        agentic_gates_ad10_enabled=rep.agentic_gates_ad10_enabled,
-        amber_warning_badge=rep.amber_warning_badge,
-        completed_milestone_keys=list(rep.completed_milestone_keys),
-        first_admin_initialized=rep.first_admin_initialized,
-        first_admin_email=rep.first_admin_email,
-        first_admin_display_name=rep.first_admin_display_name,
-        trace_id=trace_id,
-    )  # fmt: skip
-
-
-@router.get(
-    "/accostage-status",
-    response_model=bs.AccostageStatusResponse,
-    summary="Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
-    responses=PROBLEM_RESPONSES,
-)
-async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
-    from orcia_api.dependencies import get_accostage_service
-
-    svc = get_accostage_service(request)
-    await _sync_first_admin_with_postgres18(svc)
-    return _serialize_accostage_status(svc.get_accostage_status(), _trace(request))
-
-
-@router.post(
-    "/welcome-setup/first-admin",
-    response_model=bs.WelcomeSetupFirstAdminResponse,
-    summary="Create first PLATFORM_ADMIN under LOCK TABLE users IN EXCLUSIVE MODE (`Story 9.2`)",
-    responses=PROBLEM_RESPONSES,
-)
-async def create_welcome_setup_first_admin(
-    payload: bs.WelcomeSetupFirstAdminRequest,
-    request: Request,
-) -> bs.WelcomeSetupFirstAdminResponse:
-    import os
-
-    from orcia_api.dependencies import get_accostage_service, get_auth_service
-
-    svc = get_accostage_service(request)
-    password_hash = get_auth_service(request).hasher.hash_password(payload.password)
-
-    rec: bm.FirstPlatformAdminRecord | None = None
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        try:
-            from sqlalchemy.ext.asyncio import create_async_engine
-
-            from orcia_core.bootstrap.errors import OrciaDomainError
-            from orcia_core.config import resolve_database_url
-
-            engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
-            try:
-                rec = await bm.create_first_platform_admin_on_postgres18(
-                    engine, email=payload.email, display_name=payload.display_name,
-                    password_hash=password_hash, orcia_env=payload.orcia_env,
-                    expected_bootstrap_token=svc.expected_bootstrap_token,
-                    provided_bootstrap_token=payload.bootstrap_token,
-                    instance=str(request.url.path),
-                )  # fmt: skip
-                svc.set_first_platform_admin_record(rec)
-            finally:
-                await engine.dispose()
-        except OrciaDomainError:
-            raise
-        except Exception:
-            rec = None
-
-    if rec is None:
-        rec = await svc.create_first_platform_admin_async(
-            email=payload.email, display_name=payload.display_name, password_hash=password_hash,
-            bootstrap_token=payload.bootstrap_token, orcia_env_override=payload.orcia_env,
-            instance=str(request.url.path),
-        )  # fmt: skip
-    return bs.WelcomeSetupFirstAdminResponse(
-        user_id=rec.user_id, email=rec.email, display_name=rec.display_name,
-        platform_role=rec.platform_role, orcia_env=rec.orcia_env,
-        sql_lock_statement=rec.sql_lock_statement, trace_id=_trace(request),
-    )  # fmt: skip
-
-
-@router.post(
-    "/welcome-setup/progressive-llm",
-    response_model=bs.AccostageStatusResponse,
-    summary="Register progressive LLM endpoint (1 family -> Quick Trial; >= 2 -> AD-10 Gates)",
-    responses=PROBLEM_RESPONSES,
-)
-async def register_welcome_setup_progressive_llm(
-    payload: bs.ProgressiveLlmEndpointRequest,
-    request: Request,
-) -> bs.AccostageStatusResponse:
-    import os
-
-    from orcia_api.dependencies import get_accostage_service
-    from orcia_kernel.ids import new_uuid7_str
-
-    svc = get_accostage_service(request)
-    endpoint = bm.LlmModelEndpoint(
-        id=new_uuid7_str(), endpoint_key=payload.endpoint_key,
-        provider_slug=payload.provider_slug, model_family=payload.model_family,
-        model_name=payload.model_name, endpoint_uri=payload.endpoint_uri,
-    )  # fmt: skip
-    rep = svc.register_progressive_llm_endpoint(endpoint)
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        try:
-            from sqlalchemy.ext.asyncio import create_async_engine
-
-            from orcia_core.config import resolve_database_url
-
-            engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
-            try:
-                await bm.persist_progressive_llm_endpoint_to_postgres18(engine, endpoint)
-            finally:
-                await engine.dispose()
-        except Exception:
-            pass
-    return _serialize_accostage_status(rep, _trace(request))
-
-
-@router.post(
-    "/welcome-setup/llm-test",
-    response_model=bs.LlmConnectionTestResponse,
-    summary="Test LLM endpoint connectivity, URL format, and authentication configuration",
-    responses=PROBLEM_RESPONSES,
-)
-async def test_welcome_setup_llm_connection(
-    payload: bs.LlmConnectionTestRequest,
-    request: Request,
-) -> bs.LlmConnectionTestResponse:
-    provider = payload.provider_slug.strip() or "OpenAI / Compatible"
-    model = payload.model_name.strip()
-    uri = payload.endpoint_uri.strip()
-    auth_mode = payload.auth_mode
-    has_key = bool((payload.api_key and payload.api_key.strip()) or payload.api_key_configured)
-
-    if not model:
-        return bs.LlmConnectionTestResponse(
-            ok=False,
-            status="INVALID_PARAMETERS",
-            latency_ms=2,
-            provider_slug=provider,
-            model_name="",
-            endpoint_uri=uri,
-            auth_mode=auth_mode,
-            message_fr=(
-                "❌ Échec du test : veuillez renseigner l'identifiant du modèle "
-                "principal (ex. claude-3-7-sonnet, gpt-4o, mistral-large-latest)."
-            ),
-            message_en=(
-                "❌ Test failed: please enter the primary model identifier "
-                "(e.g. claude-3-7-sonnet, gpt-4o, mistral-large-latest)."
-            ),
-            trace_id=_trace(request),
-        )
-    if not uri or not (uri.startswith("http://") or uri.startswith("https://")):
-        return bs.LlmConnectionTestResponse(
-            ok=False,
-            status="INVALID_PARAMETERS",
-            latency_ms=2,
-            provider_slug=provider,
-            model_name=model,
-            endpoint_uri=uri,
-            auth_mode=auth_mode,
-            message_fr=(
-                "❌ Échec du test : veuillez indiquer une URL d'API valide "
-                "commençant par https:// ou http:// (ex. https://api.anthropic.com/v1)."
-            ),
-            message_en=(
-                "❌ Test failed: please enter a valid API URL starting with "
-                "https:// or http:// (e.g. https://api.anthropic.com/v1)."
-            ),
-            trace_id=_trace(request),
-        )
-    if auth_mode == "api_key" and not has_key:
-        return bs.LlmConnectionTestResponse(
-            ok=False,
-            status="AUTH_REQUIRED",
-            latency_ms=3,
-            provider_slug=provider,
-            model_name=model,
-            endpoint_uri=uri,
-            auth_mode=auth_mode,
-            message_fr=(
-                "❌ Échec du test : veuillez saisir votre clé d'API (jeton secret) "
-                "ou choisir « Sans clé (Serveur local) »."
-            ),
-            message_en=(
-                "❌ Test failed: please enter your API key (secret token) "
-                "or select 'No key (Local server)'."
-            ),
-            trace_id=_trace(request),
-        )
-
-    is_local = uri.startswith("http://localhost") or uri.startswith("http://127.")
-    latency_ms = 18 if is_local else 42
-    return bs.LlmConnectionTestResponse(
-        ok=True,
-        status="CONNECTED",
-        latency_ms=latency_ms,
-        provider_slug=provider,
-        model_name=model,
-        endpoint_uri=uri,
-        auth_mode=auth_mode,
-        message_fr=(
-            f"✅ Connexion réussie au modèle « {model} » ({provider}) "
-            f"sur {uri} — Réponse reçue en {latency_ms} ms."
-        ),
-        message_en=(
-            f"✅ Successfully connected to model '{model}' ({provider}) "
-            f"at {uri} — Response received in {latency_ms} ms."
-        ),
-        trace_id=_trace(request),
-    )
-
-
-def _sync_accostage_from_snapshot(
-    svc: bm.ProgressiveDay0AccostageService, snap: bm.PlatformSetupSnapshotRecord
-) -> None:
-    from orcia_kernel.ids import new_uuid7_str
-
-    endpoints: list[bm.LlmModelEndpoint] = []
-    for idx, t in enumerate(snap.llm_tiers):
-        provider_raw = str(t.get("provider", t.get("modelFamily", "anthropic"))).strip().lower()
-        family = (
-            "anthropic" if "anthropic" in provider_raw or "claude" in provider_raw
-            else "openai" if "openai" in provider_raw or "gpt" in provider_raw
-            else "google" if "google" in provider_raw or "gemini" in provider_raw
-            else "mistral" if "mistral" in provider_raw else provider_raw or "anthropic"
-        )  # fmt: skip
-        custom_uri = str(t.get("endpointUrl", t.get("endpoint_uri", ""))).strip()
-        endpoint_uri = (
-            custom_uri
-            if custom_uri.startswith("http://") or custom_uri.startswith("https://")
-            else f"https://api.{family}.local/v1"
-        )
-        endpoints.append(
-            bm.LlmModelEndpoint(
-                id=str(t.get("id", "")).strip() or new_uuid7_str(),
-                endpoint_key=str(t.get("tierKey", f"tier-{idx + 1}")).strip() or f"tier-{idx + 1}",
-                provider_slug=provider_raw or family,
-                model_family=family,
-                model_name=str(t.get("model", "claude-3-7-sonnet")).strip() or "claude-3-7-sonnet",
-                endpoint_uri=endpoint_uri,
-            )
-        )
-    svc.sync_platform_setup_snapshot(
-        llm_endpoints=tuple(endpoints),
-        has_workspace=len(snap.workspaces) > 0,
-        has_datasource=len(snap.datasources) > 0,
-        has_pilot_run=len(snap.runs) > 0,
-    )
-
-
-def _serialize_setup_snapshot(
-    snap: bm.PlatformSetupSnapshotRecord, trace_id: str
-) -> bs.PlatformSetupStateResponse:
-    return bs.PlatformSetupStateResponse(
-        first_admin_initialized=snap.first_admin_initialized,
-        first_admin_email=snap.first_admin_email,
-        first_admin_display_name=snap.first_admin_display_name,
-        org_units=list(snap.org_units), rbac_grants=list(snap.rbac_grants),
-        llm_tiers=list(snap.llm_tiers), workspaces=list(snap.workspaces),
-        datasources=list(snap.datasources), packs=list(snap.packs),
-        workflows=list(snap.workflows), runs=list(snap.runs),
-        catalog_items=list(snap.catalog_items), ontology_concepts=list(snap.ontology_concepts),
-        audit_events=list(snap.audit_events), trace_id=trace_id,
-    )  # fmt: skip
-
-
-@router.get(
-    "/platform-setup-state",
-    response_model=bs.PlatformSetupStateResponse,
-    summary="Load persisted Day-0 / Epics 8-12 Platform Setup state from PostgreSQL 18",
-    responses=PROBLEM_RESPONSES,
-)
-async def get_platform_setup_state(request: Request) -> bs.PlatformSetupStateResponse:
-    import os
-
-    from orcia_api.dependencies import get_accostage_service
-
-    svc = get_accostage_service(request)
-    snap: bm.PlatformSetupSnapshotRecord | None = None
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        try:
-            from sqlalchemy.ext.asyncio import create_async_engine
-
-            from orcia_core.config import resolve_database_url
-
-            engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
-            try:
-                snap = await bm.load_platform_setup_state_from_postgres18(
-                    engine, orcia_env=svc.orcia_env
-                )
-                db_admin = await bm.get_first_platform_admin_from_postgres18(
-                    engine, orcia_env=svc.orcia_env
-                )
-                svc.set_first_platform_admin_record(db_admin)
-            finally:
-                await engine.dispose()
-        except Exception:
-            snap = None
-
-    if snap is None:
-        cached: bm.PlatformSetupSnapshotRecord | None = getattr(
-            request.app.state, "platform_setup_snapshot", None
-        )
-        admin = svc.first_admin
-        snap = cached or bm.PlatformSetupSnapshotRecord(
-            first_admin_initialized=admin is not None,
-            first_admin_email=admin.email if admin else None,
-            first_admin_display_name=admin.display_name if admin else None,
-        )
-    request.app.state.platform_setup_snapshot = snap
-    _sync_accostage_from_snapshot(svc, snap)
-    return _serialize_setup_snapshot(snap, _trace(request))
-
-
-@router.put(
-    "/platform-setup-state",
-    response_model=bs.PlatformSetupStateResponse,
-    summary="Persist Day-0 / Epics 8-12 Platform Setup state to PostgreSQL 18",
-    responses=PROBLEM_RESPONSES,
-)
-async def put_platform_setup_state(
-    payload: bs.PlatformSetupStatePutRequest,
-    request: Request,
-) -> bs.PlatformSetupStateResponse:
-    import os
-
-    from orcia_api.dependencies import get_accostage_service
-
-    svc = get_accostage_service(request)
-    admin = svc.first_admin
-    candidate = bm.PlatformSetupSnapshotRecord(
-        first_admin_initialized=admin is not None,
-        first_admin_email=admin.email if admin else None,
-        first_admin_display_name=admin.display_name if admin else None,
-        org_units=list(payload.org_units), rbac_grants=list(payload.rbac_grants),
-        llm_tiers=list(payload.llm_tiers), workspaces=list(payload.workspaces),
-        datasources=list(payload.datasources), packs=list(payload.packs),
-        workflows=list(payload.workflows), runs=list(payload.runs),
-        catalog_items=list(payload.catalog_items),
-        ontology_concepts=list(payload.ontology_concepts),
-        audit_events=list(payload.audit_events),
-    )  # fmt: skip
-    saved: bm.PlatformSetupSnapshotRecord | None = None
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        try:
-            from sqlalchemy.ext.asyncio import create_async_engine
-
-            from orcia_core.config import resolve_database_url
-
-            engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
-            try:
-                saved = await bm.save_platform_setup_state_to_postgres18(
-                    engine, candidate, orcia_env=svc.orcia_env
-                )
-            finally:
-                await engine.dispose()
-        except Exception:
-            saved = None
-
-    final_snap = saved or candidate
-    request.app.state.platform_setup_snapshot = final_snap
-    _sync_accostage_from_snapshot(svc, final_snap)
-    return _serialize_setup_snapshot(final_snap, _trace(request))
+router.include_router(accostage_router)

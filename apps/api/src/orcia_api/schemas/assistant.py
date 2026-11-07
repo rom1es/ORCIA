@@ -300,6 +300,17 @@ class ThreeSpeedStepProgressSchemaItem(BaseModel):
     intermediate_output: str | None = None
 
 
+class ConversationTurnMessageItem(BaseModel):
+    """Single message item in multi-turn `conversation_history` (`Story 10.2`, `AD-15`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["user", "assistant", "tool"]
+    content: str = Field(..., min_length=1)
+    name: str | None = None
+    tool_call_id: str | None = None
+
+
 class ThreeSpeedTurnRequest(BaseModel):
     """Request payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`)."""
 
@@ -314,6 +325,9 @@ class ThreeSpeedTurnRequest(BaseModel):
     deep_audit_pill_active: bool = False
     requested_tier: Literal["simple", "medium", "complex", "auto"] | None = None
     thinking_effort: Literal["fast", "balanced", "deep"] | None = None
+    conversation_history: list[ConversationTurnMessageItem] = Field(default_factory=list)
+    thread_id: str | None = None
+    locale: str | None = None
 
 
 class ThreeSpeedTurnResponse(BaseModel):
