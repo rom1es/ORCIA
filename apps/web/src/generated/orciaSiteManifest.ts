@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-07",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 69,
+    "uiPrimitivesCount": 74,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 81
+    "techLeadReportsCount": 82
   },
   "activeRoutes": [
     "/",
@@ -39,6 +39,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/workspaces"
   ],
   "uiPrimitives": [
+    "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
     "AgentsAndSkillsManagerView",
@@ -48,8 +49,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AssistantDock",
     "AssistantFoldersAndCollaborativeThreadView",
     "AssistantGovernanceModalAndStudio",
+    "AssistantPromptPlusAndAutocomplete",
+    "AssistantResponseFooterActionsAndCitations",
     "AssistantSpeedSelectorAndStreamView",
+    "AssistantThinkingSliderIndicator",
     "AssistantThinkingSubWindow",
+    "AssistantUserQuestionBubble",
     "BiModeLoginView",
     "BootstrapOnboardingPanel",
     "CatalogExplorerPanel",
@@ -403,6 +408,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 Chat UX, Auto-Save, Autocomplete & RAG",
+      "reportFile": "2026-11-07-assistant-bulle-droite-actions-autosave-autocomplete-et-citations-rag-tech-lead-report.md",
+      "domain": "Bulle Utilisateur Bleue Alignée à Droite, Suppression Absolue des Doublons (display: none), Barre d'Actions sous la Réponse (👍, 👎, 📋 Copier, 🔄 Régénérer), Auto-Save des Réglages (✓ Enregistré), Menu + Flottant avec Autocomplétion @Agent / /Compétence & Citations RAG Cliquables",
+      "summary": "Création de AssistantPromptPlusAndAutocomplete.tsx, AssistantResponseFooterActionsAndCitations.tsx et AssistantGovernanceModeATabs.tsx (< 400 lignes partout) ; masquage garanti par style={{ display: \"none\" }} des doublons et panneaux repliés ; bulle utilisateur bleue à droite dès l'envoi + indicateur animé assistant-thinking-slider-indicator + auto-scroll ; barre d'actions complète sous la réponse et citations RAG avec liens cliquables (href) ; libellés 100 % français, liste déroulante Rôle par défaut et enregistrement automatique (✓ Enregistré) dans ⚙️ Réglages de Mon Assistant ; et autocomplétion dynamique @Agent / /Compétence avec filtrage en direct et validation par <Entrée> ou clic."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 UX/UI & Markdown",

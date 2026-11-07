@@ -800,4 +800,157 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
     expect(input.value).toBe("");
   });
+
+  it("Story 10.2d — renders right-aligned blue user question bubble, animated thinking slider, display:none duplicate suppression, response actions bar (Like, Dislike, Copy, Regenerate), French auto-saving settings with green badge, @Agent and /Skill dynamic autocomplete, and clickable RAG source links", () => {
+    const onSendTurn = vi.fn();
+    const onRegenerate = vi.fn();
+    const onOpenFolders = vi.fn();
+    const onSaveUserPrefs = vi.fn();
+    const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      headerTitle: "Routage Conversationnel",
+      speed1PillLabel: "⚡ Rapide",
+      speed2PillLabel: "🛠️ Outils",
+      speed3DeepAuditPillLabel: "🧠 Approfondi",
+      cacheHitBadge: "HIT",
+      cacheMissBadge: "MISS",
+      nodesDeterministicLabel: "Préparation",
+      ttftBadgePrefix: "TTFT",
+      inputPlaceholder: "Posez votre question...",
+      sendPromptCta: "Envoyer",
+    };
+
+    const { rerender } = render(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        activeUserPrompt="Comment sécuriser les accès aux documents ?"
+        isGenerating={true}
+        stepProgress={[]}
+        streamedText=""
+        ragCitations={[
+          {
+            title: "Politique de Sécurité des Espaces",
+            uri: "https://docs.orcia.local/securite/espaces",
+          },
+        ]}
+        labels={speedLabels}
+        onOpenFoldersFromPlus={onOpenFolders}
+        onRegenerateLastTurn={onRegenerate}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    // 1. User question bubble is right-aligned on blue background while generating, and thinking slider indicator is shown
+    const userBubble = screen.getByTestId("assistant-user-question-bubble");
+    expect(userBubble.textContent).toBe("Comment sécuriser les accès aux documents ?");
+    expect(userBubble.style.backgroundColor).toBe("var(--color-action-primary)");
+    expect(userBubble.style.marginLeft).toBe("auto");
+    expect(screen.getByTestId("assistant-thinking-slider-indicator")).toBeDefined();
+
+    // Legacy speed pills have display: none
+    expect(
+      screen.getByTestId("assistant-legacy-speed-pills-row").style.display,
+    ).toBe("none");
+
+    // 2. When response finishes streaming, response actions bar and clickable RAG citation links appear
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        activeUserPrompt="Comment sécuriser les accès aux documents ?"
+        isGenerating={false}
+        stepProgress={[]}
+        streamedText="Voici les recommandations de sécurité."
+        ragCitations={[
+          {
+            title: "Politique de Sécurité des Espaces",
+            uri: "https://docs.orcia.local/securite/espaces",
+          },
+        ]}
+        labels={speedLabels}
+        onOpenFoldersFromPlus={onOpenFolders}
+        onRegenerateLastTurn={onRegenerate}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    const citationLink = screen.getByTestId(
+      "assistant-rag-citation-link-0",
+    ) as HTMLAnchorElement;
+    expect(citationLink.getAttribute("href")).toBe(
+      "https://docs.orcia.local/securite/espaces",
+    );
+    expect(citationLink.textContent).toContain("Politique de Sécurité des Espaces");
+
+    const likeBtn = screen.getByTestId("assistant-action-like-btn");
+    fireEvent.click(likeBtn);
+    expect(likeBtn.getAttribute("aria-pressed")).toBe("true");
+
+    const copyBtn = screen.getByTestId("assistant-action-copy-btn");
+    fireEvent.click(copyBtn);
+    expect(copyBtn.textContent).toContain("Copié");
+
+    fireEvent.click(screen.getByTestId("assistant-action-regenerate-btn"));
+    expect(onRegenerate).toHaveBeenCalledTimes(1);
+
+    // 3. Typing @ and letters filters agents autocomplete dropdown; Enter inserts @slug at head of prompt without sending
+    const input = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "@arch" } });
+    const dropdown = screen.getByTestId("assistant-autocomplete-dropdown");
+    expect(dropdown.getAttribute("data-trigger-kind")).toBe("agent");
+    expect(dropdown.textContent).toContain("@architecte-solution");
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(input.value).toBe("@architecte-solution ");
+    expect(onSendTurn).not.toHaveBeenCalled();
+
+    // Typing / filters skills and clicking an option inserts /slug at head of prompt
+    fireEvent.change(input, { target: { value: "/risq" } });
+    expect(
+      screen.getByTestId("assistant-autocomplete-dropdown").getAttribute("data-trigger-kind"),
+    ).toBe("skill");
+    fireEvent.click(screen.getByTestId("assistant-autocomplete-option-analyse-risques"));
+    expect(input.value).toBe("/analyse-risques ");
+
+    // Opening + menu and clicking '📁 Gérer les dossiers thématiques' closes menus and calls callback
+    fireEvent.click(screen.getByTestId("assistant-prompt-plus-btn"));
+    expect(screen.getByTestId("assistant-prompt-plus-popover")).toBeDefined();
+    fireEvent.click(screen.getByTestId("assistant-plus-open-folders-btn"));
+    expect(onOpenFolders).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("assistant-prompt-plus-popover")).toBeNull();
+
+    // 4. Governance settings show French labels, Role dropdown, and auto-save with green badge
+    render(
+      <AssistantGovernanceModalAndStudio
+        workspaceId="ws-1"
+        canEditWorkspaceLayer={true}
+        canOpenStudioModeB={true}
+        assembledLayers={[]}
+        studioNodes={[]}
+        labels={GOV_LABELS}
+        onSaveUserPreferences={onSaveUserPrefs}
+      />,
+    );
+
+    const toneSelect = screen.getByTestId("assistant-gov-tone-select");
+    expect(toneSelect.textContent).toContain("Équilibré & Structuré (Recommandé)");
+    expect(toneSelect.textContent).not.toContain("STRUCTURED_SECTIONS");
+
+    const hatSelect = screen.getByTestId("assistant-gov-hat-input") as HTMLSelectElement;
+    expect(hatSelect.tagName).toBe("SELECT");
+    fireEvent.change(hatSelect, { target: { value: "TECH_LEAD" } });
+
+    expect(onSaveUserPrefs).toHaveBeenCalledWith(
+      expect.objectContaining({ defaultHat: "TECH_LEAD" }),
+    );
+    expect(screen.getByTestId("assistant-gov-autosaved-badge").textContent).toContain(
+      "✓ Enregistré",
+    );
+  });
 });

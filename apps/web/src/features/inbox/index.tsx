@@ -19,6 +19,7 @@ import {
   SavedConversationsPanel,
 } from "./SavedConversationsAndThreadView";
 import {
+  buildAssistantAutocompleteAndRagOptions,
   buildAssistantModelOptions,
   readSavedAssistantConversations,
   upsertTurnIntoSavedConversations,
@@ -30,32 +31,28 @@ import { useAssistantStreamingTurn } from "./useAssistantStreamingTurn";
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { navigateToRoute, openHelpSection } = useShellNavigation();
-  const { platformAdmin, workspaces, llmTiers } = usePlatformSetup();
+  const { platformAdmin, workspaces, llmTiers, datasources, catalogItems } = usePlatformSetup();
   const isFr = locale === "fr";
 
   const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string>("");
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
-  const [savedConversationsOpen, setSavedConversationsOpen] =
-    useState<boolean>(false);
-  const [savedConversations, setSavedConversations] = useState<
-    readonly SavedAssistantConversation[]
-  >(() => readSavedAssistantConversations());
-  const [activeConversationId, setActiveConversationId] = useState<
-    string | null
-  >(() => readSavedAssistantConversations()[0]?.id ?? null);
-  const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
-  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(
-    null,
+  const [savedConversationsOpen, setSavedConversationsOpen] = useState<boolean>(false);
+  const [savedConversations, setSavedConversations] = useState<readonly SavedAssistantConversation[]>(
+    () => readSavedAssistantConversations(),
   );
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(
+    () => readSavedAssistantConversations()[0]?.id ?? null,
+  );
+  const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
+  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
-  const isJsdom =
-    typeof navigator !== "undefined" &&
-    /jsdom/i.test(navigator.userAgent ?? "");
+  const isJsdom = typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
-  const activeConversation =
-    savedConversations.find((c) => c.id === activeConversationId) ?? null;
+  const activeConversation = savedConversations.find((c) => c.id === activeConversationId) ?? null;
+  const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
+    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
 
   const appendTurnToSavedConversation = (params: {
     userPrompt: string;
@@ -82,19 +79,15 @@ export function InboxFeaturePanel() {
           const client = createOrciaApiClient({ baseUrl: "" });
           void client
             .createAssistantThread({
-              workspace_id:
-                activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+              workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
               ...(activeFolderId ? { folder_id: activeFolderId } : {}),
               title: outcome.createdTitle,
               initial_summary: params.assistantReply.slice(0, 240),
             })
             .catch((err: unknown) => {
-              const detail =
-                err instanceof Error ? err.message : "Synchronisation différée";
+              const detail = err instanceof Error ? err.message : "Synchronisation différée";
               setGovernanceFeedback(
-                isFr
-                  ? `ℹ️ Conversation sauvegardée localement (${detail}).`
-                  : `ℹ️ Conversation saved locally (${detail}).`,
+                isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`,
               );
             });
         }
@@ -104,8 +97,7 @@ export function InboxFeaturePanel() {
   };
 
   const firstConv = savedConversations[0];
-  const initialLastReply =
-    firstConv?.turns[firstConv.turns.length - 1]?.assistantReply ?? "";
+  const initialLastReply = firstConv?.turns[firstConv.turns.length - 1]?.assistantReply ?? "";
 
   const {
     streamedText,
@@ -128,6 +120,13 @@ export function InboxFeaturePanel() {
     initialStreamedText: initialLastReply,
     onTurnCompleted: appendTurnToSavedConversation,
   });
+
+  const handleSaveDraftAction = (content: string) => {
+    const excerpt = content.slice(0, 42).replace(/\s+/g, " ").trim();
+    setGovernanceFeedback(
+      isFr ? `✅ Brouillon « ${excerpt || "Réponse"} » enregistré dans votre Espace.` : `✅ Draft "${excerpt || "Reply"}" saved to your Workspace.`,
+    );
+  };
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
@@ -153,13 +152,8 @@ export function InboxFeaturePanel() {
         savedConversationsOpen={savedConversationsOpen}
         foldersPanelOpen={foldersPanelOpen}
         governanceModalTitle={dictionary.assistantGovernance.modalTitle}
-        onNewConversation={() => {
-          setActiveConversationId(null);
-          resetStreamState("");
-        }}
-        onToggleSavedConversations={() =>
-          setSavedConversationsOpen((prev) => !prev)
-        }
+        onNewConversation={() => { setActiveConversationId(null); resetStreamState(""); }}
+        onToggleSavedConversations={() => setSavedConversationsOpen((prev) => !prev)}
         onToggleFoldersPanel={() => setFoldersPanelOpen((prev) => !prev)}
         onToggleGovernanceModal={() => setGovernanceOpen((prev) => !prev)}
         onOpenHelpSection={openHelpSection}
@@ -198,37 +192,26 @@ export function InboxFeaturePanel() {
           assembledLayers={[]}
           studioNodes={[]}
           labels={dictionary.assistantGovernance}
-          onSaveUserPreferences={(payload) => {
+          onSaveUserPreferences={(payload) =>
             setGovernanceFeedback(
-              isFr
-                ? `✅ Préférences personnelles enregistrées (ton : ${payload.responseTone}, format : ${payload.favoriteFormat}).`
-                : `✅ Personal preferences saved (tone: ${payload.responseTone}, format: ${payload.favoriteFormat}).`,
-            );
-            setGovernanceOpen(false);
-          }}
-          onSaveWorkspaceSettings={(payload) => {
+              isFr ? `✅ Préférences personnelles enregistrées automatiquement (rôle : ${payload.defaultHat}).` : `✅ Personal preferences auto-saved (role: ${payload.defaultHat}).`,
+            )
+          }
+          onSaveWorkspaceSettings={(payload) =>
             setGovernanceFeedback(
-              isFr
-                ? `✅ Réglages de l'Espace enregistrés (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).`
-                : `✅ Workspace settings saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`,
-            );
-            setGovernanceOpen(false);
-          }}
-          onSaveStudioOverride={(payload) => {
+              isFr ? `✅ Réglages de l'Espace enregistrés automatiquement (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).` : `✅ Workspace settings auto-saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`,
+            )
+          }
+          onSaveStudioOverride={(payload) =>
             setGovernanceFeedback(
-              isFr
-                ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.`
-                : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`,
-            );
-            setGovernanceOpen(false);
-          }}
-          onResetStudioOverride={(scopeLevel) => {
+              isFr ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.` : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`,
+            )
+          }
+          onResetStudioOverride={(scopeLevel) =>
             setGovernanceFeedback(
-              isFr
-                ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).`
-                : `✅ Configuration reset to defaults (${scopeLevel}).`,
-            );
-          }}
+              isFr ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).` : `✅ Configuration reset to defaults (${scopeLevel}).`,
+            )
+          }
           onClose={() => setGovernanceOpen(false)}
         />
       ) : null}
@@ -237,6 +220,10 @@ export function InboxFeaturePanel() {
         <ActiveConversationMessagesView
           conversation={activeConversation}
           isFr={isFr}
+          ragCitations={ragCitations}
+          onRegenerateTurn={(userPrompt) => sendTurn({ userPrompt, requestedSpeed: "SPEED_1_FAST", deepAuditPillActive: false })}
+          onSaveDraft={handleSaveDraftAction}
+          onContinueInProcess={() => navigateToRoute("/processes")}
         />
       )}
 
@@ -245,21 +232,15 @@ export function InboxFeaturePanel() {
         userId={platformAdmin?.email ?? ""}
         hat="PLATFORM_ADMIN"
         modelOptions={modelOptions}
-        welcomeTitle={
-          isFr
-            ? "Par quoi voulez-vous commencer ?"
-            : "Where would you like to start?"
-        }
-        showWelcomeHero={
-          !activeConversation || activeConversation.turns.length === 0
-        }
+        agentOptions={agentOptions}
+        skillOptions={skillOptions}
+        orciaDocuments={orciaDocuments}
+        ragCitations={ragCitations}
+        welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
+        showWelcomeHero={!activeConversation || activeConversation.turns.length === 0}
         hideTechnicalCacheHeader={true}
         hideLegacySpeedPills={true}
-        hideDuplicateCompletedStream={Boolean(
-          !isGenerating &&
-            activeConversation &&
-            activeConversation.turns.length > 0,
-        )}
+        hideDuplicateCompletedStream={Boolean(!isGenerating && activeConversation && activeConversation.turns.length > 0)}
         cacheHit={cacheHit}
         cacheLookupMs={cacheLookupMs}
         nodes1To4DeterministicMs={nodes1To4Ms}
@@ -270,13 +251,16 @@ export function InboxFeaturePanel() {
         generationStopped={generationStopped}
         errorMessage={errorMessage}
         labels={dictionary.assistantSpeedStream}
-        onOpenFoldersFromPlus={() => setFoldersPanelOpen(true)}
+        onOpenFoldersFromPlus={() => setFoldersPanelOpen((prev) => !prev)}
         onStopGeneration={stopGeneration}
+        onSaveDraftFromResponse={handleSaveDraftAction}
+        onContinueInProcessFromResponse={() => navigateToRoute("/processes")}
         onSendTurn={sendTurn}
       />
 
       <div
         data-testid="assistant-folders-panel-wrapper"
+        style={foldersPanelOpen ? undefined : { display: "none" }}
         className={foldersPanelOpen ? "" : "sr-only"}
       >
         <AssistantFoldersAndCollaborativeThreadView
@@ -293,88 +277,44 @@ export function InboxFeaturePanel() {
               folderId: newId,
               title,
               pinnedNotesMarkdown: "",
-              consolidatedSummary: isFr
-                ? `Dossier thématique « ${title} »`
-                : `Thematic folder "${title}"`,
+              consolidatedSummary: isFr ? `Dossier thématique « ${title} »` : `Thematic folder "${title}"`,
               visibilityMode: "PRIVATE",
               hasRestrictedSources: false,
               assembledLayer5PromptBlock: `Dossier actif : ${title}`,
             };
             setFolders((prev) => [...prev, newFolder]);
             setActiveFolderId(newId);
-            setGovernanceFeedback(
-              isFr
-                ? `✅ Dossier « ${title} » créé et sélectionné.`
-                : `✅ Folder "${title}" created and selected.`,
-            );
+            setGovernanceFeedback(isFr ? `✅ Dossier « ${title} » créé et sélectionné.` : `✅ Folder "${title}" created and selected.`);
             if (!isJsdom) {
               const client = createOrciaApiClient({ baseUrl: "" });
               void client
-                .createAssistantFolder({
-                  workspace_id:
-                    activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-                  title,
-                })
+                .createAssistantFolder({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301", title })
                 .then((res) => {
-                  setFolders((prev) =>
-                    prev.map((f) =>
-                      f.folderId === newId ? { ...f, folderId: res.folder_id } : f,
-                    ),
-                  );
+                  setFolders((prev) => prev.map((f) => (f.folderId === newId ? { ...f, folderId: res.folder_id } : f)));
                   setActiveFolderId(res.folder_id);
                 })
                 .catch((err: unknown) => {
-                  const detail =
-                    err instanceof Error ? err.message : "Erreur de création";
-                  setGovernanceFeedback(
-                    isFr
-                      ? `⚠️ Dossier « ${title} » conservé localement (détail serveur : ${detail}).`
-                      : `⚠️ Folder "${title}" kept locally (server detail: ${detail}).`,
-                  );
+                  const detail = err instanceof Error ? err.message : "Erreur de création";
+                  setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (détail serveur : ${detail}).` : `⚠️ Folder "${title}" kept locally (server detail: ${detail}).`);
                 });
             }
           }}
           onUpdatePinnedNotes={(folderId, notes) => {
-            setFolders((prev) =>
-              prev.map((f) =>
-                f.folderId === folderId
-                  ? { ...f, pinnedNotesMarkdown: notes }
-                  : f,
-              ),
-            );
-            setGovernanceFeedback(
-              isFr
-                ? "✅ Notes du dossier enregistrées."
-                : "✅ Folder notes saved.",
-            );
+            setFolders((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes } : f)));
+            setGovernanceFeedback(isFr ? "✅ Notes du dossier enregistrées." : "✅ Folder notes saved.");
           }}
-          onChangeVisibility={(
-            folderId,
-            mode: AssistantFolderVisibilityMode,
-          ) => {
-            setFolders((prev) =>
-              prev.map((f) =>
-                f.folderId === folderId ? { ...f, visibilityMode: mode } : f,
-              ),
-            );
-            setGovernanceFeedback(
-              isFr
-                ? `✅ Visibilité du dossier mise à jour (${mode}).`
-                : `✅ Folder visibility updated (${mode}).`,
-            );
+          onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
+            setFolders((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, visibilityMode: mode } : f)));
+            setGovernanceFeedback(isFr ? `✅ Visibilité du dossier mise à jour (${mode}).` : `✅ Folder visibility updated (${mode}).`);
           }}
           onSendCollaborativeMessage={(message) => {
-            setStreamedText(
-              isFr
-                ? `💬 Message ajouté à la discussion : ${message}`
-                : `💬 Message added to thread: ${message}`,
-            );
+            setStreamedText(isFr ? `💬 Message ajouté à la discussion : ${message}` : `💬 Message added to thread: ${message}`);
           }}
           onLaunchProcessFromFolder={() => navigateToRoute("/processes")}
         />
       </div>
 
-      <div data-testid="assistant-citations-card-wrapper" className="sr-only">
+      <div data-testid="assistant-citations-card-wrapper" style={{ display: "none" }} className="sr-only">
         <AssistantCitationPillsAndArtifactCard
           sanitizedResponseText=""
           sources={[]}
@@ -382,13 +322,7 @@ export function InboxFeaturePanel() {
           toolOutputs={[]}
           footerSummaryLine=""
           labels={dictionary.assistantCitations}
-          onSaveDraft={(title) => {
-            setGovernanceFeedback(
-              isFr
-                ? `✅ Brouillon « ${title} » enregistré dans votre Espace.`
-                : `✅ Draft "${title}" saved to your Workspace.`,
-            );
-          }}
+          onSaveDraft={(title) => handleSaveDraftAction(title)}
           onContinueInProcess={() => navigateToRoute("/processes")}
         />
       </div>

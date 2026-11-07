@@ -176,11 +176,21 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
         "Quels sont les points critiques de l'architecture ?",
       );
-      // Once turn is completed and displayed in ActiveConversationMessagesView, the duplicate stream box & citations card are visually hidden (sr-only) so the reply appears only once on screen
+      // Once turn is completed and displayed in ActiveConversationMessagesView, the duplicate stream box & citations card are visually hidden (display: none + sr-only) so the reply appears only once on screen
       expect(output.className).toContain("sr-only");
+      expect(output.style.display).toBe("none");
       expect(
         screen.getByTestId("assistant-citations-card-wrapper").className,
       ).toContain("sr-only");
+      expect(
+        screen.getByTestId("assistant-citations-card-wrapper").style.display,
+      ).toBe("none");
+      expect(
+        screen.getByTestId("assistant-folders-panel-wrapper").style.display,
+      ).toBe("none");
+      const userBubble = screen.getByTestId("assistant-user-question-bubble");
+      expect(userBubble.style.backgroundColor).toBe("var(--color-action-primary)");
+      expect(userBubble.style.marginLeft).toBe("auto");
     });
 
     // Verify Saved Conversations button counter incremented to (1)

@@ -1,6 +1,9 @@
 import {
+  AssistantResponseFooterActionsAndCitations,
+  AssistantUserQuestionBubble,
   ContextualInfoTriggerButton,
   FormattedMarkdownContent,
+  type UiAssistantRagCitationItem,
 } from "@orcia/ui";
 import React from "react";
 import type { SavedAssistantConversation } from "./savedConversationsStore";
@@ -182,11 +185,19 @@ export function SavedConversationsPanel({
 export interface ActiveConversationMessagesViewProps {
   readonly conversation: SavedAssistantConversation;
   readonly isFr: boolean;
+  readonly ragCitations?: readonly UiAssistantRagCitationItem[];
+  readonly onRegenerateTurn?: (userPrompt: string) => void;
+  readonly onSaveDraft?: (content: string) => void;
+  readonly onContinueInProcess?: (content: string) => void;
 }
 
 export function ActiveConversationMessagesView({
   conversation,
   isFr,
+  ragCitations = [],
+  onRegenerateTurn,
+  onSaveDraft,
+  onContinueInProcess,
 }: ActiveConversationMessagesViewProps): React.JSX.Element | null {
   if (conversation.turns.length === 0) {
     return null;
@@ -213,23 +224,26 @@ export function ActiveConversationMessagesView({
         </span>
       </header>
 
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {conversation.turns.map((turn, idx) => (
           <div
             key={turn.turnId}
             data-testid={`assistant-conversation-turn-${idx + 1}`}
-            className="space-y-1.5 rounded-lg border border-border-subtle bg-surface-primary p-3 text-xs"
+            className="space-y-2.5 rounded-lg border border-border-subtle bg-surface-primary p-3.5 text-xs"
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-semibold text-text-primary">
-                🧑 {isFr ? "Vous" : "You"}
-              </span>
-              <span className="text-[11px] text-text-secondary">
-                {turn.modelLabel} · {turn.effortLabel}
-              </span>
-            </div>
-            <p className="text-text-primary whitespace-pre-wrap">{turn.userPrompt}</p>
-            <div className="border-t border-border-subtle pt-2 mt-1.5">
+            <AssistantUserQuestionBubble
+              userPrompt={turn.userPrompt}
+              isFr={isFr}
+              modelLabel={turn.modelLabel}
+              effortLabel={turn.effortLabel}
+              testId={
+                idx === conversation.turns.length - 1
+                  ? "assistant-user-question-bubble"
+                  : `assistant-user-question-bubble-${idx + 1}`
+              }
+            />
+
+            <div className="border-t border-border-subtle pt-2.5 mt-2 space-y-2">
               <div className="font-semibold text-action-primary mb-1">
                 🤖 {isFr ? "Mon Assistant" : "My Assistant"}
               </div>
@@ -237,6 +251,16 @@ export function ActiveConversationMessagesView({
                 content={turn.assistantReply}
                 testId={`assistant-turn-markdown-${idx + 1}`}
               />
+              {idx === conversation.turns.length - 1 && (
+                <AssistantResponseFooterActionsAndCitations
+                  responseText={turn.assistantReply}
+                  isFr={isFr}
+                  ragCitations={ragCitations}
+                  onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
+                  onSaveDraft={onSaveDraft}
+                  onContinueInProcess={onContinueInProcess}
+                />
+              )}
             </div>
           </div>
         ))}

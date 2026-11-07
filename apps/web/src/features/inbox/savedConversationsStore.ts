@@ -1,8 +1,74 @@
-import type {
-  UiAssistantModelOption,
-  UiInferenceEffort,
-  UiInferenceTier,
+import {
+  DEFAULT_ASSISTANT_AGENT_OPTIONS,
+  DEFAULT_ASSISTANT_SKILL_OPTIONS,
+  DEFAULT_ORCIA_DOCUMENT_OPTIONS,
+  type ControlCenterDatasourceItem,
+  type UiAssistantAutocompleteOption,
+  type UiAssistantModelOption,
+  type UiAssistantOrciaDocumentOption,
+  type UiAssistantRagCitationItem,
+  type UiCatalogExplorerItemView,
+  type UiInferenceEffort,
+  type UiInferenceTier,
 } from "@orcia/ui";
+
+export function buildAssistantAutocompleteAndRagOptions(params: {
+  readonly catalogItems: readonly UiCatalogExplorerItemView[];
+  readonly datasources: readonly ControlCenterDatasourceItem[];
+}): {
+  readonly agentOptions: readonly UiAssistantAutocompleteOption[];
+  readonly skillOptions: readonly UiAssistantAutocompleteOption[];
+  readonly orciaDocuments: readonly UiAssistantOrciaDocumentOption[];
+  readonly ragCitations: readonly UiAssistantRagCitationItem[];
+} {
+  const catalogAgents: readonly UiAssistantAutocompleteOption[] = params.catalogItems
+    .filter((item) => item.resourceType === "agent")
+    .map((item) => ({
+      slug: item.uri.split("/").pop() ?? item.resourceId,
+      label: item.title,
+      description: item.description,
+      kind: "agent" as const,
+    }));
+  const catalogSkills: readonly UiAssistantAutocompleteOption[] = params.catalogItems
+    .filter((item) => item.resourceType === "skill")
+    .map((item) => ({
+      slug: item.uri.split("/").pop() ?? item.resourceId,
+      label: item.title,
+      description: item.description,
+      kind: "skill" as const,
+    }));
+  const agentOptions: readonly UiAssistantAutocompleteOption[] = [
+    ...DEFAULT_ASSISTANT_AGENT_OPTIONS,
+    ...catalogAgents.filter(
+      (ca) => !DEFAULT_ASSISTANT_AGENT_OPTIONS.some((d) => d.slug === ca.slug),
+    ),
+  ];
+  const skillOptions: readonly UiAssistantAutocompleteOption[] = [
+    ...DEFAULT_ASSISTANT_SKILL_OPTIONS,
+    ...catalogSkills.filter(
+      (cs) => !DEFAULT_ASSISTANT_SKILL_OPTIONS.some((d) => d.slug === cs.slug),
+    ),
+  ];
+  const orciaDocuments: readonly UiAssistantOrciaDocumentOption[] =
+    params.datasources.length > 0
+      ? params.datasources.map((ds) => ({
+          id: ds.id,
+          title: ds.alias,
+          uri: ds.uri,
+        }))
+      : DEFAULT_ORCIA_DOCUMENT_OPTIONS;
+  const ragCitations: readonly UiAssistantRagCitationItem[] =
+    params.datasources.length > 0
+      ? params.datasources.map((ds) => ({
+          title: ds.alias,
+          uri: ds.uri,
+        }))
+      : DEFAULT_ORCIA_DOCUMENT_OPTIONS.map((d) => ({
+          title: d.title,
+          uri: d.uri,
+        }));
+  return { agentOptions, skillOptions, orciaDocuments, ragCitations };
+}
 
 export const SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY =
   "orcia.assistant_saved_conversations.v1";

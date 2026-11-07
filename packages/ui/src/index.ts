@@ -268,6 +268,7 @@ export {
   type UiActivityScopeFilterOption,
 } from "./primitives/ActivityLogExplorerView";
 export {
+  ASSISTANT_DEFAULT_HAT_OPTIONS,
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,
@@ -276,6 +277,27 @@ export {
   type UiAssistantResponseTone,
   type UiAssistantStudioNode,
 } from "./primitives/AssistantGovernanceModalAndStudio";
+export {
+  applyAutocompleteSelectionToPrompt,
+  AssistantPromptPlusAndAutocomplete,
+  DEFAULT_ASSISTANT_AGENT_OPTIONS,
+  DEFAULT_ASSISTANT_SKILL_OPTIONS,
+  DEFAULT_ORCIA_DOCUMENT_OPTIONS,
+  detectActiveAutocompleteTrigger,
+  type AssistantPromptPlusAndAutocompleteProps,
+  type UiAssistantAttachedFileItem,
+  type UiAssistantAutocompleteOption,
+  type UiAssistantOrciaDocumentOption,
+} from "./primitives/AssistantPromptPlusAndAutocomplete";
+export {
+  AssistantResponseFooterActionsAndCitations,
+  AssistantThinkingSliderIndicator,
+  AssistantUserQuestionBubble,
+  type AssistantResponseFooterActionsAndCitationsProps,
+  type AssistantThinkingSliderIndicatorProps,
+  type AssistantUserQuestionBubbleProps,
+  type UiAssistantRagCitationItem,
+} from "./primitives/AssistantResponseFooterActionsAndCitations";
 export {
   AssistantSpeedSelectorAndStreamView,
   type AssistantSpeedSelectorAndStreamViewLabels,
