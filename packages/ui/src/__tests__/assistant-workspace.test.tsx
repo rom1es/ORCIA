@@ -848,7 +848,12 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(userBubble.textContent).toBe("Comment sécuriser les accès aux documents ?");
     expect(userBubble.style.backgroundColor).toBe("var(--color-action-primary)");
     expect(userBubble.style.marginLeft).toBe("auto");
-    expect(screen.getByTestId("assistant-thinking-slider-indicator")).toBeDefined();
+    const thinkingSlider = screen.getByTestId("assistant-thinking-slider-indicator");
+    expect(thinkingSlider.textContent).toContain("Recherche et rédaction en cours");
+    expect(thinkingSlider.textContent).not.toContain("en cours…");
+    expect(thinkingSlider.textContent).not.toContain("en cours...");
+    const pulsingDots = screen.getByTestId("assistant-thinking-pulsing-dots");
+    expect(pulsingDots.querySelectorAll(".animate-bounce").length).toBe(3);
 
     // Legacy speed pills have display: none
     expect(

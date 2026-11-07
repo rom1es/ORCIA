@@ -109,9 +109,7 @@ export function buildConversationHistoryPayload(
   if (!conversation || !conversation.turns.length) return [];
   const history: Array<{ role: "user" | "assistant"; content: string }> = [];
   for (const turn of conversation.turns) {
-    if (turn.userPrompt.trim()) {
-      history.push({ role: "user", content: turn.userPrompt.trim() });
-    }
+    if (turn.userPrompt.trim()) history.push({ role: "user", content: turn.userPrompt.trim() });
     if (turn.assistantReply.trim()) {
       history.push({ role: "assistant", content: turn.assistantReply.trim() });
     }
@@ -145,9 +143,7 @@ export function useAssistantStreamingTurn({
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearPendingTimers = () => {
-    for (const t of timersRef.current) {
-      clearTimeout(t);
-    }
+    for (const t of timersRef.current) clearTimeout(t);
     timersRef.current = [];
   };
 
@@ -177,32 +173,8 @@ export function useAssistantStreamingTurn({
     setGenerationStopped(false);
     setStreamedText(sanitizeAssistantDisplayReply(nextText));
     setStepProgress([]);
+    setNodes1To4Ms(0);
     setErrorMessage(null);
-  };
-
-  const streamTextProgressively = (fullText: string, onDone: () => void, signal: AbortSignal) => {
-    // Preserve 100% of newlines (\n) and Markdown indentation by slicing line-preserving segments
-    const segments = fullText.match(/[^\n]*\n|[^\n]+/g) ?? [fullText];
-    if (segments.length <= 1) {
-      setStreamedText(fullText);
-      onDone();
-      return;
-    }
-    const chunkCount = Math.min(8, Math.max(2, segments.length));
-    const segmentsPerChunk = Math.max(1, Math.ceil(segments.length / chunkCount));
-    let currentIndex = 0;
-
-    const pushNextChunk = () => {
-      if (signal.aborted) return;
-      currentIndex = Math.min(segments.length, currentIndex + segmentsPerChunk);
-      setStreamedText(segments.slice(0, currentIndex).join(""));
-      if (currentIndex < segments.length) {
-        timersRef.current.push(setTimeout(pushNextChunk, 35));
-      } else {
-        onDone();
-      }
-    };
-    pushNextChunk();
   };
 
   const sendTurn = ({
@@ -261,22 +233,27 @@ export function useAssistantStreamingTurn({
 
     const tStart = Date.now();
     if (useSteps && plannedSteps.length >= 3) {
-      const tStep2 = setTimeout(() => {
+      const advanceStep = (idx: 1 | 2) => {
         if (controller.signal.aborted) return;
-        setStepProgress([
-          { ...plannedSteps[0]!, status: "COMPLETED", durationMs: 1200 },
-          { ...plannedSteps[1]!, status: "RUNNING", durationMs: 0 },
-        ]);
-      }, 1200);
-      const tStep3 = setTimeout(() => {
-        if (controller.signal.aborted) return;
-        setStepProgress([
-          { ...plannedSteps[0]!, status: "COMPLETED", durationMs: 1200 },
-          { ...plannedSteps[1]!, status: "COMPLETED", durationMs: 1400 },
-          { ...plannedSteps[2]!, status: "RUNNING", durationMs: 0 },
-        ]);
-      }, 2600);
-      timersRef.current.push(tStep2, tStep3);
+        setStepProgress((prev) =>
+          prev.some((s) => s.stepCode === "LIVE_MODEL_REASONING")
+            ? prev
+            : idx === 1
+              ? [
+                  { ...plannedSteps[0]!, status: "COMPLETED", durationMs: 1200 },
+                  { ...plannedSteps[1]!, status: "RUNNING", durationMs: 0 },
+                ]
+              : [
+                  { ...plannedSteps[0]!, status: "COMPLETED", durationMs: 1200 },
+                  { ...plannedSteps[1]!, status: "COMPLETED", durationMs: 1400 },
+                  { ...plannedSteps[2]!, status: "RUNNING", durationMs: 0 },
+                ],
+        );
+      };
+      timersRef.current.push(
+        setTimeout(() => advanceStep(1), 1200),
+        setTimeout(() => advanceStep(2), 2600),
+      );
     }
 
     const attachmentContext =
@@ -290,65 +267,115 @@ export function useAssistantStreamingTurn({
     const historyPayload = buildConversationHistoryPayload(activeConversation);
     const activeHat = governancePrefs?.defaultHat || "PM";
     const pinnedNotes = activeFolder?.pinnedNotesMarkdown?.trim() || undefined;
+    const requestPayload = {
+      workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+      hat: activeHat,
+      user_prompt: enrichedPrompt,
+      requested_speed: requestedSpeed,
+      deep_audit_pill_active: deepAuditPillActive,
+      requested_tier: effectiveTier,
+      thinking_effort: (effectiveEffort === "default" ? "balanced" : effectiveEffort) as
+        | "fast"
+        | "balanced"
+        | "deep",
+      conversation_history: historyPayload,
+      ...(activeFolder?.folderId ? { folder_id: activeFolder.folderId } : {}),
+      ...(pinnedNotes ? { folder_pinned_notes: pinnedNotes } : {}),
+      ...(governancePrefs?.responseTone ? { response_tone: governancePrefs.responseTone } : {}),
+      ...(governancePrefs?.favoriteFormat ? { response_format: governancePrefs.favoriteFormat } : {}),
+      ...(governancePrefs?.personalInstructions
+        ? { personal_instructions: governancePrefs.personalInstructions }
+        : {}),
+      ...(governancePrefs?.workspaceInstructions
+        ? { workspace_instructions: governancePrefs.workspaceInstructions }
+        : {}),
+      locale: isFr ? "fr" : "en",
+    };
 
     const client = createOrciaApiClient({ baseUrl: "" });
+    let latestThinking = "";
+    let latestReply = "";
+    let hasStreamError = false;
+
     void client
-      .executeAssistantTurn({
-        workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-        hat: activeHat,
-        user_prompt: enrichedPrompt,
-        requested_speed: requestedSpeed,
-        deep_audit_pill_active: deepAuditPillActive,
-        requested_tier: effectiveTier,
-        thinking_effort: effectiveEffort === "default" ? "balanced" : effectiveEffort,
-        conversation_history: historyPayload,
-        ...(activeFolder?.folderId ? { folder_id: activeFolder.folderId } : {}),
-        ...(pinnedNotes ? { folder_pinned_notes: pinnedNotes } : {}),
-        ...(governancePrefs?.responseTone ? { response_tone: governancePrefs.responseTone } : {}),
-        ...(governancePrefs?.favoriteFormat ? { response_format: governancePrefs.favoriteFormat } : {}),
-        ...(governancePrefs?.personalInstructions
-          ? { personal_instructions: governancePrefs.personalInstructions }
-          : {}),
-        ...(governancePrefs?.workspaceInstructions
-          ? { workspace_instructions: governancePrefs.workspaceInstructions }
-          : {}),
-        locale: isFr ? "fr" : "en",
+      .streamAssistantTurnSse(requestPayload, {
+        signal: controller.signal,
+        onEvent: (eventName, data) => {
+          if (controller.signal.aborted) return;
+          if (eventName === "cache_status") {
+            setCacheHit(Boolean(data.cache_hit));
+            setCacheLookupMs(Number(data.cache_lookup_ms ?? 0));
+          } else if (eventName === "thinking_delta") {
+            const txt = String(data.thinking_text ?? "").trim();
+            if (!txt) return;
+            clearPendingTimers();
+            latestThinking = txt;
+            setStepProgress([
+              {
+                stepCode: "LIVE_MODEL_REASONING",
+                label: isFr ? "Raisonnement du modèle en cours" : "Model reasoning in progress",
+                durationMs: Number(data.elapsed_ms ?? Date.now() - tStart),
+                status: "RUNNING",
+                intermediateOutput: txt,
+              },
+            ]);
+          } else if (eventName === "token_delta") {
+            clearPendingTimers();
+            const acc = sanitizeAssistantDisplayReply(String(data.accumulated_text ?? ""));
+            if (!acc) return;
+            if (!latestReply) setTtftMs(Date.now() - tStart);
+            latestReply = acc;
+            setStreamedText(acc);
+            setStepProgress((prev) =>
+              prev.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
+            );
+          } else if (eventName === "stream_error") {
+            hasStreamError = true;
+            clearPendingTimers();
+            setIsGenerating(false);
+            setStepProgress((prev) =>
+              prev.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
+            );
+            setErrorMessage(`⚠️ ${String(data.message ?? "Erreur du fournisseur IA")}`);
+          } else if (eventName === "turn_completed") {
+            clearPendingTimers();
+            const finalRaw = sanitizeAssistantDisplayReply(
+              String(data.response_text ?? latestReply),
+            );
+            const finalReply = finalRaw || latestReply;
+            const elapsedSec = Math.max(1, Math.round((Date.now() - tStart) / 1000));
+            const finalSteps: readonly UiThreeSpeedStepProgress[] = latestThinking
+              ? [
+                  {
+                    stepCode: "LIVE_MODEL_REASONING",
+                    label: isFr ? "Raisonnement du modèle" : "Model reasoning",
+                    durationMs: Number(data.latency_ms ?? elapsedSec * 1000),
+                    status: "COMPLETED",
+                    intermediateOutput: latestThinking,
+                  },
+                ]
+              : useSteps
+                ? plannedSteps.map((st) => ({ ...st, status: "COMPLETED" as const }))
+                : [];
+            setStepProgress(finalSteps);
+            setStreamedText(finalReply);
+            setIsGenerating(false);
+            if (finalReply && !/^synthèse conforme pour\s*«/i.test(finalReply)) {
+              onTurnCompleted({
+                userPrompt,
+                assistantReply: finalReply,
+                requestedTier: effectiveTier,
+                thinkingEffort: effectiveEffort,
+                ...(attachedFiles ? { attachedFiles } : {}),
+                ...(finalSteps.length > 0 ? { stepProgress: finalSteps } : {}),
+                thinkingElapsedSeconds: elapsedSec,
+              });
+            }
+          }
+        },
       })
-      .then((res) => {
-        if (controller.signal.aborted) return;
-        clearPendingTimers();
-        const elapsedSec = Math.max(1, Math.round((Date.now() - tStart) / 1000));
-        setCacheHit(Boolean(res.cache_hit));
-        setCacheLookupMs(Number(res.cache_lookup_ms ?? 0));
-        setNodes1To4Ms(Number(res.nodes_1_to_4_deterministic_ms ?? 0));
-        setTtftMs(Number(res.ttft_ms ?? 0));
-        const finalSteps = useSteps
-          ? plannedSteps.map((st) => ({ ...st, status: "COMPLETED" as const }))
-          : [];
-        setStepProgress(finalSteps);
-        const replyText = sanitizeAssistantDisplayReply(res.response_text ?? "");
-        if (replyText) {
-          streamTextProgressively(
-            replyText,
-            () => {
-              if (!controller.signal.aborted) {
-                setIsGenerating(false);
-                onTurnCompleted({
-                  userPrompt,
-                  assistantReply: replyText,
-                  requestedTier: effectiveTier,
-                  thinkingEffort: effectiveEffort,
-                  ...(attachedFiles ? { attachedFiles } : {}),
-                  ...(finalSteps.length > 0 ? { stepProgress: finalSteps } : {}),
-                  thinkingElapsedSeconds: elapsedSec,
-                });
-              }
-            },
-            controller.signal,
-          );
-        } else {
-          setIsGenerating(false);
-        }
+      .then(() => {
+        if (!controller.signal.aborted && !hasStreamError) setIsGenerating(false);
       })
       .catch((err: unknown) => {
         clearPendingTimers();

@@ -89,6 +89,31 @@ export function AssistantUserQuestionBubble({
   );
 }
 
+export function ThinkingDots({
+  className = "text-action-primary",
+}: {
+  className?: string;
+}): React.JSX.Element {
+  return (
+    <span
+      role="status"
+      aria-label="Réflexion en cours"
+      data-testid="assistant-thinking-pulsing-dots"
+      className={`inline-flex items-center gap-1 ${className}`}
+    >
+      <span
+        style={{ animationDelay: "-0.3s" }}
+        className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]"
+      />
+      <span
+        style={{ animationDelay: "-0.15s" }}
+        className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]"
+      />
+      <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
+    </span>
+  );
+}
+
 export interface AssistantThinkingSliderIndicatorProps {
   readonly isFr?: boolean;
 }
@@ -104,21 +129,11 @@ export function AssistantThinkingSliderIndicator({
       className="w-full max-w-md space-y-1.5 text-xs"
     >
       <div className="flex items-center gap-2 text-text-secondary">
-        <span
-          data-testid="assistant-thinking-pulsing-dots"
-          aria-hidden="true"
-          style={{
-            color: "var(--color-action-primary)",
-            letterSpacing: "2px",
-            fontWeight: 700,
-          }}
-        >
-          •••
-        </span>
+        <ThinkingDots />
         <span>
           {isFr
-            ? "Recherche et rédaction en cours…"
-            : "Searching and drafting response…"}
+            ? "Recherche et rédaction en cours"
+            : "Searching and drafting response"}
         </span>
       </div>
       <div
@@ -167,9 +182,7 @@ export function AssistantResponseFooterActionsAndCitations({
   const [detailsOpen, setDetailsOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!copied) {
-      return;
-    }
+    if (!copied) return;
     const timer = setTimeout(() => setCopied(false), 2000);
     return () => clearTimeout(timer);
   }, [copied]);
@@ -188,14 +201,8 @@ export function AssistantResponseFooterActionsAndCitations({
 
   const handleCopy = () => {
     setCopied(true);
-    if (
-      typeof navigator !== "undefined" &&
-      navigator.clipboard &&
-      typeof navigator.clipboard.writeText === "function"
-    ) {
-      void navigator.clipboard.writeText(responseText).catch(() => {
-        // Clipboard API may be restricted in non-HTTPS or test environments
-      });
+    if (typeof navigator !== "undefined" && typeof navigator.clipboard?.writeText === "function") {
+      void navigator.clipboard.writeText(responseText).catch(() => {});
     }
   };
 
@@ -206,13 +213,7 @@ export function AssistantResponseFooterActionsAndCitations({
 
   const likeLabel = isFr ? "J'aime" : "Like";
   const dislikeLabel = isFr ? "Je n'aime pas" : "Dislike";
-  const copyLabel = copied
-    ? isFr
-      ? "Copié"
-      : "Copied"
-    : isFr
-      ? "Copier"
-      : "Copy";
+  const copyLabel = copied ? (isFr ? "Copié" : "Copied") : isFr ? "Copier" : "Copy";
   const regenerateLabel = isFr ? "Régénérer" : "Regenerate";
   const saveDraftLabel = draftSaved
     ? isFr
@@ -221,12 +222,8 @@ export function AssistantResponseFooterActionsAndCitations({
     : isFr
       ? "Enregistrer en brouillon"
       : "Save as draft";
-  const continueProcessLabel = isFr
-    ? "Poursuivre dans un Processus"
-    : "Continue in a Process";
-  const detailsLabel = isFr
-    ? "Voir les détails de la réponse"
-    : "View response details";
+  const continueProcessLabel = isFr ? "Poursuivre dans un Processus" : "Continue in a Process";
+  const detailsLabel = isFr ? "Voir les détails de la réponse" : "View response details";
 
   const iconBtnClass =
     "h-7 w-7 inline-flex items-center justify-center rounded-md border-0 bg-transparent text-xs text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";

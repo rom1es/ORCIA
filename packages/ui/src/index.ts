@@ -296,6 +296,7 @@ export {
   AssistantThinkingSliderIndicator,
   AssistantUserQuestionBubble,
   sanitizeAssistantDisplayReply,
+  ThinkingDots,
   type AssistantResponseFooterActionsAndCitationsProps,
   type AssistantThinkingSliderIndicatorProps,
   type AssistantUserQuestionBubbleProps,

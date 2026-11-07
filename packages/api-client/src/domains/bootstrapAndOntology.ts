@@ -281,6 +281,55 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
         payload,
       );
     },
+    async streamAssistantTurnSse(
+      payload: ThreeSpeedTurnRequest,
+      options?: {
+        signal?: AbortSignal;
+        onEvent?: (eventName: string, data: Record<string, unknown>) => void;
+      },
+    ): Promise<void> {
+      const response = await globalThis.fetch("/api/v1/assistant/three-speed/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
+        body: JSON.stringify(payload),
+        ...(options?.signal ? { signal: options.signal } : {}),
+      });
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status} ${response.statusText || "SSE stream error"}`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const blocks = buffer.split("\n\n");
+        buffer = blocks.pop() ?? "";
+        for (const block of blocks) {
+          let eventName = "message";
+          const dataLines: string[] = [];
+          for (const line of block.split("\n")) {
+            if (line.startsWith("event:")) {
+              eventName = line.slice(6).trim();
+            } else if (line.startsWith("data:")) {
+              dataLines.push(line.slice(5).trim());
+            }
+          }
+          if (dataLines.length > 0) {
+            try {
+              const parsed = JSON.parse(dataLines.join("\n")) as Record<string, unknown>;
+              options?.onEvent?.(eventName, parsed);
+            } catch {
+              // Ignore non-JSON keepalive comments
+            }
+          }
+        }
+      }
+    },
     listAssistantFolders(workspaceId: string): Promise<AssistantWorkspaceOverviewResponse> {
       return requestJson<AssistantWorkspaceOverviewResponse>(
         `/api/v1/assistant/workspaces/${encodeURIComponent(workspaceId)}/overview`,

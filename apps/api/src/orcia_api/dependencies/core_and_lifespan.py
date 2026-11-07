@@ -227,7 +227,7 @@ def initialize_app_services(app: FastAPI) -> None:
         import httpx
 
         app.state.http_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(60.0, connect=10.0),
+            timeout=httpx.Timeout(300.0, connect=10.0),
             limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
         )
 

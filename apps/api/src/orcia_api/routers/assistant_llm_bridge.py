@@ -126,7 +126,7 @@ def _get_or_create_async_http_client(request: Request) -> httpx.AsyncClient:
     if shared is not None and not getattr(shared, "is_closed", False):
         return shared
     client = httpx.AsyncClient(
-        timeout=httpx.Timeout(60.0, connect=10.0),
+        timeout=httpx.Timeout(300.0, connect=10.0),
         limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
     )
     request.app.state.http_client = client
@@ -309,6 +309,17 @@ async def stream_configured_llm_for_assistant_turn(
                 emitted_tokens = True
             yield evt
         if emitted_tokens:
+            return
+        if client_host != "testclient":
+            yield {
+                "event": "stream_error",
+                "data": {
+                    "message": (
+                        f"Le modèle IA {ep.model_name} ({ep.endpoint_uri}) n'a renvoyé aucun "
+                        "jeton de réponse. Vérifiez que le fournisseur IA est bien démarré."
+                    )
+                },
+            }
             return
 
     yield {

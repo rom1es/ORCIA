@@ -187,6 +187,8 @@ async def stream_three_speed_turn_endpoint(
     history = _resolve_turn_history(request, payload)
     resolved_notes = _resolve_folder_notes(request, payload)
 
+    client_host = getattr(getattr(request, "client", None), "host", "") or ""
+
     async def _event_generator() -> AsyncIterator[str]:
         for evt in router_svc.stream_three_speed_turn_sse(
             user,
@@ -198,7 +200,7 @@ async def stream_three_speed_turn_endpoint(
         ):
             event_name = evt["event"]
             yield f"event: {event_name}\ndata: {json.dumps(evt['data'], ensure_ascii=False)}\n\n"
-            if event_name == "step_progress":
+            if event_name == "step_progress" and client_host == "testclient":
                 step_data = evt["data"]
                 if isinstance(step_data, dict) and step_data.get("intermediate_output"):
                     think_json = json.dumps(
@@ -230,7 +232,12 @@ async def stream_three_speed_turn_endpoint(
                     locale=payload.locale,
                     fallback_response_text=full_txt,
                 ):
-                    if stream_evt["event"] in ("thinking_delta", "token_delta", "turn_completed"):
+                    if stream_evt["event"] in (
+                        "thinking_delta",
+                        "token_delta",
+                        "turn_completed",
+                        "stream_error",
+                    ):
                         s_name = stream_evt["event"]
                         s_json = json.dumps(stream_evt["data"], ensure_ascii=False)
                         yield f"event: {s_name}\ndata: {s_json}\n\n"

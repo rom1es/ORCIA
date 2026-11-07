@@ -9,7 +9,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-07",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 77,
+    "uiPrimitivesCount": 78,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
@@ -107,6 +107,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "SprintContextWidget",
     "StatusBadge",
     "StreamlinedCockpitView",
+    "ThinkingDots",
     "TopHeaderBar",
     "TopHeaderSearchCommand",
     "UpstreamChallengeRewindModal",
