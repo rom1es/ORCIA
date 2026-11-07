@@ -413,6 +413,35 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Revue de contrat fournisseur",
     );
 
+    // Verify the dedicated ORCIA Documentation Generation Process card (generate-orcia-documentation) and 1-click actions on /processes
+    const docProcessCard = screen.getByTestId("orcia-doc-generation-process-card");
+    expect(docProcessCard.textContent).toContain("generate-orcia-documentation");
+    expect(docProcessCard.textContent).toContain("@Rédacteur-Documentation-Orcia");
+
+    // 1-click run: publishes workflow, displays 4 steps summary & FormattedMarkdownContent preview
+    fireEvent.click(screen.getByTestId("run-orcia-doc-generation-process-btn"));
+    expect(screen.getByTestId("workflow-row-generate-orcia-documentation")).toBeDefined();
+    const stepsSummary = screen.getByTestId("orcia-doc-generation-steps-summary");
+    expect(stepsSummary.textContent).toContain("Étape 1 — Inventaire du dépôt ORCIA");
+    expect(stepsSummary.textContent).toContain(
+      "Étape 2 — Génération & Enrichissement des Guides et de la FAQ",
+    );
+    expect(stepsSummary.textContent).toContain(
+      "Étape 3 — Contrôle Qualité Déterministe (validate_help_article)",
+    );
+    expect(stepsSummary.textContent).toContain(
+      "Étape 4 — Publication & Rattachement à Chaud (/showcase & docs/help/)",
+    );
+    const outputPreview = screen.getByTestId("orcia-doc-generation-output-preview");
+    expect(outputPreview.textContent).toContain("Guide Fonctionnel par Écran");
+    expect(outputPreview.textContent).toContain("Architecture & Modèle Métier");
+
+    // 1-click load into Process Studio: pre-fills the SimplifiedProcessBuilderSection form
+    fireEvent.click(screen.getByTestId("load-orcia-doc-process-in-builder-btn"));
+    expect((screen.getByTestId("workflow-key-input") as HTMLInputElement).value).toBe(
+      "generate-orcia-documentation",
+    );
+
     // Navigate to /help -> ContextualHelpColumnAndCenter (HELP_MENU_CENTER)
     await act(async () => {
       await router.navigate({ to: "/help" });

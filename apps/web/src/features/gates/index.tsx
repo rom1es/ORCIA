@@ -7,14 +7,26 @@ import {
   type UiHelpValidationSummary,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import { usePlatformSetup } from "../../components/platformSetupStore";
+import {
+  usePlatformSetup,
+  type ConfiguredWorkflowItem,
+} from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { SimplifiedProcessBuilderSection } from "../../components/SimplifiedProcessBuilderSection";
 import { useI18n } from "../../i18n";
+import { OrciaDocumentationProcessCard } from "./OrciaDocumentationProcessCard";
 
 export function GatesFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { packs, workflows, workspaces, scopes, registerPack, upsertWorkflow } = usePlatformSetup();
+  const {
+    packs,
+    workflows,
+    workspaces,
+    scopes,
+    registerPack,
+    upsertWorkflow,
+    launchRun,
+  } = usePlatformSetup();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
@@ -26,6 +38,8 @@ export function GatesFeaturePanel() {
         : workspaces[0];
 
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [builderPresetDraft, setBuilderPresetDraft] =
+    useState<ConfiguredWorkflowItem | null>(null);
   const [whatIfImpacts, setWhatIfImpacts] = useState<PackWhatIfImpactItem[]>([]);
   const [certifications, setCertifications] = useState<PackToolCertificationSummary[]>([]);
   const [helpArticleId, setHelpArticleId] = useState<string>("help-processes-guide");
@@ -91,12 +105,25 @@ export function GatesFeaturePanel() {
         </span>
       </div>
 
+      {/* Processus Système Clé en Main : Génération et Synchronisation de la Documentation ORCIA */}
+      <OrciaDocumentationProcessCard
+        isFr={isFr}
+        isJsdom={isJsdom}
+        activeWorkspace={activeWorkspace}
+        openHelpSection={openHelpSection}
+        upsertWorkflow={upsertWorkflow}
+        launchRun={launchRun}
+        onLoadIntoBuilder={(draft) => setBuilderPresetDraft({ ...draft })}
+        onFeedback={setActionFeedback}
+      />
+
       {/* Atelier simplifié de conception et gestion des processus métiers */}
       <SimplifiedProcessBuilderSection
         isFr={isFr}
         workflows={workflows}
         openHelpSection={openHelpSection}
         upsertWorkflow={upsertWorkflow}
+        presetDraft={builderPresetDraft}
       />
 
       <div

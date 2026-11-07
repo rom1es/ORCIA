@@ -20,6 +20,9 @@ from orcia_core.orchestration.help_generator_and_validator import (
     HelpArticleValidationReport,
     HelpGenerationAndHotAttachmentService,
     HelpTriggerRegime,
+    OrciaDocumentationWorkflowReport,
+    OrciaDocumentationWorkflowStepResult,
+    run_generate_orcia_documentation_workflow,
 )
 from orcia_core.orchestration.pack_builder_processes import (
     PACK_BUILDER_AGENTS,
@@ -42,7 +45,7 @@ PACK_BUILDER_URI: str = "orcia://packs/orcia-pack-builder"
 
 @dataclass(frozen=True, slots=True)
 class GovernedPackBuilderProcessSpec:
-    """Descriptor for one of the 5 governed processes of `orcia-pack-builder`."""
+    """Descriptor for one of the governed processes of `orcia-pack-builder`."""
 
     process_number: int
     slug: str
@@ -51,6 +54,23 @@ class GovernedPackBuilderProcessSpec:
     title_en: str
     lead_agent_handle: str
     requires_human_anchor: bool
+
+
+ORCIA_DOCUMENTATION_GENERATOR_PROCESS = GovernedPackBuilderProcessSpec(
+    process_number=6,
+    slug="generate-orcia-documentation",
+    uri="orcia://pack-builder/workflows/generate-orcia-documentation",
+    title_fr=(
+        "Processus 6 — Générer et Synchroniser la Documentation Complète d'ORCIA "
+        "(Guides Écrans, FAQ Architecture & Catalogue)"
+    ),
+    title_en=(
+        "Process 6 — Generate and Synchronize Full ORCIA Documentation "
+        "(Screen Guides, Architecture FAQ & Catalog)"
+    ),
+    lead_agent_handle="@Rédacteur-Documentation-Orcia",
+    requires_human_anchor=False,
+)
 
 
 PACK_BUILDER_PROCESSES: tuple[GovernedPackBuilderProcessSpec, ...] = (
@@ -112,7 +132,10 @@ PACK_BUILDER_PROCESSES: tuple[GovernedPackBuilderProcessSpec, ...] = (
         lead_agent_handle="@Rédacteur-Documentation-Orcia",
         requires_human_anchor=False,
     ),
+    ORCIA_DOCUMENTATION_GENERATOR_PROCESS,
 )
+
+PACK_BUILDER_ALL_PROCESSES: tuple[GovernedPackBuilderProcessSpec, ...] = PACK_BUILDER_PROCESSES
 
 
 def get_pack_builder_manifest() -> dict[str, Any]:
@@ -156,7 +179,11 @@ __all__ = [
     "HelpArticleValidationReport",
     "HelpGenerationAndHotAttachmentService",
     "HelpTriggerRegime",
+    "ORCIA_DOCUMENTATION_GENERATOR_PROCESS",
+    "OrciaDocumentationWorkflowReport",
+    "OrciaDocumentationWorkflowStepResult",
     "PACK_BUILDER_AGENTS",
+    "PACK_BUILDER_ALL_PROCESSES",
     "PACK_BUILDER_PROCESSES",
     "PACK_BUILDER_URI",
     "PackBuilderAgentSpec",
@@ -170,4 +197,5 @@ __all__ = [
     "WorkspaceToPackPromotionResult",
     "__version__",
     "get_pack_builder_manifest",
+    "run_generate_orcia_documentation_workflow",
 ]
