@@ -12,6 +12,7 @@ export interface SimplifiedProcessBuilderSectionProps {
   readonly openHelpSection: (sectionId: string) => void;
   readonly upsertWorkflow: (input: ConfiguredWorkflowItem) => void;
   readonly onOpenProcessesMenu?: () => void;
+  readonly presetDraft?: ConfiguredWorkflowItem | null;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -60,6 +61,7 @@ export function SimplifiedProcessBuilderSection({
   openHelpSection,
   upsertWorkflow,
   onOpenProcessesMenu,
+  presetDraft,
 }: SimplifiedProcessBuilderSectionProps) {
   const [wfTitle, setWfTitle] = useState("");
   const [wfKey, setWfKey] = useState("");
@@ -97,6 +99,20 @@ export function SimplifiedProcessBuilderSection({
       enabled: true,
     },
   ]);
+
+  React.useEffect(() => {
+    if (!presetDraft) return;
+    setWfTitle(presetDraft.title);
+    setWfKey(presetDraft.workflowKey);
+    setWfVersion(presetDraft.version);
+    setWfStatus(presetDraft.status);
+    setWfPrePrompt(presetDraft.prePrompt);
+    setWfParamsCsv(presetDraft.requiredParams.join(", "));
+    setWfSectionsCsv(presetDraft.requiredMarkdownSections.join(", "));
+    if (presetDraft.layers.length > 0) {
+      setLayers(presetDraft.layers);
+    }
+  }, [presetDraft]);
 
   const publishedCount = workflows.filter((w) => w.status === "PUBLISHED").length;
   const draftCount = workflows.filter((w) => w.status === "DRAFT").length;
@@ -183,7 +199,7 @@ export function SimplifiedProcessBuilderSection({
             status: wfStatus,
             prePrompt: wfPrePrompt.trim(),
             prePromptSha256:
-              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", // pragma: allowlist secret
             requiredParams: wfParamsCsv
               .split(",")
               .map((s) => s.trim())

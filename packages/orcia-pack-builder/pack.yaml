@@ -33,3 +33,6 @@ processes:
   - slug: "generate-and-attach-help"
     uri: "orcia://pack-builder/workflows/generate-and-attach-help"
     title: "Processus 5 — Générer, Valider et Rattacher à Chaud les Fiches d'Aide (HelpArticle)"
+  - slug: "generate-orcia-documentation"
+    uri: "orcia://pack-builder/workflows/generate-orcia-documentation"
+    title: "Processus 6 — Générer et Synchroniser la Documentation Complète d'ORCIA (Guides Écrans, FAQ Architecture & Catalogue)"

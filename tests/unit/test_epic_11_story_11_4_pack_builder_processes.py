@@ -19,7 +19,9 @@ from orcia_core.orchestration.pack_builder_processes import (
     PackBuilderValidationError,
 )
 from orcia_pack_builder import (
+    ORCIA_DOCUMENTATION_GENERATOR_PROCESS,
     PACK_BUILDER_AGENTS,
+    PACK_BUILDER_ALL_PROCESSES,
     PACK_BUILDER_PROCESSES,
     get_pack_builder_manifest,
 )
@@ -38,7 +40,7 @@ def evaluate(ctx):
 
 
 def test_pack_builder_entry_points_and_manifest() -> None:
-    """Verify `orcia.packs` entry_point and the 4 agents + 5 governed processes."""
+    """Verify `orcia.packs` entry_point and the 4 agents + 6 governed processes."""
     eps = entry_points(group="orcia.packs")
     names = [ep.name for ep in eps]
     assert "pack_builder" in names
@@ -46,7 +48,18 @@ def test_pack_builder_entry_points_and_manifest() -> None:
     manifest = get_pack_builder_manifest()
     assert manifest["pack_slug"] == "pack-builder"
     assert len(PACK_BUILDER_AGENTS) == 4
-    assert len(PACK_BUILDER_PROCESSES) == 5
+    assert len(PACK_BUILDER_PROCESSES) == 6
+    assert len(PACK_BUILDER_ALL_PROCESSES) == 6
+    assert ORCIA_DOCUMENTATION_GENERATOR_PROCESS.slug == "generate-orcia-documentation"
+    assert (
+        ORCIA_DOCUMENTATION_GENERATOR_PROCESS.uri
+        == "orcia://pack-builder/workflows/generate-orcia-documentation"
+    )
+    assert (
+        ORCIA_DOCUMENTATION_GENERATOR_PROCESS.lead_agent_handle == "@Rédacteur-Documentation-Orcia"
+    )
+    manifest_slugs = [p["slug"] for p in manifest["processes"]]
+    assert "generate-orcia-documentation" in manifest_slugs
     handles = [a.handle for a in PACK_BUILDER_AGENTS]
     assert "@Architecte-Métier-Pack" in handles
     assert "@Rédacteur-Documentation-Orcia" in handles

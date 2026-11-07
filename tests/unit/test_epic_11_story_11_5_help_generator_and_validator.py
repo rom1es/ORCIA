@@ -211,3 +211,35 @@ async def test_fastapi_process5_endpoints_validate_and_attach_help() -> None:
             "docs/help/fr/cockpit-overview.md",
             "docs/help/en/cockpit-overview.md",
         ]
+
+
+@pytest.mark.asyncio
+async def test_process6_generate_orcia_documentation_workflow_runs_4_steps(
+    tmp_path: Path,
+) -> None:
+    """Verify Process 6 (`generate-orcia-documentation`) executes all 4 steps."""
+    svc = HelpGenerationAndHotAttachmentService()
+    with pytest.raises(ObserverModeReadOnlyError):
+        await svc.run_generate_orcia_documentation_workflow(
+            actor_role="READ_ONLY_OBSERVER",
+            export_root_dir=tmp_path,
+        )
+
+    report = await svc.run_generate_orcia_documentation_workflow(
+        actor_role="ARCHITECT",
+        export_root_dir=tmp_path,
+    )
+    assert report.workflow_slug == "generate-orcia-documentation"
+    assert report.workflow_uri == "orcia://pack-builder/workflows/generate-orcia-documentation"
+    assert report.lead_agent_handle == "@Rédacteur-Documentation-Orcia"
+    assert report.routes_inventoried_count >= 20
+    assert len(report.steps) == 4
+    assert [s.step_number for s in report.steps] == [1, 2, 3, 4]
+    assert all(s.status == "COMPLETED" for s in report.steps)
+    assert report.validation_fr.passed is True
+    assert report.validation_en.passed is True
+    assert "Guide Fonctionnel par Écran" in report.generated_markdown_fr
+    assert "Architecture & Modèle Métier" in report.generated_markdown_fr
+    assert "Questions Fréquentes (FAQ)" in report.generated_markdown_fr
+    assert (tmp_path / "docs/help/fr/orcia-complete-documentation.md").is_file()
+    assert (tmp_path / "docs/help/en/orcia-complete-documentation.md").is_file()

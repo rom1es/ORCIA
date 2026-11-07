@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 81
+    "techLeadReportsCount": 82
   },
   "activeRoutes": [
     "/",
@@ -403,6 +403,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Pack Builder & Documentation",
+      "reportFile": "2026-11-07-processus-generation-documentation-orcia-pack-builder-tech-lead-report.md",
+      "domain": "Intégration Native du Processus 6 generate-orcia-documentation dans packages/orcia-pack-builder & Exécution en 1 Clic dans ☍ Mes Processus (/processes)",
+      "summary": "Ajout du 6e processus gouverné generate-orcia-documentation (orcia://pack-builder/workflows/generate-orcia-documentation, @Rédacteur-Documentation-Orcia) dans pack.yaml et orcia_pack_builder, implémentation du workflow en 4 étapes (run_generate_orcia_documentation_workflow : inventaire du dépôt, génération des guides FR/EN et de la FAQ d'architecture, contrôle qualité déterministe validate_help_article, publication et rattachement à chaud), et création de OrciaDocumentationProcessCard.tsx dans /processes (lancement en 1 clic avec bilan des 4 étapes, aperçu FormattedMarkdownContent et chargement en 1 clic dans SimplifiedProcessBuilderSection)."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 UX/UI & Markdown",
