@@ -4,6 +4,7 @@ import {
   DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   type ControlCenterDatasourceItem,
   type UiAssistantAutocompleteOption,
+  type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
   type UiAssistantOrciaDocumentOption,
   type UiAssistantRagCitationItem,
@@ -11,6 +12,10 @@ import {
   type UiInferenceEffort,
   type UiInferenceTier,
 } from "@orcia/ui";
+import {
+  consumeAssistantPrefillPrompt,
+  readCachedAgentsAndSkills,
+} from "../../components/agentsAndSkillsBridgeStore";
 
 export function buildAssistantAutocompleteAndRagOptions(params: {
   readonly catalogItems: readonly UiCatalogExplorerItemView[];
@@ -311,4 +316,90 @@ export function upsertTurnIntoSavedConversations(params: {
     isNewConversation: true,
     createdTitle,
   };
+}
+
+export function consumeAssistantPrefillFromStorage(): string | null {
+  return consumeAssistantPrefillPrompt();
+}
+
+export function buildAssistantAutocompleteSuggestions(
+  activePacks: readonly { readonly packKey: string }[] = [],
+): readonly UiAssistantAutocompleteSuggestion[] {
+  const suggestions: UiAssistantAutocompleteSuggestion[] = [];
+  const seenTokens = new Set<string>();
+
+  const cached = readCachedAgentsAndSkills();
+  for (const ag of cached.agents ?? []) {
+    if (seenTokens.has(ag.handle)) continue;
+    seenTokens.add(ag.handle);
+    suggestions.push({
+      id: ag.agentId,
+      kind: "agent",
+      token: ag.handle,
+      name: ag.name,
+      description: ag.roleMission,
+      badge:
+        ag.visibilityScope === "PRIVATE"
+          ? "🔒 Privé"
+          : ag.visibilityScope === "PACK"
+            ? `📦 ${ag.sourcePackKey ?? "Pack"}`
+            : "👥 Équipe",
+    });
+  }
+  for (const sk of cached.skills ?? []) {
+    if (seenTokens.has(sk.commandHandle)) continue;
+    seenTokens.add(sk.commandHandle);
+    suggestions.push({
+      id: sk.skillId,
+      kind: "skill",
+      token: sk.commandHandle,
+      name: sk.name,
+      description: sk.objective,
+      badge:
+        sk.visibilityScope === "PRIVATE"
+          ? "🔒 Privé"
+          : sk.visibilityScope === "PACK"
+            ? `📦 ${sk.sourcePackKey ?? "Pack"}`
+            : "👥 Équipe",
+    });
+  }
+
+  for (const pack of activePacks) {
+    if (pack.packKey === "orcia-pack-sdlc") {
+      const sdlcDefaults: readonly UiAssistantAutocompleteSuggestion[] = [
+        {
+          id: "agent-architecte-solution",
+          kind: "agent",
+          token: "@architecte-solution",
+          name: "Architecte Solution",
+          description: "Concevoir et vérifier l'architecture cible",
+          badge: "📦 orcia-pack-sdlc",
+        },
+        {
+          id: "agent-analyste-metier",
+          kind: "agent",
+          token: "@analyste-metier",
+          name: "Analyste Métier",
+          description: "Clarifier les besoins et rédiger les exigences",
+          badge: "📦 orcia-pack-sdlc",
+        },
+        {
+          id: "skill-revue-architecture",
+          kind: "skill",
+          token: "/revue-architecture",
+          name: "Revue d'Architecture",
+          description: "Vérifier la cohérence des choix d'architecture",
+          badge: "📦 orcia-pack-sdlc",
+        },
+      ];
+      for (const item of sdlcDefaults) {
+        if (!seenTokens.has(item.token)) {
+          seenTokens.add(item.token);
+          suggestions.push(item);
+        }
+      }
+    }
+  }
+
+  return suggestions;
 }

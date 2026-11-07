@@ -302,6 +302,7 @@ export {
   AssistantSpeedSelectorAndStreamView,
   type AssistantSpeedSelectorAndStreamViewLabels,
   type AssistantSpeedSelectorAndStreamViewProps,
+  type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
   type UiAssistantSpeedMode,
   type UiThreeSpeedStepProgress,
@@ -381,10 +382,20 @@ export {
   type AgentsAndSkillsManagerLabels,
   type AgentsAndSkillsManagerViewProps,
   type AgentsAndSkillsSubTab,
+  type UiAgentSkillVisibilityFilter,
+  type UiAgentSkillVisibilityScope,
   type UiAgentThinkingLevel,
   type UiManagedAgentItem,
   type UiManagedSkillItem,
 } from "./components/AgentsAndSkillsManagerView";
+export {
+  AgentStudioCardItem,
+  type AgentStudioCardItemProps,
+} from "./components/AgentStudioCardItem";
+export {
+  SkillStudioCardItem,
+  type SkillStudioCardItemProps,
+} from "./components/SkillStudioCardItem";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

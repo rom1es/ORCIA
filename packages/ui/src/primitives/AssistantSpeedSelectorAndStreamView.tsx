@@ -4,6 +4,7 @@ import {
   ASSISTANT_EFFORT_OPTIONS,
   AssistantModelAndEffortPopover,
   DEFAULT_ASSISTANT_MODEL_OPTIONS,
+  type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
 } from "./AssistantModelAndEffortPopover";
 import {
@@ -26,7 +27,7 @@ import {
 import { AssistantThinkingSubWindow } from "./AssistantThinkingSubWindow";
 import type { UiInferenceEffort, UiInferenceTier } from "./InferenceTierAndEffortSelector";
 
-export type { UiAssistantModelOption };
+export type { UiAssistantAutocompleteSuggestion, UiAssistantModelOption };
 export type UiAssistantSpeedMode = "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT";
 
 export interface UiThreeSpeedStepProgress {
@@ -64,6 +65,9 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly skillOptions?: readonly UiAssistantAutocompleteOption[];
   readonly orciaDocuments?: readonly UiAssistantOrciaDocumentOption[];
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
+  readonly autocompleteSuggestions?: readonly UiAssistantAutocompleteSuggestion[];
+  readonly prefillPrompt?: string | null;
+  readonly onPrefillConsumed?: () => void;
   readonly welcomeTitle?: string;
   readonly showWelcomeHero?: boolean;
   readonly hideTechnicalCacheHeader?: boolean;
@@ -108,6 +112,9 @@ export function AssistantSpeedSelectorAndStreamView({
   skillOptions = DEFAULT_ASSISTANT_SKILL_OPTIONS,
   orciaDocuments = DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   ragCitations = [],
+  autocompleteSuggestions = [],
+  prefillPrompt = null,
+  onPrefillConsumed,
   welcomeTitle = "Par quoi voulez-vous commencer ?",
   showWelcomeHero = true,
   hideTechnicalCacheHeader = false,
@@ -144,7 +151,7 @@ export function AssistantSpeedSelectorAndStreamView({
   const [pickerOpen, setPickerOpen] = useState<boolean>(false);
   const [thinkingSubmenuOpen, setThinkingSubmenuOpen] = useState<boolean>(true);
   const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
-  const [promptText, setPromptText] = useState<string>("");
+  const [promptText, setPromptText] = useState<string>(() => prefillPrompt ?? "");
   const [lastSubmittedPrompt, setLastSubmittedPrompt] = useState<string>("");
   const [userEditedTierOrEffort, setUserEditedTierOrEffort] = useState<boolean>(false);
   const [localStoppedFlag, setLocalStoppedFlag] = useState<boolean>(false);
@@ -163,6 +170,41 @@ export function AssistantSpeedSelectorAndStreamView({
       el.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [streamedText]);
+
+  useEffect(() => {
+    if (prefillPrompt) {
+      setPromptText(prefillPrompt);
+      setSpeed("SPEED_2_AGENT_TOOLS");
+      setEffort("balanced");
+      onPrefillConsumed?.();
+      inputRef.current?.focus();
+    }
+  }, [prefillPrompt, onPrefillConsumed]);
+
+  const extraAgentOptions: readonly UiAssistantAutocompleteOption[] = autocompleteSuggestions
+    .filter((s) => s.kind === "agent")
+    .map((s) => ({
+      slug: s.token.replace(/^@/, ""),
+      label: s.name,
+      description: s.description,
+      kind: "agent" as const,
+    }));
+  const extraSkillOptions: readonly UiAssistantAutocompleteOption[] = autocompleteSuggestions
+    .filter((s) => s.kind === "skill")
+    .map((s) => ({
+      slug: s.token.replace(/^\//, ""),
+      label: s.name,
+      description: s.description,
+      kind: "skill" as const,
+    }));
+  const mergedAgentOptions: readonly UiAssistantAutocompleteOption[] = [
+    ...extraAgentOptions,
+    ...agentOptions.filter((a) => !extraAgentOptions.some((e) => e.slug === a.slug)),
+  ];
+  const mergedSkillOptions: readonly UiAssistantAutocompleteOption[] = [
+    ...extraSkillOptions,
+    ...skillOptions.filter((s) => !extraSkillOptions.some((e) => e.slug === s.slug)),
+  ];
 
   const detectedTrigger = detectActiveAutocompleteTrigger(promptText);
   const effectiveAutocompleteTrigger =
@@ -218,7 +260,7 @@ export function AssistantSpeedSelectorAndStreamView({
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       if (effectiveAutocompleteTrigger !== null) {
-        const list = effectiveAutocompleteTrigger.kind === "agent" ? agentOptions : skillOptions;
+        const list = effectiveAutocompleteTrigger.kind === "agent" ? mergedAgentOptions : mergedSkillOptions;
         const q = effectiveAutocompleteTrigger.query.toLowerCase();
         const matches = list.filter(
           (opt) => !q || opt.slug.toLowerCase().includes(q) || opt.label.toLowerCase().includes(q),
@@ -317,8 +359,8 @@ export function AssistantSpeedSelectorAndStreamView({
         <AssistantPromptPlusAndAutocomplete
           plusMenuOpen={plusMenuOpen}
           autocompleteTrigger={effectiveAutocompleteTrigger}
-          agentOptions={agentOptions}
-          skillOptions={skillOptions}
+          agentOptions={mergedAgentOptions}
+          skillOptions={mergedSkillOptions}
           orciaDocuments={orciaDocuments}
           attachedFiles={attachedFiles}
           onSelectAutocompleteOption={handleSelectAutocompleteOption}

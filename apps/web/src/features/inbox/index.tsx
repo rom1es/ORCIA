@@ -20,7 +20,9 @@ import {
 } from "./SavedConversationsAndThreadView";
 import {
   buildAssistantAutocompleteAndRagOptions,
+  buildAssistantAutocompleteSuggestions,
   buildAssistantModelOptions,
+  consumeAssistantPrefillFromStorage,
   readSavedAssistantConversations,
   upsertTurnIntoSavedConversations,
   writeSavedAssistantConversations,
@@ -31,9 +33,12 @@ import { useAssistantStreamingTurn } from "./useAssistantStreamingTurn";
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { navigateToRoute, openHelpSection } = useShellNavigation();
-  const { platformAdmin, workspaces, llmTiers, datasources, catalogItems } = usePlatformSetup();
+  const { platformAdmin, workspaces, llmTiers, datasources, catalogItems, packs } = usePlatformSetup();
   const isFr = locale === "fr";
 
+  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(() =>
+    consumeAssistantPrefillFromStorage(),
+  );
   const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string>("");
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
@@ -53,6 +58,7 @@ export function InboxFeaturePanel() {
   const activeConversation = savedConversations.find((c) => c.id === activeConversationId) ?? null;
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
     buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
+  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
 
   const appendTurnToSavedConversation = (params: {
     userPrompt: string;
@@ -236,6 +242,9 @@ export function InboxFeaturePanel() {
         skillOptions={skillOptions}
         orciaDocuments={orciaDocuments}
         ragCitations={ragCitations}
+        autocompleteSuggestions={autocompleteSuggestions}
+        prefillPrompt={prefillPrompt}
+        onPrefillConsumed={() => setPrefillPrompt(null)}
         welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
         showWelcomeHero={!activeConversation || activeConversation.turns.length === 0}
         hideTechnicalCacheHeader={true}
