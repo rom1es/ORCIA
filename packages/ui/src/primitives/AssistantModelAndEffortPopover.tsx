@@ -10,6 +10,7 @@ export interface UiAssistantModelOption {
   readonly title: string;
   readonly subtitle: string;
   readonly configuredModelName?: string;
+  readonly hiddenDuplicate?: boolean;
 }
 
 export const DEFAULT_ASSISTANT_MODEL_OPTIONS: readonly UiAssistantModelOption[] = [
@@ -78,6 +79,7 @@ export function AssistantModelAndEffortPopover({
   const activeEffortOption =
     ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === selectedEffort) ??
     ASSISTANT_EFFORT_OPTIONS[0]!;
+  const visibleModelCount = modelOptions.filter((m) => !m.hiddenDuplicate).length;
 
   return (
     <div
@@ -90,23 +92,32 @@ export function AssistantModelAndEffortPopover({
           Modèle IA
         </div>
         {modelOptions.map((opt) => {
-          const isSelected = opt.tier === selectedTier;
+          const isSelected = opt.tier === selectedTier || visibleModelCount === 1;
+          const displaySingleModelTitle =
+            visibleModelCount === 1 && opt.configuredModelName
+              ? opt.configuredModelName
+              : opt.title;
           return (
             <button
               key={opt.tier}
               type="button"
               data-testid={`assistant-model-option-${opt.tier}`}
+              style={opt.hiddenDuplicate ? { display: "none" } : undefined}
               onClick={() => onSelectTier(opt.tier)}
-              className={`flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
-                isSelected
-                  ? "bg-action-primary/10 font-semibold text-text-primary"
-                  : "hover:bg-surface-secondary text-text-primary"
-              }`}
+              className={
+                opt.hiddenDuplicate
+                  ? "sr-only"
+                  : `flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
+                      isSelected
+                        ? "bg-action-primary/10 font-semibold text-text-primary"
+                        : "hover:bg-surface-secondary text-text-primary"
+                    }`
+              }
             >
               <div>
                 <div className="text-xs font-semibold">
-                  {opt.title}
-                  {opt.configuredModelName ? (
+                  {displaySingleModelTitle}
+                  {visibleModelCount > 1 && opt.configuredModelName ? (
                     <span className="ml-1.5 font-mono text-[11px] text-text-secondary">
                       ({opt.configuredModelName})
                     </span>

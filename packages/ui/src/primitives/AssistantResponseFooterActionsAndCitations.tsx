@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import type { UiAssistantAttachedFileItem } from "./AssistantPromptPlusAndAutocomplete";
 
 export interface UiAssistantRagCitationItem {
   readonly title: string;
@@ -6,34 +7,45 @@ export interface UiAssistantRagCitationItem {
   readonly snippet?: string | null;
 }
 
+export function sanitizeAssistantDisplayReply(rawText: string): string {
+  if (!rawText) {
+    return "";
+  }
+  let cleaned = rawText.replace(
+    /^\s*\[(?:⚡|🛠️|🧠)\s*Vitesse\s*\d[^\]]*\]\s*/i,
+    "",
+  );
+  cleaned = cleaned.replace(
+    /Réponse directe générée avec prompt 5 couches \((?:HIT|MISS) Redis\)\s*:\s*/gi,
+    "",
+  );
+  cleaned = cleaned.replace(
+    /\s*«\s*([^»]+)\s*»\s*(?:\[(?:S\d+|G\d+|O\d+)\]\s*)+(\.?)$/i,
+    (_, inner: string, dot: string) => ` « ${inner.trim()} »${dot || "."}`,
+  );
+  cleaned = cleaned.replace(
+    /(?:\s*\[(?:S\d+|G\d+|O\d+)\])+(\.?)\s*$/g,
+    (_, trailingDot: string) => (trailingDot ? "." : ""),
+  );
+  return cleaned.trim();
+}
+
 export interface AssistantUserQuestionBubbleProps {
   readonly userPrompt: string;
   readonly isFr?: boolean;
   readonly modelLabel?: string;
   readonly effortLabel?: string;
+  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
   readonly testId?: string;
 }
 
 export function AssistantUserQuestionBubble({
   userPrompt,
-  isFr = true,
-  modelLabel,
-  effortLabel,
+  attachedFiles = [],
   testId = "assistant-user-question-bubble",
 }: AssistantUserQuestionBubbleProps): React.JSX.Element {
   return (
     <div className="flex flex-col items-end space-y-1">
-      <div className="flex items-center gap-2 text-[11px] text-text-secondary">
-        {modelLabel ? (
-          <span>
-            {modelLabel}
-            {effortLabel ? ` · ${effortLabel}` : ""}
-          </span>
-        ) : null}
-        <span className="font-semibold text-text-primary">
-          🧑 {isFr ? "Vous" : "You"}
-        </span>
-      </div>
       <div
         data-testid={testId}
         style={{
@@ -49,6 +61,25 @@ export function AssistantUserQuestionBubble({
       >
         {userPrompt}
       </div>
+      {attachedFiles.length > 0 && (
+        <div
+          data-testid="assistant-user-question-attached-files"
+          className="flex flex-wrap justify-end gap-1.5 pt-0.5"
+        >
+          {attachedFiles.map((file) => (
+            <span
+              key={file.id}
+              data-testid="assistant-user-question-attached-pill"
+              className="inline-flex items-center gap-1 rounded-md bg-surface-secondary px-2 py-0.5 text-[11px] font-medium text-text-secondary"
+            >
+              <span aria-hidden="true">
+                {file.sourceKind === "LOCAL_PC" ? "💻" : "🗂️"}
+              </span>
+              <span>{file.name}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -65,30 +96,28 @@ export function AssistantThinkingSliderIndicator({
       data-testid="assistant-thinking-slider-indicator"
       role="status"
       aria-live="polite"
-      className="rounded-lg border border-border-subtle bg-surface-primary px-3.5 py-2.5 text-xs space-y-2"
+      className="w-full max-w-md space-y-1.5 text-xs"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-2 font-medium text-text-primary">
-          <span
-            data-testid="assistant-thinking-pulsing-dots"
-            aria-hidden="true"
-            style={{
-              color: "var(--color-action-primary)",
-              letterSpacing: "2px",
-              fontWeight: 700,
-            }}
-          >
-            •••
-          </span>
-          <span>
-            {isFr
-              ? "Mon Assistant prépare votre réponse..."
-              : "My Assistant is preparing your answer..."}
-          </span>
+      <div className="flex items-center gap-2 text-text-secondary">
+        <span
+          data-testid="assistant-thinking-pulsing-dots"
+          aria-hidden="true"
+          style={{
+            color: "var(--color-action-primary)",
+            letterSpacing: "2px",
+            fontWeight: 700,
+          }}
+        >
+          •••
+        </span>
+        <span>
+          {isFr
+            ? "Recherche et rédaction en cours…"
+            : "Searching and drafting response…"}
         </span>
       </div>
       <div
-        className="h-1.5 w-full overflow-hidden rounded-full bg-surface-secondary"
+        className="h-1 w-48 overflow-hidden rounded-full bg-surface-secondary"
         aria-hidden="true"
       >
         <div
@@ -107,6 +136,8 @@ export function AssistantThinkingSliderIndicator({
 export interface AssistantResponseFooterActionsAndCitationsProps {
   readonly responseText: string;
   readonly isFr?: boolean;
+  readonly modelLabel?: string;
+  readonly effortLabel?: string;
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
   readonly onRegenerate?: () => void;
   readonly onSaveDraft?: (content: string) => void;
@@ -117,6 +148,8 @@ export interface AssistantResponseFooterActionsAndCitationsProps {
 export function AssistantResponseFooterActionsAndCitations({
   responseText,
   isFr = true,
+  modelLabel = "Polyvalent",
+  effortLabel = "Bas",
   ragCitations = [],
   onRegenerate,
   onSaveDraft,
@@ -126,6 +159,7 @@ export function AssistantResponseFooterActionsAndCitations({
   const [feedback, setFeedback] = useState<"LIKE" | "DISLIKE" | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [draftSaved, setDraftSaved] = useState<boolean>(false);
+  const [detailsOpen, setDetailsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!copied) {
@@ -165,8 +199,35 @@ export function AssistantResponseFooterActionsAndCitations({
     onSaveDraft?.(responseText);
   };
 
+  const likeLabel = isFr ? "J'aime" : "Like";
+  const dislikeLabel = isFr ? "Je n'aime pas" : "Dislike";
+  const copyLabel = copied
+    ? isFr
+      ? "Copié"
+      : "Copied"
+    : isFr
+      ? "Copier"
+      : "Copy";
+  const regenerateLabel = isFr ? "Régénérer" : "Regenerate";
+  const saveDraftLabel = draftSaved
+    ? isFr
+      ? "Brouillon enregistré"
+      : "Draft saved"
+    : isFr
+      ? "Enregistrer en brouillon"
+      : "Save as draft";
+  const continueProcessLabel = isFr
+    ? "Poursuivre dans un Processus"
+    : "Continue in a Process";
+  const detailsLabel = isFr
+    ? "Voir les détails de la réponse"
+    : "View response details";
+
+  const iconBtnClass =
+    "h-7 w-7 inline-flex items-center justify-center rounded-md text-sm text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";
+
   return (
-    <div className="space-y-2.5 pt-2 border-t border-border-subtle">
+    <div className="space-y-2 pt-2 border-t border-border-subtle/60">
       {ragCitations.length > 0 && (
         <div
           data-testid="assistant-rag-citations-list"
@@ -194,11 +255,13 @@ export function AssistantResponseFooterActionsAndCitations({
         data-testid="assistant-response-actions-bar"
         role="toolbar"
         aria-label={isFr ? "Actions sur la réponse" : "Response actions"}
-        className="flex flex-wrap items-center gap-1.5 text-[11px]"
+        className="flex flex-wrap items-center gap-1"
       >
         <button
           type="button"
           data-testid="assistant-action-like-btn"
+          aria-label={likeLabel}
+          title={likeLabel}
           aria-pressed={feedback === "LIKE"}
           onClick={handleToggleLike}
           style={
@@ -206,18 +269,19 @@ export function AssistantResponseFooterActionsAndCitations({
               ? {
                   backgroundColor: "var(--color-action-primary)",
                   color: "var(--color-primary-foreground)",
-                  borderColor: "var(--color-action-primary)",
                 }
               : undefined
           }
-          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium text-text-primary hover:bg-surface-elevated"
+          className={iconBtnClass}
         >
-          👍 {isFr ? "J'aime" : "Like"}
+          👍
         </button>
 
         <button
           type="button"
           data-testid="assistant-action-dislike-btn"
+          aria-label={dislikeLabel}
+          title={dislikeLabel}
           aria-pressed={feedback === "DISLIKE"}
           onClick={handleToggleDislike}
           style={
@@ -225,63 +289,91 @@ export function AssistantResponseFooterActionsAndCitations({
               ? {
                   backgroundColor: "var(--color-action-primary)",
                   color: "var(--color-primary-foreground)",
-                  borderColor: "var(--color-action-primary)",
                 }
               : undefined
           }
-          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium text-text-primary hover:bg-surface-elevated"
+          className={iconBtnClass}
         >
-          👎 {isFr ? "Je n'aime pas" : "Dislike"}
+          👎
         </button>
 
         <button
           type="button"
           data-testid="assistant-action-copy-btn"
+          aria-label={copyLabel}
+          title={copyLabel}
           onClick={handleCopy}
-          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium text-text-primary hover:bg-surface-elevated"
+          className={iconBtnClass}
         >
-          {copied
-            ? isFr
-              ? "✓ Copié"
-              : "✓ Copied"
-            : isFr
-              ? "📋 Copier"
-              : "📋 Copy"}
+          {copied ? "✓" : "📋"}
         </button>
 
         <button
           type="button"
           data-testid="assistant-action-regenerate-btn"
+          aria-label={regenerateLabel}
+          title={regenerateLabel}
           onClick={() => onRegenerate?.()}
-          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium text-text-primary hover:bg-surface-elevated"
+          className={iconBtnClass}
         >
-          🔄 {isFr ? "Régénérer" : "Regenerate"}
+          🔄
         </button>
 
         <button
           type="button"
           data-testid="assistant-action-save-draft-btn"
+          aria-label={saveDraftLabel}
+          title={saveDraftLabel}
           onClick={handleSaveDraft}
-          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium text-text-primary hover:bg-surface-elevated"
+          className={iconBtnClass}
         >
-          {draftSaved
-            ? isFr
-              ? "✓ Brouillon enregistré"
-              : "✓ Draft saved"
-            : isFr
-              ? "📄 Enregistrer en brouillon"
-              : "📄 Save as draft"}
+          {draftSaved ? "✓" : "📄"}
         </button>
 
         <button
           type="button"
           data-testid="assistant-action-continue-process-btn"
+          aria-label={continueProcessLabel}
+          title={continueProcessLabel}
           onClick={() => onContinueInProcess?.(responseText)}
-          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-secondary px-2.5 py-1 font-medium text-action-primary hover:bg-surface-elevated"
+          className={`${iconBtnClass} text-action-primary`}
         >
-          ☍ {isFr ? "Poursuivre dans un Processus" : "Continue in a Process"}
+          ☍
+        </button>
+
+        <button
+          type="button"
+          data-testid="assistant-action-details-btn"
+          aria-label={detailsLabel}
+          title={detailsLabel}
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen((prev) => !prev)}
+          className={iconBtnClass}
+        >
+          ⋯
         </button>
       </div>
+
+      {detailsOpen && (
+        <div
+          data-testid="assistant-response-details-popover"
+          className="inline-flex flex-wrap items-center gap-2 rounded-md bg-surface-secondary px-2.5 py-1 text-[11px] text-text-secondary"
+        >
+          <span>
+            {isFr ? "Modèle :" : "Model :"}{" "}
+            <strong className="font-medium text-text-primary">
+              {modelLabel}
+            </strong>
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>
+            {isFr ? "Niveau de réflexion :" : "Thinking level :"}{" "}
+            <strong className="font-medium text-text-primary">
+              {effortLabel}
+            </strong>
+          </span>
+        </div>
+      )}
     </div>
   );
 }

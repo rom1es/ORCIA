@@ -889,12 +889,21 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(citationLink.textContent).toContain("Politique de Sécurité des Espaces");
 
     const likeBtn = screen.getByTestId("assistant-action-like-btn");
+    expect(likeBtn.textContent).toBe("👍");
     fireEvent.click(likeBtn);
     expect(likeBtn.getAttribute("aria-pressed")).toBe("true");
 
     const copyBtn = screen.getByTestId("assistant-action-copy-btn");
+    expect(copyBtn.textContent).toBe("📋");
     fireEvent.click(copyBtn);
-    expect(copyBtn.textContent).toContain("Copié");
+    expect(copyBtn.textContent).toBe("✓");
+    expect(copyBtn.getAttribute("title")).toContain("Copié");
+
+    const detailsBtn = screen.getByTestId("assistant-action-details-btn");
+    fireEvent.click(detailsBtn);
+    expect(
+      screen.getByTestId("assistant-response-details-popover").textContent,
+    ).toContain("Modèle :");
 
     fireEvent.click(screen.getByTestId("assistant-action-regenerate-btn"));
     expect(onRegenerate).toHaveBeenCalledTimes(1);
@@ -918,9 +927,24 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     fireEvent.click(screen.getByTestId("assistant-autocomplete-option-analyse-risques"));
     expect(input.value).toBe("/analyse-risques ");
 
-    // Opening + menu and clicking '📁 Gérer les dossiers thématiques' closes menus and calls callback
+    // Opening + menu, attaching an ORCIA document places pill inside prompt box and clears it immediately on send
     fireEvent.click(screen.getByTestId("assistant-prompt-plus-btn"));
     expect(screen.getByTestId("assistant-prompt-plus-popover")).toBeDefined();
+    fireEvent.click(screen.getByTestId("assistant-plus-attach-orcia-doc-btn"));
+    fireEvent.click(screen.getByTestId("assistant-orcia-doc-option-orcia-doc-1"));
+    expect(screen.getByTestId("assistant-attached-file-pill").textContent).toContain(
+      "Référentiel Métier & Règles de l'Espace",
+    );
+
+    fireEvent.change(input, { target: { value: "Explique ce document" } });
+    fireEvent.click(screen.getByTestId("assistant-three-speed-send-btn"));
+    expect(screen.queryByTestId("assistant-attached-files-bar")).toBeNull();
+    expect(
+      screen.getByTestId("assistant-user-question-attached-pill").textContent,
+    ).toContain("Référentiel Métier & Règles de l'Espace");
+
+    // Opening + menu and clicking '📁 Gérer les dossiers thématiques' closes menus and calls callback
+    fireEvent.click(screen.getByTestId("assistant-prompt-plus-btn"));
     fireEvent.click(screen.getByTestId("assistant-plus-open-folders-btn"));
     expect(onOpenFolders).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId("assistant-prompt-plus-popover")).toBeNull();

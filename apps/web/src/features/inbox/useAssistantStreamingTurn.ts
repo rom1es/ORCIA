@@ -1,9 +1,11 @@
 import { createOrciaApiClient } from "@orcia/api-client";
-import type {
-  UiAssistantSpeedMode,
-  UiInferenceEffort,
-  UiInferenceTier,
-  UiThreeSpeedStepProgress,
+import {
+  sanitizeAssistantDisplayReply,
+  type UiAssistantAttachedFileItem,
+  type UiAssistantSpeedMode,
+  type UiInferenceEffort,
+  type UiInferenceTier,
+  type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,6 +19,7 @@ export interface UseAssistantStreamingTurnOptions {
     assistantReply: string;
     requestedTier: UiInferenceTier;
     thinkingEffort: UiInferenceEffort;
+    attachedFiles?: readonly UiAssistantAttachedFileItem[];
   }) => void;
 }
 
@@ -26,6 +29,7 @@ export interface SendAssistantTurnPayload {
   readonly deepAuditPillActive: boolean;
   readonly requestedTier?: UiInferenceTier;
   readonly thinkingEffort?: UiInferenceEffort;
+  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
 }
 
 function buildInitialThinkingSteps(
@@ -113,8 +117,9 @@ export function useAssistantStreamingTurn({
   initialStreamedText,
   onTurnCompleted,
 }: UseAssistantStreamingTurnOptions) {
-  const [streamedText, setStreamedText] =
-    useState<string>(initialStreamedText);
+  const [streamedText, setStreamedText] = useState<string>(() =>
+    sanitizeAssistantDisplayReply(initialStreamedText),
+  );
   const [stepProgress, setStepProgress] = useState<
     readonly UiThreeSpeedStepProgress[]
   >([]);
@@ -162,7 +167,7 @@ export function useAssistantStreamingTurn({
     clearPendingTimers();
     setIsGenerating(false);
     setGenerationStopped(false);
-    setStreamedText(nextText);
+    setStreamedText(sanitizeAssistantDisplayReply(nextText));
     setStepProgress([]);
     setErrorMessage(null);
   };
@@ -206,6 +211,7 @@ export function useAssistantStreamingTurn({
     deepAuditPillActive,
     requestedTier,
     thinkingEffort,
+    attachedFiles,
   }: SendAssistantTurnPayload) => {
     abortControllerRef.current?.abort();
     clearPendingTimers();
@@ -246,6 +252,7 @@ export function useAssistantStreamingTurn({
         assistantReply: jsdomReply,
         requestedTier: effectiveTier,
         thinkingEffort: effectiveEffort,
+        ...(attachedFiles ? { attachedFiles } : {}),
       });
       return;
     }
@@ -263,7 +270,9 @@ export function useAssistantStreamingTurn({
         ),
       );
     }, 500);
-    timersRef.current.push(liveStepTimer as unknown as ReturnType<typeof setTimeout>);
+    timersRef.current.push(
+      liveStepTimer as unknown as ReturnType<typeof setTimeout>,
+    );
 
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
@@ -292,7 +301,9 @@ export function useAssistantStreamingTurn({
             res.step_progress.map((st) => sanitizeThinkingStepFromApi(st)),
           );
         }
-        const replyText = res.response_text ?? "";
+        const replyText = sanitizeAssistantDisplayReply(
+          res.response_text ?? "",
+        );
         if (replyText) {
           streamTextProgressively(
             replyText,
@@ -304,6 +315,7 @@ export function useAssistantStreamingTurn({
                   assistantReply: replyText,
                   requestedTier: effectiveTier,
                   thinkingEffort: effectiveEffort,
+                  ...(attachedFiles ? { attachedFiles } : {}),
                 });
               }
             },

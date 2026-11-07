@@ -32,7 +32,10 @@ export function humanizeStepLabel(rawLabel: string): string {
   ) {
     return "Analyse de la question et préparation du contexte";
   }
-  if (/Nœud 5\s*—\s*Appel LLM/i.test(rawLabel) || /streaming SSE/i.test(rawLabel)) {
+  if (
+    /Nœud 5\s*—\s*Appel LLM/i.test(rawLabel) ||
+    /streaming SSE/i.test(rawLabel)
+  ) {
     return "Élaboration de la réponse par Mon Assistant";
   }
   return rawLabel;
@@ -57,7 +60,9 @@ export function AssistantThinkingSubWindow({
   hasStreamedResponse,
   elapsedSecondsOverride,
 }: AssistantThinkingSubWindowProps): React.JSX.Element | null {
-  const [expanded, setExpanded] = useState<boolean>(true);
+  const [expanded, setExpanded] = useState<boolean>(
+    isGenerating && !hasStreamedResponse,
+  );
   const [userToggledManually, setUserToggledManually] =
     useState<boolean>(false);
   const [liveSeconds, setLiveSeconds] = useState<number>(0);
@@ -73,13 +78,20 @@ export function AssistantThinkingSubWindow({
     } else if (
       !userToggledManually &&
       ((hasStreamedResponse && !prevHasStreamedRef.current) ||
-        (!isGenerating && prevIsGeneratingRef.current && stepProgress.length > 0))
+        (!isGenerating &&
+          prevIsGeneratingRef.current &&
+          stepProgress.length > 0))
     ) {
       setExpanded(false);
     }
     prevIsGeneratingRef.current = isGenerating;
     prevHasStreamedRef.current = hasStreamedResponse;
-  }, [isGenerating, hasStreamedResponse, stepProgress.length, userToggledManually]);
+  }, [
+    isGenerating,
+    hasStreamedResponse,
+    stepProgress.length,
+    userToggledManually,
+  ]);
 
   // Live 1-second counter while generating
   useEffect(() => {
@@ -103,17 +115,18 @@ export function AssistantThinkingSubWindow({
     ),
   );
   const displayHeaderSeconds =
-    elapsedSecondsOverride ?? (isGenerating ? liveSeconds : totalCompletedSeconds);
+    elapsedSecondsOverride ??
+    (isGenerating ? liveSeconds : totalCompletedSeconds);
 
   const headerTitle = isGenerating
     ? `Réflexion en cours · ${displayHeaderSeconds}s`
-    : `Réflexion terminée · ${displayHeaderSeconds}s`;
+    : `Réflexion pendant ${displayHeaderSeconds}s`;
 
   return (
     <div
       data-testid="assistant-thinking-subwindow"
       data-expanded={expanded ? "true" : "false"}
-      className="rounded-lg border border-border-subtle bg-surface-primary text-xs"
+      className="text-xs"
     >
       <button
         type="button"
@@ -123,18 +136,15 @@ export function AssistantThinkingSubWindow({
           setUserToggledManually(true);
           setExpanded((prev) => !prev);
         }}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left font-medium text-text-secondary hover:text-text-primary"
+        className="inline-flex items-center gap-1.5 py-0.5 text-xs font-normal text-text-secondary hover:text-text-primary transition-colors"
       >
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden="true">{isGenerating ? "⏳" : "🧠"}</span>
-          <span data-testid="assistant-thinking-subwindow-header-label">
-            {headerTitle}
-          </span>
+        <span data-testid="assistant-thinking-subwindow-header-label">
+          {headerTitle}
         </span>
         <span
           aria-hidden="true"
           data-testid="assistant-thinking-subwindow-chevron"
-          className="font-mono text-sm"
+          className="text-xs leading-none"
         >
           {expanded ? "⌄" : "›"}
         </span>
@@ -145,7 +155,7 @@ export function AssistantThinkingSubWindow({
         aria-live="polite"
         className={
           expanded
-            ? "space-y-2 border-t border-border-subtle px-3 py-2.5"
+            ? "pl-3 border-l border-border-subtle/60 space-y-1 mt-1 text-[11px] text-text-secondary"
             : "sr-only"
         }
       >
@@ -164,16 +174,14 @@ export function AssistantThinkingSubWindow({
             <li
               key={st.stepCode}
               data-testid={`assistant-step-item-${st.stepCode}`}
-              className="space-y-1 rounded border border-border-subtle/60 bg-surface-secondary/40 p-2"
+              className="space-y-0.5 py-0.5"
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 font-medium text-text-primary">
-                  <span aria-hidden="true">{isRunning ? "⏳" : "✓"}</span>
-                  <span>{cleanLabel}</span>
-                </span>
+              <div className="flex items-center gap-1.5">
+                <span aria-hidden="true">{isRunning ? "⏳" : "✓"}</span>
+                <span className="text-text-secondary">{cleanLabel}</span>
                 <span
                   data-testid={`assistant-step-live-timer-${st.stepCode}`}
-                  className="font-mono text-[11px] text-text-secondary"
+                  className="font-mono text-[11px] text-text-secondary/80"
                 >
                   {stepTimerText}
                 </span>
@@ -181,7 +189,7 @@ export function AssistantThinkingSubWindow({
               {cleanIntermediate ? (
                 <div
                   data-testid={`assistant-step-intermediate-output-${st.stepCode}`}
-                  className="rounded border border-border-subtle bg-surface-primary px-2.5 py-1.5 text-[11px] leading-relaxed text-text-secondary"
+                  className="pl-4 text-[11px] leading-relaxed text-text-secondary/80"
                 >
                   <FormattedMarkdownContent
                     content={cleanIntermediate}

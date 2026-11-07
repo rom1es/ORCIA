@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-07",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 76,
+    "uiPrimitivesCount": 77,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 85
+    "techLeadReportsCount": 86
   },
   "activeRoutes": [
     "/",
@@ -46,6 +46,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AgentsAndSkillsManagerView",
     "AppShell",
     "ArbitrationTieBreakCard",
+    "AssistantAttachedFilesInlineBar",
     "AssistantCitationPillsAndArtifactCard",
     "AssistantDock",
     "AssistantFoldersAndCollaborativeThreadView",
@@ -410,6 +411,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 UX/UI Mon Assistant",
+      "reportFile": "2026-11-07-assistant-icones-seules-sources-reelles-reflexion-minimaliste-et-pieces-jointes-tech-lead-report.md",
+      "domain": "Icônes d'Actions Seules & Popover Détails (⋯), Sources Consultées Réelles Uniquement (filterUsedRagSourcesForTurn), Purge des Préfixes/Tags (sanitizeAssistantDisplayReply), Réflexion Ultra-Minimaliste (Réflexion pendant Xs ›), Pièces Jointes Intégrées dans la Saisie, Bouton Rond ▶/■ & Déduplication des Modèles IA",
+      "summary": "Barre d'actions sous la réponse réduite aux seules icônes (👍, 👎, 📋/✓, 🔄, 📄/✓, ☍) + bouton ⋯ (assistant-action-details-btn) affichant le modèle et le niveau de réflexion ; suppression de \"🧑 Vous\" au-dessus de la bulle de question ; suppression du repli factice sur DEFAULT_ORCIA_DOCUMENT_OPTIONS dans ragCitations ; nettoyage systématique des préfixes [⚡ Vitesse 1 ...] et tags [S1] [G1] ; affichage minimaliste sans cadre Réflexion pendant Xs › ; pastilles de fichiers joints intégrées dans la barre de saisie et vidées dès l'envoi ; bouton rond d'envoi/arrêt à icône seule (▶/■) ; et déduplication des paliers lorsqu'un seul modèle IA est configuré."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Pack Builder & Documentation",

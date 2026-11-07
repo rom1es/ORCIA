@@ -3,6 +3,7 @@ import {
   AssistantUserQuestionBubble,
   ContextualInfoTriggerButton,
   FormattedMarkdownContent,
+  sanitizeAssistantDisplayReply,
   type UiAssistantRagCitationItem,
 } from "@orcia/ui";
 import React from "react";
@@ -225,45 +226,52 @@ export function ActiveConversationMessagesView({
       </header>
 
       <div className="space-y-3">
-        {conversation.turns.map((turn, idx) => (
-          <div
-            key={turn.turnId}
-            data-testid={`assistant-conversation-turn-${idx + 1}`}
-            className="space-y-2.5 rounded-lg border border-border-subtle bg-surface-primary p-3.5 text-xs"
-          >
-            <AssistantUserQuestionBubble
-              userPrompt={turn.userPrompt}
-              isFr={isFr}
-              modelLabel={turn.modelLabel}
-              effortLabel={turn.effortLabel}
-              testId={
-                idx === conversation.turns.length - 1
-                  ? "assistant-user-question-bubble"
-                  : `assistant-user-question-bubble-${idx + 1}`
-              }
-            />
-
-            <div className="border-t border-border-subtle pt-2.5 mt-2 space-y-2">
-              <div className="font-semibold text-action-primary mb-1">
-                🤖 {isFr ? "Mon Assistant" : "My Assistant"}
-              </div>
-              <FormattedMarkdownContent
-                content={turn.assistantReply}
-                testId={`assistant-turn-markdown-${idx + 1}`}
+        {conversation.turns.map((turn, idx) => {
+          const cleanReply = sanitizeAssistantDisplayReply(turn.assistantReply);
+          const turnCitations = turn.usedSources ?? ragCitations;
+          return (
+            <div
+              key={turn.turnId}
+              data-testid={`assistant-conversation-turn-${idx + 1}`}
+              className="space-y-2.5 rounded-lg border border-border-subtle bg-surface-primary p-3.5 text-xs"
+            >
+              <AssistantUserQuestionBubble
+                userPrompt={turn.userPrompt}
+                isFr={isFr}
+                modelLabel={turn.modelLabel}
+                effortLabel={turn.effortLabel}
+                {...(turn.attachedFiles ? { attachedFiles: turn.attachedFiles } : {})}
+                testId={
+                  idx === conversation.turns.length - 1
+                    ? "assistant-user-question-bubble"
+                    : `assistant-user-question-bubble-${idx + 1}`
+                }
               />
-              {idx === conversation.turns.length - 1 && (
-                <AssistantResponseFooterActionsAndCitations
-                  responseText={turn.assistantReply}
-                  isFr={isFr}
-                  ragCitations={ragCitations}
-                  onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
-                  onSaveDraft={onSaveDraft}
-                  onContinueInProcess={onContinueInProcess}
+
+              <div className="border-t border-border-subtle pt-2.5 mt-2 space-y-2">
+                <div className="font-semibold text-action-primary mb-1">
+                  🤖 {isFr ? "Mon Assistant" : "My Assistant"}
+                </div>
+                <FormattedMarkdownContent
+                  content={cleanReply}
+                  testId={`assistant-turn-markdown-${idx + 1}`}
                 />
-              )}
+                {idx === conversation.turns.length - 1 && (
+                  <AssistantResponseFooterActionsAndCitations
+                    responseText={cleanReply}
+                    isFr={isFr}
+                    modelLabel={turn.modelLabel}
+                    effortLabel={turn.effortLabel}
+                    ragCitations={turnCitations}
+                    onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
+                    onSaveDraft={onSaveDraft}
+                    onContinueInProcess={onContinueInProcess}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

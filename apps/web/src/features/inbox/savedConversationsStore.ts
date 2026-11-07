@@ -2,7 +2,9 @@ import {
   DEFAULT_ASSISTANT_AGENT_OPTIONS,
   DEFAULT_ASSISTANT_SKILL_OPTIONS,
   DEFAULT_ORCIA_DOCUMENT_OPTIONS,
+  sanitizeAssistantDisplayReply,
   type ControlCenterDatasourceItem,
+  type UiAssistantAttachedFileItem,
   type UiAssistantAutocompleteOption,
   type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
@@ -16,6 +18,44 @@ import {
   consumeAssistantPrefillPrompt,
   readCachedAgentsAndSkills,
 } from "../../components/agentsAndSkillsBridgeStore";
+
+export function filterUsedRagSourcesForTurn(params: {
+  readonly userPrompt: string;
+  readonly assistantReply: string;
+  readonly datasources: readonly ControlCenterDatasourceItem[];
+  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
+}): readonly UiAssistantRagCitationItem[] {
+  const results: UiAssistantRagCitationItem[] = [];
+  const seenUris = new Set<string>();
+
+  for (const file of params.attachedFiles ?? []) {
+    const uri = file.uri ?? `#local-file-${encodeURIComponent(file.name)}`;
+    if (!seenUris.has(uri)) {
+      seenUris.add(uri);
+      results.push({ title: file.name, uri });
+    }
+  }
+
+  const combinedLower = `${params.userPrompt} ${params.assistantReply}`.toLowerCase();
+  for (const ds of params.datasources) {
+    if (seenUris.has(ds.uri)) {
+      continue;
+    }
+    const aliasLower = ds.alias.toLowerCase();
+    const significantTokens = aliasLower
+      .split(/[^a-zA-Z0-9àâäéèêëîïôöùûüç]+/)
+      .filter((tok) => tok.length > 4);
+    const matched =
+      combinedLower.includes(aliasLower) ||
+      significantTokens.some((tok) => combinedLower.includes(tok));
+    if (matched) {
+      seenUris.add(ds.uri);
+      results.push({ title: ds.alias, uri: ds.uri });
+    }
+  }
+
+  return results;
+}
 
 export function buildAssistantAutocompleteAndRagOptions(params: {
   readonly catalogItems: readonly UiCatalogExplorerItemView[];
@@ -62,16 +102,8 @@ export function buildAssistantAutocompleteAndRagOptions(params: {
           uri: ds.uri,
         }))
       : DEFAULT_ORCIA_DOCUMENT_OPTIONS;
-  const ragCitations: readonly UiAssistantRagCitationItem[] =
-    params.datasources.length > 0
-      ? params.datasources.map((ds) => ({
-          title: ds.alias,
-          uri: ds.uri,
-        }))
-      : DEFAULT_ORCIA_DOCUMENT_OPTIONS.map((d) => ({
-          title: d.title,
-          uri: d.uri,
-        }));
+  // Never fall back to dummy DEFAULT_ORCIA_DOCUMENT_OPTIONS for ragCitations!
+  const ragCitations: readonly UiAssistantRagCitationItem[] = [];
   return { agentOptions, skillOptions, orciaDocuments, ragCitations };
 }
 
@@ -89,6 +121,8 @@ export interface SavedConversationTurnItem {
   readonly thinkingEffort: UiInferenceEffort;
   readonly effortLabel: string;
   readonly timestampIso: string;
+  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
+  readonly usedSources?: readonly UiAssistantRagCitationItem[];
 }
 
 export interface SavedAssistantConversation {
@@ -106,11 +140,7 @@ export interface SavedAssistantConversation {
 
 export function clearSavedAssistantConversationsStorage(): void {
   fallbackConversationStorage.clear();
-  if (
-    typeof window !== "undefined" &&
-    window.localStorage &&
-    typeof window.localStorage.removeItem === "function"
-  ) {
+  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.removeItem === "function") {
     try {
       window.localStorage.removeItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY);
     } catch {
@@ -121,11 +151,7 @@ export function clearSavedAssistantConversationsStorage(): void {
 
 export function readSavedAssistantConversations(): readonly SavedAssistantConversation[] {
   let raw: string | null = null;
-  if (
-    typeof window !== "undefined" &&
-    window.localStorage &&
-    typeof window.localStorage.getItem === "function"
-  ) {
+  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.getItem === "function") {
     try {
       raw = window.localStorage.getItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY);
     } catch {
@@ -135,14 +161,10 @@ export function readSavedAssistantConversations(): readonly SavedAssistantConver
   if (!raw) {
     raw = fallbackConversationStorage.get(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY) ?? null;
   }
-  if (!raw) {
-    return [];
-  }
+  if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
+    if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (item): item is SavedAssistantConversation =>
         typeof item === "object" &&
@@ -156,16 +178,10 @@ export function readSavedAssistantConversations(): readonly SavedAssistantConver
   }
 }
 
-export function writeSavedAssistantConversations(
-  conversations: readonly SavedAssistantConversation[],
-): void {
+export function writeSavedAssistantConversations(conversations: readonly SavedAssistantConversation[]): void {
   const serialized = JSON.stringify(conversations);
   fallbackConversationStorage.set(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY, serialized);
-  if (
-    typeof window !== "undefined" &&
-    window.localStorage &&
-    typeof window.localStorage.setItem === "function"
-  ) {
+  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.setItem === "function") {
     try {
       window.localStorage.setItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY, serialized);
     } catch {
@@ -186,39 +202,43 @@ export function buildAssistantModelOptions(
   llmTiers: readonly { readonly tier: string; readonly primaryModel?: string }[],
   isFr: boolean,
 ): readonly UiAssistantModelOption[] {
-  const findModel = (tierKey: UiInferenceTier): string | undefined => {
-    const exact = llmTiers.find((t) => t.tier === tierKey);
-    return exact?.primaryModel || llmTiers[0]?.primaryModel;
+  const configuredTiers = llmTiers.filter((t) => Boolean(t.primaryModel?.trim()));
+  const distinctModels = new Set(configuredTiers.map((t) => t.primaryModel!.trim()));
+  const singleModelOnly = distinctModels.size === 1 ? [...distinctModels][0] : undefined;
+
+  const findExactModel = (tierKey: UiInferenceTier): string | undefined => {
+    const exact = configuredTiers.find((t) => t.tier === tierKey);
+    return exact?.primaryModel?.trim();
   };
+
+  if (singleModelOnly) {
+    return [
+      { tier: "simple", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly, hiddenDuplicate: true },
+      { tier: "medium", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly },
+      { tier: "complex", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly, hiddenDuplicate: true },
+    ];
+  }
+
+  const seenModels = new Set<string>();
+  const buildEntry = (tierKey: UiInferenceTier, title: string, subtitle: string): UiAssistantModelOption => {
+    const modelName = findExactModel(tierKey);
+    const isDuplicate = configuredTiers.length > 0 && (!modelName || seenModels.has(modelName));
+    if (modelName) {
+      seenModels.add(modelName);
+    }
+    return {
+      tier: tierKey,
+      title,
+      subtitle,
+      ...(modelName ? { configuredModelName: modelName } : {}),
+      ...(isDuplicate ? { hiddenDuplicate: true } : {}),
+    };
+  };
+
   return [
-    {
-      tier: "simple",
-      title: isFr ? "Rapide" : "Fast",
-      subtitle: isFr ? "Réponses les plus rapides" : "Fastest answers",
-      ...(findModel("simple")
-        ? { configuredModelName: findModel("simple") }
-        : {}),
-    },
-    {
-      tier: "medium",
-      title: isFr ? "Polyvalent" : "Versatile",
-      subtitle: isFr
-        ? "Aide polyvalente au quotidien"
-        : "Everyday versatile assistance",
-      ...(findModel("medium")
-        ? { configuredModelName: findModel("medium") }
-        : {}),
-    },
-    {
-      tier: "complex",
-      title: isFr ? "Raisonnement avancé" : "Advanced reasoning",
-      subtitle: isFr
-        ? "Tâches complexes & analyse critique"
-        : "Complex tasks & critical analysis",
-      ...(findModel("complex")
-        ? { configuredModelName: findModel("complex") }
-        : {}),
-    },
+    buildEntry("simple", isFr ? "Rapide" : "Fast", isFr ? "Réponses les plus rapides" : "Fastest answers"),
+    buildEntry("medium", isFr ? "Polyvalent" : "Versatile", isFr ? "Aide polyvalente au quotidien" : "Everyday versatile assistance"),
+    buildEntry("complex", isFr ? "Raisonnement avancé" : "Advanced reasoning", isFr ? "Tâches complexes & analyse critique" : "Complex tasks & critical analysis"),
   ];
 }
 
@@ -233,6 +253,8 @@ export function upsertTurnIntoSavedConversations(params: {
   readonly assistantReply: string;
   readonly requestedTier: UiInferenceTier;
   readonly thinkingEffort: UiInferenceEffort;
+  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
+  readonly usedSources?: readonly UiAssistantRagCitationItem[];
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly resolvedConversationId: string;
@@ -242,31 +264,33 @@ export function upsertTurnIntoSavedConversations(params: {
   const modelOpt =
     params.modelOptions.find((m) => m.tier === params.requestedTier) ??
     params.modelOptions[1]!;
-  const modelLabel = modelOpt.configuredModelName
-    ? `${modelOpt.title} (${modelOpt.configuredModelName})`
-    : modelOpt.title;
+  const modelLabel =
+    modelOpt.configuredModelName && modelOpt.title !== modelOpt.configuredModelName
+      ? `${modelOpt.title} (${modelOpt.configuredModelName})`
+      : modelOpt.configuredModelName || modelOpt.title;
   const effortLabel =
     params.thinkingEffort === "deep"
-      ? params.isFr
-        ? "Réflexion Élevée"
-        : "High effort"
+      ? params.isFr ? "Réflexion Élevée" : "High effort"
       : params.thinkingEffort === "balanced"
-        ? params.isFr
-          ? "Réflexion Moyenne"
-          : "Medium effort"
-        : params.isFr
-          ? "Réflexion Basse"
-          : "Low effort";
+        ? params.isFr ? "Réflexion Moyenne" : "Medium effort"
+        : params.isFr ? "Réflexion Basse" : "Low effort";
   const nowIso = new Date().toISOString();
+  const cleanReply = sanitizeAssistantDisplayReply(params.assistantReply);
   const newTurn: SavedConversationTurnItem = {
     turnId: `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     userPrompt: params.userPrompt,
-    assistantReply: params.assistantReply,
+    assistantReply: cleanReply,
     modelTier: params.requestedTier,
     modelLabel,
     thinkingEffort: params.thinkingEffort,
     effortLabel,
     timestampIso: nowIso,
+    ...(params.attachedFiles && params.attachedFiles.length > 0
+      ? { attachedFiles: params.attachedFiles }
+      : {}),
+    ...(params.usedSources && params.usedSources.length > 0
+      ? { usedSources: params.usedSources }
+      : {}),
   };
 
   const existing = params.activeConversationId
@@ -327,8 +351,8 @@ export function buildAssistantAutocompleteSuggestions(
 ): readonly UiAssistantAutocompleteSuggestion[] {
   const suggestions: UiAssistantAutocompleteSuggestion[] = [];
   const seenTokens = new Set<string>();
-
   const cached = readCachedAgentsAndSkills();
+
   for (const ag of cached.agents ?? []) {
     if (seenTokens.has(ag.handle)) continue;
     seenTokens.add(ag.handle);
@@ -338,12 +362,7 @@ export function buildAssistantAutocompleteSuggestions(
       token: ag.handle,
       name: ag.name,
       description: ag.roleMission,
-      badge:
-        ag.visibilityScope === "PRIVATE"
-          ? "🔒 Privé"
-          : ag.visibilityScope === "PACK"
-            ? `📦 ${ag.sourcePackKey ?? "Pack"}`
-            : "👥 Équipe",
+      badge: ag.visibilityScope === "PRIVATE" ? "🔒 Privé" : ag.visibilityScope === "PACK" ? `📦 ${ag.sourcePackKey ?? "Pack"}` : "👥 Équipe",
     });
   }
   for (const sk of cached.skills ?? []) {
@@ -355,42 +374,15 @@ export function buildAssistantAutocompleteSuggestions(
       token: sk.commandHandle,
       name: sk.name,
       description: sk.objective,
-      badge:
-        sk.visibilityScope === "PRIVATE"
-          ? "🔒 Privé"
-          : sk.visibilityScope === "PACK"
-            ? `📦 ${sk.sourcePackKey ?? "Pack"}`
-            : "👥 Équipe",
+      badge: sk.visibilityScope === "PRIVATE" ? "🔒 Privé" : sk.visibilityScope === "PACK" ? `📦 ${sk.sourcePackKey ?? "Pack"}` : "👥 Équipe",
     });
   }
-
   for (const pack of activePacks) {
     if (pack.packKey === "orcia-pack-sdlc") {
       const sdlcDefaults: readonly UiAssistantAutocompleteSuggestion[] = [
-        {
-          id: "agent-architecte-solution",
-          kind: "agent",
-          token: "@architecte-solution",
-          name: "Architecte Solution",
-          description: "Concevoir et vérifier l'architecture cible",
-          badge: "📦 orcia-pack-sdlc",
-        },
-        {
-          id: "agent-analyste-metier",
-          kind: "agent",
-          token: "@analyste-metier",
-          name: "Analyste Métier",
-          description: "Clarifier les besoins et rédiger les exigences",
-          badge: "📦 orcia-pack-sdlc",
-        },
-        {
-          id: "skill-revue-architecture",
-          kind: "skill",
-          token: "/revue-architecture",
-          name: "Revue d'Architecture",
-          description: "Vérifier la cohérence des choix d'architecture",
-          badge: "📦 orcia-pack-sdlc",
-        },
+        { id: "agent-architecte-solution", kind: "agent", token: "@architecte-solution", name: "Architecte Solution", description: "Concevoir et vérifier l'architecture cible", badge: "📦 orcia-pack-sdlc" },
+        { id: "agent-analyste-metier", kind: "agent", token: "@analyste-metier", name: "Analyste Métier", description: "Clarifier les besoins et rédiger les exigences", badge: "📦 orcia-pack-sdlc" },
+        { id: "skill-revue-architecture", kind: "skill", token: "/revue-architecture", name: "Revue d'Architecture", description: "Vérifier la cohérence des choix d'architecture", badge: "📦 orcia-pack-sdlc" },
       ];
       for (const item of sdlcDefaults) {
         if (!seenTokens.has(item.token)) {
@@ -400,6 +392,5 @@ export function buildAssistantAutocompleteSuggestions(
       }
     }
   }
-
   return suggestions;
 }

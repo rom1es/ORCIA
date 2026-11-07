@@ -5,6 +5,7 @@ import {
   AssistantGovernanceModalAndStudio,
   AssistantSpeedSelectorAndStreamView,
   type AssistantFolderVisibilityMode,
+  type UiAssistantAttachedFileItem,
   type UiAssistantFolderItem,
   type UiInferenceEffort,
   type UiInferenceTier,
@@ -23,6 +24,7 @@ import {
   buildAssistantAutocompleteSuggestions,
   buildAssistantModelOptions,
   consumeAssistantPrefillFromStorage,
+  filterUsedRagSourcesForTurn,
   readSavedAssistantConversations,
   upsertTurnIntoSavedConversations,
   writeSavedAssistantConversations,
@@ -65,7 +67,14 @@ export function InboxFeaturePanel() {
     assistantReply: string;
     requestedTier: UiInferenceTier;
     thinkingEffort: UiInferenceEffort;
+    attachedFiles?: readonly UiAssistantAttachedFileItem[];
   }) => {
+    const usedSources = filterUsedRagSourcesForTurn({
+      userPrompt: params.userPrompt,
+      assistantReply: params.assistantReply,
+      datasources,
+      ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
+    });
     setSavedConversations((prev) => {
       const outcome = upsertTurnIntoSavedConversations({
         prevConversations: prev,
@@ -78,6 +87,8 @@ export function InboxFeaturePanel() {
         assistantReply: params.assistantReply,
         requestedTier: params.requestedTier,
         thinkingEffort: params.thinkingEffort,
+        ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
+        usedSources,
       });
       if (outcome.isNewConversation) {
         setActiveConversationId(outcome.resolvedConversationId);

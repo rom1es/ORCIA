@@ -279,11 +279,13 @@ export {
 } from "./primitives/AssistantGovernanceModalAndStudio";
 export {
   applyAutocompleteSelectionToPrompt,
+  AssistantAttachedFilesInlineBar,
   AssistantPromptPlusAndAutocomplete,
   DEFAULT_ASSISTANT_AGENT_OPTIONS,
   DEFAULT_ASSISTANT_SKILL_OPTIONS,
   DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   detectActiveAutocompleteTrigger,
+  type AssistantAttachedFilesInlineBarProps,
   type AssistantPromptPlusAndAutocompleteProps,
   type UiAssistantAttachedFileItem,
   type UiAssistantAutocompleteOption,
@@ -293,6 +295,7 @@ export {
   AssistantResponseFooterActionsAndCitations,
   AssistantThinkingSliderIndicator,
   AssistantUserQuestionBubble,
+  sanitizeAssistantDisplayReply,
   type AssistantResponseFooterActionsAndCitationsProps,
   type AssistantThinkingSliderIndicatorProps,
   type AssistantUserQuestionBubbleProps,
