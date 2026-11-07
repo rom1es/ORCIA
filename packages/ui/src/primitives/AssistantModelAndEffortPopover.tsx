@@ -36,24 +36,26 @@ export const ASSISTANT_EFFORT_OPTIONS: ReadonlyArray<{
   readonly speed: UiAssistantSpeedMode;
   readonly title: string;
   readonly subtitle: string;
+  readonly hiddenLegacyFast?: boolean;
 }> = [
   {
     effort: "fast",
     speed: "SPEED_1_FAST",
-    title: "Bas",
-    subtitle: "Rapide et efficace",
+    title: "Standard",
+    subtitle: "Réponse directe avec vos sources & compétences",
+    hiddenLegacyFast: true,
   },
   {
     effort: "balanced",
     speed: "SPEED_2_AGENT_TOOLS",
-    title: "Moyen",
-    subtitle: "Équilibré (Sources & Compétences)",
+    title: "Standard",
+    subtitle: "Réponse directe avec vos sources & compétences",
   },
   {
     effort: "deep",
     speed: "SPEED_3_DEEP_AUDIT",
-    title: "Élevé",
-    subtitle: "Très poussé (Plusieurs points de vue)",
+    title: "Approfondi",
+    subtitle: "Réflexion décomposée en étapes selon la question",
   },
 ];
 
@@ -76,18 +78,32 @@ export function AssistantModelAndEffortPopover({
   onToggleThinkingSubmenu,
   onSelectEffort,
 }: AssistantModelAndEffortPopoverProps): React.JSX.Element {
+  const normalizedSelectedEffort: UiInferenceEffort =
+    selectedEffort === "deep" ? "deep" : "balanced";
   const activeEffortOption =
-    ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === selectedEffort) ??
-    ASSISTANT_EFFORT_OPTIONS[0]!;
+    ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === normalizedSelectedEffort) ??
+    ASSISTANT_EFFORT_OPTIONS[1]!;
   const visibleModelCount = modelOptions.filter((m) => !m.hiddenDuplicate).length;
+  const isSingleModelOnly = visibleModelCount === 1;
 
   return (
     <div
       data-testid="assistant-model-picker-popover"
-      className="mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border-subtle bg-surface-primary p-3 text-xs shadow-lg md:grid-cols-2"
+      className={
+        isSingleModelOnly
+          ? "mt-2 rounded-xl border border-border-subtle bg-surface-primary p-2.5 text-xs shadow-lg max-w-xs ml-auto"
+          : "mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border-subtle bg-surface-primary p-3 text-xs shadow-lg md:grid-cols-2"
+      }
     >
-      {/* Column 1: AI Model Tiers */}
-      <div className="space-y-1 border-b border-border-subtle pb-2 md:border-b-0 md:border-r md:pr-3">
+      {/* Column 1: AI Model Tiers (hidden visually when only 1 distinct model is configured) */}
+      <div
+        style={isSingleModelOnly ? { display: "none" } : undefined}
+        className={
+          isSingleModelOnly
+            ? "sr-only"
+            : "space-y-1 border-b border-border-subtle pb-2 md:border-b-0 md:border-r md:pr-3"
+        }
+      >
         <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
           Modèle IA
         </div>
@@ -151,28 +167,34 @@ export function AssistantModelAndEffortPopover({
         </div>
       </div>
 
-      {/* Column 2: Thinking Effort Submenu */}
-      {thinkingSubmenuOpen && (
+      {/* Column 2 (or sole vertical list when 1 model): Thinking Effort Submenu */}
+      {(thinkingSubmenuOpen || isSingleModelOnly) && (
         <div
           data-testid="assistant-thinking-level-submenu"
-          className="space-y-1 md:pl-1"
+          className={isSingleModelOnly ? "space-y-1" : "space-y-1 md:pl-1"}
         >
           <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-            Niveau de réflexion
+            Mode de réflexion
           </div>
           {ASSISTANT_EFFORT_OPTIONS.map((eff) => {
-            const isSelected = eff.effort === selectedEffort;
+            const isSelected =
+              !eff.hiddenLegacyFast && eff.effort === normalizedSelectedEffort;
             return (
               <button
                 key={eff.effort}
                 type="button"
                 data-testid={`assistant-effort-option-${eff.effort}`}
+                style={eff.hiddenLegacyFast ? { display: "none" } : undefined}
                 onClick={() => onSelectEffort(eff.effort)}
-                className={`flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
-                  isSelected
-                    ? "bg-action-primary/10 font-semibold text-text-primary"
-                    : "hover:bg-surface-secondary text-text-primary"
-                }`}
+                className={
+                  eff.hiddenLegacyFast
+                    ? "sr-only"
+                    : `flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
+                        isSelected
+                          ? "bg-action-primary/10 font-semibold text-text-primary"
+                          : "hover:bg-surface-secondary text-text-primary"
+                      }`
+                }
               >
                 <div>
                   <div className="text-xs font-semibold">{eff.title}</div>

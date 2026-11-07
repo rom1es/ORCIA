@@ -13,6 +13,7 @@ import {
   type UiCatalogExplorerItemView,
   type UiInferenceEffort,
   type UiInferenceTier,
+  type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
 import {
   consumeAssistantPrefillPrompt,
@@ -38,22 +39,19 @@ export function filterUsedRagSourcesForTurn(params: {
 
   const combinedLower = `${params.userPrompt} ${params.assistantReply}`.toLowerCase();
   for (const ds of params.datasources) {
-    if (seenUris.has(ds.uri)) {
-      continue;
-    }
+    if (seenUris.has(ds.uri)) continue;
     const aliasLower = ds.alias.toLowerCase();
     const significantTokens = aliasLower
       .split(/[^a-zA-Z0-9àâäéèêëîïôöùûüç]+/)
       .filter((tok) => tok.length > 4);
-    const matched =
+    if (
       combinedLower.includes(aliasLower) ||
-      significantTokens.some((tok) => combinedLower.includes(tok));
-    if (matched) {
+      significantTokens.some((tok) => combinedLower.includes(tok))
+    ) {
       seenUris.add(ds.uri);
       results.push({ title: ds.alias, uri: ds.uri });
     }
   }
-
   return results;
 }
 
@@ -84,27 +82,17 @@ export function buildAssistantAutocompleteAndRagOptions(params: {
     }));
   const agentOptions: readonly UiAssistantAutocompleteOption[] = [
     ...DEFAULT_ASSISTANT_AGENT_OPTIONS,
-    ...catalogAgents.filter(
-      (ca) => !DEFAULT_ASSISTANT_AGENT_OPTIONS.some((d) => d.slug === ca.slug),
-    ),
+    ...catalogAgents.filter((ca) => !DEFAULT_ASSISTANT_AGENT_OPTIONS.some((d) => d.slug === ca.slug)),
   ];
   const skillOptions: readonly UiAssistantAutocompleteOption[] = [
     ...DEFAULT_ASSISTANT_SKILL_OPTIONS,
-    ...catalogSkills.filter(
-      (cs) => !DEFAULT_ASSISTANT_SKILL_OPTIONS.some((d) => d.slug === cs.slug),
-    ),
+    ...catalogSkills.filter((cs) => !DEFAULT_ASSISTANT_SKILL_OPTIONS.some((d) => d.slug === cs.slug)),
   ];
   const orciaDocuments: readonly UiAssistantOrciaDocumentOption[] =
     params.datasources.length > 0
-      ? params.datasources.map((ds) => ({
-          id: ds.id,
-          title: ds.alias,
-          uri: ds.uri,
-        }))
+      ? params.datasources.map((ds) => ({ id: ds.id, title: ds.alias, uri: ds.uri }))
       : DEFAULT_ORCIA_DOCUMENT_OPTIONS;
-  // Never fall back to dummy DEFAULT_ORCIA_DOCUMENT_OPTIONS for ragCitations!
-  const ragCitations: readonly UiAssistantRagCitationItem[] = [];
-  return { agentOptions, skillOptions, orciaDocuments, ragCitations };
+  return { agentOptions, skillOptions, orciaDocuments, ragCitations: [] };
 }
 
 export const SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY =
@@ -123,6 +111,8 @@ export interface SavedConversationTurnItem {
   readonly timestampIso: string;
   readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
   readonly usedSources?: readonly UiAssistantRagCitationItem[];
+  readonly stepProgress?: readonly UiThreeSpeedStepProgress[];
+  readonly thinkingElapsedSeconds?: number;
 }
 
 export interface SavedAssistantConversation {
@@ -192,9 +182,7 @@ export function writeSavedAssistantConversations(conversations: readonly SavedAs
 
 export function summarizePromptAsConversationTitle(prompt: string): string {
   const clean = prompt.replace(/\s+/g, " ").trim();
-  if (!clean) {
-    return "Nouvelle conversation";
-  }
+  if (!clean) return "Nouvelle conversation";
   return clean.length > 64 ? `${clean.slice(0, 61)}...` : clean;
 }
 
@@ -206,11 +194,6 @@ export function buildAssistantModelOptions(
   const distinctModels = new Set(configuredTiers.map((t) => t.primaryModel!.trim()));
   const singleModelOnly = distinctModels.size === 1 ? [...distinctModels][0] : undefined;
 
-  const findExactModel = (tierKey: UiInferenceTier): string | undefined => {
-    const exact = configuredTiers.find((t) => t.tier === tierKey);
-    return exact?.primaryModel?.trim();
-  };
-
   if (singleModelOnly) {
     return [
       { tier: "simple", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly, hiddenDuplicate: true },
@@ -221,11 +204,9 @@ export function buildAssistantModelOptions(
 
   const seenModels = new Set<string>();
   const buildEntry = (tierKey: UiInferenceTier, title: string, subtitle: string): UiAssistantModelOption => {
-    const modelName = findExactModel(tierKey);
+    const modelName = configuredTiers.find((t) => t.tier === tierKey)?.primaryModel?.trim();
     const isDuplicate = configuredTiers.length > 0 && (!modelName || seenModels.has(modelName));
-    if (modelName) {
-      seenModels.add(modelName);
-    }
+    if (modelName) seenModels.add(modelName);
     return {
       tier: tierKey,
       title,
@@ -255,42 +236,36 @@ export function upsertTurnIntoSavedConversations(params: {
   readonly thinkingEffort: UiInferenceEffort;
   readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
   readonly usedSources?: readonly UiAssistantRagCitationItem[];
+  readonly stepProgress?: readonly UiThreeSpeedStepProgress[];
+  readonly thinkingElapsedSeconds?: number;
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly resolvedConversationId: string;
   readonly isNewConversation: boolean;
   readonly createdTitle: string;
 } {
-  const modelOpt =
-    params.modelOptions.find((m) => m.tier === params.requestedTier) ??
-    params.modelOptions[1]!;
+  const modelOpt = params.modelOptions.find((m) => m.tier === params.requestedTier) ?? params.modelOptions[1]!;
   const modelLabel =
     modelOpt.configuredModelName && modelOpt.title !== modelOpt.configuredModelName
       ? `${modelOpt.title} (${modelOpt.configuredModelName})`
       : modelOpt.configuredModelName || modelOpt.title;
-  const effortLabel =
-    params.thinkingEffort === "deep"
-      ? params.isFr ? "Réflexion Élevée" : "High effort"
-      : params.thinkingEffort === "balanced"
-        ? params.isFr ? "Réflexion Moyenne" : "Medium effort"
-        : params.isFr ? "Réflexion Basse" : "Low effort";
+  const effortLabel = params.thinkingEffort === "deep" ? (params.isFr ? "Approfondi" : "In-depth") : "Standard";
   const nowIso = new Date().toISOString();
   const cleanReply = sanitizeAssistantDisplayReply(params.assistantReply);
+  const normalizedEffort: UiInferenceEffort = params.thinkingEffort === "deep" ? "deep" : "balanced";
   const newTurn: SavedConversationTurnItem = {
     turnId: `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     userPrompt: params.userPrompt,
     assistantReply: cleanReply,
     modelTier: params.requestedTier,
     modelLabel,
-    thinkingEffort: params.thinkingEffort,
+    thinkingEffort: normalizedEffort,
     effortLabel,
     timestampIso: nowIso,
-    ...(params.attachedFiles && params.attachedFiles.length > 0
-      ? { attachedFiles: params.attachedFiles }
-      : {}),
-    ...(params.usedSources && params.usedSources.length > 0
-      ? { usedSources: params.usedSources }
-      : {}),
+    ...(params.attachedFiles && params.attachedFiles.length > 0 ? { attachedFiles: params.attachedFiles } : {}),
+    ...(params.usedSources && params.usedSources.length > 0 ? { usedSources: params.usedSources } : {}),
+    ...(params.stepProgress && params.stepProgress.length > 0 ? { stepProgress: params.stepProgress } : {}),
+    ...(params.thinkingElapsedSeconds !== undefined ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds } : {}),
   };
 
   const existing = params.activeConversationId
@@ -302,20 +277,12 @@ export function upsertTurnIntoSavedConversations(params: {
       updatedAtIso: nowIso,
       modelTier: params.requestedTier,
       modelLabel,
-      thinkingEffort: params.thinkingEffort,
+      thinkingEffort: normalizedEffort,
       turns: [...existing.turns, newTurn],
     };
-    const nextList = [
-      updatedConv,
-      ...params.prevConversations.filter((c) => c.id !== existing.id),
-    ];
+    const nextList = [updatedConv, ...params.prevConversations.filter((c) => c.id !== existing.id)];
     writeSavedAssistantConversations(nextList);
-    return {
-      nextConversations: nextList,
-      resolvedConversationId: existing.id,
-      isNewConversation: false,
-      createdTitle: existing.title,
-    };
+    return { nextConversations: nextList, resolvedConversationId: existing.id, isNewConversation: false, createdTitle: existing.title };
   }
 
   const convId = `conv-${params.prevConversations.length + 1}-${Date.now()}`;
@@ -329,17 +296,12 @@ export function upsertTurnIntoSavedConversations(params: {
     updatedAtIso: nowIso,
     modelTier: params.requestedTier,
     modelLabel,
-    thinkingEffort: params.thinkingEffort,
+    thinkingEffort: normalizedEffort,
     turns: [newTurn],
   };
   const nextList = [createdConv, ...params.prevConversations];
   writeSavedAssistantConversations(nextList);
-  return {
-    nextConversations: nextList,
-    resolvedConversationId: convId,
-    isNewConversation: true,
-    createdTitle,
-  };
+  return { nextConversations: nextList, resolvedConversationId: convId, isNewConversation: true, createdTitle };
 }
 
 export function consumeAssistantPrefillFromStorage(): string | null {

@@ -146,7 +146,7 @@ export function AssistantSpeedSelectorAndStreamView({
   const [deepAuditActive, setDeepAuditActive] = useState<boolean>(initialDeepAudit);
   const [tier, setTier] = useState<UiInferenceTier>(initialTier);
   const [effort, setEffort] = useState<UiInferenceEffort>(
-    initialEffort ?? (initialDeepAudit ? "deep" : initialSpeed === "SPEED_2_AGENT_TOOLS" ? "balanced" : "fast"),
+    initialEffort ?? (initialDeepAudit ? "deep" : "balanced"),
   );
   const [pickerOpen, setPickerOpen] = useState<boolean>(false);
   const [thinkingSubmenuOpen, setThinkingSubmenuOpen] = useState<boolean>(true);
@@ -160,15 +160,17 @@ export function AssistantSpeedSelectorAndStreamView({
   const [forcedAutocompleteKind, setForcedAutocompleteKind] = useState<"agent" | "skill" | null>(null);
 
   const cacheKey = `assistant:prompt:${workspaceId}:${userId}:${hat}`;
+  const visibleModelCount = modelOptions.filter((m) => !m.hiddenDuplicate).length;
   const activeModelOption = modelOptions.find((m) => m.tier === tier) ?? modelOptions[1] ?? DEFAULT_ASSISTANT_MODEL_OPTIONS[1]!;
-  const activeEffortOption = ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === effort) ?? ASSISTANT_EFFORT_OPTIONS[0]!;
+  const normalizedEffort: UiInferenceEffort = effort === "deep" ? "deep" : "balanced";
+  const activeEffortOption = ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === normalizedEffort) ?? ASSISTANT_EFFORT_OPTIONS[1]!;
 
   useEffect(() => {
     const el = streamEndRef.current;
-    if (streamedText && el && typeof el.scrollIntoView === "function") {
+    if ((streamedText || stepProgress.length > 0) && el && typeof el.scrollIntoView === "function") {
       el.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [streamedText]);
+  }, [streamedText, stepProgress]);
 
   useEffect(() => {
     if (prefillPrompt) {
@@ -188,10 +190,8 @@ export function AssistantSpeedSelectorAndStreamView({
     .map((s) => ({ slug: s.token.replace(/^\//, ""), label: s.name, description: s.description, kind: "skill" as const }));
   const mergedAgentOptions = [...extraAgents, ...agentOptions.filter((a) => !extraAgents.some((e) => e.slug === a.slug))];
   const mergedSkillOptions = [...extraSkills, ...skillOptions.filter((s) => !extraSkills.some((e) => e.slug === s.slug))];
-
-  const detectedTrigger = detectActiveAutocompleteTrigger(promptText);
   const effectiveAutocompleteTrigger =
-    detectedTrigger ?? (forcedAutocompleteKind !== null ? { kind: forcedAutocompleteKind, query: "" } : null);
+    detectActiveAutocompleteTrigger(promptText) ?? (forcedAutocompleteKind !== null ? { kind: forcedAutocompleteKind, query: "" } : null);
 
   const handleSelectEffort = (nextEffort: UiInferenceEffort) => {
     setUserEditedTierOrEffort(true);
@@ -206,7 +206,7 @@ export function AssistantSpeedSelectorAndStreamView({
     if (!deepAuditActive && !userEditedTierOrEffort) {
       const hasAgentOrSkill = /(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(val);
       setSpeed(hasAgentOrSkill ? "SPEED_2_AGENT_TOOLS" : "SPEED_1_FAST");
-      setEffort(hasAgentOrSkill ? "balanced" : "fast");
+      setEffort("balanced");
     }
   };
 
@@ -277,7 +277,7 @@ export function AssistantSpeedSelectorAndStreamView({
   ];
 
   return (
-    <section data-testid="assistant-speed-selector-and-stream" className="rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary space-y-4">
+    <section data-testid="assistant-speed-selector-and-stream" className={hideTechnicalCacheHeader ? "pt-1 text-text-primary space-y-3" : "rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary space-y-4"}>
       {!hideTechnicalCacheHeader && (
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">
           <h3 className="text-sm font-semibold">{labels.headerTitle}</h3>
@@ -293,50 +293,59 @@ export function AssistantSpeedSelectorAndStreamView({
         <div className="py-6 text-center"><h2 data-testid="assistant-welcome-hero-title" className="text-xl font-semibold tracking-tight text-text-primary">{welcomeTitle}</h2></div>
       )}
 
-      {shownUserQuestion && (!hideDuplicateCompletedStream || isGenerating) ? (
-        <AssistantUserQuestionBubble userPrompt={shownUserQuestion} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} attachedFiles={lastSubmittedFiles} />
-      ) : null}
+      <div data-testid="assistant-central-scrollable-stream" className="max-h-[62vh] overflow-y-auto space-y-3 pr-1">
+        {shownUserQuestion && (!hideDuplicateCompletedStream || isGenerating) ? (
+          <AssistantUserQuestionBubble userPrompt={shownUserQuestion} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} attachedFiles={lastSubmittedFiles} />
+        ) : null}
 
-      {isGenerating && !cleanStreamedText ? (
-        <div data-testid="assistant-active-research-zone" className="py-6 my-2 flex flex-col items-start justify-center gap-2.5">
-          <AssistantThinkingSliderIndicator />
-          <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} hasStreamedResponse={false} />
-        </div>
-      ) : (
-        <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))} />
-      )}
+        {isGenerating && !cleanStreamedText ? (
+          <div className="py-2 my-1">
+            <AssistantThinkingSliderIndicator />
+          </div>
+        ) : null}
 
-      {errorMessage && (
-        <div role="alert" data-testid="assistant-error-banner" className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning">{errorMessage}</div>
-      )}
-
-      {(cleanStreamedText || isStoppedVisible) && (
-        <div
-          data-testid="assistant-streamed-response-box"
-          aria-live="polite"
-          style={hideDuplicateCompletedStream && !isStoppedVisible ? { display: "none" } : undefined}
-          className={hideDuplicateCompletedStream && !isStoppedVisible ? "sr-only" : "rounded-lg border border-border-subtle bg-surface-primary p-4 text-xs leading-relaxed space-y-2"}
-        >
-          {cleanStreamedText ? <FormattedMarkdownContent content={cleanStreamedText} /> : null}
-          {isStoppedVisible ? (
-            <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">
-              ⏹ Génération interrompue par l&apos;utilisateur
-            </div>
-          ) : null}
-          {!isGenerating && cleanStreamedText && !hideDuplicateCompletedStream ? (
-            <AssistantResponseFooterActionsAndCitations
-              responseText={cleanStreamedText}
-              modelLabel={displayModelBadge}
-              effortLabel={activeEffortOption.title}
-              ragCitations={mergedRagCitations}
-              onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))}
-              onSaveDraft={onSaveDraftFromResponse}
-              onContinueInProcess={onContinueInProcessFromResponse}
+        {!hideDuplicateCompletedStream ? (
+          <div data-testid="assistant-active-research-zone" className="py-1 flex flex-col items-start justify-center gap-2">
+            <AssistantThinkingSubWindow
+              stepProgress={stepProgress}
+              isGenerating={isGenerating}
+              hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))}
             />
-          ) : null}
-          <div ref={streamEndRef} />
-        </div>
-      )}
+          </div>
+        ) : null}
+
+        {errorMessage && (
+          <div role="alert" data-testid="assistant-error-banner" className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning">{errorMessage}</div>
+        )}
+
+        {(cleanStreamedText || isStoppedVisible) && (
+          <div
+            data-testid="assistant-streamed-response-box"
+            aria-live="polite"
+            style={hideDuplicateCompletedStream && !isStoppedVisible ? { display: "none" } : undefined}
+            className={hideDuplicateCompletedStream && !isStoppedVisible ? "sr-only" : "rounded-lg bg-surface-primary py-2 text-xs leading-relaxed space-y-2"}
+          >
+            {cleanStreamedText ? <FormattedMarkdownContent content={cleanStreamedText} /> : null}
+            {isStoppedVisible ? (
+              <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                ⏹ Génération interrompue par l&apos;utilisateur
+              </div>
+            ) : null}
+            {!isGenerating && cleanStreamedText && !hideDuplicateCompletedStream ? (
+              <AssistantResponseFooterActionsAndCitations
+                responseText={cleanStreamedText}
+                modelLabel={displayModelBadge}
+                effortLabel={activeEffortOption.title}
+                ragCitations={mergedRagCitations}
+                onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))}
+                onSaveDraft={onSaveDraftFromResponse}
+                onContinueInProcess={onContinueInProcessFromResponse}
+              />
+            ) : null}
+          </div>
+        )}
+        <div ref={streamEndRef} />
+      </div>
 
       <div className="relative">
         <AssistantPromptPlusAndAutocomplete
@@ -351,11 +360,7 @@ export function AssistantSpeedSelectorAndStreamView({
           onTriggerSkillAutocompleteFromPlus={() => { setPromptText(promptText ? `${promptText} /` : "/"); setForcedAutocompleteKind("skill"); setPlusMenuOpen(false); inputRef.current?.focus(); }}
           onAttachFile={(file) => { setAttachedFiles((prev) => [...prev, file]); setPlusMenuOpen(false); inputRef.current?.focus(); }}
           onRemoveAttachedFile={(fileId) => setAttachedFiles((prev) => prev.filter((f) => f.id !== fileId))}
-          onOpenFoldersAndCloseMenus={
-            onOpenFoldersFromPlus
-              ? () => { setPlusMenuOpen(false); setForcedAutocompleteKind(null); setPromptText((prev) => prev.replace(/(?:^|\s)[@/][a-zA-Z0-9_-]*$/, "")); onOpenFoldersFromPlus(); }
-              : undefined
-          }
+          onOpenFoldersAndCloseMenus={onOpenFoldersFromPlus ? () => { setPlusMenuOpen(false); setForcedAutocompleteKind(null); setPromptText((prev) => prev.replace(/(?:^|\s)[@/][a-zA-Z0-9_-]*$/, "")); onOpenFoldersFromPlus(); } : undefined}
         />
 
         <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
@@ -364,8 +369,7 @@ export function AssistantSpeedSelectorAndStreamView({
             <button type="button" data-testid="assistant-prompt-plus-btn" aria-label="Actions rapides et dossiers" onClick={() => { setPlusMenuOpen((prev) => !prev); setPickerOpen(false); }} className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated">+</button>
             <input ref={inputRef} type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="assistant-three-speed-input" value={promptText} placeholder={labels.inputPlaceholder} onChange={(e) => handlePromptChange(e.target.value)} onKeyDown={handleInputKeyDown} className="flex-1 min-w-[200px] border-0 bg-transparent px-2 py-1 text-xs text-text-primary focus:outline-none" />
             <button type="button" data-testid="assistant-model-and-effort-picker-trigger" aria-expanded={pickerOpen} onClick={() => { setPickerOpen((prev) => !prev); setPlusMenuOpen(false); }} className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-surface-elevated">
-              <span>{displayModelBadge}</span>
-              <span className="text-text-secondary">· {activeEffortOption.title}</span>
+              {visibleModelCount === 1 ? <span>{activeEffortOption.title}</span> : (<><span>{displayModelBadge}</span><span className="text-text-secondary">· {activeEffortOption.title}</span></>)}
               <span aria-hidden="true">▾</span>
             </button>
             <button type="button" data-testid="assistant-three-speed-send-btn" aria-label={actionAriaLabel} title={isGenerating ? "Arrêter" : "Envoyer"} onClick={() => { if (isGenerating) { setLocalStoppedFlag(true); onStopGeneration?.(); inputRef.current?.focus(); return; } triggerSendTurn(); }} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-xs font-semibold text-white hover:opacity-95">
@@ -388,10 +392,10 @@ export function AssistantSpeedSelectorAndStreamView({
       </div>
 
       <div role="group" aria-label={labels.headerTitle} data-testid="assistant-legacy-speed-pills-row" style={hideLegacySpeedPills ? { display: "none" } : undefined} className={hideLegacySpeedPills ? "sr-only" : "flex flex-wrap items-center justify-center gap-2 pt-1"}>
-        {([["SPEED_1_FAST", "fast", labels.speed1PillLabel], ["SPEED_2_AGENT_TOOLS", "balanced", labels.speed2PillLabel]] as const).map(([mode, eff, pillLabel]) => (
+        {([["SPEED_1_FAST", "balanced", labels.speed1PillLabel], ["SPEED_2_AGENT_TOOLS", "balanced", labels.speed2PillLabel]] as const).map(([mode, eff, pillLabel]) => (
           <button key={mode} type="button" data-testid={`assistant-speed-pill-${mode}`} aria-pressed={speed === mode} onClick={() => { setDeepAuditActive(false); setSpeed(mode); setEffort(eff); }} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${speed === mode ? "bg-action-primary text-white" : "bg-surface-secondary text-text-secondary"}`}>{pillLabel}</button>
         ))}
-        <button type="button" data-testid="assistant-deep-audit-pill-toggle" aria-pressed={deepAuditActive} onClick={() => { const next = !deepAuditActive; setDeepAuditActive(next); setSpeed(next ? "SPEED_3_DEEP_AUDIT" : "SPEED_1_FAST"); setEffort(next ? "deep" : "fast"); }} className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${deepAuditActive ? "bg-action-primary text-white" : "border border-border-subtle bg-surface-secondary text-text-secondary"}`}>{labels.speed3DeepAuditPillLabel}</button>
+        <button type="button" data-testid="assistant-deep-audit-pill-toggle" aria-pressed={deepAuditActive} onClick={() => { const next = !deepAuditActive; setDeepAuditActive(next); setSpeed(next ? "SPEED_3_DEEP_AUDIT" : "SPEED_1_FAST"); setEffort(next ? "deep" : "balanced"); }} className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${deepAuditActive ? "bg-action-primary text-white" : "border border-border-subtle bg-surface-secondary text-text-secondary"}`}>{labels.speed3DeepAuditPillLabel}</button>
       </div>
     </section>
   );

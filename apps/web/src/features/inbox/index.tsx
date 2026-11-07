@@ -68,6 +68,8 @@ export function InboxFeaturePanel() {
     requestedTier: UiInferenceTier;
     thinkingEffort: UiInferenceEffort;
     attachedFiles?: readonly UiAssistantAttachedFileItem[];
+    stepProgress?: readonly import("@orcia/ui").UiThreeSpeedStepProgress[];
+    thinkingElapsedSeconds?: number;
   }) => {
     const usedSources = filterUsedRagSourcesForTurn({
       userPrompt: params.userPrompt,
@@ -89,6 +91,10 @@ export function InboxFeaturePanel() {
         thinkingEffort: params.thinkingEffort,
         ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
         usedSources,
+        ...(params.stepProgress ? { stepProgress: params.stepProgress } : {}),
+        ...(params.thinkingElapsedSeconds !== undefined
+          ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds }
+          : {}),
       });
       if (outcome.isNewConversation) {
         setActiveConversationId(outcome.resolvedConversationId);
@@ -233,50 +239,52 @@ export function InboxFeaturePanel() {
         />
       ) : null}
 
-      {activeConversation && activeConversation.turns.length > 0 && (
-        <ActiveConversationMessagesView
-          conversation={activeConversation}
-          isFr={isFr}
-          ragCitations={ragCitations}
-          onRegenerateTurn={(userPrompt) => sendTurn({ userPrompt, requestedSpeed: "SPEED_1_FAST", deepAuditPillActive: false })}
-          onSaveDraft={handleSaveDraftAction}
-          onContinueInProcess={() => navigateToRoute("/processes")}
-        />
-      )}
+      <div className="orcia-bento-card space-y-3">
+        {activeConversation && activeConversation.turns.length > 0 && !isGenerating && (
+          <ActiveConversationMessagesView
+            conversation={activeConversation}
+            isFr={isFr}
+            ragCitations={ragCitations}
+            onRegenerateTurn={(userPrompt) => sendTurn({ userPrompt, requestedSpeed: "SPEED_1_FAST", deepAuditPillActive: false })}
+            onSaveDraft={handleSaveDraftAction}
+            onContinueInProcess={() => navigateToRoute("/processes")}
+          />
+        )}
 
-      <AssistantSpeedSelectorAndStreamView
-        workspaceId={activeWorkspaceId}
-        userId={platformAdmin?.email ?? ""}
-        hat="PLATFORM_ADMIN"
-        modelOptions={modelOptions}
-        agentOptions={agentOptions}
-        skillOptions={skillOptions}
-        orciaDocuments={orciaDocuments}
-        ragCitations={ragCitations}
-        autocompleteSuggestions={autocompleteSuggestions}
-        prefillPrompt={prefillPrompt}
-        onPrefillConsumed={() => setPrefillPrompt(null)}
-        welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
-        showWelcomeHero={!activeConversation || activeConversation.turns.length === 0}
-        hideTechnicalCacheHeader={true}
-        hideLegacySpeedPills={true}
-        hideDuplicateCompletedStream={Boolean(!isGenerating && activeConversation && activeConversation.turns.length > 0)}
-        cacheHit={cacheHit}
-        cacheLookupMs={cacheLookupMs}
-        nodes1To4DeterministicMs={nodes1To4Ms}
-        ttftMs={ttftMs}
-        stepProgress={stepProgress}
-        streamedText={streamedText}
-        isGenerating={isGenerating}
-        generationStopped={generationStopped}
-        errorMessage={errorMessage}
-        labels={dictionary.assistantSpeedStream}
-        onOpenFoldersFromPlus={() => setFoldersPanelOpen((prev) => !prev)}
-        onStopGeneration={stopGeneration}
-        onSaveDraftFromResponse={handleSaveDraftAction}
-        onContinueInProcessFromResponse={() => navigateToRoute("/processes")}
-        onSendTurn={sendTurn}
-      />
+        <AssistantSpeedSelectorAndStreamView
+          workspaceId={activeWorkspaceId}
+          userId={platformAdmin?.email ?? ""}
+          hat="PLATFORM_ADMIN"
+          modelOptions={modelOptions}
+          agentOptions={agentOptions}
+          skillOptions={skillOptions}
+          orciaDocuments={orciaDocuments}
+          ragCitations={ragCitations}
+          autocompleteSuggestions={autocompleteSuggestions}
+          prefillPrompt={prefillPrompt}
+          onPrefillConsumed={() => setPrefillPrompt(null)}
+          welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
+          showWelcomeHero={!activeConversation || activeConversation.turns.length === 0}
+          hideTechnicalCacheHeader={true}
+          hideLegacySpeedPills={true}
+          hideDuplicateCompletedStream={Boolean(!isGenerating && activeConversation && activeConversation.turns.length > 0)}
+          cacheHit={cacheHit}
+          cacheLookupMs={cacheLookupMs}
+          nodes1To4DeterministicMs={nodes1To4Ms}
+          ttftMs={ttftMs}
+          stepProgress={stepProgress}
+          streamedText={streamedText}
+          isGenerating={isGenerating}
+          generationStopped={generationStopped}
+          errorMessage={errorMessage}
+          labels={dictionary.assistantSpeedStream}
+          onOpenFoldersFromPlus={() => setFoldersPanelOpen((prev) => !prev)}
+          onStopGeneration={stopGeneration}
+          onSaveDraftFromResponse={handleSaveDraftAction}
+          onContinueInProcessFromResponse={() => navigateToRoute("/processes")}
+          onSendTurn={sendTurn}
+        />
+      </div>
 
       <div
         data-testid="assistant-folders-panel-wrapper"

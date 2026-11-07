@@ -977,4 +977,195 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       "✓ Enregistré",
     );
   });
+
+  it("Story 10.2e — enforces progressive step thinking (collapse show on RUNNING step -> collapse hide on COMPLETED step, sticky manual user step toggle), static summary without fake steps when stepProgress is empty, streamlined Standard/Approfondi single-model pill, borderless action icons, and PLATFORM_ADMIN purge", () => {
+    const onSendTurn = vi.fn();
+    const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      headerTitle: "Routage Conversationnel",
+      speed1PillLabel: "⚡ Rapide",
+      speed2PillLabel: "🛠️ Outils",
+      speed3DeepAuditPillLabel: "🧠 Approfondi",
+      cacheHitBadge: "HIT",
+      cacheMissBadge: "MISS",
+      nodesDeterministicLabel: "Préparation",
+      ttftBadgePrefix: "TTFT",
+      inputPlaceholder: "Posez votre question...",
+      sendPromptCta: "Envoyer",
+    };
+
+    const singleModelOptions = [
+      {
+        tier: "simple" as const,
+        title: "gemma4:12b",
+        subtitle: "Modèle IA configuré",
+        configuredModelName: "gemma4:12b",
+        hiddenDuplicate: true,
+      },
+      {
+        tier: "medium" as const,
+        title: "gemma4:12b",
+        subtitle: "Modèle IA configuré",
+        configuredModelName: "gemma4:12b",
+      },
+      {
+        tier: "complex" as const,
+        title: "gemma4:12b",
+        subtitle: "Modèle IA configuré",
+        configuredModelName: "gemma4:12b",
+        hiddenDuplicate: true,
+      },
+    ];
+
+    // 1. Rule A: Standard simple mode with no steps -> shows static "Réflexion pendant Xs" without toggle button or fake list
+    const { rerender } = render(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        modelOptions={singleModelOptions}
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        isGenerating={false}
+        stepProgress={[]}
+        streamedText="Réponse directe (rôle : PLATFORM_ADMIN) sans fausse étape."
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    // Single-model pill shows "Standard ▾" without repeating model name
+    const pickerTrigger = screen.getByTestId("assistant-model-and-effort-picker-trigger");
+    expect(pickerTrigger.textContent).toContain("Standard");
+    expect(pickerTrigger.textContent).not.toContain("gemma4:12b");
+
+    // Open popover -> fast option is hidden (display: none), only Standard & Approfondi are shown visibly
+    fireEvent.click(pickerTrigger);
+    expect(screen.getByTestId("assistant-effort-option-fast").style.display).toBe("none");
+    expect(screen.getByTestId("assistant-effort-option-balanced").textContent).toContain("Standard");
+    expect(screen.getByTestId("assistant-effort-option-deep").textContent).toContain("Approfondi");
+
+    // Sanitized response strips (rôle : PLATFORM_ADMIN) and action buttons have border-0 bg-transparent
+    const responseBox = screen.getByTestId("assistant-streamed-response-box");
+    expect(responseBox.textContent).not.toContain("PLATFORM_ADMIN");
+    expect(screen.getByTestId("assistant-action-like-btn").className).toContain("border-0");
+    expect(screen.getByTestId("assistant-action-regenerate-btn").textContent).toBe("↻");
+
+    // 2. Rule B: Progressive steps in Approfondi mode -> Step 1 starts RUNNING (collapse show)
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        modelOptions={singleModelOptions}
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        isGenerating={true}
+        stepProgress={[
+          {
+            stepCode: "STEP_1_SPEC_EDGE_CASES",
+            label: "Spécification et cas limites",
+            durationMs: 0,
+            status: "RUNNING",
+            intermediateOutput: "Cadrage des entrées/sorties et cas particuliers.",
+          },
+        ]}
+        streamedText=""
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    const step1Item = screen.getByTestId("assistant-step-item-STEP_1_SPEC_EDGE_CASES");
+    expect(step1Item.getAttribute("data-step-expanded")).toBe("true");
+    expect(
+      screen.getByTestId("assistant-step-intermediate-output-STEP_1_SPEC_EDGE_CASES").style.display,
+    ).not.toBe("none");
+
+    // 3. When Step 2 starts RUNNING, Step 1 transitions to COMPLETED and auto-collapses (collapse hide), while Step 2 opens (collapse show)
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        modelOptions={singleModelOptions}
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        isGenerating={true}
+        stepProgress={[
+          {
+            stepCode: "STEP_1_SPEC_EDGE_CASES",
+            label: "Spécification et cas limites",
+            durationMs: 1200,
+            status: "COMPLETED",
+            intermediateOutput: "Cadrage des entrées/sorties et cas particuliers.",
+          },
+          {
+            stepCode: "STEP_2_IMPLEMENTATION_DESIGN",
+            label: "Conception de l'implémentation",
+            durationMs: 0,
+            status: "RUNNING",
+            intermediateOutput: "Structuration du code et choix techniques.",
+          },
+        ]}
+        streamedText=""
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("assistant-step-item-STEP_1_SPEC_EDGE_CASES").getAttribute("data-step-expanded"),
+    ).toBe("false");
+    expect(
+      screen.getByTestId("assistant-step-intermediate-output-STEP_1_SPEC_EDGE_CASES").style.display,
+    ).toBe("none");
+    expect(
+      screen.getByTestId("assistant-step-item-STEP_2_IMPLEMENTATION_DESIGN").getAttribute("data-step-expanded"),
+    ).toBe("true");
+
+    // 4. User manually clicks Step 1 toggle to re-open it (collapse show) -> it stays open even when all steps complete!
+    fireEvent.click(screen.getByTestId("assistant-step-toggle-STEP_1_SPEC_EDGE_CASES"));
+    expect(
+      screen.getByTestId("assistant-step-item-STEP_1_SPEC_EDGE_CASES").getAttribute("data-step-expanded"),
+    ).toBe("true");
+
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        modelOptions={singleModelOptions}
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        isGenerating={false}
+        stepProgress={[
+          {
+            stepCode: "STEP_1_SPEC_EDGE_CASES",
+            label: "Spécification et cas limites",
+            durationMs: 1200,
+            status: "COMPLETED",
+            intermediateOutput: "Cadrage des entrées/sorties et cas particuliers.",
+          },
+          {
+            stepCode: "STEP_2_IMPLEMENTATION_DESIGN",
+            label: "Conception de l'implémentation",
+            durationMs: 1400,
+            status: "COMPLETED",
+            intermediateOutput: "Structuration du code et choix techniques.",
+          },
+        ]}
+        streamedText="Voici l'implémentation finale."
+        labels={speedLabels}
+        onSendTurn={onSendTurn}
+      />,
+    );
+
+    // Step 1 remains expanded (manually opened by user), while Step 2 auto-collapsed on completion
+    expect(
+      screen.getByTestId("assistant-step-item-STEP_1_SPEC_EDGE_CASES").getAttribute("data-step-expanded"),
+    ).toBe("true");
+    expect(
+      screen.getByTestId("assistant-step-item-STEP_2_IMPLEMENTATION_DESIGN").getAttribute("data-step-expanded"),
+    ).toBe("false");
+  });
 });

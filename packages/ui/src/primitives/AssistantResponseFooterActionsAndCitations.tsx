@@ -20,6 +20,11 @@ export function sanitizeAssistantDisplayReply(rawText: string): string {
     "",
   );
   cleaned = cleaned.replace(
+    /\s*\(rôle(?:\s+actif)?\s*:\s*PLATFORM_ADMIN\)/gi,
+    "",
+  );
+  cleaned = cleaned.replace(/\bPLATFORM_ADMIN\b/g, "Administrateur");
+  cleaned = cleaned.replace(
     /\s*«\s*([^»]+)\s*»\s*(?:\[(?:S\d+|G\d+|O\d+)\]\s*)+(\.?)$/i,
     (_, inner: string, dot: string) => ` « ${inner.trim()} »${dot || "."}`,
   );
@@ -149,7 +154,7 @@ export function AssistantResponseFooterActionsAndCitations({
   responseText,
   isFr = true,
   modelLabel = "Polyvalent",
-  effortLabel = "Bas",
+  effortLabel = "Standard",
   ragCitations = [],
   onRegenerate,
   onSaveDraft,
@@ -224,10 +229,10 @@ export function AssistantResponseFooterActionsAndCitations({
     : "View response details";
 
   const iconBtnClass =
-    "h-7 w-7 inline-flex items-center justify-center rounded-md text-sm text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";
+    "h-7 w-7 inline-flex items-center justify-center rounded-md border-0 bg-transparent text-xs text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";
 
   return (
-    <div className="space-y-2 pt-2 border-t border-border-subtle/60">
+    <div className="space-y-2 pt-2">
       {ragCitations.length > 0 && (
         <div
           data-testid="assistant-rag-citations-list"
@@ -243,7 +248,7 @@ export function AssistantResponseFooterActionsAndCitations({
               target="_blank"
               rel="noopener noreferrer"
               data-testid={`assistant-rag-citation-link-${index}`}
-              className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline"
+              className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline"
             >
               📄 {source.title} ↗
             </a>
@@ -316,7 +321,7 @@ export function AssistantResponseFooterActionsAndCitations({
           onClick={() => onRegenerate?.()}
           className={iconBtnClass}
         >
-          🔄
+          ↻
         </button>
 
         <button

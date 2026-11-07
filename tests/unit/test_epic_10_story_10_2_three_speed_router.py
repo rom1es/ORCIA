@@ -322,7 +322,17 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     from orcia_api.routers.assistant_llm_bridge import (
         _select_endpoint_from_tiers,
         build_assistant_system_instructions,
+        detect_adaptive_thinking_steps_for_question,
+        humanize_hat_label_fr,
     )
+
+    assert humanize_hat_label_fr("PLATFORM_ADMIN") == "Administrateur"
+    assert humanize_hat_label_fr("PM") == "Chef de Projet"
+    code_steps = detect_adaptive_thinking_steps_for_question(
+        "code la fonction factorielle en python"
+    )
+    assert len(code_steps) == 3
+    assert code_steps[0][0] == "Spécification et cas limites"
 
     tiers_cfg = [
         {
@@ -356,7 +366,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     assert ep_complex is not None and ep_complex.model_name == "gemma4:27b-pro"
 
     sys_fast = build_assistant_system_instructions(
-        hat="PM",
+        hat="PLATFORM_ADMIN",
         speed_mode="SPEED_1_FAST",
         requested_tier="simple",
         thinking_effort="fast",
@@ -369,8 +379,11 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     )
     assert "Palier Rapide" in sys_fast
     assert "Niveau de réflexion Bas" in sys_fast
+    assert "PLATFORM_ADMIN" not in sys_fast
+    assert "Administrateur" in sys_fast
     assert "Palier Raisonnement avancé" in sys_deep
     assert "Niveau de réflexion Élevé" in sys_deep
+    assert "Chef de Projet" in sys_deep
 
     captured_models: list[str] = []
     captured_sys_prompts: list[str] = []

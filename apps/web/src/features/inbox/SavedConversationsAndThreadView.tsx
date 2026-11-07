@@ -1,5 +1,6 @@
 import {
   AssistantResponseFooterActionsAndCitations,
+  AssistantThinkingSubWindow,
   AssistantUserQuestionBubble,
   ContextualInfoTriggerButton,
   FormattedMarkdownContent,
@@ -207,33 +208,19 @@ export function ActiveConversationMessagesView({
   return (
     <section
       data-testid="assistant-conversation-messages-list"
-      className="orcia-bento-card space-y-3"
+      className="space-y-3"
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">
-        <div className="text-xs font-semibold text-text-primary">
-          💬 {conversation.title}
-        </div>
-        <span className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] text-text-secondary">
-          {conversation.turns.length}{" "}
-          {isFr
-            ? conversation.turns.length > 1
-              ? "échanges enregistrés"
-              : "échange enregistré"
-            : conversation.turns.length > 1
-              ? "saved turns"
-              : "saved turn"}
-        </span>
-      </header>
-
-      <div className="space-y-3">
+      <div className="max-h-[62vh] overflow-y-auto space-y-4 pr-1">
         {conversation.turns.map((turn, idx) => {
           const cleanReply = sanitizeAssistantDisplayReply(turn.assistantReply);
           const turnCitations = turn.usedSources ?? ragCitations;
+          const turnSteps = turn.stepProgress ?? [];
+          const turnSeconds = turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
           return (
             <div
               key={turn.turnId}
               data-testid={`assistant-conversation-turn-${idx + 1}`}
-              className="space-y-2.5 rounded-lg border border-border-subtle bg-surface-primary p-3.5 text-xs"
+              className="space-y-2.5 text-xs"
             >
               <AssistantUserQuestionBubble
                 userPrompt={turn.userPrompt}
@@ -248,10 +235,13 @@ export function ActiveConversationMessagesView({
                 }
               />
 
-              <div className="border-t border-border-subtle pt-2.5 mt-2 space-y-2">
-                <div className="font-semibold text-action-primary mb-1">
-                  🤖 {isFr ? "Mon Assistant" : "My Assistant"}
-                </div>
+              <div className="pt-1 space-y-2">
+                <AssistantThinkingSubWindow
+                  stepProgress={turnSteps}
+                  isGenerating={false}
+                  hasStreamedResponse={true}
+                  elapsedSecondsOverride={turnSeconds}
+                />
                 <FormattedMarkdownContent
                   content={cleanReply}
                   testId={`assistant-turn-markdown-${idx + 1}`}

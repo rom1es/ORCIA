@@ -47,10 +47,15 @@ export function humanizeIntermediateOutput(
   if (!rawOutput) {
     return null;
   }
-  const cleaned = rawOutput.replace(
+  let cleaned = rawOutput.replace(
     /Demande analysée pour l'espace\s*«[^»]*»\s*\(rôle\s*:\s*[^)]+\)\s*:\s*/gi,
     "Analyse de votre demande : ",
   );
+  cleaned = cleaned.replace(
+    /\s*\(rôle(?:\s+actif)?\s*:\s*PLATFORM_ADMIN\)/gi,
+    "",
+  );
+  cleaned = cleaned.replace(/\bPLATFORM_ADMIN\b/g, "Administrateur");
   return cleaned;
 }
 
@@ -60,12 +65,19 @@ export function AssistantThinkingSubWindow({
   hasStreamedResponse,
   elapsedSecondsOverride,
 }: AssistantThinkingSubWindowProps): React.JSX.Element | null {
+  const hasSteps = stepProgress.length > 0;
   const [expanded, setExpanded] = useState<boolean>(
     isGenerating && !hasStreamedResponse,
   );
   const [userToggledManually, setUserToggledManually] =
     useState<boolean>(false);
+  const [userExpandedSteps, setUserExpandedSteps] = useState<
+    Readonly<Record<string, boolean>>
+  >({});
   const [liveSeconds, setLiveSeconds] = useState<number>(0);
+  const [stepLiveTimers, setStepLiveTimers] = useState<
+    Readonly<Record<string, number>>
+  >({});
   const prevIsGeneratingRef = useRef<boolean>(isGenerating);
   const prevHasStreamedRef = useRef<boolean>(hasStreamedResponse);
 
@@ -74,37 +86,41 @@ export function AssistantThinkingSubWindow({
     if (isGenerating && !prevIsGeneratingRef.current) {
       setExpanded(true);
       setUserToggledManually(false);
+      setUserExpandedSteps({});
       setLiveSeconds(0);
+      setStepLiveTimers({});
     } else if (
       !userToggledManually &&
       ((hasStreamedResponse && !prevHasStreamedRef.current) ||
-        (!isGenerating &&
-          prevIsGeneratingRef.current &&
-          stepProgress.length > 0))
+        (!isGenerating && prevIsGeneratingRef.current))
     ) {
       setExpanded(false);
     }
     prevIsGeneratingRef.current = isGenerating;
     prevHasStreamedRef.current = hasStreamedResponse;
-  }, [
-    isGenerating,
-    hasStreamedResponse,
-    stepProgress.length,
-    userToggledManually,
-  ]);
+  }, [isGenerating, hasStreamedResponse, userToggledManually]);
 
-  // Live 1-second counter while generating
+  // Live 1-second counter while generating (overall + per RUNNING step)
   useEffect(() => {
     if (!isGenerating) {
       return;
     }
     const timer = setInterval(() => {
       setLiveSeconds((prev) => prev + 1);
+      setStepLiveTimers((prev) => {
+        const next: Record<string, number> = { ...prev };
+        for (const st of stepProgress) {
+          if (st.status === "RUNNING") {
+            next[st.stepCode] = (next[st.stepCode] ?? 0) + 1;
+          }
+        }
+        return next;
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isGenerating]);
+  }, [isGenerating, stepProgress]);
 
-  if (stepProgress.length === 0 && !isGenerating) {
+  if (!hasSteps && !isGenerating && elapsedSecondsOverride === undefined) {
     return null;
   }
 
@@ -121,6 +137,31 @@ export function AssistantThinkingSubWindow({
   const headerTitle = isGenerating
     ? `Réflexion en cours · ${displayHeaderSeconds}s`
     : `Réflexion pendant ${displayHeaderSeconds}s`;
+
+  // Rule A — No structured steps: static non-collapsible line once finished, or simple header while generating
+  if (!hasSteps) {
+    return (
+      <div
+        data-testid="assistant-thinking-subwindow"
+        data-expanded="false"
+        className="text-xs text-text-secondary py-0.5"
+      >
+        <span data-testid="assistant-thinking-subwindow-header-label">
+          {headerTitle}
+        </span>
+      </div>
+    );
+  }
+
+  const toggleIndividualStep = (stepCode: string, currentlyOpen: boolean) => {
+    setUserExpandedSteps((prev) => ({
+      ...prev,
+      [stepCode]: !currentlyOpen,
+    }));
+    if (!expanded) {
+      setExpanded(true);
+    }
+  };
 
   return (
     <div
@@ -161,9 +202,17 @@ export function AssistantThinkingSubWindow({
       >
         {stepProgress.map((st) => {
           const isRunning = st.status === "RUNNING";
+          const manualState = userExpandedSteps[st.stepCode];
+          // Progressive collapse rule:
+          // - RUNNING step is automatically in collapse show (data-step-expanded="true") unless manually collapsed
+          // - COMPLETED step automatically transitions to collapse hide (data-step-expanded="false") unless manually expanded by user
+          const isStepExpanded =
+            manualState !== undefined ? manualState : isRunning;
+          const stepElapsed =
+            stepLiveTimers[st.stepCode] ?? displayHeaderSeconds;
           const stepTimerText = formatStepDurationSeconds(
             st.durationMs,
-            displayHeaderSeconds,
+            stepElapsed,
             st.status,
           );
           const cleanLabel = humanizeStepLabel(st.label);
@@ -174,9 +223,17 @@ export function AssistantThinkingSubWindow({
             <li
               key={st.stepCode}
               data-testid={`assistant-step-item-${st.stepCode}`}
+              data-step-expanded={isStepExpanded ? "true" : "false"}
+              data-step-status={st.status}
               className="space-y-0.5 py-0.5"
             >
-              <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                data-testid={`assistant-step-toggle-${st.stepCode}`}
+                aria-expanded={isStepExpanded}
+                onClick={() => toggleIndividualStep(st.stepCode, isStepExpanded)}
+                className="flex w-full items-center gap-1.5 text-left hover:text-text-primary transition-colors"
+              >
                 <span aria-hidden="true">{isRunning ? "⏳" : "✓"}</span>
                 <span className="text-text-secondary">{cleanLabel}</span>
                 <span
@@ -185,11 +242,23 @@ export function AssistantThinkingSubWindow({
                 >
                   {stepTimerText}
                 </span>
-              </div>
+                <span
+                  aria-hidden="true"
+                  data-testid={`assistant-step-chevron-${st.stepCode}`}
+                  className="text-[11px] leading-none text-text-secondary/70"
+                >
+                  {isStepExpanded ? "⌄" : "›"}
+                </span>
+              </button>
               {cleanIntermediate ? (
                 <div
                   data-testid={`assistant-step-intermediate-output-${st.stepCode}`}
-                  className="pl-4 text-[11px] leading-relaxed text-text-secondary/80"
+                  style={isStepExpanded ? undefined : { display: "none" }}
+                  className={
+                    isStepExpanded
+                      ? "pl-4 text-[11px] leading-relaxed text-text-secondary/80"
+                      : "sr-only"
+                  }
                 >
                   <FormattedMarkdownContent
                     content={cleanIntermediate}

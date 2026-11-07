@@ -1,17 +1,13 @@
 """Live LLM invocation bridge for `Mon Assistant` (`/api/v1/assistant/three-speed/*`).
 
-Resolves the active LLM tier configured by the administrator in `Modèles IA`
-(`request.app.state.platform_setup_snapshot` / `accostage_service` / PostgreSQL 18) and
-invokes the configured endpoint (Ollama `/api/chat` or `/v1/chat/completions`, OpenAI,
-Mistral, Anthropic) when running in live mode. Supports explicit tier selection
-(`simple`, `medium`, `complex`, `auto`) and thinking effort (`fast`, `balanced`, `deep`).
-Falls back deterministically in CI/TestClient when no live LLM endpoint is reachable or
-when `ORCIA_USE_CASSETTE_LLM=1`.
+Resolves the active LLM tier configured in `Modèles IA` (`platform_setup_snapshot` / PostgreSQL 18)
+and invokes Ollama (`/api/chat`) or OpenAI-compatible (`/v1/chat/completions`) endpoints.
 """
 
 from __future__ import annotations
 
 import os
+import re
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -20,11 +16,54 @@ from typing import Any
 import httpx
 from fastapi import Request
 
+_HAT_FRENCH_LABELS: dict[str, str] = {
+    "PLATFORM_ADMIN": "Administrateur",
+    "ADMIN": "Administrateur",
+    "PM": "Chef de Projet",
+    "PRODUCT_MANAGER": "Chef de Projet",
+    "ARCHITECT": "Architecte",
+    "TECH_LEAD": "Développeur",
+    "DEV": "Développeur",
+    "BA": "Analyste",
+    "UX": "Designer",
+}
+
+
+def humanize_hat_label_fr(hat: str) -> str:
+    """Translate technical `hat` code (`PLATFORM_ADMIN`, `PM`, ...) to French business label."""
+    return _HAT_FRENCH_LABELS.get((hat or "").strip().upper(), "Collaborateur")
+
+
+def detect_adaptive_thinking_steps_for_question(user_prompt: str) -> tuple[tuple[str, str], ...]:
+    """Return 3 adaptive thinking step `(title, intermediate_summary)` pairs for a question."""
+    lower = user_prompt.lower()
+    if re.search(r"\b(code|fonction|python|sql|bug|script|algorithme|api|test|react)\b", lower):
+        return (
+            ("Spécification et cas limites", "Cadrage des entrées/sorties et cas particuliers."),
+            ("Conception de l'implémentation", "Structuration du code et choix techniques."),
+            ("Vérification et exemple d'usage", "Contrôle de validité et cas de test."),
+        )
+    if re.search(r"\b(explique|résume|document|contrat|texte|synthèse|rapport|dossier)\b", lower):
+        return (
+            ("Extraction des points clés", "Repérage des idées principales et de la structure."),
+            ("Croisement avec le contexte de l'espace", "Mise en regard avec le glossaire métier."),
+            ("Structuration pédagogique", "Organisation claire de l'explication."),
+        )
+    if re.search(r"\b(choisir|comparer|option|avantage|risque|pourquoi|quel|arbitrage)\b", lower):
+        return (
+            ("Critères d'évaluation", "Définition des axes de comparaison pertinents."),
+            ("Analyse des options et points de vigilance", "Pesée des avantages et limites."),
+            ("Recommandation argumentée", "Synthèse décisionnelle."),
+        )
+    return (
+        ("Cadrage de la demande", "Identification des objectifs et du périmètre de la question."),
+        ("Analyse approfondie et sources", "Exploration détaillée des éléments de réponse."),
+        ("Consolidation de la réponse", "Mise en forme structurée et synthétique."),
+    )
+
 
 @dataclass(frozen=True, slots=True)
 class ResolvedLiveLlmEndpoint:
-    """Active LLM endpoint configuration resolved for `Mon Assistant`."""
-
     provider: str
     model_name: str
     endpoint_uri: str
@@ -35,8 +74,6 @@ class ResolvedLiveLlmEndpoint:
 
 @dataclass(frozen=True, slots=True)
 class LiveLlmTurnOutcome:
-    """Result of invoking the configured LLM endpoint for an Assistant turn."""
-
     response_text: str
     step_label: str
     latency_ms: float
@@ -46,11 +83,12 @@ class LiveLlmTurnOutcome:
 def _extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEndpoint | None:
     model_name = str(item.get("primaryModel") or item.get("model") or "").strip()
     endpoint_uri = str(item.get("endpointUrl") or item.get("endpoint_uri") or "").strip()
-    if not model_name or not endpoint_uri:
-        return None
-    if not (endpoint_uri.startswith("http://") or endpoint_uri.startswith("https://")):
-        return None
-    if ".local/" in endpoint_uri:
+    if (
+        not model_name
+        or not endpoint_uri
+        or not (endpoint_uri.startswith("http://") or endpoint_uri.startswith("https://"))
+        or ".local/" in endpoint_uri
+    ):
         return None
     provider = str(item.get("modelFamily") or item.get("provider") or "OpenAI").strip()
     auth_mode = str(item.get("authMode") or "api_key").strip()
@@ -72,12 +110,12 @@ def _select_endpoint_from_tiers(
     requested_tier: str | None = None,
 ) -> ResolvedLiveLlmEndpoint | None:
     target = (requested_tier or "").strip().lower()
-    valid_endpoints: list[ResolvedLiveLlmEndpoint] = []
-    for item in llm_tiers:
-        if isinstance(item, dict):
-            resolved = _extract_tier_endpoint_from_dict(item)
-            if resolved is not None:
-                valid_endpoints.append(resolved)
+    valid_endpoints = [
+        resolved
+        for item in llm_tiers
+        if isinstance(item, dict)
+        and (resolved := _extract_tier_endpoint_from_dict(item)) is not None
+    ]
     if not valid_endpoints:
         return None
     if target and target != "auto":
@@ -93,22 +131,15 @@ def resolve_configured_llm_endpoint(
     requested_tier: str | None = None,
 ) -> ResolvedLiveLlmEndpoint | None:
     """Resolve the active configured LLM endpoint from app state or PostgreSQL 18."""
-    use_cassette = os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-    )
-    if use_cassette:
+    if os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes"):
         return None
 
-    # 1. Check in-memory snapshot on app.state
     snap = getattr(request.app.state, "platform_setup_snapshot", None)
     if snap is not None and getattr(snap, "llm_tiers", None):
         chosen = _select_endpoint_from_tiers(list(snap.llm_tiers), requested_tier)
         if chosen is not None:
             return chosen
 
-    # 2. Lazy load from PostgreSQL 18 if snapshot was not yet hydrated in this worker
     if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
         try:
             import asyncio
@@ -137,9 +168,7 @@ def resolve_configured_llm_endpoint(
 
             if db_snap is not None:
                 request.app.state.platform_setup_snapshot = db_snap
-                chosen = _select_endpoint_from_tiers(list(db_snap.llm_tiers), requested_tier)
-                if chosen is not None:
-                    return chosen
+                return _select_endpoint_from_tiers(list(db_snap.llm_tiers), requested_tier)
         except Exception:
             pass
 
@@ -157,9 +186,8 @@ def _build_ollama_root_url(endpoint_uri: str) -> str:
 
 def _is_ollama_endpoint(ep: ResolvedLiveLlmEndpoint) -> bool:
     uri_lower = ep.endpoint_uri.lower()
-    prov_lower = ep.provider.lower()
     return (
-        "ollama" in prov_lower
+        "ollama" in ep.provider.lower()
         or ":11434" in uri_lower
         or uri_lower.endswith("/api")
         or uri_lower.endswith("/api/chat")
@@ -174,28 +202,22 @@ def build_assistant_system_instructions(
     thinking_effort: str | None = None,
     system_instructions_override: str | None = None,
 ) -> str:
-    """Build differentiated system instructions according to model tier & thinking effort."""
+    """Build differentiated system instructions without raw technical `hat` codes."""
     if system_instructions_override and system_instructions_override.strip():
         return system_instructions_override.strip()
 
-    effort = (thinking_effort or "").strip().lower()
-    if not effort:
-        if speed_mode == "SPEED_3_DEEP_AUDIT":
-            effort = "deep"
-        elif speed_mode == "SPEED_2_AGENT_TOOLS":
-            effort = "balanced"
-        else:
-            effort = "fast"
-
+    effort = (thinking_effort or "").strip().lower() or (
+        "deep"
+        if speed_mode == "SPEED_3_DEEP_AUDIT"
+        else "balanced"
+        if speed_mode == "SPEED_2_AGENT_TOOLS"
+        else "fast"
+    )
     tier_key = (requested_tier or "medium").strip().lower()
     tier_guidance = {
         "simple": "Palier Rapide : privilégie l'essentiel, la concision et une réponse immédiate.",
-        "medium": (
-            "Palier Polyvalent : équilibre clarté pédagogique, exemples concrets et structure."
-        ),
-        "complex": (
-            "Palier Raisonnement avancé : traite les nuances métiers, cas limites et arbitrages."
-        ),
+        "medium": "Palier Polyvalent : équilibre clarté pédagogique, exemples et structure.",
+        "complex": "Palier Raisonnement avancé : traite nuances métiers et arbitrages.",
     }.get(tier_key, "Palier Polyvalent : équilibre clarté pédagogique et structure.")
 
     if effort == "deep":
@@ -207,19 +229,21 @@ def build_assistant_system_instructions(
         )
     elif effort == "balanced":
         effort_guidance = (
-            "Niveau de réflexion Moyen (Équilibré — Sources & Compétences) : "
+            "Niveau de réflexion Standard (Équilibré — Sources & Compétences) : "
             "organise ta réponse avec des points clés structurés en mobilisant le contexte "
             "de l'espace de travail et les compétences mentionnées."
         )
     else:
         effort_guidance = (
-            "Niveau de réflexion Bas (Rapide et efficace) : "
+            "Niveau de réflexion Bas (Standard — Rapide et efficace) : "
             "réponds de manière directe, synthétique et immédiatement actionnable, sans détour."
         )
 
+    hat_label = humanize_hat_label_fr(hat)
     return (
-        f"Tu es Mon Assistant ORCIA (rôle actif : {hat}). "
+        f"Tu es Mon Assistant ORCIA accompagnant un profil {hat_label}. "
         f"{tier_guidance} {effort_guidance} "
+        "Ne mentionne jamais d'identifiant technique interne dans ta réponse. "
         "Réponds toujours en français de manière claire et précise."
     )
 
@@ -235,7 +259,6 @@ def invoke_configured_llm_for_assistant_turn(
     system_instructions_override: str | None = None,
 ) -> LiveLlmTurnOutcome | None:
     """Call the configured LLM endpoint and return its response text and latency."""
-    # Skip live network call when running inside FastAPI TestClient (`http://testserver`)
     client_host = getattr(getattr(request, "client", None), "host", "") or ""
     if client_host == "testclient" and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1":
         return None
@@ -244,21 +267,14 @@ def invoke_configured_llm_for_assistant_turn(
     if ep is None:
         return None
 
-    effort = (thinking_effort or "").strip().lower()
-    if not effort:
-        effort = (
-            "deep"
-            if speed_mode == "SPEED_3_DEEP_AUDIT"
-            else "balanced"
-            if speed_mode == "SPEED_2_AGENT_TOOLS"
-            else "fast"
-        )
-    effort_fr = {
-        "fast": "Réflexion Basse",
-        "balanced": "Réflexion Moyenne",
-        "deep": "Réflexion Élevée",
-    }.get(effort, "Réflexion Standard")
-
+    effort = (thinking_effort or "").strip().lower() or (
+        "deep"
+        if speed_mode == "SPEED_3_DEEP_AUDIT"
+        else "balanced"
+        if speed_mode == "SPEED_2_AGENT_TOOLS"
+        else "fast"
+    )
+    effort_fr = "Réflexion Élevée" if effort == "deep" else "Réflexion Standard"
     system_msg = build_assistant_system_instructions(
         hat=hat,
         speed_mode=speed_mode,
@@ -267,67 +283,55 @@ def invoke_configured_llm_for_assistant_turn(
         system_instructions_override=system_instructions_override,
     )
     t0 = time.perf_counter()
+    default_thinking = " · ".join(
+        f"{t}: {s}" for t, s in detect_adaptive_thinking_steps_for_question(user_prompt)
+    )
+    step_label = f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_fr}) — réponse générée"
+    messages = [
+        {"role": "system", "content": system_msg},
+        {"role": "user", "content": user_prompt.strip()},
+    ]
 
     try:
         if _is_ollama_endpoint(ep):
             root_url = _build_ollama_root_url(ep.endpoint_uri)
-            chat_url = f"{root_url}/api/chat"
-            payload: dict[str, Any] = {
-                "model": ep.model_name,
-                "messages": [
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": user_prompt.strip()},
-                ],
-                "stream": False,
-                "think": False,
-            }
             with httpx.Client(timeout=45.0) as client:
-                resp = client.post(chat_url, json=payload)
+                resp = client.post(
+                    f"{root_url}/api/chat",
+                    json={
+                        "model": ep.model_name,
+                        "messages": messages,
+                        "stream": False,
+                        "think": False,
+                    },
+                )
                 resp.raise_for_status()
                 data = resp.json()
             elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
             msg_obj = data.get("message") if isinstance(data, dict) else {}
-            content = ""
-            thinking_val: str | None = None
             if isinstance(msg_obj, dict):
-                content = str(msg_obj.get("content") or "").strip()
                 raw_think = str(msg_obj.get("thinking") or "").strip()
-                if raw_think:
-                    thinking_val = raw_think
-                if not content and raw_think:
-                    content = raw_think
-            if not content:
-                return None
-            if not thinking_val:
-                thinking_val = (
-                    f"Modèle {ep.model_name} ({ep.provider} · {effort_fr}) : "
-                    f"analyse de la question « {user_prompt.strip()[:120]} » et structuration "
-                    "de la réponse."
-                )
-            return LiveLlmTurnOutcome(
-                response_text=content,
-                step_label=(
-                    f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_fr}) — réponse générée"
-                ),
-                latency_ms=elapsed_ms,
-                thinking_text=thinking_val,
-            )
+                content = str(msg_obj.get("content") or raw_think or "").strip()
+                if content:
+                    return LiveLlmTurnOutcome(
+                        response_text=content,
+                        step_label=step_label,
+                        latency_ms=elapsed_ms,
+                        thinking_text=raw_think or default_thinking,
+                    )
+            return None
 
-        # OpenAI-compatible (`/v1/chat/completions`)
         base = ep.endpoint_uri.rstrip("/")
         completions_url = base if base.endswith("/chat/completions") else f"{base}/chat/completions"
-        headers: dict[str, str] = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json"}
         if ep.api_key:
             headers["Authorization"] = f"Bearer {ep.api_key}"
-        openai_payload: dict[str, Any] = {
-            "model": ep.model_name,
-            "messages": [
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": user_prompt.strip()},
-            ],
-        }
         with httpx.Client(timeout=30.0) as client:
-            resp = client.post(completions_url, json=openai_payload, headers=headers)
+            resp = client.post(
+                completions_url,
+                json={"model": ep.model_name, "messages": messages},
+                headers=headers,
+            )
             resp.raise_for_status()
             data = resp.json()
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
@@ -341,20 +345,12 @@ def invoke_configured_llm_for_assistant_turn(
             if content:
                 return LiveLlmTurnOutcome(
                     response_text=content,
-                    step_label=(
-                        f"💬 Modèle IA {ep.model_name} "
-                        f"({ep.provider} · {effort_fr}) — réponse générée"
-                    ),
+                    step_label=step_label,
                     latency_ms=elapsed_ms,
-                    thinking_text=raw_reasoning
-                    or (
-                        f"Modèle {ep.model_name} ({ep.provider} · {effort_fr}) : "
-                        f"élaboration de la réponse pour « {user_prompt.strip()[:120]} »."
-                    ),
+                    thinking_text=raw_reasoning or default_thinking,
                 )
     except Exception:
         return None
-
     return None
 
 
@@ -384,10 +380,7 @@ def stream_configured_llm_for_assistant_turn(
     )
     yield {
         "event": "thinking_delta",
-        "data": {
-            "step_code": "NODE_5_SINGLE_STREAM_LLM",
-            "thinking_text": thinking_text,
-        },
+        "data": {"step_code": "NODE_5_SINGLE_STREAM_LLM", "thinking_text": thinking_text},
     }
     full_text = outcome.response_text if outcome is not None else (fallback_response_text or "")
     words = full_text.split(" ")
@@ -395,12 +388,7 @@ def stream_configured_llm_for_assistant_turn(
     for idx in range(0, len(words), chunk_size):
         piece = " ".join(words[idx : idx + chunk_size])
         suffix = " " if idx + chunk_size < len(words) else ""
-        yield {
-            "event": "token_delta",
-            "data": {
-                "delta": f"{piece}{suffix}",
-            },
-        }
+        yield {"event": "token_delta", "data": {"delta": f"{piece}{suffix}"}}
     yield {
         "event": "turn_completed",
         "data": {

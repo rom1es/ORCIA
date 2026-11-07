@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 86
+    "techLeadReportsCount": 87
   },
   "activeRoutes": [
     "/",
@@ -411,6 +411,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-07",
+      "phaseOrStory": "Post-Epic 12 / Epic 10 Réflexion Progressive & Flux Unifié",
+      "reportFile": "2026-11-07-assistant-reflexion-progressive-par-etape-collapse-et-flux-unifie-tech-lead-report.md",
+      "domain": "Cinématique Progressive de Réflexion par Étapes (collapse show / collapse hide au fil de l'eau), Sélecteur Épuré à 2 Modes (Standard / Approfondi), Flux Visuel Unifié Sans Double Boîte ni 🤖 Mon Assistant, Icônes Monochromes Sans Bordure & Purge de PLATFORM_ADMIN",
+      "summary": "Suppression du niveau Bas visible au profit de 2 modes clairs (Standard par défaut et Approfondi) avec pastille courte Standard ▾ / Approfondi ▾ lorsqu'un seul modèle est configuré ; absence de fausses étapes en mode Standard (Réflexion pendant Xs statique) et enchaînement progressif en 3 étapes adaptées à la question en mode Approfondi ou avec @Agent / /Compétence (collapse show automatique sur l'étape RUNNING → collapse hide automatique sur COMPLETED avec respect du clic manuel userExpandedSteps) ; fusion visuelle en un seul flux défilable sans double carte blanche ni en-tête 🤖 Mon Assistant ; boutons d'actions sans bordure (border-0 bg-transparent) ; et purge complète de (rôle actif : PLATFORM_ADMIN) dans build_assistant_system_instructions et sanitizeAssistantDisplayReply."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 UX/UI Mon Assistant",
