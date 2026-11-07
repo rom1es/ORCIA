@@ -187,6 +187,7 @@ export function SavedConversationsPanel({
 export interface ActiveConversationMessagesViewProps {
   readonly conversation: SavedAssistantConversation;
   readonly isFr: boolean;
+  readonly isGenerating?: boolean;
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
   readonly onRegenerateTurn?: (userPrompt: string) => void;
   readonly onSaveDraft?: (content: string) => void;
@@ -196,6 +197,7 @@ export interface ActiveConversationMessagesViewProps {
 export function ActiveConversationMessagesView({
   conversation,
   isFr,
+  isGenerating = false,
   ragCitations = [],
   onRegenerateTurn,
   onSaveDraft,
@@ -208,61 +210,60 @@ export function ActiveConversationMessagesView({
   return (
     <section
       data-testid="assistant-conversation-messages-list"
-      className="space-y-3"
+      className="space-y-4"
     >
-      <div className="max-h-[62vh] overflow-y-auto space-y-4 pr-1">
-        {conversation.turns.map((turn, idx) => {
-          const cleanReply = sanitizeAssistantDisplayReply(turn.assistantReply);
-          const turnCitations = turn.usedSources ?? ragCitations;
-          const turnSteps = turn.stepProgress ?? [];
-          const turnSeconds = turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
-          return (
-            <div
-              key={turn.turnId}
-              data-testid={`assistant-conversation-turn-${idx + 1}`}
-              className="space-y-2.5 text-xs"
-            >
-              <AssistantUserQuestionBubble
-                userPrompt={turn.userPrompt}
-                isFr={isFr}
-                modelLabel={turn.modelLabel}
-                effortLabel={turn.effortLabel}
-                {...(turn.attachedFiles ? { attachedFiles: turn.attachedFiles } : {})}
-                testId={
-                  idx === conversation.turns.length - 1
-                    ? "assistant-user-question-bubble"
-                    : `assistant-user-question-bubble-${idx + 1}`
-                }
-              />
+      {conversation.turns.map((turn, idx) => {
+        const cleanReply = sanitizeAssistantDisplayReply(turn.assistantReply);
+        const turnCitations = turn.usedSources ?? ragCitations;
+        const turnSteps = turn.stepProgress ?? [];
+        const turnSeconds = turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
+        const isLastSavedTurn = idx === conversation.turns.length - 1;
+        return (
+          <div
+            key={turn.turnId}
+            data-testid={`assistant-conversation-turn-${idx + 1}`}
+            className="space-y-2.5 text-xs"
+          >
+            <AssistantUserQuestionBubble
+              userPrompt={turn.userPrompt}
+              isFr={isFr}
+              modelLabel={turn.modelLabel}
+              effortLabel={turn.effortLabel}
+              {...(turn.attachedFiles ? { attachedFiles: turn.attachedFiles } : {})}
+              testId={
+                isLastSavedTurn && !isGenerating
+                  ? "assistant-user-question-bubble"
+                  : `assistant-user-question-bubble-${idx + 1}`
+              }
+            />
 
-              <div className="pt-1 space-y-2">
-                <AssistantThinkingSubWindow
-                  stepProgress={turnSteps}
-                  isGenerating={false}
-                  hasStreamedResponse={true}
-                  elapsedSecondsOverride={turnSeconds}
+            <div className="pt-1 space-y-2">
+              <AssistantThinkingSubWindow
+                stepProgress={turnSteps}
+                isGenerating={false}
+                hasStreamedResponse={true}
+                elapsedSecondsOverride={turnSeconds}
+              />
+              <FormattedMarkdownContent
+                content={cleanReply}
+                testId={`assistant-turn-markdown-${idx + 1}`}
+              />
+              {isLastSavedTurn && !isGenerating && (
+                <AssistantResponseFooterActionsAndCitations
+                  responseText={cleanReply}
+                  isFr={isFr}
+                  modelLabel={turn.modelLabel}
+                  effortLabel={turn.effortLabel}
+                  ragCitations={turnCitations}
+                  onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
+                  onSaveDraft={onSaveDraft}
+                  onContinueInProcess={onContinueInProcess}
                 />
-                <FormattedMarkdownContent
-                  content={cleanReply}
-                  testId={`assistant-turn-markdown-${idx + 1}`}
-                />
-                {idx === conversation.turns.length - 1 && (
-                  <AssistantResponseFooterActionsAndCitations
-                    responseText={cleanReply}
-                    isFr={isFr}
-                    modelLabel={turn.modelLabel}
-                    effortLabel={turn.effortLabel}
-                    ragCitations={turnCitations}
-                    onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
-                    onSaveDraft={onSaveDraft}
-                    onContinueInProcess={onContinueInProcess}
-                  />
-                )}
-              </div>
+              )}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
     </section>
   );
 }

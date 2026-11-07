@@ -1215,4 +1215,104 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       screen.getByTestId("assistant-step-item-LIVE_MODEL_REASONING").getAttribute("data-step-expanded"),
     ).toBe("true");
   });
+
+  it("Story 10.2f — enforces Viewport-Locked Chat Layout with sticky prompt footer, renders previousTurnsSlot inside central stream, and applies Smart Sticky Scroll (auto-scroll when pinned, stops auto-scroll when user scrolls up, and resumes via ↓ Suivre la réponse en direct)", () => {
+    const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      headerTitle: "Routage Conversationnel",
+      speed1PillLabel: "⚡ Rapide",
+      speed2PillLabel: "🛠️ Outils",
+      speed3DeepAuditPillLabel: "🧠 Approfondi",
+      cacheHitBadge: "HIT",
+      cacheMissBadge: "MISS",
+      nodesDeterministicLabel: "Préparation",
+      ttftBadgePrefix: "TTFT",
+      inputPlaceholder: "Posez votre question...",
+      sendPromptCta: "Envoyer",
+    };
+
+    const { rerender } = render(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        previousTurnsSlot={<div data-testid="mock-previous-turns-slot">Tour précédent #1</div>}
+        activeUserPrompt="Écris une longue synthèse détaillée"
+        isGenerating={true}
+        stepProgress={[]}
+        streamedText="Ligne 1\nLigne 2\n"
+        labels={speedLabels}
+      />,
+    );
+
+    // 1. Sticky prompt footer is permanently anchored at bottom: 0
+    const stickyFooter = screen.getByTestId("assistant-sticky-prompt-footer");
+    expect(stickyFooter.style.position).toBe("sticky");
+    expect(stickyFooter.style.bottom).toBe("0px");
+
+    // 2. Previous turns slot is rendered inside the central scrollable stream
+    const streamEl = screen.getByTestId("assistant-central-scrollable-stream");
+    expect(streamEl.querySelector("[data-testid='mock-previous-turns-slot']")?.textContent).toBe(
+      "Tour précédent #1",
+    );
+    expect(streamEl.getAttribute("data-pinned-to-bottom")).toBe("true");
+    expect(screen.queryByTestId("assistant-resume-autoscroll-btn")).toBeNull();
+
+    // Mock scroll geometry on the central scrollable stream container
+    Object.defineProperty(streamEl, "scrollHeight", { value: 900, configurable: true });
+    Object.defineProperty(streamEl, "clientHeight", { value: 300, configurable: true });
+    streamEl.scrollTop = 600;
+
+    // 3. When pinned to bottom (true), new streamed chunks auto-scroll scrollTop to scrollHeight
+    Object.defineProperty(streamEl, "scrollHeight", { value: 1100, configurable: true });
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        previousTurnsSlot={<div data-testid="mock-previous-turns-slot">Tour précédent #1</div>}
+        activeUserPrompt="Écris une longue synthèse détaillée"
+        isGenerating={true}
+        stepProgress={[]}
+        streamedText="Ligne 1\nLigne 2\nLigne 3\nLigne 4\n"
+        labels={speedLabels}
+      />,
+    );
+    expect(streamEl.scrollTop).toBe(1100);
+
+    // 4. User manually scrolls upward (distanceFromBottom = 1100 - 150 - 300 = 650 > 48) -> unpins auto-scroll
+    streamEl.scrollTop = 150;
+    fireEvent.scroll(streamEl);
+    expect(streamEl.getAttribute("data-pinned-to-bottom")).toBe("false");
+    const resumeBtn = screen.getByTestId("assistant-resume-autoscroll-btn");
+    expect(resumeBtn.textContent).toContain("↓ Suivre la réponse en direct");
+
+    // 5. Subsequent streaming chunks append at the bottom WITHOUT hijacking user's manual scrollTop (stays 150)
+    Object.defineProperty(streamEl, "scrollHeight", { value: 1400, configurable: true });
+    rerender(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        previousTurnsSlot={<div data-testid="mock-previous-turns-slot">Tour précédent #1</div>}
+        activeUserPrompt="Écris une longue synthèse détaillée"
+        isGenerating={true}
+        stepProgress={[]}
+        streamedText="Ligne 1\nLigne 2\nLigne 3\nLigne 4\nLigne 5\nLigne 6\n"
+        labels={speedLabels}
+      />,
+    );
+    expect(streamEl.scrollTop).toBe(150);
+
+    // 6. Clicking "↓ Suivre la réponse en direct" re-pins to bottom and jumps to scrollHeight (1400)
+    fireEvent.click(resumeBtn);
+    expect(streamEl.getAttribute("data-pinned-to-bottom")).toBe("true");
+    expect(streamEl.scrollTop).toBe(1400);
+    expect(screen.queryByTestId("assistant-resume-autoscroll-btn")).toBeNull();
+  });
 });

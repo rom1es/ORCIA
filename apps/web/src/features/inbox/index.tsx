@@ -158,6 +158,19 @@ export function InboxFeaturePanel() {
     setGovernanceFeedback(isFr ? `✅ Brouillon « ${excerpt || "Réponse"} » enregistré dans votre Espace.` : `✅ Draft "${excerpt || "Reply"}" saved to your Workspace.`);
   };
 
+  const previousTurnsNode =
+    activeConversation && activeConversation.turns.length > 0 ? (
+      <ActiveConversationMessagesView
+        conversation={activeConversation}
+        isFr={isFr}
+        isGenerating={isGenerating}
+        ragCitations={ragCitations}
+        onRegenerateTurn={(userPrompt) => sendTurn({ userPrompt, requestedSpeed: "SPEED_1_FAST", deepAuditPillActive: false })}
+        onSaveDraft={handleSaveDraftAction}
+        onContinueInProcess={() => navigateToRoute("/processes")}
+      />
+    ) : null;
+
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
       {governanceFeedback ? (
@@ -250,17 +263,6 @@ export function InboxFeaturePanel() {
       ) : null}
 
       <div className="orcia-bento-card space-y-3">
-        {activeConversation && activeConversation.turns.length > 0 && !isGenerating && (
-          <ActiveConversationMessagesView
-            conversation={activeConversation}
-            isFr={isFr}
-            ragCitations={ragCitations}
-            onRegenerateTurn={(userPrompt) => sendTurn({ userPrompt, requestedSpeed: "SPEED_1_FAST", deepAuditPillActive: false })}
-            onSaveDraft={handleSaveDraftAction}
-            onContinueInProcess={() => navigateToRoute("/processes")}
-          />
-        )}
-
         <AssistantSpeedSelectorAndStreamView
           workspaceId={activeWorkspaceId}
           userId={platformAdmin?.email ?? ""}
@@ -276,6 +278,7 @@ export function InboxFeaturePanel() {
           activeFolderTitle={activeFolder?.title ?? null}
           activeFolderNotes={activeFolder?.pinnedNotesMarkdown ?? null}
           onClearActiveFolder={() => selectActiveFolderAndPersist("")}
+          previousTurnsSlot={previousTurnsNode}
           welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
           showWelcomeHero={!activeConversation || activeConversation.turns.length === 0}
           hideTechnicalCacheHeader={true}

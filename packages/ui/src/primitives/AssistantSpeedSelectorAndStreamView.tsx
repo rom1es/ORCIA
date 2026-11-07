@@ -73,6 +73,7 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly activeFolderTitle?: string | null;
   readonly activeFolderNotes?: string | null;
   readonly onClearActiveFolder?: () => void;
+  readonly previousTurnsSlot?: React.ReactNode;
   readonly welcomeTitle?: string;
   readonly showWelcomeHero?: boolean;
   readonly hideTechnicalCacheHeader?: boolean;
@@ -105,51 +106,23 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   }) => void;
 }
 
-export function AssistantSpeedSelectorAndStreamView({
-  workspaceId,
-  userId,
-  hat,
-  activeSpeed: initialSpeed = "SPEED_1_FAST",
-  deepAuditPillActive: initialDeepAudit = false,
-  selectedTier: initialTier = "medium",
-  selectedEffort: initialEffort,
-  modelOptions = DEFAULT_ASSISTANT_MODEL_OPTIONS,
-  agentOptions = DEFAULT_ASSISTANT_AGENT_OPTIONS,
-  skillOptions = DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  orciaDocuments = DEFAULT_ORCIA_DOCUMENT_OPTIONS,
-  ragCitations = [],
-  autocompleteSuggestions = [],
-  prefillPrompt = null,
-  onPrefillConsumed,
-  activeFolderTitle = null,
-  activeFolderNotes = null,
-  onClearActiveFolder,
-  welcomeTitle = "Par quoi voulez-vous commencer ?",
-  showWelcomeHero = true,
-  hideTechnicalCacheHeader = false,
-  hideLegacySpeedPills = false,
-  hideDuplicateCompletedStream = false,
-  cacheHit = true,
-  cacheLookupMs = 1.4,
-  nodes1To4DeterministicMs = 18.2,
-  ttftMs = 398.2,
-  stepProgress,
-  streamedText = "",
-  activeUserPrompt,
-  isGenerating = false,
-  initialElapsedSeconds = 0,
-  generationStopped = false,
-  errorMessage = null,
-  labels,
-  onOpenFoldersFromPlus,
-  onStopGeneration,
-  onRegenerateLastTurn,
-  onSaveDraftFromResponse,
-  onContinueInProcessFromResponse,
-  onSendTurn,
-}: AssistantSpeedSelectorAndStreamViewProps): React.JSX.Element {
+export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelectorAndStreamViewProps): React.JSX.Element {
+  const {
+    workspaceId, userId, hat, activeSpeed: initialSpeed = "SPEED_1_FAST", deepAuditPillActive: initialDeepAudit = false,
+    selectedTier: initialTier = "medium", selectedEffort: initialEffort, modelOptions = DEFAULT_ASSISTANT_MODEL_OPTIONS,
+    agentOptions = DEFAULT_ASSISTANT_AGENT_OPTIONS, skillOptions = DEFAULT_ASSISTANT_SKILL_OPTIONS,
+    orciaDocuments = DEFAULT_ORCIA_DOCUMENT_OPTIONS, ragCitations = [], autocompleteSuggestions = [], prefillPrompt = null,
+    onPrefillConsumed, activeFolderTitle = null, activeFolderNotes = null, onClearActiveFolder, previousTurnsSlot = null,
+    welcomeTitle = "Par quoi voulez-vous commencer ?", showWelcomeHero = true, hideTechnicalCacheHeader = false,
+    hideLegacySpeedPills = false, hideDuplicateCompletedStream = false, cacheHit = true, cacheLookupMs = 1.4,
+    nodes1To4DeterministicMs = 18.2, ttftMs = 398.2, stepProgress, streamedText = "", activeUserPrompt,
+    isGenerating = false, initialElapsedSeconds = 0, generationStopped = false, errorMessage = null, labels,
+    onOpenFoldersFromPlus, onStopGeneration, onRegenerateLastTurn, onSaveDraftFromResponse, onContinueInProcessFromResponse, onSendTurn,
+  } = props;
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const streamEndRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const isUserPinnedToBottomRef = useRef<boolean>(true);
+  const [isPinnedToBottom, setIsPinnedToBottom] = useState<boolean>(true);
   const [speed, setSpeed] = useState<UiAssistantSpeedMode>(initialDeepAudit ? "SPEED_3_DEEP_AUDIT" : initialSpeed);
   const [deepAuditActive, setDeepAuditActive] = useState<boolean>(initialDeepAudit);
   const [tier, setTier] = useState<UiInferenceTier>(initialTier);
@@ -171,33 +144,47 @@ export function AssistantSpeedSelectorAndStreamView({
   const normalizedEffort: UiInferenceEffort = effort === "deep" ? "deep" : "balanced";
   const activeEffortOption = ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === normalizedEffort) ?? ASSISTANT_EFFORT_OPTIONS[1]!;
 
-  useEffect(() => {
-    const el = streamEndRef.current;
-    if ((streamedText || stepProgress.length > 0) && el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "smooth", block: "end" });
+  const handleStreamScroll = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom > 48 && isUserPinnedToBottomRef.current) {
+      isUserPinnedToBottomRef.current = false;
+      setIsPinnedToBottom(false);
+    } else if (distanceFromBottom <= 24 && !isUserPinnedToBottomRef.current) {
+      isUserPinnedToBottomRef.current = true;
+      setIsPinnedToBottom(true);
     }
-  }, [streamedText, stepProgress]);
+  };
+
+  const scrollToStreamBottom = () => {
+    const el = scrollContainerRef.current;
+    isUserPinnedToBottomRef.current = true;
+    setIsPinnedToBottom(true);
+    if (el) el.scrollTop = el.scrollHeight;
+  };
 
   useEffect(() => {
-    if (prefillPrompt) {
-      setPromptText(prefillPrompt);
-      setSpeed("SPEED_2_AGENT_TOOLS");
-      setEffort("balanced");
-      onPrefillConsumed?.();
-      inputRef.current?.focus();
+    const el = scrollContainerRef.current;
+    if (isUserPinnedToBottomRef.current && (streamedText || stepProgress.length > 0 || isGenerating) && el) {
+      el.scrollTop = el.scrollHeight;
     }
+  }, [streamedText, stepProgress, isGenerating]);
+
+  useEffect(() => {
+    if (!prefillPrompt) return;
+    setPromptText(prefillPrompt);
+    setSpeed("SPEED_2_AGENT_TOOLS");
+    setEffort("balanced");
+    onPrefillConsumed?.();
+    inputRef.current?.focus();
   }, [prefillPrompt, onPrefillConsumed]);
 
-  const extraAgents = autocompleteSuggestions
-    .filter((s) => s.kind === "agent")
-    .map((s) => ({ slug: s.token.replace(/^@/, ""), label: s.name, description: s.description, kind: "agent" as const }));
-  const extraSkills = autocompleteSuggestions
-    .filter((s) => s.kind === "skill")
-    .map((s) => ({ slug: s.token.replace(/^\//, ""), label: s.name, description: s.description, kind: "skill" as const }));
+  const extraAgents = autocompleteSuggestions.filter((s) => s.kind === "agent").map((s) => ({ slug: s.token.replace(/^@/, ""), label: s.name, description: s.description, kind: "agent" as const }));
+  const extraSkills = autocompleteSuggestions.filter((s) => s.kind === "skill").map((s) => ({ slug: s.token.replace(/^\//, ""), label: s.name, description: s.description, kind: "skill" as const }));
   const mergedAgentOptions = [...extraAgents, ...agentOptions.filter((a) => !extraAgents.some((e) => e.slug === a.slug))];
   const mergedSkillOptions = [...extraSkills, ...skillOptions.filter((s) => !extraSkills.some((e) => e.slug === s.slug))];
-  const effectiveAutocompleteTrigger =
-    detectActiveAutocompleteTrigger(promptText) ?? (forcedAutocompleteKind !== null ? { kind: forcedAutocompleteKind, query: "" } : null);
+  const effectiveAutocompleteTrigger = detectActiveAutocompleteTrigger(promptText) ?? (forcedAutocompleteKind !== null ? { kind: forcedAutocompleteKind, query: "" } : null);
 
   const handleSelectEffort = (nextEffort: UiInferenceEffort) => {
     setUserEditedTierOrEffort(true);
@@ -229,6 +216,8 @@ export function AssistantSpeedSelectorAndStreamView({
       : "Hello, can you briefly introduce yourself and confirm you are operational?";
     const effectivePrompt = trimmed || lastSubmittedPrompt || fallbackPrompt;
     const submittedFiles = attachedFiles;
+    isUserPinnedToBottomRef.current = true;
+    setIsPinnedToBottom(true);
     setLastSubmittedPrompt(effectivePrompt);
     setLastSubmittedFiles(submittedFiles);
     setAttachedFiles([]);
@@ -282,7 +271,11 @@ export function AssistantSpeedSelectorAndStreamView({
   ];
 
   return (
-    <section data-testid="assistant-speed-selector-and-stream" className={hideTechnicalCacheHeader ? "pt-1 text-text-primary space-y-3" : "rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary space-y-4"}>
+    <section
+      data-testid="assistant-speed-selector-and-stream"
+      style={{ display: "flex", flexDirection: "column", maxHeight: "calc(100vh - 155px)", minHeight: "340px" }}
+      className={hideTechnicalCacheHeader ? "pt-1 text-text-primary gap-2.5" : "rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary gap-3"}
+    >
       {!hideTechnicalCacheHeader && (
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">
           <h3 className="text-sm font-semibold">{labels.headerTitle}</h3>
@@ -296,7 +289,15 @@ export function AssistantSpeedSelectorAndStreamView({
       {showWelcomeHero && !cleanStreamedText && !isGenerating && (
         <div className="py-6 text-center"><h2 data-testid="assistant-welcome-hero-title" className="text-xl font-semibold tracking-tight text-text-primary">{welcomeTitle}</h2></div>
       )}
-      <div data-testid="assistant-central-scrollable-stream" className="max-h-[62vh] overflow-y-auto space-y-3 pr-1">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleStreamScroll}
+        data-testid="assistant-central-scrollable-stream"
+        data-pinned-to-bottom={isPinnedToBottom ? "true" : "false"}
+        style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto" }}
+        className="space-y-3 pr-1"
+      >
+        {previousTurnsSlot}
         {shownUserQuestion && (!hideDuplicateCompletedStream || isGenerating) ? (
           <AssistantUserQuestionBubble userPrompt={shownUserQuestion} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} attachedFiles={lastSubmittedFiles} />
         ) : null}
@@ -310,35 +311,26 @@ export function AssistantSpeedSelectorAndStreamView({
           <div role="alert" data-testid="assistant-error-banner" className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning">{errorMessage}</div>
         )}
         {(cleanStreamedText || isStoppedVisible) && (
-          <div
-            data-testid="assistant-streamed-response-box"
-            aria-live="polite"
-            style={hideDuplicateCompletedStream && !isStoppedVisible ? { display: "none" } : undefined}
-            className={hideDuplicateCompletedStream && !isStoppedVisible ? "sr-only" : "rounded-lg bg-surface-primary py-2 text-xs leading-relaxed space-y-2"}
-          >
+          <div data-testid="assistant-streamed-response-box" aria-live="polite" style={hideDuplicateCompletedStream && !isStoppedVisible ? { display: "none" } : undefined} className={hideDuplicateCompletedStream && !isStoppedVisible ? "sr-only" : "rounded-lg bg-surface-primary py-2 text-xs leading-relaxed space-y-2"}>
             {cleanStreamedText ? <FormattedMarkdownContent content={cleanStreamedText} /> : null}
             {isStoppedVisible ? (
-              <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">
-                ⏹ Génération interrompue par l&apos;utilisateur
-              </div>
+              <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">⏹ Génération interrompue par l&apos;utilisateur</div>
             ) : null}
             {!isGenerating && cleanStreamedText && !hideDuplicateCompletedStream ? (
-              <AssistantResponseFooterActionsAndCitations
-                responseText={cleanStreamedText}
-                modelLabel={displayModelBadge}
-                effortLabel={activeEffortOption.title}
-                ragCitations={mergedRagCitations}
-                onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))}
-                onSaveDraft={onSaveDraftFromResponse}
-                onContinueInProcess={onContinueInProcessFromResponse}
-              />
+              <AssistantResponseFooterActionsAndCitations responseText={cleanStreamedText} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} ragCitations={mergedRagCitations} onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))} onSaveDraft={onSaveDraftFromResponse} onContinueInProcess={onContinueInProcessFromResponse} />
             ) : null}
           </div>
         )}
-        <div ref={streamEndRef} />
       </div>
 
-      <div className="relative">
+      <div data-testid="assistant-sticky-prompt-footer" style={{ flexShrink: 0, position: "sticky", bottom: 0, zIndex: 20, backgroundColor: "var(--color-bg-surface)", paddingTop: "6px" }} className="relative">
+        {!isPinnedToBottom && isGenerating ? (
+          <div className="mb-1.5 flex justify-center">
+            <button type="button" data-testid="assistant-resume-autoscroll-btn" onClick={scrollToStreamBottom} className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-elevated px-3 py-0.5 text-[11px] font-medium text-action-primary shadow-sm hover:bg-surface-secondary">
+              ↓ Suivre la réponse en direct
+            </button>
+          </div>
+        ) : null}
         <AssistantPromptPlusAndAutocomplete
           plusMenuOpen={plusMenuOpen}
           autocompleteTrigger={effectiveAutocompleteTrigger}
@@ -356,12 +348,8 @@ export function AssistantSpeedSelectorAndStreamView({
         {activeFolderTitle ? (
           <div data-testid="assistant-prompt-active-folder-badge" className="mb-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-action-primary/30 bg-action-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-action-primary">
             <span>📁 Dossier actif : <strong>{activeFolderTitle}</strong></span>
-            {activeFolderNotes && activeFolderNotes.trim() ? (
-              <span data-testid="assistant-prompt-active-folder-note-indicator" className="text-text-secondary">· 📌 Note active prise en compte par l&apos;Assistant</span>
-            ) : null}
-            {onClearActiveFolder ? (
-              <button type="button" data-testid="assistant-prompt-clear-active-folder-btn" onClick={onClearActiveFolder} aria-label="Détacher le dossier actif" className="ml-1 font-bold hover:opacity-80">×</button>
-            ) : null}
+            {activeFolderNotes && activeFolderNotes.trim() ? <span data-testid="assistant-prompt-active-folder-note-indicator" className="text-text-secondary">· 📌 Note active prise en compte par l&apos;Assistant</span> : null}
+            {onClearActiveFolder ? <button type="button" data-testid="assistant-prompt-clear-active-folder-btn" onClick={onClearActiveFolder} aria-label="Détacher le dossier actif" className="ml-1 font-bold hover:opacity-80">×</button> : null}
           </div>
         ) : null}
         <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
@@ -379,15 +367,7 @@ export function AssistantSpeedSelectorAndStreamView({
           </div>
         </div>
         {pickerOpen && (
-          <AssistantModelAndEffortPopover
-            modelOptions={modelOptions}
-            selectedTier={tier}
-            selectedEffort={effort}
-            thinkingSubmenuOpen={thinkingSubmenuOpen}
-            onSelectTier={(nextTier) => { setUserEditedTierOrEffort(true); setTier(nextTier); }}
-            onToggleThinkingSubmenu={() => setThinkingSubmenuOpen((prev) => !prev)}
-            onSelectEffort={handleSelectEffort}
-          />
+          <AssistantModelAndEffortPopover modelOptions={modelOptions} selectedTier={tier} selectedEffort={effort} thinkingSubmenuOpen={thinkingSubmenuOpen} onSelectTier={(nextTier) => { setUserEditedTierOrEffort(true); setTier(nextTier); }} onToggleThinkingSubmenu={() => setThinkingSubmenuOpen((prev) => !prev)} onSelectEffort={handleSelectEffort} />
         )}
       </div>
 
