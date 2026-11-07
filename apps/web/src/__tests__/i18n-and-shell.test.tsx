@@ -1716,4 +1716,191 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
     expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
   });
+
+  it("delivers the redesigned Workspaces studio view with quick filters, 1-click private-to-team sharing, inline datasource connection, integrated multi-level Glossary & Business Rules with 1-click promotion, F5 reload survival, and Option A (no visible 📖 Vocabulaire in sidebar)", async () => {
+    const queryClient = createOrciaQueryClient();
+    const history = createMemoryHistory({ initialEntries: ["/settings"] });
+    const router = createOrciaRouter({ queryClient, history });
+    await router.load();
+
+    const { unmount } = render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    // 1. Option A: Verify 📖 Vocabulaire is visually hidden in the left sidebar (display: none)
+    const vocabMenuItem = screen.getByTestId("eight-menu-item-vocabulary");
+    expect(vocabMenuItem.style.display).toBe("none");
+
+    // 2. Initialize Day-0 Admin and a Billing Team ("Équipe Produit IA")
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Romain Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "romain@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+
+    const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
+    fireEvent.change(levelSelect, { target: { value: "TEAM" } });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Équipe Produit IA" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    // Verify Global Glossary & Rules tab is accessible in /settings
+    fireEvent.click(screen.getByTestId("settings-tab-glossary"));
+    expect(screen.getByTestId("workspace-glossary-and-ontology-tab")).toBeDefined();
+
+    // 3. Navigate to 🗂️ Mes Espaces (/workspaces)
+    fireEvent.click(screen.getByTestId("eight-menu-item-spaces"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Legacy redundant panels are visually hidden (display: none)
+    expect(screen.getByTestId("workspaces-legacy-technical-panels").style.display).toBe(
+      "none",
+    );
+
+    // Create a Private Workspace ("Mon Labo Perso", PRIVATE_USER) and a Team Workspace ("Espace Produit", STANDARD)
+    const visibilitySelect = screen.getByTestId(
+      "workspace-visibility-select",
+    ) as HTMLSelectElement;
+    fireEvent.change(visibilitySelect, { target: { value: "PRIVATE_USER" } });
+    fireEvent.change(screen.getByTestId("workspace-name-input"), {
+      target: { value: "Mon Labo Perso" },
+    });
+    fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+
+    // Expand creation form via "+ Créer un Espace de Travail" button and create a 2nd workspace
+    const toggleCreateBtn = screen.getByTestId("toggle-create-workspace-form-btn");
+    fireEvent.click(toggleCreateBtn);
+    fireEvent.change(visibilitySelect, { target: { value: "STANDARD" } });
+    fireEvent.change(screen.getByTestId("workspace-name-input"), {
+      target: { value: "Espace Produit" },
+    });
+    fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+
+    // 4. Verify Quick Filters (Tous (2), 👥 Espaces d'Équipe (1), 🔒 Mes Espaces Privés (1))
+    expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
+    expect(screen.getByTestId("workspaces-filter-team").textContent).toContain("(1)");
+    expect(screen.getByTestId("workspaces-filter-private").textContent).toContain("(1)");
+
+    fireEvent.click(screen.getByTestId("workspaces-filter-private"));
+    expect(screen.getByTestId("workspace-studio-card-ws-1")).toBeDefined();
+    expect(screen.queryByTestId("workspace-studio-card-ws-2")).toBeNull();
+    fireEvent.click(screen.getByTestId("workspaces-filter-all"));
+
+    // 5. Test 1-click sharing of Private Workspace ("ws-1") to Team ("STANDARD") + Phase auto-save with "✓ Enregistré" badge
+    fireEvent.click(screen.getByTestId("share-private-workspace-btn-ws-1"));
+    expect(screen.getByTestId("workspace-visibility-badge-ws-1").textContent).toContain(
+      "Collectif d'équipe",
+    );
+    expect(screen.getByTestId("workspace-autosaved-badge-ws-1").textContent).toContain(
+      "✓ Enregistré",
+    );
+
+    fireEvent.change(screen.getByTestId("workspace-card-phase-select-ws-1"), {
+      target: { value: "RUN" },
+    });
+    expect(
+      (screen.getByTestId("workspace-card-phase-select-ws-1") as HTMLSelectElement).value,
+    ).toBe("RUN");
+
+    // 6. Test Unified 3-Tab Detail Panel for active workspace ("Mon Labo Perso", ws-1)
+    // Tab 1: 📚 Sources & Documents de l'Espace -> connect a source inline without navigating to /settings
+    expect(screen.getByTestId("workspace-detail-sources-empty")).toBeDefined();
+    const dsSubmitBtn = screen.getByTestId(
+      "workspace-inline-ds-submit-btn",
+    ) as HTMLButtonElement;
+    expect(dsSubmitBtn.disabled).toBe(true);
+
+    fireEvent.change(screen.getByTestId("workspace-inline-ds-alias-input"), {
+      target: { value: "Wiki Produit Interne" },
+    });
+    fireEvent.change(screen.getByTestId("workspace-inline-ds-uri-input"), {
+      target: { value: "https://confluence.orcia.fr/spaces/PROD" },
+    });
+    expect(dsSubmitBtn.disabled).toBe(false);
+    fireEvent.click(dsSubmitBtn);
+    expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
+      "Wiki Produit Interne",
+    );
+
+    // Tab 2: 📖 Glossaire & Règles Métiers (Ontologie) -> multi-level cascade + add term + 1-click upward promotion
+    fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));
+    const cascadeBar = screen.getByTestId("glossary-inheritance-cascade-bar");
+    expect(cascadeBar.textContent).toContain("🏢 Entreprise (Global)");
+    expect(cascadeBar.textContent).toContain("🏛️ Direction (BU)");
+    expect(cascadeBar.textContent).toContain("👥 Équipe (Équipe Produit IA)");
+    expect(cascadeBar.textContent).toContain("🗂️ Cet Espace (Mon Labo Perso)");
+    // Zero internal ORCIA enum codes in user-facing labels
+    expect(cascadeBar.textContent).not.toContain("1_ENTERPRISE");
+    expect(cascadeBar.textContent).not.toContain("3_WORKSPACE");
+
+    fireEvent.change(screen.getByTestId("workspace-glossary-term-input"), {
+      target: { value: "Marge Brute Récurrente" },
+    });
+    fireEvent.change(screen.getByTestId("workspace-glossary-definition-input"), {
+      target: {
+        value: "Revenu récurrent mensuel diminué des coûts directs d'infrastructure IA.",
+      },
+    });
+    fireEvent.click(screen.getByTestId("workspace-glossary-submit-btn"));
+
+    const conceptCard = screen.getByTestId(
+      "glossary-concept-card-marge-brute-r-currente",
+    );
+    expect(conceptCard.textContent).toContain("Marge Brute Récurrente");
+    expect(
+      screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
+    ).toContain("🗂️ Cet Espace");
+
+    // Promote in 1 click from Workspace (3_WORKSPACE) to Organization/BU (2_DOMAIN) -> shows "✓ Promu" badge
+    fireEvent.click(
+      screen.getByTestId("promote-glossary-concept-btn-marge-brute-r-currente"),
+    );
+    expect(
+      screen.getByTestId("promoted-glossary-badge-marge-brute-r-currente").textContent,
+    ).toContain("✓ Promu");
+    expect(
+      screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
+    ).toContain("🏛️ Direction (BU)");
+
+    // Tab 3: 👥 Membres, Accès & Consignes -> auto-save workspace instructions
+    fireEvent.click(screen.getByTestId("workspace-detail-tab-members"));
+    fireEvent.change(screen.getByTestId("workspace-instructions-textarea"), {
+      target: { value: "Toujours citer la source Wiki Produit Interne." },
+    });
+    expect(screen.getByTestId("workspace-instructions-saved-badge").textContent).toContain(
+      "✓ Enregistré",
+    );
+
+    // 7. F5 Reload Survival Gate: unmount() and re-render() -> verify shared visibility, attached source, and promoted glossary term persist
+    unmount();
+
+    const reloadedRouter = createOrciaRouter({
+      queryClient: createOrciaQueryClient(),
+      history: createMemoryHistory({ initialEntries: ["/workspaces"] }),
+    });
+    await reloadedRouter.load();
+    render(
+      <QueryClientProvider client={createOrciaQueryClient()}>
+        <RouterProvider router={reloadedRouter} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("workspace-visibility-badge-ws-1").textContent).toContain(
+      "Collectif d'équipe",
+    );
+    expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
+      "Wiki Produit Interne",
+    );
+    fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));
+    expect(
+      screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
+    ).toContain("🏛️ Direction (BU)");
+  });
 });
