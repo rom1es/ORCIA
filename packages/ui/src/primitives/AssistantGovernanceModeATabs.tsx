@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { handleRgaaSubmitKeyDown } from "../components/RgaaModalDialog";
 import {
   ASSISTANT_DEFAULT_HAT_OPTIONS,
   type AssistantGovernanceModalAndStudioLabels,
   type UiAssembledLayerItem,
+  type UiAssistantPromptTelemetryRecord,
   type UiAssistantResponseFormat,
   type UiAssistantResponseTone,
 } from "./AssistantGovernanceModalAndStudio";
@@ -22,10 +23,9 @@ export interface AssistantGovernanceModeATabsProps {
   readonly mcpExposed: boolean;
   readonly copiedMcp: boolean;
   readonly assembledLayers: readonly UiAssembledLayerItem[];
+  readonly promptTelemetryLog?: readonly UiAssistantPromptTelemetryRecord[];
   readonly labels: AssistantGovernanceModalAndStudioLabels;
-  readonly onSelectTab: (
-    tab: "USER_PREFS" | "WORKSPACE_SETTINGS" | "FULL_ASSEMBLY",
-  ) => void;
+  readonly onSelectTab: (tab: "USER_PREFS" | "WORKSPACE_SETTINGS" | "FULL_ASSEMBLY") => void;
   readonly onChangeTone: (tone: UiAssistantResponseTone) => void;
   readonly onChangeFormat: (format: UiAssistantResponseFormat) => void;
   readonly onChangeDefaultHat: (hat: string) => void;
@@ -51,6 +51,7 @@ export function AssistantGovernanceModeATabs({
   mcpExposed,
   copiedMcp,
   assembledLayers,
+  promptTelemetryLog = [],
   labels,
   onSelectTab,
   onChangeTone,
@@ -63,6 +64,8 @@ export function AssistantGovernanceModeATabs({
   onCopyMcpConfig,
   onSaveWorkspaceSettings,
 }: AssistantGovernanceModeATabsProps): React.JSX.Element {
+  const [expandedTelemetryTurnId, setExpandedTelemetryTurnId] = useState<string | null>(null);
+
   return (
     <div data-testid="assistant-governance-mode-a" className="space-y-4">
       <div
@@ -185,21 +188,10 @@ export function AssistantGovernanceModeATabs({
             />
           </label>
 
-          <button
-            type="button"
-            data-testid="assistant-save-user-prefs-btn"
-            style={{ display: "none" }}
-            onClick={onSaveUserPrefs}
-            onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSaveUserPrefs, false)}
-          >
+          <button type="button" data-testid="assistant-save-user-prefs-btn" style={{ display: "none" }} onClick={onSaveUserPrefs} onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSaveUserPrefs, false)}>
             {labels.saveUserPrefsCta}
           </button>
-          <button
-            type="button"
-            data-testid="assistant-gov-save-user-btn"
-            style={{ display: "none" }}
-            onClick={onSaveUserPrefs}
-          >
+          <button type="button" data-testid="assistant-gov-save-user-btn" style={{ display: "none" }} onClick={onSaveUserPrefs}>
             {labels.saveUserPrefsCta}
           </button>
         </div>
@@ -208,17 +200,12 @@ export function AssistantGovernanceModeATabs({
       {activeTab === "WORKSPACE_SETTINGS" && (
         <div data-testid="assistant-gov-panel-workspace" className="space-y-3">
           {!canEditWorkspaceLayer && (
-            <div
-              data-testid="assistant-workspace-readonly-badge"
-              className="p-2 rounded border border-surface-border bg-surface-secondary text-text-secondary"
-            >
+            <div data-testid="assistant-workspace-readonly-badge" className="p-2 rounded border border-surface-border bg-surface-secondary text-text-secondary">
               {labels.workspaceReadOnlyBadge}
             </div>
           )}
           <label className="block space-y-1">
-            <span className="text-text-secondary">
-              {labels.workspaceInstructionsLabel}{workspaceId ? ` (${workspaceId})` : ""}
-            </span>
+            <span className="text-text-secondary">{labels.workspaceInstructionsLabel}{workspaceId ? ` (${workspaceId})` : ""}</span>
             <textarea
               rows={2}
               autoComplete="off"
@@ -252,27 +239,14 @@ export function AssistantGovernanceModeATabs({
                 <span>{labels.mcpExposeToggleLabel}</span>
               </label>
               {mcpFrozenByUpperLayer && (
-                <span
-                  data-testid="assistant-mcp-frozen-funnel-badge"
-                  className="px-2 py-0.5 rounded bg-status-warning/15 text-status-warning font-medium text-[11px]"
-                >
+                <span data-testid="assistant-mcp-frozen-funnel-badge" className="px-2 py-0.5 rounded bg-status-warning/15 text-status-warning font-medium text-[11px]">
                   {labels.mcpFrozenByUpperBadge}
                 </span>
               )}
             </div>
             <div className="flex items-center justify-between gap-2">
-              <code
-                data-testid="assistant-mcp-config-snippet"
-                className="text-[11px] font-mono text-text-secondary truncate"
-              >
-                {mcpIdeConfigJson}
-              </code>
-              <button
-                type="button"
-                data-testid="assistant-copy-mcp-config-btn"
-                onClick={onCopyMcpConfig}
-                className="px-2.5 py-1 rounded border border-surface-border bg-surface-secondary shrink-0"
-              >
+              <code data-testid="assistant-mcp-config-snippet" className="text-[11px] font-mono text-text-secondary truncate">{mcpIdeConfigJson}</code>
+              <button type="button" data-testid="assistant-copy-mcp-config-btn" onClick={onCopyMcpConfig} className="px-2.5 py-1 rounded border border-surface-border bg-surface-secondary shrink-0">
                 {labels.copyMcpConfigCta} {copiedMcp ? "✓" : ""}
               </button>
             </div>
@@ -280,23 +254,10 @@ export function AssistantGovernanceModeATabs({
 
           {canEditWorkspaceLayer && (
             <>
-              <button
-                type="button"
-                data-testid="assistant-save-workspace-settings-btn"
-                style={{ display: "none" }}
-                onClick={onSaveWorkspaceSettings}
-                onKeyDown={(e) =>
-                  handleRgaaSubmitKeyDown(e, onSaveWorkspaceSettings, false)
-                }
-              >
+              <button type="button" data-testid="assistant-save-workspace-settings-btn" style={{ display: "none" }} onClick={onSaveWorkspaceSettings} onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSaveWorkspaceSettings, false)}>
                 {labels.saveWorkspaceSettingsCta}
               </button>
-              <button
-                type="button"
-                data-testid="assistant-gov-save-workspace-btn"
-                style={{ display: "none" }}
-                onClick={onSaveWorkspaceSettings}
-              >
+              <button type="button" data-testid="assistant-gov-save-workspace-btn" style={{ display: "none" }} onClick={onSaveWorkspaceSettings}>
                 {labels.saveWorkspaceSettingsCta}
               </button>
             </>
@@ -305,24 +266,75 @@ export function AssistantGovernanceModeATabs({
       )}
 
       {activeTab === "FULL_ASSEMBLY" && (
-        <div data-testid="assistant-gov-panel-assembly" className="space-y-2">
-          {assembledLayers.map((layer) => (
-            <div
-              key={layer.layerCode}
-              data-testid={`assembled-layer-${layer.layerNumber}`}
-              className="p-2.5 rounded-lg border border-surface-border bg-surface-primary space-y-1"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">{layer.label}</span>
-                <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-surface-secondary border border-surface-border">
-                  {layer.originBadge} · {layer.sha256.slice(0, 12)}
-                </span>
+        <div data-testid="assistant-gov-panel-assembly" className="space-y-3">
+          <div className="space-y-2">
+            {assembledLayers.map((layer) => (
+              <div key={layer.layerCode} data-testid={`assembled-layer-${layer.layerNumber}`} className="p-2.5 rounded-lg border border-surface-border bg-surface-primary space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">{layer.label}</span>
+                  <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-surface-secondary border border-surface-border">
+                    {layer.originBadge} · {layer.sha256.slice(0, 12)}
+                  </span>
+                </div>
+                <pre className="text-[11px] font-mono text-text-secondary whitespace-pre-wrap">{layer.content}</pre>
               </div>
-              <pre className="text-[11px] font-mono text-text-secondary whitespace-pre-wrap">
-                {layer.content}
-              </pre>
+            ))}
+          </div>
+
+          <div data-testid="assistant-prompt-telemetry-log-section" className="rounded-lg border border-surface-border bg-surface-primary p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-xs">📊 Journal des Prompts, Contextes &amp; Retours Utilisateurs ({promptTelemetryLog.length})</span>
+              <span className="text-[11px] text-text-secondary">Analyse et amélioration continue des consignes</span>
             </div>
-          ))}
+            {promptTelemetryLog.length === 0 ? (
+              <p data-testid="assistant-prompt-telemetry-empty" className="text-[11px] text-text-secondary">
+                Aucune question enregistrée pour le moment. Chaque question posée sauvegarde automatiquement son prompt, son contexte assemblé et votre évaluation (👍 Bonne réponse / 👎 Réponse à améliorer).
+              </p>
+            ) : (
+              <ul className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {promptTelemetryLog.map((entry, idx) => {
+                  const isExpanded = expandedTelemetryTurnId === entry.turnId;
+                  return (
+                    <li key={`${entry.turnId}-${idx}`} data-testid={`assistant-prompt-telemetry-item-${idx}`} className="rounded border border-surface-border bg-surface-secondary p-2.5 space-y-1.5 text-[11px]">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold text-text-primary">{entry.userPrompt}</span>
+                        <div className="flex items-center gap-1.5">
+                          {entry.userFeedback === "LIKE" && (
+                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="rounded-full bg-action-primary/15 px-2 py-0.5 font-semibold text-action-primary">👍 Bonne réponse</span>
+                          )}
+                          {entry.userFeedback === "DISLIKE" && (
+                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="rounded-full bg-status-warning/15 px-2 py-0.5 font-semibold text-status-warning">👎 Réponse à améliorer</span>
+                          )}
+                          {!entry.userFeedback && (
+                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="text-text-secondary">Non évalué</span>
+                          )}
+                          <button
+                            type="button"
+                            data-testid={`assistant-telemetry-toggle-context-${idx}`}
+                            onClick={() => setExpandedTelemetryTurnId(isExpanded ? null : entry.turnId)}
+                            className="rounded border border-surface-border bg-surface-primary px-2 py-0.5 text-[10px] font-medium text-text-primary"
+                          >
+                            {isExpanded ? "Masquer le contexte" : "Inspecter le contexte envoyé au LLM"}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-text-secondary">
+                        Modèle : {entry.modelLabel} · Réflexion : {entry.thinkingEffort} ({entry.thinkingElapsedSeconds}s) · Historique injecté : {entry.conversationHistoryCount} message(s){entry.folderTitle ? ` · 📁 Dossier : ${entry.folderTitle}` : ""}
+                      </div>
+                      {isExpanded && (
+                        <div data-testid={`assistant-telemetry-context-box-${idx}`} className="rounded border border-surface-border bg-surface-primary p-2 space-y-1">
+                          <div className="font-semibold text-[10px] text-text-secondary">System Prompt &amp; Contexte exact transmis au LLM :</div>
+                          <pre className="text-[10px] font-mono text-text-secondary whitespace-pre-wrap max-h-40 overflow-y-auto">
+                            {entry.assembledSystemPrompt || "Contexte 5 couches standard (AssistantHarness + Ontologie + Préférences)"}
+                          </pre>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </div>

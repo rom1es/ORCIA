@@ -273,6 +273,7 @@ export {
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,
   type UiAssembledLayerItem,
+  type UiAssistantPromptTelemetryRecord,
   type UiAssistantResponseFormat,
   type UiAssistantResponseTone,
   type UiAssistantStudioNode,

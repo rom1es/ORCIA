@@ -34,6 +34,18 @@ export interface components {
       leases: (components["schemas"]["ResourceLeaseItemResponse"])[];
       trace_id: string;
     };
+    ActiveBackgroundTurnStatusResponse: {
+      assembled_system_prompt?: string;
+      elapsed_ms?: number;
+      error_message?: string | null;
+      started_at_ms?: number;
+      status?: "IDLE" | "RUNNING" | "COMPLETED" | "STOPPED" | "ERROR";
+      streamed_text?: string;
+      thinking_text?: string;
+      turn_id?: string | null;
+      user_prompt?: string;
+      workspace_id: string;
+    };
     AgentItemResponse: {
       agent_id: string;
       handle: string;
@@ -1998,6 +2010,15 @@ export interface components {
       section_title: string;
       status: "APPROVED" | "HUMAN_AMENDED_EXTERNAL";
     };
+    RecordAssistantTurnFeedbackRequest: {
+      assembled_system_prompt?: string;
+      assistant_reply?: string;
+      thinking_text?: string;
+      turn_id: string;
+      user_feedback?: "LIKE" | "DISLIKE" | null;
+      user_prompt?: string;
+      workspace_id: string;
+    };
     RecursiveRunLockManifestSchemaItem: {
       applied_override_keys: (string)[];
       effective_workflow_sha256: string;
@@ -2366,6 +2387,9 @@ export interface components {
       upstream_steps_reexecuted_count: number;
       upstream_tokens_consumed: number;
     };
+    StopActiveBackgroundTurnRequest: {
+      workspace_id: string;
+    };
     StudioDryRunRequest: {
       input_values?: Record<string, unknown>;
       preview_markdown_output?: string | null;
@@ -2508,6 +2532,7 @@ export interface components {
     };
     ThreeSpeedTurnResponse: {
       assembled_prompt_sha256: string;
+      assembled_system_prompt?: string;
       cache_hit: boolean;
       cache_key: string;
       cache_lookup_ms: number;
@@ -3264,10 +3289,31 @@ export interface paths {
       };
     };
   };
+  "/api/v1/assistant/three-speed/active-turn": {
+    get: {
+      responses: {
+        200: components["schemas"]["ActiveBackgroundTurnStatusResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/three-speed/feedback": {
+    post: {
+      responses: {
+        200: Record<string, unknown>;
+      };
+    };
+  };
   "/api/v1/assistant/three-speed/invalidate-cache": {
     post: {
       responses: {
         200: components["schemas"]["InvalidatePromptCacheResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/three-speed/stop": {
+    post: {
+      responses: {
+        200: components["schemas"]["ActiveBackgroundTurnStatusResponse"];
       };
     };
   };
@@ -4197,6 +4243,7 @@ export interface paths {
 export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourceLeasesRequest"];
 export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];
+export type ActiveBackgroundTurnStatusResponse = components["schemas"]["ActiveBackgroundTurnStatusResponse"];
 export type AgentItemResponse = components["schemas"]["AgentItemResponse"];
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
 export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];
@@ -4421,6 +4468,7 @@ export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandi
 export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
 export type RebaseExternalArtifactEditsRequest = components["schemas"]["RebaseExternalArtifactEditsRequest"];
 export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChunkSchema"];
+export type RecordAssistantTurnFeedbackRequest = components["schemas"]["RecordAssistantTurnFeedbackRequest"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
@@ -4465,6 +4513,7 @@ export type StepMemlogSchemaItem = components["schemas"]["StepMemlogSchemaItem"]
 export type StepReplayRequest = components["schemas"]["StepReplayRequest"];
 export type StepReplayResponse = components["schemas"]["StepReplayResponse"];
 export type StepReplayResultSchemaItem = components["schemas"]["StepReplayResultSchemaItem"];
+export type StopActiveBackgroundTurnRequest = components["schemas"]["StopActiveBackgroundTurnRequest"];
 export type StudioDryRunRequest = components["schemas"]["StudioDryRunRequest"];
 export type StudioDryRunResponse = components["schemas"]["StudioDryRunResponse"];
 export type SubWorkflowLockSchemaItem = components["schemas"]["SubWorkflowLockSchemaItem"];

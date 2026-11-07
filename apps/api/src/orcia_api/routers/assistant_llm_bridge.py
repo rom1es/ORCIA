@@ -12,6 +12,14 @@ import httpx
 from fastapi import Request
 
 from orcia_api.dependencies import get_or_create_shared_db_engine
+from orcia_api.routers.assistant_background_turns import (
+    ACTIVE_WORKSPACE_TURNS,
+    ActiveBackgroundTurnState,
+    get_active_turn_for_workspace,
+    record_prompt_telemetry_entry,
+    run_and_consume_decoupled_turn_stream,
+    stop_active_turn_for_workspace,
+)
 from orcia_api.routers.assistant_llm_prompts import (
     build_assistant_system_instructions,
     build_multi_turn_messages,
@@ -44,6 +52,7 @@ class LiveLlmTurnOutcome:
     latency_ms: float
     thinking_text: str | None = None
     invoked_tool_names: tuple[str, ...] = ()
+    assembled_system_prompt: str = ""
 
 
 def _extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEndpoint | None:
@@ -133,6 +142,44 @@ def _get_or_create_async_http_client(request: Request) -> httpx.AsyncClient:
     return client
 
 
+def resolve_assembled_system_instructions_for_turn(
+    request: Request,
+    *,
+    hat: str,
+    speed_mode: str,
+    workspace_id: str,
+    user_id: str,
+    requested_tier: str | None = None,
+    thinking_effort: str | None = None,
+    system_instructions_override: str | None = None,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
+    locale: str = "fr",
+) -> str:
+    """Build the complete 5-layer + ontology + preferences system prompt for a turn."""
+    assembled_5_layers, ontology_summary = resolve_5_layers_and_ontology_from_request(
+        request, workspace_id=workspace_id, user_id=user_id, hat=hat
+    )
+    return build_assistant_system_instructions(
+        hat=hat,
+        speed_mode=speed_mode,
+        requested_tier=requested_tier,
+        thinking_effort=thinking_effort,
+        system_instructions_override=system_instructions_override,
+        assembled_5_layers_prompt=assembled_5_layers,
+        ontology_concepts_summary=ontology_summary,
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
+        locale=locale,
+    )
+
+
 async def invoke_configured_llm_for_assistant_turn(
     request: Request,
     *,
@@ -174,17 +221,15 @@ async def invoke_configured_llm_for_assistant_turn(
         if resolved_locale == "en"
         else ("Réflexion Élevée" if effort == "deep" else "Réflexion Standard")
     )
-    assembled_5_layers, ontology_summary = resolve_5_layers_and_ontology_from_request(
-        request, workspace_id=workspace_id, user_id=user_id, hat=hat
-    )
-    system_msg = build_assistant_system_instructions(
+    system_msg = resolve_assembled_system_instructions_for_turn(
+        request,
         hat=hat,
         speed_mode=speed_mode,
+        workspace_id=workspace_id,
+        user_id=user_id,
         requested_tier=requested_tier or ep.tier,
         thinking_effort=effort,
         system_instructions_override=system_instructions_override,
-        assembled_5_layers_prompt=assembled_5_layers,
-        ontology_concepts_summary=ontology_summary,
         response_tone=response_tone,
         response_format=response_format,
         personal_instructions=personal_instructions,
@@ -236,6 +281,7 @@ async def invoke_configured_llm_for_assistant_turn(
         latency_ms=outcome.latency_ms,
         thinking_text=outcome.thinking_text or default_thinking,
         invoked_tool_names=invoked_tools,
+        assembled_system_prompt=system_msg,
     )
 
 
@@ -258,8 +304,7 @@ async def stream_configured_llm_for_assistant_turn(
     locale: str | None = None,
     fallback_response_text: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    """True async SSE token streamer (`resp.aiter_lines()`) preserving Markdown indentation."""
-    t0 = time.perf_counter()
+    """True async SSE token streamer decoupled via `ACTIVE_WORKSPACE_TURNS`."""
     resolved_locale = resolve_request_locale(request, locale)
     default_thinking = " · ".join(
         f"{t}: {s}"
@@ -274,81 +319,46 @@ async def stream_configured_llm_for_assistant_turn(
         if can_call_live
         else None
     )
-
-    if ep is not None:
-        assembled_5_layers, ontology_summary = resolve_5_layers_and_ontology_from_request(
-            request, workspace_id=workspace_id, user_id=user_id, hat=hat
-        )
-        system_msg = build_assistant_system_instructions(
-            hat=hat,
-            speed_mode=speed_mode,
-            requested_tier=requested_tier or ep.tier,
-            thinking_effort=thinking_effort,
-            assembled_5_layers_prompt=assembled_5_layers,
-            ontology_concepts_summary=ontology_summary,
-            response_tone=response_tone,
-            response_format=response_format,
-            personal_instructions=personal_instructions,
-            workspace_instructions=workspace_instructions,
-            folder_pinned_notes=folder_pinned_notes,
-            locale=resolved_locale,
-        )
-        messages = build_multi_turn_messages(
+    system_msg = resolve_assembled_system_instructions_for_turn(
+        request,
+        hat=hat,
+        speed_mode=speed_mode,
+        workspace_id=workspace_id,
+        user_id=user_id,
+        requested_tier=requested_tier or (ep.tier if ep is not None else "medium"),
+        thinking_effort=thinking_effort,
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
+        locale=resolved_locale,
+    )
+    async for evt in run_and_consume_decoupled_turn_stream(
+        workspace_id=workspace_id,
+        user_prompt=user_prompt,
+        system_msg=system_msg,
+        default_thinking=default_thinking,
+        fallback_response_text=fallback_response_text,
+        client_host=client_host,
+        ep=ep,
+        http_client_getter=lambda: _get_or_create_async_http_client(request),
+        messages_builder=lambda: build_multi_turn_messages(
             system_msg=system_msg,
             user_prompt=user_prompt,
             conversation_history=conversation_history,
-        )
-        tools = build_workspace_tools_schema(request, speed_mode)
-        http_client = _get_or_create_async_http_client(request)
-
-        emitted_tokens = False
-        async for evt in stream_provider_chat_sse_async(
-            http_client, ep=ep, messages=messages, tools=tools or None
-        ):
-            if evt["event"] == "token_delta":
-                emitted_tokens = True
-            yield evt
-        if emitted_tokens:
-            return
-        if client_host != "testclient":
-            yield {
-                "event": "stream_error",
-                "data": {
-                    "message": (
-                        f"Le modèle IA {ep.model_name} ({ep.endpoint_uri}) n'a renvoyé aucun "
-                        "jeton de réponse. Vérifiez que le fournisseur IA est bien démarré."
-                    )
-                },
-            }
-            return
-
-    yield {
-        "event": "thinking_delta",
-        "data": {
-            "step_code": "NODE_5_SINGLE_STREAM_LLM",
-            "thinking_text": default_thinking,
-            "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
-        },
-    }
-    full_text = fallback_response_text or ""
-    accumulated: list[str] = []
-    for line_chunk in full_text.splitlines(keepends=True) or ([full_text] if full_text else []):
-        accumulated.append(line_chunk)
-        yield {
-            "event": "token_delta",
-            "data": {"delta": line_chunk, "accumulated_text": "".join(accumulated)},
-        }
-    yield {
-        "event": "turn_completed",
-        "data": {
-            "response_text": full_text,
-            "thinking_text": default_thinking,
-            "latency_ms": round((time.perf_counter() - t0) * 1000.0, 2),
-        },
-    }
+        ),
+        tools_builder=lambda: build_workspace_tools_schema(request, speed_mode),
+        conversation_history_count=len(conversation_history or []),
+        folder_pinned_notes=folder_pinned_notes,
+        thinking_effort=thinking_effort,
+    ):
+        yield evt
 
 
 __all__ = [
+    "ACTIVE_WORKSPACE_TURNS",
+    "ActiveBackgroundTurnState",
     "LiveLlmTurnOutcome",
     "ResolvedLiveLlmEndpoint",
     "_extract_tier_endpoint_from_dict",
@@ -361,12 +371,17 @@ __all__ = [
     "build_workspace_tools_schema",
     "detect_adaptive_thinking_steps_for_question",
     "extract_thinking_and_clean_content",
+    "get_active_turn_for_workspace",
     "invoke_configured_llm_for_assistant_turn",
     "is_anthropic_provider",
     "is_safe_llm_endpoint_url",
     "normalize_chat_completions_url",
+    "record_prompt_telemetry_entry",
     "resolve_5_layers_and_ontology_from_request",
+    "resolve_assembled_system_instructions_for_turn",
     "resolve_configured_llm_endpoint",
     "resolve_request_locale",
+    "stop_active_turn_for_workspace",
     "stream_configured_llm_for_assistant_turn",
+    "stream_provider_chat_sse_async",
 ]

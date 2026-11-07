@@ -104,6 +104,8 @@ export interface SavedConversationTurnItem {
   readonly turnId: string;
   readonly userPrompt: string;
   readonly assistantReply: string;
+  readonly assembledSystemPrompt?: string;
+  readonly userFeedback?: "LIKE" | "DISLIKE" | null;
   readonly modelTier: UiInferenceTier;
   readonly modelLabel: string;
   readonly thinkingEffort: UiInferenceEffort;
@@ -230,8 +232,10 @@ export function upsertTurnIntoSavedConversations(params: {
   readonly activeFolderId: string;
   readonly modelOptions: readonly UiAssistantModelOption[];
   readonly isFr: boolean;
+  readonly turnId?: string;
   readonly userPrompt: string;
   readonly assistantReply: string;
+  readonly assembledSystemPrompt?: string;
   readonly requestedTier: UiInferenceTier;
   readonly thinkingEffort: UiInferenceEffort;
   readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
@@ -241,6 +245,7 @@ export function upsertTurnIntoSavedConversations(params: {
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly resolvedConversationId: string;
+  readonly createdTurn: SavedConversationTurnItem;
   readonly isNewConversation: boolean;
   readonly createdTitle: string;
 } {
@@ -254,9 +259,10 @@ export function upsertTurnIntoSavedConversations(params: {
   const cleanReply = sanitizeAssistantDisplayReply(params.assistantReply);
   const normalizedEffort: UiInferenceEffort = params.thinkingEffort === "deep" ? "deep" : "balanced";
   const newTurn: SavedConversationTurnItem = {
-    turnId: `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    turnId: params.turnId || `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     userPrompt: params.userPrompt,
     assistantReply: cleanReply,
+    ...(params.assembledSystemPrompt ? { assembledSystemPrompt: params.assembledSystemPrompt } : {}),
     modelTier: params.requestedTier,
     modelLabel,
     thinkingEffort: normalizedEffort,
@@ -282,7 +288,7 @@ export function upsertTurnIntoSavedConversations(params: {
     };
     const nextList = [updatedConv, ...params.prevConversations.filter((c) => c.id !== existing.id)];
     writeSavedAssistantConversations(nextList);
-    return { nextConversations: nextList, resolvedConversationId: existing.id, isNewConversation: false, createdTitle: existing.title };
+    return { nextConversations: nextList, resolvedConversationId: existing.id, createdTurn: newTurn, isNewConversation: false, createdTitle: existing.title };
   }
 
   const convId = `conv-${params.prevConversations.length + 1}-${Date.now()}`;
@@ -301,7 +307,22 @@ export function upsertTurnIntoSavedConversations(params: {
   };
   const nextList = [createdConv, ...params.prevConversations];
   writeSavedAssistantConversations(nextList);
-  return { nextConversations: nextList, resolvedConversationId: convId, isNewConversation: true, createdTitle };
+  return { nextConversations: nextList, resolvedConversationId: convId, createdTurn: newTurn, isNewConversation: true, createdTitle };
+}
+
+export function updateTurnFeedbackInSavedConversations(
+  turnId: string,
+  feedback: "LIKE" | "DISLIKE" | null,
+): readonly SavedAssistantConversation[] {
+  const current = readSavedAssistantConversations();
+  const next = current.map((conv) => ({
+    ...conv,
+    turns: conv.turns.map((t) =>
+      t.turnId === turnId ? { ...t, userFeedback: feedback } : t,
+    ),
+  }));
+  writeSavedAssistantConversations(next);
+  return next;
 }
 
 export function consumeAssistantPrefillFromStorage(): string | null {

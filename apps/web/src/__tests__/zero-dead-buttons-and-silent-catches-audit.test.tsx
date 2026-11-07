@@ -265,7 +265,14 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     expect(foldersSectionText).toContain("🔒 Privé (Moi uniquement)");
     expect(foldersSectionText).not.toContain("PRIVATE");
 
-    // 6. Open '⚙️ Réglages de Mon Assistant' and customize tone + personal instructions
+    // 6. Click 👍 (Bonne réponse) on the conversation turn -> displays 'Merci pour votre retour !'
+    const likeBtns = screen.getAllByTestId("assistant-action-like-btn");
+    fireEvent.click(likeBtns[0]!);
+    expect(screen.getAllByTestId("assistant-feedback-thanks-banner")[0]?.textContent).toContain(
+      "Merci pour votre retour !",
+    );
+
+    // 7. Open '⚙️ Réglages de Mon Assistant' and customize tone + personal instructions
     fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
     expect(screen.getByTestId("assistant-gov-explainer-banner")).toBeDefined();
     fireEvent.change(screen.getByTestId("assistant-gov-tone-select"), {
@@ -276,7 +283,7 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       target: { value: "Toujours structurer avec des exemples concrets." },
     });
 
-    // 7. Unmount and re-render (F5 reload) -> verify folder, pinned notes, and governance settings survive F5!
+    // 8. Unmount and re-render (F5 reload) -> verify folder, pinned notes, 👍 feedback, and Prompt Telemetry Log survive F5!
     cleanup();
     render(
       <I18nProvider initialLocale="fr">
@@ -295,6 +302,19 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     expect(
       (screen.getByTestId("assistant-user-instructions-input") as HTMLTextAreaElement).value,
     ).toContain("Toujours structurer avec des exemples concrets.");
+
+    // Switch to Tab 3 (FULL_ASSEMBLY) and verify the recorded prompt + 👍 Bonne réponse + assembled context are persisted!
+    fireEvent.click(screen.getByTestId("assistant-gov-tab-FULL_ASSEMBLY"));
+    expect(screen.getByTestId("assistant-prompt-telemetry-log-section").textContent).toContain(
+      "Quels sont les points critiques de l'architecture ?",
+    );
+    expect(screen.getByTestId("assistant-telemetry-feedback-0").textContent).toContain(
+      "👍 Bonne réponse",
+    );
+    fireEvent.click(screen.getByTestId("assistant-telemetry-toggle-context-0"));
+    expect(screen.getByTestId("assistant-telemetry-context-box-0").textContent).toContain(
+      "[SPEED=SPEED_3_DEEP_AUDIT]",
+    );
   });
 
   it("dynamically verifies that clicking 'Lancer le test & Découvrir' and 'Activer le service' in CatalogFeaturePanel updates the DOM", async () => {

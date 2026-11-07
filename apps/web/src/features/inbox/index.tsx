@@ -6,19 +6,23 @@ import {
   AssistantSpeedSelectorAndStreamView,
   formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,
-  type UiAssistantAttachedFileItem,
   type UiAssistantFolderItem,
-  type UiInferenceEffort,
-  type UiInferenceTier,
+  type UiAssistantPromptTelemetryRecord,
 } from "@orcia/ui";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { subscribeBgStream } from "./assistantBackgroundStreamStore";
 import {
+  readSavedActiveConversationId,
   readSavedActiveFolderId,
   readSavedAssistantFolders,
   readSavedAssistantGovernancePrefs,
+  readSavedPromptTelemetryLog,
+  updatePromptTelemetryFeedback,
+  upsertSavedPromptTelemetryRecord,
+  writeSavedActiveConversationId,
   writeSavedActiveFolderId,
   writeSavedAssistantFolders,
   writeSavedAssistantGovernancePrefs,
@@ -32,11 +36,12 @@ import {
   consumeAssistantPrefillFromStorage,
   filterUsedRagSourcesForTurn,
   readSavedAssistantConversations,
+  updateTurnFeedbackInSavedConversations,
   upsertTurnIntoSavedConversations,
   writeSavedAssistantConversations,
   type SavedAssistantConversation,
 } from "./savedConversationsStore";
-import { useAssistantStreamingTurn } from "./useAssistantStreamingTurn";
+import { useAssistantStreamingTurn, type CompletedAssistantTurnPayload } from "./useAssistantStreamingTurn";
 
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
@@ -51,7 +56,12 @@ export function InboxFeaturePanel() {
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
   const [savedConversationsOpen, setSavedConversationsOpen] = useState<boolean>(false);
   const [savedConversations, setSavedConversations] = useState<readonly SavedAssistantConversation[]>(() => readSavedAssistantConversations());
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => readSavedAssistantConversations()[0]?.id ?? null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
+    const savedId = readSavedActiveConversationId();
+    const convs = readSavedAssistantConversations();
+    return savedId && convs.some((c) => c.id === savedId) ? savedId : (convs[0]?.id ?? null);
+  });
+  const [promptTelemetryLog, setPromptTelemetryLog] = useState<readonly UiAssistantPromptTelemetryRecord[]>(() => readSavedPromptTelemetryLog());
   const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
@@ -63,23 +73,29 @@ export function InboxFeaturePanel() {
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } = buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
   const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
 
+  const selectActiveConversationAndPersist = (nextConvId: string | null) => {
+    setActiveConversationId(nextConvId);
+    writeSavedActiveConversationId(nextConvId);
+  };
+
+  useEffect(() => {
+    return subscribeBgStream(() => {
+      const latestConvs = readSavedAssistantConversations();
+      if (latestConvs.length !== savedConversations.length) setSavedConversations(latestConvs);
+      const latestActiveId = readSavedActiveConversationId();
+      if (latestActiveId && latestActiveId !== activeConversationId && latestConvs.some((c) => c.id === latestActiveId)) {
+        setActiveConversationId(latestActiveId);
+      }
+      setPromptTelemetryLog(readSavedPromptTelemetryLog());
+    });
+  }, [savedConversations.length, activeConversationId]);
+
   const updateFoldersAndPersist = (updater: (prev: readonly UiAssistantFolderItem[]) => readonly UiAssistantFolderItem[]) => {
     setFolders((prev) => { const next = updater(prev); writeSavedAssistantFolders(next); return next; });
   };
-  const selectActiveFolderAndPersist = (nextFolderId: string) => {
-    setActiveFolderId(nextFolderId);
-    writeSavedActiveFolderId(nextFolderId);
-  };
+  const selectActiveFolderAndPersist = (nextFolderId: string) => { setActiveFolderId(nextFolderId); writeSavedActiveFolderId(nextFolderId); };
 
-  const appendTurnToSavedConversation = (params: {
-    userPrompt: string;
-    assistantReply: string;
-    requestedTier: UiInferenceTier;
-    thinkingEffort: UiInferenceEffort;
-    attachedFiles?: readonly UiAssistantAttachedFileItem[];
-    stepProgress?: readonly import("@orcia/ui").UiThreeSpeedStepProgress[];
-    thinkingElapsedSeconds?: number;
-  }) => {
+  const appendTurnToSavedConversation = (params: CompletedAssistantTurnPayload) => {
     const usedSources = filterUsedRagSourcesForTurn({
       userPrompt: params.userPrompt,
       assistantReply: params.assistantReply,
@@ -87,15 +103,18 @@ export function InboxFeaturePanel() {
       ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
     });
     const latestStored = readSavedAssistantConversations();
+    const persistedActiveId = readSavedActiveConversationId() ?? activeConversationId;
     const outcome = upsertTurnIntoSavedConversations({
       prevConversations: latestStored.length >= savedConversations.length ? latestStored : savedConversations,
-      activeConversationId,
+      activeConversationId: persistedActiveId,
       activeWorkspaceId,
       activeFolderId,
       modelOptions,
       isFr,
+      ...(params.turnId ? { turnId: params.turnId } : {}),
       userPrompt: params.userPrompt,
       assistantReply: params.assistantReply,
+      ...(params.assembledSystemPrompt ? { assembledSystemPrompt: params.assembledSystemPrompt } : {}),
       requestedTier: params.requestedTier,
       thinkingEffort: params.thinkingEffort,
       ...(params.attachedFiles ? { attachedFiles: params.attachedFiles } : {}),
@@ -104,27 +123,62 @@ export function InboxFeaturePanel() {
       ...(params.thinkingElapsedSeconds !== undefined ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds } : {}),
     });
     setSavedConversations(outcome.nextConversations);
-    if (outcome.isNewConversation) {
-      setActiveConversationId(outcome.resolvedConversationId);
-      if (!isJsdom) {
-        const client = createOrciaApiClient({ baseUrl: "" });
-        void client
-          .createAssistantThread({
-            workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-            ...(activeFolderId ? { folder_id: activeFolderId } : {}),
-            title: outcome.createdTitle,
-            initial_summary: params.assistantReply.slice(0, 240),
-          })
-          .catch((err: unknown) => {
-            const detail = err instanceof Error ? err.message : "Synchronisation différée";
-            setGovernanceFeedback(isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`);
-          });
-      }
+    selectActiveConversationAndPersist(outcome.resolvedConversationId);
+    setPromptTelemetryLog(
+      upsertSavedPromptTelemetryRecord({
+        turnId: outcome.createdTurn.turnId,
+        timestampIso: outcome.createdTurn.timestampIso,
+        userPrompt: params.userPrompt,
+        assembledSystemPrompt: params.assembledSystemPrompt || "",
+        conversationHistoryCount: params.conversationHistoryCount ?? 0,
+        folderTitle: params.folderTitle ?? activeFolder?.title ?? null,
+        folderPinnedNotes: params.folderPinnedNotes ?? activeFolder?.pinnedNotesMarkdown ?? null,
+        thinkingText: params.thinkingText || "",
+        assistantReply: params.assistantReply,
+        modelLabel: outcome.createdTurn.modelLabel,
+        thinkingEffort: params.thinkingEffort,
+        thinkingElapsedSeconds: params.thinkingElapsedSeconds ?? 1,
+        userFeedback: null,
+      }),
+    );
+
+    if (outcome.isNewConversation && !isJsdom) {
+      const client = createOrciaApiClient({ baseUrl: "" });
+      void client
+        .createAssistantThread({
+          workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+          ...(activeFolderId ? { folder_id: activeFolderId } : {}),
+          title: outcome.createdTitle,
+          initial_summary: params.assistantReply.slice(0, 240),
+        })
+        .catch((err: unknown) => {
+          const detail = err instanceof Error ? err.message : "Synchronisation différée";
+          setGovernanceFeedback(isFr ? `ℹ️ Conversation sauvegardée localement (${detail}).` : `ℹ️ Conversation saved locally (${detail}).`);
+        });
+    }
+  };
+
+  const handleFeedbackTurn = (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => {
+    setSavedConversations(updateTurnFeedbackInSavedConversations(turnId, feedback));
+    setPromptTelemetryLog(updatePromptTelemetryFeedback(turnId, feedback));
+    if (!isJsdom) {
+      const client = createOrciaApiClient({ baseUrl: "" });
+      void client
+        .recordAssistantTurnFeedback({
+          workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+          turn_id: turnId,
+          user_feedback: feedback,
+        })
+        .catch((err: unknown) => {
+          const detail = err instanceof Error ? err.message : "Synchronisation locale";
+          setGovernanceFeedback(isFr ? `ℹ️ Avis enregistré localement (${detail}).` : `ℹ️ Feedback saved locally (${detail}).`);
+        });
     }
   };
 
   const firstConv = savedConversations[0];
   const initialLastReply = firstConv?.turns[firstConv.turns.length - 1]?.assistantReply ?? "";
+  const latestTurnInActiveConv = activeConversation?.turns[activeConversation.turns.length - 1] ?? null;
 
   const {
     streamedText,
@@ -168,18 +222,14 @@ export function InboxFeaturePanel() {
         onRegenerateTurn={(userPrompt) => sendTurn({ userPrompt, requestedSpeed: "SPEED_1_FAST", deepAuditPillActive: false })}
         onSaveDraft={handleSaveDraftAction}
         onContinueInProcess={() => navigateToRoute("/processes")}
+        onFeedbackTurn={handleFeedbackTurn}
       />
     ) : null;
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
       {governanceFeedback ? (
-        <div
-          role="status"
-          data-testid="assistant-governance-feedback-banner"
-          className="rounded border px-3 py-2 text-xs font-medium"
-          style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
-        >
+        <div role="status" data-testid="assistant-governance-feedback-banner" className="rounded border px-3 py-2 text-xs font-medium" style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}>
           {governanceFeedback}
         </div>
       ) : null}
@@ -191,7 +241,7 @@ export function InboxFeaturePanel() {
         savedConversationsOpen={savedConversationsOpen}
         foldersPanelOpen={foldersPanelOpen}
         governanceModalTitle={dictionary.assistantGovernance.modalTitle}
-        onNewConversation={() => { setActiveConversationId(null); resetStreamState(""); }}
+        onNewConversation={() => { selectActiveConversationAndPersist(null); resetStreamState(""); }}
         onToggleSavedConversations={() => setSavedConversationsOpen((prev) => !prev)}
         onToggleFoldersPanel={() => setFoldersPanelOpen((prev) => !prev)}
         onToggleGovernanceModal={() => setGovernanceOpen((prev) => !prev)}
@@ -206,7 +256,7 @@ export function InboxFeaturePanel() {
           onResumeConversation={(convId) => {
             const target = savedConversations.find((c) => c.id === convId);
             if (!target) return;
-            setActiveConversationId(target.id);
+            selectActiveConversationAndPersist(target.id);
             const latestTurn = target.turns[target.turns.length - 1];
             resetStreamState(latestTurn?.assistantReply ?? "");
             setSavedConversationsOpen(false);
@@ -215,7 +265,7 @@ export function InboxFeaturePanel() {
             const next = savedConversations.filter((c) => c.id !== convId);
             setSavedConversations(next);
             writeSavedAssistantConversations(next);
-            if (activeConversationId === convId) { setActiveConversationId(null); resetStreamState(""); }
+            if (activeConversationId === convId) { selectActiveConversationAndPersist(null); resetStreamState(""); }
           }}
         />
       )}
@@ -232,17 +282,12 @@ export function InboxFeaturePanel() {
           initialWorkspaceInstructions={governancePrefs.workspaceInstructions}
           initialMcpExposed={governancePrefs.mcpExposeAssistant}
           assembledLayers={[]}
+          promptTelemetryLog={promptTelemetryLog}
           studioNodes={[]}
           labels={dictionary.assistantGovernance}
           onSaveUserPreferences={(payload) => {
             setGovernancePrefs((prev) => {
-              const next: SavedAssistantGovernancePrefs = {
-                ...prev,
-                responseTone: payload.responseTone,
-                favoriteFormat: payload.favoriteFormat,
-                defaultHat: payload.defaultHat,
-                personalInstructions: payload.personalInstructions,
-              };
+              const next: SavedAssistantGovernancePrefs = { ...prev, responseTone: payload.responseTone, favoriteFormat: payload.favoriteFormat, defaultHat: payload.defaultHat, personalInstructions: payload.personalInstructions };
               writeSavedAssistantGovernancePrefs(next);
               return next;
             });
@@ -295,6 +340,8 @@ export function InboxFeaturePanel() {
           initialElapsedSeconds={initialElapsedSeconds}
           generationStopped={generationStopped}
           errorMessage={errorMessage}
+          currentTurnFeedback={latestTurnInActiveConv?.userFeedback ?? null}
+          onFeedbackLastTurn={(fb) => { if (latestTurnInActiveConv) handleFeedbackTurn(latestTurnInActiveConv.turnId, fb); }}
           labels={dictionary.assistantSpeedStream}
           onOpenFoldersFromPlus={() => setFoldersPanelOpen((prev) => !prev)}
           onStopGeneration={stopGeneration}
@@ -317,15 +364,7 @@ export function InboxFeaturePanel() {
           onSelectFolder={(folderId) => selectActiveFolderAndPersist(folderId)}
           onCreateFolder={(title) => {
             const newId = `folder-${folders.length + 1}-${Date.now()}`;
-            const newFolder: UiAssistantFolderItem = {
-              folderId: newId,
-              title,
-              pinnedNotesMarkdown: "",
-              consolidatedSummary: isFr ? `Dossier thématique « ${title} »` : `Thematic folder "${title}"`,
-              visibilityMode: "PRIVATE",
-              hasRestrictedSources: false,
-              assembledLayer5PromptBlock: `Dossier actif : ${title}`,
-            };
+            const newFolder: UiAssistantFolderItem = { folderId: newId, title, pinnedNotesMarkdown: "", consolidatedSummary: isFr ? `Dossier thématique « ${title} »` : `Thematic folder "${title}"`, visibilityMode: "PRIVATE", hasRestrictedSources: false, assembledLayer5PromptBlock: `Dossier actif : ${title}` };
             updateFoldersAndPersist((prev) => [...prev, newFolder]);
             selectActiveFolderAndPersist(newId);
             setGovernanceFeedback(isFr ? `✅ Dossier « ${title} » créé et sélectionné.` : `✅ Folder "${title}" created and selected.`);
@@ -333,10 +372,7 @@ export function InboxFeaturePanel() {
               const client = createOrciaApiClient({ baseUrl: "" });
               void client
                 .createAssistantFolder({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301", title })
-                .then((res) => {
-                  updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === newId ? { ...f, folderId: res.folder_id } : f)));
-                  selectActiveFolderAndPersist(res.folder_id);
-                })
+                .then((res) => { updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === newId ? { ...f, folderId: res.folder_id } : f))); selectActiveFolderAndPersist(res.folder_id); })
                 .catch((err: unknown) => {
                   const detail = err instanceof Error ? err.message : "Erreur de création";
                   setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (${detail}).` : `⚠️ Folder "${title}" kept locally (${detail}).`);
@@ -344,13 +380,7 @@ export function InboxFeaturePanel() {
             }
           }}
           onUpdatePinnedNotes={(folderId, notes) => {
-            updateFoldersAndPersist((prev) =>
-              prev.map((f) =>
-                f.folderId === folderId
-                  ? { ...f, pinnedNotesMarkdown: notes, assembledLayer5PromptBlock: notes.trim() ? `📌 Notes actives : ${notes.trim()}` : `Dossier actif : ${f.title}` }
-                  : f,
-              ),
-            );
+            updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes, assembledLayer5PromptBlock: notes.trim() ? `📌 Notes actives : ${notes.trim()}` : `Dossier actif : ${f.title}` } : f)));
             setGovernanceFeedback(isFr ? "✅ Notes du dossier enregistrées et activées pour vos prochaines questions." : "✅ Folder notes saved and activated for your next questions.");
           }}
           onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {

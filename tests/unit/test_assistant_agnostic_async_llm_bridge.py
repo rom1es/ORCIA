@@ -482,3 +482,94 @@ async def test_anthropic_blocks_legacy_404_fallback_and_tool_call_followup() -> 
         assert any(e["event"] == "thinking_delta" for e in evts)
         assert evts[-1]["data"]["response_text"] == "Final text"
         assert "Tag thinking" in evts[-1]["data"]["thinking_text"]
+
+
+def test_background_turn_continuity_stop_and_feedback_endpoints(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify GET /active-turn, POST /stop, POST /feedback, and `assembled_system_prompt`."""
+    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+
+    sse_lines = [
+        'data: {"choices": [{"delta": {"reasoning_content": "Analyse DORA art 28"}}]}',
+        'data: {"choices": [{"delta": {"content": "Réponse consolidée DORA."}}]}',
+        "data: [DONE]",
+    ]
+    sse_payload = "\n\n".join(sse_lines) + "\n\n"
+
+    with TestClient(app) as client:
+        app.state.http_client = httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(
+                    200,
+                    headers={"content-type": "text/event-stream"},
+                    content=sse_payload.encode("utf-8"),
+                )
+            )
+        )
+        app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
+            first_admin_initialized=True,
+            first_admin_email="admin@orcia.io",
+            first_admin_display_name="Admin",
+            llm_tiers=[
+                {
+                    "tier": "medium",
+                    "primaryModel": "gemma4:12b",
+                    "modelFamily": "OpenAI Compatible",
+                    "endpointUrl": "https://llm.enterprise.internal",
+                    "authMode": "api_key",
+                    "apiKey": "sk-live-token",  # pragma: allowlist secret
+                }
+            ],
+        )
+        # 1. Stream a turn -> registers background turn state and telemetry entry
+        r_stream = client.post(
+            "/api/v1/assistant/three-speed/stream",
+            params={"persona_key": "claire"},
+            json={
+                "workspace_id": "ws-bg-continuity-01",
+                "user_prompt": "Vérifie la conformité DORA article 28",
+                "folder_pinned_notes": "Priorité absolue aux prestataires TIC critiques.",
+                "locale": "fr",
+            },
+        )
+        assert r_stream.status_code == 200
+        assert "assembled_system_prompt" in r_stream.text
+        assert "Priorité absolue aux prestataires TIC critiques." in r_stream.text
+
+        # 2. Query GET /api/v1/assistant/three-speed/active-turn -> returns COMPLETED turn
+        r_active = client.get(
+            "/api/v1/assistant/three-speed/active-turn",
+            params={"workspace_id": "ws-bg-continuity-01", "persona_key": "claire"},
+        )
+        assert r_active.status_code == 200
+        snap = r_active.json()
+        assert snap["status"] == "COMPLETED"
+        assert snap["streamed_text"] == "Réponse consolidée DORA."
+        assert "Analyse DORA art 28" in snap["thinking_text"]
+        assert "Priorité absolue aux prestataires TIC critiques." in snap["assembled_system_prompt"]
+        turn_id = snap["turn_id"]
+        assert turn_id
+
+        # 3. Record user feedback 👍 (LIKE) via POST /api/v1/assistant/three-speed/feedback
+        r_fb = client.post(
+            "/api/v1/assistant/three-speed/feedback",
+            params={"persona_key": "claire"},
+            json={
+                "workspace_id": "ws-bg-continuity-01",
+                "turn_id": turn_id,
+                "user_feedback": "LIKE",
+            },
+        )
+        assert r_fb.status_code == 200
+        assert r_fb.json()["turn_id"] == turn_id
+        assert r_fb.json()["user_feedback"] == "LIKE"
+
+        # 4. Call POST /api/v1/assistant/three-speed/stop
+        r_stop = client.post(
+            "/api/v1/assistant/three-speed/stop",
+            params={"persona_key": "claire"},
+            json={"workspace_id": "ws-bg-continuity-01"},
+        )
+        assert r_stop.status_code == 200
+        assert r_stop.json()["workspace_id"] == "ws-bg-continuity-01"

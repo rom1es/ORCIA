@@ -192,6 +192,7 @@ export interface ActiveConversationMessagesViewProps {
   readonly onRegenerateTurn?: (userPrompt: string) => void;
   readonly onSaveDraft?: (content: string) => void;
   readonly onContinueInProcess?: (content: string) => void;
+  readonly onFeedbackTurn?: (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => void;
 }
 
 export function ActiveConversationMessagesView({
@@ -202,6 +203,7 @@ export function ActiveConversationMessagesView({
   onRegenerateTurn,
   onSaveDraft,
   onContinueInProcess,
+  onFeedbackTurn,
 }: ActiveConversationMessagesViewProps): React.JSX.Element | null {
   if (conversation.turns.length === 0) {
     return null;
@@ -255,6 +257,8 @@ export function ActiveConversationMessagesView({
                   modelLabel={turn.modelLabel}
                   effortLabel={turn.effortLabel}
                   ragCitations={turnCitations}
+                  initialFeedback={turn.userFeedback ?? null}
+                  onFeedbackChange={(fb) => onFeedbackTurn?.(turn.turnId, fb)}
                   onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
                   onSaveDraft={onSaveDraft}
                   onContinueInProcess={onContinueInProcess}

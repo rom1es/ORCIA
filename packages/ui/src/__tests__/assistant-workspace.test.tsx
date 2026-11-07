@@ -1315,4 +1315,98 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(streamEl.scrollTop).toBe(1400);
     expect(screen.queryByTestId("assistant-resume-autoscroll-btn")).toBeNull();
   });
+
+  it("Story 10.2g — renders 'Bonne réponse' / 'Réponse à améliorer' feedback buttons with 'Merci pour votre retour !' banner and displays the Prompt + Context + Feedback Telemetry Log in Tab 3 of AssistantGovernanceModalAndStudio", () => {
+    const onFeedbackLastTurn = vi.fn();
+    const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      headerTitle: "Routage Conversationnel",
+      speed1PillLabel: "⚡ Rapide",
+      speed2PillLabel: "🛠️ Outils",
+      speed3DeepAuditPillLabel: "🧠 Approfondi",
+      cacheHitBadge: "HIT",
+      cacheMissBadge: "MISS",
+      nodesDeterministicLabel: "Préparation",
+      ttftBadgePrefix: "TTFT",
+      inputPlaceholder: "Posez votre question...",
+      sendPromptCta: "Envoyer",
+    };
+
+    render(
+      <AssistantSpeedSelectorAndStreamView
+        workspaceId="ws-1"
+        userId="admin@orcia.io"
+        hat="PLATFORM_ADMIN"
+        hideTechnicalCacheHeader={true}
+        hideLegacySpeedPills={true}
+        activeUserPrompt="Résume la politique DORA"
+        isGenerating={false}
+        stepProgress={[]}
+        streamedText="Voici la synthèse DORA."
+        onFeedbackLastTurn={onFeedbackLastTurn}
+        labels={speedLabels}
+      />,
+    );
+
+    const likeBtn = screen.getByTestId("assistant-action-like-btn");
+    const dislikeBtn = screen.getByTestId("assistant-action-dislike-btn");
+    expect(likeBtn.getAttribute("title")).toBe("Bonne réponse");
+    expect(dislikeBtn.getAttribute("title")).toBe("Réponse à améliorer");
+
+    // Clicking 👍 shows 'Merci pour votre retour ! · Bonne réponse' and triggers onFeedbackLastTurn("LIKE")
+    fireEvent.click(likeBtn);
+    expect(onFeedbackLastTurn).toHaveBeenCalledWith("LIKE");
+    const thanksBanner = screen.getByTestId("assistant-feedback-thanks-banner");
+    expect(thanksBanner.getAttribute("data-feedback-value")).toBe("LIKE");
+    expect(thanksBanner.textContent).toContain("Merci pour votre retour !");
+    expect(thanksBanner.textContent).toContain("Bonne réponse");
+
+    // Clicking 👎 switches to DISLIKE ('Merci pour votre retour ! · Réponse à améliorer')
+    fireEvent.click(dislikeBtn);
+    expect(onFeedbackLastTurn).toHaveBeenCalledWith("DISLIKE");
+    expect(screen.getByTestId("assistant-feedback-thanks-banner").getAttribute("data-feedback-value")).toBe("DISLIKE");
+    expect(screen.getByTestId("assistant-feedback-thanks-banner").textContent).toContain("Réponse à améliorer");
+
+    // Render AssistantGovernanceModalAndStudio with promptTelemetryLog and inspect Tab 3 (FULL_ASSEMBLY)
+    render(
+      <AssistantGovernanceModalAndStudio
+        workspaceId="ws-1"
+        canEditWorkspaceLayer={true}
+        canOpenStudioModeB={true}
+        assembledLayers={[]}
+        promptTelemetryLog={[
+          {
+            turnId: "turn-dora-01",
+            timestampIso: "2026-11-08T00:15:00.000Z",
+            userPrompt: "Résume la politique DORA",
+            assembledSystemPrompt:
+              "[ROLE=TECH_LEAD] [SPEED=SPEED_1_FAST]\n[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES] Vérifier l'article 28 DORA.",
+            conversationHistoryCount: 2,
+            folderTitle: "Audit DORA 2026",
+            folderPinnedNotes: "Vérifier l'article 28 DORA.",
+            thinkingText: "Extraction des exigences DORA...",
+            assistantReply: "Voici la synthèse DORA.",
+            modelLabel: "gemma4:12b",
+            thinkingEffort: "deep",
+            thinkingElapsedSeconds: 4,
+            userFeedback: "LIKE",
+          },
+        ]}
+        studioNodes={[]}
+        labels={GOV_LABELS}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("assistant-gov-tab-FULL_ASSEMBLY"));
+    const telemetrySection = screen.getByTestId("assistant-prompt-telemetry-log-section");
+    expect(telemetrySection.textContent).toContain("Journal des Prompts, Contextes & Retours Utilisateurs");
+    expect(screen.getByTestId("assistant-telemetry-feedback-0").textContent).toContain("👍 Bonne réponse");
+    expect(screen.getByTestId("assistant-prompt-telemetry-item-0").textContent).toContain("Résume la politique DORA");
+    expect(screen.getByTestId("assistant-prompt-telemetry-item-0").textContent).toContain("📁 Dossier : Audit DORA 2026");
+
+    // Click 'Inspecter le contexte envoyé au LLM' to reveal the exact assembledSystemPrompt
+    fireEvent.click(screen.getByTestId("assistant-telemetry-toggle-context-0"));
+    expect(screen.getByTestId("assistant-telemetry-context-box-0").textContent).toContain(
+      "[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES] Vérifier l'article 28 DORA.",
+    );
+  });
 });

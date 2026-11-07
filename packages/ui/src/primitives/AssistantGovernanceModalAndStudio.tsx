@@ -21,6 +21,22 @@ export interface UiAssembledLayerItem {
   readonly sha256: string;
 }
 
+export interface UiAssistantPromptTelemetryRecord {
+  readonly turnId: string;
+  readonly timestampIso: string;
+  readonly userPrompt: string;
+  readonly assembledSystemPrompt: string;
+  readonly conversationHistoryCount: number;
+  readonly folderTitle?: string | null;
+  readonly folderPinnedNotes?: string | null;
+  readonly thinkingText?: string;
+  readonly assistantReply: string;
+  readonly modelLabel: string;
+  readonly thinkingEffort: string;
+  readonly thinkingElapsedSeconds: number;
+  readonly userFeedback?: "LIKE" | "DISLIKE" | null;
+}
+
 export interface UiAssistantStudioNode {
   readonly nodeId: string;
   readonly title: string;
@@ -71,6 +87,7 @@ export interface AssistantGovernanceModalAndStudioProps {
   readonly mcpFrozenByUpperLayer?: boolean;
   readonly mcpIdeConfigJson?: string;
   readonly assembledLayers: readonly UiAssembledLayerItem[];
+  readonly promptTelemetryLog?: readonly UiAssistantPromptTelemetryRecord[];
   readonly studioNodes: readonly UiAssistantStudioNode[];
   readonly initialStudioPrePrompt?: string;
   readonly labels: AssistantGovernanceModalAndStudioLabels;
@@ -94,10 +111,7 @@ export interface AssistantGovernanceModalAndStudioProps {
   readonly onClose?: () => void;
 }
 
-export const ASSISTANT_DEFAULT_HAT_OPTIONS: readonly {
-  readonly value: string;
-  readonly label: string;
-}[] = [
+export const ASSISTANT_DEFAULT_HAT_OPTIONS: readonly { readonly value: string; readonly label: string }[] = [
   { value: "PM", label: "Chef de Projet / Product Manager" },
   { value: "TECH_LEAD", label: "Tech Lead / Architecte" },
   { value: "DEV", label: "Développeur / Ingénieur" },
@@ -121,6 +135,7 @@ export function AssistantGovernanceModalAndStudio({
   mcpFrozenByUpperLayer = false,
   mcpIdeConfigJson = '{"mcpServers":{"orcia-assistant":{"url":"/api/v1/mcp/spaces/default","tool":"assistant.ask"}}}',
   assembledLayers,
+  promptTelemetryLog = [],
   studioNodes,
   initialStudioPrePrompt = "Coordonner les étapes d'analyse, de recherche documentaire et de vérification avant de rédiger la réponse.",
   labels,
@@ -302,50 +317,18 @@ export function AssistantGovernanceModalAndStudio({
           mcpExposed={mcpExposed}
           copiedMcp={copiedMcp}
           assembledLayers={assembledLayers}
+          promptTelemetryLog={promptTelemetryLog}
           labels={labels}
           onSelectTab={setActiveTab}
-          onChangeTone={(next) => {
-            setUserTone(next);
-            setIsDirty(true);
-            triggerAutoSaveUserPrefs({ responseTone: next });
-          }}
-          onChangeFormat={(next) => {
-            setUserFormat(next);
-            setIsDirty(true);
-            triggerAutoSaveUserPrefs({ favoriteFormat: next });
-          }}
-          onChangeDefaultHat={(next) => {
-            setDefaultHat(next);
-            setIsDirty(true);
-            triggerAutoSaveUserPrefs({ defaultHat: next });
-          }}
-          onChangePersonalInstructions={(next) => {
-            setPersonalInstructions(next);
-            setIsDirty(true);
-            triggerAutoSaveUserPrefs({ personalInstructions: next });
-          }}
-          onSaveUserPrefs={() => {
-            setIsDirty(false);
-            triggerAutoSaveUserPrefs({});
-          }}
-          onChangeWorkspaceInstructions={(next) => {
-            setWorkspaceInstructions(next);
-            setIsDirty(true);
-            triggerAutoSaveWorkspace({ workspaceInstructions: next });
-          }}
-          onChangeMcpExposed={(next) => {
-            setMcpExposed(next);
-            setIsDirty(true);
-            triggerAutoSaveWorkspace({ mcpExposeAssistant: next });
-          }}
-          onCopyMcpConfig={() => {
-            setCopiedMcp(true);
-            onCopyMcpConfig?.(mcpIdeConfigJson);
-          }}
-          onSaveWorkspaceSettings={() => {
-            setIsDirty(false);
-            triggerAutoSaveWorkspace({});
-          }}
+          onChangeTone={(next) => { setUserTone(next); setIsDirty(true); triggerAutoSaveUserPrefs({ responseTone: next }); }}
+          onChangeFormat={(next) => { setUserFormat(next); setIsDirty(true); triggerAutoSaveUserPrefs({ favoriteFormat: next }); }}
+          onChangeDefaultHat={(next) => { setDefaultHat(next); setIsDirty(true); triggerAutoSaveUserPrefs({ defaultHat: next }); }}
+          onChangePersonalInstructions={(next) => { setPersonalInstructions(next); setIsDirty(true); triggerAutoSaveUserPrefs({ personalInstructions: next }); }}
+          onSaveUserPrefs={() => { setIsDirty(false); triggerAutoSaveUserPrefs({}); }}
+          onChangeWorkspaceInstructions={(next) => { setWorkspaceInstructions(next); setIsDirty(true); triggerAutoSaveWorkspace({ workspaceInstructions: next }); }}
+          onChangeMcpExposed={(next) => { setMcpExposed(next); setIsDirty(true); triggerAutoSaveWorkspace({ mcpExposeAssistant: next }); }}
+          onCopyMcpConfig={() => { setCopiedMcp(true); onCopyMcpConfig?.(mcpIdeConfigJson); }}
+          onSaveWorkspaceSettings={() => { setIsDirty(false); triggerAutoSaveWorkspace({}); }}
         />
       ) : (
         <AssistantGovernanceStudioModeB

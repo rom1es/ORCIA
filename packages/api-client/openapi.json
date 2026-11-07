@@ -212,6 +212,85 @@
         "title": "AcquireResourceLeasesResponse",
         "type": "object"
       },
+      "ActiveBackgroundTurnStatusResponse": {
+        "additionalProperties": false,
+        "description": "Status snapshot for `GET /api/v1/assistant/three-speed/active-turn` (`Story 10.2`).",
+        "properties": {
+          "assembled_system_prompt": {
+            "default": "",
+            "title": "Assembled System Prompt",
+            "type": "string"
+          },
+          "elapsed_ms": {
+            "default": 0.0,
+            "title": "Elapsed Ms",
+            "type": "number"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "started_at_ms": {
+            "default": 0.0,
+            "title": "Started At Ms",
+            "type": "number"
+          },
+          "status": {
+            "default": "IDLE",
+            "enum": [
+              "IDLE",
+              "RUNNING",
+              "COMPLETED",
+              "STOPPED",
+              "ERROR"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "streamed_text": {
+            "default": "",
+            "title": "Streamed Text",
+            "type": "string"
+          },
+          "thinking_text": {
+            "default": "",
+            "title": "Thinking Text",
+            "type": "string"
+          },
+          "turn_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn Id"
+          },
+          "user_prompt": {
+            "default": "",
+            "title": "User Prompt",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "ActiveBackgroundTurnStatusResponse",
+        "type": "object"
+      },
       "AgentItemResponse": {
         "additionalProperties": false,
         "description": "Transport schema for a configured Agent (`🤖 Agent`).",
@@ -12648,6 +12727,63 @@
         "title": "RebasedSectionChunkSchema",
         "type": "object"
       },
+      "RecordAssistantTurnFeedbackRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/three-speed/feedback` (`Story 10.2`).",
+        "properties": {
+          "assembled_system_prompt": {
+            "default": "",
+            "title": "Assembled System Prompt",
+            "type": "string"
+          },
+          "assistant_reply": {
+            "default": "",
+            "title": "Assistant Reply",
+            "type": "string"
+          },
+          "thinking_text": {
+            "default": "",
+            "title": "Thinking Text",
+            "type": "string"
+          },
+          "turn_id": {
+            "minLength": 1,
+            "title": "Turn Id",
+            "type": "string"
+          },
+          "user_feedback": {
+            "anyOf": [
+              {
+                "enum": [
+                  "LIKE",
+                  "DISLIKE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Feedback"
+          },
+          "user_prompt": {
+            "default": "",
+            "title": "User Prompt",
+            "type": "string"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "turn_id"
+        ],
+        "title": "RecordAssistantTurnFeedbackRequest",
+        "type": "object"
+      },
       "RecursiveRunLockManifestSchemaItem": {
         "additionalProperties": false,
         "description": "Extended `run-lock.json` pinning sources, overrides, KB hash, and sub-workflows.",
@@ -15029,6 +15165,22 @@
         "title": "StepReplayResultSchemaItem",
         "type": "object"
       },
+      "StopActiveBackgroundTurnRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/three-speed/stop` (`Story 10.2`).",
+        "properties": {
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "StopActiveBackgroundTurnRequest",
+        "type": "object"
+      },
       "StudioDryRunRequest": {
         "additionalProperties": false,
         "description": "Isolated Studio *What-If* dry-run request (`▷ Tester`, `Story 8.5`).",
@@ -16064,6 +16216,11 @@
         "properties": {
           "assembled_prompt_sha256": {
             "title": "Assembled Prompt Sha256",
+            "type": "string"
+          },
+          "assembled_system_prompt": {
+            "default": "",
+            "title": "Assembled System Prompt",
             "type": "string"
           },
           "cache_hit": {
@@ -21928,6 +22085,127 @@
         ]
       }
     },
+    "/api/v1/assistant/three-speed/active-turn": {
+      "get": {
+        "description": "Return the active or recently completed background turn for `workspace_id`.",
+        "operationId": "get_active_three_speed_turn_endpoint_api_v1_assistant_three_speed_active_turn_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveBackgroundTurnStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Active Three Speed Turn Endpoint",
+        "tags": [
+          "assistant-workspace"
+        ]
+      }
+    },
+    "/api/v1/assistant/three-speed/feedback": {
+      "post": {
+        "description": "Record user `👍` (`LIKE`) or `👎` (`DISLIKE`) feedback on a prompt telemetry entry.",
+        "operationId": "record_assistant_turn_feedback_endpoint_api_v1_assistant_three_speed_feedback_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordAssistantTurnFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Record Assistant Turn Feedback Endpoint Api V1 Assistant Three Speed Feedback Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Assistant Turn Feedback Endpoint",
+        "tags": [
+          "assistant-workspace"
+        ]
+      }
+    },
     "/api/v1/assistant/three-speed/invalidate-cache": {
       "post": {
         "description": "Invalidate Redis 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`).",
@@ -21983,6 +22261,66 @@
           }
         },
         "summary": "Invalidate Prompt Cache Endpoint",
+        "tags": [
+          "assistant-workspace"
+        ]
+      }
+    },
+    "/api/v1/assistant/three-speed/stop": {
+      "post": {
+        "description": "Explicitly cancel the active background LLM task when the user clicks Stop `■`.",
+        "operationId": "stop_active_three_speed_turn_endpoint_api_v1_assistant_three_speed_stop_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopActiveBackgroundTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveBackgroundTurnStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stop Active Three Speed Turn Endpoint",
         "tags": [
           "assistant-workspace"
         ]

@@ -327,7 +327,44 @@ class ThreeSpeedTurnResponse(BaseModel):
     step_progress: list[ThreeSpeedStepProgressSchemaItem]
     response_text: str
     assembled_prompt_sha256: str
+    assembled_system_prompt: str = ""
     deep_audit_lenses: list[str] = Field(default_factory=list)
+
+
+class ActiveBackgroundTurnStatusResponse(BaseModel):
+    """Status snapshot for `GET /api/v1/assistant/three-speed/active-turn` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    workspace_id: str
+    turn_id: str | None = None
+    status: Literal["IDLE", "RUNNING", "COMPLETED", "STOPPED", "ERROR"] = "IDLE"
+    user_prompt: str = ""
+    thinking_text: str = ""
+    streamed_text: str = ""
+    assembled_system_prompt: str = ""
+    started_at_ms: float = 0.0
+    elapsed_ms: float = 0.0
+    error_message: str | None = None
+
+
+class StopActiveBackgroundTurnRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/three-speed/stop` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    workspace_id: str = Field(..., min_length=1)
+
+
+class RecordAssistantTurnFeedbackRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/three-speed/feedback` (`Story 10.2`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    workspace_id: str = Field(..., min_length=1)
+    turn_id: str = Field(..., min_length=1)
+    user_feedback: Literal["LIKE", "DISLIKE"] | None = None
+    user_prompt: str = ""
+    assembled_system_prompt: str = ""
+    assistant_reply: str = ""
+    thinking_text: str = ""
 
 
 class InvalidatePromptCacheRequest(BaseModel):

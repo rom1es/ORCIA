@@ -45,6 +45,12 @@ export type UserPreferencesPatchRequest = components["schemas"]["UserPreferences
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
 export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
 export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
+export type ActiveBackgroundTurnStatusResponse =
+  components["schemas"]["ActiveBackgroundTurnStatusResponse"];
+export type StopActiveBackgroundTurnRequest =
+  components["schemas"]["StopActiveBackgroundTurnRequest"];
+export type RecordAssistantTurnFeedbackRequest =
+  components["schemas"]["RecordAssistantTurnFeedbackRequest"];
 export type AssistantWorkspaceOverviewResponse =
   components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type CreateAssistantFolderRequest =
@@ -275,25 +281,26 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
       );
     },
     executeAssistantTurn(payload: ThreeSpeedTurnRequest): Promise<ThreeSpeedTurnResponse> {
-      return requestJson<ThreeSpeedTurnResponse>(
-        "/api/v1/assistant/three-speed/turn",
-        "POST",
-        payload,
+      return requestJson<ThreeSpeedTurnResponse>("/api/v1/assistant/three-speed/turn", "POST", payload);
+    },
+    getActiveAssistantTurnStatus(workspaceId: string): Promise<ActiveBackgroundTurnStatusResponse> {
+      return requestJson<ActiveBackgroundTurnStatusResponse>(
+        `/api/v1/assistant/three-speed/active-turn?workspace_id=${encodeURIComponent(workspaceId)}`,
       );
+    },
+    stopActiveAssistantTurn(payload: StopActiveBackgroundTurnRequest): Promise<ActiveBackgroundTurnStatusResponse> {
+      return requestJson<ActiveBackgroundTurnStatusResponse>("/api/v1/assistant/three-speed/stop", "POST", payload);
+    },
+    recordAssistantTurnFeedback(payload: RecordAssistantTurnFeedbackRequest): Promise<Record<string, unknown>> {
+      return requestJson<Record<string, unknown>>("/api/v1/assistant/three-speed/feedback", "POST", payload);
     },
     async streamAssistantTurnSse(
       payload: ThreeSpeedTurnRequest,
-      options?: {
-        signal?: AbortSignal;
-        onEvent?: (eventName: string, data: Record<string, unknown>) => void;
-      },
+      options?: { signal?: AbortSignal; onEvent?: (eventName: string, data: Record<string, unknown>) => void },
     ): Promise<void> {
       const response = await globalThis.fetch("/api/v1/assistant/three-speed/stream", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "text/event-stream",
-        },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify(payload),
         ...(options?.signal ? { signal: options.signal } : {}),
       });
@@ -313,16 +320,12 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
           let eventName = "message";
           const dataLines: string[] = [];
           for (const line of block.split("\n")) {
-            if (line.startsWith("event:")) {
-              eventName = line.slice(6).trim();
-            } else if (line.startsWith("data:")) {
-              dataLines.push(line.slice(5).trim());
-            }
+            if (line.startsWith("event:")) eventName = line.slice(6).trim();
+            else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
           }
           if (dataLines.length > 0) {
             try {
-              const parsed = JSON.parse(dataLines.join("\n")) as Record<string, unknown>;
-              options?.onEvent?.(eventName, parsed);
+              options?.onEvent?.(eventName, JSON.parse(dataLines.join("\n")) as Record<string, unknown>);
             } catch {
               // Ignore non-JSON keepalive comments
             }
@@ -331,62 +334,28 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
       }
     },
     listAssistantFolders(workspaceId: string): Promise<AssistantWorkspaceOverviewResponse> {
-      return requestJson<AssistantWorkspaceOverviewResponse>(
-        `/api/v1/assistant/workspaces/${encodeURIComponent(workspaceId)}/overview`,
-      );
+      return requestJson<AssistantWorkspaceOverviewResponse>(`/api/v1/assistant/workspaces/${encodeURIComponent(workspaceId)}/overview`);
     },
-    createAssistantFolder(
-      payload: CreateAssistantFolderRequest,
-    ): Promise<AssistantFolderResponse> {
+    createAssistantFolder(payload: CreateAssistantFolderRequest): Promise<AssistantFolderResponse> {
       return requestJson<AssistantFolderResponse>("/api/v1/assistant/folders", "POST", payload);
     },
-    createAssistantThread(
-      payload: CreateAssistantThreadRequest,
-    ): Promise<AssistantThreadResponse> {
+    createAssistantThread(payload: CreateAssistantThreadRequest): Promise<AssistantThreadResponse> {
       return requestJson<AssistantThreadResponse>("/api/v1/assistant/threads", "POST", payload);
     },
-    sendCollaborativeThreadTurn(
-      threadId: string,
-      payload: SendCollaborativeThreadTurnRequest,
-    ): Promise<SendCollaborativeThreadTurnResponse> {
-      return requestJson<SendCollaborativeThreadTurnResponse>(
-        `/api/v1/assistant/threads/${encodeURIComponent(threadId)}/turns`,
-        "POST",
-        payload,
-      );
+    sendCollaborativeThreadTurn(threadId: string, payload: SendCollaborativeThreadTurnRequest): Promise<SendCollaborativeThreadTurnResponse> {
+      return requestJson<SendCollaborativeThreadTurnResponse>(`/api/v1/assistant/threads/${encodeURIComponent(threadId)}/turns`, "POST", payload);
     },
-    compileDnaStarlark(
-      workspaceId: string,
-      payload: CompileStarlarkMechanismRequest,
-    ): Promise<StarlarkMechanismResponse> {
-      return requestJson<StarlarkMechanismResponse>(
-        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/dna-mechanisms/compile`,
-        "POST",
-        payload,
-      );
+    compileDnaStarlark(workspaceId: string, payload: CompileStarlarkMechanismRequest): Promise<StarlarkMechanismResponse> {
+      return requestJson<StarlarkMechanismResponse>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/dna-mechanisms/compile`, "POST", payload);
     },
-    runRemoteServiceTestBench(
-      payload: TestAndDiscoverConnectorRequest,
-    ): Promise<ConnectorTestBenchReportResponse> {
-      return requestJson<ConnectorTestBenchReportResponse>(
-        "/api/v1/settings/connectors/test-and-discover",
-        "POST",
-        payload,
-      );
+    runRemoteServiceTestBench(payload: TestAndDiscoverConnectorRequest): Promise<ConnectorTestBenchReportResponse> {
+      return requestJson<ConnectorTestBenchReportResponse>("/api/v1/settings/connectors/test-and-discover", "POST", payload);
     },
-    validateHelpArticle(
-      payload: ValidateHelpArticleRequest,
-    ): Promise<HelpArticleValidationResponse> {
-      return requestJson<HelpArticleValidationResponse>(
-        "/api/v1/pack-builder/processes/validate-help-article",
-        "POST",
-        payload,
-      );
+    validateHelpArticle(payload: ValidateHelpArticleRequest): Promise<HelpArticleValidationResponse> {
+      return requestJson<HelpArticleValidationResponse>("/api/v1/pack-builder/processes/validate-help-article", "POST", payload);
     },
     listInstalledBusinessPacks(): Promise<InstalledBusinessPackListResponse> {
-      return requestJson<InstalledBusinessPackListResponse>(
-        "/api/v1/pack-builder/installed-packs",
-      );
+      return requestJson<InstalledBusinessPackListResponse>("/api/v1/pack-builder/installed-packs");
     },
   };
 }

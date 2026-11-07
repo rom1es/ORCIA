@@ -172,6 +172,7 @@ export interface AssistantResponseFooterActionsAndCitationsProps {
   readonly modelLabel?: string;
   readonly effortLabel?: string;
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
+  readonly initialFeedback?: "LIKE" | "DISLIKE" | null;
   readonly onRegenerate?: () => void;
   readonly onSaveDraft?: (content: string) => void;
   readonly onContinueInProcess?: (content: string) => void;
@@ -184,15 +185,20 @@ export function AssistantResponseFooterActionsAndCitations({
   modelLabel = "Polyvalent",
   effortLabel = "Standard",
   ragCitations = [],
+  initialFeedback = null,
   onRegenerate,
   onSaveDraft,
   onContinueInProcess,
   onFeedbackChange,
 }: AssistantResponseFooterActionsAndCitationsProps): React.JSX.Element {
-  const [feedback, setFeedback] = useState<"LIKE" | "DISLIKE" | null>(null);
+  const [feedback, setFeedback] = useState<"LIKE" | "DISLIKE" | null>(initialFeedback);
   const [copied, setCopied] = useState<boolean>(false);
   const [draftSaved, setDraftSaved] = useState<boolean>(false);
   const [detailsOpen, setDetailsOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    setFeedback(initialFeedback ?? null);
+  }, [initialFeedback]);
 
   useEffect(() => {
     if (!copied) return;
@@ -224,169 +230,58 @@ export function AssistantResponseFooterActionsAndCitations({
     onSaveDraft?.(responseText);
   };
 
-  const likeLabel = isFr ? "J'aime" : "Like";
-  const dislikeLabel = isFr ? "Je n'aime pas" : "Dislike";
+  const likeLabel = isFr ? "Bonne réponse" : "Good Response";
+  const dislikeLabel = isFr ? "Réponse à améliorer" : "Needs improvement";
   const copyLabel = copied ? (isFr ? "Copié" : "Copied") : isFr ? "Copier" : "Copy";
   const regenerateLabel = isFr ? "Régénérer" : "Regenerate";
-  const saveDraftLabel = draftSaved
-    ? isFr
-      ? "Brouillon enregistré"
-      : "Draft saved"
-    : isFr
-      ? "Enregistrer en brouillon"
-      : "Save as draft";
+  const saveDraftLabel = draftSaved ? (isFr ? "Brouillon enregistré" : "Draft saved") : isFr ? "Enregistrer en brouillon" : "Save as draft";
   const continueProcessLabel = isFr ? "Poursuivre dans un Processus" : "Continue in a Process";
   const detailsLabel = isFr ? "Voir les détails de la réponse" : "View response details";
-
-  const iconBtnClass =
-    "h-7 w-7 inline-flex items-center justify-center rounded-md border-0 bg-transparent text-xs text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";
+  const iconBtnClass = "h-7 w-7 inline-flex items-center justify-center rounded-md border-0 bg-transparent text-xs text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";
+  const activeFeedbackStyle: React.CSSProperties = { backgroundColor: "var(--color-action-primary)", color: "var(--color-primary-foreground)" };
 
   return (
     <div className="space-y-2 pt-2">
       {ragCitations.length > 0 && (
-        <div
-          data-testid="assistant-rag-citations-list"
-          className="flex flex-wrap items-center gap-1.5"
-        >
-          <span className="text-[11px] font-medium text-text-secondary">
-            {isFr ? "Sources consultées :" : "Consulted sources:"}
-          </span>
+        <div data-testid="assistant-rag-citations-list" className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-medium text-text-secondary">{isFr ? "Sources consultées :" : "Consulted sources:"}</span>
           {ragCitations.map((source, index) => (
-            <a
-              key={`${source.uri}-${index}`}
-              href={source.uri}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-testid={`assistant-rag-citation-link-${index}`}
-              className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline"
-            >
+            <a key={`${source.uri}-${index}`} href={source.uri} target="_blank" rel="noopener noreferrer" data-testid={`assistant-rag-citation-link-${index}`} className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline">
               📄 {source.title} ↗
             </a>
           ))}
         </div>
       )}
 
-      <div
-        data-testid="assistant-response-actions-bar"
-        role="toolbar"
-        aria-label={isFr ? "Actions sur la réponse" : "Response actions"}
-        className="flex flex-wrap items-center gap-1"
-      >
-        <button
-          type="button"
-          data-testid="assistant-action-like-btn"
-          aria-label={likeLabel}
-          title={likeLabel}
-          aria-pressed={feedback === "LIKE"}
-          onClick={handleToggleLike}
-          style={
-            feedback === "LIKE"
-              ? {
-                  backgroundColor: "var(--color-action-primary)",
-                  color: "var(--color-primary-foreground)",
-                }
-              : undefined
-          }
-          className={iconBtnClass}
-        >
-          👍
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-action-dislike-btn"
-          aria-label={dislikeLabel}
-          title={dislikeLabel}
-          aria-pressed={feedback === "DISLIKE"}
-          onClick={handleToggleDislike}
-          style={
-            feedback === "DISLIKE"
-              ? {
-                  backgroundColor: "var(--color-action-primary)",
-                  color: "var(--color-primary-foreground)",
-                }
-              : undefined
-          }
-          className={iconBtnClass}
-        >
-          👎
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-action-copy-btn"
-          aria-label={copyLabel}
-          title={copyLabel}
-          onClick={handleCopy}
-          className={iconBtnClass}
-        >
-          {copied ? "✓" : "📋"}
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-action-regenerate-btn"
-          aria-label={regenerateLabel}
-          title={regenerateLabel}
-          onClick={() => onRegenerate?.()}
-          className={iconBtnClass}
-        >
-          ↻
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-action-save-draft-btn"
-          aria-label={saveDraftLabel}
-          title={saveDraftLabel}
-          onClick={handleSaveDraft}
-          className={iconBtnClass}
-        >
-          {draftSaved ? "✓" : "📄"}
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-action-continue-process-btn"
-          aria-label={continueProcessLabel}
-          title={continueProcessLabel}
-          onClick={() => onContinueInProcess?.(responseText)}
-          className={`${iconBtnClass} text-action-primary`}
-        >
-          ☍
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-action-details-btn"
-          aria-label={detailsLabel}
-          title={detailsLabel}
-          aria-expanded={detailsOpen}
-          onClick={() => setDetailsOpen((prev) => !prev)}
-          className={iconBtnClass}
-        >
-          ⋯
-        </button>
+      <div data-testid="assistant-response-actions-bar" role="toolbar" aria-label={isFr ? "Actions sur la réponse" : "Response actions"} className="flex flex-wrap items-center gap-1">
+        <button type="button" data-testid="assistant-action-like-btn" aria-label={likeLabel} title={likeLabel} aria-pressed={feedback === "LIKE"} onClick={handleToggleLike} style={feedback === "LIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}>👍</button>
+        <button type="button" data-testid="assistant-action-dislike-btn" aria-label={dislikeLabel} title={dislikeLabel} aria-pressed={feedback === "DISLIKE"} onClick={handleToggleDislike} style={feedback === "DISLIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}>👎</button>
+        <button type="button" data-testid="assistant-action-copy-btn" aria-label={copyLabel} title={copyLabel} onClick={handleCopy} className={iconBtnClass}>{copied ? "✓" : "📋"}</button>
+        <button type="button" data-testid="assistant-action-regenerate-btn" aria-label={regenerateLabel} title={regenerateLabel} onClick={() => onRegenerate?.()} className={iconBtnClass}>↻</button>
+        <button type="button" data-testid="assistant-action-save-draft-btn" aria-label={saveDraftLabel} title={saveDraftLabel} onClick={handleSaveDraft} className={iconBtnClass}>{draftSaved ? "✓" : "📄"}</button>
+        <button type="button" data-testid="assistant-action-continue-process-btn" aria-label={continueProcessLabel} title={continueProcessLabel} onClick={() => onContinueInProcess?.(responseText)} className={`${iconBtnClass} text-action-primary`}>☍</button>
+        <button type="button" data-testid="assistant-action-details-btn" aria-label={detailsLabel} title={detailsLabel} aria-expanded={detailsOpen} onClick={() => setDetailsOpen((prev) => !prev)} className={iconBtnClass}>⋯</button>
       </div>
 
-      {detailsOpen && (
+      {feedback !== null && (
         <div
-          data-testid="assistant-response-details-popover"
-          className="inline-flex flex-wrap items-center gap-2 rounded-md bg-surface-secondary px-2.5 py-1 text-[11px] text-text-secondary"
+          role="status"
+          data-testid="assistant-feedback-thanks-banner"
+          data-feedback-value={feedback}
+          className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-secondary px-3 py-1.5 text-[11px] font-medium text-text-primary shadow-sm"
         >
-          <span>
-            {isFr ? "Modèle :" : "Model :"}{" "}
-            <strong className="font-medium text-text-primary">
-              {modelLabel}
-            </strong>
+          <span>{isFr ? "Merci pour votre retour !" : "Thanks for your feedback!"}</span>
+          <span className="text-text-secondary">
+            · {feedback === "LIKE" ? likeLabel : dislikeLabel}
           </span>
+        </div>
+      )}
+
+      {detailsOpen && (
+        <div data-testid="assistant-response-details-popover" className="inline-flex flex-wrap items-center gap-2 rounded-md bg-surface-secondary px-2.5 py-1 text-[11px] text-text-secondary">
+          <span>{isFr ? "Modèle :" : "Model :"} <strong className="font-medium text-text-primary">{modelLabel}</strong></span>
           <span aria-hidden="true">·</span>
-          <span>
-            {isFr ? "Niveau de réflexion :" : "Thinking level :"}{" "}
-            <strong className="font-medium text-text-primary">
-              {effortLabel}
-            </strong>
-          </span>
+          <span>{isFr ? "Niveau de réflexion :" : "Thinking level :"} <strong className="font-medium text-text-primary">{effortLabel}</strong></span>
         </div>
       )}
     </div>

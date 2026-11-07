@@ -96,6 +96,8 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly onRegenerateLastTurn?: () => void;
   readonly onSaveDraftFromResponse?: (content: string) => void;
   readonly onContinueInProcessFromResponse?: (content: string) => void;
+  readonly currentTurnFeedback?: "LIKE" | "DISLIKE" | null;
+  readonly onFeedbackLastTurn?: (feedback: "LIKE" | "DISLIKE" | null) => void;
   readonly onSendTurn?: (payload: {
     userPrompt: string;
     requestedSpeed: UiAssistantSpeedMode;
@@ -117,7 +119,8 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
     hideLegacySpeedPills = false, hideDuplicateCompletedStream = false, cacheHit = true, cacheLookupMs = 1.4,
     nodes1To4DeterministicMs = 18.2, ttftMs = 398.2, stepProgress, streamedText = "", activeUserPrompt,
     isGenerating = false, initialElapsedSeconds = 0, generationStopped = false, errorMessage = null, labels,
-    onOpenFoldersFromPlus, onStopGeneration, onRegenerateLastTurn, onSaveDraftFromResponse, onContinueInProcessFromResponse, onSendTurn,
+    onOpenFoldersFromPlus, onStopGeneration, onRegenerateLastTurn, onSaveDraftFromResponse, onContinueInProcessFromResponse,
+    currentTurnFeedback = null, onFeedbackLastTurn, onSendTurn,
   } = props;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -317,7 +320,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
               <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">⏹ Génération interrompue par l&apos;utilisateur</div>
             ) : null}
             {!isGenerating && cleanStreamedText && !hideDuplicateCompletedStream ? (
-              <AssistantResponseFooterActionsAndCitations responseText={cleanStreamedText} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} ragCitations={mergedRagCitations} onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))} onSaveDraft={onSaveDraftFromResponse} onContinueInProcess={onContinueInProcessFromResponse} />
+              <AssistantResponseFooterActionsAndCitations responseText={cleanStreamedText} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} ragCitations={mergedRagCitations} initialFeedback={currentTurnFeedback} onFeedbackChange={onFeedbackLastTurn} onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))} onSaveDraft={onSaveDraftFromResponse} onContinueInProcess={onContinueInProcessFromResponse} />
             ) : null}
           </div>
         )}
