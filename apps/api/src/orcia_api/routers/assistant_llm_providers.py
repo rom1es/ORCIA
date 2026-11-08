@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ipaddress
 import json
-import re
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
@@ -13,12 +12,23 @@ from urllib.parse import urlparse
 
 import httpx
 
+from orcia_api.routers.assistant_llm_gemini_adapter import (
+    _separate_think_tags as _separate_think_tags,
+)
+from orcia_api.routers.assistant_llm_gemini_adapter import (
+    build_gemini_native_headers,
+    build_gemini_native_request_body,
+    build_gemini_native_url,
+    extract_gemini_stream_chunk_deltas,
+    is_google_gemini_native_provider,
+    parse_gemini_native_response,
+)
 from orcia_core.observability.logging import get_logger
+
+extract_thinking_and_clean_content = _separate_think_tags
 
 logger = get_logger("orcia.assistant.llm")
 
-_THINK_TAG_BLOCK_RE = re.compile(r"<think>(.*?)</think>", re.DOTALL | re.IGNORECASE)
-_UNCLOSED_THINK_TAG_RE = re.compile(r"<think>(.*)$", re.DOTALL | re.IGNORECASE)
 _BLOCKED_HOSTS: frozenset[str] = frozenset({"169.254.169.254", "100.100.100.200", "metadata.google.internal", "metadata.goog", "metadata.azure.com", "instance-data", "example.com", "api.example.com", "mock-llm", "api.anthropic.local", "api.openai.local", "api.google.local", "api.mistral.local"})  # fmt: skip  # noqa: E501
 
 
@@ -77,18 +87,28 @@ def is_anthropic_provider(endpoint_uri: str, provider: str = "") -> bool:
     )
 
 
-def normalize_chat_completions_url(endpoint_uri: str, provider: str = "") -> str:
-    """Normalize provider base URL to its canonical chat/messages endpoint."""
+def normalize_chat_completions_url(
+    endpoint_uri: str,
+    provider: str = "",
+    *,
+    model_name: str = "gemini-argon",
+    stream: bool = False,
+) -> str:
+    """Normalize provider base URL to its canonical chat/messages/generateContent endpoint."""
     base = endpoint_uri.strip().rstrip("/")
     if is_anthropic_provider(base, provider):
         if base.endswith("/messages"):
             return base
         return f"{base}/messages" if base.endswith("/v1") else f"{base}/v1/messages"
+    if is_google_gemini_native_provider(base, provider):
+        return build_gemini_native_url(base, model_name, stream=stream)
     if base.endswith(("/chat/completions", "/api/chat", "/messages")):
         return base
+    if base.endswith(("/v1beta/openai", "/openai", "/v1")):
+        return f"{base}/chat/completions"
     if base.endswith("/api"):
         return f"{base[:-4].rstrip('/')}/v1/chat/completions"
-    return f"{base}/chat/completions" if base.endswith("/v1") else f"{base}/v1/chat/completions"
+    return f"{base}/v1/chat/completions"
 
 
 def build_legacy_local_chat_url(endpoint_uri: str) -> str:
@@ -102,7 +122,9 @@ def build_legacy_local_chat_url(endpoint_uri: str) -> str:
 
 
 def build_provider_headers(ep: ResolvedLiveLlmEndpoint, target_url: str) -> dict[str, str]:
-    """Construct HTTP headers for OpenAI-compatible, Anthropic Messages, or Azure OpenAI."""
+    """Construct HTTP headers for OpenAI-compatible, Anthropic Messages, Gemini Native, or Azure."""
+    if is_google_gemini_native_provider(target_url, ep.provider):
+        return build_gemini_native_headers(ep.api_key)
     headers: dict[str, str] = {"Content-Type": "application/json"}
     if is_anthropic_provider(target_url, ep.provider):
         headers["anthropic-version"] = "2023-06-01"
@@ -116,23 +138,6 @@ def build_provider_headers(ep: ResolvedLiveLlmEndpoint, target_url: str) -> dict
     return headers
 
 
-def extract_thinking_and_clean_content(
-    raw_content: str, explicit_reasoning: str = ""
-) -> tuple[str, str]:
-    """Strictly separate `<think>...</think>` / `reasoning_content` from final `content`."""
-    thinking_parts = [explicit_reasoning.strip()] if explicit_reasoning.strip() else []
-    text = raw_content or ""
-    for match in _THINK_TAG_BLOCK_RE.finditer(text):
-        if extracted := match.group(1).strip():
-            thinking_parts.append(extracted)
-    cleaned = _THINK_TAG_BLOCK_RE.sub("", text)
-    if (unclosed := _UNCLOSED_THINK_TAG_RE.search(cleaned)) is not None:
-        if partial_think := unclosed.group(1).strip():
-            thinking_parts.append(partial_think)
-        cleaned = cleaned[: unclosed.start()]
-    return cleaned.strip(), "\n\n".join(thinking_parts).strip()
-
-
 def build_provider_request_body(
     *,
     ep: ResolvedLiveLlmEndpoint,
@@ -141,7 +146,9 @@ def build_provider_request_body(
     stream: bool,
     tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Build JSON payload for Anthropic (`/v1/messages`) or OpenAI-compatible endpoints."""
+    """Build JSON payload for Gemini Native, Anthropic (`/v1/messages`), or OpenAI-compatible."""
+    if is_google_gemini_native_provider(target_url, ep.provider):
+        return build_gemini_native_request_body(messages, include_thoughts=True, tools=tools)
     if is_anthropic_provider(target_url, ep.provider):
         sys_blocks = [str(m.get("content") or "") for m in messages if m.get("role") == "system"]
         conv_msgs = [
@@ -179,21 +186,16 @@ def build_provider_request_body(
 
 def _parse_non_stream_json(data: dict[str, Any]) -> tuple[str, str, tuple[dict[str, Any], ...]]:
     """Extract `(clean_content, thinking_text, tool_calls)` from provider JSON."""
+    if isinstance(data.get("candidates"), list):
+        return parse_gemini_native_response(data)
     if isinstance(data.get("content"), list):
         blocks = [b for b in data["content"] if isinstance(b, dict)]
         texts = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
-        thinks = "\n".join(
-            str(b.get("thinking") or "") for b in blocks if b.get("type") == "thinking"
-        )
+        thinks = "\n".join(str(b.get("thinking") or "") for b in blocks if b.get("type") == "thinking")  # fmt: skip  # noqa: E501
         t_calls = tuple(
-            {
-                "id": str(b.get("id") or "call_1"),
-                "name": str(b.get("name") or ""),
-                "arguments": b.get("input") or {},
-            }
-            for b in blocks
-            if b.get("type") == "tool_use"
-        )
+            {"id": str(b.get("id") or "call_1"), "name": str(b.get("name") or ""), "arguments": b.get("input") or {}}  # noqa: E501
+            for b in blocks if b.get("type") == "tool_use"
+        )  # fmt: skip
         clean, think = extract_thinking_and_clean_content(texts, thinks)
         return clean, think, t_calls
 
@@ -201,29 +203,17 @@ def _parse_non_stream_json(data: dict[str, Any]) -> tuple[str, str, tuple[dict[s
     if isinstance(choices, list) and choices and isinstance(choices[0], dict):
         msg = choices[0].get("message")
         if isinstance(msg, dict):
-            raw_r = str(
-                msg.get("reasoning_content") or msg.get("reasoning") or msg.get("thinking") or ""
-            )
+            raw_r = str(msg.get("reasoning_content") or msg.get("reasoning") or msg.get("thinking") or "")  # fmt: skip  # noqa: E501
             tools = tuple(
-                {
-                    "id": str(tc.get("id") or "call_1"),
-                    "name": str((tc.get("function") or {}).get("name") or tc.get("name") or ""),
-                    "arguments": (tc.get("function") or {}).get("arguments") or {},
-                }
-                for tc in (msg.get("tool_calls") or [])
-                if isinstance(tc, dict)
-            )
+                {"id": str(tc.get("id") or "call_1"), "name": str((tc.get("function") or {}).get("name") or tc.get("name") or ""), "arguments": (tc.get("function") or {}).get("arguments") or {}}  # noqa: E501
+                for tc in (msg.get("tool_calls") or []) if isinstance(tc, dict)
+            )  # fmt: skip
             clean, think = extract_thinking_and_clean_content(str(msg.get("content") or ""), raw_r)
             return clean, think, tools
 
     msg_obj = data.get("message")
     if isinstance(msg_obj, dict):
-        raw_r = str(
-            msg_obj.get("reasoning_content")
-            or msg_obj.get("thinking")
-            or msg_obj.get("reasoning")
-            or ""
-        )
+        raw_r = str(msg_obj.get("reasoning_content") or msg_obj.get("thinking") or msg_obj.get("reasoning") or "")  # fmt: skip  # noqa: E501
         clean, think = extract_thinking_and_clean_content(str(msg_obj.get("content") or ""), raw_r)
         return clean, think, ()
     return "", "", ()
@@ -232,13 +222,7 @@ def _parse_non_stream_json(data: dict[str, Any]) -> tuple[str, str, tuple[dict[s
 def _log_provider_error(
     event: str, exc: Exception, ep: ResolvedLiveLlmEndpoint, target_url: str, t0: float
 ) -> None:
-    kw: dict[str, Any] = {
-        "endpoint": target_url,
-        "model": ep.model_name,
-        "provider": ep.provider,
-        "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
-        "error_type": type(exc).__name__,
-    }
+    kw: dict[str, Any] = {"endpoint": target_url, "model": ep.model_name, "provider": ep.provider, "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2), "error_type": type(exc).__name__}  # fmt: skip  # noqa: E501
     if isinstance(exc, httpx.HTTPStatusError):
         kw["status_code"] = exc.response.status_code
     logger.warning(event, **kw)
@@ -252,7 +236,9 @@ async def invoke_provider_chat_async(
     tools: list[dict[str, Any]] | None = None,
 ) -> ProviderChatTurnResponse | None:
     """Execute an async chat completion call with structured logging and legacy 404 fallback."""
-    target_url = normalize_chat_completions_url(ep.endpoint_uri, ep.provider)
+    target_url = normalize_chat_completions_url(
+        ep.endpoint_uri, ep.provider, model_name=ep.model_name, stream=False
+    )
     headers = build_provider_headers(ep, target_url)
     body = build_provider_request_body(
         ep=ep, target_url=target_url, messages=messages, stream=False, tools=tools
@@ -260,7 +246,11 @@ async def invoke_provider_chat_async(
     t0 = time.perf_counter()
     try:
         resp = await http_client.post(target_url, json=body, headers=headers)
-        if resp.status_code == 404 and not is_anthropic_provider(target_url, ep.provider):
+        if (
+            resp.status_code == 404
+            and not is_anthropic_provider(target_url, ep.provider)
+            and not is_google_gemini_native_provider(target_url, ep.provider)
+        ):
             fallback_url = build_legacy_local_chat_url(ep.endpoint_uri)
             if fallback_url != target_url:
                 resp = await http_client.post(
@@ -287,6 +277,8 @@ async def invoke_provider_chat_async(
 
 def _extract_stream_chunk_deltas(chunk: dict[str, Any]) -> tuple[str, str]:
     """Return `(content_delta, reasoning_delta)` from a single parsed SSE/NDJSON chunk."""
+    if isinstance(chunk.get("candidates"), list):
+        return extract_gemini_stream_chunk_deltas(chunk)
     if chunk.get("type") == "content_block_delta" and isinstance(chunk.get("delta"), dict):
         d = chunk["delta"]
         if d.get("type") == "text_delta":
@@ -301,10 +293,7 @@ def _extract_stream_chunk_deltas(chunk: dict[str, Any]) -> tuple[str, str]:
             return str(delta.get("content") or ""), str(r or "")
     msg = chunk.get("message")
     if isinstance(msg, dict):
-        return (
-            str(msg.get("content") or ""),
-            str(msg.get("thinking") or msg.get("reasoning_content") or ""),
-        )
+        return str(msg.get("content") or ""), str(msg.get("thinking") or msg.get("reasoning_content") or "")  # fmt: skip  # noqa: E501
     return "", ""
 
 
@@ -328,7 +317,9 @@ async def stream_provider_chat_sse_async(
     tools: list[dict[str, Any]] | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """True async HTTP SSE streaming (`resp.aiter_lines()`) preserving `\n` and code indentation."""
-    target_url = normalize_chat_completions_url(ep.endpoint_uri, ep.provider)
+    target_url = normalize_chat_completions_url(
+        ep.endpoint_uri, ep.provider, model_name=ep.model_name, stream=True
+    )
     headers = build_provider_headers(ep, target_url)
     body = build_provider_request_body(
         ep=ep, target_url=target_url, messages=messages, stream=True, tools=tools

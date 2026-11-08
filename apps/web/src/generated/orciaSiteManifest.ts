@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-07",
+  "lastSyncedDate": "2026-11-08",
   "stats": {
     "activeRoutesCount": 20,
     "uiPrimitivesCount": 78,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 89
+    "techLeadReportsCount": 90
   },
   "activeRoutes": [
     "/",
@@ -412,6 +412,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Post-Epic 12 / Epics 6, 8 & 10 Multi-Provider Gemini Argon",
+      "reportFile": "2026-11-08-integration-gemini-argon-configuration-et-assistant-tech-lead-report.md",
+      "domain": "Intégration de Google Gemini (Gemini Argon / gemini-argon) dans ⚙️ Configuration > Modèles IA et 💬 Mon Assistant (Mode B API Native :generateContent / :streamGenerateContent?alt=sse + x-goog-api-key + thinkingConfig & Mode A /v1beta/openai/chat/completions)",
+      "summary": "Découpage modulaire de SettingsAiModelsSection.tsx (660 -> 348 lignes) + settingsAiModelsPresets.ts (258 lignes) avec préréglage Google Gemini sur gemini-argon, puces rapides ai-model-quick-chip-gemini-argon et sélecteur de protocole Mode B (/v1beta) vs Mode A (/v1beta/openai) ; création de assistant_llm_gemini_adapter.py (238 lignes) avec séparation stricte part.thought == True (thinking_delta) vs part.text (token_delta), normalisation /v1beta/openai/chat/completions sans /v1 dupliqué, diagnostic llm-test enrichi et affichage explicite de gemini-argon à côté de gemma4:12b dans buildAssistantModelOptions."
+    },
     {
       "date": "2026-11-07",
       "phaseOrStory": "Post-Epic 12 / Epic 10 Dossiers, Notes, Réglages & Contexte Multi-Tours LLM",

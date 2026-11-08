@@ -209,10 +209,11 @@ export function buildAssistantModelOptions(
     const modelName = configuredTiers.find((t) => t.tier === tierKey)?.primaryModel?.trim();
     const isDuplicate = configuredTiers.length > 0 && (!modelName || seenModels.has(modelName));
     if (modelName) seenModels.add(modelName);
+    const enrichedSubtitle = modelName ? `${subtitle} · ${modelName}` : subtitle;
     return {
       tier: tierKey,
       title,
-      subtitle,
+      subtitle: enrichedSubtitle,
       ...(modelName ? { configuredModelName: modelName } : {}),
       ...(isDuplicate ? { hiddenDuplicate: true } : {}),
     };
