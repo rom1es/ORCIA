@@ -445,6 +445,9 @@ class HumanAnchorAndArbitrationService:
             draft_artifact={
                 **step_exec.draft_artifact,
                 "pending_arbitration_id": arb_id,
+                "arbitration_question_title": question_title.strip(),
+                "arbitration_context_summary": context_summary.strip(),
+                "arbitration_tie_break_policy": effective_policy,
                 "options_matrix": [o.to_dict() for o in options_matrix],
             },
             memlog_entries=(

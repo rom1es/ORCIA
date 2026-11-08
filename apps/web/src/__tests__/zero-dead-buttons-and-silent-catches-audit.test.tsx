@@ -5,6 +5,7 @@ import React from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ShellContainer } from "../components/ShellContainer";
 import { CatalogFeaturePanel } from "../features/catalog";
+import { CockpitFeaturePanel } from "../features/cockpit";
 import { GatesFeaturePanel } from "../features/gates";
 import { InboxFeaturePanel } from "../features/inbox";
 import { WorkspacesFeaturePanel } from "../features/workspaces";
@@ -98,6 +99,8 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onAskAssistant",
         "onClose",
       ],
+      HumanLedAnchorCard: ["onChange", "onSignAnchor"],
+      ArbitrationTieBreakCard: ["onSelectOption"],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);
@@ -418,6 +421,69 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "Contrôle automatique généré",
       );
       expect(screen.getByTestId("starlark-compiler-panel")).toBeDefined();
+    });
+  });
+
+  it("dynamically verifies HumanLedAnchorCard (>= 30 chars) and ArbitrationTieBreakCard in CockpitFeaturePanel and F5 rehydration", async () => {
+    const view1 = render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <CockpitFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    const anchorTextarea = screen.getByTestId("cockpit-human-anchor-textarea");
+    const anchorSubmitBtn = screen.getByTestId("human-anchor-submit-human_architecture_intent");
+    expect((anchorSubmitBtn as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(anchorTextarea, {
+      target: {
+        value:
+          "Orientation humaine obligatoire rédigée et signée avec au moins trente caractères.",
+      },
+    });
+    expect((anchorSubmitBtn as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(anchorSubmitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
+    });
+
+    const selectOptBtn = screen.getByTestId("arbitration-select-OPT_A_SPOT_15M");
+    fireEvent.click(selectOptBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("cockpit-arbitration-resolved-summary").getAttribute(
+          "data-selected-option",
+        ),
+      ).toBe("OPT_A_SPOT_15M");
+      expect(
+        screen.getByTestId("cockpit-human-led-governance-section").getAttribute(
+          "data-step-status",
+        ),
+      ).toBe("COMMITTED");
+    });
+
+    view1.unmount();
+
+    // F5 reload (remount) rehydrates signed anchor + resolved arbitration from GET /api/v1/orchestration/...
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <CockpitFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
+      expect(
+        screen.getByTestId("cockpit-arbitration-resolved-summary").getAttribute(
+          "data-selected-option",
+        ),
+      ).toBe("OPT_A_SPOT_15M");
     });
   });
 });

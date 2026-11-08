@@ -246,7 +246,8 @@ class DurableOrchestrationEngine:
                 metadata=meta,
             )
             exec_result = executor.execute_step(exec_ctx)
-            draft_payload = dict(exec_result.artifact_payload)
+            existing_draft = self.blackboard.get_step_execution(run.id, step_key).draft_artifact
+            draft_payload = {**existing_draft, **exec_result.artifact_payload}
             memlog_entries.append(
                 StepMemlogEntry(
                     entry_id=new_uuid7_str(),

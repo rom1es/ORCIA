@@ -61,6 +61,7 @@ export function ArbitrationTieBreakCard({
 }: ArbitrationTieBreakCardProps) {
   const [justification, setJustification] = useState("");
   const [chosenKey, setChosenKey] = useState<string | null>(selectedOptionKey);
+  const activeChosenKey = chosenKey ?? selectedOptionKey;
 
   const handleChoose = (optKey: string) => {
     if (readOnly) {
@@ -139,7 +140,7 @@ export function ArbitrationTieBreakCard({
         }}
       >
         {options.map((opt) => {
-          const isSelected = chosenKey === opt.optionKey;
+          const isSelected = activeChosenKey === opt.optionKey;
           return (
             <div
               key={opt.optionKey}
@@ -248,7 +249,7 @@ export function ArbitrationTieBreakCard({
         />
       )}
 
-      {chosenKey && (
+      {activeChosenKey && (
         <div
           data-testid={`arbitration-resolved-banner-${arbitrationId}`}
           role="status"
@@ -263,7 +264,7 @@ export function ArbitrationTieBreakCard({
             fontWeight: 600,
           }}
         >
-          {labels.resolvedBannerPrefix}: {chosenKey}
+          {labels.resolvedBannerPrefix}: {activeChosenKey}
         </div>
       )}
     </section>

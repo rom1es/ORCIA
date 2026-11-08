@@ -17,7 +17,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "techLeadReportsCount": 104,
     "capabilitiesCount": 57,
     "liveCapabilitiesCount": 54,
-    "verifiedCapabilitiesCount": 3
+    "verifiedCapabilitiesCount": 5
   },
   "activeRoutes": [
     "/",

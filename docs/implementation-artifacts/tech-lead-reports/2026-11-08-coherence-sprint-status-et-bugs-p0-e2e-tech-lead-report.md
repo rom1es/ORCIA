@@ -4,7 +4,7 @@
 - **Story / Clé Sprint** : `2026-11-08-coherence-sprint-status-et-bugs-p0-e2e` (`Epic 13`, tickets `BUG-E2E-01..04`)
 - **Capacité(s)** : `CAP-073` (dossiers Assistant), `CAP-023` (ancrages humains / arbitrage), `CAP-040` (notifications / claim temps réel), `CAP-001` (authentification) — classification `feature` (bugfix) + `doc`
 - **Branche dédiée** : `fix/p0-e2e-bugs`
-- **Statut** : `in-progress`
+- **Statut** : `done`
 
 ---
 
@@ -91,5 +91,24 @@ Constat complémentaire : l'adaptateur SQL ne peut pas être livré sans `AUTH-0
 - Vérifications : `pnpm turbo run lint typecheck test` (web 47, ui 68, api-client 8) vert ; **E2E 02 sur pile isolée : 2 passés, 1 `fixme`**.
 - Correction annexe : la documentation `docs/testing-strategy.md` (et ses reprises dans `README.md`, `architecture.md`, `AGENTS.md`) citait des ports, scripts et fichiers E2E inexistants (`:55433`, `pnpm test:e2e:up`, `refuse_if_not_e2e_target`, `test_rag_hybrid_rrf_eval.py`…) ; remplacés par les mécanismes réels (`testcontainers`, API `:8100`, web `:3101`, `is_isolated_e2e_database_url`, `pnpm e2e`) et chaque lien de fichier vérifié.
 
-### 3.3 BUG-E2E-03, 02
-_En cours._
+### 3.3 BUG-E2E-03 (fait — flux SSE temps réel `< 500 ms` + consommateur `EventSource`)
+| Fichier | Modification |
+| :--- | :--- |
+| `packages/orcia-core/src/orcia_core/orchestration/presence_and_sse.py` | Ajout de `subscribe(listener, workspace_id=...) -> unsubscribe` sur `SseBroadcastPort` et `InMemorySseBrokerAdapter` ; notification immédiate des abonnés dans `publish()` |
+| `apps/api/src/orcia_api/routers/inbox_and_leases.py` | Abonnement `asyncio.Queue` via `loop.call_soon_threadsafe` sur `GET /api/v1/events/stream`, maintien de la connexion ouverte en temps réel (`< 500 ms`, `AD-4`) |
+| `apps/web/src/components/useWorkspaceEventsSse.ts` | Nouveau hook `EventSource` écoutant `connected`, `task.claim.locked` et `task.claim.released` |
+| `apps/web/src/components/ShellContainer.tsx` | Branchement de `useWorkspaceEventsSse` dans `InnerShellContainer` |
+| `tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py` | Vérification de la notification temps réel `subscribe()` sur `claim` et `release` |
+| `apps/web/e2e/04-multi-actor-claim-sse.spec.ts` | Retrait de `test.fail` sur le test temps réel (`2 passed`, latence ~248 ms < 500 ms) |
+
+### 3.4 BUG-E2E-02 (fait — `HumanLedAnchorCard` & `ArbitrationTieBreakCard` montés dans `/cockpit` + E2E 03 vert)
+| Fichier | Modification |
+| :--- | :--- |
+| `packages/ui/src/primitives/ArbitrationTieBreakCard.tsx` | Prise en compte réactive de `selectedOptionKey` (`activeChosenKey = chosenKey ?? selectedOptionKey`) lors de la réhydratation serveur après F5 |
+| `packages/orcia-core/src/orcia_core/orchestration/human_anchors_and_arbitration.py` | Conservation de `arbitration_question_title`, `arbitration_context_summary` et `arbitration_tie_break_policy` dans `draft_artifact` |
+| `apps/api/src/orcia_api/routers/blackboard_and_engine.py` | Synchronisation SQL de `step_exec` lors de `POST /api/v1/orchestration/runs/anchors/sign` |
+| `apps/web/src/features/cockpit/CockpitHumanLedGovernanceSection.tsx` | Nouveau panneau gouvernance Human-Led montant `HumanLedAnchorCard` et `ArbitrationTieBreakCard` connectés à `@orcia/api-client` (`getOrchestrationState`, `getRunBlackboardState`, `instantiateWorkflowRun`, `signHumanAnchor`, `requestHumanArbitration`, `resolveHumanArbitration`) |
+| `apps/web/src/features/cockpit/index.tsx` | Montage de `CockpitHumanLedGovernanceSection` et instanciation serveur lors du lancement d'un processus |
+| `apps/web/src/__tests__/vitest.setup.ts` | Transport Vitest à état pour `/api/v1/orchestration/state`, `instantiate`, `blackboard`, `anchors/sign`, `arbitration` et `arbitration/resolve` |
+| `apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx` | Enregistrement de `HumanLedAnchorCard` et `ArbitrationTieBreakCard` dans `requiredPropsByComponent` + test dynamique complet avec survie au F5 |
+| `apps/web/e2e/03-human-led-anchor-and-arbitration.spec.ts` | Remplacement du `test.fixme` par le scénario E2E complet (verrou < 30 car., signature SHA-256 >= 30 car., rejet agent 422 `ERR_HUMAN_ANCHOR_REQUIRED`, escalade et résolution d'arbitrage, survie au vrai F5 `localStorage.clear()` + `page.reload()`) |

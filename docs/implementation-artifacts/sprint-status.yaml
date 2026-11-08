@@ -61,7 +61,7 @@ development_status:
   3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
   3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: done
-  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done # backend livré ; UI non montée dans apps/web → BUG-E2E-02
+  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done # backend + UI CockpitHumanLedGovernanceSection (HumanLedAnchorCard + ArbitrationTieBreakCard) câblés (BUG-E2E-02 résolu)
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
   epic-3-retrospective: optional
 
@@ -882,11 +882,13 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Amelia (Dev) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Révélé par TEST-04 (spec 03) : seuls les endpoints existent (anchors/sign, arbitration, arbitration/resolve) ; aucun usage
-      des deux composants dans apps/web. Les stories 3.4 sont `done` mais le parcours Human-Led n'est pas utilisable dans le portail.
+      Révélé par TEST-04 (spec 03). Corrigé (2026-11-08, branche fix/p0-e2e-bugs) : CockpitHumanLedGovernanceSection monté dans
+      CockpitFeaturePanel avec HumanLedAnchorCard (violet signature >= 30 car.) et ArbitrationTieBreakCard (ambre arbitrage)
+      câblés à @orcia/api-client (instantiate, anchors/sign, arbitration, arbitration/resolve, blackboard), réhydratation F5 via GET,
+      garde-fou CI requiredPropsByComponent mis à jour, et spec E2E 03-human-led-anchor-and-arbitration.spec.ts activée et verte.
   - id: BUG-E2E-03
     title: "GET /api/v1/events/stream (AD-4) rejoue les événements récents puis se termine : pas de diffusion SSE temps réel < 500 ms"
     action: "Rendre le flux persistant (abonnement au SSEBroker / Redis pub-sub avec heartbeat) et consommer le flux dans apps/web (aucun EventSource aujourd'hui) ; retirer test.fail dans e2e/04-multi-actor-claim-sse.spec.ts"
