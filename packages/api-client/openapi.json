@@ -7672,6 +7672,31 @@
         "title": "HumanGateEvaluateResponse",
         "type": "object"
       },
+      "HumanGateEvaluationListResponse": {
+        "additionalProperties": false,
+        "description": "Response for `GET /api/v1/gates/human/evaluations` (`Story 4.3`, `AD-11`).",
+        "properties": {
+          "evaluations": {
+            "items": {
+              "$ref": "#/components/schemas/HumanGateEvaluationSchemaItem"
+            },
+            "title": "Evaluations",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluations",
+          "trace_id"
+        ],
+        "title": "HumanGateEvaluationListResponse",
+        "type": "object"
+      },
       "HumanGateEvaluationSchemaItem": {
         "additionalProperties": false,
         "description": "Serialized `HumanGateEvaluationRecord` (`Story 4.3`, `AD-11`).",
@@ -14656,6 +14681,31 @@
           "idempotency_key"
         ],
         "title": "StagedJiraActionItemSchema",
+        "type": "object"
+      },
+      "StagedJiraActionListResponse": {
+        "additionalProperties": false,
+        "description": "Response payload listing staged or executed Jira actions (`Story 4.4`, `AD-5`).",
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/StagedJiraActionItemSchema"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actions",
+          "trace_id"
+        ],
+        "title": "StagedJiraActionListResponse",
         "type": "object"
       },
       "StarlarkEvaluationResponse": {
@@ -28636,6 +28686,24 @@
               "title": "Workspace Id",
               "type": "string"
             }
+          },
+          {
+            "description": "Keep SSE connection open for real-time events (`AD-4`).",
+            "in": "query",
+            "name": "live",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Keep SSE connection open for real-time events (`AD-4`).",
+              "title": "Live"
+            }
           }
         ],
         "responses": {
@@ -29251,6 +29319,142 @@
           }
         },
         "summary": "Evaluate an Adaptive Human Gate (`mandatory_full`, `risk_or_exception_based`, `sampling`)",
+        "tags": [
+          "gates"
+        ]
+      }
+    },
+    "/api/v1/gates/human/evaluations": {
+      "get": {
+        "operationId": "list_human_gate_evaluations_endpoint_api_v1_gates_human_evaluations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateEvaluationListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Adaptive Human Gate evaluations (`Story 4.3`, `AD-11`)",
         "tags": [
           "gates"
         ]
@@ -30840,6 +31044,143 @@
           }
         },
         "summary": "Pre-validate Jira transitions and stage action in draft_artifact_jsonb (`AD-5`)",
+        "tags": [
+          "jira-and-mcp"
+        ]
+      }
+    },
+    "/api/v1/jira/actions/staged": {
+      "get": {
+        "description": "List staged or executed Jira actions for F5 state rehydration.",
+        "operationId": "list_staged_jira_actions_api_v1_jira_actions_staged_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagedJiraActionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List staged and executed Jira workflow actions (`Story 4.4`, `AD-5`)",
         "tags": [
           "jira-and-mcp"
         ]
@@ -36699,7 +37040,9 @@
               "enum": [
                 "SCREEN",
                 "WORKSPACE",
-                "ALL_WORKSPACES"
+                "ALL_WORKSPACES",
+                "GLOBAL",
+                "CONTEXTUAL"
               ],
               "title": "Scope",
               "type": "string"
@@ -36710,11 +37053,17 @@
             "name": "workspace_id",
             "required": false,
             "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "default": "ws-claims-alpha",
-              "maxLength": 128,
-              "minLength": 1,
-              "title": "Workspace Id",
-              "type": "string"
+              "title": "Workspace Id"
             }
           },
           {

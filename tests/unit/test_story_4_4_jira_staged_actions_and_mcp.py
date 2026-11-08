@@ -339,6 +339,14 @@ def test_governed_mcp_server_and_fastapi_routes() -> None:
     assert commit_res.status_code == 200
     assert commit_res.json()["executed_action"]["status"] == "EXECUTED"
 
+    list_staged_res = client.get(
+        "/api/v1/jira/actions/staged?workspace_id=0192c4e0-0000-7000-8000-000000000201&persona_key=marc"
+    )
+    assert list_staged_res.status_code == 200
+    assert len(list_staged_res.json()["actions"]) >= 1
+    assert list_staged_res.json()["actions"][-1]["staged_action_id"] == staged_id
+    assert list_staged_res.json()["actions"][-1]["status"] == "EXECUTED"
+
     wh_res = client.post(
         "/api/v1/webhooks/jira/issue-updated",
         json={

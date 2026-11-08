@@ -79,6 +79,15 @@ class StageJiraActionResponse(BaseModel):
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
+class StagedJiraActionListResponse(BaseModel):
+    """Response payload listing staged or executed Jira actions (`Story 4.4`, `AD-5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    actions: list[StagedJiraActionItemSchema]
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
 class CommitStagedJiraActionRequest(BaseModel):
     """Request payload to execute a staged Jira action on Gate pass (`AD-5`, `AD-11`)."""
 

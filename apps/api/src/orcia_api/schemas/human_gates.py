@@ -90,6 +90,15 @@ class HumanGateEvaluateResponse(BaseModel):
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
+class HumanGateEvaluationListResponse(BaseModel):
+    """Response for `GET /api/v1/gates/human/evaluations` (`Story 4.3`, `AD-11`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    evaluations: list[HumanGateEvaluationSchemaItem]
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
 class HumanGateChunkDecideRequest(BaseModel):
     """Request payload for chunk decision endpoint (`UX-DR5`, `Story 4.3`)."""
 

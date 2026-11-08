@@ -12,18 +12,33 @@ from orcia_api.schemas.human_gates import (
     HumanGateChunkDecideResponse,
     HumanGateEvaluateRequest,
     HumanGateEvaluateResponse,
+    HumanGateEvaluationListResponse,
     HumanGateEvaluationSchemaItem,
     HumanGateFinalizeRequest,
     HumanGateFinalizeResponse,
 )
 from orcia_core.gates.human import ChunkApprovalRecord, HumanGateEvaluationRecord
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.orchestration.errors import ObserverModeReadOnlyError
+from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(tags=["gates"])
 
 
 def _trace(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+
+
+def _enforce_human_gate_mutation_guard(
+    request: Request, user: UserIdentity, workspace_id: str
+) -> None:
+    if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    bootstrap_svc = get_bootstrap_service(request)
+    if bootstrap_svc.auth_service.evaluator.get_workspace(workspace_id) is not None:
+        bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
+            user, workspace_id, instance=str(request.url.path)
+        )
 
 
 def _serialize_chunk(chunk: ChunkApprovalRecord) -> ChunkApprovalSchemaItem:
@@ -74,6 +89,26 @@ def _serialize_human_gate(record: HumanGateEvaluationRecord) -> HumanGateEvaluat
     )
 
 
+@router.get(
+    "/api/v1/gates/human/evaluations",
+    response_model=HumanGateEvaluationListResponse,
+    summary="List Adaptive Human Gate evaluations (`Story 4.3`, `AD-11`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def list_human_gate_evaluations_endpoint(
+    request: Request,
+    workspace_id: str | None = Query(default=None, min_length=1, max_length=128),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> HumanGateEvaluationListResponse:
+    resolve_request_user(request, persona_key=persona_key)
+    bootstrap_svc = get_bootstrap_service(request)
+    records = bootstrap_svc.gate_service.human_service.list_evaluations(workspace_id=workspace_id)
+    return HumanGateEvaluationListResponse(
+        evaluations=[_serialize_human_gate(r) for r in records],
+        trace_id=_trace(request),
+    )
+
+
 @router.post(
     "/api/v1/gates/human/evaluate",
     response_model=HumanGateEvaluateResponse,
@@ -89,9 +124,7 @@ async def evaluate_human_gate_endpoint(
 ) -> HumanGateEvaluateResponse:
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
-    bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
-        user, payload.workspace_id, instance=str(request.url.path)
-    )
+    _enforce_human_gate_mutation_guard(request, user, payload.workspace_id)
     trace_id = _trace(request)
     record = bootstrap_svc.gate_service.human_service.evaluate_human_gate(
         workspace_id=payload.workspace_id,
@@ -132,9 +165,7 @@ async def inspect_human_gate_hypotheses_endpoint(
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
     record = bootstrap_svc.gate_service.human_service.get_evaluation(gate_evaluation_id)
-    bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
-        user, record.workspace_id, instance=str(request.url.path)
-    )
+    _enforce_human_gate_mutation_guard(request, user, record.workspace_id)
     updated = bootstrap_svc.gate_service.human_service.inspect_briefing_hypotheses(
         gate_evaluation_id, reviewer_user_id=user.id
     )
@@ -160,9 +191,7 @@ async def decide_human_gate_chunk_endpoint(
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
     record = bootstrap_svc.gate_service.human_service.get_evaluation(gate_evaluation_id)
-    bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
-        user, record.workspace_id, instance=str(request.url.path)
-    )
+    _enforce_human_gate_mutation_guard(request, user, record.workspace_id)
     chunk = bootstrap_svc.gate_service.human_service.decide_chunk(
         gate_evaluation_id,
         chunk_key,
@@ -195,9 +224,7 @@ async def finalize_human_gate_endpoint(
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
     record = bootstrap_svc.gate_service.human_service.get_evaluation(gate_evaluation_id)
-    bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
-        user, record.workspace_id, instance=str(request.url.path)
-    )
+    _enforce_human_gate_mutation_guard(request, user, record.workspace_id)
     trace_id = _trace(request)
     finalized = bootstrap_svc.gate_service.human_service.finalize_human_gate(
         gate_evaluation_id,

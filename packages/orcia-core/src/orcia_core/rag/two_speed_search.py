@@ -148,6 +148,15 @@ DEFAULT_SEARCH_CANDIDATES: tuple[FederatedSearchCandidate, ...] = (
         screen_route="/cockpit",
         deep_link_uri="help://cockpit/overview",
     ),
+    FederatedSearchCandidate(
+        item_id="cand-agents-catalog-1",
+        family="AGENTS_SKILLS",
+        title="Catalogue des Agents spécialisés & Compétences métiers",
+        snippet="Créer, qualifier et exécuter des agents et compétences (skills) gouvernés.",
+        workspace_id="ws-claims-alpha",
+        screen_route="/agents",
+        deep_link_uri="/agents",
+    ),
 )
 
 
@@ -181,15 +190,18 @@ class TwoSpeedFederatedSearchService:
         words = [w for w in norm_q.split(" ") if w]
 
         # 1. Filter by PermissionGuard (AD-21) and Scope (SCREEN | WORKSPACE | ALL_WORKSPACES)
+        clean_ws = active_workspace_id.strip()
+        is_global_or_empty_ws = not clean_ws or clean_ws in ("scope-global", "GLOBAL")
         authorized: list[FederatedSearchCandidate] = []
         for cand in self._candidates:
             if user_role not in cand.allowed_roles:
                 continue
             if scope == "SCREEN" and (
-                cand.workspace_id != active_workspace_id or cand.screen_route != active_screen_route
+                (not is_global_or_empty_ws and cand.workspace_id != clean_ws)
+                or cand.screen_route != active_screen_route
             ):
                 continue
-            if scope == "WORKSPACE" and cand.workspace_id != active_workspace_id:
+            if scope == "WORKSPACE" and not is_global_or_empty_ws and cand.workspace_id != clean_ws:
                 continue
             authorized.append(cand)
 

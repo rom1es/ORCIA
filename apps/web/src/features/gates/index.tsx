@@ -14,6 +14,7 @@ import {
 import { useShellNavigation } from "../../components/ShellContainer";
 import { SimplifiedProcessBuilderSection } from "../../components/SimplifiedProcessBuilderSection";
 import { useI18n } from "../../i18n";
+import { GatesAdaptiveHumanReviewSection } from "./GatesAdaptiveHumanReviewSection";
 import { OrciaDocumentationProcessCard } from "./OrciaDocumentationProcessCard";
 
 export function GatesFeaturePanel() {
@@ -120,6 +121,13 @@ export function GatesFeaturePanel() {
         openHelpSection={openHelpSection}
         upsertWorkflow={upsertWorkflow}
         presetDraft={builderPresetDraft}
+      />
+
+      {/* Revue humaine adaptative : Briefing 4 blocs, Découpage & Garde-fou < 15 s (FR-6 / FR-19) */}
+      <GatesAdaptiveHumanReviewSection
+        activeWorkspaceId={activeWorkspace?.workspaceId}
+        isFr={isFr}
+        onFeedback={setActionFeedback}
       />
 
       <div

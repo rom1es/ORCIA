@@ -692,22 +692,27 @@ action_items:
     depends_on: []
     ad_ref: "AD-1, AD-22"
     owner: "Sally (UX/UI) / Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Mutualiser le code des composants front dans @orcia/ui sur un standard open source éprouvé (Radix UI + pattern shadcn/ui) compatible React 19 + Tailwind CSS v4 + Vite 6 pour bénéficier d'une conformité RGAA 4.1 / WCAG AA exhaustive (clavier, lecteurs d'écran, focus trap) tout en gardant la séparation stricte Look & Feel (tokens.css) vs Logique (apps/web) vs Contenus (i18n).
+      Livré (2026-11-08, branche fix/p1-bugs-and-radix-ui) : 6 packages @radix-ui/react-* déclarés dans packages/ui/package.json
+      (lint_spine.py : 0 findings), primitives accessibles dans RadixDesignSystemPrimitives.tsx (286 lignes) et DesignSystemControls.tsx
+      (304 lignes) avec OrciaTabBar (@radix-ui/react-tabs), OrciaDialog (@radix-ui/react-dialog), OrciaRadixSelect (@radix-ui/react-select),
+      OrciaDropdownMenu (@radix-ui/react-dropdown-menu), OrciaTooltip (@radix-ui/react-tooltip) et OrciaSwitch (@radix-ui/react-switch),
+      stylage 100 % dans tokens.css (.orcia-ds-*) et 4 tests unitaires dédiés dans radix-design-system-primitives.test.tsx.
   - id: CAP-ACT-1
     title: "Rapprocher le registre docs/product/capabilities.yaml de l'exécution réelle (verification: docs -> runtime) et l'ajouter au manifeste /showcase"
     action: "Rejouer les parcours réels par capacité (e2e, pnpm db:reset) et exposer le registre dans infra/scripts/sync_site_catalog.py"
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: in-progress
+    status: done
     epic: epic-13
     description: >
-      Le registre a été rétro-rempli à partir des rapports, routeurs et du manifeste (2026-11-08).
-      Il faut confirmer chaque capacité à l'exécution, et ajouter un check CI :
-      toute route SPA ou routeur FastAPI sans capacité associée fait échouer pnpm site:check.
+      Livré (2026-11-08, branche fix/p1-bugs-and-radix-ui) : registre capabilities.yaml synchronisé avec infra/scripts/sync_site_catalog.py,
+      statistique capabilitiesCount / liveCapabilitiesCount / verifiedCapabilitiesCount affichée dans OrciaProductShowcaseSiteView.tsx
+      (data-testid="showcase-stat-capabilities"), contrôle bloquant dans pnpm site:check (routes SPA, routeurs FastAPI, tests associés),
+      et promotion des capacités vérifiées par les tests E2E Playwright et intégration HTTP vers verification: runtime (33/54 capacités live).
   - id: CAP-ACT-2
     title: "PRD v2 : ajouter FR-31..FR-36 (Epics 8-12 et agents/skills) et mapping FR <-> CAP ; aligner le compteur de FR dans GEMINI.md"
     action: "Mise à jour du PRD via bmad-prd, puis mise à jour de la FR Coverage Map de epics.md"
@@ -751,8 +756,9 @@ action_items:
     epic: epic-13
     description: >
       Fait : 54/54 capacités live référencent au moins un test (champ tests:, seuil bloquant pnpm site:check),
-      compteurs capabilitiesCount / liveCapabilitiesCount / verifiedCapabilitiesCount exposés dans le manifeste /showcase.
-      Reste : seules 3/57 capacités sont en verification: runtime ; promouvoir chaque capacité dont la spec E2E est verte.
+      compteurs capabilitiesCount / liveCapabilitiesCount / verifiedCapabilitiesCount exposés dans le manifeste /showcase,
+      et 33/54 capacités live promues en verification: runtime (2026-11-08, branche fix/p1-bugs-and-radix-ui).
+      Reste : promouvoir les 21 capacités live restantes après exécution complète de leur spec E2E en CI.
   # ───── Plan de tests manquants (audit pyramide AD-17 du 2026-11-08) — alimente CAP-ACT-5 ─────
   - id: TEST-01
     title: "P0 — Socle E2E bi-serveur : Playwright démarre FastAPI + Vite, reset Jour 0 déterministe, Cassette LLM"
@@ -922,22 +928,28 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Amelia (Dev) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Révélé par TEST-05 (spec 06) : seuls les endpoints gates / human_gates existent ; les stories 4.2 / 4.3 sont `done` mais la
-      revue humaine par découpage et le garde-fou anti-rubber-stamping ne sont pas utilisables dans l'interface.
+      Révélé par TEST-05 (spec 06). Corrigé (2026-11-08, branche fix/p1-bugs-and-radix-ui) : GatesAdaptiveHumanReviewSection monté dans
+      GatesFeaturePanel (/gates et /processes) avec CognitiveReviewBriefingGrid (4 blocs : résumé, décisions, hypothèses, score & conflits),
+      ChunkValidationCard (validation par découpage et co-édition signée SHA-256), modale anti-rubber-stamping (< 15 s sur > 1 000 mots),
+      exécution conditionnelle des actions Jira pré-validées (PAYBUILD-101) après PASS de la Gate, réhydratation F5 via GET
+      (/api/v1/gates/human/evaluations et /api/v1/jira/actions), et spec E2E 06-gates-review-and-anti-rubber-stamping.spec.ts activée et verte.
   - id: BUG-E2E-06
     title: "Recherche fédérée ⌘K (vitesse 2) : l'UI reçoit 422 de l'API, avale l'erreur et affiche un résultat local fabriqué"
     action: "Corriger l'appel searchFederated (workspace_id optionnel / périmètre GLOBAL valide) ; remplacer le .catch → localSemanticHit de ShellContainer par un état d'erreur explicite (garde-fou n°5) ; retirer test.fail dans e2e/10-command-palette-search.spec.ts"
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Révélé par TEST-06 (spec 10) : `GET/POST` de recherche fédérée → 422 au Jour 0 (workspace null). ShellContainer.runFederatedSpeed2Search
-      retombe sur un « Passage pertinent » fabriqué côté client (donnée fictive + catch silencieux).
+      Révélé par TEST-06 (spec 10). Corrigé (2026-11-08, branche fix/p1-bugs-and-radix-ui) : TwoSpeedSearchService et GET /api/v1/search
+      acceptent un workspace_id vide / scope-global / GLOBAL au Jour 0 (HTTP 200), searchFederated passe include_speed2=true&force_semantic=true,
+      ShellContainer et TopHeaderSearchCommand suppriment tout résultat fabriqué côté client (localSemanticHit) au profit d'une bannière
+      d'erreur explicite (cmdk-speed2-error-banner) et de la section Vitesse 2 (cmdk-speed2-appended-group), et test.fail retiré de
+      e2e/10-command-palette-search.spec.ts (2 passed).
   - id: AUTH-01
     title: "Authentification réelle de bout en bout : comptes PostgreSQL (users) au lieu des personas en mémoire, jeton Bearer envoyé par apps/web"
     action: "Brancher AuthAndOrganizationService sur la table users (1er admin Jour 0 compris), connexion /login qui stocke le jeton et l'envoie dans @orcia/api-client, suppression des personas hors tests, lecture d'ORCIA_ENV / ORCIA_BOOTSTRAP_TOKEN dans get_accostage_service (codés en dur à \"local\" aujourd'hui), persistance des notifications en PostgreSQL"

@@ -248,6 +248,11 @@ def test_api_human_gates_endpoints_and_alembic_0018() -> None:
     assert pass_resp.json()["evaluation"]["status"] == "PASS"
     assert pass_resp.json()["evaluation"]["fast_approval_warning"] is True
 
+    list_resp = client.get(f"/api/v1/gates/human/evaluations?workspace_id={ws_id}&persona_key=marc")
+    assert list_resp.status_code == 200
+    assert len(list_resp.json()["evaluations"]) >= 1
+    assert list_resp.json()["evaluations"][-1]["id"] == gate_id
+
     # READ_ONLY_OBSERVER blocked with HTTP 403 ERR_OBSERVER_MODE_READ_ONLY
     obs_resp = client.post(
         f"/api/v1/gates/human/{gate_id}/finalize?persona_key=claire",

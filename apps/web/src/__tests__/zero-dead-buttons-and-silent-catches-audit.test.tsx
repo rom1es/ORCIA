@@ -101,6 +101,8 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       ],
       HumanLedAnchorCard: ["onChange", "onSignAnchor"],
       ArbitrationTieBreakCard: ["onSelectOption"],
+      CognitiveReviewBriefingGrid: ["onInspectHypotheses"],
+      ChunkValidationCard: ["onDecideChunk", "onFinalizeGate"],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

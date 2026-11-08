@@ -17,6 +17,7 @@ from orcia_api.schemas.jira_and_mcp import (
     McpToolDescriptorSchema,
     McpToolsListResponse,
     StagedJiraActionItemSchema,
+    StagedJiraActionListResponse,
     StageJiraActionRequest,
     StageJiraActionResponse,
 )
@@ -97,6 +98,27 @@ async def search_workspace_jira_jql(
         project_alias=payload.project_alias,
         project_key=project_key,
         issues=issues,
+        trace_id=_trace(request),
+    )
+
+
+@router.get(
+    "/api/v1/jira/actions/staged",
+    response_model=StagedJiraActionListResponse,
+    summary="List staged and executed Jira workflow actions (`Story 4.4`, `AD-5`)",
+    responses=PROBLEM_RESPONSES,
+)
+async def list_staged_jira_actions(
+    request: Request,
+    workspace_id: str | None = Query(default=None, min_length=1, max_length=128),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> StagedJiraActionListResponse:
+    """List staged or executed Jira actions for F5 state rehydration."""
+    resolve_request_user(request, persona_key=persona_key)
+    svc = _get_jira_service(request)
+    items = svc.list_staged_actions(workspace_id=workspace_id)
+    return StagedJiraActionListResponse(
+        actions=[_serialize_staged(item) for item in items],
         trace_id=_trace(request),
     )
 

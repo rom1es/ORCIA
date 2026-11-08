@@ -1214,6 +1214,10 @@ export interface components {
       evaluation: components["schemas"]["HumanGateEvaluationSchemaItem"];
       trace_id: string;
     };
+    HumanGateEvaluationListResponse: {
+      evaluations: (components["schemas"]["HumanGateEvaluationSchemaItem"])[];
+      trace_id: string;
+    };
     HumanGateEvaluationSchemaItem: {
       agentic_score: number;
       auto_passed: boolean;
@@ -2304,6 +2308,10 @@ export interface components {
       summary: string;
       target_transition: string | null;
       workspace_id: string;
+    };
+    StagedJiraActionListResponse: {
+      actions: (components["schemas"]["StagedJiraActionItemSchema"])[];
+      trace_id: string;
     };
     StarlarkEvaluationResponse: {
       elapsed_ms: number;
@@ -3627,6 +3635,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/gates/human/evaluations": {
+    get: {
+      responses: {
+        200: components["schemas"]["HumanGateEvaluationListResponse"];
+      };
+    };
+  };
   "/api/v1/gates/human/{gate_evaluation_id}/chunks/{chunk_key}/decide": {
     post: {
       responses: {
@@ -3708,6 +3723,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["StageJiraActionResponse"];
+      };
+    };
+  };
+  "/api/v1/jira/actions/staged": {
+    get: {
+      responses: {
+        200: components["schemas"]["StagedJiraActionListResponse"];
       };
     };
   };
@@ -4404,6 +4426,7 @@ export type HumanGateChunkDecideRequest = components["schemas"]["HumanGateChunkD
 export type HumanGateChunkDecideResponse = components["schemas"]["HumanGateChunkDecideResponse"];
 export type HumanGateEvaluateRequest = components["schemas"]["HumanGateEvaluateRequest"];
 export type HumanGateEvaluateResponse = components["schemas"]["HumanGateEvaluateResponse"];
+export type HumanGateEvaluationListResponse = components["schemas"]["HumanGateEvaluationListResponse"];
 export type HumanGateEvaluationSchemaItem = components["schemas"]["HumanGateEvaluationSchemaItem"];
 export type HumanGateFinalizeRequest = components["schemas"]["HumanGateFinalizeRequest"];
 export type HumanGateFinalizeResponse = components["schemas"]["HumanGateFinalizeResponse"];
@@ -4532,6 +4555,7 @@ export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeRe
 export type StageJiraActionRequest = components["schemas"]["StageJiraActionRequest"];
 export type StageJiraActionResponse = components["schemas"]["StageJiraActionResponse"];
 export type StagedJiraActionItemSchema = components["schemas"]["StagedJiraActionItemSchema"];
+export type StagedJiraActionListResponse = components["schemas"]["StagedJiraActionListResponse"];
 export type StarlarkEvaluationResponse = components["schemas"]["StarlarkEvaluationResponse"];
 export type StarlarkStagedEffectSchema = components["schemas"]["StarlarkStagedEffectSchema"];
 export type StarlarkVerdictSchema = components["schemas"]["StarlarkVerdictSchema"];

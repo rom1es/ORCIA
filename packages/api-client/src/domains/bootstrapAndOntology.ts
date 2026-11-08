@@ -245,16 +245,25 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
     },
     searchFederated(
       query: string,
-      scope: "CONTEXTUAL" | "GLOBAL" = "CONTEXTUAL",
+      scope: "SCREEN" | "WORKSPACE" | "ALL_WORKSPACES" | "CONTEXTUAL" | "GLOBAL" = "ALL_WORKSPACES",
       workspaceId?: string | null,
       screenRoute = "/spaces",
+      forceSemantic = true,
     ): Promise<FederatedSearchResponse> {
+      const normalizedScope =
+        scope === "GLOBAL"
+          ? "ALL_WORKSPACES"
+          : scope === "CONTEXTUAL"
+            ? "WORKSPACE"
+            : scope;
       const params = new URLSearchParams({
         q: query,
-        scope,
+        scope: normalizedScope,
         screen_route: screenRoute,
+        include_speed2: "true",
+        force_semantic: forceSemantic ? "true" : "false",
       });
-      if (workspaceId) {
+      if (workspaceId && workspaceId.trim().length > 0) {
         params.set("workspace_id", workspaceId);
       }
       return requestJson<FederatedSearchResponse>(`/api/v1/search?${params.toString()}`);

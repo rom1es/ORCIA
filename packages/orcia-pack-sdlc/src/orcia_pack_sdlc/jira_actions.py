@@ -346,6 +346,13 @@ class MultiProjectJiraStagedActionService:
         """Return `step_executions.draft_artifact_jsonb` containing staged Jira actions."""
         return dict(self._draft_artifacts_by_step.get(step_execution_id, {"staged_actions": []}))
 
+    def list_staged_actions(self, *, workspace_id: str | None = None) -> list[StagedJiraActionItem]:
+        """List staged or executed Jira actions, optionally filtered by `workspace_id`."""
+        items = list(self._staged_by_id.values())
+        if workspace_id is not None and workspace_id.strip():
+            items = [item for item in items if item.workspace_id == workspace_id]
+        return items
+
     def commit_staged_action_on_gate_pass(
         self,
         *,

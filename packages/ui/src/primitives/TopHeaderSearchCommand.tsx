@@ -68,6 +68,8 @@ export interface TopHeaderSearchCommandProps {
   readonly speed1Hits: readonly TopSearchHitItem[];
   readonly speed2Hits?: readonly TopSearchHitItem[];
   readonly speed2Loading?: boolean;
+  readonly speed2Executed?: boolean;
+  readonly speed2Error?: string | null;
   readonly isDirty?: boolean;
   readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
   readonly onQueryChange?: (query: string, scope: TopSearchScopeMode) => void;
@@ -96,6 +98,8 @@ export function TopHeaderSearchCommand({
   speed1Hits,
   speed2Hits = [],
   speed2Loading = false,
+  speed2Executed = false,
+  speed2Error = null,
   isDirty = false,
   rgaaLabels,
   onQueryChange,
@@ -254,6 +258,16 @@ export function TopHeaderSearchCommand({
           />
         ) : null}
 
+        {speed2Error ? (
+          <div
+            role="alert"
+            data-testid="cmdk-speed2-error-banner"
+            className="orcia-ds-alert orcia-ds-alert-error"
+          >
+            {speed2Error}
+          </div>
+        ) : null}
+
         <div
           role="tablist"
           aria-label="Portées de recherche"
@@ -300,7 +314,7 @@ export function TopHeaderSearchCommand({
           data-selected-index={safeSelectedIndex}
           className="flex-1 overflow-y-auto p-2.5 space-y-2"
         >
-          {combinedHits.length === 0 ? (
+          {combinedHits.length === 0 && !speed2Executed && !speed2Loading ? (
             <p
               data-testid="cmdk-empty-results"
               className="text-xs text-text-secondary py-4 text-center"
@@ -309,6 +323,14 @@ export function TopHeaderSearchCommand({
             </p>
           ) : (
             <>
+              {combinedHits.length === 0 ? (
+                <p
+                  data-testid="cmdk-empty-results"
+                  className="text-xs text-text-secondary py-2 text-center"
+                >
+                  {labels.emptyResultsLabel}
+                </p>
+              ) : null}
               {/* Speed 1 Locked Section */}
               <div data-testid="cmdk-speed1-locked-group" className="space-y-1">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary px-1">
@@ -368,7 +390,7 @@ export function TopHeaderSearchCommand({
               </div>
 
               {/* Speed 2 Appended Bottom Section (Zero Layout Shift on Top Hits) */}
-              {(deduplicatedSpeed2.length > 0 || speed2Loading) && (
+              {(deduplicatedSpeed2.length > 0 || speed2Loading || speed2Executed) && (
                 <div
                   data-testid="cmdk-speed2-appended-group"
                   className="space-y-1 pt-2 border-t border-surface-border"
