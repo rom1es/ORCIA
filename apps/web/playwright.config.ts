@@ -41,6 +41,8 @@ export default defineConfig({
   // Base PostgreSQL partagée et remise à zéro (Jour 0) entre specs : exécution séquentielle.
   fullyParallel: false,
   workers: 1,
+  // Les parcours de saisie réels (admin + BU + équipe + espace) dépassent 30 s.
+  timeout: 90000,
   retries: 0,
   use: {
     baseURL: webBaseUrl,

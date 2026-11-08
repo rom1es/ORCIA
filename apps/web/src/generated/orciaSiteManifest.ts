@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 97
+    "techLeadReportsCount": 98
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-05)",
+      "reportFile": "2026-11-08-test-05-e2e-p1-specs-tech-lead-report.md",
+      "domain": "Specs E2E P1 : Mes Espaces (org + espace + F5), agents (création + F5), gates (fixme)",
+      "summary": "apps/web/e2e/06..08-*.spec.ts, support/orgAndWorkspace.ts."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-04)",

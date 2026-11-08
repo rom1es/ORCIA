@@ -801,7 +801,7 @@ action_items:
     priority: P1
     depends_on: [TEST-04]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: "Parcours UJ-6, UJ-2/UJ-3, UJ-9."
   - id: TEST-06
@@ -907,3 +907,14 @@ action_items:
       Constaté pendant TEST-04 : resolve_user() retombe sur la persona `marc` quand aucun jeton n'est fourni (le web n'envoie pas
       de Bearer) ; initialize_app_services() sème 4 notifications fictives (ids 0195f000-…) en mémoire, contraire à la politique
       zéro donnée fictive et au garde-fou « jamais de singleton en mémoire en production ». Risque sécurité (usurpation) à qualifier.
+  - id: BUG-E2E-05
+    title: "CognitiveReviewBriefingGrid et ChunkValidationCard (Epic 4, FR-6/FR-19) non montés dans apps/web"
+    action: "Câbler le briefing de revue 4 blocs et la validation par découpage dans le portail via @orcia/api-client puis activer le test.fixme de e2e/06-gates-review-and-anti-rubber-stamping.spec.ts"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-05 (spec 06) : seuls les endpoints gates / human_gates existent ; les stories 4.2 / 4.3 sont `done` mais la
+      revue humaine par découpage et le garde-fou anti-rubber-stamping ne sont pas utilisables dans l'interface.
