@@ -12,11 +12,14 @@ export interface AgentStudioCardItemProps {
   readonly agent: UiManagedAgentItem;
   readonly skills: readonly UiManagedSkillItem[];
   readonly labels: AgentsAndSkillsManagerLabels;
-  readonly testInputValue: string;
-  readonly onChangeTestInput: (agentId: string, nextValue: string) => void;
-  readonly onToggleAgentSkill: (agentId: string, skillId: string, nextChecked: boolean) => void;
-  readonly onExecuteAgent: (agentId: string, prompt: string) => void;
+  readonly testInputValue?: string;
+  readonly onChangeTestInput?: (agentId: string, nextValue: string) => void;
+  readonly onToggleAgentSkill?: (agentId: string, skillId: string, nextChecked: boolean) => void;
+  readonly onExecuteAgent?: (agentId: string, prompt: string) => void;
   readonly onDeleteAgent: (agentId: string) => void;
+  readonly onDuplicateAgent?: (agent: UiManagedAgentItem) => void;
+  readonly onToggleAgentEnabled?: (agentId: string, nextEnabled: boolean) => void;
+  readonly onOpenDetailModal?: (agent: UiManagedAgentItem) => void;
   readonly onUpdateAgentThinkingLevel?: (
     agentId: string,
     nextThinkingLevel: UiAgentThinkingLevel,
@@ -32,11 +35,10 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   agent,
   skills,
   labels,
-  testInputValue,
-  onChangeTestInput,
-  onToggleAgentSkill,
-  onExecuteAgent,
   onDeleteAgent,
+  onDuplicateAgent,
+  onToggleAgentEnabled,
+  onOpenDetailModal,
   onUpdateAgentThinkingLevel,
   onUpdateAgentVisibility,
   onUseAgentInAssistant,
@@ -45,12 +47,16 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   const [autosavedBadgeVisible, setAutosavedBadgeVisible] = useState(false);
 
   const visibilityScope: UiAgentSkillVisibilityScope = agent.visibilityScope ?? "TEAM";
+  const isPack = visibilityScope === "PACK";
+  const isEnabled = agent.enabledOnWorkspace !== false;
   const visibilityBadgeText =
     visibilityScope === "PRIVATE"
       ? "🔒 Privé"
       : visibilityScope === "PACK"
         ? `📦 Pack Métier (${agent.sourcePackKey ?? "orcia-pack-sdlc"})`
         : "👥 Équipe";
+
+  const attachedSkills = skills.filter((sk) => agent.skillIds.includes(sk.skillId));
 
   const triggerAutosavedFeedback = () => {
     setAutosavedBadgeVisible(true);
@@ -64,21 +70,11 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   };
 
   const handleToggleVisibilityClick = () => {
+    if (isPack) return;
     const nextScope: UiAgentSkillVisibilityScope =
       visibilityScope === "PRIVATE" ? "TEAM" : "PRIVATE";
     onUpdateAgentVisibility?.(agent.agentId, nextScope);
     triggerAutosavedFeedback();
-  };
-
-  const handleRunAgent = () => {
-    const raw = testInputValue.trim();
-    const prompt =
-      raw ||
-      `Bonjour ${agent.name}, présente ton rôle (${agent.roleMission}) et confirme que tu es prêt.`;
-    if (!raw) {
-      onChangeTestInput(agent.agentId, prompt);
-    }
-    onExecuteAgent(agent.agentId, prompt);
   };
 
   return (
@@ -86,6 +82,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
       data-testid={`agent-card-${agent.agentId}`}
       className="space-y-2.5 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3.5 text-xs"
     >
+      {/* Row 1: Identity & Governance Badges */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <strong className="text-sm text-[var(--orcia-text-primary)]">{agent.name}</strong>
@@ -104,15 +101,44 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
           >
             {copiedHandle ? "✓ Copié" : "Copier @"}
           </button>
-          <button
-            type="button"
-            data-testid={`agent-visibility-badge-${agent.agentId}`}
-            onClick={handleToggleVisibilityClick}
-            title="Cliquer pour basculer la visibilité (Privé / Équipe)"
-            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
-          >
-            {visibilityBadgeText}
-          </button>
+
+          {isPack ? (
+            <span
+              data-testid={`agent-visibility-badge-${agent.agentId}`}
+              className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
+            >
+              {visibilityBadgeText}
+            </span>
+          ) : (
+            <button
+              type="button"
+              data-testid={`agent-visibility-badge-${agent.agentId}`}
+              onClick={handleToggleVisibilityClick}
+              title="Cliquer pour basculer la visibilité (Privé / Équipe)"
+              className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
+            >
+              {visibilityBadgeText}
+            </button>
+          )}
+
+          {!isEnabled && (
+            <span
+              data-testid={`agent-disabled-badge-${agent.agentId}`}
+              className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium text-[var(--orcia-text-secondary)]"
+            >
+              ⏸️ Désactivé sur cet espace
+            </span>
+          )}
+
+          {agent.mcpExposed && (
+            <span
+              data-testid={`agent-mcp-active-badge-${agent.agentId}`}
+              className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-semibold"
+            >
+              🔌 MCP Actif
+            </span>
+          )}
+
           {autosavedBadgeVisible && (
             <span
               data-testid={`agent-autosaved-badge-${agent.agentId}`}
@@ -124,31 +150,6 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {onUseAgentInAssistant && (
-            <button
-              type="button"
-              data-testid={`use-agent-in-assistant-btn-${agent.agentId}`}
-              onClick={() => onUseAgentInAssistant(agent)}
-              className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
-            >
-              💬 Utiliser dans Mon Assistant
-            </button>
-          )}
-          <button
-            type="button"
-            data-testid={`delete-agent-btn-${agent.agentId}`}
-            onClick={() => onDeleteAgent(agent.agentId)}
-            className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1 text-[11px]"
-          >
-            {labels.deleteAgentButtonLabel}
-          </button>
-        </div>
-      </div>
-
-      <p className="text-[var(--orcia-text-secondary)]">{agent.roleMission}</p>
-
-      <div className="flex flex-wrap items-center gap-3 pt-1">
         <label className="inline-flex items-center gap-1.5">
           <span className="font-medium text-[var(--orcia-text-secondary)]">
             {labels.agentThinkingLevelLabel} :
@@ -170,71 +171,103 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             ))}
           </select>
         </label>
-
-        {skills.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-medium text-[var(--orcia-text-secondary)]">
-              {labels.attachedSkillsLabel} :
-            </span>
-            {skills.map((sk) => {
-              const attached = agent.skillIds.includes(sk.skillId);
-              return (
-                <label
-                  key={sk.skillId}
-                  className="inline-flex items-center gap-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5"
-                >
-                  <input
-                    type="checkbox"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-1p-ignore="true"
-                    data-bwignore="true"
-                    data-form-type="other"
-                    data-testid={`agent-attach-skill-${agent.agentId}-${sk.skillId}`}
-                    checked={attached}
-                    onChange={(e) => {
-                      onToggleAgentSkill(agent.agentId, sk.skillId, e.target.checked);
-                      triggerAutosavedFeedback();
-                    }}
-                  />
-                  <span>
-                    {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        )}
       </div>
 
-      <div className="flex flex-wrap gap-2 pt-1">
-        <input
-          type="text"
-          autoComplete="off"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-bwignore="true"
-          data-form-type="other"
-          data-testid={`agent-test-input-${agent.agentId}`}
-          value={testInputValue}
-          onChange={(e) => onChangeTestInput(agent.agentId, e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleRunAgent();
-            }
-          }}
-          placeholder={labels.testAgentInputPlaceholder}
-          className="flex-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1"
-        />
-        <button
-          type="button"
-          data-testid={`run-agent-btn-${agent.agentId}`}
-          onClick={handleRunAgent}
-          className="rounded bg-[var(--orcia-action-primary)] px-3 py-1 font-semibold text-[var(--orcia-text-on-action)]"
-        >
-          ⚡ {labels.runAgentButtonLabel}
-        </button>
+      {/* Row 2: Mission & Attached Skills Pills */}
+      <div className="space-y-1.5">
+        <p className="text-[var(--orcia-text-secondary)]">{agent.roleMission}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-medium text-[var(--orcia-text-secondary)]">
+            {labels.attachedSkillsLabel} :
+          </span>
+          {attachedSkills.length === 0 ? (
+            <span className="text-[11px] text-[var(--orcia-text-secondary)]">
+              Aucune compétence rattachée
+            </span>
+          ) : (
+            attachedSkills.map((sk) => (
+              <span
+                key={sk.skillId}
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px]"
+              >
+                🛠️ {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)
+              </span>
+            ))
+          )}
+          <button
+            type="button"
+            onClick={() => onOpenDetailModal?.(agent)}
+            className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium"
+          >
+            + Rattacher / Gérer
+          </button>
+        </div>
+      </div>
+
+      {/* Row 3: Clear Actions by Origin */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {onUseAgentInAssistant && (
+            <button
+              type="button"
+              data-testid={`use-agent-in-assistant-btn-${agent.agentId}`}
+              onClick={() => onUseAgentInAssistant(agent)}
+              className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
+            >
+              💬 Utiliser dans Mon Assistant
+            </button>
+          )}
+          <button
+            type="button"
+            data-testid={`open-agent-detail-modal-btn-${agent.agentId}`}
+            onClick={() => onOpenDetailModal?.(agent)}
+            className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-semibold"
+          >
+            ⚙️ Configurer &amp; Tester
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isPack ? (
+            <>
+              <button
+                type="button"
+                data-testid={`duplicate-agent-btn-${agent.agentId}`}
+                onClick={() => onDuplicateAgent?.(agent)}
+                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-medium"
+              >
+                📋 Dupliquer &amp; Personnaliser
+              </button>
+              <button
+                type="button"
+                data-testid={`toggle-agent-enabled-btn-${agent.agentId}`}
+                onClick={() => onToggleAgentEnabled?.(agent.agentId, !isEnabled)}
+                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-medium"
+              >
+                {isEnabled ? "⏸️ Désactiver sur l'espace" : "▶️ Activer sur l'espace"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                data-testid={`duplicate-agent-btn-${agent.agentId}`}
+                onClick={() => onDuplicateAgent?.(agent)}
+                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1 text-[11px] font-medium"
+              >
+                📋 Dupliquer
+              </button>
+              <button
+                type="button"
+                data-testid={`delete-agent-btn-${agent.agentId}`}
+                onClick={() => onDeleteAgent(agent.agentId)}
+                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1 text-[11px]"
+              >
+                {labels.deleteAgentButtonLabel}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {agent.lastExecutionOutput && (

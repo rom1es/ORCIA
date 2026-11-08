@@ -7,6 +7,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 AgentThinkingLevelSchema = Literal["simple", "medium", "complex", "auto"]
+AgentSkillVisibilityScopeSchema = Literal["PRIVATE", "TEAM", "PACK"]
+AgentKindTypeSchema = Literal["LOCAL", "REMOTE_MCP_A2A"]
 
 
 class SkillItemResponse(BaseModel):
@@ -25,6 +27,9 @@ class SkillItemResponse(BaseModel):
     expected_output_format: str = Field(default="Synthèse structurée", min_length=1, max_length=512)
     version: str = Field(default="1.0.0", min_length=1, max_length=64)
     sha256: str = Field(default="", max_length=64)
+    visibility_scope: AgentSkillVisibilityScopeSchema = "TEAM"
+    source_pack_key: str | None = Field(default=None, max_length=128)
+    enabled_in_workspace: bool = True
 
 
 class UpsertSkillRequest(BaseModel):
@@ -39,6 +44,9 @@ class UpsertSkillRequest(BaseModel):
     instructions: str = Field(..., min_length=1, max_length=8000)
     expected_output_format: str = Field(default="Synthèse structurée", min_length=1, max_length=512)
     version: str = Field(default="1.0.0", min_length=1, max_length=64)
+    visibility_scope: AgentSkillVisibilityScopeSchema | None = None
+    source_pack_key: str | None = Field(default=None, max_length=128)
+    enabled_in_workspace: bool | None = None
 
 
 class ExecuteSkillRequest(BaseModel):
@@ -82,6 +90,12 @@ class AgentItemResponse(BaseModel):
     skill_ids: list[str] = Field(default_factory=list)
     version: str = Field(default="1.0.0", min_length=1, max_length=64)
     sha256: str = Field(default="", max_length=64)
+    visibility_scope: AgentSkillVisibilityScopeSchema = "TEAM"
+    source_pack_key: str | None = Field(default=None, max_length=128)
+    enabled_in_workspace: bool = True
+    mcp_exposed: bool = False
+    agent_kind: AgentKindTypeSchema = "LOCAL"
+    remote_endpoint_url: str | None = Field(default=None, max_length=512)
 
 
 class UpsertAgentRequest(BaseModel):
@@ -96,6 +110,32 @@ class UpsertAgentRequest(BaseModel):
     thinking_level: AgentThinkingLevelSchema = "medium"
     skill_ids: list[str] = Field(default_factory=list)
     version: str = Field(default="1.0.0", min_length=1, max_length=64)
+    visibility_scope: AgentSkillVisibilityScopeSchema | None = None
+    source_pack_key: str | None = Field(default=None, max_length=128)
+    enabled_in_workspace: bool | None = None
+    mcp_exposed: bool | None = None
+    agent_kind: AgentKindTypeSchema | None = None
+    remote_endpoint_url: str | None = Field(default=None, max_length=512)
+
+
+class DuplicateAgentRequest(BaseModel):
+    """Request payload to duplicate an Agent into a customizable TEAM/PRIVATE Agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    new_name: str | None = Field(default=None, max_length=255)
+    visibility_scope: Literal["PRIVATE", "TEAM"] = "TEAM"
+
+
+class ToggleAgentGovernanceRequest(BaseModel):
+    """Request payload to update Agent governance flags and thinking level in 1 click."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled_in_workspace: bool | None = None
+    mcp_exposed: bool | None = None
+    visibility_scope: Literal["PRIVATE", "TEAM"] | None = None
+    thinking_level: AgentThinkingLevelSchema | None = None
 
 
 class UpdateAgentSkillsRequest(BaseModel):

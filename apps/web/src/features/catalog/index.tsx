@@ -33,6 +33,7 @@ export function CatalogFeaturePanel() {
   const { navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
   const [mcpExposed, setMcpExposed] = useState<boolean>(false);
+  const [pinnedAssistantMcpExposed, setPinnedAssistantMcpExposed] = useState<boolean>(false);
   const [catalogActionFeedback, setCatalogActionFeedback] = useState<string | null>(null);
   const [testBenchSteps, setTestBenchSteps] = useState<
     readonly {
@@ -66,6 +67,10 @@ export function CatalogFeaturePanel() {
     handleUpdateSkillVisibility,
     handleExecuteSkill,
     handleCreateAgent,
+    handleDuplicateAgent,
+    handleToggleAgentEnabled,
+    handleToggleAgentMcpExposure,
+    handleUpdateAgentDetails,
     handleToggleAgentSkill,
     handleUpdateAgentThinkingLevel,
     handleUpdateAgentVisibility,
@@ -182,6 +187,19 @@ export function CatalogFeaturePanel() {
     );
   };
 
+  const handleToggleMcp = (next: boolean) => {
+    setMcpExposed(next);
+    setCatalogActionFeedback(
+      next
+        ? isFr
+          ? "🔌 Exposition MCP activée pour vos outils."
+          : "🔌 MCP exposure enabled."
+        : isFr
+          ? "🔌 Exposition MCP désactivée."
+          : "🔌 MCP exposure disabled.",
+    );
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {catalogActionFeedback && (
@@ -199,6 +217,10 @@ export function CatalogFeaturePanel() {
         skills={skills}
         labels={dictionary.agentsAndSkillsManager}
         onCreateAgent={handleCreateAgent}
+        onDuplicateAgent={handleDuplicateAgent}
+        onToggleAgentEnabled={handleToggleAgentEnabled}
+        onToggleAgentMcpExposure={handleToggleAgentMcpExposure}
+        onUpdateAgentDetails={handleUpdateAgentDetails}
         onToggleAgentSkill={handleToggleAgentSkill}
         onUpdateAgentThinkingLevel={handleUpdateAgentThinkingLevel}
         onUpdateAgentVisibility={handleUpdateAgentVisibility}
@@ -217,6 +239,32 @@ export function CatalogFeaturePanel() {
           navigateToRoute("/assistant");
         }}
         onLoadPackTemplates={handleLoadPackTemplates}
+        onOpenMcpTestBench={handleRunRemoteTestBench}
+        pinnedAssistantMcpExposed={pinnedAssistantMcpExposed}
+        onTogglePinnedAssistantMcp={(next) => {
+          setPinnedAssistantMcpExposed(next);
+          setCatalogActionFeedback(
+            next
+              ? "🔌 Assistant de l'Espace (@assistant) exposé en MCP."
+              : "🔌 Exposition MCP de l'Assistant de l'Espace désactivée.",
+          );
+        }}
+        onOpenAssistantSettings={() => navigateToRoute("/assistant")}
+        onOpenAssistant={() => navigateToRoute("/assistant")}
+        connectionsContent={
+          <RemoteServiceTestBenchAndMcpExposureView
+            endpointUrl={datasources[0]?.uri ?? ""}
+            steps={testBenchSteps}
+            discoveredCapabilities={discoveredCapabilities}
+            canActivate={canActivateConnector || datasources.length > 0}
+            mcpExposed={mcpExposed}
+            exposedToolNames={catalogItems.map((item) => item.resourceId)}
+            labels={dictionary.remoteServiceTestBench}
+            onRunTestBench={handleRunRemoteTestBench}
+            onActivateService={handleActivateRemoteService}
+            onToggleMcpExposure={handleToggleMcp}
+          />
+        }
       />
 
       {catalogItems.length === 0 && (
@@ -262,18 +310,7 @@ export function CatalogFeaturePanel() {
           labels={dictionary.remoteServiceTestBench}
           onRunTestBench={handleRunRemoteTestBench}
           onActivateService={handleActivateRemoteService}
-          onToggleMcpExposure={(next) => {
-            setMcpExposed(next);
-            setCatalogActionFeedback(
-              next
-                ? isFr
-                  ? "🔌 Exposition MCP activée pour vos outils."
-                  : "🔌 MCP exposure enabled."
-                : isFr
-                  ? "🔌 Exposition MCP désactivée."
-                  : "🔌 MCP exposure disabled.",
-            );
-          }}
+          onToggleMcpExposure={handleToggleMcp}
         />
       </div>
     </div>

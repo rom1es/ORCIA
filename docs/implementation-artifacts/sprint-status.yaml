@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 10-31-2026 11:45
+last_updated: 11-08-2026 09:30
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -93,6 +93,11 @@ development_status:
   7-3-boucle-fermée-d-auto-remédiation-uj-12-diagnostic-0-90-repro: backlog
   7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: backlog
   epic-7-retrospective: optional
+
+  # Epic 13 — Évolutions continues & traçabilité des capacités (CAP-ACT-4)
+  epic-13: in-progress
+  13-1-registre-des-capacites-controle-ci-et-prd-v2: review
+  epic-13-retrospective: optional
 
   # Epic 8 — Settings Hub, Enterprise Governance (6-Verb RBAC/ABAC), Cognitive Routing & Studio/Wizards (AD-21)
   # Plan : docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md
@@ -691,3 +696,160 @@ action_items:
     epic: epic-12
     description: >
       Mutualiser le code des composants front dans @orcia/ui sur un standard open source éprouvé (Radix UI + pattern shadcn/ui) compatible React 19 + Tailwind CSS v4 + Vite 6 pour bénéficier d'une conformité RGAA 4.1 / WCAG AA exhaustive (clavier, lecteurs d'écran, focus trap) tout en gardant la séparation stricte Look & Feel (tokens.css) vs Logique (apps/web) vs Contenus (i18n).
+  - id: CAP-ACT-1
+    title: "Rapprocher le registre docs/product/capabilities.yaml de l'exécution réelle (verification: docs -> runtime) et l'ajouter au manifeste /showcase"
+    action: "Rejouer les parcours réels par capacité (e2e, pnpm db:reset) et exposer le registre dans infra/scripts/sync_site_catalog.py"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: in-progress
+    epic: epic-12
+    description: >
+      Le registre a été rétro-rempli à partir des rapports, routeurs et du manifeste (2026-11-08).
+      Il faut confirmer chaque capacité à l'exécution, et ajouter un check CI :
+      toute route SPA ou routeur FastAPI sans capacité associée fait échouer pnpm site:check.
+  - id: CAP-ACT-2
+    title: "PRD v2 : ajouter FR-31..FR-36 (Epics 8-12 et agents/skills) et mapping FR <-> CAP ; aligner le compteur de FR dans GEMINI.md"
+    action: "Mise à jour du PRD via bmad-prd, puis mise à jour de la FR Coverage Map de epics.md"
+    priority: P1
+    depends_on: [CAP-ACT-1]
+    owner: "John (PM)"
+    status: done
+    epic: epic-12
+    description: >
+      Le PRD ne couvre pas Mes Espaces, Mon Assistant, pack-builder, wizards, MCP/A2A, journal d'activité.
+      Les FR proposés sont listés dans le bloc proposed_fr de capabilities.yaml.
+  - id: CAP-ACT-3
+    title: "Réconcilier l'Epic 6 (audit_ledger/FinOps) avec le Journal d'activité livré hors epic (CAP-065) et statuer sur l'Epic 7"
+    action: "Auditer le code réel de /activity et /finops puis rebaser les stories 6.1 à 6.4 sur l'existant"
+    priority: P1
+    depends_on: []
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-6
+    description: >
+      Éviter un doublon entre le journal d'activité ad-hoc du 2026-11-05 et la Story 6.1 (backlog).
+      orcia_core/audit_finops ne contient aujourd'hui que errors.py.
+  - id: CAP-ACT-4
+    title: "Epic 13 « Évolutions continues » + champ capability obligatoire dans le gabarit de rapport Tech Lead"
+    action: "Créer l'epic 13 dans epics.md et sprint-status.yaml, ajouter capability: CAP-xx | none dans TECH-LEAD-REPORT-TEMPLATE.md"
+    priority: P2
+    depends_on: [CAP-ACT-1]
+    owner: "Bob (SM) / Amelia (Dev)"
+    status: done
+    epic: epic-12
+    description: >
+      Toute demande ad-hoc fonctionnelle doit créer ou mettre à jour une capacité du registre
+      et se rattacher à un FR du PRD ou à une story rétroactive.
+  - id: CAP-ACT-5
+    title: "Passer les capacités de verification docs à runtime et exposer le registre dans le manifeste /showcase"
+    action: "Rejouer chaque parcours (e2e Playwright / pnpm db:reset) puis passer verification: runtime ; ajouter capabilitiesCount au manifeste (type OrciaShowcaseManifestData de @orcia/ui)"
+    priority: P2
+    depends_on: [CAP-ACT-1, TEST-04]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Réalisé via les specs E2E TEST-04..06 (chaque spec verte promeut ses capacités en runtime). Reste à faire de CAP-ACT-1 : le contrôle CI de couverture est livré (infra/scripts/capabilities_registry.py,
+      branché sur pnpm site:check), mais les 57 capacités restent verification: docs (déduites des rapports/routeurs).
+  # ───── Plan de tests manquants (audit pyramide AD-17 du 2026-11-08) — alimente CAP-ACT-5 ─────
+  - id: TEST-01
+    title: "P0 — Socle E2E bi-serveur : Playwright démarre FastAPI + Vite, reset Jour 0 déterministe, Cassette LLM"
+    action: "playwright.config.ts : webServer[] (apps/api :8000 avec ORCIA_USE_CASSETTE_LLM=true + Vite :3100 proxifiant /api), globalSetup appelant infra/scripts/maintenance/09_reset_db_first_boot.py --apply, PG18/Redis via testcontainers ou docker compose de test"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Aujourd'hui un seul webServer (Vite, scripts/run-next.mjs). Sans backend, tout appel /api/v1 d'un vrai navigateur échoue.
+      Prérequis de TEST-02..TEST-10. Intégrer aussi `pnpm e2e` à la CI.
+  - id: TEST-02
+    title: "P0 — Réparer shell.spec.ts obsolète (Epic 12) : sélecteurs eight-menu-item-*, modale first-boot-admin-setup-modal"
+    action: "Remplacer sidebar-nav-item-* / global-sidebar (19 occurrences, 0 eight-menu-item) par les sélecteurs de FourZoneDirectionCShell"
+    priority: P0
+    depends_on: [TEST-01]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: "Le test e2e existant ne valide plus le shell réel."
+  - id: TEST-03
+    title: "P0 — Supprimer l'angle mort isJsdom : injecter le transport @orcia/api-client au lieu de court-circuiter sous Vitest"
+    action: "Remplacer les 44 occurrences de `isJsdom` (11 fichiers apps/web/src : ShellContainer, platformSetupStore, useAssistantStreamingTurn, useManagedAgentsAndSkills…) par un client injectable (MSW ou fetch mocké au niveau transport) ; tests F5 : unmount/render rehydratés via GET simulé, puis E2E réel (TEST-04)"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: open
+    epic: epic-13
+    description: >
+      Les tests « survie au F5 » ne prouvent aujourd'hui que le localStorage JSDOM (garde-fou n°3 de AGENTS.md non réellement vérifié).
+      Risque : régression de câblage invisible en CI.
+  - id: TEST-04
+    title: "P0 — E2E Playwright 01..05 (Jour 0 + vrai F5 BDD ; Mon Assistant SSE/citations/dossiers ; Human-Led ancrage/arbitrage ; multi-acteurs Claim SSE <500 ms + READ_ONLY_OBSERVER ; mobile 390x844 + RGAA Escape)"
+    action: "Créer apps/web/e2e/01..05-*.spec.ts (voir audit). Mapping capacités : 01→CAP-004/005/057/061 ; 02→CAP-070..076 ; 03→CAP-021/022/023 ; 04→CAP-040/050 ; 05→CAP-042/100"
+    priority: P0
+    depends_on: [TEST-01, TEST-02]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Couche 5 AD-17 : 2 BrowserContext simultanés exigés pour le multi-acteurs. Chaque spec réussi passe les capacités visées
+      de verification: docs à runtime dans docs/product/capabilities.yaml.
+  - id: TEST-05
+    title: "P1 — E2E Playwright 06..08 (gates briefing/anti-rubber-stamp/Jira staged ; Mes Espaces ADN-Starlark-glossaire ; agents/skills + banc MCP)"
+    action: "Créer apps/web/e2e/06..08-*.spec.ts. Mapping : 06→CAP-030..033 ; 07→CAP-080/081 ; 08→CAP-082/090/091/092"
+    priority: P1
+    depends_on: [TEST-04]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: "Parcours UJ-6, UJ-2/UJ-3, UJ-9."
+  - id: TEST-06
+    title: "P2 — E2E Playwright 09..11 (pack-builder + aide ⓘ ; ⌘K 2 vitesses + Permission Broker ; Configuration/Modèles IA, Ontologie/Catalogue, Journal d'activité)"
+    action: "Créer 09..11. Mapping : 09→CAP-083/064 ; 10→CAP-062/003 ; 11→CAP-052..056/010/011/002/065 (capacités non couvertes par l'audit initial)"
+    priority: P2
+    depends_on: [TEST-05]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      L'audit externe proposait 10 specs ; le croisement avec capabilities.yaml montre que les capacités
+      Settings/Modèles IA, Ontologie/RAG, Catalogue et Journal d'activité n'ont aucun E2E : ajout d'une 11e spec.
+  - id: TEST-07
+    title: "P1 — Couche 2 : câbler en HTTP (AsyncClient + ASGITransport → SELECT PG18) les tests d'intégration story 9/10/11 et ad-hoc"
+    action: "Seuls 2 fichiers sur 17 de tests/integration utilisent AsyncClient. Refondre test_story_9_*, 10_*, 11_* pour traverser routeur → service → SELECT PG18 (garde-fou n°2 de AGENTS.md)"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: "Aucun test d'intégration pour les routeurs ad-hoc (agents_and_skills, settings_and_studio IAM/modèles IA, control_center, portal_and_help)."
+  - id: TEST-08
+    title: "P1 — Couche 4 : tests/evals Golden Dataset (assistant, citations, extraction ontologique) sur DeterministicCassetteLLM"
+    action: "Créer tests/evals/ avec jeux dorés et seuils (citations fantômes = 0, refus constitutionnel FR-4), exécutés en CI à 0 $"
+    priority: P1
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: "Le dossier n'existe pas ; seuls 2 tests exercent la Cassette."
+  - id: TEST-09
+    title: "P1 — Couche Sécurité / Red-Team (absente) : IDOR inter-périmètres, hidden_when_unauthorized, SSRF endpoints modèles, secrets jamais en clair, READ_ONLY_OBSERVER sur toutes les mutations"
+    action: "Créer tests/security/ (paramétré sur les 163 endpoints : mutation ⇒ 403 pour observateur ; fuzz Schemathesis auth) + Playwright pour le mode observateur"
+    priority: P1
+    depends_on: [TEST-01]
+    owner: "Sophie (SecOps) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: "La couche Sécurité/Red-Team citée par AD-17 n'a aucun fichier dédié (seul le fuzzing Schemathesis de contrat existe)."
+  - id: TEST-10
+    title: "P2 — Traçabilité test ↔ capacité : champ `tests:` dans capabilities.yaml et check CI « capacité live sans E2E ni intégration HTTP »"
+    action: "Étendre capabilities_registry.py : chaque capacité status live référence ≥1 test (unit/integration/e2e) ; rapport de couverture par couche ; seuil bloquant progressif"
+    priority: P2
+    depends_on: [TEST-04]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Évite la dérive « fonctionnalité livrée sans test traversant ». Les 57 capacités sont toutes verification: docs ;
+      ce champ remplace la vérification manuelle et pilote CAP-ACT-5.

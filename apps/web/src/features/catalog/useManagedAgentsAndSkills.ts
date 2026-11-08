@@ -31,11 +31,7 @@ function buildSkillLocalOutput(skill: UiManagedSkillItem, inputText: string): st
   ].join("\n");
 }
 
-function buildAgentLocalOutput(
-  agent: UiManagedAgentItem,
-  allSkills: readonly UiManagedSkillItem[],
-  prompt: string,
-): string {
+function buildAgentLocalOutput(agent: UiManagedAgentItem, allSkills: readonly UiManagedSkillItem[], prompt: string): string {
   const attached = allSkills.filter((s) => agent.skillIds.includes(s.skillId));
   const skillsLine =
     attached.length > 0
@@ -54,13 +50,9 @@ export function useManagedAgentsAndSkills(
   activePacks: readonly ConfiguredPackItem[],
   onFeedback: (msg: string) => void,
 ) {
-  const [managedState, setManagedState] = useState<CachedAgentsAndSkillsState>(() =>
-    readCachedAgentsAndSkills(),
-  );
+  const [managedState, setManagedState] = useState<CachedAgentsAndSkillsState>(() => readCachedAgentsAndSkills());
 
-  const updateManagedState = (
-    updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
-  ) => {
+  const updateManagedState = (updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState) => {
     setManagedState((prev) => {
       const next = updater(prev);
       writeCachedAgentsAndSkills(next);
@@ -76,42 +68,26 @@ export function useManagedAgentsAndSkills(
       .then((res) => {
         if (cancelled) return;
         const mappedSkills: UiManagedSkillItem[] = (res.skills ?? []).map((s) => ({
-          skillId: s.skill_id,
-          slug: s.slug,
-          commandHandle: s.command_handle,
-          name: s.name,
-          objective: s.objective,
-          inputParameters: s.input_parameters ?? [],
-          instructions: s.instructions,
-          expectedOutputFormat: s.expected_output_format ?? "Synthèse structurée",
-          lastExecutionOutput: null,
-          visibilityScope: "TEAM",
+          skillId: s.skill_id, slug: s.slug, commandHandle: s.command_handle, name: s.name, objective: s.objective,
+          inputParameters: s.input_parameters ?? [], instructions: s.instructions,
+          expectedOutputFormat: s.expected_output_format ?? "Synthèse structurée", lastExecutionOutput: null, visibilityScope: "TEAM",
         }));
         const mappedAgents: UiManagedAgentItem[] = (res.agents ?? []).map((a) => ({
-          agentId: a.agent_id,
-          slug: a.slug,
-          handle: a.handle,
-          name: a.name,
-          roleMission: a.role_mission,
-          instructions: a.instructions,
-          thinkingLevel: (a.thinking_level ?? "medium") as UiAgentThinkingLevel,
-          skillIds: a.skill_ids ?? [],
-          lastExecutionOutput: null,
-          visibilityScope: "TEAM",
+          agentId: a.agent_id, slug: a.slug, handle: a.handle, name: a.name, roleMission: a.role_mission, instructions: a.instructions,
+          thinkingLevel: (a.thinking_level ?? "medium") as UiAgentThinkingLevel, skillIds: a.skill_ids ?? [],
+          lastExecutionOutput: null, visibilityScope: "TEAM", enabledOnWorkspace: true, mcpExposed: false,
         }));
         const nextState = { agents: mappedAgents, skills: mappedSkills };
         writeCachedAgentsAndSkills(nextState);
         setManagedState(nextState);
       })
-      .catch(() => {
-        // Keep localStorage cache when initial hydration fails
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      .catch((err: unknown) => onFeedback(`⚠️ Chargement hors ligne (${err instanceof Error ? err.message : "cache local actif"}).`));
+    return () => { cancelled = true; };
+  }, [onFeedback]);
 
   const combinedState = mergeManagedStateWithActivePacks(managedState, activePacks);
+  const resolveAgents = (prev: CachedAgentsAndSkillsState): readonly UiManagedAgentItem[] =>
+    prev.agents.length > 0 ? prev.agents : mergeManagedStateWithActivePacks(prev, activePacks).agents;
 
   const handleLoadPackTemplates = () => {
     const defaultPacks: readonly ConfiguredPackItem[] = [
@@ -127,31 +103,20 @@ export function useManagedAgentsAndSkills(
     const skillId = slug.startsWith("skill-") ? slug : `skill-${slug}`;
     const slashSlug = slug.startsWith("skill-") ? slug.slice(6) || slug : slug;
     const optimisticSkill: UiManagedSkillItem = {
-      skillId,
-      slug: slashSlug,
-      commandHandle: `/${slashSlug}`,
-      name: draft.name.trim(),
-      objective: draft.objective.trim(),
-      inputParameters: draft.inputParameters,
-      instructions: draft.instructions.trim(),
+      skillId, slug: slashSlug, commandHandle: `/${slashSlug}`, name: draft.name.trim(), objective: draft.objective.trim(),
+      inputParameters: draft.inputParameters, instructions: draft.instructions.trim(),
       expectedOutputFormat: draft.expectedOutputFormat.trim() || "Synthèse structurée",
-      lastExecutionOutput: null,
-      visibilityScope: draft.visibilityScope ?? "TEAM",
+      lastExecutionOutput: null, visibilityScope: draft.visibilityScope ?? "TEAM",
     };
     updateManagedState((prev) => ({ ...prev, skills: [...prev.skills.filter((s) => s.skillId !== skillId), optimisticSkill] }));
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .upsertSkill({
-          skill_id: skillId,
-          name: optimisticSkill.name,
-          objective: optimisticSkill.objective,
-          input_parameters: [...optimisticSkill.inputParameters],
-          instructions: optimisticSkill.instructions,
+          skill_id: skillId, name: optimisticSkill.name, objective: optimisticSkill.objective,
+          input_parameters: [...optimisticSkill.inputParameters], instructions: optimisticSkill.instructions,
           expected_output_format: optimisticSkill.expectedOutputFormat,
         })
-        .catch((err: unknown) => {
-          onFeedback(`⚠️ Synchronisation compétence différée (${err instanceof Error ? err.message : "hors ligne"}).`);
-        });
+        .catch((err: unknown) => onFeedback(`⚠️ Synchronisation compétence différée (${err instanceof Error ? err.message : "hors ligne"}).`));
     }
   };
 
@@ -163,9 +128,7 @@ export function useManagedAgentsAndSkills(
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .deleteSkill(skillId)
-        .catch((err: unknown) => {
-          onFeedback(`⚠️ Suppression différée (${err instanceof Error ? err.message : "hors ligne"}).`);
-        });
+        .catch((err: unknown) => onFeedback(`⚠️ Suppression différée (${err instanceof Error ? err.message : "hors ligne"}).`));
     }
   };
 
@@ -181,31 +144,15 @@ export function useManagedAgentsAndSkills(
       const baseSkills = prev.skills.some((s) => s.skillId === skillId)
         ? prev.skills
         : [...prev.skills, ...Object.values(PACK_SKILLS_BY_PACK_KEY).flat().filter((s) => s.skillId === skillId)];
-      return {
-        ...prev,
-        skills: baseSkills.map((skill) =>
-          skill.skillId === skillId ? { ...skill, lastExecutionOutput: buildSkillLocalOutput(skill, inputText) } : skill,
-        ),
-      };
+      return { ...prev, skills: baseSkills.map((skill) => (skill.skillId === skillId ? { ...skill, lastExecutionOutput: buildSkillLocalOutput(skill, inputText) } : skill)) };
     });
-
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .executeSkill(skillId, { input_text: inputText })
-        .then((res) => {
-          updateManagedState((prev) => ({
-            ...prev,
-            skills: prev.skills.map((s) => (s.skillId === skillId ? { ...s, lastExecutionOutput: res.output_text } : s)),
-          }));
-        })
+        .then((res) => updateManagedState((prev) => ({ ...prev, skills: prev.skills.map((s) => (s.skillId === skillId ? { ...s, lastExecutionOutput: res.output_text } : s)) })))
         .catch((err: unknown) => {
           const detail = err instanceof Error ? err.message : "erreur serveur";
-          updateManagedState((prev) => ({
-            ...prev,
-            skills: prev.skills.map((s) =>
-              s.skillId === skillId ? { ...s, lastExecutionOutput: `${s.lastExecutionOutput ?? ""}\n⚠️ Remarque : exécution locale utilisée (${detail}).` } : s,
-            ),
-          }));
+          updateManagedState((prev) => ({ ...prev, skills: prev.skills.map((s) => (s.skillId === skillId ? { ...s, lastExecutionOutput: `${s.lastExecutionOutput ?? ""}\n⚠️ Remarque : exécution locale utilisée (${detail}).` } : s)) }));
         });
     }
   };
@@ -215,77 +162,80 @@ export function useManagedAgentsAndSkills(
     const agentId = slug.startsWith("agent-") ? slug : `agent-${slug}`;
     const handleSlug = slug.startsWith("agent-") ? slug.slice(6) || slug : slug;
     const optimisticAgent: UiManagedAgentItem = {
-      agentId,
-      slug: handleSlug,
-      handle: `@${handleSlug}`,
-      name: draft.name.trim(),
-      roleMission: draft.roleMission.trim(),
-      instructions: draft.instructions.trim(),
-      thinkingLevel: draft.thinkingLevel,
-      skillIds: [...draft.skillIds],
-      lastExecutionOutput: null,
-      visibilityScope: draft.visibilityScope ?? "TEAM",
+      agentId, slug: handleSlug, handle: `@${handleSlug}`, name: draft.name.trim(), roleMission: draft.roleMission.trim(),
+      instructions: draft.instructions.trim(), thinkingLevel: draft.thinkingLevel, skillIds: [...draft.skillIds],
+      lastExecutionOutput: null, visibilityScope: draft.visibilityScope ?? "TEAM", enabledOnWorkspace: true, mcpExposed: false,
     };
     updateManagedState((prev) => ({ ...prev, agents: [...prev.agents.filter((a) => a.agentId !== agentId), optimisticAgent] }));
-
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .upsertAgent({
-          agent_id: agentId,
-          name: optimisticAgent.name,
-          role_mission: optimisticAgent.roleMission,
-          instructions: optimisticAgent.instructions,
-          thinking_level: optimisticAgent.thinkingLevel,
+          agent_id: agentId, name: optimisticAgent.name, role_mission: optimisticAgent.roleMission,
+          instructions: optimisticAgent.instructions, thinking_level: optimisticAgent.thinkingLevel,
           skill_ids: [...optimisticAgent.skillIds],
         })
-        .catch((err: unknown) => {
-          onFeedback(`⚠️ Synchronisation agent différée (${err instanceof Error ? err.message : "hors ligne"}).`);
-        });
+        .catch((err: unknown) => onFeedback(`⚠️ Synchronisation agent différée (${err instanceof Error ? err.message : "hors ligne"}).`));
+    }
+  };
+
+  const handleDuplicateAgent = (sourceAgent: UiManagedAgentItem) => {
+    const customName = `${sourceAgent.name} (Copie)`;
+    const slug = slugifyIdentifier(customName, "agent-copie");
+    const agentId = slug.startsWith("agent-") ? slug : `agent-${slug}`;
+    const handleSlug = slug.startsWith("agent-") ? slug.slice(6) || slug : slug;
+    const duplicated: UiManagedAgentItem = {
+      ...sourceAgent, agentId, slug: handleSlug, handle: `@${handleSlug}`, name: customName,
+      visibilityScope: "TEAM", sourcePackKey: null, enabledOnWorkspace: true,
+    };
+    updateManagedState((prev) => ({ ...prev, agents: [...resolveAgents(prev).filter((a) => a.agentId !== agentId), duplicated] }));
+    onFeedback(`✅ Agent « ${duplicated.name} » dupliqué et prêt à être personnalisé.`);
+  };
+
+  const handleToggleAgentEnabled = (agentId: string, nextEnabled: boolean) => {
+    updateManagedState((prev) => ({ ...prev, agents: resolveAgents(prev).map((a) => (a.agentId === agentId ? { ...a, enabledOnWorkspace: nextEnabled } : a)) }));
+  };
+
+  const handleToggleAgentMcpExposure = (agentId: string, nextExposed: boolean) => {
+    updateManagedState((prev) => ({ ...prev, agents: resolveAgents(prev).map((a) => (a.agentId === agentId ? { ...a, mcpExposed: nextExposed } : a)) }));
+  };
+
+  const handleUpdateAgentDetails = (
+    agentId: string,
+    patch: { name: string; roleMission: string; instructions: string; thinkingLevel: UiAgentThinkingLevel; visibilityScope?: UiAgentSkillVisibilityScope; mcpExposed?: boolean },
+  ) => {
+    updateManagedState((prev) => ({ ...prev, agents: resolveAgents(prev).map((a) => (a.agentId === agentId ? { ...a, ...patch } : a)) }));
+    if (!isJsdomEnv()) {
+      void createOrciaApiClient({ baseUrl: "" })
+        .upsertAgent({ agent_id: agentId, name: patch.name, role_mission: patch.roleMission, instructions: patch.instructions, thinking_level: patch.thinkingLevel, skill_ids: [] })
+        .catch((err: unknown) => onFeedback(`⚠️ Mise à jour d'agent différée (${err instanceof Error ? err.message : "hors ligne"}).`));
     }
   };
 
   const handleToggleAgentSkill = (agentId: string, skillId: string, nextChecked: boolean) => {
     let nextSkillIdsForApi: string[] = [];
-    updateManagedState((prev) => {
-      const baseAgents = prev.agents.some((a) => a.agentId === agentId)
-        ? prev.agents
-        : mergeManagedStateWithActivePacks(prev, activePacks).agents;
-      return {
-        ...prev,
-        agents: baseAgents.map((agent) => {
-          if (agent.agentId !== agentId) return agent;
-          const without = agent.skillIds.filter((id) => id !== skillId);
-          const updatedIds = nextChecked ? [...without, skillId] : without;
-          nextSkillIdsForApi = updatedIds;
-          return { ...agent, skillIds: updatedIds };
-        }),
-      };
-    });
+    updateManagedState((prev) => ({
+      ...prev,
+      agents: resolveAgents(prev).map((agent) => {
+        if (agent.agentId !== agentId) return agent;
+        const without = agent.skillIds.filter((id) => id !== skillId);
+        const updatedIds = nextChecked ? [...without, skillId] : without;
+        nextSkillIdsForApi = updatedIds;
+        return { ...agent, skillIds: updatedIds };
+      }),
+    }));
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .updateAgentSkills(agentId, { skill_ids: nextSkillIdsForApi })
-        .catch((err: unknown) => {
-          onFeedback(`⚠️ Rattachement compétence différé (${err instanceof Error ? err.message : "hors ligne"}).`);
-        });
+        .catch((err: unknown) => onFeedback(`⚠️ Rattachement compétence différé (${err instanceof Error ? err.message : "hors ligne"}).`));
     }
   };
 
   const handleUpdateAgentThinkingLevel = (agentId: string, nextThinkingLevel: UiAgentThinkingLevel) => {
-    updateManagedState((prev) => {
-      const baseAgents = prev.agents.some((a) => a.agentId === agentId)
-        ? prev.agents
-        : mergeManagedStateWithActivePacks(prev, activePacks).agents;
-      return { ...prev, agents: baseAgents.map((a) => (a.agentId === agentId ? { ...a, thinkingLevel: nextThinkingLevel } : a)) };
-    });
+    updateManagedState((prev) => ({ ...prev, agents: resolveAgents(prev).map((a) => (a.agentId === agentId ? { ...a, thinkingLevel: nextThinkingLevel } : a)) }));
   };
 
   const handleUpdateAgentVisibility = (agentId: string, nextVisibility: UiAgentSkillVisibilityScope) => {
-    updateManagedState((prev) => {
-      const baseAgents = prev.agents.some((a) => a.agentId === agentId)
-        ? prev.agents
-        : mergeManagedStateWithActivePacks(prev, activePacks).agents;
-      return { ...prev, agents: baseAgents.map((a) => (a.agentId === agentId ? { ...a, visibilityScope: nextVisibility } : a)) };
-    });
+    updateManagedState((prev) => ({ ...prev, agents: resolveAgents(prev).map((a) => (a.agentId === agentId ? { ...a, visibilityScope: nextVisibility } : a)) }));
   };
 
   const handleDeleteAgent = (agentId: string) => {
@@ -293,9 +243,7 @@ export function useManagedAgentsAndSkills(
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .deleteAgent(agentId)
-        .catch((err: unknown) => {
-          onFeedback(`⚠️ Suppression d'agent différée (${err instanceof Error ? err.message : "hors ligne"}).`);
-        });
+        .catch((err: unknown) => onFeedback(`⚠️ Suppression d'agent différée (${err instanceof Error ? err.message : "hors ligne"}).`));
     }
   };
 
@@ -307,29 +255,20 @@ export function useManagedAgentsAndSkills(
         : [...prev.agents, ...Object.values(PACK_AGENTS_BY_PACK_KEY).flat().filter((a) => a.agentId === agentId)];
       return {
         ...prev,
-        agents: baseAgents.map((agent) =>
-          agent.agentId === agentId
-            ? { ...agent, lastExecutionOutput: buildAgentLocalOutput(agent, merged.skills, prompt) }
-            : agent,
-        ),
+        agents: baseAgents.map((agent) => (agent.agentId === agentId ? { ...agent, lastExecutionOutput: buildAgentLocalOutput(agent, merged.skills, prompt) } : agent)),
       };
     });
-
     if (!isJsdomEnv()) {
       void createOrciaApiClient({ baseUrl: "" })
         .executeAgent(agentId, { prompt })
-        .then((res) => {
-          updateManagedState((prev) => ({ ...prev, agents: prev.agents.map((a) => (a.agentId === agentId ? { ...a, lastExecutionOutput: res.response_text } : a)) }));
-        })
+        .then((res) => updateManagedState((prev) => ({ ...prev, agents: prev.agents.map((a) => (a.agentId === agentId ? { ...a, lastExecutionOutput: res.response_text } : a)) })))
         .catch((err: unknown) => {
           const detail = err instanceof Error ? err.message : "erreur serveur";
-          updateManagedState((prev) => ({
-            ...prev,
-            agents: prev.agents.map((a) => (a.agentId === agentId ? { ...a, lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n⚠️ Remarque : réponse locale affichée (${detail}).` } : a)),
-          }));
+          updateManagedState((prev) => ({ ...prev, agents: prev.agents.map((a) => (a.agentId === agentId ? { ...a, lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n⚠️ Remarque : réponse locale affichée (${detail}).` } : a)) }));
         });
     }
   };
+
   return {
     agents: combinedState.agents,
     skills: combinedState.skills,
@@ -339,6 +278,10 @@ export function useManagedAgentsAndSkills(
     handleUpdateSkillVisibility,
     handleExecuteSkill,
     handleCreateAgent,
+    handleDuplicateAgent,
+    handleToggleAgentEnabled,
+    handleToggleAgentMcpExposure,
+    handleUpdateAgentDetails,
     handleToggleAgentSkill,
     handleUpdateAgentThinkingLevel,
     handleUpdateAgentVisibility,

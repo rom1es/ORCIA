@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-08",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 78,
+    "uiPrimitivesCount": 81,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 90
+    "techLeadReportsCount": 92
   },
   "activeRoutes": [
     "/",
@@ -42,6 +42,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
+    "AgentDetailAndSandboxModal",
     "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
     "AppShell",
@@ -103,6 +104,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ScopeSwitcher",
     "ScopedPromptBox",
     "SecretField",
+    "SkillDetailAndSandboxModal",
     "SkillStudioCardItem",
     "SprintContextWidget",
     "StatusBadge",
@@ -114,6 +116,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "UserAccountDropdownAndSettingsModal",
     "WorkflowStudioSection",
     "WorkflowTopGovernanceBar",
+    "WorkspaceAssistantPinnedCard",
     "WorkspaceControlCenter",
     "WorkspaceFiveTabsAndExternalRebaseView",
     "WorkspaceTopologyPanel"
@@ -412,6 +415,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Gouvernance documentaire (CAP-ACT-1..4)",
+      "reportFile": "2026-11-08-cap-act-1-a-4-gouvernance-registre-capacites-tech-lead-report.md",
+      "domain": "Contrôle CI du registre (capabilities_registry.py dans site:check), PRD v2.0 (FR-31..FR-36), Epic 13, réconciliation Epic 6, consigne AGENTS.md §5",
+      "summary": "Nouveau module + 6 tests, 9 trous de couverture corrigés, epics.md / sprint-status.yaml / PRD / gabarit mis à jour."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Gouvernance documentaire",
+      "reportFile": "2026-11-08-registre-capacites-fonctionnelles-tech-lead-report.md",
+      "domain": "Registre unique des capacités livrées (docs/product/capabilities.yaml, 57 capacités, FR-31..36 proposés), tickets CAP-ACT-1..4",
+      "summary": "Création de capabilities.yaml rétro-rempli (epics + ad-hoc), action_items dans sprint-status.yaml ; aucun code applicatif modifié."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Post-Epic 12 / Epics 6, 8 & 10 Multi-Provider Gemini Argon",

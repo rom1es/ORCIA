@@ -1,0 +1,452 @@
+# ORCIA — Registre des capacités fonctionnelles (source de vérité « ce qui est en place »)
+#
+# Rôle : répondre à « qu'est-ce qui est livré aujourd'hui ? ». Le PRD porte l'intention (FR),
+# epics.md / sprint-status.yaml portent la planification, les rapports Tech Lead portent l'historique.
+# Ce fichier relie les trois aux surfaces réelles (route, routeur, UI, migration).
+#
+# Champs :
+#   fr          : FR du PRD v2 couverts (FR-1..FR-36 ; FR-31..36 définis au §4.10 du PRD v2.0)
+#   origin      : epic | adhoc
+#   origin_ref  : story-key / epic ou slug du rapport Tech Lead (docs/implementation-artifacts/tech-lead-reports/)
+#   status      : live | partial | planned
+#   verification: docs = déduit des rapports/routeurs/manifeste, NON rejoué à l'exécution (2026-11-08)
+#                 Les capacités « docs » doivent passer à « runtime » après un parcours réel (e2e / pnpm db:reset).
+#   surfaces    : route SPA, préfixe API, composant @orcia/ui, migration — "?" = à confirmer
+version: 1
+generated: 2026-11-08
+verification_default: docs
+
+# FR-31..36 : définis au §4.10 du PRD v2.0 (2026-11-08). Bloc conservé comme index lisible.
+proposed_fr:
+  FR-31: "Gouvernance entreprise & Settings : habilitations RBAC/ABAC, modèles IA et routage, connecteurs & secrets, packs, wizards (Epic 8)"
+  FR-32: "Coquille ergonomique, recherche ⌘K, accostage progressif Jour 0, aide contextuelle, journal d'activité (Epic 9 + ad-hoc)"
+  FR-33: "Mon Assistant : gouvernance 4 niveaux, 3 vitesses (TTFT), citations déterministes, dossiers & fils collaboratifs (Epic 10)"
+  FR-34: "Mes Espaces : gouvernance métier de l'espace, ADN, glossaire, routage d'artefacts (Epic 11.1-11.2)"
+  FR-35: "Exposition MCP/A2A gouvernée, banc de test, atelier orcia-pack-builder (Epic 11.3-11.5)"
+  FR-36: "Gestion des agents et compétences (skills) : création, exécution, MCP (ad-hoc 05/11 + 08/11)"
+
+# Surfaces volontairement sans capacité métier propre (le contrôle `pnpm site:check` les ignore).
+coverage_exemptions:
+  - { surface: "/", reason: "Redirection d'accueil vers le cockpit, aucune capacité propre" }
+  - { surface: health, reason: "Sonde technique /api/v1/health (infrastructure, pas une fonctionnalité)" }
+
+capabilities:
+  # ───────────── Fondations (Epic 1, 3.2x) ─────────────
+  - id: CAP-001
+    title: Authentification hybride bi-mode (OIDC + locale) et hiérarchie d'équipes
+    fr: [FR-21]
+    origin: epic
+    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi
+    status: live
+    surfaces: { route: /login, api: /api/v1/auth, ui: BiModeLoginView }
+  - id: CAP-002
+    title: Catalogue fédéré multi-sources (db/git/nexus/confluence/jira) et surcharges 4 niveaux
+    fr: [FR-20]
+    origin: epic
+    origin_ref: 1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db
+    status: live
+    surfaces: { route: /catalog, api: /api/v1 (catalog.py), ui: CatalogExplorerPanel }
+  - id: CAP-003
+    title: Exécution passthrough / service principal et Permission Broker (lien Jira pré-rempli)
+    fr: [FR-22]
+    origin: epic
+    origin_ref: 1-4-exécution-passthrough-service-principal-permission-broker-ia
+    status: live
+    surfaces: { api: "/api/v1/permissions/broker (permission_broker.py)" }
+  - id: CAP-004
+    title: Workflows système d'amorçage Jour 0 et onboarding d'équipe
+    fr: [FR-28]
+    origin: epic
+    origin_ref: 1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto
+    status: live
+    surfaces: { route: /bootstrap, api: /api/v1/bootstrap, ui: BootstrapOnboardingPanel }
+  - id: CAP-005
+    title: Persistance admin Jour 0 et réinitialisation BDD (pnpm db:reset)
+    fr: [FR-28]
+    origin: adhoc
+    origin_ref: 2026-11-04-persistance-admin-jour0-et-reinit-bdd
+    status: live
+    surfaces: { api: /api/v1/bootstrap }
+  - id: CAP-006
+    title: Monolithe modulaire, persistance SQLAlchemy asyncio, bus Outbox, SPA Vite/TanStack, séparation pack SDLC
+    fr: []   # Fondation d'architecture (AD-1, AD-19) — NFR §10.4
+    origin: epic
+    origin_ref: 3-2a..3-2f
+    status: live
+    surfaces: { migration: "0001+" }
+
+  # ───────────── Ontologie & RAG (Epic 2) ─────────────
+  - id: CAP-010
+    title: Ontologie 4 niveaux (héritage, extraction temps réel, simulation d'impact)
+    fr: [FR-8, FR-9, FR-10]
+    origin: epic
+    origin_ref: 2-1, 2-2
+    status: live
+    surfaces: { route: /ontology, api: "/api/v1/ontology-rag (ontology_and_rag.py)" }
+  - id: CAP-011
+    title: Indexation différenciée incrémentale et graphe tripartite Confluence↔Jira↔Git
+    fr: [FR-23]
+    origin: epic
+    origin_ref: 2-3, 2-4
+    status: live
+    surfaces: { route: /ontology, api: /api/v1/ontology-rag }
+
+  # ───────────── Orchestration, assistant DAG, human-led (Epic 3) ─────────────
+  - id: CAP-020
+    title: Workflow-as-code YAML/JSON et gabarits d'artefact multi-audience
+    fr: [FR-11, FR-12]
+    origin: epic
+    origin_ref: 3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc
+    status: live
+  - id: CAP-021
+    title: Moteur d'orchestration durable (DBOS), blackboard, checkpoints, version pinning, exécution réelle des étapes
+    fr: [FR-14, FR-15]
+    origin: epic
+    origin_ref: 3-2, 3-2f
+    status: live
+    surfaces: { api: "/api/v1/orchestration + blackboard_and_engine.py" }
+  - id: CAP-022
+    title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
+    fr: [FR-1, FR-13]
+    origin: epic
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc
+    status: live
+    surfaces: { api: /api/v1/assistant }
+  - id: CAP-023
+    title: Ancrages humains obligatoires et arbitrage / tie-break
+    fr: [FR-4, FR-5]
+    origin: epic
+    origin_ref: 3-4
+    status: live
+    surfaces: { ui: HumanLedAnchorCard + ArbitrationTieBreakCard, migration: "0015" }
+  - id: CAP-024
+    title: Challenge amont What-If et replay ciblé step N
+    fr: [FR-7, FR-16]
+    origin: epic
+    origin_ref: 3-5
+    status: live
+    surfaces: { api: challenge_and_replay.py, ui: UpstreamChallengeRewindModal, migration: "0016" }
+
+  # ───────────── Gates, sandbox, Jira (Epic 4) ─────────────
+  - id: CAP-030
+    title: Sandbox hors processus bimodale (wasmtime T1 / conteneur T2) et gates déterministes
+    fr: [FR-17, FR-24]
+    origin: epic
+    origin_ref: 4-1, 4-1a
+    status: live
+    surfaces: { route: /gates, api: gates.py, migration: "0017" }
+  - id: CAP-031
+    title: Gates agentiques (orthogonalité des modèles, scrub PII, SecretRef DEK/KEK)
+    fr: [FR-18]
+    origin: epic
+    origin_ref: 4-2
+    status: live
+  - id: CAP-032
+    title: Gates humaines adaptatives, briefing 4 blocs, validation par découpage
+    fr: [FR-6, FR-19]
+    origin: epic
+    origin_ref: 4-3
+    status: live
+    surfaces: { route: /gates, api: human_gates.py, ui: CognitiveReviewBriefingGrid, migration: "0018" }
+  - id: CAP-033
+    title: Actions et transitions Jira multi-projets (staged aux gates)
+    fr: [FR-24]
+    origin: epic
+    origin_ref: 4-4
+    status: live
+    surfaces: { api: jira_and_mcp.py }
+
+  # ───────────── Supervision & expérience (Epic 5) ─────────────
+  - id: CAP-040
+    title: Centre de notifications unifié (individuel / équipe, prise en charge)
+    fr: [FR-2]
+    origin: epic
+    origin_ref: 5-1
+    status: live
+    surfaces: { route: /inbox, api: inbox_and_leases.py }
+  - id: CAP-041
+    title: Supervision multi-runs et sélecteur de périmètre / centre de pilotage
+    fr: [FR-3]
+    origin: epic
+    origin_ref: 5-2
+    status: live
+    surfaces: { route: "/cockpit, /workspaces", api: "/api/v1/control-center (control_center.py)" }
+  - id: CAP-042
+    title: Responsive 3 breakpoints et compagnon mobile
+    fr: [FR-1]
+    origin: epic
+    origin_ref: 5-3
+    status: live
+
+  # ───────────── Settings & gouvernance (Epic 8 + ad-hoc) ─────────────
+  - id: CAP-050
+    title: Modèle d'habilitations RBAC/ABAC à 6 verbes (hidden_when_unauthorized, ABAC staging/budget)
+    fr: [FR-31]
+    origin: epic
+    origin_ref: 8-1
+    status: live
+    surfaces: { route: /settings, api: "/api/v1/settings/iam" }
+  - id: CAP-051
+    title: Écran Habilitations IAM (correction après dialogue UX)
+    fr: [FR-31]
+    origin: adhoc
+    origin_ref: 2026-11-05-dialogue-sally-winston-correction-ecran-habilitations-iam
+    status: live
+    surfaces: { route: /settings, ui: SettingsIamOrganizationSection }
+  - id: CAP-052
+    title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
+    fr: [FR-31]
+    origin: epic
+    origin_ref: 8-2
+    status: live
+  - id: CAP-053
+    title: Modèles IA — authentification, test de connexion, garde SSRF
+    fr: [FR-31]
+    origin: adhoc
+    origin_ref: 2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide
+    status: live
+    surfaces: { route: /settings, ui: SettingsAiModelsSection }
+  - id: CAP-054
+    title: Hub connecteurs et gestion des secrets
+    fr: [FR-31]
+    origin: epic
+    origin_ref: 8-4
+    status: live
+    surfaces: { route: /settings }
+  - id: CAP-055
+    title: Studio workflows et registre des packs
+    fr: [FR-31]
+    origin: epic
+    origin_ref: 8-5
+    status: live
+    surfaces: { route: /settings, ui: SettingsPacksSection }
+  - id: CAP-056
+    title: Packs métiers — catalogue backend, écran simplifié, activation unique
+    fr: [FR-31]
+    origin: adhoc
+    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston
+    status: live
+    surfaces: { route: /settings }
+  - id: CAP-057
+    title: Wizards d'initialisation durables
+    fr: [FR-31]
+    origin: epic
+    origin_ref: 8-6
+    status: live
+    surfaces: { route: /wizards }
+  - id: CAP-058
+    title: Coquille Settings avec permission guards
+    fr: [FR-31]
+    origin: epic
+    origin_ref: 8-3
+    status: live
+    surfaces: { route: "/settings, /configuration", api: settings_and_studio.py }
+
+  # ───────────── Shell, navigation, aide (Epic 9, 12 + ad-hoc) ─────────────
+  - id: CAP-060
+    title: Shell 4 zones Direction C (8 entrées) et cockpit épuré
+    fr: [FR-32]
+    origin: epic
+    origin_ref: 9-1, 12-1
+    status: live
+    surfaces: { ui: AppShell + CollapsibleAppRail, api: /api/v1/navigation }
+  - id: CAP-061
+    title: Accostage progressif Jour 0 (1/6) et protections
+    fr: [FR-32]
+    origin: epic
+    origin_ref: 9-2
+    status: live
+    surfaces: { api: bootstrap_accostage.py }
+  - id: CAP-062
+    title: Recherche fédérée contextuelle ⌘K à 2 vitesses
+    fr: [FR-32]
+    origin: epic
+    origin_ref: 9-3
+    status: live
+    surfaces: { ui: CommandPaletteModal }
+  - id: CAP-063
+    title: Menu compte et modale de préférences utilisateur
+    fr: [FR-32]
+    origin: epic
+    origin_ref: 9-4
+    status: live
+  - id: CAP-064
+    title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide)
+    fr: [FR-32]
+    origin: epic
+    origin_ref: 9-5 + 2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i
+    status: live
+    surfaces: { route: /help, api: portal_and_help.py }
+  - id: CAP-065
+    title: Journal d'activité (auteurs, horodatage, filtres)
+    fr: [FR-25, FR-32]   # chevauche Story 6.1 (backlog) — à réconcilier (CAP-ACT-3)
+    origin: adhoc
+    origin_ref: 2026-11-05-journal-activite-menu-dedie-auteurs-horodatage-et-filtres
+    status: partial
+    surfaces: { route: /activity, ui: ActivityLogExplorerView }
+    notes: "Lit auditEvents du snapshot d'accostage (bootstrap_accostage.py), pas un audit_ledger append-only. Story 6.1 doit remplacer cette source (réconciliation CAP-ACT-3, 2026-11-08)."
+  - id: CAP-066
+    title: Site de présentation /showcase et site statique autonome (sync auto)
+    fr: []
+    origin: adhoc
+    origin_ref: 2026-11-05-site-presentation-orcia-3-piliers-human-led-anti-hallucination-et-sync-auto
+    status: live
+    surfaces: { route: /showcase }
+
+  # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
+  - id: CAP-070
+    title: Gouvernance de personnalisation 4 niveaux (Mode A / Mode B studio)
+    fr: [FR-33]
+    origin: epic
+    origin_ref: 10-1
+    status: live
+    surfaces: { route: /assistant, api: assistant_workspace_governance.py, ui: AssistantGovernanceModalAndStudio }
+  - id: CAP-071
+    title: Routage 3 vitesses, TTFT < 1,2 s, cache Redis du prompt assemblé, tours en arrière-plan
+    fr: [FR-33]
+    origin: epic
+    origin_ref: 10-2
+    status: live
+    surfaces: { api: assistant_workspace.py, ui: AssistantSpeedSelectorAndStreamView }
+  - id: CAP-072
+    title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
+    fr: [FR-33]
+    origin: epic
+    origin_ref: 10-3
+    status: live
+    surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
+  - id: CAP-073
+    title: Dossiers thématiques, fils collaboratifs, partage et lancement de processus
+    fr: [FR-33]
+    origin: epic
+    origin_ref: 10-4
+    status: live
+    surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
+  - id: CAP-074
+    title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
+    fr: [FR-33]
+    origin: adhoc
+    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui
+    status: live
+    surfaces: { api: assistant_llm_bridge.py + assistant_llm_providers.py }
+
+  # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
+  - id: CAP-080
+    title: Mes Espaces 5 sous-onglets, cascade de localisation d'artefacts, waivers
+    fr: [FR-34]
+    origin: epic
+    origin_ref: 11-1
+    status: live
+    surfaces: { route: /spaces, api: workspace_governance.py, migration: "0026" }
+  - id: CAP-081
+    title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
+    fr: [FR-34]
+    origin: epic
+    origin_ref: 11-2
+    status: live
+    surfaces: { api: dna_and_glossary.py, migration: "0027" }
+  - id: CAP-082
+    title: Services MCP, agents distants A2A et banc de test
+    fr: [FR-35]
+    origin: epic
+    origin_ref: 11-3
+    status: live
+    surfaces: { api: mcp_and_test_bench.py }
+  - id: CAP-083
+    title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
+    fr: [FR-35]
+    origin: epic
+    origin_ref: 11-4, 11-5 + 2026-11-05-refonte-atelier-processus-clair-aide-contextuelle-et-menu-processus
+    status: live
+    surfaces: { route: /processes, api: pack_builder.py }
+
+  # ───────────── Agents, skills, MCP (ad-hoc) ─────────────
+  - id: CAP-090
+    title: Gestion, création et exécution des agents et compétences (skills)
+    fr: [FR-24, FR-36]
+    origin: adhoc
+    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills
+    status: live
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: AgentsAndSkillsManagerView }
+  - id: CAP-091
+    title: Refonte complète écran Agents, Skills et MCP
+    fr: [FR-36]
+    origin: adhoc
+    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp
+    status: live
+    surfaces: { route: /agents }
+
+  # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
+  - id: CAP-100
+    title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system)
+    fr: []
+    origin: adhoc
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html"
+    status: live
+
+  # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────
+  - id: CAP-043
+    title: Centre de notifications d'équipes (org units) et boutons grisés explicites
+    fr: [FR-2]
+    origin: adhoc
+    origin_ref: 2026-11-06-centre-notifications-equipes-org-et-boutons-grises
+    status: live
+    surfaces: { route: /inbox }
+  - id: CAP-067
+    title: Rattachement d'équipe, facturation, espaces privés et sélecteur de contexte
+    fr: [FR-3, FR-21, FR-34]
+    origin: adhoc
+    origin_ref: 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte
+    status: live
+    surfaces: { route: /spaces, api: org_and_workspaces.py }
+  - id: CAP-075
+    title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
+    fr: [FR-33]
+    origin: adhoc
+    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant"
+    status: live
+    surfaces: { route: /assistant, api: assistant_background_turns.py }
+  - id: CAP-076
+    title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
+    fr: [FR-33]
+    origin: adhoc
+    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant
+    status: live
+    surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
+  - id: CAP-084
+    title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
+    fr: [FR-34, FR-35]
+    origin: adhoc
+    origin_ref: 2026-11-07-refonte-mes-espaces-et-integration-glossaire-ontologie-option-a + 2026-11-07-processus-generation-documentation-orcia-pack-builder
+    status: live
+    surfaces: { route: /spaces, api: pack_builder.py }
+  - id: CAP-092
+    title: Menu « Mes agents » — visibilité des packs et pont vers l'assistant
+    fr: [FR-36]
+    origin: adhoc
+    origin_ref: 2026-11-07-refonte-menu-mes-agents-visibilite-packs-et-pont-assistant
+    status: live
+    surfaces: { route: /agents }
+  - id: CAP-068
+    title: Documentation / FAQ — lien workspace ↔ org unit
+    fr: [FR-32]
+    origin: adhoc
+    origin_ref: 2026-11-06-documentation-faq-lien-workspace-org-unit
+    status: live
+    surfaces: { route: /help }
+
+  # ───────────── Planifié (non livré) ─────────────
+  - id: CAP-200
+    title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps
+    fr: [FR-25, FR-26, FR-27]
+    origin: epic
+    origin_ref: epic-6 (6-1..6-4, backlog)
+    status: planned
+    surfaces: { route: /finops (shell existant), "orcia_core/audit_finops": "errors.py seul" }
+    notes: "Constat 2026-11-08 : aucune migration audit_ledger, audit_finops = errors.py, /finops = coquille. SEC-03 (DEK/KEK) livré via 4.2. Story 6.1 réutilise ActivityLogExplorerView (CAP-065)."
+  - id: CAP-201
+    title: Exécution autonome sous contrat, déclencheurs idempotents, auto-remédiation (UJ-12)
+    fr: [FR-29, FR-30]
+    origin: epic
+    origin_ref: epic-7 (7-1..7-4, backlog)
+    status: planned

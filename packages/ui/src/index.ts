@@ -402,6 +402,18 @@ export {
   SkillStudioCardItem,
   type SkillStudioCardItemProps,
 } from "./components/SkillStudioCardItem";
+export {
+  WorkspaceAssistantPinnedCard,
+  type WorkspaceAssistantPinnedCardProps,
+} from "./components/WorkspaceAssistantPinnedCard";
+export {
+  AgentDetailAndSandboxModal,
+  type AgentDetailAndSandboxModalProps,
+} from "./components/AgentDetailAndSandboxModal";
+export {
+  SkillDetailAndSandboxModal,
+  type SkillDetailAndSandboxModalProps,
+} from "./components/SkillDetailAndSandboxModal";
 export { AppShell, type AppShellProps } from "./shell/AppShell";
 export { AssistantDock, type AssistantDockProps } from "./shell/AssistantDock";
 export {

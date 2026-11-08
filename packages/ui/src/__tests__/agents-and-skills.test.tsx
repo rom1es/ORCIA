@@ -14,7 +14,7 @@ const TEST_LABELS: AgentsAndSkillsManagerLabels = {
   subtitle: "Créez vos compétences réutilisables et rattachez-les à vos agents.",
   tabAgents: "🤖 Mes Agents",
   tabSkills: "🛠️ Compétences (Skills)",
-  tabConnections: "🔌 Connexions externes",
+  tabConnections: "🔌 Serveurs d'outils & MCP",
   emptyAgentsTitle: "Aucun agent configuré",
   emptyAgentsDescription: "Créez votre premier agent ci-dessus.",
   emptySkillsTitle: "Aucune compétence enregistrée",
@@ -81,6 +81,7 @@ function StatefulHarness() {
             instructions: draft.instructions,
             expectedOutputFormat: draft.expectedOutputFormat,
             lastExecutionOutput: null,
+            visibilityScope: draft.visibilityScope ?? "TEAM",
           },
         ]);
       }}
@@ -116,8 +117,31 @@ function StatefulHarness() {
             thinkingLevel: draft.thinkingLevel as UiAgentThinkingLevel,
             skillIds: draft.skillIds,
             lastExecutionOutput: null,
+            visibilityScope: draft.visibilityScope ?? "TEAM",
           },
         ]);
+      }}
+      onDuplicateAgent={(sourceAgent) => {
+        setAgents((prev) => [
+          ...prev,
+          {
+            ...sourceAgent,
+            agentId: `${sourceAgent.agentId}-copy`,
+            slug: `${sourceAgent.slug}-copy`,
+            handle: `${sourceAgent.handle}-copy`,
+            name: `${sourceAgent.name} (Copie)`,
+            visibilityScope: "TEAM",
+            sourcePackKey: null,
+            enabledOnWorkspace: true,
+          },
+        ]);
+      }}
+      onToggleAgentEnabled={(agentId, nextEnabled) => {
+        setAgents((prev) =>
+          prev.map((a) =>
+            a.agentId === agentId ? { ...a, enabledOnWorkspace: nextEnabled } : a,
+          ),
+        );
       }}
       onToggleAgentSkill={(agentId, skillId, nextChecked) => {
         setAgents((prev) =>
@@ -156,14 +180,22 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     cleanup();
   });
 
-  it("starts with 0 agents and 0 skills, supports creating and executing a Skill, creating an Agent, attaching the Skill in 1 click, and executing the Agent", () => {
+  it("starts with 0 agents and 0 skills (KPI strip hidden, creation modals closed), opens modals on CTA click, and runs Dry-Run tests inside the Configuration & Sandbox modal", () => {
     render(<StatefulHarness />);
 
     expect(screen.getByTestId("agents-empty-state")).toBeDefined();
+    expect(screen.getByTestId("workspace-assistant-pinned-card")).toBeDefined();
+    expect(screen.queryByTestId("agents-kpi-strip")).toBeNull();
+    expect(screen.queryByTestId("create-agent-modal")).toBeNull();
 
     // Switch to Skills tab
     fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
     expect(screen.getByTestId("skills-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("create-skill-modal")).toBeNull();
+
+    // Open Create Skill Modal
+    fireEvent.click(screen.getByTestId("open-create-skill-drawer-btn"));
+    expect(screen.getByTestId("create-skill-modal")).toBeDefined();
 
     // Create a Skill
     fireEvent.change(screen.getByTestId("skill-name-input"), {
@@ -183,18 +215,28 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     });
     fireEvent.click(screen.getByTestId("create-skill-submit-btn"));
 
-    // Verify Skill card appears & execute it in 1 click
+    // Modal closes automatically on submit and KPI strip is now visible
+    expect(screen.queryByTestId("create-skill-modal")).toBeNull();
+    expect(screen.getByTestId("agents-kpi-strip")).toBeDefined();
+
+    // Verify Skill card appears & open Skill detail/sandbox modal to execute it
     expect(screen.getByTestId("skill-card-skill-1")).toBeDefined();
+    fireEvent.click(screen.getByTestId("open-skill-detail-modal-btn-skill-1"));
+    expect(screen.getByTestId("skill-detail-modal-skill-1")).toBeDefined();
+
     fireEvent.change(screen.getByTestId("skill-test-input-skill-1"), {
       target: { value: "Contrat Acme Cloud hébergé en UE" },
     });
     fireEvent.click(screen.getByTestId("run-skill-btn-skill-1"));
-    expect(screen.getByTestId("skill-execution-output-skill-1").textContent).toContain(
+    expect(screen.getAllByTestId("skill-execution-output-skill-1")[0]?.textContent).toContain(
       'Exécuté: Audit RGPD Fournisseur sur "Contrat Acme Cloud hébergé en UE"',
     );
+    fireEvent.click(screen.getByTestId("close-skill-detail-modal-btn-skill-1"));
 
-    // Switch back to Agents tab
+    // Switch back to Agents tab & open Create Agent Modal
     fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
+    fireEvent.click(screen.getByTestId("open-create-agent-drawer-btn"));
+    expect(screen.getByTestId("create-agent-modal")).toBeDefined();
 
     // Create an Agent and select the skill during creation
     fireEvent.change(screen.getByTestId("agent-name-input"), {
@@ -212,30 +254,37 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     fireEvent.click(screen.getByTestId("create-agent-skill-checkbox-skill-1"));
     fireEvent.click(screen.getByTestId("create-agent-submit-btn"));
 
-    // Verify Agent card appears with attached skill and execute it in 1 click
+    // Modal closes automatically
+    expect(screen.queryByTestId("create-agent-modal")).toBeNull();
     expect(screen.getByTestId("agent-card-agent-1")).toBeDefined();
+
+    // Open Agent Detail & Dry-Run Sandbox Modal
+    fireEvent.click(screen.getByTestId("open-agent-detail-modal-btn-agent-1"));
+    expect(screen.getByTestId("agent-detail-modal-agent-1")).toBeDefined();
+
     fireEvent.change(screen.getByTestId("agent-test-input-agent-1"), {
       target: { value: "Analyse le contrat fournisseur BetaCorp" },
     });
     fireEvent.click(screen.getByTestId("run-agent-btn-agent-1"));
-    expect(screen.getByTestId("agent-execution-output-agent-1").textContent).toContain(
+    expect(screen.getAllByTestId("agent-execution-output-agent-1")[0]?.textContent).toContain(
       "Réponse Juriste Conformité IA [skills=skill-1] : Analyse le contrat fournisseur BetaCorp",
     );
 
-    // Toggle skill off in 1 click on the existing agent card
+    // Toggle skill off in 1 click inside the detail modal
     fireEvent.click(screen.getByTestId("agent-attach-skill-agent-1-skill-1"));
     fireEvent.click(screen.getByTestId("run-agent-btn-agent-1"));
-    expect(screen.getByTestId("agent-execution-output-agent-1").textContent).toContain(
+    expect(screen.getAllByTestId("agent-execution-output-agent-1")[0]?.textContent).toContain(
       "Réponse Juriste Conformité IA [skills=] : Analyse le contrat fournisseur BetaCorp",
     );
+    fireEvent.click(screen.getByTestId("close-agent-detail-modal-btn-agent-1"));
 
-    // Switch to Connections tab (hidden in DOM for backward compatibility)
-    expect(screen.getByTestId("agents-subview-tab-connections").style.display).toBe("none");
+    // Switch to visible 3rd Connections tab
+    expect(screen.getByTestId("agents-subview-tab-connections").style.display).not.toBe("none");
     fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
     expect(screen.getByTestId("custom-connections-slot")).toBeDefined();
   });
 
-  it("displays only 2 visible main tabs (🤖 Agents & 🛠️ Compétences), supports PRIVATE vs TEAM visibility selection, inline thinking level & visibility auto-save ('✓ Enregistré'), FormattedMarkdownContent rendering, and '💬 Utiliser dans Mon Assistant'", () => {
+  it("displays 3 visible tabs, protects PACK agents from deletion while allowing 1-click duplication & workspace enable/disable, and supports PRIVATE vs TEAM visibility & '💬 Utiliser dans Mon Assistant'", () => {
     const usedInAssistant: string[] = [];
 
     function RichStudioHarness() {
@@ -254,38 +303,30 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
           sourcePackKey: "orcia-pack-sdlc",
         },
       ]);
-      const [agents, setAgents] = useState<UiManagedAgentItem[]>([]);
+      const [agents, setAgents] = useState<UiManagedAgentItem[]>([
+        {
+          agentId: "agent-pack-arch",
+          slug: "pack-arch",
+          handle: "@pack-arch",
+          name: "Architecte Solution",
+          roleMission: "Valider l'architecture",
+          instructions: "Vérifier les patterns",
+          thinkingLevel: "complex",
+          skillIds: ["skill-revue-architecture"],
+          visibilityScope: "PACK",
+          sourcePackKey: "orcia-pack-sdlc",
+          enabledOnWorkspace: true,
+        },
+      ]);
 
       return (
         <AgentsAndSkillsManagerView
           agents={agents}
           skills={skills}
           labels={TEST_LABELS}
-          onCreateSkill={(draft) => {
-            setSkills((prev) => [
-              ...prev,
-              {
-                skillId: `skill-${prev.length + 1}`,
-                slug: `skill-${prev.length + 1}`,
-                commandHandle: `/skill-${prev.length + 1}`,
-                name: draft.name,
-                objective: draft.objective,
-                inputParameters: draft.inputParameters,
-                instructions: draft.instructions,
-                expectedOutputFormat: draft.expectedOutputFormat,
-                visibilityScope: draft.visibilityScope ?? "TEAM",
-              },
-            ]);
-          }}
+          onCreateSkill={() => undefined}
           onDeleteSkill={(id) => setSkills((prev) => prev.filter((s) => s.skillId !== id))}
           onExecuteSkill={() => undefined}
-          onUpdateSkillVisibility={(skillId, nextScope) => {
-            setSkills((prev) =>
-              prev.map((s) =>
-                s.skillId === skillId ? { ...s, visibilityScope: nextScope } : s,
-              ),
-            );
-          }}
           onUseSkillInAssistant={(skill) => usedInAssistant.push(skill.commandHandle)}
           onCreateAgent={(draft) => {
             setAgents((prev) => [
@@ -304,20 +345,27 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
               },
             ]);
           }}
-          onToggleAgentSkill={(agentId, skillId, nextChecked) => {
+          onDuplicateAgent={(src) => {
+            setAgents((prev) => [
+              ...prev,
+              {
+                ...src,
+                agentId: `${src.agentId}-copy`,
+                handle: `${src.handle}-copy`,
+                name: `${src.name} (Copie)`,
+                visibilityScope: "TEAM",
+                sourcePackKey: null,
+              },
+            ]);
+          }}
+          onToggleAgentEnabled={(agentId, nextEnabled) => {
             setAgents((prev) =>
               prev.map((a) =>
-                a.agentId === agentId
-                  ? {
-                      ...a,
-                      skillIds: nextChecked
-                        ? [...a.skillIds, skillId]
-                        : a.skillIds.filter((id) => id !== skillId),
-                    }
-                  : a,
+                a.agentId === agentId ? { ...a, enabledOnWorkspace: nextEnabled } : a,
               ),
             );
           }}
+          onToggleAgentSkill={() => undefined}
           onUpdateAgentThinkingLevel={(agentId, nextLvl) => {
             setAgents((prev) =>
               prev.map((a) =>
@@ -341,12 +389,21 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
 
     render(<RichStudioHarness />);
 
-    // 1. Only 2 visible tabs (Connections tab has display: none)
+    // 1. All 3 tabs are visible
     expect(screen.getByTestId("agents-subview-tab-agents").style.display).not.toBe("none");
     expect(screen.getByTestId("agents-subview-tab-skills").style.display).not.toBe("none");
-    expect(screen.getByTestId("agents-subview-tab-connections").style.display).toBe("none");
+    expect(screen.getByTestId("agents-subview-tab-connections").style.display).not.toBe("none");
 
-    // 2. Create an Agent with PRIVATE visibility
+    // 2. Pack agent has no Delete button, can be disabled/enabled on space, and duplicated into a TEAM agent
+    expect(screen.queryByTestId("delete-agent-btn-agent-pack-arch")).toBeNull();
+    fireEvent.click(screen.getByTestId("toggle-agent-enabled-btn-agent-pack-arch"));
+    expect(screen.getByTestId("agent-disabled-badge-agent-pack-arch")).toBeDefined();
+    fireEvent.click(screen.getByTestId("duplicate-agent-btn-agent-pack-arch"));
+    expect(screen.getByTestId("agent-card-agent-pack-arch-copy")).toBeDefined();
+    expect(screen.getByTestId("delete-agent-btn-agent-pack-arch-copy")).toBeDefined();
+
+    // 3. Create an Agent with PRIVATE visibility via the modal
+    fireEvent.click(screen.getByTestId("open-create-agent-drawer-btn"));
     fireEvent.change(screen.getByTestId("agent-visibility-select"), {
       target: { value: "PRIVATE" },
     });
@@ -364,14 +421,14 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     const badge = screen.getByTestId("agent-visibility-badge-agent-perso-1");
     expect(badge.textContent).toContain("🔒 Privé");
 
-    // 3. Toggle visibility PRIVATE -> TEAM in 1 click and verify auto-save badge '✓ Enregistré'
+    // 4. Toggle visibility PRIVATE -> TEAM in 1 click and verify auto-save badge '✓ Enregistré'
     fireEvent.click(badge);
     expect(badge.textContent).toContain("👥 Équipe");
     expect(screen.getByTestId("agent-autosaved-badge-agent-perso-1").textContent).toContain(
       "✓ Enregistré",
     );
 
-    // 4. Change thinking level inline and verify FormattedMarkdownContent is rendered
+    // 5. Change thinking level inline and verify FormattedMarkdownContent is rendered
     fireEvent.change(screen.getByTestId("agent-card-thinking-select-agent-perso-1"), {
       target: { value: "complex" },
     });
@@ -381,7 +438,7 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
         .querySelector('[data-testid="formatted-markdown-content"]'),
     ).not.toBeNull();
 
-    // 5. Click '💬 Utiliser dans Mon Assistant' on Agent and Skill
+    // 6. Click '💬 Utiliser dans Mon Assistant' on Agent and Skill
     fireEvent.click(screen.getByTestId("use-agent-in-assistant-btn-agent-perso-1"));
     expect(usedInAssistant).toContain("@perso-1");
 
@@ -389,6 +446,7 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     expect(
       screen.getByTestId("skill-visibility-badge-skill-revue-architecture").textContent,
     ).toContain("📦 Pack Métier (orcia-pack-sdlc)");
+    expect(screen.queryByTestId("delete-skill-btn-skill-revue-architecture")).toBeNull();
     fireEvent.click(
       screen.getByTestId("use-skill-in-assistant-btn-skill-revue-architecture"),
     );

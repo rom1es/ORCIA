@@ -95,7 +95,7 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
       "Créez vos compétences réutilisables, rattachez-les en 1 clic à vos agents spécialisés et exécutez-les immédiatement sur un cas concret.",
     tabAgents: "🤖 Mes Agents",
     tabSkills: "🛠️ Compétences (Skills)",
-    tabConnections: "🔌 Connexions externes",
+    tabConnections: "🔌 Serveurs d'outils & MCP",
     emptyAgentsTitle: "Aucun agent configuré",
     emptyAgentsDescription:
       "Créez votre premier agent ci-dessus pour lui confier des compétences et l'exécuter en 1 clic.",
@@ -227,7 +227,7 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
       "Create reusable business skills, attach them in 1 click to your specialized agents, and execute them immediately on concrete tasks.",
     tabAgents: "🤖 My Agents",
     tabSkills: "🛠️ Skills",
-    tabConnections: "🔌 External Connections",
+    tabConnections: "🔌 Tool Servers & MCP",
     emptyAgentsTitle: "No agent configured yet",
     emptyAgentsDescription:
       "Create your first agent above to attach skills and run it in 1 click.",

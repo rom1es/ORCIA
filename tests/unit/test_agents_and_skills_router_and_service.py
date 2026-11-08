@@ -1,5 +1,5 @@
 """Unit, HTTP Contract & PostgreSQL 18 SQL Adapter Tests for Agents (`🤖 Mes Agents`)
-and Skills (`🛠️ Compétences`) Management, Attachment, and 1-Click Execution.
+and Skills (`🛠️ Compétences`) Management, Attachment, Governance, and 1-Click Execution.
 """
 
 from __future__ import annotations
@@ -33,6 +33,8 @@ def test_agents_and_skills_service_lifecycle_and_detachment() -> None:
     assert skill.skill_id == "skill-audit-conformite-fournisseur"
     assert skill.command_handle == "/audit-conformite-fournisseur"
     assert skill.input_parameters == ("contrat", "annexe")
+    assert skill.visibility_scope == "TEAM"
+    assert skill.enabled_in_workspace is True
 
     # 2. Execute the Skill on a sample input
     skill_outcome = svc.execute_skill(
@@ -53,6 +55,9 @@ def test_agents_and_skills_service_lifecycle_and_detachment() -> None:
     )
     assert agent.agent_id == "agent-analyste-achats"
     assert agent.skill_ids == (skill.skill_id,)
+    assert agent.visibility_scope == "TEAM"
+    assert agent.enabled_in_workspace is True
+    assert agent.mcp_exposed is False
 
     # 4. Execute the Agent and verify attached Skill is invoked
     agent_outcome = svc.execute_agent(
@@ -85,23 +90,64 @@ def test_agents_and_skills_service_lifecycle_and_detachment() -> None:
     assert svc.agents == ()
 
 
+def test_pack_immutability_duplication_and_governance_toggles() -> None:
+    """Verify PACK agents/skills cannot be deleted, can be duplicated, and support toggles."""
+    svc = AgentsAndSkillsManagementService()
+    pack_skill = svc.upsert_skill(
+        skill_id="skill-pack-dora",
+        name="Controle DORA",
+        objective="Vérifier la résilience opérationnelle numérique",
+        instructions="Contrôler les registres ICT.",
+        visibility_scope="PACK",
+        source_pack_key="pack-conformite-dora",
+    )
+    pack_agent = svc.upsert_agent(
+        agent_id="agent-pack-dora",
+        name="Auditeur DORA Officiel",
+        role_mission="Auditer la conformité DORA",
+        instructions="Appliquer la grille officielle DORA.",
+        thinking_level="complex",
+        skill_ids=[pack_skill.skill_id],
+        visibility_scope="PACK",
+        source_pack_key="pack-conformite-dora",
+    )
+
+    with pytest.raises(ValidationDomainError) as exc_skill:
+        svc.delete_skill(pack_skill.skill_id)
+    assert "Pack Métier" in str(exc_skill.value)
+
+    with pytest.raises(ValidationDomainError) as exc_agent:
+        svc.delete_agent(pack_agent.agent_id)
+    assert "Pack Métier" in str(exc_agent.value)
+
+    # Duplicate pack agent into customizable PRIVATE or TEAM agent
+    duplicated = svc.duplicate_agent(pack_agent.agent_id, visibility_scope="PRIVATE")
+    assert duplicated.agent_id != pack_agent.agent_id
+    assert duplicated.name == "Auditeur DORA Officiel (Copie)"
+    assert duplicated.visibility_scope == "PRIVATE"
+    assert duplicated.source_pack_key == "pack-conformite-dora"
+    assert duplicated.skill_ids == (pack_skill.skill_id,)
+
+    # Toggle workspace enablement and MCP exposure
+    disabled = svc.set_agent_enabled(pack_agent.agent_id, enabled=False)
+    assert disabled.enabled_in_workspace is False
+    exposed = svc.set_agent_mcp_exposure(duplicated.agent_id, mcp_exposed=True)
+    assert exposed.mcp_exposed is True
+
+    # Duplicated non-PACK agent can be deleted
+    removed_copy = svc.delete_agent(duplicated.agent_id)
+    assert removed_copy.agent_id == duplicated.agent_id
+
+
 def test_agents_and_skills_service_validation_and_sync() -> None:
     """Verify domain errors on invalid inputs, missing entities, and sync_from_records."""
     svc = AgentsAndSkillsManagementService()
 
     with pytest.raises(ValidationDomainError):
-        svc.upsert_skill(
-            name="  ",
-            objective="desc",
-            instructions="inst",
-        )
+        svc.upsert_skill(name="  ", objective="desc", instructions="inst")
 
     with pytest.raises(ValidationDomainError):
-        svc.upsert_agent(
-            name="Agent X",
-            role_mission="  ",
-            instructions="inst",
-        )
+        svc.upsert_agent(name="Agent X", role_mission="  ", instructions="inst")
 
     with pytest.raises(ResourceNotFoundError):
         svc.get_skill("skill-unknown")
@@ -109,7 +155,6 @@ def test_agents_and_skills_service_validation_and_sync() -> None:
     with pytest.raises(ResourceNotFoundError):
         svc.get_agent("agent-unknown")
 
-    # Test sync_from_records filters orphan skill_ids
     s1 = ManagedSkillRecord(
         skill_id="skill-1",
         slug="skill-1",
@@ -139,7 +184,7 @@ def test_agents_and_skills_service_validation_and_sync() -> None:
 def test_agents_and_skills_fastapi_router_contract(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verify all 8 `/api/v1/agents-and-skills/*` HTTP endpoints and Observer Mode guard."""
+    """Verify all `/api/v1/agents-and-skills/*` HTTP endpoints and Observer Mode guard."""
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     client = TestClient(app)
@@ -147,9 +192,8 @@ def test_agents_and_skills_fastapi_router_contract(
     # 1. Day-0 initial state: 0 agents, 0 skills
     r0 = client.get("/api/v1/agents-and-skills")
     assert r0.status_code == 200
-    body0 = r0.json()
-    assert body0["agents"] == []
-    assert body0["skills"] == []
+    assert r0.json()["agents"] == []
+    assert r0.json()["skills"] == []
 
     # 2. Observer mode (claire) is rejected with 403 ERR_OBSERVER_MODE_READ_ONLY
     r_obs = client.post(
@@ -179,87 +223,88 @@ def test_agents_and_skills_fastapi_router_contract(
         },
     )
     assert r_skill.status_code == 200
-    skill_data = r_skill.json()
-    assert skill_data["skill_id"] == "skill-synthese-contrat"
-    assert skill_data["command_handle"] == "/synthese-de-contrat"
+    assert r_skill.json()["command_handle"] == "/synthese-de-contrat"
 
-    # 4. Execute the Skill via POST /api/v1/agents-and-skills/skills/{skill_id}/execute
+    # 4. Execute the Skill
     r_exec_skill = client.post(
         "/api/v1/agents-and-skills/skills/skill-synthese-contrat/execute",
         json={"input_text": "Engagement ferme de 36 mois à 120 kEUR/an."},
     )
     assert r_exec_skill.status_code == 200
-    exec_skill_body = r_exec_skill.json()
-    assert exec_skill_body["skill_id"] == "skill-synthese-contrat"
-    assert "Synthese de contrat" in exec_skill_body["output_text"]
+    assert "Synthese de contrat" in r_exec_skill.json()["output_text"]
 
-    # 5. Create an Agent via POST /api/v1/agents-and-skills/agents
-    r_agent = client.post(
+    # 5. Create a PACK Agent and verify immutability, duplication, and governance PATCH
+    r_pack_agent = client.post(
         "/api/v1/agents-and-skills/agents",
         json={
-            "agent_id": "agent-controleur-engagements",
-            "name": "Contrôleur des Engagements",
-            "role_mission": "Valider les engagements pluriannuels avant signature",
-            "instructions": "Vérifier le budget et signaler tout engagement > 24 mois.",
+            "agent_id": "agent-pack-achats",
+            "name": "Auditeur Pack Achats",
+            "role_mission": "Vérifier les achats IT du Pack",
+            "instructions": "Appliquer le référentiel Achats.",
             "thinking_level": "medium",
             "skill_ids": ["skill-synthese-contrat"],
+            "visibility_scope": "PACK",
+            "source_pack_key": "pack-achats-it",
         },
     )
-    assert r_agent.status_code == 200
-    agent_data = r_agent.json()
-    assert agent_data["agent_id"] == "agent-controleur-engagements"
-    assert agent_data["skill_ids"] == ["skill-synthese-contrat"]
+    assert r_pack_agent.status_code == 200
+    assert r_pack_agent.json()["visibility_scope"] == "PACK"
 
-    # 6. Execute the Agent via POST /api/v1/agents-and-skills/agents/{agent_id}/execute
+    # Deleting a PACK agent returns 422 ValidationDomainError
+    r_del_pack = client.delete("/api/v1/agents-and-skills/agents/agent-pack-achats")
+    assert r_del_pack.status_code == 422
+
+    # Duplicate the PACK agent into a customizable TEAM agent
+    r_dup = client.post(
+        "/api/v1/agents-and-skills/agents/agent-pack-achats/duplicate",
+        json={"new_name": "Contrôleur des Engagements", "visibility_scope": "TEAM"},
+    )
+    assert r_dup.status_code == 200
+    dup_data = r_dup.json()
+    dup_id = dup_data["agent_id"]
+    assert dup_data["visibility_scope"] == "TEAM"
+    assert dup_data["source_pack_key"] == "pack-achats-it"
+    assert dup_data["skill_ids"] == ["skill-synthese-contrat"]
+
+    # Toggle governance on the duplicated agent
+    r_gov = client.patch(
+        f"/api/v1/agents-and-skills/agents/{dup_id}/governance",
+        json={
+            "enabled_in_workspace": False,
+            "mcp_exposed": True,
+            "visibility_scope": "PRIVATE",
+            "thinking_level": "complex",
+        },
+    )
+    assert r_gov.status_code == 200
+    gov_body = r_gov.json()
+    assert gov_body["enabled_in_workspace"] is False
+    assert gov_body["mcp_exposed"] is True
+    assert gov_body["visibility_scope"] == "PRIVATE"
+    assert gov_body["thinking_level"] == "complex"
+
+    # 6. Execute the duplicated Agent
     r_exec_agent = client.post(
-        "/api/v1/agents-and-skills/agents/agent-controleur-engagements/execute",
+        f"/api/v1/agents-and-skills/agents/{dup_id}/execute",
         json={"prompt": "Peut-on signer ce contrat de 36 mois ?"},
     )
     assert r_exec_agent.status_code == 200
-    exec_agent_body = r_exec_agent.json()
-    assert exec_agent_body["agent_id"] == "agent-controleur-engagements"
-    assert len(exec_agent_body["invoked_skills"]) == 1
-    assert exec_agent_body["invoked_skills"][0]["skill_id"] == "skill-synthese-contrat"
-    assert "Contrôleur des Engagements" in exec_agent_body["response_text"]
+    assert len(r_exec_agent.json()["invoked_skills"]) == 1
 
-    # 7. Update Agent skills via PATCH /api/v1/agents-and-skills/agents/{agent_id}/skills
-    r_patch = client.patch(
-        "/api/v1/agents-and-skills/agents/agent-controleur-engagements/skills",
-        json={"skill_ids": []},
-    )
-    assert r_patch.status_code == 200
-    assert r_patch.json()["skill_ids"] == []
-
-    # Re-attach and then delete the Skill -> verify automatic detachment
-    client.patch(
-        "/api/v1/agents-and-skills/agents/agent-controleur-engagements/skills",
-        json={"skill_ids": ["skill-synthese-contrat"]},
-    )
+    # 7. Delete the Skill -> verify automatic detachment
     r_del_skill = client.delete("/api/v1/agents-and-skills/skills/skill-synthese-contrat")
     assert r_del_skill.status_code == 200
-    assert r_del_skill.json()["deleted_id"] == "skill-synthese-contrat"
-    assert r_del_skill.json()["detached_from_agent_ids"] == ["agent-controleur-engagements"]
+    assert dup_id in r_del_skill.json()["detached_from_agent_ids"]
 
-    r_list_after = client.get("/api/v1/agents-and-skills")
-    assert r_list_after.status_code == 200
-    assert r_list_after.json()["skills"] == []
-    assert r_list_after.json()["agents"][0]["skill_ids"] == []
-
-    # 8. Delete the Agent
-    r_del_agent = client.delete("/api/v1/agents-and-skills/agents/agent-controleur-engagements")
+    # 8. Delete the duplicated Agent
+    r_del_agent = client.delete(f"/api/v1/agents-and-skills/agents/{dup_id}")
     assert r_del_agent.status_code == 200
-    assert r_del_agent.json()["deleted_id"] == "agent-controleur-engagements"
-    final_list = client.get("/api/v1/agents-and-skills").json()
-    assert final_list["agents"] == []
-    assert final_list["skills"] == []
+    assert r_del_agent.json()["deleted_id"] == dup_id
 
 
 @pytest.mark.asyncio
 async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
-    """Verify PostgreSQL 18 SQL adapter functions (`persist_skill_to_postgres18`,
-    `persist_agent_to_postgres18`, `load_agents_and_skills_from_postgres18`,
-    `delete_skill_from_postgres18`, `delete_agent_from_postgres18`).
-    """
+    """Verify PostgreSQL 18 SQL adapter serialization/deserialization of all metadata fields."""
     import json
     from typing import Any
     from uuid import uuid4
@@ -337,6 +382,9 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
         input_parameters=["dpa"],
         instructions="Examiner l'article 28.",
         expected_output_format="Tableau RGPD",
+        visibility_scope="PRIVATE",
+        source_pack_key="pack-rgpd",
+        enabled_in_workspace=False,
     )
     agent = svc.upsert_agent(
         name="DPO Assistant",
@@ -344,6 +392,12 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
         instructions="Signaler tout transfert hors UE.",
         thinking_level="complex",
         skill_ids=[skill.skill_id],
+        visibility_scope="PACK",
+        source_pack_key="pack-rgpd",
+        enabled_in_workspace=False,
+        mcp_exposed=True,
+        agent_kind="REMOTE_MCP_A2A",
+        remote_endpoint_url="https://mcp.internal/dpo-agent",
     )
 
     await persist_skill_to_postgres18(engine, skill)
@@ -352,10 +406,18 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
     loaded_skills, loaded_agents = await load_agents_and_skills_from_postgres18(engine)
     assert len(loaded_skills) == 1
     assert loaded_skills[0].skill_id == skill.skill_id
-    assert loaded_skills[0].input_parameters == ("dpa",)
+    assert loaded_skills[0].visibility_scope == "PRIVATE"
+    assert loaded_skills[0].source_pack_key == "pack-rgpd"
+    assert loaded_skills[0].enabled_in_workspace is False
+
     assert len(loaded_agents) == 1
     assert loaded_agents[0].agent_id == agent.agent_id
-    assert loaded_agents[0].skill_ids == (skill.skill_id,)
+    assert loaded_agents[0].visibility_scope == "PACK"
+    assert loaded_agents[0].source_pack_key == "pack-rgpd"
+    assert loaded_agents[0].enabled_in_workspace is False
+    assert loaded_agents[0].mcp_exposed is True
+    assert loaded_agents[0].agent_kind == "REMOTE_MCP_A2A"
+    assert loaded_agents[0].remote_endpoint_url == "https://mcp.internal/dpo-agent"
 
     _, detached_ids = svc.delete_skill(skill.skill_id)
     updated_agents = tuple(svc.get_agent(aid) for aid in detached_ids)

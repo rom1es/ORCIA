@@ -3,13 +3,16 @@ import {
   AgentCreateFormDrawer,
   AgentsAndSkillsHeaderAndToolbar,
 } from "./AgentAndSkillCreateForms";
+import { AgentDetailAndSandboxModal } from "./AgentDetailAndSandboxModal";
 import { AgentStudioCardItem } from "./AgentStudioCardItem";
 import {
   matchesAgentQueryAndScope,
   matchesSkillQueryAndScope,
   SkillCreateFormDrawer,
 } from "./SkillCreateFormDrawer";
+import { SkillDetailAndSandboxModal } from "./SkillDetailAndSandboxModal";
 import { SkillStudioCardItem } from "./SkillStudioCardItem";
+import { WorkspaceAssistantPinnedCard } from "./WorkspaceAssistantPinnedCard";
 
 export type AgentsAndSkillsSubTab = "AGENTS" | "SKILLS" | "CONNECTIONS";
 export type UiAgentThinkingLevel = "simple" | "medium" | "complex" | "auto";
@@ -43,6 +46,8 @@ export interface UiManagedAgentItem {
   readonly lastInvokedSkills?: readonly string[];
   readonly visibilityScope?: UiAgentSkillVisibilityScope;
   readonly sourcePackKey?: string | null;
+  readonly enabledOnWorkspace?: boolean;
+  readonly mcpExposed?: boolean;
 }
 
 export interface AgentsAndSkillsManagerLabels {
@@ -94,61 +99,45 @@ export interface AgentsAndSkillsManagerViewProps {
   readonly skills: readonly UiManagedSkillItem[];
   readonly labels: AgentsAndSkillsManagerLabels;
   readonly initialTab?: AgentsAndSkillsSubTab;
-  readonly onCreateAgent: (input: {
-    name: string;
-    roleMission: string;
-    instructions: string;
-    thinkingLevel: UiAgentThinkingLevel;
-    skillIds: string[];
-    visibilityScope?: "PRIVATE" | "TEAM";
-  }) => void;
+  readonly onCreateAgent: (input: { name: string; roleMission: string; instructions: string; thinkingLevel: UiAgentThinkingLevel; skillIds: string[]; visibilityScope?: "PRIVATE" | "TEAM" }) => void;
   readonly onToggleAgentSkill: (agentId: string, skillId: string, nextChecked: boolean) => void;
   readonly onExecuteAgent: (agentId: string, prompt: string) => void;
   readonly onDeleteAgent: (agentId: string) => void;
+  readonly onDuplicateAgent?: (agent: UiManagedAgentItem) => void;
+  readonly onToggleAgentEnabled?: (agentId: string, nextEnabled: boolean) => void;
+  readonly onToggleAgentMcpExposure?: (agentId: string, nextExposed: boolean) => void;
+  readonly onUpdateAgentDetails?: (agentId: string, patch: { name: string; roleMission: string; instructions: string; thinkingLevel: UiAgentThinkingLevel; visibilityScope?: UiAgentSkillVisibilityScope; mcpExposed?: boolean }) => void;
   readonly onUpdateAgentThinkingLevel?: (agentId: string, nextThinkingLevel: UiAgentThinkingLevel) => void;
   readonly onUpdateAgentVisibility?: (agentId: string, nextVisibility: UiAgentSkillVisibilityScope) => void;
   readonly onUseAgentInAssistant?: (agent: UiManagedAgentItem) => void;
-  readonly onCreateSkill: (input: {
-    name: string;
-    objective: string;
-    inputParameters: string[];
-    instructions: string;
-    expectedOutputFormat: string;
-    visibilityScope?: "PRIVATE" | "TEAM";
-  }) => void;
+  readonly onCreateSkill: (input: { name: string; objective: string; inputParameters: string[]; instructions: string; expectedOutputFormat: string; visibilityScope?: "PRIVATE" | "TEAM" }) => void;
   readonly onExecuteSkill: (skillId: string, inputText: string) => void;
   readonly onDeleteSkill: (skillId: string) => void;
   readonly onUpdateSkillVisibility?: (skillId: string, nextVisibility: UiAgentSkillVisibilityScope) => void;
   readonly onUseSkillInAssistant?: (skill: UiManagedSkillItem) => void;
   readonly onLoadPackTemplates?: () => void;
+  readonly onOpenMcpTestBench?: () => void;
+  readonly pinnedAssistantMcpExposed?: boolean;
+  readonly onTogglePinnedAssistantMcp?: (nextExposed: boolean) => void;
+  readonly onOpenAssistantSettings?: () => void;
+  readonly onOpenAssistant?: () => void;
   readonly connectionsContent?: React.ReactNode;
 }
 
 export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProps> = ({
-  agents,
-  skills,
-  labels,
-  initialTab = "AGENTS",
-  onCreateAgent,
-  onToggleAgentSkill,
-  onExecuteAgent,
-  onDeleteAgent,
-  onUpdateAgentThinkingLevel,
-  onUpdateAgentVisibility,
-  onUseAgentInAssistant,
-  onCreateSkill,
-  onExecuteSkill,
-  onDeleteSkill,
-  onUpdateSkillVisibility,
-  onUseSkillInAssistant,
-  onLoadPackTemplates,
-  connectionsContent,
+  agents, skills, labels, initialTab = "AGENTS", onCreateAgent, onToggleAgentSkill, onExecuteAgent, onDeleteAgent,
+  onDuplicateAgent, onToggleAgentEnabled, onToggleAgentMcpExposure, onUpdateAgentDetails, onUpdateAgentThinkingLevel,
+  onUpdateAgentVisibility, onUseAgentInAssistant, onCreateSkill, onExecuteSkill, onDeleteSkill, onUpdateSkillVisibility,
+  onUseSkillInAssistant, onLoadPackTemplates, onOpenMcpTestBench, pinnedAssistantMcpExposed = false,
+  onTogglePinnedAssistantMcp, onOpenAssistantSettings, onOpenAssistant, connectionsContent,
 }) => {
   const [activeTab, setActiveTab] = useState<AgentsAndSkillsSubTab>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState<UiAgentSkillVisibilityFilter>("ALL");
-  const [isCreateAgentOpen, setIsCreateAgentOpen] = useState(true);
-  const [isCreateSkillOpen, setIsCreateSkillOpen] = useState(true);
+  const [isCreateAgentOpen, setIsCreateAgentOpen] = useState(false);
+  const [isCreateSkillOpen, setIsCreateSkillOpen] = useState(false);
+  const [activeDetailAgentId, setActiveDetailAgentId] = useState<string | null>(null);
+  const [activeDetailSkillId, setActiveDetailSkillId] = useState<string | null>(null);
 
   const [agentName, setAgentName] = useState("");
   const [agentRole, setAgentRole] = useState("");
@@ -169,6 +158,13 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
   const filteredAgents = agents.filter((ag) => matchesAgentQueryAndScope(ag, searchQuery, visibilityFilter));
   const filteredSkills = skills.filter((sk) => matchesSkillQueryAndScope(sk, searchQuery, visibilityFilter));
 
+  const activeAgentsCount = agents.filter((a) => a.enabledOnWorkspace !== false).length;
+  const packOrTeamAgentsCount = agents.filter((a) => (a.visibilityScope ?? "TEAM") === "PACK" || (a.visibilityScope ?? "TEAM") === "TEAM").length;
+  const mcpExposedAgentsCount = agents.filter((a) => a.mcpExposed).length + (pinnedAssistantMcpExposed ? 1 : 0);
+
+  const activeDetailAgent = agents.find((a) => a.agentId === activeDetailAgentId) ?? null;
+  const activeDetailSkill = skills.find((s) => s.skillId === activeDetailSkillId) ?? null;
+
   const handleSubmitAgent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!agentName.trim() || !agentRole.trim() || !agentInstructions.trim()) return;
@@ -184,6 +180,7 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
     setAgentRole("");
     setAgentInstructions("");
     setSelectedSkillIds([]);
+    setIsCreateAgentOpen(false);
   };
 
   const handleSubmitSkill = (e: React.FormEvent) => {
@@ -203,6 +200,7 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
     setSkillParamsRaw("");
     setSkillInstructions("");
     setSkillOutputFormat("");
+    setIsCreateSkillOpen(false);
   };
 
   return (
@@ -212,43 +210,28 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
       className="space-y-4 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-4 text-[var(--orcia-text-primary)]"
     >
       <AgentsAndSkillsHeaderAndToolbar
-        labels={labels}
-        activeTab={activeTab}
-        agentsCount={agents.length}
-        skillsCount={skills.length}
-        searchQuery={searchQuery}
-        visibilityFilter={visibilityFilter}
-        onSelectTab={setActiveTab}
-        onToggleCreateAgent={() => setIsCreateAgentOpen((prev) => !prev)}
-        onToggleCreateSkill={() => setIsCreateSkillOpen((prev) => !prev)}
-        onChangeSearchQuery={setSearchQuery}
-        onChangeVisibilityFilter={setVisibilityFilter}
-        onLoadPackTemplates={onLoadPackTemplates}
+        labels={labels} activeTab={activeTab} agentsCount={agents.length} activeAgentsCount={activeAgentsCount}
+        skillsCount={skills.length} packOrTeamAgentsCount={packOrTeamAgentsCount} mcpExposedAgentsCount={mcpExposedAgentsCount}
+        searchQuery={searchQuery} visibilityFilter={visibilityFilter} onSelectTab={setActiveTab}
+        onToggleCreateAgent={() => setIsCreateAgentOpen((prev) => !prev)} onToggleCreateSkill={() => setIsCreateSkillOpen((prev) => !prev)}
+        onOpenMcpTestBench={onOpenMcpTestBench} onChangeSearchQuery={setSearchQuery}
+        onChangeVisibilityFilter={setVisibilityFilter} onLoadPackTemplates={onLoadPackTemplates}
       />
 
       {activeTab === "AGENTS" && (
         <div data-testid="agents-subview-panel" className="space-y-4">
-          <AgentCreateFormDrawer
-            isOpen={isCreateAgentOpen}
-            labels={labels}
-            skills={skills}
-            agentName={agentName}
-            agentRole={agentRole}
-            agentInstructions={agentInstructions}
-            agentThinking={agentThinking}
-            agentVisibility={agentVisibility}
-            selectedSkillIds={selectedSkillIds}
-            onChangeName={setAgentName}
-            onChangeRole={setAgentRole}
-            onChangeInstructions={setAgentInstructions}
-            onChangeThinking={setAgentThinking}
-            onChangeVisibility={setAgentVisibility}
-            onToggleSkillId={(skillId, checked) =>
-              setSelectedSkillIds((prev) => (checked ? [...prev, skillId] : prev.filter((id) => id !== skillId)))
-            }
-            onSubmit={handleSubmitAgent}
+          <WorkspaceAssistantPinnedCard
+            mcpExposed={pinnedAssistantMcpExposed} onToggleMcpExposed={onTogglePinnedAssistantMcp}
+            onOpenSettings={onOpenAssistantSettings} onOpenAssistant={onOpenAssistant}
           />
-
+          <AgentCreateFormDrawer
+            isOpen={isCreateAgentOpen} labels={labels} skills={skills} agentName={agentName} agentRole={agentRole}
+            agentInstructions={agentInstructions} agentThinking={agentThinking} agentVisibility={agentVisibility}
+            selectedSkillIds={selectedSkillIds} onChangeName={setAgentName} onChangeRole={setAgentRole}
+            onChangeInstructions={setAgentInstructions} onChangeThinking={setAgentThinking} onChangeVisibility={setAgentVisibility}
+            onToggleSkillId={(skillId, checked) => setSelectedSkillIds((prev) => (checked ? [...prev, skillId] : prev.filter((id) => id !== skillId)))}
+            onSubmit={handleSubmitAgent} onClose={() => setIsCreateAgentOpen(false)}
+          />
           {filteredAgents.length === 0 ? (
             <div data-testid="agents-empty-state" className="rounded border border-dashed border-[var(--orcia-border-subtle)] p-4 text-center text-xs text-[var(--orcia-text-secondary)]">
               <strong className="block text-[var(--orcia-text-primary)]">{labels.emptyAgentsTitle}</strong>
@@ -258,22 +241,24 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
             <div className="space-y-3">
               {filteredAgents.map((ag) => (
                 <AgentStudioCardItem
-                  key={ag.agentId}
-                  agent={ag}
-                  skills={skills}
-                  labels={labels}
-                  testInputValue={agentTestInputs[ag.agentId] ?? ""}
-                  onChangeTestInput={(agentId, val) => setAgentTestInputs((p) => ({ ...p, [agentId]: val }))}
-                  onToggleAgentSkill={onToggleAgentSkill}
-                  onExecuteAgent={onExecuteAgent}
-                  onDeleteAgent={onDeleteAgent}
+                  key={ag.agentId} agent={ag} skills={skills} labels={labels} onDeleteAgent={onDeleteAgent}
+                  onDuplicateAgent={onDuplicateAgent} onToggleAgentEnabled={onToggleAgentEnabled}
+                  onOpenDetailModal={(item) => setActiveDetailAgentId(item.agentId)}
                   onUpdateAgentThinkingLevel={onUpdateAgentThinkingLevel}
-                  onUpdateAgentVisibility={onUpdateAgentVisibility}
-                  onUseAgentInAssistant={onUseAgentInAssistant}
+                  onUpdateAgentVisibility={onUpdateAgentVisibility} onUseAgentInAssistant={onUseAgentInAssistant}
                 />
               ))}
             </div>
           )}
+          <AgentDetailAndSandboxModal
+            agent={activeDetailAgent} skills={skills} labels={labels}
+            testInputValue={activeDetailAgent ? (agentTestInputs[activeDetailAgent.agentId] ?? "") : ""}
+            onChangeTestInput={(agentId, val) => setAgentTestInputs((p) => ({ ...p, [agentId]: val }))}
+            onToggleAgentSkill={onToggleAgentSkill} onExecuteAgent={onExecuteAgent}
+            onUpdateAgentThinkingLevel={onUpdateAgentThinkingLevel} onUpdateAgentVisibility={onUpdateAgentVisibility}
+            onToggleAgentMcpExposure={onToggleAgentMcpExposure} onUpdateAgentDetails={onUpdateAgentDetails}
+            onClose={() => setActiveDetailAgentId(null)}
+          />
         </div>
       )}
 
@@ -283,23 +268,13 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
             {labels.skillUsageBanner}
           </div>
           <SkillCreateFormDrawer
-            isOpen={isCreateSkillOpen}
-            labels={labels}
-            skillName={skillName}
-            skillObjective={skillObjective}
-            skillParamsRaw={skillParamsRaw}
-            skillInstructions={skillInstructions}
-            skillOutputFormat={skillOutputFormat}
-            skillVisibility={skillVisibility}
-            onChangeName={setSkillName}
-            onChangeObjective={setSkillObjective}
-            onChangeParamsRaw={setSkillParamsRaw}
-            onChangeInstructions={setSkillInstructions}
-            onChangeOutputFormat={setSkillOutputFormat}
-            onChangeVisibility={setSkillVisibility}
-            onSubmit={handleSubmitSkill}
+            isOpen={isCreateSkillOpen} labels={labels} skillName={skillName} skillObjective={skillObjective}
+            skillParamsRaw={skillParamsRaw} skillInstructions={skillInstructions} skillOutputFormat={skillOutputFormat}
+            skillVisibility={skillVisibility} onChangeName={setSkillName} onChangeObjective={setSkillObjective}
+            onChangeParamsRaw={setSkillParamsRaw} onChangeInstructions={setSkillInstructions}
+            onChangeOutputFormat={setSkillOutputFormat} onChangeVisibility={setSkillVisibility}
+            onSubmit={handleSubmitSkill} onClose={() => setIsCreateSkillOpen(false)}
           />
-
           {filteredSkills.length === 0 ? (
             <div data-testid="skills-empty-state" className="rounded border border-dashed border-[var(--orcia-border-subtle)] p-4 text-center text-xs text-[var(--orcia-text-secondary)]">
               <strong className="block text-[var(--orcia-text-primary)]">{labels.emptySkillsTitle}</strong>
@@ -309,19 +284,20 @@ export const AgentsAndSkillsManagerView: React.FC<AgentsAndSkillsManagerViewProp
             <div className="space-y-3">
               {filteredSkills.map((sk) => (
                 <SkillStudioCardItem
-                  key={sk.skillId}
-                  skill={sk}
-                  labels={labels}
-                  testInputValue={skillTestInputs[sk.skillId] ?? ""}
-                  onChangeTestInput={(skillId, val) => setSkillTestInputs((p) => ({ ...p, [skillId]: val }))}
-                  onExecuteSkill={onExecuteSkill}
-                  onDeleteSkill={onDeleteSkill}
-                  onUpdateSkillVisibility={onUpdateSkillVisibility}
-                  onUseSkillInAssistant={onUseSkillInAssistant}
+                  key={sk.skillId} skill={sk} labels={labels} onDeleteSkill={onDeleteSkill}
+                  onOpenDetailModal={(item) => setActiveDetailSkillId(item.skillId)}
+                  onUpdateSkillVisibility={onUpdateSkillVisibility} onUseSkillInAssistant={onUseSkillInAssistant}
                 />
               ))}
             </div>
           )}
+          <SkillDetailAndSandboxModal
+            skill={activeDetailSkill} labels={labels}
+            testInputValue={activeDetailSkill ? (skillTestInputs[activeDetailSkill.skillId] ?? "") : ""}
+            onChangeTestInput={(skillId, val) => setSkillTestInputs((p) => ({ ...p, [skillId]: val }))}
+            onExecuteSkill={onExecuteSkill} onUpdateSkillVisibility={onUpdateSkillVisibility}
+            onClose={() => setActiveDetailSkillId(null)}
+          />
         </div>
       )}
 

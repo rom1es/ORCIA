@@ -6,6 +6,7 @@
 
 - **Date** : YYYY-MM-DD
 - **Story / Clé Sprint** : `{story-key}` ou `{YYYY-MM-DD}-{descriptif-court}` (`Epic N` / `Ajustement Transverse`)
+- **Capacité(s)** : `CAP-xxx` (existant à mettre à jour / nouveau à créer dans `docs/product/capabilities.yaml`) ou `none (hygiène/NFR/UX)` — classification : `feature | hygiène | ux | doc` (voir `AGENTS.md` §5)
 - **Auteur / Contexte** : [Contexte métier, objectif principal, problème résolu, exigences `FR-*`, `NFR-*`, `AD-*`, `UX-DR*` couvertes]
 - **Commits associés** : `hash1`, `hash2`
 

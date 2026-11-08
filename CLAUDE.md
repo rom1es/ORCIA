@@ -63,3 +63,6 @@ This project is indexed by GitNexus as **ORCIA** (541 symbols, 699 relationships
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Registre des capacités (obligatoire)
+Consulter puis mettre à jour `docs/product/capabilities.yaml` pour toute évolution (voir `AGENTS.md` §5) ; renseigner `Capacité(s)` dans le rapport Tech Lead ; `pnpm site:check` doit passer.

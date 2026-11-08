@@ -27,9 +27,10 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 - Architecture Spine (19 locked ADs & stack versions): `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md`
 - Detailed Architecture & Core ERD (18 tables including `workspace_datasources` & `domain_events_outbox`): `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md`
 - Stack Review, Modularity Analysis & Sprint Change Proposal: `docs/planning-artifacts/research/stack-review-2026-10-27.md`, `docs/planning-artifacts/research/modularity-analysis-2026-10-27.md`, and `docs/planning-artifacts/sprint-change-proposal-2026-10-27.md`
-- PRD (33 FRs, 13 NFRs, 12 UJs): `docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md`
+- PRD v2.0 (36 FRs, 13 NFRs, 12 UJs): `docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md`
 - UX Design Tokens & Experience (Direction C, 16 UX-DRs): `docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md` and `EXPERIENCE.md`
 - Epics & 33 User Stories (`status: final`, 7 Epics): `docs/planning-artifacts/epics.md`
+- Capabilities Registry (source de vérité de ce qui est livré, contrôlé par `pnpm site:check`): `docs/product/capabilities.yaml`
 - Sprint Tracking File: `docs/implementation-artifacts/sprint-status.yaml`
 - Tech Lead Report Template: `docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`
 - Tech Lead Reports Directory: `docs/implementation-artifacts/tech-lead-reports/`
@@ -110,6 +111,16 @@ Pour garantir une exécution `100 %` non bloquante, agnostique vis-à-vis des fo
 4. **Règle 4 — Zéro `except Exception:` Muet sans Log Structuré & Garde-Fou SSRF Obligatoire** :
    - Aucun bloc `except Exception:` dans `apps/api`, `apps/worker` ou `packages/orcia-core` ne peut avaler une erreur silencieusement (`pass` / `return None`) sans journaliser via `get_logger(...)` (`logger.warning` / `logger.error`) ou annoter explicitement un teardown bénin, ni retourner une latence factice codée en dur.
    - Toute URL d'endpoint externe configurée en base doit être validée par un garde-fou SSRF (`is_safe_llm_endpoint_url`) bloquant les IP de métadonnées Cloud link-local (`169.254.0.0/16`, `169.254.169.254`, `fe80::/10`, `metadata.google.internal`, `100.100.100.200`) tout en autorisant les domaines internes légitimes (`.local`, `.internal`).
+
+
+## 5. Registre des Capacités & Traçabilité PRD ↔ Epics ↔ Réalisé (OBLIGATOIRE — anti-dispersion)
+Source de vérité de « ce qui est en place » : [`docs/product/capabilities.yaml`](file:///home/romain/Documents/Projects/ORCIA/docs/product/capabilities.yaml) (une entrée `CAP-xxx` par capacité : `fr`, `fr_proposed`, `origin: epic|adhoc`, `origin_ref`, `status`, `surfaces`). Le PRD porte l'intention (FR), `epics.md` / `sprint-status.yaml` la planification, les rapports Tech Lead l'historique ; le registre les relie aux surfaces réelles.
+1. **Avant tout travail (Story, évolution, bugfix, ajustement)** : consulter `capabilities.yaml` (+ `FR Coverage Map` de `epics.md` et `sprint-status.yaml`) pour retrouver la capacité concernée, éviter tout doublon et repérer les chevauchements avec une Story `backlog`. Si le besoin recoupe une Story `backlog`, le dire et la rebaser plutôt que de livrer en parallèle.
+2. **Dans le rapport Tech Lead (Section 1)** : renseigner le champ `Capacité(s)` (`CAP-xxx` existant, nouveau `CAP-xxx` à créer, ou `none (hygiène/NFR/UX)`) et la classification `feature | hygiène | ux | doc`.
+3. **Après implémentation (avant `done` / fin de tâche)** : créer ou mettre à jour l'entrée `CAP-xxx` (statut, `origin_ref` = story-key ou slug du rapport, surfaces route/API/UI/migration, date de vérification) et exécuter `pnpm site:check` : toute route SPA ou routeur FastAPI sans capacité associée fait échouer le contrôle.
+4. **Toute évolution fonctionnelle hors Story** doit se rattacher soit à un FR du PRD, soit à un `FR-3x` proposé (`proposed_fr` du registre), soit à l'Epic 13 « Évolutions continues » (Story rétroactive `13.x`) ; jamais « orpheline ». Les travaux d'hygiène (purge, a11y, câblage, refactoring) se classent en NFR / garde-fous, pas en fonctionnalités.
+5. **Cohérence documentaire** : un FR ajouté au PRD est ajouté à la `FR Coverage Map` de `epics.md` ; un statut de Story qui change est reflété dans `sprint-status.yaml` ET dans `capabilities.yaml` ; le nombre de FR cité dans ce fichier doit rester égal à celui du PRD.
+6. **Statut `verification`** : `docs` (déduit des rapports/routeurs) ne vaut pas preuve ; passer à `runtime` uniquement après un parcours réel (test e2e / `pnpm db:reset`).
 
 ---
 

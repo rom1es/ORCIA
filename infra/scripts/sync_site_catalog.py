@@ -788,6 +788,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.check:
         errors: list[str] = []
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from capabilities_registry import run_registry_check
+
+        errors.extend(f"[capabilities.yaml] {e}" for e in run_registry_check())
         if not MANIFEST_TS_OUT.exists():
             errors.append(f"Missing generated manifest: {MANIFEST_TS_OUT}")
         elif MANIFEST_TS_OUT.read_text(encoding="utf-8") != expected_ts:

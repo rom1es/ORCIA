@@ -137,6 +137,15 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-29** : Epic 7 - Exécution Autonome sous Contrat, Déclencheurs Événementiels Idempotents (Webhooks, Puits de Logs, Cron), Boucle Fermée d'Auto-Remédiation (`UJ-12`) & Audit Post-Hoc
 - **FR-30** : Epic 3 & Epic 7 - Imbrication Fractale de Workflows (`Sub-Workflows` & `Workflow-as-Agent`, profondeur $\le 3$)
 
+- **FR-31** : Epic 8 (+ ad-hoc, Epic 13) - Gouvernance d'entreprise & Paramètres : habilitations RBAC/ABAC à 6 verbes, modèles IA et routage, connecteurs & secrets, packs, wizards (`CAP-050`..`CAP-058`)
+- **FR-32** : Epic 9 & 12 (+ ad-hoc, Epic 13) - Coquille 4 zones, recherche ⌘K, accostage Jour 0, aide contextuelle, journal d'activité (`CAP-060`..`CAP-068`)
+- **FR-33** : Epic 10 (+ ad-hoc, Epic 13) - Mon Assistant gouverné : 4 niveaux, 3 vitesses, citations déterministes, dossiers & fils (`CAP-070`..`CAP-076`)
+- **FR-34** : Epic 11 (+ ad-hoc, Epic 13) - Mes Espaces : ADN, glossaire, routage d'artefacts, rattachement d'équipe (`CAP-067`, `CAP-080`, `CAP-081`, `CAP-084`)
+- **FR-35** : Epic 11 (+ ad-hoc, Epic 13) - Exposition MCP/A2A, banc de test, atelier orcia-pack-builder (`CAP-082`..`CAP-084`)
+- **FR-36** : ad-hoc, Epic 13 - Gestion des agents et compétences (`CAP-090`..`CAP-092`)
+
+> Source de vérité du statut réel de chaque capacité : `docs/product/capabilities.yaml` (voir `AGENTS.md` §5).
+
 ## Epic List
 
 ### Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
@@ -780,6 +789,8 @@ So that la prise en main quotidienne soit immédiate sans page blanche ni surcha
 ## Epic 6: Gouvernance Exécutive, Provenance Auditable Immuable, FinOps Consolidé (LLM Internes + Télémétrie MCP/Agents Distants) & Réversibilité Humaine
 
 Permettre aux Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie UJ-6`) de piloter dans **📊 FinOps** l'équation économique consolidée de leurs processus (*Coût de Setup + Coût de Run interne vérifié + Coût externe déclaré MCP/A2A vs gain de TTM*) protégée par le validateur **`RemoteUsageSanitizer`** (`_meta.usage` / `X-Orcia-Usage`), les coupe-circuits budgétaires et anti-boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`) et les coupe-circuits isolés par connecteur (`CIRCUIT_OPEN`, `AD-12`), d'inspecter et d'exporter la *Provenance Auditable* immuable de chaque Step, Gate et test de connexion à chaud (`audit_ledger`, `ADMIN_CONNECTION_TEST`), et de suivre les 3 contre-métriques de gouvernance cognitive (*Ratio Cadrage Actif $\ge 40\%$*, *Taux de Rubber-Stamping $< 5\%$*, *Indice de Pattern Drift / Réversibilité Humaine $0\%$*) avec recommandations automatiques d'ajustement des Gates.
+
+> **Réconciliation du 2026-11-08 (`CAP-ACT-3`)** : constat dans le code — aucune migration Alembic ne crée `audit_ledger`, `packages/orcia-core/.../audit_finops/` ne contient que `errors.py`, `/finops` n'est qu'une coquille `ModuleWorkspaceView` et le **Journal d'activité** (`/activity`, `CAP-065`, livré hors epic le 2026-11-05) lit `auditEvents` issus du snapshot d'accostage (`bootstrap_accostage.py`), **sans** registre append-only. Les Stories 6.1 à 6.4 restent donc **intégralement `backlog`**. Rebasage : (a) Story 6.1 doit **remplacer la source** de `/activity` par `audit_ledger` (le composant `ActivityLogExplorerView` et ses filtres sont réutilisés, pas recréés) ; (b) les statuts d'avancement figurent dans `capabilities.yaml` (`CAP-065` partial, `CAP-200` planned).
 
 ### Story 6.1: Registre de Provenance Auditable Immuable (`audit_ledger` Append-Only), Traçabilité des Tests à Chaud (`ADMIN_CONNECTION_TEST`) & Export de Conformité JSON/Markdown
 
@@ -1442,3 +1453,25 @@ So that l'interface respecte intégralement les 11 règles fondamentales UX/UI (
    - Dans le menu de l'utilisateur à droite (`UserAccountDropdownAndSettingsModal`), le sélecteur est conservé et renommé **« Rôle »** (`Role` en anglais) avec des libellés métiers lisibles (*Administrateur de la plateforme*, *Product Manager / Métier*, *Architecte*, *Tech Lead / Développeur*, *Sécurité & Conformité*) ;
 5. **Purge complète des textes NFR et du jargon interne** : toutes les mentions de latences NFR (`< 500ms`, `0 ms`, `< 30 ms`, `< 50 ms`, `< 2 ms`, `< 5 s`, `< 100 ms`, `< 1,2 s`, `< 10 ms`, `< 15 s`), de dimensions en pixels (`340px`, `420px`, `280px`, `720px × max 600px`) et de références internes (`Couche 5`, `Mode A — 3 onglets`, `AD-*`, `UX-DR*`, `LOCK TABLE users`, `POST /api/v1/auth/logout → /login`) sont retirées des dictionnaires `fr.ts`, `en.ts` et `epic5..11_labels.ts`
 **And** la parité bilingue `fr`/`en` à `100 %`, l'isolation `@orcia/ui` et `pnpm turbo run lint typecheck test` passent à `0` erreur.
+
+## Epic 13: Évolutions Continues & Traçabilité des Capacités (Travaux Hors Epic Rattachés au PRD)
+
+Garantir qu'aucune évolution fonctionnelle livrée hors Story ne reste orpheline : chaque demande ad-hoc fonctionnelle est rattachée à un FR du PRD, à une capacité `CAP-xxx` de `docs/product/capabilities.yaml` et à une Story rétroactive `13.x`. Les travaux d'hygiène (purge, accessibilité, câblage, refactoring) ne sont pas des fonctionnalités : ils se traitent comme NFR / garde-fous.
+**FRs covered:** `FR-31`, `FR-32`, `FR-33`, `FR-34`, `FR-35`, `FR-36` (rattachement rétroactif des travaux hors epic).
+
+### Story 13.1: Registre des Capacités, Contrôle de Couverture CI & Régularisation PRD v2
+
+As a Product Owner / Tech Lead,
+I want un registre unique des capacités livrées, relié au PRD, aux epics et aux surfaces réelles, contrôlé en CI,
+So that je sache à tout moment ce qui est en place, quelle en est l'origine (epic ou ad-hoc), et que toute nouvelle route ou tout nouveau routeur soit rattaché à une capacité.
+
+**Acceptance Criteria:**
+
+**Given** `docs/product/capabilities.yaml`
+**When** `pnpm site:check` s'exécute
+**Then** il échoue si un `id` est dupliqué, un champ obligatoire manque, un `FR-n` n'existe pas dans le PRD, ou si une route SPA / un routeur FastAPI n'est ni référencé par une capacité ni listé dans `coverage_exemptions` avec une raison
+**And** le PRD v2.0 définit `FR-31` à `FR-36` (§4.10) et la FR Coverage Map les référence.
+
+### Story 13.2 (gabarit) : Évolution Fonctionnelle Rétroactive `13.x`
+
+Toute demande ad-hoc fonctionnelle crée une Story `13.x` (rattachée au `FR-3x` concerné) ainsi qu'une entrée ou mise à jour `CAP-xxx` ; le rapport Tech Lead porte le champ `Capacité(s)`.

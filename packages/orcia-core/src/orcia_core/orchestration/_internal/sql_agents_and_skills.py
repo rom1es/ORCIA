@@ -13,7 +13,9 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from orcia_core.orchestration.agents_and_skills_manager import (
+from orcia_core.orchestration.agents_and_skills_models import (
+    AgentKindType,
+    AgentSkillVisibilityScope,
     AgentThinkingLevel,
     ManagedAgentRecord,
     ManagedSkillRecord,
@@ -51,6 +53,20 @@ async def _ensure_root_org_unit_id(conn: AsyncConnection) -> UUID:
     return UUID(str(row.scalar_one()))
 
 
+def _parse_visibility_scope(raw_val: object) -> AgentSkillVisibilityScope:
+    val = str(raw_val or "TEAM").upper()
+    if val in ("PRIVATE", "TEAM", "PACK"):
+        return cast(AgentSkillVisibilityScope, val)
+    return "TEAM"
+
+
+def _parse_agent_kind(raw_val: object) -> AgentKindType:
+    val = str(raw_val or "LOCAL").upper()
+    if val in ("LOCAL", "REMOTE_MCP_A2A"):
+        return cast(AgentKindType, val)
+    return "LOCAL"
+
+
 async def load_agents_and_skills_from_postgres18(
     engine: AsyncEngine,
 ) -> tuple[tuple[ManagedSkillRecord, ...], tuple[ManagedAgentRecord, ...]]:
@@ -83,6 +99,10 @@ async def load_agents_and_skills_from_postgres18(
         raw_meta = row[8]
         meta = raw_meta if isinstance(raw_meta, dict) else json.loads(str(raw_meta or "{}"))
         slug = str(meta.get("slug") or resource_id)
+        vis_scope = _parse_visibility_scope(meta.get("visibility_scope"))
+        raw_pack = meta.get("source_pack_key")
+        source_pack_key = str(raw_pack).strip() if raw_pack else None
+        enabled_in_workspace = bool(meta.get("enabled_in_workspace", True))
 
         if item_type == "USER_SKILL":
             raw_params = meta.get("input_parameters") or []
@@ -102,6 +122,9 @@ async def load_agents_and_skills_from_postgres18(
                     ),
                     version=version,
                     sha256=sha256,
+                    visibility_scope=vis_scope,
+                    source_pack_key=source_pack_key,
+                    enabled_in_workspace=enabled_in_workspace,
                 )
             )
         elif item_type == "USER_AGENT":
@@ -113,6 +136,8 @@ async def load_agents_and_skills_from_postgres18(
                 if raw_level in ("simple", "medium", "complex", "auto")
                 else "medium"
             )
+            raw_remote = meta.get("remote_endpoint_url")
+            remote_endpoint_url = str(raw_remote).strip() if raw_remote else None
             agents.append(
                 ManagedAgentRecord(
                     agent_id=resource_id,
@@ -126,6 +151,12 @@ async def load_agents_and_skills_from_postgres18(
                     skill_ids=skill_ids,
                     version=version,
                     sha256=sha256,
+                    visibility_scope=vis_scope,
+                    source_pack_key=source_pack_key,
+                    enabled_in_workspace=enabled_in_workspace,
+                    mcp_exposed=bool(meta.get("mcp_exposed", False)),
+                    agent_kind=_parse_agent_kind(meta.get("agent_kind")),
+                    remote_endpoint_url=remote_endpoint_url,
                 )
             )
 
@@ -143,6 +174,9 @@ async def persist_skill_to_postgres18(
         "input_parameters": list(skill.input_parameters),
         "instructions": skill.instructions,
         "expected_output_format": skill.expected_output_format,
+        "visibility_scope": skill.visibility_scope,
+        "source_pack_key": skill.source_pack_key,
+        "enabled_in_workspace": skill.enabled_in_workspace,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)
@@ -196,6 +230,12 @@ async def persist_agent_to_postgres18(
         "instructions": agent.instructions,
         "thinking_level": agent.thinking_level,
         "skill_ids": list(agent.skill_ids),
+        "visibility_scope": agent.visibility_scope,
+        "source_pack_key": agent.source_pack_key,
+        "enabled_in_workspace": agent.enabled_in_workspace,
+        "mcp_exposed": agent.mcp_exposed,
+        "agent_kind": agent.agent_kind,
+        "remote_endpoint_url": agent.remote_endpoint_url,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)

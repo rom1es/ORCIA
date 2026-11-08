@@ -24,7 +24,9 @@ from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRe
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
 from orcia_core.orchestration.agents_and_skills_manager import (
     AgentExecutionOutcome,
+    AgentKindType,
     AgentsAndSkillsManagementService,
+    AgentSkillVisibilityScope,
     AgentThinkingLevel,
     InvokedSkillTraceItem,
     ManagedAgentRecord,
@@ -212,6 +214,8 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "ASSISTANT_WORKFLOW_URI",
     "AgentExecutionOutcome",
+    "AgentKindType",
+    "AgentSkillVisibilityScope",
     "AgentThinkingLevel",
     "AgentsAndSkillsManagementService",
     "AsyncSubscriberCallback",

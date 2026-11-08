@@ -8,104 +8,34 @@ via `sql_agents_and_skills.py` when PostgreSQL 18 is available.
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import json
-import re
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from typing import Literal
 
 from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
+from orcia_core.orchestration.agents_and_skills_models import (
+    AgentExecutionOutcome,
+    AgentKindType,
+    AgentSkillVisibilityScope,
+    AgentThinkingLevel,
+    InvokedSkillTraceItem,
+    ManagedAgentRecord,
+    ManagedSkillRecord,
+    SkillExecutionOutcome,
+    build_managed_agent_record,
+    build_managed_skill_record,
+    compute_payload_sha256,
+    format_agent_execution_outcome,
+    format_skill_execution_outcome,
+    normalize_identifier_slug,
+    rebuild_agent_with_skills,
+)
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
-from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
 
-AgentThinkingLevel = Literal["simple", "medium", "complex", "auto"]
-
-_SLUG_CLEAN_RE = re.compile(r"[^a-z0-9]+")
-
-
-def normalize_identifier_slug(raw_name: str, fallback_prefix: str = "item") -> str:
-    """Convert a human-readable name into a clean lowercase kebab-case slug."""
-    cleaned = _SLUG_CLEAN_RE.sub("-", raw_name.strip().lower()).strip("-")
-    return cleaned or f"{fallback_prefix}-{new_uuid7_str()[:8]}"
-
-
-def compute_payload_sha256(payload: dict[str, object]) -> str:
-    """Compute a deterministic SHA-256 hex digest over a JSON-serializable payload."""
-    canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
-    return hashlib.sha256(canonical).hexdigest()
-
-
-@dataclass(frozen=True, slots=True)
-class ManagedSkillRecord:
-    """User-created reusable Skill (`🛠️ Compétence`)."""
-
-    skill_id: str
-    slug: str
-    command_handle: str
-    uri: str
-    name: str
-    objective: str
-    input_parameters: tuple[str, ...]
-    instructions: str
-    expected_output_format: str
-    version: str = "1.0.0"
-    sha256: str = ""
-
-
-@dataclass(frozen=True, slots=True)
-class ManagedAgentRecord:
-    """User-created Agent (`🤖 Agent`) with 1-click attached Skills."""
-
-    agent_id: str
-    slug: str
-    handle: str
-    uri: str
-    name: str
-    role_mission: str
-    instructions: str
-    thinking_level: AgentThinkingLevel
-    skill_ids: tuple[str, ...] = ()
-    version: str = "1.0.0"
-    sha256: str = ""
-
-
-@dataclass(frozen=True, slots=True)
-class SkillExecutionOutcome:
-    """Result of testing/executing a Skill in 1 click."""
-
-    skill_id: str
-    skill_name: str
-    command_handle: str
-    input_text: str
-    applied_parameters: dict[str, str]
-    output_text: str
-    expected_output_format: str
-    status: Literal["SUCCEEDED"] = "SUCCEEDED"
-
-
-@dataclass(frozen=True, slots=True)
-class InvokedSkillTraceItem:
-    """Trace of a Skill mobilized during an Agent execution."""
-
-    skill_id: str
-    skill_name: str
-    command_handle: str
-    output_summary: str
-
-
-@dataclass(frozen=True, slots=True)
-class AgentExecutionOutcome:
-    """Result of testing/executing an Agent with its attached Skills in 1 click."""
-
-    agent_id: str
-    agent_name: str
-    agent_handle: str
-    thinking_level: AgentThinkingLevel
-    prompt: str
-    response_text: str
-    invoked_skills: tuple[InvokedSkillTraceItem, ...]
-    status: Literal["SUCCEEDED"] = "SUCCEEDED"
+_PACK_IMMUTABILITY_ERROR_MSG = (
+    "Les agents et compétences issus d'un Pack Métier ne peuvent pas être supprimés ; "
+    "vous pouvez les désactiver sur l'espace ou les dupliquer pour les personnaliser."
+)
 
 
 def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> str:
@@ -120,6 +50,13 @@ def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> str:
         return pool.submit(lambda: asyncio.run(llm.complete(request)).content).result()
 
 
+def _require_non_empty(value: str, detail_msg: str, instance: str | None) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValidationDomainError(detail_override=detail_msg, instance=instance)
+    return cleaned
+
+
 class AgentsAndSkillsManagementService:
     """Domain service for creating, linking, and executing Skills and Agents (`🤖 Mes Agents`)."""
 
@@ -130,40 +67,29 @@ class AgentsAndSkillsManagementService:
 
     @property
     def skills(self) -> tuple[ManagedSkillRecord, ...]:
-        """Return all user-configured skills in creation order."""
         return tuple(self._skills.values())
 
     @property
     def agents(self) -> tuple[ManagedAgentRecord, ...]:
-        """Return all user-configured agents in creation order."""
         return tuple(self._agents.values())
 
     def sync_from_records(
-        self,
-        *,
-        skills: tuple[ManagedSkillRecord, ...],
-        agents: tuple[ManagedAgentRecord, ...],
+        self, *, skills: tuple[ManagedSkillRecord, ...], agents: tuple[ManagedAgentRecord, ...]
     ) -> None:
-        """Hydrate in-memory state from PostgreSQL 18 records."""
-        valid_skill_ids = {s.skill_id for s in skills}
+        valid_ids = {s.skill_id for s in skills}
         self._skills = {s.skill_id: s for s in skills}
         self._agents = {
-            a.agent_id: replace(
-                a,
-                skill_ids=tuple(sid for sid in a.skill_ids if sid in valid_skill_ids),
-            )
+            a.agent_id: replace(a, skill_ids=tuple(sid for sid in a.skill_ids if sid in valid_ids))
             for a in agents
         }
 
     def get_skill(self, skill_id: str, *, instance: str | None = None) -> ManagedSkillRecord:
-        """Retrieve a Skill by ID or raise `ResourceNotFoundError`."""
         skill = self._skills.get(skill_id)
         if skill is None:
             raise ResourceNotFoundError(instance=instance)
         return skill
 
     def get_agent(self, agent_id: str, *, instance: str | None = None) -> ManagedAgentRecord:
-        """Retrieve an Agent by ID or raise `ResourceNotFoundError`."""
         agent = self._agents.get(agent_id)
         if agent is None:
             raise ResourceNotFoundError(instance=instance)
@@ -179,57 +105,35 @@ class AgentsAndSkillsManagementService:
         expected_output_format: str = "Synthèse structurée",
         skill_id: str | None = None,
         version: str = "1.0.0",
+        visibility_scope: AgentSkillVisibilityScope | None = None,
+        source_pack_key: str | None = None,
+        enabled_in_workspace: bool | None = None,
         instance: str | None = None,
     ) -> ManagedSkillRecord:
-        """Create or update a reusable Skill (`🛠️ Compétence`)."""
-        clean_name = name.strip()
-        clean_objective = objective.strip()
-        clean_instructions = instructions.strip()
-        clean_format = expected_output_format.strip() or "Synthèse structurée"
-        if not clean_name:
-            raise ValidationDomainError(
-                detail_override="Le nom de la compétence est obligatoire.",
-                instance=instance,
-            )
-        if not clean_objective:
-            raise ValidationDomainError(
-                detail_override="L'objectif métier de la compétence est obligatoire.",
-                instance=instance,
-            )
-        if not clean_instructions:
-            raise ValidationDomainError(
-                detail_override="Les instructions d'exécution de la compétence sont obligatoires.",
-                instance=instance,
-            )
-
+        clean_name = _require_non_empty(name, "Le nom de la compétence est obligatoire.", instance)
+        clean_obj = _require_non_empty(
+            objective, "L'objectif métier de la compétence est obligatoire.", instance
+        )
+        clean_inst = _require_non_empty(
+            instructions,
+            "Les instructions d'exécution de la compétence sont obligatoires.",
+            instance,
+        )
         slug = normalize_identifier_slug(clean_name, fallback_prefix="skill")
         resolved_id = (skill_id or "").strip() or f"skill-{slug}"
-        params = tuple(dict.fromkeys(p.strip() for p in input_parameters if p.strip()))
-        uri = f"orcia://skills/{slug}@{version}"
-        digest = compute_payload_sha256(
-            {
-                "skill_id": resolved_id,
-                "slug": slug,
-                "name": clean_name,
-                "objective": clean_objective,
-                "input_parameters": list(params),
-                "instructions": clean_instructions,
-                "expected_output_format": clean_format,
-                "version": version,
-            }
-        )
-        record = ManagedSkillRecord(
-            skill_id=resolved_id,
+        record = build_managed_skill_record(
+            resolved_id=resolved_id,
             slug=slug,
-            command_handle=f"/{slug}",
-            uri=uri,
-            name=clean_name,
-            objective=clean_objective,
-            input_parameters=params,
-            instructions=clean_instructions,
-            expected_output_format=clean_format,
+            clean_name=clean_name,
+            clean_obj=clean_obj,
+            params=tuple(dict.fromkeys(p.strip() for p in input_parameters if p.strip())),
+            clean_inst=clean_inst,
+            clean_fmt=expected_output_format.strip() or "Synthèse structurée",
             version=version,
-            sha256=digest,
+            existing=self._skills.get(resolved_id),
+            visibility_scope=visibility_scope,
+            source_pack_key=source_pack_key,
+            enabled_in_workspace=enabled_in_workspace,
         )
         self._skills[resolved_id] = record
         return record
@@ -237,14 +141,17 @@ class AgentsAndSkillsManagementService:
     def delete_skill(
         self, skill_id: str, *, instance: str | None = None
     ) -> tuple[ManagedSkillRecord, tuple[str, ...]]:
-        """Delete a Skill and automatically detach it from any Agents referencing it."""
         removed = self.get_skill(skill_id, instance=instance)
+        if removed.visibility_scope == "PACK":
+            raise ValidationDomainError(
+                detail_override=_PACK_IMMUTABILITY_ERROR_MSG, instance=instance
+            )
         del self._skills[skill_id]
         updated_agent_ids: list[str] = []
         for aid, agent in list(self._agents.items()):
             if skill_id in agent.skill_ids:
                 next_skills = tuple(sid for sid in agent.skill_ids if sid != skill_id)
-                self._agents[aid] = self._rebuild_agent_with_skills(agent, next_skills)
+                self._agents[aid] = rebuild_agent_with_skills(agent, next_skills)
                 updated_agent_ids.append(aid)
         return removed, tuple(updated_agent_ids)
 
@@ -257,65 +164,11 @@ class AgentsAndSkillsManagementService:
         instance: str | None = None,
         llm_response_override: str | None = None,
     ) -> SkillExecutionOutcome:
-        """Execute/test a Skill directly on a concrete input and return its formatted result."""
         skill = self.get_skill(skill_id, instance=instance)
-        clean_input = input_text.strip()
-        if not clean_input:
-            raise ValidationDomainError(
-                detail_override="Veuillez saisir une entrée de test pour exécuter la compétence.",
-                instance=instance,
-            )
-        provided_params = {
-            str(k).strip(): str(v).strip() for k, v in (parameters or {}).items() if str(k).strip()
-        }
-        for expected_param in skill.input_parameters:
-            if expected_param not in provided_params:
-                provided_params[expected_param] = clean_input
-
-        params_summary = (
-            ", ".join(f"{k}={v}" for k, v in provided_params.items())
-            if provided_params
-            else "aucun paramètre additionnel"
+        clean_input = _require_non_empty(
+            input_text, "Veuillez saisir une entrée de test pour exécuter la compétence.", instance
         )
-        resolved_result = (
-            llm_response_override.strip()
-            if llm_response_override and llm_response_override.strip()
-            else f"Synthèse validée pour « {clean_input} »."
-        )
-        output_lines = [
-            f"✅ Compétence « {skill.name} » ({skill.command_handle}) exécutée avec succès.",
-            f"• Objectif appliqué : {skill.objective}",
-            f"• Entrée analysée : {clean_input}",
-            f"• Paramètres pris en compte : {params_summary}",
-            f"• Méthode exécutée : {skill.instructions}",
-            f"• Résultat ({skill.expected_output_format}) :\n{resolved_result}",
-        ]
-        return SkillExecutionOutcome(
-            skill_id=skill.skill_id,
-            skill_name=skill.name,
-            command_handle=skill.command_handle,
-            input_text=clean_input,
-            applied_parameters=provided_params,
-            output_text="\n".join(output_lines),
-            expected_output_format=skill.expected_output_format,
-        )
-
-    def _rebuild_agent_with_skills(
-        self, agent: ManagedAgentRecord, next_skills: tuple[str, ...]
-    ) -> ManagedAgentRecord:
-        digest = compute_payload_sha256(
-            {
-                "agent_id": agent.agent_id,
-                "slug": agent.slug,
-                "name": agent.name,
-                "role_mission": agent.role_mission,
-                "instructions": agent.instructions,
-                "thinking_level": agent.thinking_level,
-                "skill_ids": list(next_skills),
-                "version": agent.version,
-            }
-        )
-        return replace(agent, skill_ids=next_skills, sha256=digest)
+        return format_skill_execution_outcome(skill, clean_input, parameters, llm_response_override)
 
     def upsert_agent(
         self,
@@ -327,69 +180,114 @@ class AgentsAndSkillsManagementService:
         skill_ids: tuple[str, ...] | list[str] = (),
         agent_id: str | None = None,
         version: str = "1.0.0",
+        visibility_scope: AgentSkillVisibilityScope | None = None,
+        source_pack_key: str | None = None,
+        enabled_in_workspace: bool | None = None,
+        mcp_exposed: bool | None = None,
+        agent_kind: AgentKindType | None = None,
+        remote_endpoint_url: str | None = None,
         instance: str | None = None,
     ) -> ManagedAgentRecord:
-        """Create or update an Agent (`🤖 Agent`) with its attached `skill_ids`."""
-        clean_name = name.strip()
-        clean_role = role_mission.strip()
-        clean_instructions = instructions.strip()
-        if not clean_name:
-            raise ValidationDomainError(
-                detail_override="Le nom de l'agent est obligatoire.",
-                instance=instance,
-            )
-        if not clean_role:
-            raise ValidationDomainError(
-                detail_override="Le rôle et la mission de l'agent sont obligatoires.",
-                instance=instance,
-            )
-        if not clean_instructions:
-            raise ValidationDomainError(
-                detail_override="Les instructions de l'agent sont obligatoires.",
-                instance=instance,
-            )
-
+        clean_name = _require_non_empty(name, "Le nom de l'agent est obligatoire.", instance)
+        clean_role = _require_non_empty(
+            role_mission, "Le rôle et la mission de l'agent sont obligatoires.", instance
+        )
+        clean_inst = _require_non_empty(
+            instructions, "Les instructions de l'agent sont obligatoires.", instance
+        )
         slug = normalize_identifier_slug(clean_name, fallback_prefix="agent")
         resolved_id = (agent_id or "").strip() or f"agent-{slug}"
         valid_skills = tuple(
             dict.fromkeys(sid.strip() for sid in skill_ids if sid.strip() in self._skills)
         )
-        uri = f"orcia://agents/{slug}@{version}"
-        base = ManagedAgentRecord(
-            agent_id=resolved_id,
+        record = build_managed_agent_record(
+            resolved_id=resolved_id,
             slug=slug,
-            handle=f"@{slug}",
-            uri=uri,
-            name=clean_name,
-            role_mission=clean_role,
-            instructions=clean_instructions,
+            clean_name=clean_name,
+            clean_role=clean_role,
+            clean_inst=clean_inst,
             thinking_level=thinking_level,
-            skill_ids=valid_skills,
+            valid_skills=valid_skills,
             version=version,
+            existing=self._agents.get(resolved_id),
+            visibility_scope=visibility_scope,
+            source_pack_key=source_pack_key,
+            enabled_in_workspace=enabled_in_workspace,
+            mcp_exposed=mcp_exposed,
+            agent_kind=agent_kind,
+            remote_endpoint_url=remote_endpoint_url,
         )
-        record = self._rebuild_agent_with_skills(base, valid_skills)
         self._agents[resolved_id] = record
         return record
 
     def set_agent_skills(
+        self, agent_id: str, *, skill_ids: tuple[str, ...] | list[str], instance: str | None = None
+    ) -> ManagedAgentRecord:
+        agent = self.get_agent(agent_id, instance=instance)
+        valid = tuple(
+            dict.fromkeys(sid.strip() for sid in skill_ids if sid.strip() in self._skills)
+        )
+        updated = rebuild_agent_with_skills(agent, valid)
+        self._agents[agent_id] = updated
+        return updated
+
+    def duplicate_agent(
         self,
         agent_id: str,
         *,
-        skill_ids: tuple[str, ...] | list[str],
+        new_name: str | None = None,
+        visibility_scope: Literal["PRIVATE", "TEAM"] = "TEAM",
         instance: str | None = None,
     ) -> ManagedAgentRecord:
-        """Attach or detach Skills on an Agent in 1 click."""
-        agent = self.get_agent(agent_id, instance=instance)
-        valid_skills = tuple(
-            dict.fromkeys(sid.strip() for sid in skill_ids if sid.strip() in self._skills)
+        source = self.get_agent(agent_id, instance=instance)
+        resolved_name = (new_name or "").strip() or f"{source.name} (Copie)"
+        base_slug = normalize_identifier_slug(resolved_name, fallback_prefix="agent")
+        candidate_id, suffix = f"agent-{base_slug}", 2
+        while candidate_id in self._agents:
+            candidate_id = f"agent-{base_slug}-{suffix}"
+            suffix += 1
+        return self.upsert_agent(
+            agent_id=candidate_id,
+            name=resolved_name,
+            role_mission=source.role_mission,
+            instructions=source.instructions,
+            thinking_level=source.thinking_level,
+            skill_ids=source.skill_ids,
+            visibility_scope=visibility_scope,
+            source_pack_key=source.source_pack_key,
+            enabled_in_workspace=True,
+            mcp_exposed=False,
+            agent_kind=source.agent_kind,
+            remote_endpoint_url=source.remote_endpoint_url,
+            instance=instance,
         )
-        updated = self._rebuild_agent_with_skills(agent, valid_skills)
+
+    def set_agent_enabled(
+        self, agent_id: str, *, enabled: bool, instance: str | None = None
+    ) -> ManagedAgentRecord:
+        agent = self.get_agent(agent_id, instance=instance)
+        updated = rebuild_agent_with_skills(
+            replace(agent, enabled_in_workspace=enabled), agent.skill_ids
+        )
+        self._agents[agent_id] = updated
+        return updated
+
+    def set_agent_mcp_exposure(
+        self, agent_id: str, *, mcp_exposed: bool, instance: str | None = None
+    ) -> ManagedAgentRecord:
+        agent = self.get_agent(agent_id, instance=instance)
+        updated = rebuild_agent_with_skills(
+            replace(agent, mcp_exposed=mcp_exposed), agent.skill_ids
+        )
         self._agents[agent_id] = updated
         return updated
 
     def delete_agent(self, agent_id: str, *, instance: str | None = None) -> ManagedAgentRecord:
-        """Delete an Agent by ID."""
         removed = self.get_agent(agent_id, instance=instance)
+        if removed.visibility_scope == "PACK":
+            raise ValidationDomainError(
+                detail_override=_PACK_IMMUTABILITY_ERROR_MSG, instance=instance
+            )
         del self._agents[agent_id]
         return removed
 
@@ -401,74 +299,60 @@ class AgentsAndSkillsManagementService:
         instance: str | None = None,
         llm_response_override: str | None = None,
     ) -> AgentExecutionOutcome:
-        """Execute an Agent with its attached Skills on a user prompt."""
         agent = self.get_agent(agent_id, instance=instance)
-        clean_prompt = prompt.strip()
-        if not clean_prompt:
-            raise ValidationDomainError(
-                detail_override="Veuillez saisir une demande pour tester l'agent.",
-                instance=instance,
+        clean_prompt = _require_non_empty(
+            prompt, "Veuillez saisir une demande pour tester l'agent.", instance
+        )
+        traces = [
+            InvokedSkillTraceItem(
+                skill_id=s.skill_id,
+                skill_name=s.name,
+                command_handle=s.command_handle,
+                output_summary=(
+                    f"{s.name} ({s.command_handle}) -> "
+                    f"{s.expected_output_format} produit pour « {clean_prompt} »"
+                ),
             )
-
-        invoked_traces: list[InvokedSkillTraceItem] = []
-        for sid in agent.skill_ids:
-            skill = self._skills.get(sid)
-            if skill is None:
-                continue
-            self.execute_skill(sid, input_text=clean_prompt, instance=instance)
-            invoked_traces.append(
-                InvokedSkillTraceItem(
-                    skill_id=skill.skill_id,
-                    skill_name=skill.name,
-                    command_handle=skill.command_handle,
-                    output_summary=(
-                        f"{skill.name} ({skill.command_handle}) -> "
-                        f"{skill.expected_output_format} produit pour « {clean_prompt} »"
-                    ),
-                )
-            )
-
+            for sid in agent.skill_ids
+            if (s := self._skills.get(sid)) is not None
+            and self.execute_skill(sid, input_text=clean_prompt, instance=instance)
+        ]
         skills_block = (
-            "\n".join(f"- {t.output_summary}" for t in invoked_traces)
-            if invoked_traces
+            "\n".join(f"- {t.output_summary}" for t in traces)
+            if traces
             else "Aucune compétence externe mobilisée."
         )
-        if llm_response_override and llm_response_override.strip():
-            llm_text = llm_response_override.strip()
-        else:
-            llm_req = LlmPromptRequest(
-                system_prompt=(
-                    f"Agent: {agent.name} ({agent.handle}) | Rôle: {agent.role_mission} | "
-                    f"Instructions: {agent.instructions}"
+        llm_text = (
+            llm_response_override.strip()
+            if llm_response_override and llm_response_override.strip()
+            else _run_llm_sync(
+                self._llm,
+                LlmPromptRequest(
+                    system_prompt=(
+                        f"Agent: {agent.name} ({agent.handle}) | Rôle: {agent.role_mission} | "
+                        f"Instructions: {agent.instructions}"
+                    ),
+                    user_prompt=f"Demande: {clean_prompt}\nCompétences: {skills_block}",
+                    model_family="anthropic",
+                    model_id="anthropic/claude-3-7-sonnet",
+                    execution_mode="COACHING",
+                    metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
                 ),
-                user_prompt=f"Demande: {clean_prompt}\nCompétences: {skills_block}",
-                model_family="anthropic",
-                model_id="anthropic/claude-3-7-sonnet",
-                execution_mode="COACHING",
-                metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
             )
-            llm_text = _run_llm_sync(self._llm, llm_req)
+        )
+        return format_agent_execution_outcome(agent, clean_prompt, traces, llm_text)
 
-        skills_names = (
-            ", ".join(f"{t.skill_name} ({t.command_handle})" for t in invoked_traces)
-            if invoked_traces
-            else "aucune compétence rattachée"
-        )
-        response_lines = [
-            f"🤖 Réponse de {agent.name} ({agent.handle}) — Mission : {agent.role_mission}",
-            f"• Demande traitée : « {clean_prompt} »",
-            f"• Compétences mobilisées ({len(invoked_traces)}) : {skills_names}",
-            (
-                f"• Synthèse : Selon mes instructions (« {agent.instructions} »), "
-                f"voici la proposition structurée pour « {clean_prompt} ». ({llm_text})"
-            ),
-        ]
-        return AgentExecutionOutcome(
-            agent_id=agent.agent_id,
-            agent_name=agent.name,
-            agent_handle=agent.handle,
-            thinking_level=agent.thinking_level,
-            prompt=clean_prompt,
-            response_text="\n".join(response_lines),
-            invoked_skills=tuple(invoked_traces),
-        )
+
+__all__ = [
+    "AgentExecutionOutcome",
+    "AgentKindType",
+    "AgentSkillVisibilityScope",
+    "AgentThinkingLevel",
+    "AgentsAndSkillsManagementService",
+    "InvokedSkillTraceItem",
+    "ManagedAgentRecord",
+    "ManagedSkillRecord",
+    "SkillExecutionOutcome",
+    "compute_payload_sha256",
+    "normalize_identifier_slug",
+]

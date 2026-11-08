@@ -812,7 +812,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("3/5");
   });
 
-  it("supports creating Skills, creating Agents, attaching Skills in 1 click, executing both, and surviving F5 reload on /agents", async () => {
+  it("supports creating Skills, creating Agents via modals, configuring & executing both in sandbox modals, and surviving F5 reload on /agents", async () => {
     const { resetCachedAgentsAndSkillsForTest } = await import(
       "../features/catalog/index"
     );
@@ -830,10 +830,15 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     expect(screen.getByTestId("agents-and-skills-manager-view")).toBeDefined();
+    expect(screen.getByTestId("workspace-assistant-pinned-card")).toBeDefined();
     expect(screen.getByTestId("agents-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("create-agent-modal")).toBeNull();
 
-    // 1. Switch to Skills tab and create a Skill
+    // 1. Switch to Skills tab, open Create Skill Modal, and create a Skill
     fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
+    fireEvent.click(screen.getByTestId("open-create-skill-drawer-btn"));
+    expect(screen.getByTestId("create-skill-modal")).toBeDefined();
+
     fireEvent.change(screen.getByTestId("skill-name-input"), {
       target: { value: "Analyse Conformité Fournisseur" },
     });
@@ -844,21 +849,28 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Vérifier la responsabilité, la réversibilité et la juridiction." },
     });
     fireEvent.click(screen.getByTestId("create-skill-submit-btn"));
+    expect(screen.queryByTestId("create-skill-modal")).toBeNull();
 
     const skillId = "skill-analyse-conformite-fournisseur";
     expect(screen.getByTestId(`skill-card-${skillId}`)).toBeDefined();
 
-    // Execute Skill in 1 click
+    // Open Skill Detail & Sandbox Modal and execute Skill
+    fireEvent.click(screen.getByTestId(`open-skill-detail-modal-btn-${skillId}`));
+    expect(screen.getByTestId(`skill-detail-modal-${skillId}`)).toBeDefined();
     fireEvent.change(screen.getByTestId(`skill-test-input-${skillId}`), {
       target: { value: "Article 12 : plafond de responsabilité limité à 1 mois" },
     });
     fireEvent.click(screen.getByTestId(`run-skill-btn-${skillId}`));
-    expect(screen.getByTestId(`skill-execution-output-${skillId}`).textContent).toContain(
+    expect(screen.getAllByTestId(`skill-execution-output-${skillId}`)[0]?.textContent).toContain(
       "Analyse Conformité Fournisseur",
     );
+    fireEvent.click(screen.getByTestId(`close-skill-detail-modal-btn-${skillId}`));
 
-    // 2. Switch to Agents tab, create an Agent with the Skill attached, and execute it
+    // 2. Switch to Agents tab, open Create Agent Modal, create an Agent with the Skill attached, and execute it in Sandbox Modal
     fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
+    fireEvent.click(screen.getByTestId("open-create-agent-drawer-btn"));
+    expect(screen.getByTestId("create-agent-modal")).toBeDefined();
+
     fireEvent.change(screen.getByTestId("agent-name-input"), {
       target: { value: "Expert Achats IT" },
     });
@@ -870,17 +882,21 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId(`create-agent-skill-checkbox-${skillId}`));
     fireEvent.click(screen.getByTestId("create-agent-submit-btn"));
+    expect(screen.queryByTestId("create-agent-modal")).toBeNull();
 
     const agentId = "agent-expert-achats-it";
     expect(screen.getByTestId(`agent-card-${agentId}`)).toBeDefined();
 
+    fireEvent.click(screen.getByTestId(`open-agent-detail-modal-btn-${agentId}`));
+    expect(screen.getByTestId(`agent-detail-modal-${agentId}`)).toBeDefined();
     fireEvent.change(screen.getByTestId(`agent-test-input-${agentId}`), {
       target: { value: "Examine le contrat SaaS Acme" },
     });
     fireEvent.click(screen.getByTestId(`run-agent-btn-${agentId}`));
-    expect(screen.getByTestId(`agent-execution-output-${agentId}`).textContent).toContain(
+    expect(screen.getAllByTestId(`agent-execution-output-${agentId}`)[0]?.textContent).toContain(
       "Analyse Conformité Fournisseur",
     );
+    fireEvent.click(screen.getByTestId(`close-agent-detail-modal-btn-${agentId}`));
 
     // 3. Simulate F5 reload: unmount and re-render on /agents
     firstRender.unmount();
@@ -909,18 +925,21 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
     expect(screen.getByTestId(`skill-card-${skillId}`)).toBeDefined();
 
-    // Verify visual removal of Connections tab, CatalogExplorerPanel, and RemoteServiceTestBench at bottom of /agents
-    expect(screen.getByTestId("agents-subview-tab-connections").style.display).toBe("none");
+    // Verify 3rd tab (🔌 Serveurs d'outils & MCP) is visible and interactive
+    expect(screen.getByTestId("agents-subview-tab-connections").style.display).not.toBe("none");
     expect(screen.getByTestId("catalog-explorer-panel-wrapper").style.display).toBe("none");
     expect(screen.getByTestId("remote-service-test-bench-wrapper").style.display).toBe("none");
+    fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
+    expect(screen.getByTestId("connections-subview-panel")).toBeDefined();
 
-    // 4. Load Business Pack Agents & Skills in 1 click and verify 📦 Pack Métier badges appear
+    // 4. Load Business Pack Agents & Skills and verify 📦 Pack Métier badges + protection against deletion
     fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
     fireEvent.click(screen.getByTestId("load-pack-agents-templates-btn"));
     expect(screen.getByTestId("agent-card-agent-architecte-solution")).toBeDefined();
     expect(
       screen.getByTestId("agent-visibility-badge-agent-architecte-solution").textContent,
     ).toContain("📦 Pack Métier (orcia-pack-sdlc)");
+    expect(screen.queryByTestId("delete-agent-btn-agent-architecte-solution")).toBeNull();
 
     // 5. Click '💬 Utiliser dans Mon Assistant' -> redirects to /assistant with @architecte-solution pre-filled!
     fireEvent.click(

@@ -2,7 +2,10 @@
 title: ORCIA (Orchestration of Processes, Context, and Intelligent Agents)
 status: final
 created: 2026-10-24
-updated: 2026-10-27
+updated: 2026-11-08
+version: 2.0
+changelog:
+  - "2026-11-08 (v2.0) : ajout §4.10 FR-31..FR-36 (Epics 8-12 et travaux hors epic, régularisation rétroactive) — traçabilité via docs/product/capabilities.yaml"
 ---
 
 # PRD: ORCIA (Orchestration of Processes, Context, and Intelligent Agents)
@@ -218,7 +221,7 @@ Pensée pour les organisations complexes, ORCIA fédère à la volée les ressou
 
 ## 4. Features
 
-*Chaque sous-section décrit un domaine fonctionnel cohérent suivi de ses exigences fonctionnelles numérotées globalement (`FR-1` à `FR-30`) avec des conséquences testables et des références explicites aux User Journeys (`UJ-1` à `UJ-12`) et aux termes du Glossaire (§3).*
+*Chaque sous-section décrit un domaine fonctionnel cohérent suivi de ses exigences fonctionnelles numérotées globalement (`FR-1` à `FR-36`) avec des conséquences testables et des références explicites aux User Journeys (`UJ-1` à `UJ-12`) et aux termes du Glossaire (§3).*
 
 ### 4.1 Expérience "Chat-First + Canvas", Agent Assistant Adaptatif & Centre de Notifications Multi-Runs
 
@@ -511,6 +514,59 @@ Tout **Workflow** du **Catalogue Fédéré** peut être exposé comme un **Agent
 **Consequences (testable) :**
 - Toute déclaration de sous-workflow dépassant `nesting_depth > 3` ou introduisant un cycle d'appel (`A -> B -> A`) est rejetée statiquement à l'enregistrement et à l'instanciation.
 - Le **Blackboard** d'un sous-workflow enfant ne reçoit que les `inputs` explicitement transmis par l'étape parente et ne publie dans le **Blackboard** parent que ses `outputs` déclarés une fois au statut `COMMITTED`.
+
+---
+
+### 4.10 Portail d'Administration, Assistant Gouverné, Espaces Métier, Exposition MCP/A2A & Agents (régularisation v2.0 — Epics 8 à 12 et évolutions continues)
+
+**Description :** Cette section régularise les capacités livrées après la v1.0 du PRD (Epics 8 à 12 et évolutions ad-hoc). Chaque FR est relié à ses capacités réelles dans `docs/product/capabilities.yaml` (`CAP-xxx`) ; le registre fait foi pour le statut et les surfaces (route, API, composant, migration).
+
+**Functional Requirements :**
+
+#### FR-31 : Gouvernance d'Entreprise & Paramètres (Habilitations RBAC/ABAC à 6 verbes, Modèles IA et Routage, Connecteurs & Secrets, Packs, Wizards)
+Un administrateur habilité configure depuis **⚙️ Configuration** les habilitations (`DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN` + conditions ABAC), les modèles IA (multi-fournisseurs, routage automatique par tiers, test de connexion), les connecteurs et leurs secrets, le registre des packs métiers et les parcours d'initialisation durables (wizards). Capacités : `CAP-050` à `CAP-058`.
+
+**Consequences (testable) :**
+- Un objet sensible marqué `hidden_when_unauthorized` n'apparaît ni en liste, ni en recherche, ni sous forme de cadenas pour un utilisateur non habilité.
+- Toute URL d'endpoint de modèle IA pointant vers une adresse de métadonnées Cloud link-local est rejetée (garde-fou SSRF) ; un secret n'est jamais restitué en clair par l'API.
+- Un seul pack métier peut être actif à la fois par périmètre ; l'état survit au rechargement de l'URL.
+
+#### FR-32 : Coquille Ergonomique, Recherche ⌘K, Accostage Progressif Jour 0, Aide Contextuelle & Journal d'Activité
+Le portail offre un shell à 4 zones (8 entrées fixes), une recherche fédérée contextuelle `⌘K` à 2 vitesses, un accostage progressif Jour 0, une aide contextuelle hybride (`ⓘ`) sans jargon interne, et un journal d'activité filtrable par auteur, période et périmètre. Capacités : `CAP-060` à `CAP-068`.
+
+**Consequences (testable) :**
+- Toute fenêtre modale se ferme par `Escape` et propose une sortie d'annulation.
+- Le journal d'activité n'affiche que les événements du périmètre d'observation actif ; sa source de provenance immuable (`audit_ledger`) relève de `FR-25` (Epic 6) et n'est pas encore livrée.
+- Aucune donnée fictive n'est affichée hors mode test.
+
+#### FR-33 : Mon Assistant Gouverné (Personnalisation à 4 Niveaux, 3 Vitesses, Citations Déterministes, Dossiers & Fils Collaboratifs)
+L'utilisateur converse avec l'assistant via un flux réel (SSE) en choisissant une vitesse (TTFT cible `< 1,2 s` pour la voie rapide), avec raisonnement séparé du contenu, citations vérifiées `[S1]`/`[G1]`/`[O1]`, dossiers thématiques partageables, conversations sauvegardées et lancement de processus depuis un dossier. Capacités : `CAP-070` à `CAP-076`.
+
+**Consequences (testable) :**
+- Une citation dont la source n'est pas résolue est filtrée avant affichage.
+- Le contenu Markdown (sauts de ligne, indentation du code) est restitué intégralement ; aucun faux streaming par découpage de réponse complète.
+- Les dossiers, notes et réglages persistent après rechargement de la page.
+
+#### FR-34 : Mes Espaces — Gouvernance Métier de l'Espace (ADN, Glossaire, Routage d'Artefacts)
+Un responsable d'espace gère en 5 sous-onglets la chaîne causale `DIRECTIVE ➔ NORME ➔ MÉCANISME`, le cycle de vie du glossaire (règles `✨ À valider`), la cascade de localisation des artefacts à 4 niveaux, le rattachement d'équipe et de facturation, et les espaces privés. Capacités : `CAP-067`, `CAP-080`, `CAP-081`, `CAP-084`.
+
+**Consequences (testable) :**
+- Un terme extrait reste `À valider` tant qu'un humain habilité ne l'a pas validé ; il n'alimente pas l'ontologie avant.
+- Le rattachement d'un espace à une équipe est reflété dans le sélecteur de contexte et la facturation.
+
+#### FR-35 : Exposition MCP/A2A Gouvernée, Banc de Test & Atelier orcia-pack-builder
+Un administrateur déclare des services MCP et agents distants (A2A), les teste à chaud sans polluer les runs de production, et construit des packs métiers via l'atelier `orcia-pack-builder` (processus 1 à 5, dont `generate-and-attach` et `validate_help`). Capacités : `CAP-082`, `CAP-083`, `CAP-084`.
+
+**Consequences (testable) :**
+- Un essai du banc de test n'est rattaché à aucun run de production.
+- Un pack généré ne peut être activé qu'après validation de son aide contextuelle (`validate_help`).
+
+#### FR-36 : Gestion des Agents et Compétences (Skills)
+L'utilisateur crée, consulte, exécute et supprime des agents et compétences depuis **Mes agents**, avec visibilité par pack et pont vers l'assistant ; les skills s'exécutent en sandbox (`FR-24`). Capacités : `CAP-090` à `CAP-092`.
+
+**Consequences (testable) :**
+- Un agent ou skill non autorisé pour l'utilisateur n'est pas exécutable (refus `403` avec procédure du Permission Broker).
+- Toute action utilisateur sur un agent affiche un retour explicite (succès ou erreur), jamais un échec silencieux.
 
 ---
 
