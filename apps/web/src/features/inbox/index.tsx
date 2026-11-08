@@ -66,7 +66,6 @@ export function InboxFeaturePanel() {
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
-  const isJsdom = typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
   const activeConversation = savedConversations.find((c) => c.id === activeConversationId) ?? null;
   const activeFolder = folders.find((f) => f.folderId === activeFolderId) ?? null;
@@ -142,7 +141,7 @@ export function InboxFeaturePanel() {
       }),
     );
 
-    if (outcome.isNewConversation && !isJsdom) {
+    if (outcome.isNewConversation) {
       const client = createOrciaApiClient({ baseUrl: "" });
       void client
         .createAssistantThread({
@@ -161,19 +160,17 @@ export function InboxFeaturePanel() {
   const handleFeedbackTurn = (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => {
     setSavedConversations(updateTurnFeedbackInSavedConversations(turnId, feedback));
     setPromptTelemetryLog(updatePromptTelemetryFeedback(turnId, feedback));
-    if (!isJsdom) {
-      const client = createOrciaApiClient({ baseUrl: "" });
-      void client
-        .recordAssistantTurnFeedback({
-          workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-          turn_id: turnId,
-          user_feedback: feedback,
-        })
-        .catch((err: unknown) => {
-          const detail = err instanceof Error ? err.message : "Synchronisation locale";
-          setGovernanceFeedback(isFr ? `ℹ️ Avis enregistré localement (${detail}).` : `ℹ️ Feedback saved locally (${detail}).`);
-        });
-    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    void client
+      .recordAssistantTurnFeedback({
+        workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+        turn_id: turnId,
+        user_feedback: feedback,
+      })
+      .catch((err: unknown) => {
+        const detail = err instanceof Error ? err.message : "Synchronisation locale";
+        setGovernanceFeedback(isFr ? `ℹ️ Avis enregistré localement (${detail}).` : `ℹ️ Feedback saved locally (${detail}).`);
+      });
   };
 
   const firstConv = savedConversations[0];
@@ -199,7 +196,6 @@ export function InboxFeaturePanel() {
   } = useAssistantStreamingTurn({
     activeWorkspaceId,
     isFr,
-    isJsdom,
     initialStreamedText: initialLastReply,
     activeConversation,
     activeFolder,
@@ -368,16 +364,13 @@ export function InboxFeaturePanel() {
             updateFoldersAndPersist((prev) => [...prev, newFolder]);
             selectActiveFolderAndPersist(newId);
             setGovernanceFeedback(isFr ? `✅ Dossier « ${title} » créé et sélectionné.` : `✅ Folder "${title}" created and selected.`);
-            if (!isJsdom) {
-              const client = createOrciaApiClient({ baseUrl: "" });
-              void client
-                .createAssistantFolder({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301", title })
-                .then((res) => { updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === newId ? { ...f, folderId: res.folder_id } : f))); selectActiveFolderAndPersist(res.folder_id); })
-                .catch((err: unknown) => {
-                  const detail = err instanceof Error ? err.message : "Erreur de création";
-                  setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (${detail}).` : `⚠️ Folder "${title}" kept locally (${detail}).`);
-                });
-            }
+            const client = createOrciaApiClient({ baseUrl: "" });
+            void client
+              .createAssistantFolder({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301", title })
+              .catch((err: unknown) => {
+                const detail = err instanceof Error ? err.message : "Erreur de création";
+                setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (${detail}).` : `⚠️ Folder "${title}" kept locally (${detail}).`);
+              });
           }}
           onUpdatePinnedNotes={(folderId, notes) => {
             updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes, assembledLayer5PromptBlock: notes.trim() ? `📌 Notes actives : ${notes.trim()}` : `Dossier actif : ${f.title}` } : f)));

@@ -101,9 +101,6 @@ function InnerShellContainer({
   );
   const [activeHelpSectionId, setActiveHelpSectionId] = useState<string | null>(null);
 
-  const isJsdom =
-    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-
   const runFederatedSpeed2Search = (query: string) => {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -131,11 +128,6 @@ function InnerShellContainer({
       highlightDurationMs: 2000,
       opensContextualHelpColumn: false,
     };
-    if (isJsdom) {
-      setSpeed2Hits([localSemanticHit]);
-      setSpeed2Loading(false);
-      return;
-    }
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
       .searchFederated(trimmed, "GLOBAL", workspaces[0]?.workspaceId ?? null, pathname ?? "/spaces")

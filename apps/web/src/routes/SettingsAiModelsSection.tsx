@@ -96,7 +96,7 @@ export function SettingsAiModelsSection({
         none_local: "Sans clé (Serveur local / Réseau interne)",
       }
     : {
-        api_key: "API Key (Secret token)",
+        api_key: "API Key (Secret token)", // pragma: allowlist secret
         env_var: "Server environment variable",
         none_local: "No key (Local server / Internal network)",
       };
@@ -114,11 +114,7 @@ export function SettingsAiModelsSection({
       setTestResult(syncErr);
       return;
     }
-    const isJsdom = typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (isJsdom) {
-      setTestResult(buildLocalLlmConnectionSuccessFeedback({ isFr, ...params }));
-      return;
-    }
+    setTestResult(buildLocalLlmConnectionSuccessFeedback({ isFr, ...params }));
     setTestResult(await runRemoteLlmConnectionTestEvaluation({ isFr, ...params }));
   };
 

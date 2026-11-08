@@ -125,58 +125,56 @@ export function CatalogFeaturePanel() {
         : `✅ Test bench completed on ${targetUrl}.`,
     );
 
-    const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (!isJsdom) {
-      const client = createOrciaApiClient({ baseUrl: "" });
-      void client
-        .runRemoteServiceTestBench({
-          protocol: "MCP_STREAMABLE_HTTP_SSE",
-          endpoint_url: targetUrl,
-          identity_mode: "SECRET_REF",
-          has_user_personal_token: true,
-          secret_ref_valid: true,
-          allow_private_network: true,
-          raw_tool_names: ["search_documents", "propose_draft_update"],
-          simulated_dry_run_elapsed_ms: 42,
-          simulated_dry_run_bytes: 512,
-        })
-        .then((res) => {
-          if (Array.isArray(res.steps) && res.steps.length > 0) {
-            setTestBenchSteps(
-              res.steps.map((s) => ({
-                stepNumber: (s.step_number ?? 1) as 1 | 2 | 3 | 4,
-                stepCode: s.step_code as
-                  | "1_NETWORK_TLS_ANTI_SSRF"
-                  | "2_AUTHENTICATION"
-                  | "3_CONTRACT_DISCOVERY"
-                  | "4_HOT_DRY_RUN",
-                status: s.status as
-                  | "PASS"
-                  | "FAIL"
-                  | "WAITING_USER_PASSTHROUGH_TOKEN"
-                  | "SKIPPED",
-                detailFr: s.detail_fr,
-              })),
-            );
-          }
-          if (Array.isArray(res.discovered_capabilities)) {
-            setDiscoveredCapabilities(
-              res.discovered_capabilities.map((c) => ({
-                toolName: c.tool_name,
-                qualification: c.qualification as "READ_ONLY" | "WRITE_STAGED_REQUIRED",
-                badgeFr: c.badge_fr,
-              })),
-            );
-          }
-          setCanActivateConnector(Boolean(res.can_activate));
-        })
-        .catch((err: unknown) => {
-          setCatalogActionFeedback(
-            `✅ Banc de test validé localement (${err instanceof Error ? err.message : "mode local"}).`,
+    const client = createOrciaApiClient({ baseUrl: "" });
+    void client
+      .runRemoteServiceTestBench({
+        protocol: "MCP_STREAMABLE_HTTP_SSE",
+        endpoint_url: targetUrl,
+        identity_mode: "SECRET_REF",
+        has_user_personal_token: true,
+        secret_ref_valid: true,
+        allow_private_network: true,
+        raw_tool_names: ["search_documents", "propose_draft_update"],
+        simulated_dry_run_elapsed_ms: 42,
+        simulated_dry_run_bytes: 512,
+      })
+      .then((res) => {
+        if (Array.isArray(res.steps) && res.steps.length > 0) {
+          setTestBenchSteps(
+            res.steps.map((s) => ({
+              stepNumber: (s.step_number ?? 1) as 1 | 2 | 3 | 4,
+              stepCode: s.step_code as
+                | "1_NETWORK_TLS_ANTI_SSRF"
+                | "2_AUTHENTICATION"
+                | "3_CONTRACT_DISCOVERY"
+                | "4_HOT_DRY_RUN",
+              status: s.status as
+                | "PASS"
+                | "FAIL"
+                | "WAITING_USER_PASSTHROUGH_TOKEN"
+                | "SKIPPED",
+              detailFr: s.detail_fr,
+            })),
           );
-        });
-    }
+        }
+        if (Array.isArray(res.discovered_capabilities) && res.discovered_capabilities.length > 0) {
+          setDiscoveredCapabilities(
+            res.discovered_capabilities.map((c) => ({
+              toolName: c.tool_name,
+              qualification: c.qualification as "READ_ONLY" | "WRITE_STAGED_REQUIRED",
+              badgeFr: c.badge_fr,
+            })),
+          );
+        }
+        if (typeof res.can_activate === "boolean") {
+          setCanActivateConnector(res.can_activate);
+        }
+      })
+      .catch((err: unknown) => {
+        setCatalogActionFeedback(
+          `✅ Banc de test validé localement (${err instanceof Error ? err.message : "mode local"}).`,
+        );
+      });
   };
 
   const handleActivateRemoteService = () => {

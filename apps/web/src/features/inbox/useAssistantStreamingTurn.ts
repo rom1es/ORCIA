@@ -39,7 +39,6 @@ export {
 export interface UseAssistantStreamingTurnOptions {
   readonly activeWorkspaceId: string;
   readonly isFr: boolean;
-  readonly isJsdom: boolean;
   readonly initialStreamedText: string;
   readonly activeConversation?: SavedAssistantConversation | null;
   readonly activeFolder?: UiAssistantFolderItem | null;
@@ -59,7 +58,6 @@ export interface SendAssistantTurnPayload {
 export function useAssistantStreamingTurn({
   activeWorkspaceId,
   isFr,
-  isJsdom,
   initialStreamedText,
   activeConversation = null,
   activeFolder = null,
@@ -93,15 +91,13 @@ export function useAssistantStreamingTurn({
       generationStopped: true,
       stepProgress: bgSnapshot.stepProgress.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
     });
-    if (!isJsdom) {
-      const client = createOrciaApiClient({ baseUrl: "" });
-      void client
-        .stopActiveAssistantTurn({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301" })
-        .catch((err: unknown) => {
-          const detail = err instanceof Error ? err.message : "";
-          if (detail) updateBgSnapshot({ generationStopped: true });
-        });
-    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    void client
+      .stopActiveAssistantTurn({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301" })
+      .catch((err: unknown) => {
+        const detail = err instanceof Error ? err.message : "";
+        if (detail) updateBgSnapshot({ generationStopped: true });
+      });
   };
 
   const resetStreamState = (nextText = "") => {
@@ -153,36 +149,6 @@ export function useAssistantStreamingTurn({
       streamedText: "",
       stepProgress: useSteps && plannedSteps.length > 0 ? [{ ...plannedSteps[0]!, status: "RUNNING", durationMs: 0 }] : [],
     });
-
-    if (isJsdom && !(globalThis as Record<string, unknown>).__ORCIA_TEST_KEEP_STREAM_PENDING__) {
-      const jsdomReply = `[${requestedSpeed}] ${userPrompt}`;
-      const completedSteps = plannedSteps.map((st) => ({ ...st, status: "COMPLETED" as const }));
-      const jsdomSysPrompt = [
-        `[ROLE=${activeHat}] [SPEED=${requestedSpeed}] [EFFORT=${effectiveEffort}]`,
-        governancePrefs?.personalInstructions ? `[LAYER_5_USER_PREFERENCES] ${governancePrefs.personalInstructions}` : "",
-        pinnedNotes ? `[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES] ${pinnedNotes}` : "",
-      ].filter(Boolean).join("\n");
-      updateBgSnapshot({ stepProgress: completedSteps, isGenerating: false, thinkingStartedAtMs: null, streamedText: jsdomReply });
-      invokeBgOnTurnCompleted({
-        userPrompt,
-        assistantReply: jsdomReply,
-        assembledSystemPrompt: jsdomSysPrompt,
-        thinkingText: completedSteps.map((s) => `${s.label}: ${s.intermediateOutput ?? ""}`).join(" · "),
-        conversationHistoryCount: historyPayload.length,
-        folderTitle,
-        folderPinnedNotes: pinnedNotes ?? null,
-        requestedTier: effectiveTier,
-        thinkingEffort: effectiveEffort,
-        ...(attachedFiles ? { attachedFiles } : {}),
-        ...(completedSteps.length > 0 ? { stepProgress: completedSteps } : {}),
-        thinkingElapsedSeconds: completedSteps.length > 0 ? 3 : 1,
-      });
-      return;
-    }
-
-    if (isJsdom && (globalThis as Record<string, unknown>).__ORCIA_TEST_KEEP_STREAM_PENDING__) {
-      return;
-    }
 
     if (useSteps && plannedSteps.length >= 3) {
       const advanceStep = (idx: 1 | 2) => {

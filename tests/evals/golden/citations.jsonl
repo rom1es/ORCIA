@@ -1,0 +1,7 @@
+{"id":"valid-source","text":"La règle est définie dans l'ADR [S1].","expect_kept":["S1"],"expect_stripped":[]}
+{"id":"phantom-source","text":"Selon [S1] et aussi [S99].","expect_kept":["S1"],"expect_stripped":["S99"]}
+{"id":"valid-glossary","text":"Le terme [G1] est défini au glossaire.","expect_kept":["G1"],"expect_stripped":[]}
+{"id":"phantom-glossary","text":"Voir [G7] pour la définition.","expect_kept":[],"expect_stripped":["G7"]}
+{"id":"valid-tool","text":"Résultat de l'outil [O1].","expect_kept":["O1"],"expect_stripped":[]}
+{"id":"mixed","text":"[S1] puis [S2], [G1], [O1] et enfin [S5] [O3].","expect_kept":["S1","S2","G1","O1"],"expect_stripped":["S5","O3"]}
+{"id":"no-citation","text":"Réponse sans aucune citation.","expect_kept":[],"expect_stripped":[]}

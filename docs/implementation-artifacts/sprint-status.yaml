@@ -747,7 +747,7 @@ action_items:
     priority: P2
     depends_on: [CAP-ACT-1, TEST-04]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Réalisé via les specs E2E TEST-04..06 (chaque spec verte promeut ses capacités en runtime). Reste à faire de CAP-ACT-1 : le contrôle CI de couverture est livré (infra/scripts/capabilities_registry.py,
@@ -770,7 +770,7 @@ action_items:
     priority: P0
     depends_on: [TEST-01]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: "Le test e2e existant ne valide plus le shell réel."
   - id: TEST-03
@@ -779,7 +779,7 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Amelia (Dev) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Les tests « survie au F5 » ne prouvent aujourd'hui que le localStorage JSDOM (garde-fou n°3 de AGENTS.md non réellement vérifié).
@@ -790,7 +790,7 @@ action_items:
     priority: P0
     depends_on: [TEST-01, TEST-02]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Couche 5 AD-17 : 2 BrowserContext simultanés exigés pour le multi-acteurs. Chaque spec réussi passe les capacités visées
@@ -801,7 +801,7 @@ action_items:
     priority: P1
     depends_on: [TEST-04]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: "Parcours UJ-6, UJ-2/UJ-3, UJ-9."
   - id: TEST-06
@@ -810,7 +810,7 @@ action_items:
     priority: P2
     depends_on: [TEST-05]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       L'audit externe proposait 10 specs ; le croisement avec capabilities.yaml montre que les capacités
@@ -821,44 +821,110 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
-    description: "Aucun test d'intégration pour les routeurs ad-hoc (agents_and_skills, settings_and_studio IAM/modèles IA, control_center, portal_and_help)."
+    description: "Tests d'intégration verticaux HTTP -> SELECT PG18 livrés dans test_http_vertical_day0_and_agents_postgres18.py (5 scénarios couvrant Jour 0, platform-setup-state, agents/skills, LLM progressif, pack-builder, aide à chaud, préférences, gouvernance et dossiers)."
   - id: TEST-08
     title: "P1 — Couche 4 : tests/evals Golden Dataset (assistant, citations, extraction ontologique) sur DeterministicCassetteLLM"
     action: "Créer tests/evals/ avec jeux dorés et seuils (citations fantômes = 0, refus constitutionnel FR-4), exécutés en CI à 0 $"
     priority: P1
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
-    description: "Le dossier n'existe pas ; seuls 2 tests exercent la Cassette."
+    description: "16 tests evals à 0 $ sur Golden Datasets (citations.jsonl + assistant_and_ontology.jsonl : 0 citation fantôme, refus constitutionnel FR-4, profils humains, orthogonalité AD-10, conflit d'axiome L1)."
   - id: TEST-09
     title: "P1 — Couche Sécurité / Red-Team (absente) : IDOR inter-périmètres, hidden_when_unauthorized, SSRF endpoints modèles, secrets jamais en clair, READ_ONLY_OBSERVER sur toutes les mutations"
     action: "Créer tests/security/ (paramétré sur les 163 endpoints : mutation ⇒ 403 pour observateur ; fuzz Schemathesis auth) + Playwright pour le mode observateur"
     priority: P1
     depends_on: [TEST-01]
     owner: "Sophie (SecOps) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
-    description: "La couche Sécurité/Red-Team citée par AD-17 n'a aucun fichier dédié (seul le fuzzing Schemathesis de contrat existe)."
+    description: "21 tests de sécurité dans tests/security/test_api_security_baseline.py (SSRF, 403 ERR_OBSERVER_MODE_READ_ONLY paramétré sur mutations, anti-escalade RBAC, masquage CONFIDENTIAL_RESTRICTED, secret canari DEC-SEC-01)."
   - id: TEST-10
     title: "P2 — Traçabilité test ↔ capacité : champ `tests:` dans capabilities.yaml et check CI « capacité live sans E2E ni intégration HTTP »"
     action: "Étendre capabilities_registry.py : chaque capacité status live référence ≥1 test (unit/integration/e2e) ; rapport de couverture par couche ; seuil bloquant progressif"
     priority: P2
     depends_on: [TEST-04]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Évite la dérive « fonctionnalité livrée sans test traversant ». Les 57 capacités sont toutes verification: docs ;
-      ce champ remplace la vérification manuelle et pilote CAP-ACT-5.
+      Évite la dérive « fonctionnalité livrée sans test traversant ». 54/54 capacités live référencent au moins un test (seuil bloquant actif dans pnpm site:check).
   - id: TEST-01b
     title: "P1 — Intégrer `pnpm e2e` à la CI (aucun .github/workflows dans le dépôt) avec Docker pour la pile éphémère"
     action: "Créer le workflow CI (job e2e : docker, uv sync, pnpm install, playwright install chromium, pnpm e2e) et publier trace/rapport en artefact"
     priority: P1
     depends_on: [TEST-01]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: "Socle livré (TEST-01) ; reste la exécution automatique en CI."
+  - id: BUG-E2E-01
+    title: "Dossiers de Mon Assistant non réhydratés depuis PostgreSQL après un vrai F5 (localStorage vidé)"
+    action: "Au démarrage de /assistant, appeler listAssistantFolders (GET overview) et réhydrater assistantFoldersAndPrefsStore ; retirer test.fail dans e2e/02-assistant-streaming-and-folders.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 02) : le dossier est créé (POST /api/v1/assistant/folders < 400) mais « Dossiers (0) » après
+      localStorage.clear() + reload. Viole le garde-fou n°3 (survie au F5 via GET). Test en test.fail jusqu'à correction.
+  - id: BUG-E2E-02
+    title: "HumanLedAnchorCard et ArbitrationTieBreakCard (Epic 3, FR-4/FR-5) non montés dans apps/web"
+    action: "Câbler les composants dans l'écran du run/cockpit (signature d'ancrage, arbitrage) via @orcia/api-client puis activer le test.fixme de e2e/03-human-led-anchor-and-arbitration.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 03) : seuls les endpoints existent (anchors/sign, arbitration, arbitration/resolve) ; aucun usage
+      des deux composants dans apps/web. Les stories 3.4 sont `done` mais le parcours Human-Led n'est pas utilisable dans le portail.
+  - id: BUG-E2E-03
+    title: "GET /api/v1/events/stream (AD-4) rejoue les événements récents puis se termine : pas de diffusion SSE temps réel < 500 ms"
+    action: "Rendre le flux persistant (abonnement au SSEBroker / Redis pub-sub avec heartbeat) et consommer le flux dans apps/web (aucun EventSource aujourd'hui) ; retirer test.fail dans e2e/04-multi-actor-claim-sse.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 04). Le claim exclusif fonctionne (200 puis 409 ERR_STEP_ALREADY_CLAIMED_BY_PEER) mais le verrou
+      visuel chez un pair en < 500 ms (FR-2) n'est pas réalisé : pas de push, et le service de notifications est en mémoire.
+  - id: BUG-E2E-04
+    title: "Composition Root : identité par défaut `marc` (TEAM_LEAD) sans jeton et notifications d'amorce fictives en mémoire"
+    action: "Exiger un Bearer en dehors du mode test, supprimer la persona de repli et les seed_default_notifications à identifiants fixes de initialize_app_services (zéro donnée fictive), persister les notifications en PostgreSQL"
+    priority: P0
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Constaté pendant TEST-04 : resolve_user() retombe sur la persona `marc` quand aucun jeton n'est fourni (le web n'envoie pas
+      de Bearer) ; initialize_app_services() sème 4 notifications fictives (ids 0195f000-…) en mémoire, contraire à la politique
+      zéro donnée fictive et au garde-fou « jamais de singleton en mémoire en production ». Risque sécurité (usurpation) à qualifier.
+  - id: BUG-E2E-05
+    title: "CognitiveReviewBriefingGrid et ChunkValidationCard (Epic 4, FR-6/FR-19) non montés dans apps/web"
+    action: "Câbler le briefing de revue 4 blocs et la validation par découpage dans le portail via @orcia/api-client puis activer le test.fixme de e2e/06-gates-review-and-anti-rubber-stamping.spec.ts"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-05 (spec 06) : seuls les endpoints gates / human_gates existent ; les stories 4.2 / 4.3 sont `done` mais la
+      revue humaine par découpage et le garde-fou anti-rubber-stamping ne sont pas utilisables dans l'interface.
+  - id: BUG-E2E-06
+    title: "Recherche fédérée ⌘K (vitesse 2) : l'UI reçoit 422 de l'API, avale l'erreur et affiche un résultat local fabriqué"
+    action: "Corriger l'appel searchFederated (workspace_id optionnel / périmètre GLOBAL valide) ; remplacer le .catch → localSemanticHit de ShellContainer par un état d'erreur explicite (garde-fou n°5) ; retirer test.fail dans e2e/10-command-palette-search.spec.ts"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-06 (spec 10) : `GET/POST` de recherche fédérée → 422 au Jour 0 (workspace null). ShellContainer.runFederatedSpeed2Search
+      retombe sur un « Passage pertinent » fabriqué côté client (donnée fictive + catch silencieux).

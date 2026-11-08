@@ -1,147 +1,73 @@
 import { expect, test } from "@playwright/test";
+import { resetDay0 } from "./support/day0";
 
-test.describe("ORCIA Direction C 7-Module Shell & Multi-Viewport E2E (UX-DR1, UX-DR2, UX-DR8)", () => {
-  test("renders 3 columns, starts empty by default, and supports ?fixture=test for automated E2E scenarios across 8 feature entries", async ({
+const EIGHT_MENU_KEYS = [
+  "cockpit",
+  "assistant",
+  "processes",
+  "agents",
+  "spaces",
+  "finops",
+  "configuration",
+  "help",
+] as const;
+
+test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, UX-DR8)", () => {
+  test.beforeEach(async ({ page }) => {
+    resetDay0();
+    await page.goto("/");
+    await expect(page.getByTestId("first-boot-admin-setup-modal")).toBeVisible({
+      timeout: 30000,
+    });
+  });
+
+  test("présente les 4 zones et les 8 entrées fixes sans préfixe numérique", async ({ page }) => {
+    await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible();
+    await expect(page.getByTestId("four-zone-top-header-bar")).toBeVisible();
+    await expect(page.getByTestId("four-zone-sidebar")).toBeVisible();
+    await expect(page.getByTestId("four-zone-central-workspace")).toBeAttached();
+
+    for (const key of EIGHT_MENU_KEYS) {
+      const entry = page.getByTestId(`eight-menu-item-${key}`);
+      await expect(entry).toBeAttached();
+      const text = (await entry.innerText()).trim();
+      expect(text.length, `libellé vide pour ${key}`).toBeGreaterThan(0);
+      expect(text, `préfixe numérique interdit pour ${key}`).not.toMatch(/^\d+[.)]?\s/);
+    }
+  });
+
+  test("grise les entrées de menu tant que la plateforme n'est pas initialisée (Jour 0)", async ({
     page,
   }) => {
-    // 1. Default system starts empty of sample data and filters menu entries by scope
-    await page.goto("/cockpit");
-    await expect(page.getByTestId("sidebar-nav-item-cockpit")).toBeVisible();
-    await expect(page.getByTestId("sidebar-nav-item-catalog")).toBeVisible();
-    await expect(page.getByTestId("sidebar-nav-item-admin")).toBeVisible();
-    await expect(page.getByTestId("sidebar-nav-item-bootstrap")).toBeVisible();
-    await expect(page.getByTestId("sidebar-nav-item-inbox")).toHaveCount(0);
+    const disabledReasons: string[] = [];
+    for (const key of EIGHT_MENU_KEYS) {
+      const entry = page.getByTestId(`eight-menu-item-${key}`);
+      if ((await entry.getAttribute("aria-disabled")) === "true") {
+        const reason = await entry.getAttribute("data-disabled-reason");
+        expect(reason, `raison de grisage manquante pour ${key}`).toBeTruthy();
+        disabledReasons.push(key);
+      }
+    }
+    expect(disabledReasons.length, "au moins une entrée grisée au Jour 0").toBeGreaterThan(0);
+  });
 
-    // 2. Automated test dataset mode (?fixture=test)
-    await page.goto("/cockpit?fixture=test");
-
-    const sidebar = page.getByTestId("global-sidebar");
-    const canvas = page.getByTestId("app-shell-canvas");
-    const dock = page.getByTestId("assistant-dock");
-
-    await expect(sidebar).toBeVisible();
-    await expect(canvas).toBeVisible();
-    await expect(dock).toBeVisible();
-    await expect(page.getByTestId("topbar-search-input")).toBeVisible();
-
-    // Verify all 8 feature entries in French by default (without number prefixes)
-    await expect(page.getByTestId("sidebar-nav-item-cockpit")).toContainText("Cockpit & Chat");
-    await expect(page.getByTestId("sidebar-nav-item-inbox")).toContainText("Boîte & Mes Runs");
-    await expect(page.getByTestId("sidebar-nav-item-catalog")).toContainText("Catalogue Fédéré");
-    await expect(page.getByTestId("sidebar-nav-item-ontology")).toContainText("Ontologie & KB");
-    await expect(page.getByTestId("sidebar-nav-item-gates")).toContainText(
-      "Gates & Habilitations",
-    );
-    await expect(page.getByTestId("sidebar-nav-item-finops")).toContainText("FinOps & Audit");
-    await expect(page.getByTestId("sidebar-nav-item-admin")).toContainText(
-      "Administration & Pilotage des Workspaces",
-    );
-    await expect(page.getByTestId("sidebar-nav-item-bootstrap")).toContainText(
-      "Initialisation & Onboarding",
-    );
-
-    // Keyboard shortcut '[' collapses sidebar
+  test("le raccourci « [ » replie et déplie la barre latérale", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop-cockpit", "raccourci clavier : bureau uniquement");
+    const sidebar = page.getByTestId("four-zone-sidebar");
+    await expect(sidebar).toHaveAttribute("data-rail-collapsed", "false");
+    await page.getByTestId("four-zone-central-workspace").click({ position: { x: 5, y: 5 }, force: true });
     await page.keyboard.press("[");
-    await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+    await expect(sidebar).toHaveAttribute("data-rail-collapsed", "true");
     await page.keyboard.press("[");
-    await expect(sidebar).toHaveAttribute("data-collapsed", "false");
+    await expect(sidebar).toHaveAttribute("data-rail-collapsed", "false");
+  });
 
-    // Keyboard shortcut ']' collapses Assistant Dock
-    await page.keyboard.press("]");
-    await expect(dock).toHaveAttribute("data-collapsed", "true");
-
-    // Switch locale to English
-    await page.getByTestId("locale-switcher-button").click();
-    await expect(page.getByTestId("locale-switcher-button")).toContainText("(EN)");
-
-    // Story 1.3: Navigate to Catalog module -> Verify CatalogExplorerPanel
-    await page.getByTestId("sidebar-nav-item-catalog").click();
-    await expect(page).toHaveURL(/\/catalog/);
-    await expect(page.getByTestId("catalog-explorer-panel")).toBeVisible();
-    await expect(page.getByTestId("uri-badge-res-blackbox-security-agent")).toHaveAttribute(
-      "data-uri-scheme",
-      "git",
-    );
-    await expect(page.getByTestId("uri-badge-res-nexus-bmad-architecture-pack")).toHaveAttribute(
-      "data-uri-scheme",
-      "nexus",
-    );
-    await expect(page.getByTestId("uri-badge-res-payment-delivery-workflow")).toHaveAttribute(
-      "data-uri-scheme",
-      "db",
-    );
-
-    await page.getByTestId("resolve-cas-btn-res-open-checkout-skill").click();
-    await expect(page.getByTestId("resolve-cas-result-res-open-checkout-skill")).toContainText(
-      "cas/4b72d9a1c30e",
-    );
-
-    await page.getByTestId("bmad-import-trigger-btn").click();
-    await expect(page.getByTestId("bmad-import-result")).toContainText("BMAD_PACK");
-
-    // Epic 2 (Stories 2.1-2.4): Navigate to Ontology & KB module -> Verify 4-level ontology, What-If, Promote, Tripartite Graph & Stale Warning
-    await page.getByTestId("sidebar-nav-item-ontology").click();
-    await expect(page).toHaveURL(/\/ontology/);
-    await expect(page.getByTestId("ontology-kb-explorer-panel")).toBeVisible();
-    await expect(page.getByTestId("ontology-columns-grid")).toBeVisible();
-    await expect(page.getByTestId("tripartite-graph-section")).toBeVisible();
-    await expect(page.getByTestId("stale-alerts-section")).toBeVisible();
-    await page.getByTestId("what-if-btn-concept-l1-strategic-asset").click();
-    await expect(page.getByTestId("ontology-action-banner")).toContainText(
-      "ERR_ONTOLOGY_CONFLICT",
-    );
-    await page.getByTestId("promote-btn-concept-l4-3ds-frictionless-exemption").click();
-    await expect(page.getByTestId("ontology-action-banner")).toContainText("3_WORKSPACE");
-
-    // Story 1.2 & 1.5: Navigate to Admin & Bootstrap dedicated menu entries
-    await page.getByTestId("sidebar-nav-item-admin").click();
-    await expect(page).toHaveURL(/\/workspaces/);
-    await expect(page.getByTestId("workspace-topology-panel")).toBeVisible();
-
-    await page.getByTestId("sidebar-nav-item-bootstrap").click();
-    await expect(page).toHaveURL(/\/bootstrap/);
-    await expect(page.getByTestId("bootstrap-onboarding-panel")).toBeVisible();
-    const anchorCard = page.getByTestId("human-led-anchor-card");
-    await expect(anchorCard).toBeVisible();
-    await expect(anchorCard).toHaveAttribute("data-human-authored-required", "true");
-
-    await page.getByTestId("simulate-single-llm-family-btn").click();
-    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText(
-      "ERR_MODEL_ORTHOGONALITY_VIOLATION",
-    );
-    await page.getByTestId("simulate-dual-llm-family-btn").click();
-
-    await page.getByTestId("execute-init-workspace-btn").click();
-    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText("HTTP 200 OK");
-
-    await page.getByTestId("execute-init-datasource-btn").click();
-    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText("HTTP 200 OK");
-
-    await page.getByTestId("execute-init-user-btn").click();
-    await expect(page.getByTestId("bootstrap-feedback-banner")).toContainText("AES-256-GCM");
-
-    // Story 1.4: Navigate to Gates & Permissions -> Verify Permission Broker auto-opens Dock on PERMISSION_DENIED_STEP
-    await page.getByTestId("sidebar-nav-item-gates").click();
-    await expect(page).toHaveURL(/\/gates/);
-    await page.getByTestId("simulate-permission-denied-confluence-btn").click();
-    await expect(dock).toHaveAttribute("data-collapsed", "false");
-    await expect(page.getByTestId("permission-broker-card")).toBeVisible();
-    await expect(page.getByTestId("permission-broker-required-role")).toHaveText(
-      "CONFLUENCE_PAY_ADR_READER",
-    );
-
-    await page.getByTestId("permission-broker-replay-btn").click();
-    await expect(page.getByTestId("permission-broker-card")).toHaveAttribute(
-      "data-ticket-status",
-      "REPLAYED",
-    );
-
-    await page.getByTestId("simulate-confused-deputy-btn").click();
-    await expect(page.getByTestId("permission-broker-action-banner")).toContainText(
-      "ERR_CONFUSED_DEPUTY_BLOCKED",
-    );
-
-    // Mobile Companion tab bar is rendered and interactive
-    await expect(page.getByTestId("mobile-companion-tabbar")).toBeVisible();
+  test("la modale Jour 0 est un dialogue accessible qui bloque le shell", async ({ page }) => {
+    const modal = page.getByTestId("first-boot-admin-setup-modal");
+    await expect(modal).toHaveAttribute("role", "dialog");
+    await expect(modal).toHaveAttribute("aria-modal", "true");
+    await expect(
+      page.getByTestId("sidebar-rail-toggle-btn").click({ timeout: 2000 }),
+    ).rejects.toThrow(/intercepts pointer events/);
   });
 });

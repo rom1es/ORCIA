@@ -12,7 +12,7 @@ import type {
   UiOntologyLevel,
   UiScopeNode,
 } from "@orcia/ui";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   cleanAuditSummaryJargon,
   clearPlatformSetupStorage,
@@ -169,14 +169,11 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const [auditEvents, setAuditEvents] = useState<readonly ConfiguredAuditEvent[]>(
     initialCache.auditEvents,
   );
+  const hasMutatedSinceMountRef = useRef(false);
 
   const persistSnapshot = (next: CachedPlatformSetupState) => {
+    hasMutatedSinceMountRef.current = true;
     writeCachedPlatformSetupState(next);
-    const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (isJsdom) {
-      return;
-    }
     const client = createOrciaApiClient({ baseUrl: "" });
     const payload: PlatformSetupStatePutRequest = {
       org_units: next.orgUnits as unknown as Record<string, unknown>[],
@@ -208,11 +205,6 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     let cancelled = false;
-    const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (isJsdom) {
-      return;
-    }
     const client = createOrciaApiClient({ baseUrl: "" });
     Promise.all([
       client.getAccostageStatus(),
@@ -221,6 +213,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       .then(([status, remoteState]) => {
         if (cancelled) return;
         if (status.first_admin_initialized === false) {
+          if (hasMutatedSinceMountRef.current || readCachedPlatformAdmin() !== null) {
+            return;
+          }
           writeCachedPlatformAdmin(null);
           writeCachedPlatformSetupState(null);
           setPlatformAdmin(null);
@@ -238,10 +233,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           return;
         }
         if (status.first_admin_initialized && status.first_admin_email) {
+          const existingLocal = readCachedPlatformAdmin();
           const synced: ConfiguredPlatformAdmin = {
             displayName: status.first_admin_display_name ?? status.first_admin_email,
             email: status.first_admin_email,
             role: "PLATFORM_ADMIN",
+            ...(existingLocal?.memberTeamIds ? { memberTeamIds: existingLocal.memberTeamIds } : {}),
           };
           writeCachedPlatformAdmin(synced);
           setPlatformAdmin(synced);
@@ -390,40 +387,36 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
 
-    const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (!isJsdom) {
-      const rawPassword =
-        input.password && input.password.trim().length >= 8
-          ? input.password.trim()
-          : "OrciaInitialAdmin!2026";
-      const client = createOrciaApiClient({ baseUrl: "" });
-      void client
-        .createWelcomeSetupFirstAdmin({
-          email: admin.email,
-          display_name: admin.displayName,
-          password: rawPassword,
-          orcia_env: "local",
-        })
-        .catch(() => {
-          void client
-            .getAccostageStatus()
-            .then((status) => {
-              if (status.first_admin_initialized && status.first_admin_email) {
-                const existing: ConfiguredPlatformAdmin = {
-                  displayName:
-                    status.first_admin_display_name ?? status.first_admin_email,
-                  email: status.first_admin_email,
-                  role: "PLATFORM_ADMIN",
-                  memberTeamIds: admin.memberTeamIds ?? [],
-                };
-                writeCachedPlatformAdmin(existing);
-                setPlatformAdmin(existing);
-              }
-            })
-            .catch(() => undefined);
-        });
-    }
+    const rawPassword =
+      input.password && input.password.trim().length >= 8
+        ? input.password.trim()
+        : "OrciaInitialAdmin!2026";
+    const client = createOrciaApiClient({ baseUrl: "" });
+    void client
+      .createWelcomeSetupFirstAdmin({
+        email: admin.email,
+        display_name: admin.displayName,
+        password: rawPassword,
+        orcia_env: "local",
+      })
+      .catch(() => {
+        void client
+          .getAccostageStatus()
+          .then((status) => {
+            if (status.first_admin_initialized && status.first_admin_email) {
+              const existing: ConfiguredPlatformAdmin = {
+                displayName:
+                  status.first_admin_display_name ?? status.first_admin_email,
+                email: status.first_admin_email,
+                role: "PLATFORM_ADMIN",
+                memberTeamIds: admin.memberTeamIds ?? [],
+              };
+              writeCachedPlatformAdmin(existing);
+              setPlatformAdmin(existing);
+            }
+          })
+          .catch(() => undefined);
+      });
   };
 
   const toggleAdminTeamMembership = (teamId: string) => {
@@ -610,25 +603,21 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ llmTiers: nextLlmTiers, auditEvents: nextAudit }));
 
-    const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (!isJsdom) {
-      const client = createOrciaApiClient({ baseUrl: "" });
-      const resolvedUri =
-        input.endpointUrl &&
-        (input.endpointUrl.startsWith("http://") || input.endpointUrl.startsWith("https://"))
-          ? input.endpointUrl
-          : `https://api.${input.modelFamily.toLowerCase().replace(/[^a-z0-9-]+/g, "-")}.local/v1`;
-      void client
-        .registerProgressiveLlmEndpoint({
-          endpoint_key: input.tier,
-          provider_slug: input.modelFamily,
-          model_family: input.modelFamily,
-          model_name: input.primaryModel,
-          endpoint_uri: resolvedUri,
-        })
-        .catch(() => undefined);
-    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    const resolvedUri =
+      input.endpointUrl &&
+      (input.endpointUrl.startsWith("http://") || input.endpointUrl.startsWith("https://"))
+        ? input.endpointUrl
+        : `https://api.${input.modelFamily.toLowerCase().replace(/[^a-z0-9-]+/g, "-")}.local/v1`;
+    void client
+      .registerProgressiveLlmEndpoint({
+        endpoint_key: input.tier,
+        provider_slug: input.modelFamily,
+        model_family: input.modelFamily,
+        model_name: input.primaryModel,
+        endpoint_uri: resolvedUri,
+      })
+      .catch(() => undefined);
   };
 
   const createWorkspace = (input: {

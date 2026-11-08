@@ -14,7 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 95
+    "techLeadReportsCount": 103,
+    "capabilitiesCount": 57,
+    "liveCapabilitiesCount": 54,
+    "verifiedCapabilitiesCount": 3
   },
   "activeRoutes": [
     "/",
@@ -420,6 +423,62 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Documentation Stratégie de Tests & Anti-Dette",
+      "reportFile": "2026-11-08-documentation-strategie-tests-et-gouvernance-anti-dette-tech-lead-report.md",
+      "domain": "Documentation de référence de la stratégie de tests AD-17 (5 couches + Sécurité) et des 10 mécanismes automatisés anti-dette de tests",
+      "summary": "Création de docs/testing-strategy.md et mise à jour de README.md, architecture.md, AGENTS.md et CLAUDE.md."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-03)",
+      "reportFile": "2026-11-08-test-03-centralisation-garde-jsdom-tech-lead-report.md",
+      "domain": "Garde jsdom centralisée (lib/runtimeEnv.ts) + audit anti-régression ; suppression complète à venir",
+      "summary": "apps/web/src/lib/runtimeEnv.ts, 9 fichiers, runtime-env-guard-audit.test.ts."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-07..10)",
+      "reportFile": "2026-11-08-test-07-a-10-pyramide-integration-evals-securite-tech-lead-report.md",
+      "domain": "Intégration verticale HTTP→PG18, evals Golden Dataset citations, socle sécurité, traçabilité tests: ↔ capacités",
+      "summary": "tests/integration/test_http_vertical_*, tests/evals/, tests/security/, capabilities_registry.py."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / CI (TEST-01b)",
+      "reportFile": "2026-11-08-test-01b-workflow-ci-e2e-tech-lead-report.md",
+      "domain": "Workflow GitHub Actions e2e.yml (pile éphémère Docker + Playwright)",
+      "summary": ".github/workflows/e2e.yml — à valider à la première exécution CI."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-06)",
+      "reportFile": "2026-11-08-test-06-e2e-p2-specs-tech-lead-report.md",
+      "domain": "Specs E2E P2 : aide contextuelle, ⌘K, écrans sans erreur serveur ; BUG-E2E-06",
+      "summary": "apps/web/e2e/09..11-*.spec.ts, support/apiErrors.ts."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-05)",
+      "reportFile": "2026-11-08-test-05-e2e-p1-specs-tech-lead-report.md",
+      "domain": "Specs E2E P1 : Mes Espaces (org + espace + F5), agents (création + F5), gates (fixme)",
+      "summary": "apps/web/e2e/06..08-*.spec.ts, support/orgAndWorkspace.ts."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-04)",
+      "reportFile": "2026-11-08-test-04-e2e-p0-specs-tech-lead-report.md",
+      "domain": "Specs E2E P0 sur la pile isolée : Jour 0 + vrai F5 en base, Mon Assistant, Human-Led, multi-acteurs, mobile (livraison incrémentale)",
+      "summary": "apps/web/e2e/01..05-*.spec.ts, helpers support/."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-02)",
+      "reportFile": "2026-11-08-test-02-reparation-shell-spec-e2e-tech-lead-report.md",
+      "domain": "Réécriture de shell.spec.ts sur le shell 4 zones réel (FourZoneDirectionCShell, Epic 12) et l'état Jour 0",
+      "summary": "4 tests Playwright sur la pile E2E isolée, 2 viewports ; ancien parcours fictif supprimé."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Post-Epic 12 / Design System @orcia/ui & Centralisation des Icônes",

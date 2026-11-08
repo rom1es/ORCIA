@@ -72,11 +72,6 @@ export function SettingsPacksSection({
 
   useEffect(() => {
     let cancelled = false;
-    const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-    if (isJsdom) {
-      return;
-    }
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
       .listInstalledBusinessPacks()

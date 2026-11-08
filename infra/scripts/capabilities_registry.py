@@ -39,7 +39,9 @@ def prd_max_fr(path: Path = PRD_PATH) -> int:
     return max(nums) if nums else 0
 
 
-def validate_registry(data: dict[str, Any], max_fr: int | None = None) -> list[str]:
+def validate_registry(
+    data: dict[str, Any], max_fr: int | None = None, repo_root: Path = REPO_ROOT
+) -> list[str]:
     errors: list[str] = []
     seen: set[str] = set()
     max_fr = prd_max_fr() if max_fr is None else max_fr
@@ -55,6 +57,11 @@ def validate_registry(data: dict[str, Any], max_fr: int | None = None) -> list[s
             errors.append(f"{cap_id}: origin `{cap['origin']}` invalide ({sorted(ORIGINS)})")
         if cap.get("status") and cap["status"] not in STATUSES:
             errors.append(f"{cap_id}: status `{cap['status']}` invalide ({sorted(STATUSES)})")
+        for test_path in cap.get("tests", []) or []:
+            if not (repo_root / str(test_path)).exists():
+                errors.append(f"{cap_id}: test référencé introuvable `{test_path}`")
+        if cap.get("verification") == "runtime" and not cap.get("tests"):
+            errors.append(f"{cap_id}: verification `runtime` exige au moins un test (`tests:`)")
         for fr in cap.get("fr", []) or []:
             if not re.fullmatch(r"FR-\d+", str(fr)):
                 errors.append(f"{cap_id}: FR `{fr}` invalide (attendu FR-<n>)")
@@ -95,6 +102,13 @@ def check_coverage(data: dict[str, Any], routes: list[str], routers: list[str]) 
     return errors
 
 
+def capability_test_stats(data: dict[str, Any]) -> dict[str, Any]:
+    """Capacités `live` avec / sans test référencé (`tests:`), pour pilotage de la pyramide."""
+    live = [c for c in data.get("capabilities", []) if c.get("status") == "live"]
+    without = [str(c["id"]) for c in live if not c.get("tests")]
+    return {"live": len(live), "with_tests": len(live) - len(without), "without_tests": without}
+
+
 def discover_routers(routers_dir: Path = ROUTERS_DIR) -> list[str]:
     return sorted(
         p.stem for p in routers_dir.glob("*.py") if "APIRouter(" in p.read_text(encoding="utf-8")
@@ -114,4 +128,9 @@ def run_registry_check() -> list[str]:
     data = load_registry()
     errors = validate_registry(data)
     errors += check_coverage(data, discover_routes(), discover_routers())
+    stats = capability_test_stats(data)
+    if stats["without_tests"]:
+        errors.append(
+            f"Capacités `live` sans test référencé (`tests:`): {', '.join(stats['without_tests'])}"
+        )
     return errors

@@ -31,6 +31,7 @@ Orchestration of Processes, Context, and Intelligent Agents — hybrid TypeScrip
 - UX Design Tokens & Experience (Direction C, 16 UX-DRs): `docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md` and `EXPERIENCE.md`
 - Epics & 33 User Stories (`status: final`, 7 Epics): `docs/planning-artifacts/epics.md`
 - Capabilities Registry (source de vérité de ce qui est livré, contrôlé par `pnpm site:check`): `docs/product/capabilities.yaml`
+- Testing Strategy & Zero-Test-Debt Governance (`AD-17` 5 Layers + Security & 10 Automated Anti-Debt Gates): `docs/testing-strategy.md`
 - Sprint Tracking File: `docs/implementation-artifacts/sprint-status.yaml`
 - Tech Lead Report Template: `docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`
 - Tech Lead Reports Directory: `docs/implementation-artifacts/tech-lead-reports/`
@@ -120,7 +121,30 @@ Source de vérité de « ce qui est en place » : [`docs/product/capabilities.ya
 3. **Après implémentation (avant `done` / fin de tâche)** : créer ou mettre à jour l'entrée `CAP-xxx` (statut, `origin_ref` = story-key ou slug du rapport, surfaces route/API/UI/migration, date de vérification) et exécuter `pnpm site:check` : toute route SPA ou routeur FastAPI sans capacité associée fait échouer le contrôle.
 4. **Toute évolution fonctionnelle hors Story** doit se rattacher soit à un FR du PRD, soit à un `FR-3x` proposé (`proposed_fr` du registre), soit à l'Epic 13 « Évolutions continues » (Story rétroactive `13.x`) ; jamais « orpheline ». Les travaux d'hygiène (purge, a11y, câblage, refactoring) se classent en NFR / garde-fous, pas en fonctionnalités.
 5. **Cohérence documentaire** : un FR ajouté au PRD est ajouté à la `FR Coverage Map` de `epics.md` ; un statut de Story qui change est reflété dans `sprint-status.yaml` ET dans `capabilities.yaml` ; le nombre de FR cité dans ce fichier doit rester égal à celui du PRD.
-6. **Statut `verification`** : `docs` (déduit des rapports/routeurs) ne vaut pas preuve ; passer à `runtime` uniquement après un parcours réel (test e2e / `pnpm db:reset`).
+6. **Statut `verification`** : `docs` (déduit des rapports/routeurs) ne vaut pas preuve ; passer à `runtime` uniquement après un parcours réel (test e2e / `pnpm db:reset`), et renseigner obligatoirement le champ `tests:` dans `docs/product/capabilities.yaml` (contrôlé en CI par `pnpm site:check` : aucune capacité `live` ne peut rester sans test référencé).
+
+## 6. Revue Systématique d'Impact sur Toute la Pyramide des Tests (`AD-17` — Couches 1 à 5 + Sécurité, OBLIGATOIRE)
+Référence complète de la stratégie et des 10 verrous anti-dette de tests : [`docs/testing-strategy.md`](file:///home/romain/Documents/Projects/ORCIA/docs/testing-strategy.md).
+Pour **chaque User Story (`Story N.M`)** ET pour **chaque demande ad-hoc (évolution, correctif, refactoring UX/API/SQL)**, l'agent DOIT mener une revue d'impact traversante sur les **6 niveaux de tests** **avant codage** (dans la Section 1/2 du rapport Tech Lead) ET **après codage** (dans la Section 3.3 du rapport Tech Lead) :
+1. **Couche 1a — Unitaires Python & Routeurs (`tests/unit/`, `>= 90 %` requis)** :
+   - `.venv/bin/pytest tests/unit --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90`
+2. **Couche 1b — Unitaires & Composants Frontend TS/React sans court-circuit `isJsdom` (`packages/ui/src/__tests__/`, `apps/web/src/__tests__/`, `packages/api-client/src/__tests__/`)** :
+   - `pnpm turbo run lint typecheck test`
+   - Interdiction absolue d'introduire `if (isJsdom) return;` dans `apps/web/src/` : tout appel `@orcia/api-client` sous Vitest traverse le transport HTTP/SSE simulé (`apps/web/src/__tests__/vitest.setup.ts`, contrôlé par `runtime-env-guard-audit.test.ts` et `zero-dead-buttons-and-silent-catches-audit.test.tsx`).
+3. **Couche 2 — Intégration Verticale `HTTP FastAPI ➔ PostgreSQL 18 / Redis 7.4 / SeaweedFS` (`tests/integration/`)** :
+   - `.venv/bin/pytest tests/integration`
+   - Toute création/modification de routeur ou de persistance SQL doit être vérifiée par un test `AsyncClient(transport=ASGITransport(app=app))` suivi d'un `SELECT` direct sur PostgreSQL 18 (`test_http_vertical_day0_and_agents_postgres18.py`, `test_epics_1_7_vertical_sql_wiring_postgres18.py`).
+4. **Couche 3 — Contrat OpenAPI 3.1 (`0-diff`), Conformité & Frontières Hexagonales (`tests/contract/`, `tests/conformance/`)** :
+   - `.venv/bin/pytest tests/contract tests/conformance` + `.venv/bin/lint-imports` + `lint_spine.py`.
+5. **Couche 4 — Orchestration IA Déterministe & Evals « Golden Dataset » à `0 $` (`tests/evals/`)** :
+   - `.venv/bin/pytest tests/evals`
+   - Tout changement touchant au prompt à 5 couches (`AssistantHarness`), aux citations `[S1]/[G1]/[O1]`, au routage 3 vitesses ou à l'Ontologie `L1–L4` doit mettre à jour et faire passer les jeux dorés (`tests/evals/golden/*.jsonl`).
+6. **Couche Sécurité / Red-Team (`tests/security/`)** :
+   - `.venv/bin/pytest tests/security`
+   - Vérifier systématiquement : garde-fou SSRF (`is_safe_llm_endpoint_url`), rejet `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` de `READ_ONLY_OBSERVER` sur toute nouvelle route de mutation, confinement RBAC/ABAC (`403 ERR_GRANT_ESCALATION_FORBIDDEN`), masquage `CONFIDENTIAL_RESTRICTED`, et absence de fuite de secret en clair (`DEC-SEC-01`).
+7. **Couche 5 — Tests End-to-End Navigateur Playwright Bi-Serveur (`apps/web/e2e/00..11-*.spec.ts`, Desktop `1440×900` + Mobile `390×844`)** :
+   - `pnpm e2e` (démarre automatiquement PostgreSQL 18 + Redis 7.4 éphémères, applique `09_reset_db_first_boot.py --apply`, lance FastAPI `:8000` avec `ORCIA_USE_CASSETTE_LLM=true` et Vite `:3100`).
+   - **Obligation d'alignement E2E** : toute modification d'écran, de sélecteur `data-testid`, de modale Jour 0, de route SPA ou de flux API DOIT vérifier et mettre à jour les specs Playwright impactées (`apps/web/e2e/*.spec.ts`) ainsi que la liste `tests:` de la capacité correspondante dans `docs/product/capabilities.yaml`.
 
 ---
 

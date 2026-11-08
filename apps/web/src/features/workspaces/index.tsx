@@ -52,9 +52,6 @@ export function WorkspacesFeaturePanel() {
     [],
   );
 
-  const isJsdom =
-    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
-
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
   const activeScopeName =
     activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform ORCIA");
@@ -311,44 +308,42 @@ export function WorkspacesFeaturePanel() {
                 ? `✅ Contrôle automatique généré et vérifié pour la règle « ${ruleId} ».`
                 : `✅ Automated check generated and verified for rule "${ruleId}".`,
             );
-            if (!isJsdom) {
-              const client = createOrciaApiClient({ baseUrl: "" });
-              const targetWsId =
-                displayedWorkspaces[0]?.workspaceId ||
-                "0195f000-0000-7000-8000-000000000301";
-              void client
-                .compileDnaStarlark(targetWsId, {
-                  rule_id: ruleId,
-                  directive_title: "Orientation Qualité",
-                  norm_title: `Règle ${ruleId}`,
-                  natural_language_rule_fr:
-                    "Le champ reference_code doit être renseigné et conforme.",
-                  required_field: "reference_code",
-                })
-                .then((res) => {
-                  setCompiledMechanism({
-                    mechanismId: String(res.mechanism_id),
-                    ruleId: res.rule_id,
-                    scriptName: res.script_name,
-                    starlarkCode: res.starlark_code,
-                    sha256: res.sha256,
-                    explanationFr: res.explanation_fr,
-                    verifiedBadgeFr: res.verified_badge_fr,
-                    causalBreadcrumb: res.causal_breadcrumb,
-                    selfCorrected: Boolean(res.self_corrected),
-                    signedAndActive: Boolean(res.signed_and_active),
-                  });
-                })
-                .catch((err: unknown) => {
-                  const detail =
-                    err instanceof Error ? err.message : "Erreur de compilation";
-                  setActionFeedback(
-                    isFr
-                      ? `⚠️ Contrôle généré localement (détail serveur : ${detail}).`
-                      : `⚠️ Check generated locally (server detail: ${detail}).`,
-                  );
+            const client = createOrciaApiClient({ baseUrl: "" });
+            const targetWsId =
+              displayedWorkspaces[0]?.workspaceId ||
+              "0195f000-0000-7000-8000-000000000301";
+            void client
+              .compileDnaStarlark(targetWsId, {
+                rule_id: ruleId,
+                directive_title: "Orientation Qualité",
+                norm_title: `Règle ${ruleId}`,
+                natural_language_rule_fr:
+                  "Le champ reference_code doit être renseigné et conforme.",
+                required_field: "reference_code",
+              })
+              .then((res) => {
+                setCompiledMechanism({
+                  mechanismId: String(res.mechanism_id),
+                  ruleId: res.rule_id,
+                  scriptName: res.script_name,
+                  starlarkCode: res.starlark_code,
+                  sha256: res.sha256,
+                  explanationFr: res.explanation_fr,
+                  verifiedBadgeFr: res.verified_badge_fr,
+                  causalBreadcrumb: res.causal_breadcrumb,
+                  selfCorrected: Boolean(res.self_corrected),
+                  signedAndActive: Boolean(res.signed_and_active),
                 });
-            }
+              })
+              .catch((err: unknown) => {
+                const detail =
+                  err instanceof Error ? err.message : "Erreur de compilation";
+                setActionFeedback(
+                  isFr
+                    ? `⚠️ Contrôle généré localement (détail serveur : ${detail}).`
+                    : `⚠️ Check generated locally (server detail: ${detail}).`,
+                );
+              });
           }}
           onSignAndActivate={(mechanismId) => {
             setCompiledMechanism((prev) =>
