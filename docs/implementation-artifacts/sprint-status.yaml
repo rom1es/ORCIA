@@ -862,3 +862,14 @@ action_items:
     status: open
     epic: epic-13
     description: "Socle livré (TEST-01) ; reste la exécution automatique en CI."
+  - id: BUG-E2E-01
+    title: "Dossiers de Mon Assistant non réhydratés depuis PostgreSQL après un vrai F5 (localStorage vidé)"
+    action: "Au démarrage de /assistant, appeler listAssistantFolders (GET overview) et réhydrater assistantFoldersAndPrefsStore ; retirer test.fail dans e2e/02-assistant-streaming-and-folders.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 02) : le dossier est créé (POST /api/v1/assistant/folders < 400) mais « Dossiers (0) » après
+      localStorage.clear() + reload. Viole le garde-fou n°3 (survie au F5 via GET). Test en test.fail jusqu'à correction.

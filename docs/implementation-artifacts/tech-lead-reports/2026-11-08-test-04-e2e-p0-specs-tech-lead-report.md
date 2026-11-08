@@ -33,3 +33,4 @@
 | Spec | Statut | Capacités couvertes |
 | :--- | :--- | :--- |
 | `01-day0-boot-and-f5-persistence` | ✅ 4/4 (2 viewports) | CAP-004, CAP-005, CAP-061 |
+| `02-assistant-streaming-and-folders` | ✅ tour LLM (cassette) 2 viewports ; ⚠️ dossier/F5 en `test.fail` → **BUG-E2E-01** | CAP-070..074 (partiel) |
