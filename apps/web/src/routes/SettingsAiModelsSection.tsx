@@ -1,4 +1,3 @@
-import { isJsdomRuntime } from "../lib/runtimeEnv";
 import {
   ContextualInfoTriggerButton,
   EffortSelector,
@@ -115,11 +114,7 @@ export function SettingsAiModelsSection({
       setTestResult(syncErr);
       return;
     }
-    const isJsdom = isJsdomRuntime();
-    if (isJsdom) {
-      setTestResult(buildLocalLlmConnectionSuccessFeedback({ isFr, ...params }));
-      return;
-    }
+    setTestResult(buildLocalLlmConnectionSuccessFeedback({ isFr, ...params }));
     setTestResult(await runRemoteLlmConnectionTestEvaluation({ isFr, ...params }));
   };
 

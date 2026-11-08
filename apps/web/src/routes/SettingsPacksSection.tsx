@@ -1,4 +1,3 @@
-import { isJsdomRuntime } from "../lib/runtimeEnv";
 import {
   createOrciaApiClient,
   type InstalledBusinessPackItemResponse,
@@ -73,11 +72,6 @@ export function SettingsPacksSection({
 
   useEffect(() => {
     let cancelled = false;
-    const isJsdom =
-      isJsdomRuntime();
-    if (isJsdom) {
-      return;
-    }
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
       .listInstalledBusinessPacks()

@@ -1,4 +1,3 @@
-import { isJsdomRuntime } from "../../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   HelpArticleGeneratorAndValidatorView,
@@ -69,9 +68,6 @@ export function GatesFeaturePanel() {
     violations: [],
   });
 
-  const isJsdom =
-    isJsdomRuntime();
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {actionFeedback ? (
@@ -109,7 +105,6 @@ export function GatesFeaturePanel() {
       {/* Processus Système Clé en Main : Génération et Synchronisation de la Documentation ORCIA */}
       <OrciaDocumentationProcessCard
         isFr={isFr}
-        isJsdom={isJsdom}
         activeWorkspace={activeWorkspace}
         openHelpSection={openHelpSection}
         upsertWorkflow={upsertWorkflow}
@@ -272,37 +267,35 @@ export function GatesFeaturePanel() {
               ? `✅ Fiche d'aide « ${nextArticleId} » générée, vérifiée et rattachée à l'écran.`
               : `✅ Help article "${nextArticleId}" generated, verified, and attached.`,
           );
-          if (!isJsdom) {
-            const client = createOrciaApiClient({ baseUrl: "" });
-            void client
-              .validateHelpArticle({
-                markdown_text:
-                  "---\nid: help-processes-guide\nversion: 1.0.0\npack: core\nbound_routes:\n  - /processes\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows: []\n---\n# Guide des Processus\n## Objectif\nAccompagner les équipes.\n## Étapes\n1. Créer un processus\n## Composants\n- `ContextualHelpColumnAndCenter`\n## Questions fréquentes\n- Comment lancer un processus ?",
+          const client = createOrciaApiClient({ baseUrl: "" });
+          void client
+            .validateHelpArticle({
+              markdown_text:
+                "---\nid: help-processes-guide\nversion: 1.0.0\npack: core\nbound_routes:\n  - /processes\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows: []\n---\n# Guide des Processus\n## Objectif\nAccompagner les équipes.\n## Étapes\n1. Créer un processus\n## Composants\n- `ContextualHelpColumnAndCenter`\n## Questions fréquentes\n- Comment lancer un processus ?",
+              lang: "fr",
+              extra_allowed_routes: ["/processes", "/gates"],
+              known_glossary_terms: [],
+            })
+            .then((res) => {
+              setValidationFr({
+                articleId: res.article_id || nextArticleId,
                 lang: "fr",
-                extra_allowed_routes: ["/processes", "/gates"],
-                known_glossary_terms: [],
-              })
-              .then((res) => {
-                setValidationFr({
-                  articleId: res.article_id || nextArticleId,
-                  lang: "fr",
-                  passed: Boolean(res.passed),
-                  boundRoutesValid: Boolean(res.bound_routes_valid),
-                  uiComponentsAndSectionsValid: Boolean(res.ui_components_and_sections_valid),
-                  glossaryAndZeroSecretValid: Boolean(res.glossary_and_zero_secret_valid),
-                  elapsedMs: Number(res.elapsed_ms ?? 2.1),
-                  violations: res.violations ?? [],
-                });
-              })
-              .catch((err: unknown) => {
-                const detail = err instanceof Error ? err.message : "Erreur de validation";
-                setActionFeedback(
-                  isFr
-                    ? `⚠️ Fiche d'aide rattachée localement (détail serveur : ${detail}).`
-                    : `⚠️ Help article attached locally (server detail: ${detail}).`,
-                );
+                passed: Boolean(res.passed),
+                boundRoutesValid: Boolean(res.bound_routes_valid),
+                uiComponentsAndSectionsValid: Boolean(res.ui_components_and_sections_valid),
+                glossaryAndZeroSecretValid: Boolean(res.glossary_and_zero_secret_valid),
+                elapsedMs: Number(res.elapsed_ms ?? 2.1),
+                violations: res.violations ?? [],
               });
-          }
+            })
+            .catch((err: unknown) => {
+              const detail = err instanceof Error ? err.message : "Erreur de validation";
+              setActionFeedback(
+                isFr
+                  ? `⚠️ Fiche d'aide rattachée localement (détail serveur : ${detail}).`
+                  : `⚠️ Help article attached locally (server detail: ${detail}).`,
+              );
+            });
         }}
       />
     </div>

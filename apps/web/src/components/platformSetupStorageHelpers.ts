@@ -17,6 +17,10 @@ const fallbackMemoryStorage = new Map<string, string>();
 
 export function clearPlatformSetupStorage(): void {
   fallbackMemoryStorage.clear();
+  const resetHook = (globalThis as Record<string, unknown>).__ORCIA_RESET_VITEST_BACKEND__;
+  if (typeof resetHook === "function") {
+    resetHook();
+  }
   if (
     typeof window !== "undefined" &&
     window.localStorage &&

@@ -779,7 +779,7 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Amelia (Dev) / Sally (UX)"
-    status: in-progress
+    status: done
     epic: epic-13
     description: >
       Les tests « survie au F5 » ne prouvent aujourd'hui que le localStorage JSDOM (garde-fou n°3 de AGENTS.md non réellement vérifié).

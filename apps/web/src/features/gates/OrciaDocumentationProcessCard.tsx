@@ -17,7 +17,6 @@ export interface OrciaDocumentationProcessStepItem {
 
 export interface OrciaDocumentationProcessCardProps {
   readonly isFr: boolean;
-  readonly isJsdom: boolean;
   readonly activeWorkspace?: {
     readonly workspaceId: string;
     readonly name: string;
@@ -149,7 +148,6 @@ function buildGeneratedDocumentationMarkdown(isFr: boolean): string {
 
 export function OrciaDocumentationProcessCard({
   isFr,
-  isJsdom,
   activeWorkspace,
   openHelpSection,
   upsertWorkflow,
@@ -231,26 +229,24 @@ export function OrciaDocumentationProcessCard({
         : '✅ Process "generate-orcia-documentation" published and executed in 4 steps.',
     );
 
-    if (!isJsdom) {
-      const client = createOrciaApiClient({ baseUrl: "" });
-      void client
-        .validateHelpArticle({
-          markdown_text:
-            "---\nid: help.orcia.complete-documentation\nversion: 1.0.0\npack_id: orcia://packs/orcia-pack-builder\nbound_routes:\n  - /cockpit\n  - /processes\n  - /help\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows:\n  - orcia://pack-builder/workflows/generate-orcia-documentation\n---\n# Documentation Complète d'ORCIA {#top}\n## 1. À quoi sert cet écran ? {#overview}\nGuide complet d'ORCIA. Composant UI : `<ContextualHelpColumnAndCenter />`.\n## 2. Comment faire (Pas-à-pas) {#steps}\n- Lancer generate-orcia-documentation\n## 3. Questions fréquentes & Dépannage {#faq}\n- Comment mettre à jour la documentation ?",
-          lang: isFr ? "fr" : "en",
-          extra_allowed_routes: ["/cockpit", "/processes", "/help"],
-          known_glossary_terms: [],
-        })
-        .catch((err: unknown) => {
-          const detail =
-            err instanceof Error ? err.message : "Validation locale appliquée";
-          onFeedback(
-            isFr
-              ? `✅ Processus « generate-orcia-documentation » exécuté en 4 étapes (${detail}).`
-              : `✅ Process "generate-orcia-documentation" executed in 4 steps (${detail}).`,
-          );
-        });
-    }
+    const client = createOrciaApiClient({ baseUrl: "" });
+    void client
+      .validateHelpArticle({
+        markdown_text:
+          "---\nid: help.orcia.complete-documentation\nversion: 1.0.0\npack_id: orcia://packs/orcia-pack-builder\nbound_routes:\n  - /cockpit\n  - /processes\n  - /help\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows:\n  - orcia://pack-builder/workflows/generate-orcia-documentation\n---\n# Documentation Complète d'ORCIA {#top}\n## 1. À quoi sert cet écran ? {#overview}\nGuide complet d'ORCIA. Composant UI : `<ContextualHelpColumnAndCenter />`.\n## 2. Comment faire (Pas-à-pas) {#steps}\n- Lancer generate-orcia-documentation\n## 3. Questions fréquentes & Dépannage {#faq}\n- Comment mettre à jour la documentation ?",
+        lang: isFr ? "fr" : "en",
+        extra_allowed_routes: ["/cockpit", "/processes", "/help"],
+        known_glossary_terms: [],
+      })
+      .catch((err: unknown) => {
+        const detail =
+          err instanceof Error ? err.message : "Validation locale appliquée";
+        onFeedback(
+          isFr
+            ? `✅ Processus « generate-orcia-documentation » exécuté en 4 étapes (${detail}).`
+            : `✅ Process "generate-orcia-documentation" executed in 4 steps (${detail}).`,
+        );
+      });
   };
 
   const handleLoadIntoBuilder = () => {
