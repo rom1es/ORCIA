@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 96
+    "techLeadReportsCount": 97
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-04)",
+      "reportFile": "2026-11-08-test-04-e2e-p0-specs-tech-lead-report.md",
+      "domain": "Specs E2E P0 sur la pile isolée : Jour 0 + vrai F5 en base, Mon Assistant, Human-Led, multi-acteurs, mobile (livraison incrémentale)",
+      "summary": "apps/web/e2e/01..05-*.spec.ts, helpers support/."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-02)",
