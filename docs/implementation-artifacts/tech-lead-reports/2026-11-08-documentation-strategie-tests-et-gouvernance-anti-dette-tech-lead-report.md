@@ -29,7 +29,7 @@ Il manquait un **document de référence unique, complet et opérationnel** dans
   - **Couche 2 (Intégration Verticale Conteneurisée)** : `17` fichiers dans `tests/integration/*_postgres18*.py` sur PostgreSQL 18 + `pgvector`, Redis 7.4 et SeaweedFS S3 via `testcontainers-python`.
   - **Couche 3 (Contrat OpenAPI 3.1 & Conformité)** : `tests/contract/test_openapi_and_rfc9457_contract.py` + `tests/conformance/test_connector_conformance.py`.
   - **Couche 4 (Évaluations Cognitives & Ontologiques `0 $`)** : `3` suites dans `tests/evals/` + `2` datasets dorés (`tests/evals/golden/citations.jsonl`, `tests/evals/golden/assistant_and_ontology.jsonl`).
-  - **Couche 5 (E2E Bi-Serveur Isolé `@playwright/test`)** : `12` specs `apps/web/e2e/00..11-*.spec.ts` sur pile éphémère isolée (`infra/scripts/e2e/`, ports `55433` / `56380` / `18000` / `13100`, workflow CI `.github/workflows/e2e.yml`).
+  - **Couche 5 (E2E Bi-Serveur Isolé `@playwright/test`)** : `12` specs `apps/web/e2e/00..11-*.spec.ts` sur pile éphémère isolée (`infra/scripts/e2e/`, conteneurs éphémères `testcontainers`, API `:8100`, web `:3101`, workflow CI `.github/workflows/e2e.yml`).
   - **Couche Sécurité & RBAC Transverse** : `tests/security/test_api_security_baseline.py` (`21` tests couvrant SSRF, `READ_ONLY_OBSERVER`, escalade de privilèges RBAC, masquage `CONFIDENTIAL_RESTRICTED`, secrets canaris `DEC-SEC-01`, RFC 9457).
 
 ### 1.4 Opportunités de Factorisation & Dette Technique Identifiée

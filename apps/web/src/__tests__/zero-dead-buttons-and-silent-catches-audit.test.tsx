@@ -9,6 +9,7 @@ import { GatesFeaturePanel } from "../features/gates";
 import { InboxFeaturePanel } from "../features/inbox";
 import { WorkspacesFeaturePanel } from "../features/workspaces";
 import { I18nProvider } from "../i18n";
+import { seedVitestPlatformSetupState } from "./vitest.setup";
 
 afterEach(() => {
   cleanup();
@@ -132,6 +133,30 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
   });
 
   it("dynamically verifies that clicking 'Envoyer à Mon Assistant', selecting Model & Thinking Level, saving/resuming conversations across F5 reloads, and '+ Nouveau dossier' in InboxFeaturePanel updates the DOM", async () => {
+    // Un dossier appartient à un Espace de travail réel (aucun espace de repli fictif — BUG-E2E-01).
+    seedVitestPlatformSetupState({
+      org_units: [],
+      rbac_grants: [],
+      llm_tiers: [],
+      workspaces: [
+        {
+          workspaceId: "ws-audit-1",
+          name: "Espace Audit",
+          visibilityMode: "STANDARD",
+          ownerOrgUnitName: "Equipe Audit",
+          lifecyclePhase: "BUILD",
+          suggestedWorkflows: [],
+          accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+          finopsCostUsd: 0,
+        },
+      ],
+      datasources: [],
+      packs: [],
+      workflows: [],
+      runs: [],
+      catalog_items: [],
+      ontology_concepts: [],
+    });
     const firstRender = render(
       <I18nProvider initialLocale="fr">
         <ShellContainer>
@@ -257,7 +282,8 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       target: { value: "Toujours vérifier l'article 28 DORA sur les prestataires TIC critiques." },
     });
     fireEvent.click(screen.getByTestId("assistant-save-pinned-notes-btn"));
-    expect(screen.getByTestId("assistant-prompt-active-folder-note-indicator").textContent).toContain(
+    // Les notes sont enregistrées côté serveur (aller-retour HTTP) avant d'être affichées.
+    expect((await screen.findByTestId("assistant-prompt-active-folder-note-indicator")).textContent).toContain(
       "Note active prise en compte",
     );
 
@@ -292,10 +318,10 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         </ShellContainer>
       </I18nProvider>,
     );
-    expect(screen.getByTestId("assistant-prompt-active-folder-badge").textContent).toContain(
+    expect((await screen.findByTestId("assistant-prompt-active-folder-badge")).textContent).toContain(
       "Audit DORA 2026",
     );
-    expect(screen.getByTestId("assistant-prompt-active-folder-note-indicator").textContent).toContain(
+    expect((await screen.findByTestId("assistant-prompt-active-folder-note-indicator")).textContent).toContain(
       "Note active prise en compte",
     );
     fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));

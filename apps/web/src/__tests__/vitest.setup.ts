@@ -20,6 +20,7 @@ interface MockBackendState {
   platformSetupState: Record<string, unknown> | null;
   agents: Array<Record<string, unknown>>;
   skills: Array<Record<string, unknown>>;
+  assistantFolders: Array<Record<string, unknown>>;
   recordedCalls: RecordedVitestApiCall[];
 }
 
@@ -28,6 +29,7 @@ const backendState: MockBackendState = {
   platformSetupState: null,
   agents: [],
   skills: [],
+  assistantFolders: [],
   recordedCalls: [],
 };
 
@@ -36,7 +38,17 @@ export function resetVitestApiBackend(): void {
   backendState.platformSetupState = null;
   backendState.agents = [];
   backendState.skills = [];
+  backendState.assistantFolders = [];
   backendState.recordedCalls = [];
+}
+
+/** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
+export function seedVitestPlatformSetupState(
+  state: Record<string, unknown>,
+  firstAdmin: { email: string; displayName: string } = { email: "admin@orcia.test", displayName: "Admin Test" },
+): void {
+  backendState.firstAdmin = firstAdmin;
+  backendState.platformSetupState = state;
 }
 
 export function getRecordedVitestApiCalls(): readonly RecordedVitestApiCall[] {
@@ -230,15 +242,55 @@ async function vitestFetchTransport(
   if (path === "/api/v1/assistant/folders" && method === "POST") {
     const title = String(body.title ?? "Dossier");
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    return jsonResponse({
-      folder_id: `folder-${slug}-${backendState.recordedCalls.length}`,
-      workspace_id: String(body.workspace_id ?? "ws-1"),
+    const folderId = typeof body.folder_id === "string" && body.folder_id ? body.folder_id : `folder-${slug}-${backendState.recordedCalls.length}`;
+    const existing = backendState.assistantFolders.find((f) => f.folder_id === folderId);
+    const record: Record<string, unknown> = {
+      folder_id: folderId,
+      workspace_id: String(body.workspace_id ?? ""),
+      owner_user_id: "user-vitest",
       title,
-      pinned_notes_markdown: "",
-      consolidated_summary: `Dossier thématique « ${title} »`,
-      visibility_mode: "PRIVATE",
-      has_restricted_sources: false,
+      pinned_notes_markdown: String(body.pinned_notes_markdown ?? ""),
+      working_attachments_uris: [],
+      consolidated_summary: String(body.consolidated_summary ?? ""),
+      evidence_tags: ["S1"],
+      has_restricted_sources: Boolean(body.has_restricted_sources ?? false),
+      visibility_mode: existing?.visibility_mode ?? "PRIVATE",
+      shares: [],
       assembled_layer5_prompt_block: `Dossier actif : ${title}`,
+    };
+    backendState.assistantFolders = existing
+      ? backendState.assistantFolders.map((f) => (f.folder_id === folderId ? record : f))
+      : [...backendState.assistantFolders, record];
+    return jsonResponse(record);
+  }
+
+  const shareMatch = /^\/api\/v1\/assistant\/folders\/([^/]+)\/share$/.exec(path);
+  if (shareMatch && method === "POST") {
+    const folderId = decodeURIComponent(shareMatch[1] ?? "");
+    const folder = backendState.assistantFolders.find((f) => f.folder_id === folderId);
+    if (!folder) return jsonResponse({ error_code: "ERR_RESOURCE_NOT_FOUND" }, 404);
+    folder.visibility_mode = body.visibility_mode;
+    return jsonResponse({
+      folder_id: folderId,
+      workspace_id: folder.workspace_id,
+      visibility_mode: body.visibility_mode,
+      shares: [],
+      has_restricted_sources: folder.has_restricted_sources,
+    });
+  }
+
+  const overviewMatch = /^\/api\/v1\/assistant\/workspaces\/([^/]+)\/overview$/.exec(path);
+  if (overviewMatch && method === "GET") {
+    const workspaceId = decodeURIComponent(overviewMatch[1] ?? "");
+    const wsFolders = backendState.assistantFolders.filter((f) => f.workspace_id === workspaceId);
+    return jsonResponse({
+      workspace_id: workspaceId,
+      tabs: ["ACTIVE_DISCUSSION", "FOLDERS", "HISTORY_SEARCH"],
+      active_folder_pill_label: null,
+      folders_count: wsFolders.length,
+      folders: wsFolders,
+      threads: [],
+      history_hits: [],
     });
   }
 

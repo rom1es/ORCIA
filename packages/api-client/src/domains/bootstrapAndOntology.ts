@@ -56,6 +56,10 @@ export type AssistantWorkspaceOverviewResponse =
 export type CreateAssistantFolderRequest =
   components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
 export type AssistantFolderResponse = components["schemas"]["AssistantFolderSchemaItem"];
+export type ConfigureAssistantFolderSharingRequest =
+  components["schemas"]["ConfigureFolderSharingRequest"];
+export type ConfigureAssistantFolderSharingResponse =
+  components["schemas"]["ConfigureFolderSharingResponse"];
 export type CreateAssistantThreadRequest =
   components["schemas"]["CreateAssistantThreadRequest"];
 export type AssistantThreadResponse = components["schemas"]["AssistantThreadSchemaItem"];
@@ -338,6 +342,16 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
     },
     createAssistantFolder(payload: CreateAssistantFolderRequest): Promise<AssistantFolderResponse> {
       return requestJson<AssistantFolderResponse>("/api/v1/assistant/folders", "POST", payload);
+    },
+    configureAssistantFolderSharing(
+      folderId: string,
+      payload: ConfigureAssistantFolderSharingRequest,
+    ): Promise<ConfigureAssistantFolderSharingResponse> {
+      return requestJson<ConfigureAssistantFolderSharingResponse>(
+        `/api/v1/assistant/folders/${encodeURIComponent(folderId)}/share`,
+        "POST",
+        payload,
+      );
     },
     createAssistantThread(payload: CreateAssistantThreadRequest): Promise<AssistantThreadResponse> {
       return requestJson<AssistantThreadResponse>("/api/v1/assistant/threads", "POST", payload);

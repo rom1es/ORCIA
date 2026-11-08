@@ -362,7 +362,7 @@ capabilities:
     origin: epic
     origin_ref: 10-4
     status: live
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)

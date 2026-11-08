@@ -30,7 +30,7 @@ La stratégie d'ORCIA repose sur **4 principes fondateurs** :
 ```mermaid
 flowchart TD
     subgraph Pyramide["Pyramide des Tests ORCIA (AD-17)"]
-        L5["Couche 5 — End-to-End Bi-Serveur Isolé & Multi-Acteurs\nPlaywright (apps/web/e2e/00..11-*.spec.ts)\nPile éphémère PG18 :55433 + Redis :56380 + FastAPI :18000 + Vite :13100"]
+        L5["Couche 5 — End-to-End Bi-Serveur Isolé & Multi-Acteurs\nPlaywright (apps/web/e2e/00..11-*.spec.ts)\nPile éphémère testcontainers PG18 + Redis 7.4, FastAPI :8100, Vite :3101"]
         L4["Couche 4 — Évaluations Cognitives, Citations, Ontologie & Cassettes (0 $)\npytest (tests/evals/ + tests/evals/golden/*.jsonl + DeterministicCassetteLLM)"]
         L3["Couche 3 — Contrat OpenAPI 3.1 (0-diff), RFC 9457 & Conformité Connecteurs\npytest + openapi-typescript (tests/contract/ + tests/conformance/)"]
         L2["Couche 2 — Intégration Verticale sur Conteneurs Réels\npytest + testcontainers-python (tests/integration/*_postgres18*.py)\nHTTP FastAPI (ASGITransport) ➔ PostgreSQL 18 + pgvector / Redis 7.4 / SeaweedFS S3"]
@@ -58,8 +58,8 @@ flowchart TD
 | **Couche 1 — Unitaires, Propriétés, UI & Audits AST** | `tests/unit/`<br>`packages/ui/src/__tests__/`<br>`packages/api-client/src/__tests__/`<br>`apps/web/src/__tests__/` | `pytest`, `hypothesis`, `Vitest`, `@testing-library/react`, `import-linter`, `ruff`, `mypy --strict` | `50` fichiers Python<br>`24` fichiers TS/TSX | `< 15 s`<br>Couverture $\ge 90\%$ sur `orcia-kernel` & `orcia-core` | Logique métier des 8 domaines, invariants d'états, composants `@orcia/ui`, survie au `F5` (`unmount`/`render`), isolation hexagonale (`AD-19`/`AD-20`), zéro bouton muet et zéro anti-pattern AST. |
 | **Couche 2 — Intégration Verticale Conteneurisée** | `tests/integration/` | `pytest`, `testcontainers-python`, `httpx.AsyncClient(ASGITransport)`, PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS S3 | `17` fichiers `*_postgres18*.py` | `< 60 s` | Persistance SQL réelle de bout en bout (`HTTP ➔ SELECT PG18`), migrations Alembic `0001..0027`, triggers append-only, reprise sur crash DBOS, Outbox `SKIP LOCKED`, verrous Redis et stockage S3 CAS. |
 | **Couche 3 — Contrat OpenAPI 3.1 & Conformité** | `tests/contract/`<br>`tests/conformance/`<br>`packages/api-client/` | `pytest`, `openapi-typescript` (`0-diff`) | `2` suites dédiées | `< 5 s`<br>`0-diff` SDK | Parité stricte entre les schémas Pydantic v2 de `apps/api` et le SDK TypeScript `@orcia/api-client`, enveloppes d'erreur **RFC 9457** (`application/problem+json` + `trace_id`) et conformité `ConnectorPort`. |
-| **Couche 4 — Évaluations Cognitives & Ontologiques (`0 $`)** | `tests/evals/`<br>`tests/evals/golden/*.jsonl` | `pytest`, `DeterministicCassetteLLM` | `3` fichiers d'evals<br>`2` Golden Datasets (`14` cas dorés) | `< 5 s`<br>`0 $` coût LLM<br>`0` citation fantôme | Précision/rappel du vérificateur de citations `[S1]/[G1]/[O1]`, assemblage 5 couches `AssistantHarness`, refus constitutionnel `FR-4` sur ancre humaine, adaptation aux profils humains, orthogonalité `AD-10` et détection `ERR_ONTOLOGY_CONFLICT`. |
-| **Couche 5 — End-to-End Bi-Serveur Isolé & Multi-Acteurs** | `apps/web/e2e/`<br>`infra/scripts/e2e/`<br>`.github/workflows/e2e.yml` | `@playwright/test` (`1.52+`), Docker Compose E2E (`:55433`, `:56380`), FastAPI (`:18000`), Vite (`:13100`) | `12` specs `00..11-*.spec.ts` | Viewports Desktop `1440×900` & Mobile `390×844` | Parcours utilisateur réels de bout en bout (Jour 0 Admin + vrai `F5` navigateur, Mon Assistant streaming + citations, Ancres Humaines, verrou multi-acteurs + observateur, Mes Espaces, Agents & Skills, Gates, Aide `?`, Recherche `⌘K`). |
+| **Couche 4 — Évaluations Cognitives & Ontologiques (`0 $`)** | `tests/evals/`<br>`tests/evals/golden/*.jsonl` | `pytest`, `DeterministicCassetteLLM` | `2` fichiers d'evals<br>`2` Golden Datasets (`14` cas dorés) | `< 5 s`<br>`0 $` coût LLM<br>`0` citation fantôme | Précision/rappel du vérificateur de citations `[S1]/[G1]/[O1]`, assemblage 5 couches `AssistantHarness`, refus constitutionnel `FR-4` sur ancre humaine, adaptation aux profils humains, orthogonalité `AD-10` et détection `ERR_ONTOLOGY_CONFLICT`. |
+| **Couche 5 — End-to-End Bi-Serveur Isolé & Multi-Acteurs** | `apps/web/e2e/`<br>`infra/scripts/e2e/`<br>`.github/workflows/e2e.yml` | `@playwright/test`, conteneurs éphémères `testcontainers` (PostgreSQL 18 + Redis 7.4, ports aléatoires), FastAPI (`:8100`), Vite (`:3101`) | `12` specs `00..11-*.spec.ts` | Viewports Desktop `1440×900` & Mobile `390×844` | Parcours utilisateur réels de bout en bout (Jour 0 Admin + vrai `F5` navigateur, Mon Assistant streaming + citations, Ancres Humaines, verrou multi-acteurs + observateur, Mes Espaces, Agents & Skills, Gates, Aide `?`, Recherche `⌘K`). |
 | **Couche Transverse — Sécurité & Red-Team** | `tests/security/` | `pytest`, `ASGITransport` | `1` suite complète (`21` tests) | `100 %` bloquant | Garde-fou SSRF (`is_safe_llm_endpoint_url`), blocage `403 ERR_OBSERVER_MODE_READ_ONLY` sur mutations, anti-escalade RBAC (`403 ERR_GRANT_ESCALATION_FORBIDDEN`), masquage `CONFIDENTIAL_RESTRICTED` et non-fuite des secrets canaris (`DEC-SEC-01`). |
 
 ---
@@ -85,22 +85,21 @@ flowchart TD
   - **SeaweedFS S3 (`chrislusf/seaweedfs:4.17`)** : archivage immuable adressé par contenu (`cas/<sha256>`) des exports de packs métiers et des articles d'aide rattachés à chaud.
 
 ### 3.3 Couche 3 — Tests de Contrat OpenAPI 3.1 & Conformité Connecteurs (`tests/contract/`, `tests/conformance/`)
-- [`tests/contract/test_openapi_and_rfc9457_contract.py`](../tests/contract/test_openapi_and_rfc9457_contract.py) vérifie la validité du schéma OpenAPI 3.1 exposé par FastAPI, la présence systématique des enveloppes d'erreur normalisées **RFC 9457 Problem Details** (`type`, `title`, `status`, `detail`, `error_code`, `trace_id` W3C OpenTelemetry) et l'absence de dérive avec `packages/api-client`.
-- [`tests/conformance/test_connector_conformance.py`](../tests/conformance/test_connector_conformance.py) soumet chaque connecteur enregistré dans `orcia.connectors` (`git://`, `jira://`, `confluence://`, `db://`, `sap://`) à une batterie commune de conformité (`AD-20`).
+- [`tests/contract/test_openapi_contract.py`](../tests/contract/test_openapi_contract.py) vérifie la validité du schéma OpenAPI 3.1 exposé par FastAPI, la présence systématique des enveloppes d'erreur normalisées **RFC 9457 Problem Details** (`type`, `title`, `status`, `detail`, `error_code`, `trace_id` W3C OpenTelemetry) et l'absence de dérive avec `packages/api-client`.
+- [`tests/conformance/connector_port/test_connector_conformance.py`](../tests/conformance/connector_port/test_connector_conformance.py) soumet chaque connecteur enregistré dans `orcia.connectors` (`git://`, `jira://`, `confluence://`, `db://`, `sap://`) à une batterie commune de conformité (`AD-20`).
 
 ### 3.4 Couche 4 — Évaluations Cognitives, Citations, Ontologie & Cassettes Déterministes (`tests/evals/`)
 - Exécutable en `< 5 s` et pour `0 $` en CI grâce à `DeterministicCassetteLLM` et aux jeux de données dorés (`tests/evals/golden/`):
   - [`tests/evals/test_citations_golden_dataset.py`](../tests/evals/test_citations_golden_dataset.py) + [`tests/evals/golden/citations.jsonl`](../tests/evals/golden/citations.jsonl) : vérifie que le vérificateur déterministe de citations conserve `100 %` des citations légitimes issues de la Table des Preuves (`[S1]`, `[G1]`, `[O1]`) et **purge `100 %` des citations fantômes inventées par un modèle** (`0` citation fantôme tolérée en sortie, remplacée par `[Citation non vérifiée]` avec événement d'audit `PHANTOM_CITATION_STRIPPED`).
   - [`tests/evals/test_assistant_and_ontology_evals.py`](../tests/evals/test_assistant_and_ontology_evals.py) + [`tests/evals/golden/assistant_and_ontology.jsonl`](../tests/evals/golden/assistant_and_ontology.jsonl) : évalue l'ordre strict des 5 couches de `AssistantHarness`, le refus constitutionnel immédiat (`HUMAN_ANCHOR_WRITE_REFUSAL`, `0` appel LLM) lorsqu'un utilisateur demande de remplir une section `human_authored_required: true` (`FR-4`), l'adaptation sémantique selon le profil humain (`EXECUTIVE`, `ARCHITECT`, `PM`), l'orthogonalité des familles de modèles entre exécuteur et juge (`AD-10`), et le blocage déterministe `ERR_ONTOLOGY_CONFLICT` lorsqu'une règle d'équipe contredit un axiome d'entreprise `L1` (`immutable: true`).
-  - [`tests/evals/test_rag_hybrid_rrf_eval.py`](../tests/evals/test_rag_hybrid_rrf_eval.py) : valide la qualité du classement hybride *Reciprocal Rank Fusion* (`k=60`) et la détection de fraîcheur `[STALE_WARNING]`.
 
 ### 3.5 Couche 5 — Tests End-to-End Bi-Serveur Isolés & Multi-Acteurs (`apps/web/e2e/`)
 - **Architecture d'isolation E2E dédiée ([`infra/scripts/e2e/`](../infra/scripts/e2e/) & [`apps/web/playwright.config.ts`](../apps/web/playwright.config.ts))** :
   - Pour éviter toute collision avec l'environnement de développement local (`PostgreSQL :5433`, `Redis :6380`, `FastAPI :8000`, `Vite :3100`), la suite Playwright démarre une **pile bi-serveur et base de données 100 % isolée** :
-    - PostgreSQL 18 + `pgvector` E2E en `tmpfs` sur le port **`55433`** (base `orcia_e2e`) et Redis 7.4 E2E sur le port **`56380`** via [`infra/docker/docker-compose.e2e.yml`](../infra/docker/docker-compose.e2e.yml).
-    - API FastAPI E2E sur le port **`18000`** avec `ORCIA_E2E_MODE=1` et `ORCIA_LLM_ADAPTER=cassette` (`0 $`).
-    - Serveur frontend Vite E2E sur le port **`13100`** proxifiant `/api` vers `:18000`.
-  - **Garde-fou de sécurité [`refuse_if_not_e2e_target`](../infra/scripts/e2e/reset_e2e_db.py)** : le script de remise à zéro Jour 0 E2E refuse catégoriquement de s'exécuter (et lève `E2EIsolationError`) si `ORCIA_E2E_MODE != "1"`, si le nom de la base ne se termine pas par `_e2e` ou si le port est le port de développement `5433` (protégé par 10 tests unitaires dans [`tests/unit/test_e2e_isolation_guard.py`](../tests/unit/test_e2e_isolation_guard.py)).
+    - PostgreSQL 18 + `pgvector` (base `orcia_e2e`) et Redis 7.4 démarrés en conteneurs éphémères par [`infra/scripts/e2e/e2e_stack.py`](../infra/scripts/e2e/e2e_stack.py) (`testcontainers`, ports attribués dynamiquement), migrations Alembic appliquées au démarrage.
+    - API FastAPI E2E sur le port **`8100`** (`ORCIA_E2E_API_PORT`) avec `ORCIA_USE_CASSETTE_LLM=true` (`0 $`), sans le `.env` de développement, et `ORCIA_E2E_SEED_FIXTURES=1` (seules données d'amorce autorisées, réservées à cette pile).
+    - Serveur frontend Vite E2E sur le port **`3101`** (`ORCIA_E2E_WEB_PORT`) proxifiant `/api` vers `:8100`.
+  - **Garde-fou d'isolation [`is_isolated_e2e_database_url`](../infra/scripts/e2e/e2e_stack_config.py)** : la pile et le script de remise à zéro Jour 0 [`reset_day0.py`](../infra/scripts/e2e/reset_day0.py) refusent toute base qui n'est pas `orcia_e2e` locale ou qui utilise un port de développement (`5432`, `5433`) ; couvert par [`tests/unit/test_e2e_stack_config.py`](../tests/unit/test_e2e_stack_config.py).
 - **Couverture des 13 specs E2E (`apps/web/e2e/00..11-*.spec.ts` + `shell.spec.ts`)** :
   - [`00-stack-smoke.spec.ts`](../apps/web/e2e/00-stack-smoke.spec.ts) & [`shell.spec.ts`](../apps/web/e2e/shell.spec.ts) : Coquille 4 zones Direction C, 8 entrées du rail latéral, état Jour 0 sur Desktop (`1440×900`) et Mobile (`390×844`).
   - [`01-day0-boot-and-f5-persistence.spec.ts`](../apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts) : Création du 1er Administrateur Jour 0 dans la modale bloquante, écriture Argon2id dans PostgreSQL 18, **vrai `page.reload()` (`F5`)** prouvant que la modale ne réapparaît pas, et rejet `409 Conflict` d'une seconde inscription concurrente.
@@ -216,17 +215,12 @@ pnpm turbo run lint typecheck test
 
 ### 7.3 Exécution des tests End-to-End Playwright (Couche 5 — Pile Bi-Serveur Isolée)
 ```bash
-# 1. Démarrer l'infrastructure Docker E2E isolée (PostgreSQL 18 :55433 en tmpfs + Redis 7.4 :56380)
-pnpm test:e2e:up
+# Démarre automatiquement (webServer Playwright) les conteneurs éphémères PostgreSQL 18 + Redis 7.4,
+# FastAPI :8100 en mode cassette et Vite :3101, exécute les specs, puis arrête la pile.
+pnpm e2e
 
-# 2. Réinitialiser la base E2E à l'état Jour 0 (protégé par refuse_if_not_e2e_target)
-pnpm test:e2e:reset
-
-# 3. Exécuter la suite Playwright E2E (démarre automatiquement FastAPI :18000 en mode cassette + Vite :13100)
-pnpm test:e2e
-
-# 4. Arrêter et nettoyer les conteneurs E2E éphémères
-pnpm test:e2e:down
+# Une seule spec, un seul projet (viewport Desktop)
+cd apps/web && npx playwright test e2e/02-assistant-streaming-and-folders.spec.ts --project=desktop-cockpit
 ```
 
 ### 7.4 Contrôle du Registre des Capacités (`capabilities.yaml`) & Synchronisation du Site `/showcase`

@@ -283,8 +283,8 @@ ORCIA applique une stratégie de vérification à **5 couches + Sécurité** (vo
 # Linter, vérification de types et tests unitaires Frontend / TypeScript (Vitest)
 pnpm turbo run lint typecheck test
 
-# Couche 5 — Tests End-to-End Playwright sur pile bi-serveur isolée (:55433 / :56380 / :18000 / :13100)
-pnpm test:e2e:up && pnpm test:e2e:reset && pnpm test:e2e
+# Couche 5 — Tests End-to-End Playwright sur pile éphémère isolée (conteneurs PostgreSQL 18 / Redis 7.4, API :8100, web :3101)
+pnpm e2e
 
 # Vérifier la cohérence du registre des capacités (zéro route orpheline, zéro capacité live sans test)
 pnpm site:check

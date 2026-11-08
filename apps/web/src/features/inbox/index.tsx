@@ -6,7 +6,6 @@ import {
   AssistantSpeedSelectorAndStreamView,
   formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,
-  type UiAssistantFolderItem,
   type UiAssistantPromptTelemetryRecord,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
@@ -17,14 +16,12 @@ import { subscribeBgStream } from "./assistantBackgroundStreamStore";
 import {
   readSavedActiveConversationId,
   readSavedActiveFolderId,
-  readSavedAssistantFolders,
   readSavedAssistantGovernancePrefs,
   readSavedPromptTelemetryLog,
   updatePromptTelemetryFeedback,
   upsertSavedPromptTelemetryRecord,
   writeSavedActiveConversationId,
   writeSavedActiveFolderId,
-  writeSavedAssistantFolders,
   writeSavedAssistantGovernancePrefs,
   type SavedAssistantGovernancePrefs,
 } from "./assistantFoldersAndPrefsStore";
@@ -42,6 +39,7 @@ import {
   type SavedAssistantConversation,
 } from "./savedConversationsStore";
 import { useAssistantStreamingTurn, type CompletedAssistantTurnPayload } from "./useAssistantStreamingTurn";
+import { useServerAssistantFolders } from "./useServerAssistantFolders";
 
 export function InboxFeaturePanel() {
   const { dictionary, locale } = useI18n();
@@ -50,7 +48,6 @@ export function InboxFeaturePanel() {
   const isFr = locale === "fr";
 
   const [prefillPrompt, setPrefillPrompt] = useState<string | null>(() => consumeAssistantPrefillFromStorage());
-  const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>(() => readSavedAssistantFolders());
   const [activeFolderId, setActiveFolderId] = useState<string>(() => readSavedActiveFolderId());
   const [governancePrefs, setGovernancePrefs] = useState<SavedAssistantGovernancePrefs>(() => readSavedAssistantGovernancePrefs());
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
@@ -66,6 +63,11 @@ export function InboxFeaturePanel() {
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
+  const { folders, createFolder, savePinnedNotes, changeVisibility } = useServerAssistantFolders({
+    workspaceId: activeWorkspaceId,
+    messages: dictionary.assistantFoldersSync,
+    onFeedback: setGovernanceFeedback,
+  });
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
   const activeConversation = savedConversations.find((c) => c.id === activeConversationId) ?? null;
   const activeFolder = folders.find((f) => f.folderId === activeFolderId) ?? null;
@@ -89,9 +91,6 @@ export function InboxFeaturePanel() {
     });
   }, [savedConversations.length, activeConversationId]);
 
-  const updateFoldersAndPersist = (updater: (prev: readonly UiAssistantFolderItem[]) => readonly UiAssistantFolderItem[]) => {
-    setFolders((prev) => { const next = updater(prev); writeSavedAssistantFolders(next); return next; });
-  };
   const selectActiveFolderAndPersist = (nextFolderId: string) => { setActiveFolderId(nextFolderId); writeSavedActiveFolderId(nextFolderId); };
 
   const appendTurnToSavedConversation = (params: CompletedAssistantTurnPayload) => {
@@ -359,27 +358,26 @@ export function InboxFeaturePanel() {
           onOpenHelpSection={openHelpSection}
           onSelectFolder={(folderId) => selectActiveFolderAndPersist(folderId)}
           onCreateFolder={(title) => {
-            const newId = `folder-${folders.length + 1}-${Date.now()}`;
-            const newFolder: UiAssistantFolderItem = { folderId: newId, title, pinnedNotesMarkdown: "", consolidatedSummary: isFr ? `Dossier thématique « ${title} »` : `Thematic folder "${title}"`, visibilityMode: "PRIVATE", hasRestrictedSources: false, assembledLayer5PromptBlock: `Dossier actif : ${title}` };
-            updateFoldersAndPersist((prev) => [...prev, newFolder]);
-            selectActiveFolderAndPersist(newId);
-            setGovernanceFeedback(isFr ? `✅ Dossier « ${title} » créé et sélectionné.` : `✅ Folder "${title}" created and selected.`);
-            const client = createOrciaApiClient({ baseUrl: "" });
-            void client
-              .createAssistantFolder({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301", title })
-              .catch((err: unknown) => {
-                const detail = err instanceof Error ? err.message : "Erreur de création";
-                setGovernanceFeedback(isFr ? `⚠️ Dossier « ${title} » conservé localement (${detail}).` : `⚠️ Folder "${title}" kept locally (${detail}).`);
-              });
+            void createFolder(title).then((saved) => {
+              if (!saved) return;
+              selectActiveFolderAndPersist(saved.folderId);
+              setGovernanceFeedback(isFr ? `✅ Dossier « ${saved.title} » créé et sélectionné.` : `✅ Folder "${saved.title}" created and selected.`);
+            });
           }}
           onUpdatePinnedNotes={(folderId, notes) => {
-            updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, pinnedNotesMarkdown: notes, assembledLayer5PromptBlock: notes.trim() ? `📌 Notes actives : ${notes.trim()}` : `Dossier actif : ${f.title}` } : f)));
-            setGovernanceFeedback(isFr ? "✅ Notes du dossier enregistrées et activées pour vos prochaines questions." : "✅ Folder notes saved and activated for your next questions.");
+            const folder = folders.find((f) => f.folderId === folderId);
+            if (!folder) return;
+            void savePinnedNotes(folder, notes).then((ok) => {
+              if (ok) setGovernanceFeedback(isFr ? "✅ Notes du dossier enregistrées et activées pour vos prochaines questions." : "✅ Folder notes saved and activated for your next questions.");
+            });
           }}
           onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
+            const folder = folders.find((f) => f.folderId === folderId);
+            if (!folder) return;
             const humanLabel = formatFolderVisibilityLabel(mode, isFr);
-            updateFoldersAndPersist((prev) => prev.map((f) => (f.folderId === folderId ? { ...f, visibilityMode: mode } : f)));
-            setGovernanceFeedback(isFr ? `✅ Visibilité du dossier mise à jour (${humanLabel}).` : `✅ Folder visibility updated (${humanLabel}).`);
+            void changeVisibility(folder, mode).then((ok) => {
+              if (ok) setGovernanceFeedback(isFr ? `✅ Visibilité du dossier mise à jour (${humanLabel}).` : `✅ Folder visibility updated (${humanLabel}).`);
+            });
           }}
           onSendCollaborativeMessage={(message) => setStreamedText(isFr ? `💬 Message ajouté à la discussion : ${message}` : `💬 Message added to thread: ${message}`)}
           onLaunchProcessFromFolder={() => navigateToRoute("/processes")}

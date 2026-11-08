@@ -10,6 +10,11 @@ export interface AssistantDictionarySection {
   readonly assistantSpeedStream: AssistantSpeedSelectorAndStreamViewLabels;
   readonly assistantCitations: AssistantCitationPillsAndArtifactCardLabels;
   readonly assistantFolders: AssistantFoldersAndCollaborativeThreadViewLabels;
+  readonly assistantFoldersSync: {
+    readonly workspaceRequired: string;
+    readonly loadFailed: (detail: string) => string;
+    readonly saveFailed: (detail: string) => string;
+  };
 }
 
 export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
@@ -67,6 +72,11 @@ export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
     continueInProcessCta: "☍ Poursuivre dans un Processus avec validation →",
     v5LockNoticeText:
       "🔒 Pour garantir la qualité, toute publication vers vos outils partagés passe par une étape de validation.",
+  },
+  assistantFoldersSync: {
+    workspaceRequired: "⚠️ Créez ou sélectionnez d'abord un Espace de travail pour enregistrer vos dossiers.",
+    loadFailed: (detail: string) => `⚠️ Impossible de charger vos dossiers (${detail}).`,
+    saveFailed: (detail: string) => `⚠️ Le dossier n'a pas pu être enregistré (${detail}).`,
   },
   assistantFolders: {
     tab1ActiveDiscussionTitle: "💬 Discussion en cours",
@@ -140,6 +150,11 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     continueInProcessCta: "☍ Continue in a reviewed Process →",
     v5LockNoticeText:
       "🔒 To ensure quality, publishing to shared tools always goes through a review step.",
+  },
+  assistantFoldersSync: {
+    workspaceRequired: "⚠️ Create or select a Workspace first to save your folders.",
+    loadFailed: (detail: string) => `⚠️ Unable to load your folders (${detail}).`,
+    saveFailed: (detail: string) => `⚠️ The folder could not be saved (${detail}).`,
   },
   assistantFolders: {
     tab1ActiveDiscussionTitle: "💬 Active discussion",

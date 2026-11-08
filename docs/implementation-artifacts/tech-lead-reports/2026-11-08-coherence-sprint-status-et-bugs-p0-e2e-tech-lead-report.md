@@ -74,5 +74,22 @@ Chaque bug P0 relève d'une story à part entière, et non d'un correctif ponctu
 - Vérifications : `pytest tests/security` 33 passés ; `pytest tests/unit tests/contract tests/conformance tests/evals` (hors conteneurs) vert sauf 2 échecs **préexistants sur `main`** (`test_ac_e2_*`, `test_ac_f2_*`) → ticket `TEST-HYG-01` ; `ruff`, `mypy --strict`, `lint-imports` (5/5) verts.
 - Impact GitNexus pré-édition : `resolve_user` et `seed_default_notifications` **CRITICAL** ; comportement inchangé en `local` / `test` (défaut de la pile E2E et des tests), seul le mode non local change.
 
-### 3.2 BUG-E2E-01, 03, 02
+### 3.2 BUG-E2E-01 (fait côté portail ; persistance SQL → BUG-E2E-01b)
+Constat complémentaire : l'adaptateur SQL ne peut pas être livré sans `AUTH-01` (clé étrangère `assistant_folders.owner_user_id → users(id)` alors que l'identité API est une persona en mémoire).
+
+| Fichier | Modification |
+| :--- | :--- |
+| `apps/web/src/features/inbox/useServerAssistantFolders.ts` | Nouveau hook : réhydratation `GET …/overview`, création / notes / visibilité via l'API, identifiants serveur, refus explicite sans espace, erreurs remontées |
+| `apps/web/src/features/inbox/index.tsx` | Branchement du hook ; suppression de l'identifiant client fabriqué et de l'espace de repli fictif `…000301` |
+| `packages/api-client/src/domains/bootstrapAndOntology.ts` | Méthode typée `configureAssistantFolderSharing` |
+| `apps/web/src/i18n/locales/assistant_labels.ts` | Messages FR/EN `assistantFoldersSync` |
+| `apps/web/src/__tests__/vitest.setup.ts` | Backend simulé à état pour les dossiers (POST / share / overview) + `seedVitestPlatformSetupState` |
+| `apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx` | Nouveau (4 tests : survie au F5 via GET, refus sans espace, notes + visibilité persistées, erreur affichée) |
+| `apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx` | Espace réel pré-rempli, attente de l'aller-retour serveur |
+| `apps/web/e2e/02-assistant-streaming-and-folders.spec.ts` | Création d'un espace réel, attente du `GET overview` après F5, `test.fail` retiré ; `test.fixme` « survit au redémarrage de l'API » (BUG-E2E-01b) |
+
+- Vérifications : `pnpm turbo run lint typecheck test` (web 47, ui 68, api-client 8) vert ; **E2E 02 sur pile isolée : 2 passés, 1 `fixme`**.
+- Correction annexe : la documentation `docs/testing-strategy.md` (et ses reprises dans `README.md`, `architecture.md`, `AGENTS.md`) citait des ports, scripts et fichiers E2E inexistants (`:55433`, `pnpm test:e2e:up`, `refuse_if_not_e2e_target`, `test_rag_hybrid_rrf_eval.py`…) ; remplacés par les mécanismes réels (`testcontainers`, API `:8100`, web `:3101`, `is_isolated_e2e_database_url`, `pnpm e2e`) et chaque lien de fichier vérifié.
+
+### 3.3 BUG-E2E-03, 02
 _En cours._

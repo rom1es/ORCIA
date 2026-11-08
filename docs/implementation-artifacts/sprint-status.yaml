@@ -868,11 +868,14 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Révélé par TEST-04 (spec 02) : le dossier est créé (POST /api/v1/assistant/folders < 400) mais « Dossiers (0) » après
       localStorage.clear() + reload. Viole le garde-fou n°3 (survie au F5 via GET). Test en test.fail jusqu'à correction.
+      Corrigé côté portail (2026-11-08, branche fix/p0-e2e-bugs) : le serveur est la source de vérité (GET overview au démarrage,
+      identifiants serveur, notes et visibilité envoyées à l'API, aucun espace de repli fictif, erreurs affichées). Spec E2E 02 verte.
+      La persistance PostgreSQL (survie au redémarrage de l'API) est suivie par BUG-E2E-01b.
   - id: BUG-E2E-02
     title: "HumanLedAnchorCard et ArbitrationTieBreakCard (Epic 3, FR-4/FR-5) non montés dans apps/web"
     action: "Câbler les composants dans l'écran du run/cockpit (signature d'ancrage, arbitrage) via @orcia/api-client puis activer le test.fixme de e2e/03-human-led-anchor-and-arbitration.spec.ts"
@@ -956,3 +959,14 @@ action_items:
     description: >
       Constaté le 2026-11-08 lors de la non-régression de BUG-E2E-04 : échecs présents sur main indépendamment du correctif
       (AD-20 règle 1 et clôture EC-1 de la Story 3.2f régressées par des évolutions ultérieures).
+  - id: BUG-E2E-01b
+    title: "Dossiers de Mon Assistant : adaptateur PostgreSQL (tables 0025 assistant_folders / threads / shares) au lieu du service en mémoire"
+    action: "Créer l'adaptateur SQL du domaine (garde-fou n°1), l'injecter via la Composition Root, test d'intégration HTTP -> SELECT PG18, activer le test.fixme « survit au redémarrage de l'API » de e2e/02"
+    priority: P0
+    depends_on: [AUTH-01]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      AssistantFoldersAndSharingService stocke les dossiers dans un dict en mémoire. Les tables existent (migration 0025) mais
+      owner_user_id référence users(id) : tant que l'identité API est une persona en mémoire (AUTH-01), l'insertion viole la clé étrangère.
