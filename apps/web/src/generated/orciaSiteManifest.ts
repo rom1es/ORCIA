@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 99
+    "techLeadReportsCount": 100
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / CI (TEST-01b)",
+      "reportFile": "2026-11-08-test-01b-workflow-ci-e2e-tech-lead-report.md",
+      "domain": "Workflow GitHub Actions e2e.yml (pile éphémère Docker + Playwright)",
+      "summary": ".github/workflows/e2e.yml — à valider à la première exécution CI."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-06)",

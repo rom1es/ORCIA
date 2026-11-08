@@ -859,7 +859,7 @@ action_items:
     priority: P1
     depends_on: [TEST-01]
     owner: "Amelia (Dev)"
-    status: open
+    status: review
     epic: epic-13
     description: "Socle livré (TEST-01) ; reste la exécution automatique en CI."
   - id: BUG-E2E-01
