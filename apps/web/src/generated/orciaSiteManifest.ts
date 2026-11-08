@@ -438,8 +438,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse UX/UI / Refonte écran Agents, Skills & MCP",
       "reportFile": "2026-11-08-refonte-complete-ecran-agents-skills-et-mcp-tech-lead-report.md",
-      "domain": "Refonte de /agents (CAP-091) — Section 3 à compléter (bilan 5 couches non finalisé au moment du commit)",
-      "summary": "Modales de détail/sandbox agent et skill, cartes, agents_and_skills_models.py, schémas et tests associés (branche feat/agents-skills-mcp-screen-overhaul)."
+      "domain": "Refonte complète de 🤖 Mes Agents (/agents, CAP-091) — 3 Onglets Visibles (Agents, Compétences, Serveurs d'outils & MCP), Carte Épinglée 🤖 Assistant de l'Espace, Modales de Création/Configuration/Dry-Run & Gouvernance des Ressources PACK",
+      "summary": "Suppression des formulaires ouverts en permanence et des cases à cocher $N \\times M$ sur les cartes au profit de cartes sobres (< 2s), création et configuration/Bac à sable Dry-Run en modales RGAA (AgentDetailAndSandboxModal, SkillDetailAndSandboxModal), Carte n°1 épinglée WorkspaceAssistantPinnedCard, protection immuable des ressources PACK contre la suppression (422) avec duplication 1-clic (duplicate_agent) et activation/désactivation par espace (PATCH /governance), et exposition du 3ᵉ onglet 🔌 Serveurs d'outils & MCP."
     },
     {
       "date": "2026-11-08",

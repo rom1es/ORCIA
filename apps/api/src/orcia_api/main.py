@@ -12,6 +12,7 @@ from orcia_api.middleware.trace_and_error import (
 from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
 from orcia_api.routers.assistant import router as assistant_router
 from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
+from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
@@ -59,6 +60,12 @@ def create_app() -> FastAPI:
             "Hexagonal Modular Monolith API with RFC 9457 Problem Details."
         ),
         lifespan=app_lifespan,
+        responses={
+            **PROBLEM_RESPONSES,
+            409: PROBLEM_RESPONSES[422],
+            412: PROBLEM_RESPONSES[422],
+            428: PROBLEM_RESPONSES[422],
+        },
     )
     initialize_app_services(application)
     application.add_middleware(TraceContextMiddleware)

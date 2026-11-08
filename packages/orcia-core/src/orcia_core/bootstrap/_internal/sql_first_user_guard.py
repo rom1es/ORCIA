@@ -35,7 +35,14 @@ async def create_first_platform_admin_on_postgres18(
     if effective_env != "local":
         expected = (expected_bootstrap_token or "").strip()
         candidate = (provided_bootstrap_token or "").strip()
-        if not expected or not candidate or not hmac.compare_digest(expected, candidate):
+        if (
+            not expected
+            or not candidate
+            or not hmac.compare_digest(
+                expected.encode("utf-8", errors="surrogatepass"),
+                candidate.encode("utf-8", errors="surrogatepass"),
+            )
+        ):
             raise InvalidBootstrapTokenError(instance=instance)
 
     async with engine.begin() as conn:

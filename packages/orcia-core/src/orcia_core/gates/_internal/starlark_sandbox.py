@@ -9,6 +9,8 @@ import time
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from orcia_kernel.errors import ValidationDomainError
+
 _CATASTROPHIC_REDOS_PATTERN = re.compile(r"\([^()]*[+*][^()]*\)[+*?]|\(\?P?<[^>]+>[^()]*[+*]\)[+*]")
 _FORBIDDEN_AST_NODES = (
     ast.Import,
@@ -29,8 +31,12 @@ _FORBIDDEN_AST_NODES = (
 )
 
 
-class StarlarkSandboxError(ValueError):
+class StarlarkSandboxError(ValidationDomainError, ValueError):
     """Raised when a Starlark mechanism script violates determinism, step cap, or RE2 rules."""
+
+    def __init__(self, message: str = "Starlark mechanism sandbox error.") -> None:
+        ValidationDomainError.__init__(self, detail_override=message)
+        ValueError.__init__(self, message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,11 +213,16 @@ class StarlarkMechanismSandbox:
             "__builtins__": safe_builtins,
             "orcia_sys": host,
         }
-        compiled = compile(tree, filename="<mechanism.star>", mode="exec")
-        exec(compiled, env, env)  # noqa: S102
-        if callable(env.get("evaluate")):
-            host._tick(1)
-            env["evaluate"](host.input())
+        try:
+            compiled = compile(tree, filename="<mechanism.star>", mode="exec")
+            exec(compiled, env, env)  # noqa: S102
+            if callable(env.get("evaluate")):
+                host._tick(1)
+                env["evaluate"](host.input())
+        except StarlarkSandboxError:
+            raise
+        except Exception as exc:
+            raise StarlarkSandboxError(f"Starlark execution error: {exc}") from exc
 
         if not host.verdicts:
             raise StarlarkSandboxError(
@@ -232,7 +243,7 @@ class StarlarkMechanismSandbox:
     def _parse_and_verify_starlark_ast(starlark_code: str) -> ast.Module:
         try:
             tree = ast.parse(starlark_code, filename="<mechanism.star>", mode="exec")
-        except SyntaxError as exc:
+        except (SyntaxError, ValueError) as exc:
             raise StarlarkSandboxError(f"Starlark syntax error: {exc}") from exc
 
         for node_count, node in enumerate(ast.walk(tree), start=1):

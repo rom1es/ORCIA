@@ -146,11 +146,14 @@ class DnaStarlarkAndGlossaryLifecycleService:
                 regex_pattern=regex_pattern,
                 norm_title=norm_title,
             )
-            self._verify_pass_and_fail(
-                starlark_code=candidate_code,
-                passing_payload=pass_payload,
-                failing_payload=fail_payload,
-            )
+            try:
+                self._verify_pass_and_fail(
+                    starlark_code=candidate_code,
+                    passing_payload=pass_payload,
+                    failing_payload=fail_payload,
+                )
+            except StarlarkSandboxError as exc:
+                raise ValidationDomainError(detail_override=str(exc)) from exc
 
         elapsed_ms = round((time.perf_counter() - started) * 1000.0, 3)
         script_name = f"{rule_id.lower().replace('_', '-')}.star"
@@ -191,10 +194,13 @@ class DnaStarlarkAndGlossaryLifecycleService:
             raise ValidationDomainError(
                 detail_override=f"Unknown Starlark mechanism '{mechanism_id}'."
             )
-        return self._sandbox.evaluate_script(
-            starlark_code=mech.starlark_code,
-            payload=payload,
-        )
+        try:
+            return self._sandbox.evaluate_script(
+                starlark_code=mech.starlark_code,
+                payload=payload,
+            )
+        except StarlarkSandboxError as exc:
+            raise ValidationDomainError(detail_override=str(exc)) from exc
 
     def extract_glossary_candidates_two_pass(
         self,

@@ -79,7 +79,10 @@ async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
     "/welcome-setup/first-admin",
     response_model=bs.WelcomeSetupFirstAdminResponse,
     summary="Create first PLATFORM_ADMIN under LOCK TABLE users IN EXCLUSIVE MODE (`Story 9.2`)",
-    responses=PROBLEM_RESPONSES,
+    responses={
+        **PROBLEM_RESPONSES,
+        409: PROBLEM_RESPONSES[422],
+    },
 )
 async def create_welcome_setup_first_admin(
     payload: bs.WelcomeSetupFirstAdminRequest,

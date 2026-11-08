@@ -2,11 +2,13 @@ import type {
   AgentItemResponse,
   AgentsAndSkillsListResponse,
   DeleteSkillOrAgentResponse,
+  DuplicateAgentRequest,
   ExecuteAgentRequest,
   ExecuteAgentResponse,
   ExecuteSkillRequest,
   ExecuteSkillResponse,
   SkillItemResponse,
+  ToggleAgentGovernanceRequest,
   UpdateAgentSkillsRequest,
   UpsertAgentRequest,
   UpsertSkillRequest,
@@ -59,6 +61,28 @@ export function createAgentsAndSkillsDomainClient(requestJson: RequestJsonFn) {
       return requestJson<AgentItemResponse>(
         `/api/v1/agents-and-skills/agents${buildPersonaQuery(personaKey)}`,
         "POST",
+        payload,
+      );
+    },
+    duplicateAgent(
+      agentId: string,
+      payload: DuplicateAgentRequest = {},
+      personaKey?: string,
+    ): Promise<AgentItemResponse> {
+      return requestJson<AgentItemResponse>(
+        `/api/v1/agents-and-skills/agents/${encodeURIComponent(agentId)}/duplicate${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    updateAgentGovernance(
+      agentId: string,
+      payload: ToggleAgentGovernanceRequest,
+      personaKey?: string,
+    ): Promise<AgentItemResponse> {
+      return requestJson<AgentItemResponse>(
+        `/api/v1/agents-and-skills/agents/${encodeURIComponent(agentId)}/governance${buildPersonaQuery(personaKey)}`,
+        "PATCH",
         payload,
       );
     },

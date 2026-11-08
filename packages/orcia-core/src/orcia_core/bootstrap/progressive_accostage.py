@@ -178,7 +178,14 @@ class ProgressiveDay0AccostageService:
         if effective_env != "local":
             expected = (self._expected_bootstrap_token or "").strip()
             candidate = (provided_token or "").strip()
-            if not expected or not candidate or not hmac.compare_digest(expected, candidate):
+            if (
+                not expected
+                or not candidate
+                or not hmac.compare_digest(
+                    expected.encode("utf-8", errors="surrogatepass"),
+                    candidate.encode("utf-8", errors="surrogatepass"),
+                )
+            ):
                 raise InvalidBootstrapTokenError(instance=instance)
         return effective_env
 

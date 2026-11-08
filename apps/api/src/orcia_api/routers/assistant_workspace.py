@@ -26,7 +26,7 @@ from orcia_api.routers.assistant_llm_bridge import (
 from orcia_api.routers.assistant_workspace_citations import router as citations_router
 from orcia_api.routers.assistant_workspace_folders import router as folders_router
 from orcia_api.routers.assistant_workspace_governance import router as governance_router
-from orcia_api.routers.auth import resolve_request_user
+from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.assistant import (
     ActiveBackgroundTurnStatusResponse,
     InvalidatePromptCacheRequest,
@@ -43,7 +43,11 @@ from orcia_core.orchestration.assistant_three_speed_router import (
 )
 from orcia_core.permissions.models import UserIdentity
 
-router = APIRouter(prefix="/api/v1/assistant", tags=["assistant-workspace"])
+router = APIRouter(
+    prefix="/api/v1/assistant",
+    tags=["assistant-workspace"],
+    responses=PROBLEM_RESPONSES,
+)
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 ThreeSpeedRouterDep = Annotated[
@@ -282,7 +286,15 @@ def record_assistant_turn_feedback_endpoint(
     )
 
 
-@router.post("/three-speed/stream")
+@router.post(
+    "/three-speed/stream",
+    responses={
+        200: {
+            "description": "Server-Sent Events stream (`text/event-stream`).",
+            "content": {"text/event-stream": {"schema": {"type": "object"}}},
+        }
+    },
+)
 async def stream_three_speed_turn_endpoint(
     payload: ThreeSpeedTurnRequest,
     request: Request,

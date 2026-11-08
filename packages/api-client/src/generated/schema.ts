@@ -48,16 +48,22 @@ export interface components {
     };
     AgentItemResponse: {
       agent_id: string;
+      agent_kind?: "LOCAL" | "REMOTE_MCP_A2A";
+      enabled_in_workspace?: boolean;
       handle: string;
       instructions: string;
+      mcp_exposed?: boolean;
       name: string;
+      remote_endpoint_url?: string | null;
       role_mission: string;
       sha256?: string;
       skill_ids?: (string)[];
       slug: string;
+      source_pack_key?: string | null;
       thinking_level?: "simple" | "medium" | "complex" | "auto";
       uri: string;
       version?: string;
+      visibility_scope?: "PRIVATE" | "TEAM" | "PACK";
     };
     AgenticGateEvaluateRequest: {
       anonymize_pii_reversible?: boolean;
@@ -785,6 +791,10 @@ export interface components {
       uri: string;
       workspace_id: string;
     };
+    DuplicateAgentRequest: {
+      new_name?: string | null;
+      visibility_scope?: "PRIVATE" | "TEAM";
+    };
     EffectiveWorkflowResolveRequest: {
       workflow_uri: string;
       workspace_id: string;
@@ -1082,9 +1092,6 @@ export interface components {
       description_fr: string;
       step_number: number;
       title_fr: string;
-    };
-    HTTPValidationError: {
-      detail?: (components["schemas"]["ValidationError"])[];
     };
     HealthResponse: {
       status?: "ok";
@@ -2238,6 +2245,7 @@ export interface components {
     };
     SkillItemResponse: {
       command_handle: string;
+      enabled_in_workspace?: boolean;
       expected_output_format?: string;
       input_parameters?: (string)[];
       instructions: string;
@@ -2246,8 +2254,10 @@ export interface components {
       sha256?: string;
       skill_id: string;
       slug: string;
+      source_pack_key?: string | null;
       uri: string;
       version?: string;
+      visibility_scope?: "PRIVATE" | "TEAM" | "PACK";
     };
     SseEventEnvelopeResponse: {
       channel: string;
@@ -2573,6 +2583,12 @@ export interface components {
       red_stdout: string;
       trace_id: string;
     };
+    ToggleAgentGovernanceRequest: {
+      enabled_in_workspace?: boolean | null;
+      mcp_exposed?: boolean | null;
+      thinking_level?: "simple" | "medium" | "complex" | "auto" | null;
+      visibility_scope?: "PRIVATE" | "TEAM" | null;
+    };
     TripartiteTraceEdgeSchemaItem: {
       edge_key: string;
       id: string;
@@ -2648,21 +2664,30 @@ export interface components {
     };
     UpsertAgentRequest: {
       agent_id?: string | null;
+      agent_kind?: "LOCAL" | "REMOTE_MCP_A2A" | null;
+      enabled_in_workspace?: boolean | null;
       instructions: string;
+      mcp_exposed?: boolean | null;
       name: string;
+      remote_endpoint_url?: string | null;
       role_mission: string;
       skill_ids?: (string)[];
+      source_pack_key?: string | null;
       thinking_level?: "simple" | "medium" | "complex" | "auto";
       version?: string;
+      visibility_scope?: "PRIVATE" | "TEAM" | "PACK" | null;
     };
     UpsertSkillRequest: {
+      enabled_in_workspace?: boolean | null;
       expected_output_format?: string;
       input_parameters?: (string)[];
       instructions: string;
       name: string;
       objective: string;
       skill_id?: string | null;
+      source_pack_key?: string | null;
       version?: string;
+      visibility_scope?: "PRIVATE" | "TEAM" | "PACK" | null;
     };
     UpstreamChallengePreviewRequest: {
       challenge_reason: string;
@@ -2802,13 +2827,6 @@ export interface components {
       passed: boolean;
       ui_components_and_sections_valid: boolean;
       violations: (string)[];
-    };
-    ValidationError: {
-      ctx?: Record<string, unknown>;
-      input?: unknown;
-      loc: (string | number)[];
-      msg: string;
-      type: string;
     };
     VerifyAndFilterCitationsRequest: {
       glossary_items?: (components["schemas"]["RawGlossaryCandidateSchemaItem"])[];
@@ -3156,10 +3174,24 @@ export interface paths {
       };
     };
   };
+  "/api/v1/agents-and-skills/agents/{agent_id}/duplicate": {
+    post: {
+      responses: {
+        200: components["schemas"]["AgentItemResponse"];
+      };
+    };
+  };
   "/api/v1/agents-and-skills/agents/{agent_id}/execute": {
     post: {
       responses: {
         200: components["schemas"]["ExecuteAgentResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/agents/{agent_id}/governance": {
+    patch: {
+      responses: {
+        200: components["schemas"]["AgentItemResponse"];
       };
     };
   };
@@ -4327,6 +4359,7 @@ export type DocVsCodeAuditRequest = components["schemas"]["DocVsCodeAuditRequest
 export type DocVsCodeAuditResponse = components["schemas"]["DocVsCodeAuditResponse"];
 export type DocumentIngestionRequest = components["schemas"]["DocumentIngestionRequest"];
 export type DocumentIngestionResponse = components["schemas"]["DocumentIngestionResponse"];
+export type DuplicateAgentRequest = components["schemas"]["DuplicateAgentRequest"];
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResourceAccessRequest"];
@@ -4357,7 +4390,6 @@ export type GlossaryCandidateSchema = components["schemas"]["GlossaryCandidateSc
 export type GovernedMcpInvokeRequest = components["schemas"]["GovernedMcpInvokeRequest"];
 export type GovernedMcpInvokeResponse = components["schemas"]["GovernedMcpInvokeResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
-export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
 export type HumanAnchorSignRequest = components["schemas"]["HumanAnchorSignRequest"];
@@ -4529,6 +4561,7 @@ export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest
 export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
+export type ToggleAgentGovernanceRequest = components["schemas"]["ToggleAgentGovernanceRequest"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type TwoPassExtractionRequest = components["schemas"]["TwoPassExtractionRequest"];
 export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtractionResponse"];
@@ -4555,7 +4588,6 @@ export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWr
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
 export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
 export type ValidateHelpArticleResponse = components["schemas"]["ValidateHelpArticleResponse"];
-export type ValidationError = components["schemas"]["ValidationError"];
 export type VerifyAndFilterCitationsRequest = components["schemas"]["VerifyAndFilterCitationsRequest"];
 export type VerifyAndFilterCitationsResponse = components["schemas"]["VerifyAndFilterCitationsResponse"];
 export type WelcomeSetupFirstAdminRequest = components["schemas"]["WelcomeSetupFirstAdminRequest"];

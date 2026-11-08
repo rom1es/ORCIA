@@ -374,7 +374,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp
     status: live
-    surfaces: { route: /agents }
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + WorkspaceAssistantPinnedCard + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
   - id: CAP-100
