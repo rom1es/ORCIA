@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 92
+    "techLeadReportsCount": 94
   },
   "activeRoutes": [
     "/",
@@ -415,6 +415,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-01)",
+      "reportFile": "2026-11-08-test-01-socle-e2e-bi-serveur-tech-lead-report.md",
+      "domain": "Socle E2E bi-serveur Playwright : FastAPI + Vite + PostgreSQL 18 / Redis 7.4 éphémères, reset Jour 0 sécurisé, cassette LLM (AD-17 Couche 5)",
+      "summary": "infra/scripts/e2e/*, playwright.config.ts (webServer[], workers: 1), spec de fumée 2 viewports, 10 tests unitaires du garde-fou d'isolation."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse UX/UI / Refonte écran Agents, Skills & MCP",
+      "reportFile": "2026-11-08-refonte-complete-ecran-agents-skills-et-mcp-tech-lead-report.md",
+      "domain": "Refonte de /agents (CAP-091) — Section 3 à compléter (bilan 5 couches non finalisé au moment du commit)",
+      "summary": "Modales de détail/sandbox agent et skill, cartes, agents_and_skills_models.py, schémas et tests associés (branche feat/agents-skills-mcp-screen-overhaul)."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Gouvernance documentaire (CAP-ACT-1..4)",

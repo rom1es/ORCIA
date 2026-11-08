@@ -21,9 +21,14 @@ if (fs.existsSync(rootEnvPath)) {
   }
 }
 
-const webHost = process.env.ORCIA_WEB_HOST ?? "127.0.0.1";
-const webPort = process.env.ORCIA_WEB_PORT ?? process.env.PORT ?? "3100";
-const webBaseUrl = process.env.ORCIA_WEB_URL ?? `http://${webHost}:${webPort}`;
+// Ports dédiés E2E : jamais ceux de l'environnement de développement (API 8000, web 3100).
+const webHost = process.env.ORCIA_E2E_WEB_HOST ?? "127.0.0.1";
+const webPort = process.env.ORCIA_E2E_WEB_PORT ?? "3101";
+const apiPort = process.env.ORCIA_E2E_API_PORT ?? "8100";
+const webBaseUrl = `http://${webHost}:${webPort}`;
+const apiBaseUrl = `http://127.0.0.1:${apiPort}`;
+const repoRoot = path.resolve(configDir, "../..");
+const pythonBin = path.join(repoRoot, ".venv/bin/python");
 
 const cachedChromePath = path.join(
   os.homedir(),
@@ -33,7 +38,9 @@ const executablePath = fs.existsSync(cachedChromePath) ? cachedChromePath : unde
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  // Base PostgreSQL partagée et remise à zéro (Jour 0) entre specs : exécution séquentielle.
+  fullyParallel: false,
+  workers: 1,
   retries: 0,
   use: {
     baseURL: webBaseUrl,
@@ -59,10 +66,32 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: `node scripts/run-next.mjs dev --host ${webHost} --port ${webPort}`,
-    url: webBaseUrl,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60000,
-  },
+  webServer: [
+    {
+      // Pile isolée : PostgreSQL 18 + Redis 7.4 éphémères, migrations, FastAPI (cassette LLM, 0 $).
+      command: `${pythonBin} infra/scripts/e2e/e2e_stack.py --api-port ${apiPort}`,
+      cwd: repoRoot,
+      url: `${apiBaseUrl}/api/v1/health`,
+      reuseExistingServer: false,
+      timeout: 180000,
+      // SIGTERM (et non SIGKILL par défaut) : laisse e2e_stack.py supprimer les conteneurs.
+      gracefulShutdown: { signal: "SIGTERM", timeout: 30000 },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+    {
+      // SPA Vite dont le proxy `/api` vise l'API E2E (et non l'API de développement).
+      command: `node scripts/run-next.mjs dev --host ${webHost} --port ${webPort}`,
+      url: webBaseUrl,
+      reuseExistingServer: false,
+      timeout: 60000,
+      env: {
+        ORCIA_WEB_HOST: webHost,
+        ORCIA_WEB_PORT: webPort,
+        PORT: webPort,
+        ORCIA_API_HOST: "127.0.0.1",
+        ORCIA_API_PORT: apiPort,
+      },
+    },
+  ],
 });

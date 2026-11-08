@@ -759,7 +759,7 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Aujourd'hui un seul webServer (Vite, scripts/run-next.mjs). Sans backend, tout appel /api/v1 d'un vrai navigateur échoue.
@@ -853,3 +853,12 @@ action_items:
     description: >
       Évite la dérive « fonctionnalité livrée sans test traversant ». Les 57 capacités sont toutes verification: docs ;
       ce champ remplace la vérification manuelle et pilote CAP-ACT-5.
+  - id: TEST-01b
+    title: "P1 — Intégrer `pnpm e2e` à la CI (aucun .github/workflows dans le dépôt) avec Docker pour la pile éphémère"
+    action: "Créer le workflow CI (job e2e : docker, uv sync, pnpm install, playwright install chromium, pnpm e2e) et publier trace/rapport en artefact"
+    priority: P1
+    depends_on: [TEST-01]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: "Socle livré (TEST-01) ; reste la exécution automatique en CI."
