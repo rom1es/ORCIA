@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 98
+    "techLeadReportsCount": 99
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-06)",
+      "reportFile": "2026-11-08-test-06-e2e-p2-specs-tech-lead-report.md",
+      "domain": "Specs E2E P2 : aide contextuelle, ⌘K, écrans sans erreur serveur ; BUG-E2E-06",
+      "summary": "apps/web/e2e/09..11-*.spec.ts, support/apiErrors.ts."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-05)",

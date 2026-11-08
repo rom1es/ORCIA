@@ -810,7 +810,7 @@ action_items:
     priority: P2
     depends_on: [TEST-05]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       L'audit externe proposait 10 specs ; le croisement avec capabilities.yaml montre que les capacités
@@ -918,3 +918,14 @@ action_items:
     description: >
       Révélé par TEST-05 (spec 06) : seuls les endpoints gates / human_gates existent ; les stories 4.2 / 4.3 sont `done` mais la
       revue humaine par découpage et le garde-fou anti-rubber-stamping ne sont pas utilisables dans l'interface.
+  - id: BUG-E2E-06
+    title: "Recherche fédérée ⌘K (vitesse 2) : l'UI reçoit 422 de l'API, avale l'erreur et affiche un résultat local fabriqué"
+    action: "Corriger l'appel searchFederated (workspace_id optionnel / périmètre GLOBAL valide) ; remplacer le .catch → localSemanticHit de ShellContainer par un état d'erreur explicite (garde-fou n°5) ; retirer test.fail dans e2e/10-command-palette-search.spec.ts"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-06 (spec 10) : `GET/POST` de recherche fédérée → 422 au Jour 0 (workspace null). ShellContainer.runFederatedSpeed2Search
+      retombe sur un « Passage pertinent » fabriqué côté client (donnée fictive + catch silencieux).
