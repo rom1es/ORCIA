@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 import {
   GuidanceDrawer,
   type GuidanceDrawerLabels,
@@ -286,7 +287,7 @@ export function WorkspaceControlCenter({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0, fontSize: "0.9375rem" }}>
-              ⚡ {labels.contributorRunsHeader} ({contributorRuns.length})
+              <OrciaIcon name="lightning" /> {labels.contributorRunsHeader} ({contributorRuns.length})
             </h3>
             <button
               type="button"
@@ -336,7 +337,7 @@ export function WorkspaceControlCenter({
           ))}
 
           <h3 style={{ margin: "8px 0 0 0", fontSize: "0.9375rem" }}>
-            👁️ {labels.observerRunsHeader} ({observerRuns.length})
+            <OrciaIcon name="eye" /> {labels.observerRunsHeader} ({observerRuns.length})
           </h3>
           {observerRuns.map((run) => (
             <article

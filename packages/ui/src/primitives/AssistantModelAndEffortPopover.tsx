@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "../components/icons";
 import type { UiAssistantSpeedMode } from "./AssistantSpeedSelectorAndStreamView";
 import type {
   UiInferenceEffort,
@@ -144,9 +145,11 @@ export function AssistantModelAndEffortPopover({
                 </div>
               </div>
               {isSelected && (
-                <span aria-label="Sélectionné" className="text-xs font-bold">
-                  ✓
-                </span>
+                <OrciaIcon
+                  name="check"
+                  ariaLabel="Sélectionné"
+                  className="text-xs font-bold"
+                />
               )}
             </button>
           );
@@ -159,9 +162,11 @@ export function AssistantModelAndEffortPopover({
             onClick={onToggleThinkingSubmenu}
             className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left font-medium hover:bg-surface-secondary"
           >
-            <span>🧠 Niveau de réflexion</span>
+            <span>
+              <OrciaIcon name="brain" /> Niveau de réflexion
+            </span>
             <span className="text-text-secondary">
-              {activeEffortOption.title} ▸
+              {activeEffortOption.title} <OrciaIcon name="caretRight" />
             </span>
           </button>
         </div>
@@ -203,9 +208,11 @@ export function AssistantModelAndEffortPopover({
                   </div>
                 </div>
                 {isSelected && (
-                  <span aria-label="Sélectionné" className="text-xs font-bold">
-                    ✓
-                  </span>
+                  <OrciaIcon
+                    name="check"
+                    ariaLabel="Sélectionné"
+                    className="text-xs font-bold"
+                  />
                 )}
               </button>
             );

@@ -5,6 +5,7 @@ import type {
   UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
+import { OrciaIcon } from "./icons";
 
 export interface SkillStudioCardItemProps {
   readonly skill: UiManagedSkillItem;
@@ -34,12 +35,20 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
   const [autosavedBadgeVisible, setAutosavedBadgeVisible] = useState(false);
 
   const visibilityScope: UiAgentSkillVisibilityScope = skill.visibilityScope ?? "TEAM";
-  const visibilityBadgeText =
-    visibilityScope === "PRIVATE"
-      ? "🔒 Privé"
-      : visibilityScope === "PACK"
-        ? `📦 Pack Métier (${skill.sourcePackKey ?? "orcia-pack-sdlc"})`
-        : "👥 Équipe";
+  const visibilityBadgeContent =
+    visibilityScope === "PRIVATE" ? (
+      <>
+        <OrciaIcon name="lock" /> Privé
+      </>
+    ) : visibilityScope === "PACK" ? (
+      <>
+        <OrciaIcon name="spaces" /> Pack Métier ({skill.sourcePackKey ?? "orcia-pack-sdlc"})
+      </>
+    ) : (
+      <>
+        <OrciaIcon name="team" /> Équipe
+      </>
+    );
 
   const handleCopyCommand = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -85,7 +94,13 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
             title="Copier la commande /skill"
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 text-[10px] font-medium"
           >
-            {copiedCommand ? "✓ Copié" : "Copier /"}
+            {copiedCommand ? (
+              <>
+                <OrciaIcon name="check" /> Copié
+              </>
+            ) : (
+              "Copier /"
+            )}
           </button>
           <button
             type="button"
@@ -94,7 +109,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
             title="Cliquer pour basculer la visibilité (Privé / Équipe)"
             className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
           >
-            {visibilityBadgeText}
+            {visibilityBadgeContent}
           </button>
           {autosavedBadgeVisible && (
             <span
@@ -102,7 +117,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-semibold"
               style={{ color: "var(--color-status-success)" }}
             >
-              ✓ Enregistré
+              <OrciaIcon name="check" /> Enregistré
             </span>
           )}
         </div>
@@ -115,7 +130,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
               onClick={() => onUseSkillInAssistant(skill)}
               className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
             >
-              💬 Utiliser dans Mon Assistant
+              <OrciaIcon name="assistant" /> Utiliser dans Mon Assistant
             </button>
           )}
           <button
@@ -157,7 +172,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
           onClick={handleRunSkill}
           className="rounded bg-[var(--orcia-action-primary)] px-3 py-1 font-semibold text-[var(--orcia-text-on-action)]"
         >
-          ⚡ {labels.runSkillButtonLabel}
+          <OrciaIcon name="lightning" /> {labels.runSkillButtonLabel}
         </button>
       </div>
 

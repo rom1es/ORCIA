@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export interface CollapsibleAppRailLabels {
   readonly railAriaLabel: string;
@@ -107,13 +108,13 @@ export function CollapsibleAppRail({
           data-testid="rail-action-required-pill"
           style={{ fontSize: "0.7rem", color: "var(--orcia-text-secondary)" }}
         >
-          🔔 {actionRequiredCount} {!collapsed ? labels.actionRequiredBadgeLabel : ""}
+          <OrciaIcon name="notifications" /> {actionRequiredCount} {!collapsed ? labels.actionRequiredBadgeLabel : ""}
         </span>
         <span
           data-testid="rail-outbox-health-pill"
           style={{ fontSize: "0.7rem", color: "var(--orcia-text-secondary)" }}
         >
-          🟢 Outbox ({outboxPendingCount}) {!collapsed ? labels.outboxHealthyLabel : ""}
+          <OrciaIcon name="statusHealthy" /> Outbox ({outboxPendingCount}) {!collapsed ? labels.outboxHealthyLabel : ""}
         </span>
       </footer>
     </aside>

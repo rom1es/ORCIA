@@ -5,6 +5,8 @@ import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   DisabledButtonAlertIndicator,
   FourZoneDirectionCShell,
+  getOrciaIconGlyph,
+  OrciaIcon,
   RgaaUnsavedChangesAlert,
   TopHeaderSearchCommand,
   UserAccountDropdownAndSettingsModal,
@@ -228,11 +230,15 @@ function InnerShellContainer({
   const hasBillingTeam =
     memberTeamIds.length > 0 || teamUnits.length > 0 || workspaces.length > 0;
 
-  const groupPrivateLabel = isFr ? "🔒 Mes Espaces Privés" : "🔒 My Private Spaces";
-  const groupTeamsLabel = isFr ? "👥 Mes Équipes & Espaces" : "👥 My Teams & Spaces";
+  const groupPrivateLabel = isFr
+    ? `${getOrciaIconGlyph("lock")} Mes Espaces Privés`
+    : `${getOrciaIconGlyph("lock")} My Private Spaces`;
+  const groupTeamsLabel = isFr
+    ? `${getOrciaIconGlyph("team")} Mes Équipes & Espaces`
+    : `${getOrciaIconGlyph("team")} My Teams & Spaces`;
   const groupSupervisionLabel = isFr
-    ? "🏢 Supervision Organisation"
-    : "🏢 Organization Supervision";
+    ? `${getOrciaIconGlyph("organizationBu")} Supervision Organisation`
+    : `${getOrciaIconGlyph("organizationBu")} Organization Supervision`;
 
   const workspaceOptions = [
     ...privateWorkspaces.map((ws) => ({
@@ -488,7 +494,7 @@ function InnerShellContainer({
                 cursor: "pointer",
               }}
             >
-              <span aria-hidden="true">🌐</span>
+              <OrciaIcon name="globe" />
               <span>Documentation</span>
             </button>
           )

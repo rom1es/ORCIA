@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
@@ -80,7 +81,9 @@ export function GuidanceDrawer({
           gap: "8px",
         }}
       >
-        <strong style={{ fontSize: "0.875rem" }}>🧭 {labels.drawerTitle}</strong>
+        <strong style={{ fontSize: "0.875rem" }}>
+          <OrciaIcon name="compass" /> {labels.drawerTitle}
+        </strong>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           {open ? (
             <button

@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "./icons";
 
 export interface DisabledButtonAlertIndicatorProps {
   /** Whether the parent button is currently disabled (greyed out). */
@@ -64,7 +65,7 @@ export function DisabledButtonAlertIndicator({
         flexShrink: 0,
       }}
     >
-      <span aria-hidden="true">!</span>
+      <OrciaIcon name="alertBadge" />
       <span
         role="tooltip"
         data-testid={tooltipTestId}

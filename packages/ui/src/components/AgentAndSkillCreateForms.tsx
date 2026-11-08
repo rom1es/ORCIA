@@ -7,6 +7,7 @@ import type {
   UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
+import { OrciaIcon, getOrciaIconGlyph } from "./icons";
 
 export interface AgentCreateFormDrawerProps {
   readonly isOpen: boolean;
@@ -97,8 +98,8 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
           onChange={(e) => onChangeVisibility(e.target.value as "PRIVATE" | "TEAM")}
           className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1.5"
         >
-          <option value="TEAM">👥 Partagé avec mon Équipe &amp; Espace</option>
-          <option value="PRIVATE">🔒 Privé (Visible uniquement par moi)</option>
+          <option value="TEAM">{getOrciaIconGlyph("team")} Partagé avec mon Équipe &amp; Espace</option>
+          <option value="PRIVATE">{getOrciaIconGlyph("lock")} Privé (Visible uniquement par moi)</option>
         </select>
       </label>
       <label className="flex flex-col gap-1 md:col-span-2">
@@ -302,12 +303,12 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
       >
         {(
           [
-            ["ALL", "visibility-filter-all", "Tous"],
-            ["PRIVATE", "visibility-filter-private", "🔒 Privés"],
-            ["TEAM", "visibility-filter-team", "👥 Équipe / Espace"],
-            ["PACK", "visibility-filter-pack", "📦 Packs Métiers"],
+            ["ALL", "visibility-filter-all", "Tous", null],
+            ["PRIVATE", "visibility-filter-private", "Privés", "lock"],
+            ["TEAM", "visibility-filter-team", "Équipe / Espace", "team"],
+            ["PACK", "visibility-filter-pack", "Packs Métiers", "spaces"],
           ] as const
-        ).map(([filterKey, testId, filterLabel]) => (
+        ).map(([filterKey, testId, filterLabel, iconName]) => (
           <button
             key={filterKey}
             type="button"
@@ -320,7 +321,13 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
                 : "bg-[var(--orcia-surface-secondary)] text-[var(--orcia-text-primary)]"
             }`}
           >
-            {filterLabel}
+            {iconName ? (
+              <>
+                <OrciaIcon name={iconName} /> {filterLabel}
+              </>
+            ) : (
+              filterLabel
+            )}
           </button>
         ))}
         {onLoadPackTemplates && (
@@ -330,7 +337,7 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
             onClick={onLoadPackTemplates}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-[11px] font-semibold"
           >
-            📦 Charger les Agents &amp; Compétences des Packs Métiers
+            <OrciaIcon name="spaces" /> Charger les Agents &amp; Compétences des Packs Métiers
           </button>
         )}
       </div>

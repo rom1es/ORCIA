@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "../components/icons";
 import type {
   UiMcpTargetKind,
   UiPersonalMcpTokenItem,
@@ -68,7 +69,9 @@ export function UserSettingsModalTabs({
           className="space-y-3"
         >
           <div className="flex items-center justify-between">
-            <span>Ouverture automatique de l&apos;Aide ❓</span>
+            <span>
+              Ouverture automatique de l&apos;Aide <OrciaIcon name="help" />
+            </span>
             <input
               type="checkbox"
               autoComplete="off"
@@ -86,7 +89,9 @@ export function UserSettingsModalTabs({
             />
           </div>
           <div className="flex items-center justify-between">
-            <span>Notifications 🔔 actives</span>
+            <span>
+              Notifications <OrciaIcon name="notifications" /> actives
+            </span>
             <input
               type="checkbox"
               autoComplete="off"
@@ -153,7 +158,7 @@ export function UserSettingsModalTabs({
               data-testid="passthrough-test-ok-badge"
               className="ml-2 text-status-success font-mono"
             >
-              ✅ Connectivité vérifiée
+              <OrciaIcon name="checkFilled" /> Connectivité vérifiée
             </span>
           )}
         </div>

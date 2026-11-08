@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
+import { OrciaIcon, getOrciaIconGlyph } from "../components/icons";
 
 export type AssistantMainTabCode = "ACTIVE_DISCUSSION" | "FOLDERS" | "HISTORY_SEARCH";
 export type AssistantFolderVisibilityMode = "PRIVATE" | "SHARED_SELECTED" | "WORKSPACE_OPEN";
@@ -56,12 +57,18 @@ export interface AssistantFoldersAndCollaborativeThreadViewProps {
 
 export function formatFolderVisibilityLabel(mode: AssistantFolderVisibilityMode, isFr = true): string {
   if (mode === "SHARED_SELECTED") {
-    return isFr ? "👥 Partagé (Membres choisis)" : "👥 Shared (Selected members)";
+    return isFr
+      ? `${getOrciaIconGlyph("team")} Partagé (Membres choisis)`
+      : `${getOrciaIconGlyph("team")} Shared (Selected members)`;
   }
   if (mode === "WORKSPACE_OPEN") {
-    return isFr ? "📦 Visible par tout l'Espace" : "📦 Open to entire Workspace";
+    return isFr
+      ? `${getOrciaIconGlyph("spaces")} Visible par tout l'Espace`
+      : `${getOrciaIconGlyph("spaces")} Open to entire Workspace`;
   }
-  return isFr ? "🔒 Privé (Moi uniquement)" : "🔒 Private (Only me)";
+  return isFr
+    ? `${getOrciaIconGlyph("lock")} Privé (Moi uniquement)`
+    : `${getOrciaIconGlyph("lock")} Private (Only me)`;
 }
 
 export function AssistantFoldersAndCollaborativeThreadView({
@@ -111,7 +118,15 @@ export function AssistantFoldersAndCollaborativeThreadView({
       <div data-testid="assistant-folders-and-notes-explainer" className="rounded-lg border border-border-subtle bg-surface-primary p-3 text-xs space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="font-semibold text-text-primary">
-            {isFr ? "📁 Dossiers thématiques & 📌 Notes permanentes (Mémoire de Mon Assistant)" : "📁 Thematic Folders & 📌 Pinned Notes (My Assistant Memory)"}
+            {isFr ? (
+              <>
+                <OrciaIcon name="folder" /> Dossiers thématiques &amp; <OrciaIcon name="pin" /> Notes permanentes (Mémoire de Mon Assistant)
+              </>
+            ) : (
+              <>
+                <OrciaIcon name="folder" /> Thematic Folders &amp; <OrciaIcon name="pin" /> Pinned Notes (My Assistant Memory)
+              </>
+            )}
           </span>
           {onOpenHelpSection && (
             <ContextualInfoTriggerButton
@@ -167,11 +182,12 @@ export function AssistantFoldersAndCollaborativeThreadView({
         <div data-testid="assistant-folder-pinned-notes-drawer" className="rounded-lg border border-border-subtle bg-surface-primary p-3 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-text-primary">
-              {isFr ? `📌 Notes permanentes du dossier « ${activeFolder.title} » (injectées dans chaque question)` : `📌 Permanent notes for folder "${activeFolder.title}" (injected into every question)`}
+              <OrciaIcon name="pin" />{" "}
+              {isFr ? `Notes permanentes du dossier « ${activeFolder.title} » (injectées dans chaque question)` : `Permanent notes for folder "${activeFolder.title}" (injected into every question)`}
             </span>
             {notesSavedBadge && (
               <span data-testid="assistant-folder-notes-saved-badge" className="text-[11px] font-semibold text-status-success">
-                {isFr ? "✓ Notes enregistrées et actives" : "✓ Notes saved and active"}
+                <OrciaIcon name="check" /> {isFr ? "Notes enregistrées et actives" : "Notes saved and active"}
               </span>
             )}
           </div>
@@ -258,7 +274,8 @@ export function AssistantFoldersAndCollaborativeThreadView({
               >
                 <div className="flex items-center justify-between gap-2">
                   <button type="button" data-testid={`assistant-select-folder-btn-${folder.folderId}`} onClick={() => onSelectFolder?.(folder.folderId)} className="text-xs font-semibold hover:underline text-left">
-                    📁 {folder.title} {isSelected ? "✓" : ""}
+                    <OrciaIcon name="folder" /> {folder.title}{" "}
+                    {isSelected ? <OrciaIcon name="check" /> : ""}
                   </button>
                   <span data-testid={`assistant-folder-visibility-badge-${folder.folderId}`} className="rounded bg-surface-secondary px-2 py-0.5 text-[11px] font-medium text-text-secondary">
                     {formatFolderVisibilityLabel(folder.visibilityMode, isFr)}
@@ -266,7 +283,9 @@ export function AssistantFoldersAndCollaborativeThreadView({
                 </div>
                 <p className="text-[11px] text-text-secondary">{folder.consolidatedSummary}</p>
                 {folder.pinnedNotesMarkdown.trim() && (
-                  <p className="text-[11px] text-text-primary truncate">📌 {folder.pinnedNotesMarkdown}</p>
+                  <p className="text-[11px] text-text-primary truncate">
+                    <OrciaIcon name="pin" /> {folder.pinnedNotesMarkdown}
+                  </p>
                 )}
               </div>
             );

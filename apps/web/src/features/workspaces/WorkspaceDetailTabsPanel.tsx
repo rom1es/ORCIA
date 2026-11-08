@@ -1,6 +1,7 @@
 import {
   ContextualInfoTriggerButton,
   DisabledButtonAlertIndicator,
+  OrciaIcon,
   type ControlCenterDatasourceItem,
   type ControlCenterWorkspaceGovItem,
   type UiOntologyConceptView,
@@ -104,7 +105,7 @@ export function WorkspaceDetailTabsPanel({
             onClick={() => setActiveDetailTab("SOURCES")}
             className="orcia-ds-tab"
           >
-            {isFr ? "📚 Sources & Documents de l'Espace" : "📚 Workspace Sources & Documents"}
+            <OrciaIcon name="books" /> {isFr ? "Sources & Documents de l'Espace" : "Workspace Sources & Documents"}
           </button>
           <button
             type="button"
@@ -114,7 +115,7 @@ export function WorkspaceDetailTabsPanel({
             onClick={() => setActiveDetailTab("GLOSSARY")}
             className="orcia-ds-tab"
           >
-            {isFr ? "📖 Glossaire & Règles Métiers (Ontologie)" : "📖 Business Glossary & Rules (Ontology)"}
+            <OrciaIcon name="bookOpen" /> {isFr ? "Glossaire & Règles Métiers (Ontologie)" : "Business Glossary & Rules (Ontology)"}
           </button>
           <button
             type="button"
@@ -124,7 +125,7 @@ export function WorkspaceDetailTabsPanel({
             onClick={() => setActiveDetailTab("MEMBERS")}
             className="orcia-ds-tab"
           >
-            {isFr ? "👥 Membres, Accès & Consignes" : "👥 Members, Access & Instructions"}
+            <OrciaIcon name="team" /> {isFr ? "Membres, Accès & Consignes" : "Members, Access & Instructions"}
           </button>
         </nav>
       </div>

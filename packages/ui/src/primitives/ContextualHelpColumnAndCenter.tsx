@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export type UiHelpArticleLayer = "BASE" | "PACK" | "WORKSPACE" | "USER";
 
@@ -215,7 +216,7 @@ export function ContextualHelpColumnAndCenter({
               >
                 <div className="font-semibold text-text-primary flex items-center justify-between gap-1.5 flex-wrap">
                   <span className="flex items-center gap-1.5">
-                    <span aria-hidden="true">ⓘ</span>
+                    <OrciaIcon name="infoSymbol" />
                     <span>{sec.title}</span>
                   </span>
                   {isActive && (
@@ -250,7 +251,7 @@ export function ContextualHelpColumnAndCenter({
           className="w-full px-3 py-2 bg-surface-secondary text-left font-semibold flex items-center justify-between"
         >
           <span>{labels.stepByStepAccordionTitle}</span>
-          <span>{openSteps ? "▾" : "▸"}</span>
+          <OrciaIcon name={openSteps ? "caretDown" : "caretRight"} />
         </button>
         {openSteps && (
           <ol
@@ -274,7 +275,7 @@ export function ContextualHelpColumnAndCenter({
           className="w-full px-3 py-2 bg-surface-secondary text-left font-semibold flex items-center justify-between"
         >
           <span>{labels.keyTermsAccordionTitle}</span>
-          <span>{openTerms ? "▾" : "▸"}</span>
+          <OrciaIcon name={openTerms ? "caretDown" : "caretRight"} />
         </button>
         {openTerms && (
           <ul
@@ -298,7 +299,7 @@ export function ContextualHelpColumnAndCenter({
           className="w-full px-3 py-2 bg-surface-secondary text-left font-semibold flex items-center justify-between"
         >
           <span>{labels.faqAccordionTitle}</span>
-          <span>{openFaq ? "▾" : "▸"}</span>
+          <OrciaIcon name={openFaq ? "caretDown" : "caretRight"} />
         </button>
         {openFaq && (
           <ul

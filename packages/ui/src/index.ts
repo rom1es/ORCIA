@@ -240,6 +240,19 @@ export {
   type DisabledButtonAlertIndicatorProps,
 } from "./components/DisabledButtonAlertIndicator";
 export {
+  getOrciaIconDefinition,
+  getOrciaIconGlyph,
+  ORCIA_EIGHT_MENU_ICON_NAMES,
+  ORCIA_ICONS,
+  ORCIA_MODULE_ICON_NAMES,
+  ORCIA_SCOPE_LEVEL_ICON_NAMES,
+  OrciaIcon,
+  type OrciaIconCategory,
+  type OrciaIconDefinition,
+  type OrciaIconName,
+  type OrciaIconProps,
+} from "./components/icons";
+export {
   OrciaAlertBanner,
   OrciaButton,
   OrciaInput,

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FormattedMarkdownContent } from "../components/FormattedMarkdownContent";
+import { OrciaIcon } from "../components/icons";
 import type { UiThreeSpeedStepProgress } from "./AssistantSpeedSelectorAndStreamView";
 
 export interface AssistantThinkingSubWindowProps {
@@ -212,13 +213,11 @@ export function AssistantThinkingSubWindow({
         <span data-testid="assistant-thinking-subwindow-header-label">
           {headerTitle}
         </span>
-        <span
-          aria-hidden="true"
-          data-testid="assistant-thinking-subwindow-chevron"
+        <OrciaIcon
+          name={expanded ? "chevronDown" : "chevronRight"}
+          testId="assistant-thinking-subwindow-chevron"
           className="text-xs leading-none"
-        >
-          {expanded ? "⌄" : "›"}
-        </span>
+        />
       </button>
 
       <ol
@@ -268,7 +267,7 @@ export function AssistantThinkingSubWindow({
                 onClick={() => toggleIndividualStep(st.stepCode, isStepExpanded)}
                 className="flex w-full items-center gap-1.5 text-left hover:text-text-primary transition-colors"
               >
-                <span aria-hidden="true">{isRunning ? "⏳" : "✓"}</span>
+                <OrciaIcon name={isRunning ? "hourglass" : "check"} />
                 <span className="text-text-secondary">{cleanLabel}</span>
                 <span
                   data-testid={`assistant-step-live-timer-${st.stepCode}`}
@@ -276,13 +275,11 @@ export function AssistantThinkingSubWindow({
                 >
                   {stepTimerText}
                 </span>
-                <span
-                  aria-hidden="true"
-                  data-testid={`assistant-step-chevron-${st.stepCode}`}
+                <OrciaIcon
+                  name={isStepExpanded ? "chevronDown" : "chevronRight"}
+                  testId={`assistant-step-chevron-${st.stepCode}`}
                   className="text-[11px] leading-none text-text-secondary/70"
-                >
-                  {isStepExpanded ? "⌄" : "›"}
-                </span>
+                />
               </button>
               {cleanIntermediate ? (
                 <div

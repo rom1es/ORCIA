@@ -2,6 +2,7 @@ import {
   ContextualHelpColumnAndCenter,
   ContextualInfoTriggerButton,
   OntologyAndKbExplorerPanel,
+  OrciaIcon,
   type UiOntologyLevel,
 } from "@orcia/ui";
 import React, { useState } from "react";
@@ -61,9 +62,10 @@ export function OntologyFeaturePanel() {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <strong>
+            <OrciaIcon name="globe" />{" "}
             {isFr
-              ? "🌐 Site de Présentation & Documentation Vivante d'ORCIA"
-              : "🌐 ORCIA Living Product & Architecture Showcase Site"}
+              ? "Site de Présentation & Documentation Vivante d'ORCIA"
+              : "ORCIA Living Product & Architecture Showcase Site"}
           </strong>
           <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
             {isFr
@@ -77,7 +79,7 @@ export function OntologyFeaturePanel() {
           onClick={() => navigateToRoute("/showcase")}
           className="orcia-ds-btn orcia-ds-btn-primary"
         >
-          <span aria-hidden="true">🌐</span> <span>Documentation</span>
+          <OrciaIcon name="globe" /> <span>Documentation</span>
         </button>
       </section>
 

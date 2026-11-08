@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 
 export type UiChunkStatus = "PENDING" | "APPROVED" | "CO_EDITED" | "CHALLENGED";
 export type UiChunkDecisionAction = "APPROVE" | "CO_EDIT" | "CHALLENGE";
@@ -245,7 +246,9 @@ export function ChunkValidationCard({
                     cursor: readOnly ? "not-allowed" : "pointer",
                   }}
                 >
-                  <span>✓ {labels.approveSectionLabel}</span>
+                  <span>
+                    <OrciaIcon name="check" /> {labels.approveSectionLabel}
+                  </span>
                   <DisabledButtonAlertIndicator
                     disabled={Boolean(readOnly)}
                     reason="Mode lecture seule : validation réservée aux contributeurs."
@@ -278,7 +281,9 @@ export function ChunkValidationCard({
                     cursor: readOnly ? "not-allowed" : "pointer",
                   }}
                 >
-                  <span>✍️ {labels.coEditSectionLabel}</span>
+                  <span>
+                    <OrciaIcon name="pen" /> {labels.coEditSectionLabel}
+                  </span>
                   <DisabledButtonAlertIndicator
                     disabled={Boolean(readOnly)}
                     reason="Mode lecture seule : co-édition réservée aux contributeurs."
@@ -307,7 +312,9 @@ export function ChunkValidationCard({
                     cursor: readOnly ? "not-allowed" : "pointer",
                   }}
                 >
-                  <span>⏪ {labels.challengeSectionLabel}</span>
+                  <span>
+                    <OrciaIcon name="rollback" /> {labels.challengeSectionLabel}
+                  </span>
                   <DisabledButtonAlertIndicator
                     disabled={Boolean(readOnly)}
                     reason="Mode lecture seule : remise en cause réservée aux contributeurs."
@@ -365,7 +372,9 @@ export function ChunkValidationCard({
             cursor: canFinalize ? "pointer" : "not-allowed",
           }}
         >
-          <span>🛡️ {labels.finalizeGateButtonLabel}</span>
+          <span>
+            <OrciaIcon name="shield" /> {labels.finalizeGateButtonLabel}
+          </span>
           <DisabledButtonAlertIndicator
             disabled={!canFinalize}
             reason={labels.pendingSectionsNotice}
@@ -390,7 +399,7 @@ export function ChunkValidationCard({
           }}
         >
           <strong style={{ color: "var(--color-arbitration-amber)" }}>
-            ⚠️ {labels.guardModalTitle}
+            <OrciaIcon name="warning" /> {labels.guardModalTitle}
           </strong>
           <p style={{ margin: 0, color: "var(--color-foreground)" }}>
             {labels.guardModalDescription}

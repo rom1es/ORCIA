@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { OrciaIcon } from "../components/icons";
 import {
   RgaaDialogFooterActions,
   RgaaUnsavedChangesAlert,
@@ -270,7 +271,9 @@ export function UserAccountDropdownAndSettingsModal({
         onClick={() => setDropdownOpen((prev) => !prev)}
         className="px-2.5 py-1 rounded-md text-xs font-medium border border-surface-border bg-surface-secondary text-text-primary flex items-center gap-1.5"
       >
-        <span>👤 {userDisplayName}</span>
+        <span>
+          <OrciaIcon name="user" /> {userDisplayName}
+        </span>
         <span
           data-testid="user-account-role-pill"
           className="text-[11px] text-text-secondary"
@@ -334,7 +337,15 @@ export function UserAccountDropdownAndSettingsModal({
               onClick={handleToggleThemeQuick}
               className="px-2 py-0.5 rounded border border-surface-border bg-surface-secondary font-mono text-[11px]"
             >
-              {theme === "light" ? "☀️ Clair" : "🌙 Sombre"}
+              {theme === "light" ? (
+                <>
+                  <OrciaIcon name="sun" /> Clair
+                </>
+              ) : (
+                <>
+                  <OrciaIcon name="moon" /> Sombre
+                </>
+              )}
             </button>
           </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export interface Rfc9457LoginError {
   readonly errorCode: string;
@@ -117,7 +118,7 @@ export function BiModeLoginView({
           color: "var(--orcia-surface-elevated)",
         }}
       >
-        🔐 {labels.primarySsoCta}
+        <OrciaIcon name="keyLock" /> {labels.primarySsoCta}
       </button>
 
       <div
@@ -144,7 +145,7 @@ export function BiModeLoginView({
             cursor: "pointer",
           }}
         >
-          {accordionOpen ? "▾" : "▸"} {labels.localAccordionToggle}
+          <OrciaIcon name={accordionOpen ? "caretDown" : "caretRight"} /> {labels.localAccordionToggle}
         </button>
 
         {accordionOpen ? (

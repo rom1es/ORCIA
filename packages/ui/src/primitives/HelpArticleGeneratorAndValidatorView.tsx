@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 
 export interface UiHelpValidationSummary {
   articleId: string;
@@ -134,14 +135,16 @@ export const HelpArticleGeneratorAndValidatorView: FC<
             </div>
             <ul className="space-y-1" style={{ color: "var(--color-text-secondary)" }}>
               <li data-testid={`check-routes-${val.lang}`}>
-                {val.boundRoutesValid ? "✓" : "✗"} {labels.checkBoundRoutesLabel}
+                <OrciaIcon name={val.boundRoutesValid ? "check" : "cross"} />{" "}
+                {labels.checkBoundRoutesLabel}
               </li>
               <li data-testid={`check-ui-sections-${val.lang}`}>
-                {val.uiComponentsAndSectionsValid ? "✓" : "✗"}{" "}
+                <OrciaIcon name={val.uiComponentsAndSectionsValid ? "check" : "cross"} />{" "}
                 {labels.checkUiComponentsSectionsLabel}
               </li>
               <li data-testid={`check-glossary-secret-${val.lang}`}>
-                {val.glossaryAndZeroSecretValid ? "✓" : "✗"} {labels.checkGlossaryZeroSecretLabel}
+                <OrciaIcon name={val.glossaryAndZeroSecretValid ? "check" : "cross"} />{" "}
+                {labels.checkGlossaryZeroSecretLabel}
               </li>
             </ul>
           </div>

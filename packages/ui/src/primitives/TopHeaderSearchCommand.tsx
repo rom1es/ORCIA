@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
@@ -208,9 +209,7 @@ export function TopHeaderSearchCommand({
       {/* Top Search Input + Scope Pills (SCREEN | WORKSPACE | ALL_WORKSPACES) */}
       <div className="p-3 border-b border-surface-border flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <span aria-hidden="true" className="text-sm font-mono text-text-secondary">
-            ⌘K
-          </span>
+          <OrciaIcon name="cmdkShortcut" className="text-sm font-mono text-text-secondary" />
           <input
             type="search"
             autoComplete="off"
@@ -234,7 +233,7 @@ export function TopHeaderSearchCommand({
             onClick={() => onTriggerSpeed2Now?.(query, scope)}
             className="px-2 py-1 rounded text-xs border border-surface-border bg-surface-secondary text-text-secondary"
           >
-            ✨ Vitesse 2 (450 ms)
+            <OrciaIcon name="sparkles" /> Vitesse 2 (450 ms)
           </button>
           <button
             type="button"
@@ -468,9 +467,15 @@ export function TopHeaderSearchCommand({
           data-testid="cmdk-deeplink-highlight-banner"
           className="px-3 py-1.5 bg-surface-secondary border-t border-surface-border text-xs font-mono text-text-primary"
         >
-          {lastDeepLink.opensContextualHelpColumn
-            ? `❓ Help Column -> ${lastDeepLink.deepLinkUri}`
-            : `🎯 Deep-Link Auto-Focus (${lastDeepLink.highlightDurationMs} ms) -> ${lastDeepLink.deepLinkUri}`}
+          {lastDeepLink.opensContextualHelpColumn ? (
+            <>
+              <OrciaIcon name="help" /> Help Column -&gt; {lastDeepLink.deepLinkUri}
+            </>
+          ) : (
+            <>
+              <OrciaIcon name="target" /> Deep-Link Auto-Focus ({lastDeepLink.highlightDurationMs} ms) -&gt; {lastDeepLink.deepLinkUri}
+            </>
+          )}
         </div>
       )}
 

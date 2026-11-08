@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { OrciaIcon } from "../components/icons";
 import {
   resolveRgaaModalGuardLabels,
   RgaaUnsavedChangesAlert,
@@ -258,7 +259,7 @@ export function AssistantGovernanceModalAndStudio({
               }}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
             >
-              ✓ Enregistré
+              <OrciaIcon name="check" /> Enregistré
             </span>
           )}
         </div>
@@ -280,7 +281,7 @@ export function AssistantGovernanceModalAndStudio({
               onClick={() => setActiveMode("MODE_A")}
               className="px-3 py-1.5 rounded-lg border border-surface-border bg-surface-secondary"
             >
-              ← Retour aux réglages
+              <OrciaIcon name="arrowLeft" /> Retour aux réglages
             </button>
           )}
           <button

@@ -1,10 +1,12 @@
-import type {
-  ControlCenterDatasourceItem,
-  ControlCenterWorkspaceGovItem,
-  ProductLifecyclePhaseType,
-  UiOntologyConceptView,
-  UiOntologyLevel,
-  WorkspaceVisibilityMode,
+import {
+  getOrciaIconGlyph,
+  OrciaIcon,
+  type ControlCenterDatasourceItem,
+  type ControlCenterWorkspaceGovItem,
+  type ProductLifecyclePhaseType,
+  type UiOntologyConceptView,
+  type UiOntologyLevel,
+  type WorkspaceVisibilityMode,
 } from "@orcia/ui";
 import React, { useState } from "react";
 import type {
@@ -121,7 +123,8 @@ export function WorkspaceStudioCardsAndDetailView({
             className="orcia-ds-tab"
             style={getTabStyle(filterMode === "TEAM")}
           >
-            {isFr ? `👥 Espaces d'Équipe (${teamWorkspacesCount})` : `👥 Team Spaces (${teamWorkspacesCount})`}
+            <OrciaIcon name="team" />{" "}
+            {isFr ? `Espaces d'Équipe (${teamWorkspacesCount})` : `Team Spaces (${teamWorkspacesCount})`}
           </button>
           <button
             type="button"
@@ -131,7 +134,8 @@ export function WorkspaceStudioCardsAndDetailView({
             className="orcia-ds-tab"
             style={getTabStyle(filterMode === "PRIVATE")}
           >
-            {isFr ? `🔒 Mes Espaces Privés (${privateWorkspacesCount})` : `🔒 My Private Spaces (${privateWorkspacesCount})`}
+            <OrciaIcon name="lock" />{" "}
+            {isFr ? `Mes Espaces Privés (${privateWorkspacesCount})` : `My Private Spaces (${privateWorkspacesCount})`}
           </button>
         </div>
 
@@ -191,12 +195,18 @@ export function WorkspaceStudioCardsAndDetailView({
             const wsSourcesCount = datasources.filter((d) => d.workspaceName === ws.name).length;
             const isSelected = activeWorkspace?.workspaceId === ws.workspaceId;
             const isAutosaved = autosavedWsIds.includes(ws.workspaceId);
-            const visibilityBadge =
+            const visibilityIconName =
               ws.visibilityMode === "PRIVATE_USER"
-                ? isFr ? "🔒 Privé personnel" : "🔒 Private personal"
+                ? "lock"
                 : ws.visibilityMode === "CONFIDENTIAL_RESTRICTED"
-                  ? isFr ? "🛡️ Confidentiel isolé" : "🛡️ Confidential isolated"
-                  : isFr ? "👥 Collectif d'équipe" : "👥 Team shared";
+                  ? "shield"
+                  : "team";
+            const visibilityLabelText =
+              ws.visibilityMode === "PRIVATE_USER"
+                ? isFr ? "Privé personnel" : "Private personal"
+                : ws.visibilityMode === "CONFIDENTIAL_RESTRICTED"
+                  ? isFr ? "Confidentiel isolé" : "Confidential isolated"
+                  : isFr ? "Collectif d'équipe" : "Team shared";
 
             return (
               <div
@@ -231,7 +241,7 @@ export function WorkspaceStudioCardsAndDetailView({
                           color: "var(--color-status-success)",
                         }}
                       >
-                        {isFr ? "✓ Enregistré" : "✓ Saved"}
+                        <OrciaIcon name="check" /> {isFr ? "Enregistré" : "Saved"}
                       </span>
                     )}
                     <span
@@ -245,16 +255,16 @@ export function WorkspaceStudioCardsAndDetailView({
                         border: "1px solid var(--color-border-subtle)",
                       }}
                     >
-                      {visibilityBadge}
+                      <OrciaIcon name={visibilityIconName} /> {visibilityLabelText}
                     </span>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                  <span>📚 <strong>{wsSourcesCount}</strong> {isFr ? "Sources rattachées" : "Attached sources"}</span>
-                  <span>📖 <strong>{ontologyConcepts.length}</strong> {isFr ? "Termes & Règles actifs" : "Active terms & rules"}</span>
-                  <span>☍ <strong>{workflows.length}</strong> {isFr ? "Processus" : "Processes"}</span>
-                  <span>💰 <strong>{(ws.finopsCostUsd ?? 0).toFixed(2)} $</strong></span>
+                  <span><OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong> {isFr ? "Sources rattachées" : "Attached sources"}</span>
+                  <span><OrciaIcon name="bookOpen" /> <strong>{ontologyConcepts.length}</strong> {isFr ? "Termes & Règles actifs" : "Active terms & rules"}</span>
+                  <span><OrciaIcon name="menuProcesses" /> <strong>{workflows.length}</strong> {isFr ? "Processus" : "Processes"}</span>
+                  <span><OrciaIcon name="moneyBag" /> <strong>{(ws.finopsCostUsd ?? 0).toFixed(2)} $</strong></span>
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", paddingTop: "4px" }}>
@@ -283,9 +293,15 @@ export function WorkspaceStudioCardsAndDetailView({
                     }}
                     style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
                   >
-                    <option value="STANDARD">{isFr ? "👥 Collectif d'équipe" : "👥 Team shared"}</option>
-                    <option value="PRIVATE_USER">{isFr ? "🔒 Privé personnel" : "🔒 Private personal"}</option>
-                    <option value="CONFIDENTIAL_RESTRICTED">{isFr ? "🛡️ Confidentiel isolé" : "🛡️ Confidential isolated"}</option>
+                    <option value="STANDARD">
+                      {`${getOrciaIconGlyph("team")} ${isFr ? "Collectif d'équipe" : "Team shared"}`}
+                    </option>
+                    <option value="PRIVATE_USER">
+                      {`${getOrciaIconGlyph("lock")} ${isFr ? "Privé personnel" : "Private personal"}`}
+                    </option>
+                    <option value="CONFIDENTIAL_RESTRICTED">
+                      {`${getOrciaIconGlyph("shield")} ${isFr ? "Confidentiel isolé" : "Confidential isolated"}`}
+                    </option>
                   </select>
 
                   {ws.visibilityMode === "PRIVATE_USER" && (
@@ -312,7 +328,7 @@ export function WorkspaceStudioCardsAndDetailView({
                         cursor: "pointer",
                       }}
                     >
-                      {isFr ? "👥 Partager avec l'Équipe" : "👥 Share with Team"}
+                      <OrciaIcon name="team" /> {isFr ? "Partager avec l'Équipe" : "Share with Team"}
                     </button>
                   )}
                 </div>
@@ -343,7 +359,7 @@ export function WorkspaceStudioCardsAndDetailView({
                       cursor: "pointer",
                     }}
                   >
-                    {isFr ? "🎯 Travailler dans cet Espace" : "🎯 Work in this Space"}
+                    <OrciaIcon name="target" /> {isFr ? "Travailler dans cet Espace" : "Work in this Space"}
                   </button>
                   <div style={{ display: "flex", gap: "6px" }}>
                     <button
@@ -359,7 +375,7 @@ export function WorkspaceStudioCardsAndDetailView({
                         cursor: "pointer",
                       }}
                     >
-                      {isFr ? "💬 Ouvrir Mon Assistant" : "💬 Open My Assistant"}
+                      <OrciaIcon name="menuAssistant" /> {isFr ? "Ouvrir Mon Assistant" : "Open My Assistant"}
                     </button>
                     <button
                       type="button"
@@ -374,7 +390,7 @@ export function WorkspaceStudioCardsAndDetailView({
                         cursor: "pointer",
                       }}
                     >
-                      {isFr ? "☍ Lancer un Processus" : "☍ Launch a Process"}
+                      <OrciaIcon name="menuProcesses" /> {isFr ? "Lancer un Processus" : "Launch a Process"}
                     </button>
                   </div>
                 </div>

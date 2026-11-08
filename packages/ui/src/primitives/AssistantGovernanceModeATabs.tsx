@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 import { handleRgaaSubmitKeyDown } from "../components/RgaaModalDialog";
 import {
   ASSISTANT_DEFAULT_HAT_OPTIONS,
@@ -72,7 +73,7 @@ export function AssistantGovernanceModeATabs({
         data-testid="assistant-gov-explainer-banner"
         className="rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-[11px] text-text-secondary leading-relaxed"
       >
-        💡 Ces réglages personnalisent directement le rôle métier, le ton, le format et les consignes permanentes (Couches 4 et 5) transmis automatiquement au modèle IA à chaque question posée dans Mon Assistant.
+        <OrciaIcon name="lightbulb" /> Ces réglages personnalisent directement le rôle métier, le ton, le format et les consignes permanentes (Couches 4 et 5) transmis automatiquement au modèle IA à chaque question posée dans Mon Assistant.
       </div>
       <div role="tablist" className="grid grid-cols-3 gap-2">
         {(
@@ -247,7 +248,7 @@ export function AssistantGovernanceModeATabs({
             <div className="flex items-center justify-between gap-2">
               <code data-testid="assistant-mcp-config-snippet" className="text-[11px] font-mono text-text-secondary truncate">{mcpIdeConfigJson}</code>
               <button type="button" data-testid="assistant-copy-mcp-config-btn" onClick={onCopyMcpConfig} className="px-2.5 py-1 rounded border border-surface-border bg-surface-secondary shrink-0">
-                {labels.copyMcpConfigCta} {copiedMcp ? "✓" : ""}
+                {labels.copyMcpConfigCta} {copiedMcp ? <OrciaIcon name="check" /> : ""}
               </button>
             </div>
           </div>
@@ -283,12 +284,14 @@ export function AssistantGovernanceModeATabs({
 
           <div data-testid="assistant-prompt-telemetry-log-section" className="rounded-lg border border-surface-border bg-surface-primary p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-xs">📊 Journal des Prompts, Contextes &amp; Retours Utilisateurs ({promptTelemetryLog.length})</span>
+              <span className="font-semibold text-xs">
+                <OrciaIcon name="finops" /> Journal des Prompts, Contextes &amp; Retours Utilisateurs ({promptTelemetryLog.length})
+              </span>
               <span className="text-[11px] text-text-secondary">Analyse et amélioration continue des consignes</span>
             </div>
             {promptTelemetryLog.length === 0 ? (
               <p data-testid="assistant-prompt-telemetry-empty" className="text-[11px] text-text-secondary">
-                Aucune question enregistrée pour le moment. Chaque question posée sauvegarde automatiquement son prompt, son contexte assemblé et votre évaluation (👍 Bonne réponse / 👎 Réponse à améliorer).
+                Aucune question enregistrée pour le moment. Chaque question posée sauvegarde automatiquement son prompt, son contexte assemblé et votre évaluation (<OrciaIcon name="thumbUp" /> Bonne réponse / <OrciaIcon name="thumbDown" /> Réponse à améliorer).
               </p>
             ) : (
               <ul className="space-y-2 max-h-60 overflow-y-auto pr-1">
@@ -300,10 +303,14 @@ export function AssistantGovernanceModeATabs({
                         <span className="font-semibold text-text-primary">{entry.userPrompt}</span>
                         <div className="flex items-center gap-1.5">
                           {entry.userFeedback === "LIKE" && (
-                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="rounded-full bg-action-primary/15 px-2 py-0.5 font-semibold text-action-primary">👍 Bonne réponse</span>
+                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="rounded-full bg-action-primary/15 px-2 py-0.5 font-semibold text-action-primary">
+                              <OrciaIcon name="thumbUp" /> Bonne réponse
+                            </span>
                           )}
                           {entry.userFeedback === "DISLIKE" && (
-                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="rounded-full bg-status-warning/15 px-2 py-0.5 font-semibold text-status-warning">👎 Réponse à améliorer</span>
+                            <span data-testid={`assistant-telemetry-feedback-${idx}`} className="rounded-full bg-status-warning/15 px-2 py-0.5 font-semibold text-status-warning">
+                              <OrciaIcon name="thumbDown" /> Réponse à améliorer
+                            </span>
                           )}
                           {!entry.userFeedback && (
                             <span data-testid={`assistant-telemetry-feedback-${idx}`} className="text-text-secondary">Non évalué</span>
@@ -319,7 +326,15 @@ export function AssistantGovernanceModeATabs({
                         </div>
                       </div>
                       <div className="text-[10px] text-text-secondary">
-                        Modèle : {entry.modelLabel} · Réflexion : {entry.thinkingEffort} ({entry.thinkingElapsedSeconds}s) · Historique injecté : {entry.conversationHistoryCount} message(s){entry.folderTitle ? ` · 📁 Dossier : ${entry.folderTitle}` : ""}
+                        Modèle : {entry.modelLabel} · Réflexion : {entry.thinkingEffort} ({entry.thinkingElapsedSeconds}s) · Historique injecté : {entry.conversationHistoryCount} message(s)
+                        {entry.folderTitle ? (
+                          <>
+                            {" · "}
+                            <OrciaIcon name="folder" /> Dossier : {entry.folderTitle}
+                          </>
+                        ) : (
+                          ""
+                        )}
                       </div>
                       {isExpanded && (
                         <div data-testid={`assistant-telemetry-context-box-${idx}`} className="rounded border border-surface-border bg-surface-primary p-2 space-y-1">

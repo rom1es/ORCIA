@@ -1,5 +1,6 @@
 import React from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 
 export interface CognitiveReviewBriefingLabels {
   gridTitle: string;
@@ -62,7 +63,7 @@ export function CognitiveReviewBriefingGrid({
         }}
       >
         <strong style={{ fontSize: "15px", color: "var(--color-foreground)" }}>
-          🛡️ {labels.gridTitle}
+          <OrciaIcon name="shield" /> {labels.gridTitle}
         </strong>
         <span
           data-testid="briefing-hypotheses-status-badge"
@@ -82,9 +83,15 @@ export function CognitiveReviewBriefingGrid({
               : "1px solid var(--color-arbitration-amber)",
           }}
         >
-          {hypothesesInspected
-            ? `✓ ${labels.hypothesesInspectedBadgeLabel}`
-            : `⚠️ ${labels.hypothesesPendingBadgeLabel}`}
+          {hypothesesInspected ? (
+            <>
+              <OrciaIcon name="check" /> {labels.hypothesesInspectedBadgeLabel}
+            </>
+          ) : (
+            <>
+              <OrciaIcon name="warning" /> {labels.hypothesesPendingBadgeLabel}
+            </>
+          )}
         </span>
       </header>
 
@@ -194,7 +201,7 @@ export function CognitiveReviewBriefingGrid({
                   : "var(--color-arbitration-amber)",
               }}
             >
-              ⚖️ {labels.block4Title}
+              <OrciaIcon name="scale" /> {labels.block4Title}
             </div>
             <ul
               style={{

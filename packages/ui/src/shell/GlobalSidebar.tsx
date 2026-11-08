@@ -1,4 +1,5 @@
 import React from "react";
+import { ORCIA_MODULE_ICON_NAMES, OrciaIcon } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
 import { ScopeSwitcher } from "./ScopeSwitcher";
 import type {
@@ -23,17 +24,6 @@ export interface GlobalSidebarProps {
   onToggleScopeSwitcher: () => void;
   onSelectScope: (scopeId: string) => void;
 }
-
-const MODULE_ICONS: Record<UiModuleKey, string> = {
-  cockpit: "🏠",
-  inbox: "🔔",
-  catalog: "📦",
-  ontology: "🧬",
-  gates: "🛡️",
-  finops: "📊",
-  admin: "⚙️",
-  bootstrap: "🚀",
-};
 
 export function GlobalSidebar({
   modules,
@@ -105,8 +95,8 @@ export function GlobalSidebar({
                 fontFamily: "var(--font-sans)",
               }}
             >
-              <span
-                aria-hidden="true"
+              <OrciaIcon
+                name="brandLogo"
                 style={{
                   width: "32px",
                   height: "32px",
@@ -120,9 +110,7 @@ export function GlobalSidebar({
                   fontSize: "15px",
                   boxShadow: "var(--shadow-card)",
                 }}
-              >
-                ❖
-              </span>
+              />
               <span style={{ fontWeight: 700, fontSize: "18px", letterSpacing: "-0.02em" }}>
                 {labels.brandTitle}
               </span>
@@ -206,9 +194,10 @@ export function GlobalSidebar({
                     }}
                   >
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
-                      <span aria-hidden="true" style={{ fontSize: "15px" }}>
-                        {MODULE_ICONS[mod.key]}
-                      </span>
+                      <OrciaIcon
+                        name={ORCIA_MODULE_ICON_NAMES[mod.key]}
+                        style={{ fontSize: "15px" }}
+                      />
                       {!collapsed && <span>{moduleLabel}</span>}
                     </span>
 

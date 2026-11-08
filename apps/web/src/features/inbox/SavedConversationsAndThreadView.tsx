@@ -4,6 +4,7 @@ import {
   AssistantUserQuestionBubble,
   ContextualInfoTriggerButton,
   FormattedMarkdownContent,
+  OrciaIcon,
   sanitizeAssistantDisplayReply,
   type UiAssistantRagCitationItem,
 } from "@orcia/ui";
@@ -56,9 +57,10 @@ export function AssistantTopToolbar({
           onClick={onToggleSavedConversations}
           className="rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary"
         >
+          <OrciaIcon name="clock" />{" "}
           {isFr
-            ? `🕒 Conversations sauvegardées (${savedCount})`
-            : `🕒 Saved conversations (${savedCount})`}
+            ? `Conversations sauvegardées (${savedCount})`
+            : `Saved conversations (${savedCount})`}
         </button>
 
         <button
@@ -68,9 +70,10 @@ export function AssistantTopToolbar({
           onClick={onToggleFoldersPanel}
           className="rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary"
         >
+          <OrciaIcon name="folder" />{" "}
           {isFr
-            ? `📁 Dossiers (${foldersCount})`
-            : `📁 Folders (${foldersCount})`}
+            ? `Dossiers (${foldersCount})`
+            : `Folders (${foldersCount})`}
         </button>
       </div>
 
@@ -119,9 +122,10 @@ export function SavedConversationsPanel({
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold text-text-primary">
+          <OrciaIcon name="clock" />{" "}
           {isFr
-            ? `🕒 Conversations sauvegardées (${conversations.length})`
-            : `🕒 Saved conversations (${conversations.length})`}
+            ? `Conversations sauvegardées (${conversations.length})`
+            : `Saved conversations (${conversations.length})`}
         </h3>
       </div>
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 
 export type ProductLifecyclePhaseType = "RUN" | "BUILD" | "MIGRATION";
 
@@ -89,7 +90,14 @@ export function ProductLifecycleCard({
             {visibilityMode}
             {ownerOrgUnitName ? ` • ${ownerOrgUnitName}` : ""}
             {finopsCostUsd !== null ? ` • $${finopsCostUsd.toFixed(2)}` : ""}
-            {payloadMasked ? " • 🔒 Payload Masqué" : ""}
+            {payloadMasked ? (
+              <>
+                {" • "}
+                <OrciaIcon name="lock" /> Payload Masqué
+              </>
+            ) : (
+              ""
+            )}
           </div>
         </div>
         <div

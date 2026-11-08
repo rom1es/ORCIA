@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "./icons";
 
 export interface ContextualInfoTriggerButtonProps {
   /**
@@ -48,7 +49,7 @@ export function ContextualInfoTriggerButton({
         onOpenHelpSection?.(sectionId);
       }}
     >
-      <span aria-hidden="true">i</span>
+      <OrciaIcon name="infoBadge" />
     </button>
   );
 }
