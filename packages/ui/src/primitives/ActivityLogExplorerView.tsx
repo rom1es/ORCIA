@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
+import { OrciaIcon } from "../components/icons";
 import { StatusBadge, type StatusBadgeTone } from "./StatusBadge";
 
 export type ActivityTimeWindowOption = "ALL" | "1H" | "24H" | "7D" | "30D";
@@ -496,14 +497,14 @@ export function ActivityLogExplorerView({
                       data-testid={`activity-event-timestamp-${ev.id}`}
                       style={{ fontFamily: "var(--font-mono)" }}
                     >
-                      🕒 {labels.timestampPrefix} : {ev.formattedTimestamp}
+                      <OrciaIcon name="clock" /> {labels.timestampPrefix} : {ev.formattedTimestamp}
                     </span>
                     <span data-testid={`activity-event-actor-${ev.id}`}>
-                      👤 {labels.actorPrefix} : <strong>{ev.actorName}</strong>
+                      <OrciaIcon name="user" /> {labels.actorPrefix} : <strong>{ev.actorName}</strong>
                       {ev.actorEmail ? ` (${ev.actorEmail})` : ""}
                     </span>
                     <span data-testid={`activity-event-scope-${ev.id}`}>
-                      📍 {labels.scopePrefix} : <strong>{ev.scopeLabel}</strong>
+                      <OrciaIcon name="locationPin" /> {labels.scopePrefix} : <strong>{ev.scopeLabel}</strong>
                     </span>
                   </div>
                 </div>

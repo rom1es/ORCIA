@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
+import { getOrciaIconGlyph, ORCIA_EIGHT_MENU_ICON_NAMES } from "../components/icons";
 import { OrciaButton, OrciaSectionCard, OrciaTabBar } from "./DesignSystemControls";
 import { StatusBadge } from "./StatusBadge";
 
@@ -79,7 +80,9 @@ interface ScreenGuideSpec {
 const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   {
     id: "cockpit",
-    icon: "◈",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.cockpit);
+    },
     titleFr: "1. ◈ Cockpit",
     titleEn: "1. ◈ Cockpit",
     route: "/cockpit",
@@ -100,7 +103,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "assistant",
-    icon: "💬",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.assistant);
+    },
     titleFr: "2. 💬 Mon Assistant",
     titleEn: "2. 💬 My Assistant",
     route: "/assistant",
@@ -121,7 +126,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "processes",
-    icon: "☍",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.processes);
+    },
     titleFr: "3. ☍ Mes Processus",
     titleEn: "3. ☍ My Processes",
     route: "/processes",
@@ -142,7 +149,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "agents",
-    icon: "🤖",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.agents);
+    },
     titleFr: "4. 🤖 Mes Agents",
     titleEn: "4. 🤖 My Agents",
     route: "/agents",
@@ -163,7 +172,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "spaces",
-    icon: "📦",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.spaces);
+    },
     titleFr: "5. 📦 Mes Espaces",
     titleEn: "5. 📦 My Spaces",
     route: "/spaces",
@@ -184,7 +195,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "finops",
-    icon: "📊",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.finops);
+    },
     titleFr: "6. 📊 Suivi des Coûts",
     titleEn: "6. 📊 Cost Tracking",
     route: "/finops",
@@ -205,7 +218,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "activity",
-    icon: "📜",
+    get icon() {
+      return getOrciaIconGlyph("menuActivity");
+    },
     titleFr: "7. 📜 Journal d'Activité",
     titleEn: "7. 📜 Activity Log",
     route: "/activity",
@@ -226,7 +241,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "settings",
-    icon: "⚙",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.configuration);
+    },
     titleFr: "8. ⚙ Configuration",
     titleEn: "8. ⚙ Configuration",
     route: "/settings",
@@ -247,7 +264,9 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   },
   {
     id: "help",
-    icon: "❓",
+    get icon() {
+      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.help);
+    },
     titleFr: "9. ❓ Aide Contextuelle (ⓘ) & Recherche Globale (⌘K)",
     titleEn: "9. ❓ Contextual Help (ⓘ) & Global Search (⌘K)",
     route: "/help",

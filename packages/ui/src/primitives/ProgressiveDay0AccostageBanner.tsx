@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export type UiProgressiveLlmTierMode =
   | "UNCONFIGURED"
@@ -239,7 +240,7 @@ export function ProgressiveDay0AccostageBanner({
               className="font-mono text-[11px]"
               style={{ color: "var(--color-state-verified)" }}
             >
-              LOCK TABLE users IN EXCLUSIVE MODE ✓
+              LOCK TABLE users IN EXCLUSIVE MODE <OrciaIcon name="check" />
             </div>
           )}
         </div>
@@ -311,7 +312,10 @@ export function ProgressiveDay0AccostageBanner({
               }}
             >
               <span>{m.title}</span>
-              <span className="font-mono text-[11px]">{m.completed ? "✓" : "→"}</span>
+              <OrciaIcon
+                name={m.completed ? "check" : "arrowRight"}
+                className="font-mono text-[11px]"
+              />
             </button>
           ))}
         </div>

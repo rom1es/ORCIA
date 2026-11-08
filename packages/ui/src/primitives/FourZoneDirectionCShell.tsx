@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import {
+  getOrciaIconGlyph,
+  ORCIA_EIGHT_MENU_ICON_NAMES,
+  OrciaIcon,
+  type OrciaIconName,
+} from "../components/icons";
 
 export type EightFixedMenuKey =
   | "cockpit"
@@ -13,19 +19,20 @@ export type EightFixedMenuKey =
 
 export interface EightFixedMenuEntrySpec {
   readonly key: EightFixedMenuKey;
+  readonly iconName: OrciaIconName;
   readonly icon: string;
   readonly route: string;
 }
 
 export const DEFAULT_EIGHT_FIXED_MENU_ENTRIES: readonly EightFixedMenuEntrySpec[] = [
-  { key: "cockpit", icon: "◈", route: "/cockpit" },
-  { key: "assistant", icon: "💬", route: "/assistant" },
-  { key: "processes", icon: "☍", route: "/processes" },
-  { key: "agents", icon: "🤖", route: "/agents" },
-  { key: "spaces", icon: "📦", route: "/spaces" },
-  { key: "finops", icon: "📊", route: "/finops" },
-  { key: "configuration", icon: "⚙", route: "/configuration" },
-  { key: "help", icon: "❓", route: "/help" },
+  { key: "cockpit", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.cockpit, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.cockpit); }, route: "/cockpit" },
+  { key: "assistant", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.assistant, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.assistant); }, route: "/assistant" },
+  { key: "processes", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.processes, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.processes); }, route: "/processes" },
+  { key: "agents", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.agents, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.agents); }, route: "/agents" },
+  { key: "spaces", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.spaces, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.spaces); }, route: "/spaces" },
+  { key: "finops", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.finops, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.finops); }, route: "/finops" },
+  { key: "configuration", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.configuration, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.configuration); }, route: "/configuration" },
+  { key: "help", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.help, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.help); }, route: "/help" },
 ] as const;
 
 export type UiNotificationCenterItemKind =
@@ -231,7 +238,7 @@ export function FourZoneDirectionCShell({
               cursor: "pointer",
             }}
           >
-            {labels.workspacePrefix} : {activeWorkspaceName} ⌄
+            {labels.workspacePrefix} : {activeWorkspaceName} <OrciaIcon name="chevronDown" />
           </button>
 
           {workspaceDropdownOpen && workspaceOptions && workspaceOptions.length > 0 && (
@@ -301,7 +308,7 @@ export function FourZoneDirectionCShell({
             color: "var(--color-text-secondary)",
           }}
         >
-          <span>🔍 {labels.searchTriggerPlaceholder}</span>
+          <span><OrciaIcon name="search" /> {labels.searchTriggerPlaceholder}</span>
           <kbd className="font-mono text-[11px]">⌘K</kbd>
         </button>
 
@@ -366,7 +373,7 @@ export function FourZoneDirectionCShell({
                 color: "var(--color-text-primary)",
               }}
             >
-              <span>👤 {userDisplayName}</span>
+              <span><OrciaIcon name="user" /> {userDisplayName}</span>
               <span
                 data-testid="topbar-hat-badge"
                 className="rounded px-1.5 py-0.5 text-[11px] font-semibold"
@@ -405,7 +412,7 @@ export function FourZoneDirectionCShell({
               onClick={() => setNotificationsOpen(false)}
               className="text-xs"
             >
-              ✕
+              <OrciaIcon name="close" />
             </button>
           </div>
           {notifications.length === 0 ? (
@@ -502,7 +509,7 @@ export function FourZoneDirectionCShell({
           >
             <p style={{ margin: 0 }}>
               {labels.notificationsVsActivityHint ??
-                "🔔 Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le 📜 Journal d'Activité."}
+                `${getOrciaIconGlyph("notifications")} Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le ${getOrciaIconGlyph("activity")} Journal d'Activité.`}
             </p>
             <button
               type="button"
@@ -523,7 +530,7 @@ export function FourZoneDirectionCShell({
                 cursor: "pointer",
               }}
             >
-              {labels.notificationsOpenActivityCta ?? "📜 Ouvrir le Journal d'Activité →"}
+              {labels.notificationsOpenActivityCta ?? `${getOrciaIconGlyph("activity")} Ouvrir le Journal d'Activité →`}
             </button>
           </div>
         </aside>
@@ -591,7 +598,7 @@ export function FourZoneDirectionCShell({
                       cursor: isDisabled ? "not-allowed" : "pointer",
                     }}
                   >
-                    <span aria-hidden="true">{entry.icon}</span>
+                    <OrciaIcon name={entry.iconName} />
                     {!railCollapsed && <span className="flex-1">{entryLabel}</span>}
                     <DisabledButtonAlertIndicator
                       disabled={isDisabled}
@@ -623,7 +630,7 @@ export function FourZoneDirectionCShell({
                         cursor: "pointer",
                       }}
                     >
-                      <span aria-hidden="true">📜</span>
+                      <OrciaIcon name="activity" />
                       {!railCollapsed && (
                         <span>{labels.activityMenuLabel ?? "Journal d'Activité"}</span>
                       )}
@@ -633,7 +640,7 @@ export function FourZoneDirectionCShell({
               );
             })}
 
-            {/* Option A : 📖 Vocabulaire retiré visuellement du menu gauche (intégré dans 🗂️ Mes Espaces & ⚙️ Configuration) */}
+            {/* Option A : Vocabulaire retiré visuellement du menu gauche (intégré dans Mes Espaces & Configuration) */}
             <button
               type="button"
               data-testid="eight-menu-item-vocabulary"
@@ -642,7 +649,7 @@ export function FourZoneDirectionCShell({
               style={{ display: "none" }}
               onClick={() => onSelectMenu("spaces", "/workspaces")}
             >
-              📖 Vocabulaire
+              <OrciaIcon name="vocabulary" /> Vocabulaire
             </button>
 
             {!railCollapsed && sidebarSecondarySlot}
@@ -721,7 +728,7 @@ export function FourZoneDirectionCShell({
                 onClick={() => updateHelpColumnOpen(false)}
                 className="text-xs"
               >
-                ✕
+                <OrciaIcon name="close" />
               </button>
             </div>
             <div

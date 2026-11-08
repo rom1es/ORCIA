@@ -7,6 +7,7 @@ import type {
   UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
+import { OrciaIcon, getOrciaIconGlyph } from "./icons";
 
 export interface AgentDetailAndSandboxModalProps {
   readonly agent: UiManagedAgentItem | null;
@@ -109,13 +110,15 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
       <div className="w-[720px] max-h-[600px] flex flex-col rounded-xl border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] text-[var(--orcia-text-primary)] shadow-xl overflow-hidden text-xs">
         <header className="flex items-center justify-between border-b border-[var(--orcia-border-subtle)] px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold">⚙️ {agent.name}</h3>
+            <h3 className="text-sm font-semibold">
+              <OrciaIcon name="configuration" /> {agent.name}
+            </h3>
             <code className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-1.5 py-0.5 font-mono text-[11px]">
               {agent.handle}
             </code>
             {savedFeedback && (
               <span className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold" style={{ color: "var(--color-status-success)" }}>
-                ✓ Enregistré
+                <OrciaIcon name="check" /> Enregistré
               </span>
             )}
           </div>
@@ -160,8 +163,8 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
                   }}
                   className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1.5"
                 >
-                  <option value="TEAM">👥 Équipe / Espace</option>
-                  <option value="PRIVATE">🔒 Privé</option>
+                  <option value="TEAM">{getOrciaIconGlyph("team")} Équipe / Espace</option>
+                  <option value="PRIVATE">{getOrciaIconGlyph("lock")} Privé</option>
                 </select>
               </label>
             )}
@@ -181,7 +184,9 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
                   setSavedFeedback(true);
                 }}
               />
-              <span>🔌 Exposer cet agent en MCP</span>
+              <span>
+                <OrciaIcon name="plug" /> Exposer cet agent en MCP
+              </span>
             </label>
 
             <label className="flex flex-col gap-1 md:col-span-2">
@@ -219,7 +224,9 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
                           setSavedFeedback(true);
                         }}
                       />
-                      <span>🛠️ {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)</span>
+                      <span>
+                        <OrciaIcon name="tools" /> {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)
+                      </span>
                     </label>
                   );
                 })}
@@ -228,7 +235,9 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
           </div>
 
           <div className="space-y-2 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3">
-            <h4 className="font-semibold">▷ Tester l&apos;Agent / Dry-Run</h4>
+            <h4 className="font-semibold">
+              <OrciaIcon name="playOutline" /> Tester l&apos;Agent / Dry-Run
+            </h4>
             <div className="flex flex-wrap gap-2">
               <input
                 type="text"
@@ -245,7 +254,7 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
                 className="flex-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1.5"
               />
               <button type="button" data-testid={`run-agent-btn-${agent.agentId}`} onClick={handleRunAgent} className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 font-semibold text-[var(--orcia-text-on-action)]">
-                ⚡ {labels.runAgentButtonLabel}
+                <OrciaIcon name="lightning" /> {labels.runAgentButtonLabel}
               </button>
             </div>
             {agent.lastExecutionOutput && (

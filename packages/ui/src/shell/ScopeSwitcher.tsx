@@ -1,6 +1,7 @@
 import React from "react";
+import { getOrciaIconGlyph, ORCIA_SCOPE_LEVEL_ICON_NAMES } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
-import type { UiScopeLevel, UiScopeNode, UiShellLabels } from "./types";
+import type { UiScopeNode, UiShellLabels } from "./types";
 
 export interface ScopeSwitcherProps {
   scopes: UiScopeNode[];
@@ -10,13 +11,6 @@ export interface ScopeSwitcherProps {
   onToggleOpen: () => void;
   onSelectScope: (scopeId: string) => void;
 }
-
-const LEVEL_ICONS: Record<UiScopeLevel, string> = {
-  GLOBAL: "🌐",
-  BU: "🏢",
-  TEAM: "👥",
-  WORKSPACE: "🗂️",
-};
 
 export function ScopeSwitcher({
   scopes,
@@ -53,7 +47,9 @@ export function ScopeSwitcher({
         }}
       >
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {activeScope ? `${LEVEL_ICONS[activeScope.level]} ${activeScope.name}` : labels.scopeSwitcherButtonLabel}
+          {activeScope
+            ? `${getOrciaIconGlyph(ORCIA_SCOPE_LEVEL_ICON_NAMES[activeScope.level])} ${activeScope.name}`
+            : labels.scopeSwitcherButtonLabel}
         </span>
         <kbd
           style={{
@@ -155,7 +151,7 @@ export function ScopeSwitcher({
                     }}
                   >
                     <span>
-                      {LEVEL_ICONS[scope.level]} [{labels.scopeLevels[scope.level]}] {scope.name}
+                      {getOrciaIconGlyph(ORCIA_SCOPE_LEVEL_ICON_NAMES[scope.level])} [{labels.scopeLevels[scope.level]}] {scope.name}
                     </span>
                     <StatusBadge
                       label={labels.accessModes[scope.accessMode]}

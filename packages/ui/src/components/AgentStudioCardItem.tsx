@@ -7,6 +7,7 @@ import type {
   UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
+import { OrciaIcon } from "./icons";
 
 export interface AgentStudioCardItemProps {
   readonly agent: UiManagedAgentItem;
@@ -49,12 +50,20 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   const visibilityScope: UiAgentSkillVisibilityScope = agent.visibilityScope ?? "TEAM";
   const isPack = visibilityScope === "PACK";
   const isEnabled = agent.enabledOnWorkspace !== false;
-  const visibilityBadgeText =
-    visibilityScope === "PRIVATE"
-      ? "🔒 Privé"
-      : visibilityScope === "PACK"
-        ? `📦 Pack Métier (${agent.sourcePackKey ?? "orcia-pack-sdlc"})`
-        : "👥 Équipe";
+  const visibilityBadgeContent =
+    visibilityScope === "PRIVATE" ? (
+      <>
+        <OrciaIcon name="lock" /> Privé
+      </>
+    ) : visibilityScope === "PACK" ? (
+      <>
+        <OrciaIcon name="spaces" /> Pack Métier ({agent.sourcePackKey ?? "orcia-pack-sdlc"})
+      </>
+    ) : (
+      <>
+        <OrciaIcon name="team" /> Équipe
+      </>
+    );
 
   const attachedSkills = skills.filter((sk) => agent.skillIds.includes(sk.skillId));
 
@@ -99,7 +108,13 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             title="Copier l'identifiant @handle"
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 text-[10px] font-medium"
           >
-            {copiedHandle ? "✓ Copié" : "Copier @"}
+            {copiedHandle ? (
+              <>
+                <OrciaIcon name="check" /> Copié
+              </>
+            ) : (
+              "Copier @"
+            )}
           </button>
 
           {isPack ? (
@@ -107,7 +122,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               data-testid={`agent-visibility-badge-${agent.agentId}`}
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
             >
-              {visibilityBadgeText}
+              {visibilityBadgeContent}
             </span>
           ) : (
             <button
@@ -117,7 +132,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               title="Cliquer pour basculer la visibilité (Privé / Équipe)"
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
             >
-              {visibilityBadgeText}
+              {visibilityBadgeContent}
             </button>
           )}
 
@@ -135,7 +150,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               data-testid={`agent-mcp-active-badge-${agent.agentId}`}
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-semibold"
             >
-              🔌 MCP Actif
+              <OrciaIcon name="plug" /> MCP Actif
             </span>
           )}
 
@@ -145,7 +160,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-semibold"
               style={{ color: "var(--color-status-success)" }}
             >
-              ✓ Enregistré
+              <OrciaIcon name="check" /> Enregistré
             </span>
           )}
         </div>
@@ -190,7 +205,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 key={sk.skillId}
                 className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px]"
               >
-                🛠️ {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)
+                <OrciaIcon name="tools" /> {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)
               </span>
             ))
           )}
@@ -214,7 +229,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               onClick={() => onUseAgentInAssistant(agent)}
               className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
             >
-              💬 Utiliser dans Mon Assistant
+              <OrciaIcon name="assistant" /> Utiliser dans Mon Assistant
             </button>
           )}
           <button
@@ -223,7 +238,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             onClick={() => onOpenDetailModal?.(agent)}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-semibold"
           >
-            ⚙️ Configurer &amp; Tester
+            <OrciaIcon name="configuration" /> Configurer &amp; Tester
           </button>
         </div>
 
@@ -236,7 +251,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 onClick={() => onDuplicateAgent?.(agent)}
                 className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-medium"
               >
-                📋 Dupliquer &amp; Personnaliser
+                <OrciaIcon name="copy" /> Dupliquer &amp; Personnaliser
               </button>
               <button
                 type="button"
@@ -255,7 +270,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 onClick={() => onDuplicateAgent?.(agent)}
                 className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1 text-[11px] font-medium"
               >
-                📋 Dupliquer
+                <OrciaIcon name="copy" /> Dupliquer
               </button>
               <button
                 type="button"

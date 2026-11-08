@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "./icons";
 
 export interface WorkspaceAssistantPinnedCardProps {
   readonly mcpExposed?: boolean;
@@ -21,13 +22,13 @@ export const WorkspaceAssistantPinnedCard: React.FC<WorkspaceAssistantPinnedCard
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <strong className="text-sm text-[var(--orcia-text-primary)]">
-            🤖 Assistant de l&apos;Espace
+            <OrciaIcon name="agents" /> Assistant de l&apos;Espace
           </strong>
           <code className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 font-mono text-[11px]">
             @assistant
           </code>
           <span className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium">
-            📌 Épinglé · Chef d&apos;orchestre de l&apos;Espace
+            <OrciaIcon name="pin" /> Épinglé · Chef d&apos;orchestre de l&apos;Espace
           </span>
         </div>
         <p className="text-[var(--orcia-text-secondary)]">
@@ -49,7 +50,9 @@ export const WorkspaceAssistantPinnedCard: React.FC<WorkspaceAssistantPinnedCard
             checked={mcpExposed}
             onChange={(e) => onToggleMcpExposed?.(e.target.checked)}
           />
-          <span>🔌 Exposer en MCP</span>
+          <span>
+            <OrciaIcon name="plug" /> Exposer en MCP
+          </span>
         </label>
         <button
           type="button"
@@ -57,7 +60,7 @@ export const WorkspaceAssistantPinnedCard: React.FC<WorkspaceAssistantPinnedCard
           onClick={onOpenSettings}
           className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-medium"
         >
-          ⚙ Réglages de l&apos;assistant
+          <OrciaIcon name="configuration" /> Réglages de l&apos;assistant
         </button>
         <button
           type="button"
@@ -65,7 +68,7 @@ export const WorkspaceAssistantPinnedCard: React.FC<WorkspaceAssistantPinnedCard
           onClick={onOpenAssistant}
           className="rounded bg-[var(--orcia-action-primary)] px-3 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
         >
-          💬 Ouvrir Mon Assistant →
+          <OrciaIcon name="assistant" /> Ouvrir Mon Assistant →
         </button>
       </div>
     </div>

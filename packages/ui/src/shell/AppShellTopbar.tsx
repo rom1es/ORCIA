@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon, getOrciaIconGlyph } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
 import type { UiHumanProfileBadge, UiModuleKey, UiShellLabels } from "./types";
 
@@ -41,7 +42,10 @@ export function AppShellTopbar({
   const searchAriaLabel =
     labels.topbarSearchAriaLabel ?? (currentLocale === "fr" ? "Rechercher" : "Search");
   const darkModeLabel =
-    labels.darkModeToggleLabel ?? (currentLocale === "fr" ? "🌙 Mode sombre" : "🌙 Dark mode");
+    labels.darkModeToggleLabel ??
+    (currentLocale === "fr"
+      ? `${getOrciaIconGlyph("moon")} Mode sombre`
+      : `${getOrciaIconGlyph("moon")} Dark mode`);
 
   return (
     <header
@@ -87,9 +91,10 @@ export function AppShellTopbar({
           maxWidth: "420px",
         }}
       >
-        <span aria-hidden="true" style={{ color: "var(--color-sidebar-muted)", fontSize: "13px" }}>
-          🔍
-        </span>
+        <OrciaIcon
+          name="search"
+          style={{ color: "var(--color-sidebar-muted)", fontSize: "13px" }}
+        />
         <input
           type="search"
           autoComplete="off"
@@ -140,7 +145,7 @@ export function AppShellTopbar({
             fontSize: "15px",
           }}
         >
-          💬
+          <OrciaIcon name="assistant" />
         </button>
 
         {onToggleLocale && (
@@ -215,7 +220,10 @@ export function AppShellTopbar({
               }}
             />
           </span>
-          <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>▾</span>
+          <OrciaIcon
+            name="caretDown"
+            style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}
+          />
         </button>
 
         {profileDropdownOpen && (

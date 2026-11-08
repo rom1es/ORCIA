@@ -5,6 +5,7 @@ import type {
   UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
+import { OrciaIcon, getOrciaIconGlyph } from "./icons";
 
 export interface SkillDetailAndSandboxModalProps {
   readonly skill: UiManagedSkillItem | null;
@@ -66,7 +67,9 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
       <div className="w-[720px] max-h-[600px] flex flex-col rounded-xl border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] text-[var(--orcia-text-primary)] shadow-xl overflow-hidden text-xs">
         <header className="flex items-center justify-between border-b border-[var(--orcia-border-subtle)] px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold">🛠️ {skill.name}</h3>
+            <h3 className="text-sm font-semibold">
+              <OrciaIcon name="tools" /> {skill.name}
+            </h3>
             <code className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-1.5 py-0.5 font-mono text-[11px]">
               {skill.commandHandle}
             </code>
@@ -120,8 +123,8 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
                     }
                     className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1"
                   >
-                    <option value="TEAM">👥 Équipe / Espace</option>
-                    <option value="PRIVATE">🔒 Privé</option>
+                    <option value="TEAM">{getOrciaIconGlyph("team")} Équipe / Espace</option>
+                    <option value="PRIVATE">{getOrciaIconGlyph("lock")} Privé</option>
                   </select>
                 </label>
               </div>
@@ -129,7 +132,9 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
           </div>
 
           <div className="space-y-2 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3">
-            <h4 className="font-semibold">▷ Tester la Compétence / Dry-Run</h4>
+            <h4 className="font-semibold">
+              <OrciaIcon name="playOutline" /> Tester la Compétence / Dry-Run
+            </h4>
             <div className="flex flex-wrap gap-2">
               <input
                 type="text"
@@ -156,7 +161,7 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
                 onClick={handleRunSkill}
                 className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 font-semibold text-[var(--orcia-text-on-action)]"
               >
-                ⚡ {labels.runSkillButtonLabel}
+                <OrciaIcon name="lightning" /> {labels.runSkillButtonLabel}
               </button>
             </div>
             {skill.lastExecutionOutput && (

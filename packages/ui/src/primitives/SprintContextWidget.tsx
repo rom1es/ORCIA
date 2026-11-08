@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export interface SprintContextWidgetLabels {
   readonly widgetTitle: string;
@@ -45,7 +46,7 @@ export function SprintContextWidget({
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <strong style={{ fontSize: "0.9375rem" }}>
-          🎯 {labels.widgetTitle} — {sprintName}
+          <OrciaIcon name="target" /> {labels.widgetTitle} — {sprintName}
         </strong>
         <span
           style={{
@@ -82,7 +83,7 @@ export function SprintContextWidget({
             color: "var(--orcia-text-primary)",
           }}
         >
-          ✨ {labels.auditRisksCta}
+          <OrciaIcon name="sparkles" /> {labels.auditRisksCta}
         </button>
 
         {audited ? (
@@ -92,7 +93,7 @@ export function SprintContextWidget({
             data-testid="sprint-audit-status"
             style={{ fontSize: "0.75rem", fontWeight: 600 }}
           >
-            ✅ {labels.auditCompletedMessage}
+            <OrciaIcon name="checkFilled" /> {labels.auditCompletedMessage}
           </span>
         ) : null}
       </div>

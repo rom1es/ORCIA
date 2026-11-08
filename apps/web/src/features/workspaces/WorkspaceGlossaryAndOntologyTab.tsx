@@ -1,6 +1,8 @@
 import {
   ContextualInfoTriggerButton,
   DisabledButtonAlertIndicator,
+  getOrciaIconGlyph,
+  OrciaIcon,
   type ControlCenterWorkspaceGovItem,
   type UiOntologyConceptView,
   type UiOntologyLevel,
@@ -126,38 +128,43 @@ export function WorkspaceGlossaryAndOntologyTab({
     setPromotedKeys((prev) => (prev.includes(concept.conceptKey) ? prev : [...prev, concept.conceptKey]));
   };
 
+  const enterpriseIcon = getOrciaIconGlyph("organizationBu");
+  const divisionIcon = getOrciaIconGlyph("divisionLandmark");
+  const teamIcon = getOrciaIconGlyph("team");
+  const workspaceIcon = getOrciaIconGlyph("workspaceFolder");
+
   const cascadeTiers = [
     {
       tierId: "enterprise",
-      badge: isFr ? "🏢 Entreprise (Global)" : "🏢 Enterprise (Global)",
+      badge: isFr ? `${enterpriseIcon} Entreprise (Global)` : `${enterpriseIcon} Enterprise (Global)`,
       subtitle: isFr ? "Socle commun de l'organisation" : "Organization shared foundation",
       items: ontologyConcepts.filter((c) => c.level === "1_ENTERPRISE"),
     },
     {
       tierId: "domain",
-      badge: isFr ? `🏛️ Direction (${buLabel})` : `🏛️ Division (${buLabel})`,
+      badge: isFr ? `${divisionIcon} Direction (${buLabel})` : `${divisionIcon} Division (${buLabel})`,
       subtitle: isFr ? "Vocabulaire et règles de votre Direction" : "Division vocabulary & rules",
       items: ontologyConcepts.filter((c) => c.level === "2_DOMAIN"),
     },
     {
       tierId: "team",
-      badge: isFr ? `👥 Équipe (${teamLabel})` : `👥 Team (${teamLabel})`,
+      badge: isFr ? `${teamIcon} Équipe (${teamLabel})` : `${teamIcon} Team (${teamLabel})`,
       subtitle: isFr ? "Termes partagés par l'équipe" : "Team shared terms",
       items: ontologyConcepts.filter((c) => c.level === "3_TEAM"),
     },
     {
       tierId: "workspace",
-      badge: isFr ? `🗂️ Cet Espace (${wsName})` : `🗂️ This Workspace (${wsName})`,
+      badge: isFr ? `${workspaceIcon} Cet Espace (${wsName})` : `${workspaceIcon} This Workspace (${wsName})`,
       subtitle: isFr ? "Termes spécifiques à cet espace" : "Workspace-specific terms",
       items: ontologyConcepts.filter((c) => c.level === "3_WORKSPACE" || c.level === "4_RUN_EPHEMERAL"),
     },
   ];
 
   const getLevelBadgeLabel = (level: UiOntologyLevel): string => {
-    if (level === "1_ENTERPRISE") return isFr ? "🏢 Entreprise (Global)" : "🏢 Enterprise";
-    if (level === "2_DOMAIN") return isFr ? `🏛️ Direction (${buLabel})` : `🏛️ Division (${buLabel})`;
-    if (level === "3_TEAM") return isFr ? `👥 Équipe (${teamLabel})` : `👥 Team (${teamLabel})`;
-    return isFr ? `🗂️ Cet Espace (${wsName})` : `🗂️ This Workspace (${wsName})`;
+    if (level === "1_ENTERPRISE") return isFr ? `${enterpriseIcon} Entreprise (Global)` : `${enterpriseIcon} Enterprise`;
+    if (level === "2_DOMAIN") return isFr ? `${divisionIcon} Direction (${buLabel})` : `${divisionIcon} Division (${buLabel})`;
+    if (level === "3_TEAM") return isFr ? `${teamIcon} Équipe (${teamLabel})` : `${teamIcon} Team (${teamLabel})`;
+    return isFr ? `${workspaceIcon} Cet Espace (${wsName})` : `${workspaceIcon} This Workspace (${wsName})`;
   };
 
   return (
@@ -171,7 +178,8 @@ export function WorkspaceGlossaryAndOntologyTab({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <strong style={{ fontSize: "14px" }}>
-            {isFr ? `📖 Glossaire & Règles Métiers applicables à « ${wsName} »` : `📖 Business Glossary & Rules applicable to "${wsName}"`}
+            <OrciaIcon name="bookOpen" />{" "}
+            {isFr ? `Glossaire & Règles Métiers applicables à « ${wsName} »` : `Business Glossary & Rules applicable to "${wsName}"`}
           </strong>
           <ContextualInfoTriggerButton
             sectionId="glossary-rules"
@@ -190,7 +198,7 @@ export function WorkspaceGlossaryAndOntologyTab({
             color: "var(--color-text-secondary)",
           }}
         >
-          {`🏢 Entreprise (Global) ➔ 🏛️ Direction (${buLabel}) ➔ 👥 Équipe (${teamLabel}) ➔ 🗂️ Cet Espace (${wsName})`}
+          {`${enterpriseIcon} Entreprise (Global) ➔ ${divisionIcon} Direction (${buLabel}) ➔ ${teamIcon} Équipe (${teamLabel}) ➔ ${workspaceIcon} Cet Espace (${wsName})`}
         </span>
       </div>
 
@@ -244,10 +252,10 @@ export function WorkspaceGlossaryAndOntologyTab({
           onChange={(e) => setSelectedScopeTier(e.target.value as "WORKSPACE" | "TEAM" | "BU" | "ENTERPRISE")}
           style={inputStyle}
         >
-          <option value="WORKSPACE">{isFr ? `🗂️ Cet Espace (${wsName})` : `🗂️ This Workspace (${wsName})`}</option>
-          <option value="TEAM">{isFr ? `👥 Mon Équipe (${teamLabel})` : `👥 My Team (${teamLabel})`}</option>
-          <option value="BU">{isFr ? `🏛️ Direction (${buLabel})` : `🏛️ Division (${buLabel})`}</option>
-          <option value="ENTERPRISE">{isFr ? "🏢 Entreprise (Global)" : "🏢 Enterprise (Global)"}</option>
+          <option value="WORKSPACE">{isFr ? `${workspaceIcon} Cet Espace (${wsName})` : `${workspaceIcon} This Workspace (${wsName})`}</option>
+          <option value="TEAM">{isFr ? `${teamIcon} Mon Équipe (${teamLabel})` : `${teamIcon} My Team (${teamLabel})`}</option>
+          <option value="BU">{isFr ? `${divisionIcon} Direction (${buLabel})` : `${divisionIcon} Division (${buLabel})`}</option>
+          <option value="ENTERPRISE">{isFr ? `${enterpriseIcon} Entreprise (Global)` : `${enterpriseIcon} Enterprise (Global)`}</option>
         </select>
         <button
           type="submit"
@@ -346,7 +354,7 @@ export function WorkspaceGlossaryAndOntologyTab({
                               color: "var(--color-status-success)",
                             }}
                           >
-                            {isFr ? "✓ Promu" : "✓ Promoted"}
+                            <OrciaIcon name="check" /> {isFr ? "Promu" : "Promoted"}
                           </span>
                         )}
                         {canPromote && (
@@ -365,9 +373,10 @@ export function WorkspaceGlossaryAndOntologyTab({
                               cursor: "pointer",
                             }}
                           >
+                            <OrciaIcon name="promoteUp" />{" "}
                             {concept.level === "3_WORKSPACE"
-                              ? isFr ? "⬆️ Partager à la Direction / Équipe" : "⬆️ Share with Division / Team"
-                              : isFr ? "⬆️ Promouvoir à l'Organisation" : "⬆️ Promote to Organization"}
+                              ? isFr ? "Partager à la Direction / Équipe" : "Share with Division / Team"
+                              : isFr ? "Promouvoir à l'Organisation" : "Promote to Organization"}
                           </button>
                         )}
                       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 import {
   DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
@@ -171,7 +172,7 @@ export function UpstreamChallengeRewindModal({
               letterSpacing: "0.04em",
             }}
           >
-            ⚡ {labels.modalTitle}
+            <OrciaIcon name="lightning" /> {labels.modalTitle}
           </span>
           <p
             style={{
@@ -231,7 +232,14 @@ export function UpstreamChallengeRewindModal({
           </strong>{" "}
           <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
             {preview.targetUpstreamStepKey}
-            {subWorkflowStepKey ? ` → ${subWorkflowStepKey}` : ""}
+            {subWorkflowStepKey ? (
+              <>
+                {" "}
+                <OrciaIcon name="arrowRight" /> {subWorkflowStepKey}
+              </>
+            ) : (
+              ""
+            )}
           </code>
         </div>
         <div

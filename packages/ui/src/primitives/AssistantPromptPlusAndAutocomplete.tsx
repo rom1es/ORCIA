@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export interface UiAssistantAutocompleteOption {
   readonly slug: string;
@@ -104,9 +105,7 @@ export function AssistantAttachedFilesInlineBar({
           data-testid="assistant-attached-file-pill"
           className="inline-flex items-center gap-1.5 rounded-md bg-surface-secondary px-2 py-0.5 text-[11px] font-medium text-text-primary"
         >
-          <span aria-hidden="true">
-            {file.sourceKind === "LOCAL_PC" ? "💻" : "🗂️"}
-          </span>
+          <OrciaIcon name={file.sourceKind === "LOCAL_PC" ? "laptop" : "workspaceFolder"} />
           <span>{file.name}</span>
           <button
             type="button"
@@ -115,7 +114,7 @@ export function AssistantAttachedFilesInlineBar({
             onClick={() => onRemoveAttachedFile(file.id)}
             className="border-0 bg-transparent p-0.5 text-text-secondary hover:text-text-primary leading-none"
           >
-            ×
+            <OrciaIcon name="times" />
           </button>
         </span>
       ))}
@@ -201,9 +200,11 @@ export function AssistantPromptPlusAndAutocomplete({
           className="rounded-xl border border-border-subtle bg-surface-primary p-2 text-xs shadow-lg space-y-1"
         >
           <div className="px-2 py-1 text-[11px] font-semibold text-text-secondary border-b border-border-subtle">
-            {autocompleteTrigger.kind === "agent"
-              ? "🤖 Sélectionner un agent (@) — Entrée ou clic pour valider"
-              : "🛠️ Sélectionner une compétence (/) — Entrée ou clic pour valider"}
+            {autocompleteTrigger.kind === "agent" ? (
+              <><OrciaIcon name="agents" /> Sélectionner un agent (@) — Entrée ou clic pour valider</>
+            ) : (
+              <><OrciaIcon name="tools" /> Sélectionner une compétence (/) — Entrée ou clic pour valider</>
+            )}
           </div>
           {filteredOptions.map((opt, idx) => (
             <button
@@ -260,7 +261,7 @@ export function AssistantPromptPlusAndAutocomplete({
             onClick={() => { setOrciaDocsSubmenuOpen(false); fileInputRef.current?.click(); }}
             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
           >
-            <span>💻 Ajouter un fichier depuis mon ordinateur</span>
+            <span><OrciaIcon name="laptop" /> Ajouter un fichier depuis mon ordinateur</span>
           </button>
 
           <button
@@ -270,8 +271,8 @@ export function AssistantPromptPlusAndAutocomplete({
             onClick={() => setOrciaDocsSubmenuOpen((prev) => !prev)}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
           >
-            <span>🗂️ Ajouter un document disponible dans ORCIA</span>
-            <span aria-hidden="true">▸</span>
+            <span><OrciaIcon name="workspaceFolder" /> Ajouter un document disponible dans ORCIA</span>
+            <OrciaIcon name="caretRight" />
           </button>
 
           {orciaDocsSubmenuOpen && (
@@ -287,7 +288,7 @@ export function AssistantPromptPlusAndAutocomplete({
                   }}
                   className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[11px] text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
                 >
-                  <span>📄 {doc.title}</span>
+                  <span><OrciaIcon name="document" /> {doc.title}</span>
                 </button>
               ))}
             </div>
@@ -301,7 +302,7 @@ export function AssistantPromptPlusAndAutocomplete({
               onClick={() => { setOrciaDocsSubmenuOpen(false); onOpenFoldersAndCloseMenus(); }}
               className="flex w-full items-center gap-2 rounded-lg border-t border-border-subtle pt-2 mt-1 px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
             >
-              <span>📁 Gérer les dossiers thématiques</span>
+              <span><OrciaIcon name="folder" /> Gérer les dossiers thématiques</span>
             </button>
           )}
         </div>

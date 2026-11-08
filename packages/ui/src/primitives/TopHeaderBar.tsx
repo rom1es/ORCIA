@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "../components/icons";
 
 export interface TopHeaderBarLabels {
   readonly workspacePackSelectorLabel: string;
@@ -51,7 +52,7 @@ export function TopHeaderBar({
             backgroundColor: "var(--orcia-surface-secondary)",
           }}
         >
-          🗂️ {labels.workspacePackSelectorLabel}: {activeWorkspaceName} (
+          <OrciaIcon name="workspaceFolder" /> {labels.workspacePackSelectorLabel}: {activeWorkspaceName} (
           <code style={{ fontFamily: "var(--orcia-font-mono)" }}>{activePackKey}</code>)
         </span>
 
@@ -66,7 +67,7 @@ export function TopHeaderBar({
             backgroundColor: "var(--orcia-surface-primary)",
           }}
         >
-          🎯 {labels.sprintSelectorLabel}: {activeSprintName}
+          <OrciaIcon name="target" /> {labels.sprintSelectorLabel}: {activeSprintName}
         </span>
       </div>
 
@@ -82,7 +83,7 @@ export function TopHeaderBar({
             backgroundColor: "var(--orcia-surface-secondary)",
           }}
         >
-          {dbosPg18Healthy ? "🟢" : "🔴"} {labels.dbosPg18HealthLabel}
+          <OrciaIcon name={dbosPg18Healthy ? "statusHealthy" : "statusError"} /> {labels.dbosPg18HealthLabel}
         </span>
 
         <span
@@ -96,7 +97,7 @@ export function TopHeaderBar({
             backgroundColor: "var(--orcia-surface-secondary)",
           }}
         >
-          {outboxDlqCount === 0 ? "🟢" : "🟡"} {labels.outboxHealthLabel} (DLQ={outboxDlqCount})
+          <OrciaIcon name={outboxDlqCount === 0 ? "statusHealthy" : "statusWarning"} /> {labels.outboxHealthLabel} (DLQ={outboxDlqCount})
         </span>
       </div>
     </header>

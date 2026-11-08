@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-08",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 81,
+    "uiPrimitivesCount": 86,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 94
+    "techLeadReportsCount": 95
   },
   "activeRoutes": [
     "/",
@@ -81,9 +81,14 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "InferenceTierBadge",
     "LayersInspectorPopover",
     "MobileCompanionView",
+    "ORCIA_EIGHT_MENU_ICON_NAMES",
+    "ORCIA_ICONS",
+    "ORCIA_MODULE_ICON_NAMES",
+    "ORCIA_SCOPE_LEVEL_ICON_NAMES",
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
+    "OrciaIcon",
     "OrciaInput",
     "OrciaProductShowcaseSiteView",
     "OrciaSectionCard",
@@ -415,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Post-Epic 12 / Design System @orcia/ui & Centralisation des Icônes",
+      "reportFile": "2026-11-08-centralisation-icones-ui-tech-lead-report.md",
+      "domain": "Audit Exhaustif & Centralisation Intégrale des Icônes UI dans @orcia/ui (packages/ui/src/components/icons/ : ORCIA_ICONS, <OrciaIcon />, getOrciaIconGlyph) et apps/web avec Réactivité Immédiate & Garde-Fou CI Anti-Régression (icon-registry-centralization.test.tsx)",
+      "summary": "Création de la source unique de vérité packages/ui/src/components/icons/ (iconRegistry.ts avec 97 clés sémantiques OrciaIconName, OrciaIcon.tsx accessible RGAA 4.1 avec data-orcia-icon), refactoring de 33 composants @orcia/ui et 6 vues apps/web (suppression des dictionnaires locaux MODULE_ICONS / LEVEL_ICONS et des <span aria-hidden=\"true\"> en dur, getters dynamiques sur DEFAULT_EIGHT_FIXED_MENU_ENTRIES et NINE_SCREENS_GUIDE), et suite Vitest icon-registry-centralization.test.tsx prouvant que toute modification dans ORCIA_ICONS se répercute immédiatement dans toute l'interface."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-01)",

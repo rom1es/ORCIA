@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { OrciaIcon } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
 import type {
   UiOntologyConceptView,
@@ -383,7 +384,7 @@ export function OntologyAndKbExplorerPanel({
                       cursor: "pointer",
                     }}
                   >
-                    ↻
+                    <OrciaIcon name="regenerate" />
                   </button>
                 </div>
               ))}

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
+import { OrciaIcon } from "./icons";
 
 export interface RgaaModalGuardLabels {
   readonly cancelButtonLabel?: string;
@@ -232,7 +233,7 @@ export function RgaaUnsavedChangesAlert({
       }}
     >
       <div className="font-semibold" style={{ color: "var(--color-arbitration-amber)" }}>
-        ⚠️ {resolved.unsavedAlertTitle}
+        <OrciaIcon name="warning" /> {resolved.unsavedAlertTitle}
       </div>
       <p className="m-0 text-xs" style={{ color: "var(--color-text-primary)" }}>
         {resolved.unsavedAlertMessage}

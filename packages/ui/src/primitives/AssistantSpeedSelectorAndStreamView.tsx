@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FormattedMarkdownContent } from "../components/FormattedMarkdownContent";
+import { getOrciaIconGlyph, OrciaIcon } from "../components/icons";
 import {
   ASSISTANT_EFFORT_OPTIONS,
   AssistantModelAndEffortPopover,
@@ -307,7 +308,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
         {isGenerating && !cleanStreamedText ? <div className="py-2 my-1"><AssistantThinkingSliderIndicator /></div> : null}
         {!hideDuplicateCompletedStream ? (
           <div data-testid="assistant-active-research-zone" className="py-1 flex flex-col items-start justify-center gap-2">
-            <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} initialElapsedSeconds={initialElapsedSeconds} hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith("⏳"))} />
+            <AssistantThinkingSubWindow stepProgress={stepProgress} isGenerating={isGenerating} initialElapsedSeconds={initialElapsedSeconds} hasStreamedResponse={Boolean(cleanStreamedText && !cleanStreamedText.startsWith(getOrciaIconGlyph("hourglass")))} />
           </div>
         ) : null}
         {errorMessage && (
@@ -317,7 +318,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
           <div data-testid="assistant-streamed-response-box" aria-live="polite" style={hideDuplicateCompletedStream && !isStoppedVisible ? { display: "none" } : undefined} className={hideDuplicateCompletedStream && !isStoppedVisible ? "sr-only" : "rounded-lg bg-surface-primary py-2 text-xs leading-relaxed space-y-2"}>
             {cleanStreamedText ? <FormattedMarkdownContent content={cleanStreamedText} /> : null}
             {isStoppedVisible ? (
-              <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">⏹ Génération interrompue par l&apos;utilisateur</div>
+              <div data-testid="assistant-generation-stopped-badge" className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary"><OrciaIcon name="stopButton" /> Génération interrompue par l&apos;utilisateur</div>
             ) : null}
             {!isGenerating && cleanStreamedText && !hideDuplicateCompletedStream ? (
               <AssistantResponseFooterActionsAndCitations responseText={cleanStreamedText} modelLabel={displayModelBadge} effortLabel={activeEffortOption.title} ragCitations={mergedRagCitations} initialFeedback={currentTurnFeedback} onFeedbackChange={onFeedbackLastTurn} onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(lastSubmittedPrompt))} onSaveDraft={onSaveDraftFromResponse} onContinueInProcess={onContinueInProcessFromResponse} />
@@ -330,7 +331,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
         {!isPinnedToBottom && isGenerating ? (
           <div className="mb-1.5 flex justify-center">
             <button type="button" data-testid="assistant-resume-autoscroll-btn" onClick={scrollToStreamBottom} className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-elevated px-3 py-0.5 text-[11px] font-medium text-action-primary shadow-sm hover:bg-surface-secondary">
-              ↓ Suivre la réponse en direct
+              <OrciaIcon name="arrowDown" /> Suivre la réponse en direct
             </button>
           </div>
         ) : null}
@@ -350,22 +351,22 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
         />
         {activeFolderTitle ? (
           <div data-testid="assistant-prompt-active-folder-badge" className="mb-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-action-primary/30 bg-action-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-action-primary">
-            <span>📁 Dossier actif : <strong>{activeFolderTitle}</strong></span>
-            {activeFolderNotes && activeFolderNotes.trim() ? <span data-testid="assistant-prompt-active-folder-note-indicator" className="text-text-secondary">· 📌 Note active prise en compte par l&apos;Assistant</span> : null}
-            {onClearActiveFolder ? <button type="button" data-testid="assistant-prompt-clear-active-folder-btn" onClick={onClearActiveFolder} aria-label="Détacher le dossier actif" className="ml-1 font-bold hover:opacity-80">×</button> : null}
+            <span><OrciaIcon name="folder" /> Dossier actif : <strong>{activeFolderTitle}</strong></span>
+            {activeFolderNotes && activeFolderNotes.trim() ? <span data-testid="assistant-prompt-active-folder-note-indicator" className="text-text-secondary">· <OrciaIcon name="pin" /> Note active prise en compte par l&apos;Assistant</span> : null}
+            {onClearActiveFolder ? <button type="button" data-testid="assistant-prompt-clear-active-folder-btn" onClick={onClearActiveFolder} aria-label="Détacher le dossier actif" className="ml-1 font-bold hover:opacity-80"><OrciaIcon name="times" /></button> : null}
           </div>
         ) : null}
         <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
           <AssistantAttachedFilesInlineBar attachedFiles={attachedFiles} onRemoveAttachedFile={(fileId) => setAttachedFiles((prev) => prev.filter((f) => f.id !== fileId))} />
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" data-testid="assistant-prompt-plus-btn" aria-label="Actions rapides et dossiers" onClick={() => { setPlusMenuOpen((prev) => !prev); setPickerOpen(false); }} className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated">+</button>
+            <button type="button" data-testid="assistant-prompt-plus-btn" aria-label="Actions rapides et dossiers" onClick={() => { setPlusMenuOpen((prev) => !prev); setPickerOpen(false); }} className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated"><OrciaIcon name="plus" /></button>
             <input ref={inputRef} type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="assistant-three-speed-input" value={promptText} placeholder={labels.inputPlaceholder} onChange={(e) => handlePromptChange(e.target.value)} onKeyDown={handleInputKeyDown} className="flex-1 min-w-[200px] border-0 bg-transparent px-2 py-1 text-xs text-text-primary focus:outline-none" />
             <button type="button" data-testid="assistant-model-and-effort-picker-trigger" aria-expanded={pickerOpen} onClick={() => { setPickerOpen((prev) => !prev); setPlusMenuOpen(false); }} className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-surface-elevated">
               {visibleModelCount === 1 ? <span>{activeEffortOption.title}</span> : (<><span>{displayModelBadge}</span><span className="text-text-secondary">· {activeEffortOption.title}</span></>)}
-              <span aria-hidden="true">▾</span>
+              <OrciaIcon name="caretDown" />
             </button>
             <button type="button" data-testid="assistant-three-speed-send-btn" aria-label={actionAriaLabel} title={isGenerating ? "Arrêter" : "Envoyer"} onClick={() => { if (isGenerating) { setLocalStoppedFlag(true); onStopGeneration?.(); inputRef.current?.focus(); return; } triggerSendTurn(); }} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-xs font-semibold text-white hover:opacity-95">
-              {isGenerating ? <span data-testid="assistant-stop-square-icon" aria-hidden="true">■</span> : <span data-testid="assistant-send-play-icon" aria-hidden="true">▶</span>}
+              {isGenerating ? <OrciaIcon name="stopSquare" testId="assistant-stop-square-icon" /> : <OrciaIcon name="play" testId="assistant-send-play-icon" />}
             </button>
           </div>
         </div>

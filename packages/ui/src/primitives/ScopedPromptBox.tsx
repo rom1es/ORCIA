@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaIcon } from "../components/icons";
 
 export type CognitiveTierChoice =
   | "TIER_1_FAST"
@@ -65,7 +66,9 @@ export function ScopedPromptBox({
         gap: "12px",
       }}
     >
-      <strong style={{ fontSize: "0.9375rem" }}>💬 {labels.boxTitle}</strong>
+      <strong style={{ fontSize: "0.9375rem" }}>
+        <OrciaIcon name="assistant" /> {labels.boxTitle}
+      </strong>
 
       <div>
         <span

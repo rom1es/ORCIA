@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "./icons";
 
 export interface FormattedMarkdownContentProps {
   readonly content: string;
@@ -315,7 +316,7 @@ export function FormattedMarkdownContent({
                   onClick={() => handleCopyCode(codeBody, idx)}
                   className="rounded border border-border-subtle bg-surface-primary px-2 py-0.5 font-sans text-[10px] font-medium text-text-primary hover:bg-surface-elevated"
                 >
-                  {copiedIndex === idx ? "✓ Copié" : "Copier"}
+                  {copiedIndex === idx ? <><OrciaIcon name="check" /> Copié</> : "Copier"}
                 </button>
               </div>
               <pre className="overflow-x-auto p-3 font-mono text-[11px] leading-relaxed text-text-primary">

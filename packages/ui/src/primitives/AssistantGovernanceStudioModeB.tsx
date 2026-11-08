@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "../components/icons";
 import { handleRgaaSubmitKeyDown } from "../components/RgaaModalDialog";
 import type {
   AssistantGovernanceModalAndStudioLabels,
@@ -80,7 +81,7 @@ export function AssistantGovernanceStudioModeB({
         />
       </label>
 
-      {/* 5 Nodes wrapped inside Entry/Exit 🔒 AssistantHarness */}
+      {/* 5 Nodes wrapped inside Entry/Exit AssistantHarness */}
       <div
         data-testid="studio-nodes-canvas"
         className="space-y-2 rounded-lg border border-surface-border bg-surface-primary p-3"
@@ -104,7 +105,7 @@ export function AssistantGovernanceStudioModeB({
                 data-testid={`studio-node-locked-${node.nodeId}`}
                 className="px-2 py-0.5 rounded bg-surface-secondary text-text-secondary font-mono text-[10px]"
               >
-                🔒 {node.lockedBy}
+                <OrciaIcon name="lock" /> {node.lockedBy}
               </span>
             ) : (
               <button
@@ -134,7 +135,7 @@ export function AssistantGovernanceStudioModeB({
           data-testid="studio-reset-restored-banner"
           className="p-2 rounded bg-surface-secondary border border-surface-border font-mono text-[11px]"
         >
-          ↺ Configuration standard restaurée
+          <OrciaIcon name="undo" /> Configuration standard restaurée
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { OrciaIcon } from "../components/icons";
 import type { UiAssistantAttachedFileItem } from "./AssistantPromptPlusAndAutocomplete";
 
 export interface UiAssistantRagCitationItem {
@@ -77,9 +78,7 @@ export function AssistantUserQuestionBubble({
               data-testid="assistant-user-question-attached-pill"
               className="inline-flex items-center gap-1 rounded-md bg-surface-secondary px-2 py-0.5 text-[11px] font-medium text-text-secondary"
             >
-              <span aria-hidden="true">
-                {file.sourceKind === "LOCAL_PC" ? "💻" : "🗂️"}
-              </span>
+              <OrciaIcon name={file.sourceKind === "LOCAL_PC" ? "laptop" : "workspaceFolder"} />
               <span>{file.name}</span>
             </span>
           ))}
@@ -247,20 +246,20 @@ export function AssistantResponseFooterActionsAndCitations({
           <span className="text-[11px] font-medium text-text-secondary">{isFr ? "Sources consultées :" : "Consulted sources:"}</span>
           {ragCitations.map((source, index) => (
             <a key={`${source.uri}-${index}`} href={source.uri} target="_blank" rel="noopener noreferrer" data-testid={`assistant-rag-citation-link-${index}`} className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline">
-              📄 {source.title} ↗
+              <OrciaIcon name="document" /> {source.title} <OrciaIcon name="externalLink" />
             </a>
           ))}
         </div>
       )}
 
       <div data-testid="assistant-response-actions-bar" role="toolbar" aria-label={isFr ? "Actions sur la réponse" : "Response actions"} className="flex flex-wrap items-center gap-1">
-        <button type="button" data-testid="assistant-action-like-btn" aria-label={likeLabel} title={likeLabel} aria-pressed={feedback === "LIKE"} onClick={handleToggleLike} style={feedback === "LIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}>👍</button>
-        <button type="button" data-testid="assistant-action-dislike-btn" aria-label={dislikeLabel} title={dislikeLabel} aria-pressed={feedback === "DISLIKE"} onClick={handleToggleDislike} style={feedback === "DISLIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}>👎</button>
-        <button type="button" data-testid="assistant-action-copy-btn" aria-label={copyLabel} title={copyLabel} onClick={handleCopy} className={iconBtnClass}>{copied ? "✓" : "📋"}</button>
-        <button type="button" data-testid="assistant-action-regenerate-btn" aria-label={regenerateLabel} title={regenerateLabel} onClick={() => onRegenerate?.()} className={iconBtnClass}>↻</button>
-        <button type="button" data-testid="assistant-action-save-draft-btn" aria-label={saveDraftLabel} title={saveDraftLabel} onClick={handleSaveDraft} className={iconBtnClass}>{draftSaved ? "✓" : "📄"}</button>
-        <button type="button" data-testid="assistant-action-continue-process-btn" aria-label={continueProcessLabel} title={continueProcessLabel} onClick={() => onContinueInProcess?.(responseText)} className={`${iconBtnClass} text-action-primary`}>☍</button>
-        <button type="button" data-testid="assistant-action-details-btn" aria-label={detailsLabel} title={detailsLabel} aria-expanded={detailsOpen} onClick={() => setDetailsOpen((prev) => !prev)} className={iconBtnClass}>⋯</button>
+        <button type="button" data-testid="assistant-action-like-btn" aria-label={likeLabel} title={likeLabel} aria-pressed={feedback === "LIKE"} onClick={handleToggleLike} style={feedback === "LIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}><OrciaIcon name="like" /></button>
+        <button type="button" data-testid="assistant-action-dislike-btn" aria-label={dislikeLabel} title={dislikeLabel} aria-pressed={feedback === "DISLIKE"} onClick={handleToggleDislike} style={feedback === "DISLIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}><OrciaIcon name="dislike" /></button>
+        <button type="button" data-testid="assistant-action-copy-btn" aria-label={copyLabel} title={copyLabel} onClick={handleCopy} className={iconBtnClass}><OrciaIcon name={copied ? "check" : "copy"} /></button>
+        <button type="button" data-testid="assistant-action-regenerate-btn" aria-label={regenerateLabel} title={regenerateLabel} onClick={() => onRegenerate?.()} className={iconBtnClass}><OrciaIcon name="regenerate" /></button>
+        <button type="button" data-testid="assistant-action-save-draft-btn" aria-label={saveDraftLabel} title={saveDraftLabel} onClick={handleSaveDraft} className={iconBtnClass}><OrciaIcon name={draftSaved ? "check" : "document"} /></button>
+        <button type="button" data-testid="assistant-action-continue-process-btn" aria-label={continueProcessLabel} title={continueProcessLabel} onClick={() => onContinueInProcess?.(responseText)} className={`${iconBtnClass} text-action-primary`}><OrciaIcon name="processes" /></button>
+        <button type="button" data-testid="assistant-action-details-btn" aria-label={detailsLabel} title={detailsLabel} aria-expanded={detailsOpen} onClick={() => setDetailsOpen((prev) => !prev)} className={iconBtnClass}><OrciaIcon name="moreHorizontal" /></button>
       </div>
 
       {feedback !== null && (
@@ -280,7 +279,7 @@ export function AssistantResponseFooterActionsAndCitations({
       {detailsOpen && (
         <div data-testid="assistant-response-details-popover" className="inline-flex flex-wrap items-center gap-2 rounded-md bg-surface-secondary px-2.5 py-1 text-[11px] text-text-secondary">
           <span>{isFr ? "Modèle :" : "Model :"} <strong className="font-medium text-text-primary">{modelLabel}</strong></span>
-          <span aria-hidden="true">·</span>
+          <OrciaIcon name="bulletDot" />
           <span>{isFr ? "Niveau de réflexion :" : "Thinking level :"} <strong className="font-medium text-text-primary">{effortLabel}</strong></span>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaIcon } from "../components/icons";
 
 export type ResponsiveBreakpointTier = "DESKTOP" | "LAPTOP" | "MOBILE";
 export type MobileCompanionTabId = "inbox" | "arbitration" | "briefing";
@@ -145,7 +146,7 @@ export function MobileCompanionView({
             fontSize: "0.8125rem",
           }}
         >
-          🖥️ {labels.desktopOnlyBanner} (
+          <OrciaIcon name="desktop" /> {labels.desktopOnlyBanner} (
           {attemptedDesktopOnlyFeature === "YAML_EDITOR"
             ? labels.blockedYamlEditorLabel
             : attemptedDesktopOnlyFeature === "HEAVY_CO_EDITING"
