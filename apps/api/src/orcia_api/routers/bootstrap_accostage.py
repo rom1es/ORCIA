@@ -11,6 +11,7 @@ from orcia_api.dependencies import (
     get_auth_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_connection_test
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
 from orcia_core import bootstrap as bm
@@ -171,71 +172,7 @@ async def test_welcome_setup_llm_connection(
     payload: bs.LlmConnectionTestRequest,
     request: Request,
 ) -> bs.LlmConnectionTestResponse:
-    provider = payload.provider_slug.strip() or "OpenAI / Compatible"
-    model = payload.model_name.strip()
-    uri = payload.endpoint_uri.strip()
-    auth_mode = payload.auth_mode
-    has_key = bool((payload.api_key and payload.api_key.strip()) or payload.api_key_configured)
-
-    from typing import Literal
-
-    def _fail(
-        status: Literal["INVALID_PARAMETERS", "AUTH_REQUIRED"],
-        lat: int,
-        msg_fr: str,
-        msg_en: str,
-        m_name: str = model,
-    ) -> bs.LlmConnectionTestResponse:
-        return bs.LlmConnectionTestResponse(
-            ok=False, status=status, latency_ms=lat, provider_slug=provider,
-            model_name=m_name, endpoint_uri=uri, auth_mode=auth_mode,
-            message_fr=msg_fr, message_en=msg_en, trace_id=_trace(request),
-        )  # fmt: skip
-
-    if not model:
-        return _fail(
-            "INVALID_PARAMETERS",
-            2,
-            "❌ Échec du test : veuillez renseigner l'identifiant du modèle "
-            "principal (ex. claude-3-7-sonnet, gpt-4o, mistral-large-latest).",
-            "❌ Test failed: please enter the primary model identifier "
-            "(e.g. claude-3-7-sonnet, gpt-4o, mistral-large-latest).",
-            m_name="",
-        )
-    if not uri or not (uri.startswith("http://") or uri.startswith("https://")):
-        return _fail(
-            "INVALID_PARAMETERS",
-            2,
-            "❌ Échec du test : veuillez indiquer une URL d'API valide "
-            "commençant par https:// ou http:// (ex. https://api.anthropic.com/v1).",
-            "❌ Test failed: please enter a valid API URL starting with "
-            "https:// or http:// (e.g. https://api.anthropic.com/v1).",
-        )
-    if auth_mode == "api_key" and not has_key:
-        return _fail(
-            "AUTH_REQUIRED",
-            3,
-            "❌ Échec du test : veuillez saisir votre clé d'API (jeton secret) "
-            "ou choisir « Sans clé (Serveur local) ».",
-            "❌ Test failed: please enter your API key (secret token) "
-            "or select 'No key (Local server)'.",
-        )
-
-    is_local = uri.startswith("http://localhost") or uri.startswith("http://127.")
-    latency_ms = 18 if is_local else 42
-    return bs.LlmConnectionTestResponse(
-        ok=True, status="CONNECTED", latency_ms=latency_ms, provider_slug=provider,
-        model_name=model, endpoint_uri=uri, auth_mode=auth_mode,
-        message_fr=(
-            f"✅ Connexion réussie au modèle « {model} » ({provider}) "
-            f"sur {uri} — Réponse reçue en {latency_ms} ms."
-        ),
-        message_en=(
-            f"✅ Successfully connected to model '{model}' ({provider}) "
-            f"at {uri} — Response received in {latency_ms} ms."
-        ),
-        trace_id=_trace(request),
-    )  # fmt: skip
+    return evaluate_welcome_llm_connection_test(payload, _trace(request))
 
 
 def _sync_accostage_from_snapshot(
