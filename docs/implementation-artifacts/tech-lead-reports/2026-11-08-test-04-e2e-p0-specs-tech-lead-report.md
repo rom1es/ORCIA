@@ -34,3 +34,16 @@
 | :--- | :--- | :--- |
 | `01-day0-boot-and-f5-persistence` | ✅ 4/4 (2 viewports) | CAP-004, CAP-005, CAP-061 |
 | `02-assistant-streaming-and-folders` | ✅ tour LLM (cassette) 2 viewports ; ⚠️ dossier/F5 en `test.fail` → **BUG-E2E-01** | CAP-070..074 (partiel) |
+| `03-human-led-anchor-and-arbitration` | ⏸️ `test.fixme` — **BUG-E2E-02** (composants non montés dans `apps/web`) | CAP-023 (non couverte) |
+| `04-multi-actor-claim-sse` | ✅ claim exclusif 200/409 + replay SSE ; ⚠️ push temps réel en `test.fail` → **BUG-E2E-03** | CAP-040 (partiel) |
+| `05-mobile-companion-and-rgaa` | ✅ garde `isDirty` (Escape → alertdialog) + zéro débordement mobile | CAP-042, CAP-100 |
+
+### Résultats globaux
+- Suite `01..05` : specs vertes ; défauts produit **assumés et tracés** (`test.fail` / `test.fixme`) plutôt que masqués.
+- **Défauts révélés par les E2E** (tickets `P0` dans `sprint-status.yaml`) :
+  - `BUG-E2E-01` dossiers d'Assistant non réhydratés depuis PostgreSQL après F5 ;
+  - `BUG-E2E-02` `HumanLedAnchorCard` / `ArbitrationTieBreakCard` non montés (Epic 3 inutilisable dans le portail) ;
+  - `BUG-E2E-03` `/api/v1/events/stream` = replay au connect, pas de push < 500 ms ;
+  - `BUG-E2E-04` identité par défaut `marc` sans jeton + notifications d'amorce fictives en mémoire (sécurité / zéro donnée fictive).
+- Spec 04 : exécutée une seule fois (stock de notifications OPEN en mémoire limité, cf. BUG-E2E-04).
+- Hors périmètre : observateur `READ_ONLY_OBSERVER` (aucune persona observateur disponible) → repris par `TEST-09`.

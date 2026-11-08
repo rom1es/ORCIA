@@ -790,7 +790,7 @@ action_items:
     priority: P0
     depends_on: [TEST-01, TEST-02]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Couche 5 AD-17 : 2 BrowserContext simultanés exigés pour le multi-acteurs. Chaque spec réussi passe les capacités visées
@@ -873,3 +873,37 @@ action_items:
     description: >
       Révélé par TEST-04 (spec 02) : le dossier est créé (POST /api/v1/assistant/folders < 400) mais « Dossiers (0) » après
       localStorage.clear() + reload. Viole le garde-fou n°3 (survie au F5 via GET). Test en test.fail jusqu'à correction.
+  - id: BUG-E2E-02
+    title: "HumanLedAnchorCard et ArbitrationTieBreakCard (Epic 3, FR-4/FR-5) non montés dans apps/web"
+    action: "Câbler les composants dans l'écran du run/cockpit (signature d'ancrage, arbitrage) via @orcia/api-client puis activer le test.fixme de e2e/03-human-led-anchor-and-arbitration.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 03) : seuls les endpoints existent (anchors/sign, arbitration, arbitration/resolve) ; aucun usage
+      des deux composants dans apps/web. Les stories 3.4 sont `done` mais le parcours Human-Led n'est pas utilisable dans le portail.
+  - id: BUG-E2E-03
+    title: "GET /api/v1/events/stream (AD-4) rejoue les événements récents puis se termine : pas de diffusion SSE temps réel < 500 ms"
+    action: "Rendre le flux persistant (abonnement au SSEBroker / Redis pub-sub avec heartbeat) et consommer le flux dans apps/web (aucun EventSource aujourd'hui) ; retirer test.fail dans e2e/04-multi-actor-claim-sse.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 04). Le claim exclusif fonctionne (200 puis 409 ERR_STEP_ALREADY_CLAIMED_BY_PEER) mais le verrou
+      visuel chez un pair en < 500 ms (FR-2) n'est pas réalisé : pas de push, et le service de notifications est en mémoire.
+  - id: BUG-E2E-04
+    title: "Composition Root : identité par défaut `marc` (TEAM_LEAD) sans jeton et notifications d'amorce fictives en mémoire"
+    action: "Exiger un Bearer en dehors du mode test, supprimer la persona de repli et les seed_default_notifications à identifiants fixes de initialize_app_services (zéro donnée fictive), persister les notifications en PostgreSQL"
+    priority: P0
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Constaté pendant TEST-04 : resolve_user() retombe sur la persona `marc` quand aucun jeton n'est fourni (le web n'envoie pas
+      de Bearer) ; initialize_app_services() sème 4 notifications fictives (ids 0195f000-…) en mémoire, contraire à la politique
+      zéro donnée fictive et au garde-fou « jamais de singleton en mémoire en production ». Risque sécurité (usurpation) à qualifier.
