@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-08-2026 09:30
+last_updated: 11-08-2026 14:40
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
   3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
   3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: done
-  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done
+  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done # backend livré ; UI non montée dans apps/web → BUG-E2E-02
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
   epic-3-retrospective: optional
 
@@ -69,12 +69,12 @@ development_status:
   4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: done
   4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: done
   4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: done
-  4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: done
+  4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: done # backend livré ; UI non montée dans apps/web → BUG-E2E-05
   4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: done
   epic-4-retrospective: optional
 
   epic-5: done
-  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done
+  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done # claim OK ; diffusion SSE temps réel absente → BUG-E2E-03
   5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: done
   5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: done
   5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
@@ -96,7 +96,7 @@ development_status:
 
   # Epic 13 — Évolutions continues & traçabilité des capacités (CAP-ACT-4)
   epic-13: in-progress
-  13-1-registre-des-capacites-controle-ci-et-prd-v2: review
+  13-1-registre-des-capacites-controle-ci-et-prd-v2: review # reste en review tant que CAP-ACT-1 / CAP-ACT-5 (passage en runtime) ne sont pas terminés
   epic-13-retrospective: optional
 
   # Epic 8 — Settings Hub, Enterprise Governance (6-Verb RBAC/ABAC), Cognitive Routing & Studio/Wizards (AD-21)
@@ -693,7 +693,7 @@ action_items:
     ad_ref: "AD-1, AD-22"
     owner: "Sally (UX/UI) / Winston (Architect) / Amelia (Dev)"
     status: open
-    epic: epic-12
+    epic: epic-13
     description: >
       Mutualiser le code des composants front dans @orcia/ui sur un standard open source éprouvé (Radix UI + pattern shadcn/ui) compatible React 19 + Tailwind CSS v4 + Vite 6 pour bénéficier d'une conformité RGAA 4.1 / WCAG AA exhaustive (clavier, lecteurs d'écran, focus trap) tout en gardant la séparation stricte Look & Feel (tokens.css) vs Logique (apps/web) vs Contenus (i18n).
   - id: CAP-ACT-1
@@ -703,7 +703,7 @@ action_items:
     depends_on: []
     owner: "Amelia (Dev)"
     status: in-progress
-    epic: epic-12
+    epic: epic-13
     description: >
       Le registre a été rétro-rempli à partir des rapports, routeurs et du manifeste (2026-11-08).
       Il faut confirmer chaque capacité à l'exécution, et ajouter un check CI :
@@ -747,11 +747,12 @@ action_items:
     priority: P2
     depends_on: [CAP-ACT-1, TEST-04]
     owner: "Amelia (Dev)"
-    status: done
+    status: in-progress
     epic: epic-13
     description: >
-      Réalisé via les specs E2E TEST-04..06 (chaque spec verte promeut ses capacités en runtime). Reste à faire de CAP-ACT-1 : le contrôle CI de couverture est livré (infra/scripts/capabilities_registry.py,
-      branché sur pnpm site:check), mais les 57 capacités restent verification: docs (déduites des rapports/routeurs).
+      Fait : 54/54 capacités live référencent au moins un test (champ tests:, seuil bloquant pnpm site:check),
+      compteurs capabilitiesCount / liveCapabilitiesCount / verifiedCapabilitiesCount exposés dans le manifeste /showcase.
+      Reste : seules 3/57 capacités sont en verification: runtime ; promouvoir chaque capacité dont la spec E2E est verte.
   # ───── Plan de tests manquants (audit pyramide AD-17 du 2026-11-08) — alimente CAP-ACT-5 ─────
   - id: TEST-01
     title: "P0 — Socle E2E bi-serveur : Playwright démarre FastAPI + Vite, reset Jour 0 déterministe, Cassette LLM"
@@ -821,9 +822,9 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: done
+    status: review
     epic: epic-13
-    description: "Tests d'intégration verticaux HTTP -> SELECT PG18 livrés dans test_http_vertical_day0_and_agents_postgres18.py (5 scénarios couvrant Jour 0, platform-setup-state, agents/skills, LLM progressif, pack-builder, aide à chaud, préférences, gouvernance et dossiers)."
+    description: "Fait : 5 scénarios verticaux AsyncClient(ASGITransport) -> SELECT PG18 dans test_http_vertical_day0_and_agents_postgres18.py (Jour 0, platform-setup-state, agents/skills, LLM progressif, pack-builder, aide à chaud, préférences, gouvernance, dossiers). Reste : refonte HTTP des fichiers historiques test_story_9_*, 10_*, 11_* et routeurs control_center / portal_and_help."
   - id: TEST-08
     title: "P1 — Couche 4 : tests/evals Golden Dataset (assistant, citations, extraction ontologique) sur DeterministicCassetteLLM"
     action: "Créer tests/evals/ avec jeux dorés et seuils (citations fantômes = 0, refus constitutionnel FR-4), exécutés en CI à 0 $"
