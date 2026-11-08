@@ -45,6 +45,7 @@ capabilities:
     origin: epic
     origin_ref: 1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db
     status: live
+    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
     surfaces: { route: /catalog, api: /api/v1 (catalog.py), ui: CatalogExplorerPanel }
   - id: CAP-003
     title: Exécution passthrough / service principal et Permission Broker (lien Jira pré-rempli)
@@ -59,6 +60,7 @@ capabilities:
     origin: epic
     origin_ref: 1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto
     status: live
+    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts]
     surfaces: { route: /bootstrap, api: /api/v1/bootstrap, ui: BootstrapOnboardingPanel }
   - id: CAP-005
     title: Persistance admin Jour 0 et réinitialisation BDD (pnpm db:reset)
@@ -66,6 +68,8 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-04-persistance-admin-jour0-et-reinit-bdd
     status: live
+    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    verification: runtime
     surfaces: { api: /api/v1/bootstrap }
   - id: CAP-006
     title: Monolithe modulaire, persistance SQLAlchemy asyncio, bus Outbox, SPA Vite/TanStack, séparation pack SDLC
@@ -82,6 +86,7 @@ capabilities:
     origin: epic
     origin_ref: 2-1, 2-2
     status: live
+    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
     surfaces: { route: /ontology, api: "/api/v1/ontology-rag (ontology_and_rag.py)" }
   - id: CAP-011
     title: Indexation différenciée incrémentale et graphe tripartite Confluence↔Jira↔Git
@@ -163,6 +168,7 @@ capabilities:
     origin: epic
     origin_ref: 5-1
     status: live
+    tests: [apps/web/e2e/04-multi-actor-claim-sse.spec.ts]
     surfaces: { route: /inbox, api: inbox_and_leases.py }
   - id: CAP-041
     title: Supervision multi-runs et sélecteur de périmètre / centre de pilotage
@@ -177,6 +183,7 @@ capabilities:
     origin: epic
     origin_ref: 5-3
     status: live
+    tests: [apps/web/e2e/05-mobile-companion-and-rgaa.spec.ts]
 
   # ───────────── Settings & gouvernance (Epic 8 + ad-hoc) ─────────────
   - id: CAP-050
@@ -185,6 +192,7 @@ capabilities:
     origin: epic
     origin_ref: 8-1
     status: live
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts]
     surfaces: { route: /settings, api: "/api/v1/settings/iam" }
   - id: CAP-051
     title: Écran Habilitations IAM (correction après dialogue UX)
@@ -199,12 +207,14 @@ capabilities:
     origin: epic
     origin_ref: 8-2
     status: live
+    tests: [tests/security/test_api_security_baseline.py]
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]
     origin: adhoc
     origin_ref: 2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide
     status: live
+    tests: [tests/security/test_api_security_baseline.py]
     surfaces: { route: /settings, ui: SettingsAiModelsSection }
   - id: CAP-054
     title: Hub connecteurs et gestion des secrets
@@ -249,6 +259,8 @@ capabilities:
     origin: epic
     origin_ref: 9-1, 12-1
     status: live
+    tests: [apps/web/e2e/shell.spec.ts]
+    verification: runtime
     surfaces: { ui: AppShell + CollapsibleAppRail, api: /api/v1/navigation }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
@@ -256,6 +268,7 @@ capabilities:
     origin: epic
     origin_ref: 9-2
     status: live
+    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, apps/web/e2e/shell.spec.ts]
     surfaces: { api: bootstrap_accostage.py }
   - id: CAP-062
     title: Recherche fédérée contextuelle ⌘K à 2 vitesses
@@ -263,6 +276,7 @@ capabilities:
     origin: epic
     origin_ref: 9-3
     status: live
+    tests: [apps/web/e2e/10-command-palette-search.spec.ts]
     surfaces: { ui: CommandPaletteModal }
   - id: CAP-063
     title: Menu compte et modale de préférences utilisateur
@@ -276,6 +290,7 @@ capabilities:
     origin: epic
     origin_ref: 9-5 + 2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i
     status: live
+    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts]
     surfaces: { route: /help, api: portal_and_help.py }
   - id: CAP-065
     title: Journal d'activité (auteurs, horodatage, filtres)
@@ -283,6 +298,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-05-journal-activite-menu-dedie-auteurs-horodatage-et-filtres
     status: partial
+    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
     surfaces: { route: /activity, ui: ActivityLogExplorerView }
     notes: "Lit auditEvents du snapshot d'accostage (bootstrap_accostage.py), pas un audit_ledger append-only. Story 6.1 doit remplacer cette source (réconciliation CAP-ACT-3, 2026-11-08)."
   - id: CAP-066
@@ -300,6 +316,7 @@ capabilities:
     origin: epic
     origin_ref: 10-1
     status: live
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     surfaces: { route: /assistant, api: assistant_workspace_governance.py, ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
     title: Routage 3 vitesses, TTFT < 1,2 s, cache Redis du prompt assemblé, tours en arrière-plan
@@ -307,6 +324,7 @@ capabilities:
     origin: epic
     origin_ref: 10-2
     status: live
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     surfaces: { api: assistant_workspace.py, ui: AssistantSpeedSelectorAndStreamView }
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
@@ -314,6 +332,7 @@ capabilities:
     origin: epic
     origin_ref: 10-3
     status: live
+    tests: [tests/evals/test_citations_golden_dataset.py]
     surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
     title: Dossiers thématiques, fils collaboratifs, partage et lancement de processus
@@ -321,6 +340,7 @@ capabilities:
     origin: epic
     origin_ref: 10-4
     status: live
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
@@ -328,6 +348,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui
     status: live
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     surfaces: { api: assistant_llm_bridge.py + assistant_llm_providers.py }
 
   # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
@@ -337,6 +358,7 @@ capabilities:
     origin: epic
     origin_ref: 11-1
     status: live
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts]
     surfaces: { route: /spaces, api: workspace_governance.py, migration: "0026" }
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
@@ -367,6 +389,8 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills
     status: live
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    verification: runtime
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: AgentsAndSkillsManagerView }
   - id: CAP-091
     title: Refonte complète écran Agents, Skills et MCP

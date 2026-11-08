@@ -821,7 +821,7 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: in-progress
     epic: epic-13
     description: "Aucun test d'intégration pour les routeurs ad-hoc (agents_and_skills, settings_and_studio IAM/modèles IA, control_center, portal_and_help)."
   - id: TEST-08
@@ -830,7 +830,7 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: review
     epic: epic-13
     description: "Le dossier n'existe pas ; seuls 2 tests exercent la Cassette."
   - id: TEST-09
@@ -839,7 +839,7 @@ action_items:
     priority: P1
     depends_on: [TEST-01]
     owner: "Sophie (SecOps) / Amelia (Dev)"
-    status: open
+    status: review
     epic: epic-13
     description: "La couche Sécurité/Red-Team citée par AD-17 n'a aucun fichier dédié (seul le fuzzing Schemathesis de contrat existe)."
   - id: TEST-10
@@ -848,7 +848,7 @@ action_items:
     priority: P2
     depends_on: [TEST-04]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Évite la dérive « fonctionnalité livrée sans test traversant ». Les 57 capacités sont toutes verification: docs ;

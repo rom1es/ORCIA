@@ -792,6 +792,13 @@ def main(argv: list[str] | None = None) -> int:
         from capabilities_registry import run_registry_check
 
         errors.extend(f"[capabilities.yaml] {e}" for e in run_registry_check())
+        from capabilities_registry import capability_test_stats, load_registry
+
+        stats = capability_test_stats(load_registry())
+        print(
+            f"[capabilities] {stats['with_tests']}/{stats['live']} capacités live référencent "
+            f"au moins un test ({len(stats['without_tests'])} sans test)."
+        )
         if not MANIFEST_TS_OUT.exists():
             errors.append(f"Missing generated manifest: {MANIFEST_TS_OUT}")
         elif MANIFEST_TS_OUT.read_text(encoding="utf-8") != expected_ts:

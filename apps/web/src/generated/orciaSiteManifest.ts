@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 100
+    "techLeadReportsCount": 101
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-07..10)",
+      "reportFile": "2026-11-08-test-07-a-10-pyramide-integration-evals-securite-tech-lead-report.md",
+      "domain": "Intégration verticale HTTP→PG18, evals Golden Dataset citations, socle sécurité, traçabilité tests: ↔ capacités",
+      "summary": "tests/integration/test_http_vertical_*, tests/evals/, tests/security/, capabilities_registry.py."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / CI (TEST-01b)",

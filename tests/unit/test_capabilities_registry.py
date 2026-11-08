@@ -79,3 +79,36 @@ def test_exemption_without_reason_is_rejected() -> None:
     mod = _load()
     data = {"capabilities": [_cap()], "coverage_exemptions": [{"surface": "/x"}]}
     assert any("reason" in e for e in mod.validate_registry(data))
+
+
+def test_declared_test_paths_must_exist(tmp_path: Path) -> None:
+    mod = _load()
+    (tmp_path / "ok.spec.ts").write_text("//", encoding="utf-8")
+    data = {
+        "capabilities": [
+            _cap(tests=["ok.spec.ts"]),
+            _cap("CAP-002", tests=["absent.spec.ts"]),
+        ]
+    }
+    errors = mod.validate_registry(data, max_fr=36, repo_root=tmp_path)
+    assert any("absent.spec.ts" in e for e in errors)
+    assert not any("ok.spec.ts" in e for e in errors)
+
+
+def test_runtime_verification_requires_a_test_reference() -> None:
+    mod = _load()
+    data = {"capabilities": [_cap(verification="runtime")]}
+    assert any("runtime" in e for e in mod.validate_registry(data, max_fr=36))
+
+
+def test_capability_test_stats_counts_live_capabilities_without_tests() -> None:
+    mod = _load()
+    data = {
+        "capabilities": [
+            _cap(tests=["a"]),
+            _cap("CAP-002"),
+            _cap("CAP-003", status="planned"),
+        ]
+    }
+    stats = mod.capability_test_stats(data)
+    assert stats == {"live": 2, "with_tests": 1, "without_tests": ["CAP-002"]}
