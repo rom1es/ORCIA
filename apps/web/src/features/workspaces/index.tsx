@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   CommandPaletteModal,
@@ -53,7 +54,7 @@ export function WorkspacesFeaturePanel() {
   );
 
   const isJsdom =
-    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    isJsdomRuntime();
 
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
   const activeScopeName =

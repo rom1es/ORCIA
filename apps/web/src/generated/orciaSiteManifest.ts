@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 101
+    "techLeadReportsCount": 102
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-03)",
+      "reportFile": "2026-11-08-test-03-centralisation-garde-jsdom-tech-lead-report.md",
+      "domain": "Garde jsdom centralisée (lib/runtimeEnv.ts) + audit anti-régression ; suppression complète à venir",
+      "summary": "apps/web/src/lib/runtimeEnv.ts, 9 fichiers, runtime-env-guard-audit.test.ts."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-07..10)",

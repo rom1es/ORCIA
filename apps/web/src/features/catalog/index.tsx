@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   AgentsAndSkillsManagerView,
@@ -126,7 +127,7 @@ export function CatalogFeaturePanel() {
     );
 
     const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+      isJsdomRuntime();
     if (!isJsdom) {
       const client = createOrciaApiClient({ baseUrl: "" });
       void client

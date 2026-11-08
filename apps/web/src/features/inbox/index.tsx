@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   AssistantCitationPillsAndArtifactCard,
@@ -66,7 +67,7 @@ export function InboxFeaturePanel() {
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
-  const isJsdom = typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+  const isJsdom = isJsdomRuntime();
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
   const activeConversation = savedConversations.find((c) => c.id === activeConversationId) ?? null;
   const activeFolder = folders.find((f) => f.folderId === activeFolderId) ?? null;

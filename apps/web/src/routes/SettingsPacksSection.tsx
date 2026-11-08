@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../lib/runtimeEnv";
 import {
   createOrciaApiClient,
   type InstalledBusinessPackItemResponse,
@@ -73,7 +74,7 @@ export function SettingsPacksSection({
   useEffect(() => {
     let cancelled = false;
     const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+      isJsdomRuntime();
     if (isJsdom) {
       return;
     }

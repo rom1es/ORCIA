@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../lib/runtimeEnv";
 import { createOrciaApiClient, type PlatformSetupStatePutRequest } from "@orcia/api-client";
 import type {
   ControlCenterDatasourceItem,
@@ -173,7 +174,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const persistSnapshot = (next: CachedPlatformSetupState) => {
     writeCachedPlatformSetupState(next);
     const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+      isJsdomRuntime();
     if (isJsdom) {
       return;
     }
@@ -209,7 +210,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     let cancelled = false;
     const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+      isJsdomRuntime();
     if (isJsdom) {
       return;
     }
@@ -391,7 +392,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
 
     const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+      isJsdomRuntime();
     if (!isJsdom) {
       const rawPassword =
         input.password && input.password.trim().length >= 8
@@ -611,7 +612,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     persistSnapshot(buildSnapshot({ llmTiers: nextLlmTiers, auditEvents: nextAudit }));
 
     const isJsdom =
-      typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+      isJsdomRuntime();
     if (!isJsdom) {
       const client = createOrciaApiClient({ baseUrl: "" });
       const resolvedUri =

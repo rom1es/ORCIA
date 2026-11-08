@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   ContextualHelpColumnAndCenter,
@@ -102,7 +103,7 @@ function InnerShellContainer({
   const [activeHelpSectionId, setActiveHelpSectionId] = useState<string | null>(null);
 
   const isJsdom =
-    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    isJsdomRuntime();
 
   const runFederatedSpeed2Search = (query: string) => {
     const trimmed = query.trim();

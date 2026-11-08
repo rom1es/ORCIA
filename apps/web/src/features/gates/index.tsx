@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   HelpArticleGeneratorAndValidatorView,
@@ -69,7 +70,7 @@ export function GatesFeaturePanel() {
   });
 
   const isJsdom =
-    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+    isJsdomRuntime();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

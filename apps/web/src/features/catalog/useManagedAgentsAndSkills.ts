@@ -1,3 +1,4 @@
+import { isJsdomRuntime } from "../../lib/runtimeEnv";
 import { createOrciaApiClient } from "@orcia/api-client";
 import type {
   UiAgentSkillVisibilityScope,
@@ -18,7 +19,7 @@ import {
 } from "./packAgentsCatalog";
 
 function isJsdomEnv(): boolean {
-  return typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent ?? "");
+  return isJsdomRuntime();
 }
 
 function buildSkillLocalOutput(skill: UiManagedSkillItem, inputText: string): string {
