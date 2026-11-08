@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
+import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 
 test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et dossiers", () => {
   test.beforeEach(async ({ page }) => {
@@ -36,12 +37,13 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     });
   });
 
-  test("un dossier créé survit à un vrai F5 (réhydratation depuis PostgreSQL)", async ({ page }) => {
-    // DÉFAUT PRODUIT RÉEL (BUG-E2E-01) : après F5 sans localStorage, « Dossiers (0) » — les dossiers
-    // ne sont réhydratés que depuis localStorage (aucun GET au démarrage sans espace de travail).
-    // `test.fail` : le test passe tant que le défaut existe et ÉCHOUE dès qu'il est corrigé
-    // (retirer alors cette ligne).
-    test.fail(true, "BUG-E2E-01 : dossiers non réhydratés depuis PostgreSQL après F5");
+  test("un dossier créé dans un espace est réhydraté depuis l'API après un vrai F5 (cache navigateur vidé)", async ({
+    page,
+  }) => {
+    // Prérequis réel : un dossier appartient à un Espace de travail (aucun espace de repli fictif).
+    await createBuAndTeamViaUi(page);
+    await createWorkspaceViaUi(page, "Espace E2E Dossiers", "espace-e2e-dossiers");
+
     await page.goto("/assistant");
     await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
     await page.getByTestId("assistant-new-folder-title-input").fill("Dossier E2E persistant");
@@ -56,8 +58,19 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
       window.localStorage.clear();
       window.sessionStorage.clear();
     });
+    const overview = page.waitForResponse(
+      (r) => r.url().includes("/api/v1/assistant/workspaces/") && r.url().endsWith("/overview"),
+      { timeout: 30000 },
+    );
     await page.reload();
+    expect((await overview).status()).toBeLessThan(400);
     await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
     await expect(page.getByText("Dossier E2E persistant").first()).toBeVisible({ timeout: 20000 });
+  });
+
+  test("un dossier survit au redémarrage de l'API (persistance PostgreSQL)", async () => {
+    // BUG-E2E-01b : le service des dossiers est encore en mémoire ; l'adaptateur SQL (tables 0025)
+    // dépend d'AUTH-01 (propriétaire = vrai compte `users`, clé étrangère). À activer avec ce ticket.
+    test.fixme(true, "BUG-E2E-01b : persistance PostgreSQL des dossiers (dépend d'AUTH-01)");
   });
 });

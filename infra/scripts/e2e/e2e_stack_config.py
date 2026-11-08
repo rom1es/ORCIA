@@ -63,6 +63,7 @@ def build_api_env(
             "ORCIA_JWT_SIGNING_SECRET": E2E_JWT_SECRET,
             "ORCIA_PASSTHROUGH_MASTER_KEY": E2E_VAULT_KEY,
             "ORCIA_WORKER_STUB_BROKER": "1",
+            "ORCIA_E2E_SEED_FIXTURES": "1",
         }
     )
     return env

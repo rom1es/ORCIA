@@ -1,3 +1,4 @@
+import { createOrciaApiClient } from "@orcia/api-client";
 import {
   ContextualInfoTriggerButton,
   ProgressiveDay0AccostageBanner,
@@ -9,6 +10,7 @@ import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { CockpitHumanLedGovernanceSection } from "./CockpitHumanLedGovernanceSection";
 
 export function buildCockpitWorkflowPreviewGraph(): {
   nodes: Node[];
@@ -35,6 +37,7 @@ export function CockpitFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const {
+    platformAdmin,
     llmTiers,
     orgUnits,
     rbacGrants,
@@ -51,6 +54,7 @@ export function CockpitFeaturePanel() {
   const [selectedWsId, setSelectedWsId] = useState<string>("");
   const [selectedWfKey, setSelectedWfKey] = useState<string>("");
   const [runTitle, setRunTitle] = useState<string>("");
+  const [runRefreshSignal, setRunRefreshSignal] = useState<number>(0);
 
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
@@ -141,6 +145,20 @@ export function CockpitFeaturePanel() {
       workflowKey: wfKey,
     });
     setRunTitle("");
+    void (async () => {
+      try {
+        await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun(
+          {
+            workflow_uri: "orcia://workflows/claims-engineering-delivery",
+            workspace_id: targetWs.workspaceId,
+          },
+          "marc",
+        );
+        setRunRefreshSignal((n) => n + 1);
+      } catch {
+        // Handled in CockpitHumanLedGovernanceSection
+      }
+    })();
   };
 
   return (
@@ -393,6 +411,12 @@ export function CockpitFeaturePanel() {
           </div>
         )}
       </section>
+
+      <CockpitHumanLedGovernanceSection
+        workspaceId={selectedWsId || availableWorkspaces[0]?.workspaceId}
+        authorName={platformAdmin?.displayName ?? dictionary.humanAnchor.defaultAuthorName}
+        refreshSignal={runRefreshSignal}
+      />
     </div>
   );
 }

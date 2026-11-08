@@ -131,7 +131,8 @@ capabilities:
     origin_ref: 3-4
     status: live
     tests: [apps/web/e2e/03-human-led-anchor-and-arbitration.spec.ts, tests/unit/test_story_3_4_human_anchors_and_arbitration.py]
-    surfaces: { ui: HumanLedAnchorCard + ArbitrationTieBreakCard, migration: "0015" }
+    verification: runtime
+    surfaces: { route: /cockpit, ui: HumanLedAnchorCard + ArbitrationTieBreakCard, migration: "0015" }
   - id: CAP-024
     title: Challenge amont What-If et replay ciblé step N
     fr: [FR-7, FR-16]
@@ -182,6 +183,7 @@ capabilities:
     origin_ref: 5-1
     status: live
     tests: [apps/web/e2e/04-multi-actor-claim-sse.spec.ts, tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py]
+    verification: runtime
     surfaces: { route: /inbox, api: inbox_and_leases.py }
   - id: CAP-041
     title: Supervision multi-runs et sélecteur de périmètre / centre de pilotage
@@ -362,7 +364,7 @@ capabilities:
     origin: epic
     origin_ref: 10-4
     status: live
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)

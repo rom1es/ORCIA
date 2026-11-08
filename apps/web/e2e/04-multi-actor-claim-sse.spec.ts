@@ -108,10 +108,6 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
   });
 
   test("le flux SSE d'un acteur connecté reçoit en direct la prise en charge d'un pair (< 500 ms)", async () => {
-    // DÉFAUT PRODUIT RÉEL (BUG-E2E-03) : `GET /api/v1/events/stream` ne fait que rejouer les
-    // événements récents puis se termine ; aucune diffusion en direct (AD-4, « < 500 ms »).
-    // `test.fail` : passe tant que le défaut existe, échoue dès la correction (retirer alors la ligne).
-    test.fail(true, "BUG-E2E-03 : flux SSE non temps réel (replay au connect uniquement)");
     const actorA = await pwRequest.newContext({ baseURL: API });
     const stream = openSseStream(`${API}/api/v1/events/stream`);
     try {

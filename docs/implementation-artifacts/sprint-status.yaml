@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-08-2026 09:30
+last_updated: 11-08-2026 14:40
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
   3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
   3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
   3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: done
-  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done
+  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done # backend + UI CockpitHumanLedGovernanceSection (HumanLedAnchorCard + ArbitrationTieBreakCard) câblés (BUG-E2E-02 résolu)
   3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
   epic-3-retrospective: optional
 
@@ -69,12 +69,12 @@ development_status:
   4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: done
   4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: done
   4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: done
-  4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: done
+  4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: done # backend livré ; UI non montée dans apps/web → BUG-E2E-05
   4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: done
   epic-4-retrospective: optional
 
   epic-5: done
-  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done
+  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done # claim + diffusion SSE temps réel < 500 ms OK (BUG-E2E-03 résolu)
   5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: done
   5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: done
   5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
@@ -96,7 +96,7 @@ development_status:
 
   # Epic 13 — Évolutions continues & traçabilité des capacités (CAP-ACT-4)
   epic-13: in-progress
-  13-1-registre-des-capacites-controle-ci-et-prd-v2: review
+  13-1-registre-des-capacites-controle-ci-et-prd-v2: review # reste en review tant que CAP-ACT-1 / CAP-ACT-5 (passage en runtime) ne sont pas terminés
   epic-13-retrospective: optional
 
   # Epic 8 — Settings Hub, Enterprise Governance (6-Verb RBAC/ABAC), Cognitive Routing & Studio/Wizards (AD-21)
@@ -693,7 +693,7 @@ action_items:
     ad_ref: "AD-1, AD-22"
     owner: "Sally (UX/UI) / Winston (Architect) / Amelia (Dev)"
     status: open
-    epic: epic-12
+    epic: epic-13
     description: >
       Mutualiser le code des composants front dans @orcia/ui sur un standard open source éprouvé (Radix UI + pattern shadcn/ui) compatible React 19 + Tailwind CSS v4 + Vite 6 pour bénéficier d'une conformité RGAA 4.1 / WCAG AA exhaustive (clavier, lecteurs d'écran, focus trap) tout en gardant la séparation stricte Look & Feel (tokens.css) vs Logique (apps/web) vs Contenus (i18n).
   - id: CAP-ACT-1
@@ -703,7 +703,7 @@ action_items:
     depends_on: []
     owner: "Amelia (Dev)"
     status: in-progress
-    epic: epic-12
+    epic: epic-13
     description: >
       Le registre a été rétro-rempli à partir des rapports, routeurs et du manifeste (2026-11-08).
       Il faut confirmer chaque capacité à l'exécution, et ajouter un check CI :
@@ -747,11 +747,12 @@ action_items:
     priority: P2
     depends_on: [CAP-ACT-1, TEST-04]
     owner: "Amelia (Dev)"
-    status: done
+    status: in-progress
     epic: epic-13
     description: >
-      Réalisé via les specs E2E TEST-04..06 (chaque spec verte promeut ses capacités en runtime). Reste à faire de CAP-ACT-1 : le contrôle CI de couverture est livré (infra/scripts/capabilities_registry.py,
-      branché sur pnpm site:check), mais les 57 capacités restent verification: docs (déduites des rapports/routeurs).
+      Fait : 54/54 capacités live référencent au moins un test (champ tests:, seuil bloquant pnpm site:check),
+      compteurs capabilitiesCount / liveCapabilitiesCount / verifiedCapabilitiesCount exposés dans le manifeste /showcase.
+      Reste : seules 3/57 capacités sont en verification: runtime ; promouvoir chaque capacité dont la spec E2E est verte.
   # ───── Plan de tests manquants (audit pyramide AD-17 du 2026-11-08) — alimente CAP-ACT-5 ─────
   - id: TEST-01
     title: "P0 — Socle E2E bi-serveur : Playwright démarre FastAPI + Vite, reset Jour 0 déterministe, Cassette LLM"
@@ -821,9 +822,9 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: done
+    status: review
     epic: epic-13
-    description: "Tests d'intégration verticaux HTTP -> SELECT PG18 livrés dans test_http_vertical_day0_and_agents_postgres18.py (5 scénarios couvrant Jour 0, platform-setup-state, agents/skills, LLM progressif, pack-builder, aide à chaud, préférences, gouvernance et dossiers)."
+    description: "Fait : 5 scénarios verticaux AsyncClient(ASGITransport) -> SELECT PG18 dans test_http_vertical_day0_and_agents_postgres18.py (Jour 0, platform-setup-state, agents/skills, LLM progressif, pack-builder, aide à chaud, préférences, gouvernance, dossiers). Reste : refonte HTTP des fichiers historiques test_story_9_*, 10_*, 11_* et routeurs control_center / portal_and_help."
   - id: TEST-08
     title: "P1 — Couche 4 : tests/evals Golden Dataset (assistant, citations, extraction ontologique) sur DeterministicCassetteLLM"
     action: "Créer tests/evals/ avec jeux dorés et seuils (citations fantômes = 0, refus constitutionnel FR-4), exécutés en CI à 0 $"
@@ -867,45 +868,54 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Révélé par TEST-04 (spec 02) : le dossier est créé (POST /api/v1/assistant/folders < 400) mais « Dossiers (0) » après
       localStorage.clear() + reload. Viole le garde-fou n°3 (survie au F5 via GET). Test en test.fail jusqu'à correction.
+      Corrigé côté portail (2026-11-08, branche fix/p0-e2e-bugs) : le serveur est la source de vérité (GET overview au démarrage,
+      identifiants serveur, notes et visibilité envoyées à l'API, aucun espace de repli fictif, erreurs affichées). Spec E2E 02 verte.
+      La persistance PostgreSQL (survie au redémarrage de l'API) est suivie par BUG-E2E-01b.
   - id: BUG-E2E-02
     title: "HumanLedAnchorCard et ArbitrationTieBreakCard (Epic 3, FR-4/FR-5) non montés dans apps/web"
     action: "Câbler les composants dans l'écran du run/cockpit (signature d'ancrage, arbitrage) via @orcia/api-client puis activer le test.fixme de e2e/03-human-led-anchor-and-arbitration.spec.ts"
     priority: P0
     depends_on: []
     owner: "Amelia (Dev) / Sally (UX)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Révélé par TEST-04 (spec 03) : seuls les endpoints existent (anchors/sign, arbitration, arbitration/resolve) ; aucun usage
-      des deux composants dans apps/web. Les stories 3.4 sont `done` mais le parcours Human-Led n'est pas utilisable dans le portail.
+      Révélé par TEST-04 (spec 03). Corrigé (2026-11-08, branche fix/p0-e2e-bugs) : CockpitHumanLedGovernanceSection monté dans
+      CockpitFeaturePanel avec HumanLedAnchorCard (violet signature >= 30 car.) et ArbitrationTieBreakCard (ambre arbitrage)
+      câblés à @orcia/api-client (instantiate, anchors/sign, arbitration, arbitration/resolve, blackboard), réhydratation F5 via GET,
+      garde-fou CI requiredPropsByComponent mis à jour, et spec E2E 03-human-led-anchor-and-arbitration.spec.ts activée et verte.
   - id: BUG-E2E-03
     title: "GET /api/v1/events/stream (AD-4) rejoue les événements récents puis se termine : pas de diffusion SSE temps réel < 500 ms"
     action: "Rendre le flux persistant (abonnement au SSEBroker / Redis pub-sub avec heartbeat) et consommer le flux dans apps/web (aucun EventSource aujourd'hui) ; retirer test.fail dans e2e/04-multi-actor-claim-sse.spec.ts"
     priority: P0
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Révélé par TEST-04 (spec 04). Le claim exclusif fonctionne (200 puis 409 ERR_STEP_ALREADY_CLAIMED_BY_PEER) mais le verrou
-      visuel chez un pair en < 500 ms (FR-2) n'est pas réalisé : pas de push, et le service de notifications est en mémoire.
+      Révélé par TEST-04 (spec 04). Corrigé (2026-11-08, branche fix/p0-e2e-bugs) : SseBroadcastPort.subscribe() + file asyncio
+      temps réel sur GET /api/v1/events/stream (< 500 ms, AD-4), consommateur EventSource useWorkspaceEventsSse dans ShellContainer,
+      et retrait de test.fail dans e2e/04-multi-actor-claim-sse.spec.ts (2 passed).
   - id: BUG-E2E-04
     title: "Composition Root : identité par défaut `marc` (TEAM_LEAD) sans jeton et notifications d'amorce fictives en mémoire"
     action: "Exiger un Bearer en dehors du mode test, supprimer la persona de repli et les seed_default_notifications à identifiants fixes de initialize_app_services (zéro donnée fictive), persister les notifications en PostgreSQL"
     priority: P0
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Constaté pendant TEST-04 : resolve_user() retombe sur la persona `marc` quand aucun jeton n'est fourni (le web n'envoie pas
       de Bearer) ; initialize_app_services() sème 4 notifications fictives (ids 0195f000-…) en mémoire, contraire à la politique
       zéro donnée fictive et au garde-fou « jamais de singleton en mémoire en production ». Risque sécurité (usurpation) à qualifier.
+      Correctif borné livré (2026-11-08, branche fix/p0-e2e-bugs) : hors ORCIA_ENV local/test, Bearer obligatoire
+      (401 ERR_AUTH_REQUIRED) et persona_key refusé ; notifications d'amorce semées uniquement sur la pile E2E
+      (ORCIA_E2E_SEED_FIXTURES=1). Reste traité par AUTH-01 (authentification réelle de bout en bout).
   - id: BUG-E2E-05
     title: "CognitiveReviewBriefingGrid et ChunkValidationCard (Epic 4, FR-6/FR-19) non montés dans apps/web"
     action: "Câbler le briefing de revue 4 blocs et la validation par découpage dans le portail via @orcia/api-client puis activer le test.fixme de e2e/06-gates-review-and-anti-rubber-stamping.spec.ts"
@@ -928,3 +938,38 @@ action_items:
     description: >
       Révélé par TEST-06 (spec 10) : `GET/POST` de recherche fédérée → 422 au Jour 0 (workspace null). ShellContainer.runFederatedSpeed2Search
       retombe sur un « Passage pertinent » fabriqué côté client (donnée fictive + catch silencieux).
+  - id: AUTH-01
+    title: "Authentification réelle de bout en bout : comptes PostgreSQL (users) au lieu des personas en mémoire, jeton Bearer envoyé par apps/web"
+    action: "Brancher AuthAndOrganizationService sur la table users (1er admin Jour 0 compris), connexion /login qui stocke le jeton et l'envoie dans @orcia/api-client, suppression des personas hors tests, lecture d'ORCIA_ENV / ORCIA_BOOTSTRAP_TOKEN dans get_accostage_service (codés en dur à \"local\" aujourd'hui), persistance des notifications en PostgreSQL"
+    priority: P0
+    depends_on: [BUG-E2E-04]
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Suite de BUG-E2E-04. Constat : le 1er administrateur créé au Jour 0 n'est pas connu du service d'authentification
+      (utilisateurs en mémoire), apps/web n'envoie jamais de Bearer, et la vérification ORCIA_BOOTSTRAP_TOKEN est
+      neutralisée (orcia_env="local" codé en dur dans dependencies/portal_and_assistant.py). Impact GitNexus CRITICAL
+      (resolve_user : 90 appelants).
+  - id: TEST-HYG-01
+    title: "Deux tests d'architecture rouges sur main : vocabulaire SDLC et chaînes `simulated_*` dans orcia_core/orchestration"
+    action: "Purger le vocabulaire métier et les paramètres simulated_* de orchestration/remote_test_bench_and_mcp_exposure.py (et fichiers signalés) ou les déplacer vers le pack concerné ; remettre au vert test_ac_e2_* et test_ac_f2_*"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Constaté le 2026-11-08 lors de la non-régression de BUG-E2E-04 : échecs présents sur main indépendamment du correctif
+      (AD-20 règle 1 et clôture EC-1 de la Story 3.2f régressées par des évolutions ultérieures).
+  - id: BUG-E2E-01b
+    title: "Dossiers de Mon Assistant : adaptateur PostgreSQL (tables 0025 assistant_folders / threads / shares) au lieu du service en mémoire"
+    action: "Créer l'adaptateur SQL du domaine (garde-fou n°1), l'injecter via la Composition Root, test d'intégration HTTP -> SELECT PG18, activer le test.fixme « survit au redémarrage de l'API » de e2e/02"
+    priority: P0
+    depends_on: [AUTH-01]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      AssistantFoldersAndSharingService stocke les dossiers dans un dict en mémoire. Les tables existent (migration 0025) mais
+      owner_user_id référence users(id) : tant que l'identité API est une persona en mémoire (AUTH-01), l'insertion viole la clé étrangère.

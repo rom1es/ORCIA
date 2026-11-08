@@ -180,10 +180,19 @@ async def sign_human_anchor(
         instance=str(request.url.path),
     )
     step_exec = svc.engine.blackboard.get_step_execution(payload.run_id, payload.step_key)
+    run = svc.engine._get_run(payload.run_id, instance=str(request.url.path))
+    trace_id = _trace(request)
+    await sync_step_execution_and_snapshot_to_sql(
+        request,
+        run=run,
+        step_exec=step_exec,
+        snapshot=None,
+        trace_id=trace_id,
+    )
     return HumanAnchorSignResponse(
         signature=serialize_anchor(sig),
         step_execution=serialize_step_exec(step_exec),
-        trace_id=_trace(request),
+        trace_id=trace_id,
     )
 
 

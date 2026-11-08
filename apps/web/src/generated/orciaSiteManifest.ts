@@ -14,10 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 103,
+    "techLeadReportsCount": 104,
     "capabilitiesCount": 57,
     "liveCapabilitiesCount": 54,
-    "verifiedCapabilitiesCount": 3
+    "verifiedCapabilitiesCount": 5
   },
   "activeRoutes": [
     "/",
@@ -423,6 +423,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Sprint & Bugs P0 (BUG-E2E-01..04)",
+      "reportFile": "2026-11-08-coherence-sprint-status-et-bugs-p0-e2e-tech-lead-report.md",
+      "domain": "Cohérence de sprint-status.yaml et correction des 4 bugs P0 révélés par les E2E",
+      "summary": "Statuts CAP-ACT-5 / TEST-07 rectifiés, rattachements epic-13 ; correctifs P0 en cours."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Documentation Stratégie de Tests & Anti-Dette",

@@ -143,7 +143,7 @@ Pour **chaque User Story (`Story N.M`)** ET pour **chaque demande ad-hoc (évolu
    - `.venv/bin/pytest tests/security`
    - Vérifier systématiquement : garde-fou SSRF (`is_safe_llm_endpoint_url`), rejet `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` de `READ_ONLY_OBSERVER` sur toute nouvelle route de mutation, confinement RBAC/ABAC (`403 ERR_GRANT_ESCALATION_FORBIDDEN`), masquage `CONFIDENTIAL_RESTRICTED`, et absence de fuite de secret en clair (`DEC-SEC-01`).
 7. **Couche 5 — Tests End-to-End Navigateur Playwright Bi-Serveur (`apps/web/e2e/00..11-*.spec.ts`, Desktop `1440×900` + Mobile `390×844`)** :
-   - `pnpm e2e` (démarre automatiquement PostgreSQL 18 + Redis 7.4 éphémères, applique `09_reset_db_first_boot.py --apply`, lance FastAPI `:8000` avec `ORCIA_USE_CASSETTE_LLM=true` et Vite `:3100`).
+   - `pnpm e2e` (démarre automatiquement PostgreSQL 18 + Redis 7.4 éphémères, applique `09_reset_db_first_boot.py --apply`, lance FastAPI `:8100` avec `ORCIA_USE_CASSETTE_LLM=true` et Vite `:3101`, ports dédiés distincts du développement).
    - **Obligation d'alignement E2E** : toute modification d'écran, de sélecteur `data-testid`, de modale Jour 0, de route SPA ou de flux API DOIT vérifier et mettre à jour les specs Playwright impactées (`apps/web/e2e/*.spec.ts`) ainsi que la liste `tests:` de la capacité correspondante dans `docs/product/capabilities.yaml`.
 
 ---

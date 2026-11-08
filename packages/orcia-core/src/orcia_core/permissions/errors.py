@@ -38,6 +38,16 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "A valid TOTP multi-factor authentication code is required.",
         ),
     },
+    "ERR_AUTH_REQUIRED": {
+        "fr": LocalizedErrorCopy(
+            "Authentification requise",
+            "Connectez-vous pour accéder à cette ressource.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Authentication required",
+            "Sign in to access this resource.",
+        ),
+    },
     "ERR_AUTH_TOKEN_REVOKED": {
         "fr": LocalizedErrorCopy(
             "Session expirée ou révoquée",
@@ -154,6 +164,12 @@ class InvalidCredentialsError(OrciaDomainError):
 
 class InvalidMfaCodeError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_AUTH_MFA_INVALID", 401, "auth-mfa-invalid"
+
+
+class AuthenticationRequiredError(OrciaDomainError):
+    """Raised when no Bearer token is supplied outside `ORCIA_ENV` local / test (BUG-E2E-04)."""
+
+    error_code, http_status, type_slug = "ERR_AUTH_REQUIRED", 401, "auth-required"
 
 
 class RevokedTokenError(OrciaDomainError):
