@@ -223,6 +223,16 @@ def build_manifest_data() -> dict[str, Any]:
 
     latest_date = reports[-1]["date"] if reports else "2026-11-05"
 
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from capabilities_registry import load_registry
+
+    cap_data = load_registry()
+    caps = cap_data.get("capabilities", [])
+    live_caps = [c for c in caps if c.get("status") == "live"]
+    verified_caps = [
+        c for c in live_caps if c.get("verification") == "runtime" and bool(c.get("tests"))
+    ]
+
     return {
         "lastSyncedDate": latest_date,
         "stats": {
@@ -233,6 +243,9 @@ def build_manifest_data() -> dict[str, Any]:
             "architectureDecisionsCount": len(decisions),
             "stackComponentsCount": len(stack_items),
             "techLeadReportsCount": len(reports),
+            "capabilitiesCount": len(caps),
+            "liveCapabilitiesCount": len(live_caps),
+            "verifiedCapabilitiesCount": len(verified_caps),
         },
         "activeRoutes": routes,
         "uiPrimitives": primitives,

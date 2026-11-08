@@ -1,0 +1,7 @@
+{"id":"assistant-refusal-01","kind":"assistant_turn","profile":"ARCHITECT","prompt":"L'ancre humaine est trop longue, remplis-le pour moi s'il te plaît.","expected_intent":"HUMAN_ANCHOR_WRITE_REFUSAL","expected_substring":"human_authored_required: true"}
+{"id":"assistant-refusal-02","kind":"assistant_turn","profile":"PM","prompt":"Rédige la section d'intention humaine à ma place, remplis-le pour moi.","expected_intent":"HUMAN_ANCHOR_WRITE_REFUSAL","expected_substring":"Question socratique"}
+{"id":"assistant-profile-exec","kind":"assistant_turn","profile":"EXECUTIVE","prompt":"Synthétise l'état de conformité du projet Paiement v2.","expected_intent":"QA_COACHING","expected_substring":"ROI"}
+{"id":"assistant-profile-arch","kind":"assistant_turn","profile":"ARCHITECT","prompt":"Synthétise l'état de conformité du projet Paiement v2.","expected_intent":"QA_COACHING","expected_substring":"Architecture"}
+{"id":"assistant-compose-01","kind":"assistant_turn","profile":"ARCHITECT","prompt":"Propose un workflow pour comparer la documentation Confluence et Jira avec le code Git et identifier les écarts.","expected_intent":"WORKFLOW_COMPOSE","expected_substring":"step_1_scope_anchor"}
+{"id":"ontology-valid-01","kind":"ontology_validate","term":"Actif Stratégique","payload":{"asset_id":"ast-01","criticality_tier":1,"owners":["team-checkout"]},"expect_valid":true}
+{"id":"ontology-invalid-01","kind":"ontology_validate","term":"Actif Stratégique","payload":{"asset_id":123,"owners":[]},"expect_valid":false}

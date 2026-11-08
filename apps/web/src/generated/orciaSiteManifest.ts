@@ -14,7 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 102
+    "techLeadReportsCount": 103,
+    "capabilitiesCount": 57,
+    "liveCapabilitiesCount": 54,
+    "verifiedCapabilitiesCount": 3
   },
   "activeRoutes": [
     "/",
@@ -420,6 +423,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Documentation Stratégie de Tests & Anti-Dette",
+      "reportFile": "2026-11-08-documentation-strategie-tests-et-gouvernance-anti-dette-tech-lead-report.md",
+      "domain": "Documentation de référence de la stratégie de tests AD-17 (5 couches + Sécurité) et des 10 mécanismes automatisés anti-dette de tests",
+      "summary": "Création de docs/testing-strategy.md et mise à jour de README.md, architecture.md, AGENTS.md et CLAUDE.md."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Tests (TEST-03)",

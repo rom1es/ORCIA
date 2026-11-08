@@ -256,9 +256,9 @@ pnpm db:reset
 | Arrêter tous les services                                          | `./manage.sh stop all`                                        |
 | Réinitialiser la base de données à l'état du premier lancement     | `pnpm db:reset`                                               |
 
-### Qualité du code et exécution des tests
+### Qualité du code et exécution de la pyramide des tests
 
-Toutes les commandes Python s'exécutent via l'environnement virtuel `.venv/bin/` situé à la racine du projet :
+ORCIA applique une stratégie de vérification à **5 couches + Sécurité** (voir le guide détaillé [`docs/testing-strategy.md`](docs/testing-strategy.md)). Toutes les commandes Python s'exécutent via l'environnement virtuel `.venv/bin/` situé à la racine du projet :
 
 ```bash
 # Vérifier le style et le formatage du code Python (Ruff)
@@ -271,11 +271,23 @@ Toutes les commandes Python s'exécutent via l'environnement virtuel `.venv/bin/
 # Vérifier le respect de l'isolation entre les modules Python (import-linter)
 .venv/bin/lint-imports
 
-# Exécuter la suite de tests Python avec contrôle de la couverture de code (>= 90 %)
-.venv/bin/pytest --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90
+# Couche 1 — Tests unitaires Python et audits d'architecture avec contrôle de couverture (>= 90 %)
+.venv/bin/pytest tests/unit --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90
 
-# Exécuter le linter, la vérification de types et les tests Frontend / TypeScript
+# Couche 2 — Tests d'intégration verticale sur conteneurs réels (PostgreSQL 18 + pgvector, Redis 7.4, SeaweedFS S3)
+.venv/bin/pytest tests/integration -q
+
+# Couches 3, 4 & Sécurité — Contrats OpenAPI/RFC 9457, évaluations cognitives (0 $) et socle de sécurité API
+.venv/bin/pytest tests/contract tests/conformance tests/evals tests/security -q
+
+# Linter, vérification de types et tests unitaires Frontend / TypeScript (Vitest)
 pnpm turbo run lint typecheck test
+
+# Couche 5 — Tests End-to-End Playwright sur pile bi-serveur isolée (:55433 / :56380 / :18000 / :13100)
+pnpm test:e2e:up && pnpm test:e2e:reset && pnpm test:e2e
+
+# Vérifier la cohérence du registre des capacités (zéro route orpheline, zéro capacité live sans test)
+pnpm site:check
 ```
 
 ---
@@ -283,6 +295,8 @@ pnpm turbo run lint typecheck test
 ## 7. Documentation complémentaire
 
 Pour approfondir le fonctionnement de la plateforme ou contribuer au développement :
+- **Stratégie de tests & gouvernance anti-dette de tests** : [`docs/testing-strategy.md`](docs/testing-strategy.md)
+- **Registre des capacités fonctionnelles livrées** : [`docs/product/capabilities.yaml`](docs/product/capabilities.yaml)
 - **Guides d'aide intégrés (FR / EN)** : [`docs/help/`](docs/help/)
 - **Documentation d'architecture et de conception** : [`docs/planning-artifacts/`](docs/planning-artifacts/)
 - **Historique des rapports d'implémentation technique** : [`docs/implementation-artifacts/tech-lead-reports/`](docs/implementation-artifacts/tech-lead-reports/)

@@ -64,5 +64,14 @@ This project is indexed by GitNexus as **ORCIA** (541 symbols, 699 relationships
 
 <!-- gitnexus:end -->
 
-## Registre des capacités (obligatoire)
-Consulter puis mettre à jour `docs/product/capabilities.yaml` pour toute évolution (voir `AGENTS.md` §5) ; renseigner `Capacité(s)` dans le rapport Tech Lead ; `pnpm site:check` doit passer.
+## Registre des capacités & Revue de toute la pyramide des tests (obligatoire)
+- Référence complète de la stratégie de tests et des 10 mécanismes anti-dette de tests : [`docs/testing-strategy.md`](file:///home/romain/Documents/Projects/ORCIA/docs/testing-strategy.md).
+- Consulter puis mettre à jour `docs/product/capabilities.yaml` pour toute évolution (voir `AGENTS.md` §5) ; renseigner `Capacité(s)` et `tests:` dans le rapport Tech Lead et le registre ; `pnpm site:check` doit passer (aucune capacité `live` sans test référencé).
+- Pour chaque Story ou demande ad-hoc, vérifier systématiquement l'impact sur **toutes les couches de la pyramide des tests (`AD-17`) jusqu'aux tests End-to-End** (voir `AGENTS.md` §6) :
+  1. **Couche 1a — Unitaires Python** (`.venv/bin/pytest tests/unit --cov=packages/orcia-kernel --cov=packages/orcia-core --cov-fail-under=90`)
+  2. **Couche 1b — Unitaires & Composants TS/React sans court-circuit `isJsdom`** (`pnpm turbo run lint typecheck test`, transport HTTP/SSE simulé dans `vitest.setup.ts`)
+  3. **Couche 2 — Intégration Verticale `HTTP ➔ PostgreSQL 18`** (`.venv/bin/pytest tests/integration` avec `AsyncClient` + `SELECT` PG18)
+  4. **Couche 3 — Contrat OpenAPI 3.1 (`0-diff`) & Frontières Hexagonales** (`.venv/bin/pytest tests/contract tests/conformance` + `.venv/bin/lint-imports`)
+  5. **Couche 4 — Orchestration IA & Evals « Golden Dataset » à `0 $`** (`.venv/bin/pytest tests/evals`)
+  6. **Couche Sécurité / Red-Team** (`.venv/bin/pytest tests/security` : SSRF, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, masquage `CONFIDENTIAL_RESTRICTED`, zéro secret en clair)
+  7. **Couche 5 — E2E Navigateur Playwright Bi-Serveur** (`pnpm e2e` sur `apps/web/e2e/00..11-*.spec.ts` : mettre à jour toute spec E2E impactée par un changement de route, de `data-testid` ou de flux API).

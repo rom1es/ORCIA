@@ -42,6 +42,9 @@ export interface OrciaShowcaseManifestStats {
   readonly architectureDecisionsCount: number;
   readonly stackComponentsCount: number;
   readonly techLeadReportsCount: number;
+  readonly capabilitiesCount?: number;
+  readonly liveCapabilitiesCount?: number;
+  readonly verifiedCapabilitiesCount?: number;
 }
 
 export interface OrciaShowcaseManifestData {

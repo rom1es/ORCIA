@@ -432,7 +432,20 @@ Exigence de couverture minimale de **90 %** sur le code de la plateforme (`packa
 - En pré-release, `orcia-evals` évalue sur un *Golden Dataset* la qualité du workflow de l'Agent Assistant (`AD-15`) et des lentilles d'évaluation (`AD-10`).
 
 ### 7.5. Couche 5 — Tests End-to-End Multi-Utilisateurs & Multi-Device (`@playwright/test 1.64.1`)
-- Exécution de parcours complets ouvrant simultanément deux sessions navigateur (ex. Nadia en *Contributeur* et un coéquipier en *Observateur* dans `UJ-4`) pour valider la latence SSE `< 500ms` des verrous de présence, tant sur **Desktop (`1440x900`)** que sur **Mobile Companion (`390x844`)**.
+- Exécution de parcours complets sur une **pile bi-serveur E2E 100 % isolée** (`PostgreSQL 18 :55433` en `tmpfs`, `Redis 7.4 :56380`, `FastAPI :18000` en mode `DeterministicCassetteLLM`, `Vite :13100`, protégée par le garde-fou `refuse_if_not_e2e_target`) ouvrant simultanément deux sessions navigateur (ex. *Contributeur* et *Observateur*) pour valider la latence SSE `< 500ms` des verrous de présence, le vrai rechargement `F5` (`page.reload()`) en base de données et le rejet `403 ERR_OBSERVER_MODE_READ_ONLY`, tant sur **Desktop (`1440x900`)** que sur **Mobile Companion (`390x844`)**.
+
+### 7.6. Couche Transverse Sécurité & 10 Mécanismes Automatisés Anti-Dette de Tests
+Pour empêcher structurellement l'apparition de dette de tests au fil des Epics et des évolutions ad-hoc, la pyramide `AD-17` est complétée par la suite de sécurité [`tests/security/test_api_security_baseline.py`](file:///home/romain/Documents/Projects/ORCIA/tests/security/test_api_security_baseline.py) (Anti-SSRF `is_safe_llm_endpoint_url`, rejet `403 ERR_OBSERVER_MODE_READ_ONLY` sur mutations, anti-escalade RBAC `403 ERR_GRANT_ESCALATION_FORBIDDEN`, masquage `CONFIDENTIAL_RESTRICTED`, non-divulgation des secrets canaris `DEC-SEC-01`) et par **10 verrous automatisés bloquants** documentés en détail dans [**`docs/testing-strategy.md`**](file:///home/romain/Documents/Projects/ORCIA/docs/testing-strategy.md) :
+1. **Contrat Registre des Capacités $\leftrightarrow$ Routes $\leftrightarrow$ Tests (`capabilities.yaml` & `pnpm site:check`)** : aucune route FastAPI ou SPA sans capacité `CAP-xxx`, aucune capacité `live` sans fichier de test vérifié sur disque (`tests:` + `verification: runtime`).
+2. **Garde-Fou « Zéro Bouton Muet, Zéro Callback Oublié & Zéro `.catch(() => undefined)` »** (`zero-dead-buttons-and-silent-catches-audit.test.tsx`).
+3. **Garde Centralisée d'Environnement `isJsdomTestEnv()`** (`runtime-env-guard-audit.test.ts`).
+4. **Garde-Fou de Survie au `F5`** (`unmount()` $\rightarrow$ `render()` en Vitest + `page.reload()` en Playwright E2E sur PostgreSQL 18).
+5. **Audit AST Anti-Patterns Architecturaux & Asynchronisme (`TID251`)** (`test_codebase_architectural_anti_patterns_audit.py`).
+6. **Audit « Zero Mock & Zero Fictional Data » en Production** (`test_zero_fictional_data_and_mocks_in_prod.py`).
+7. **Contrats d'Isolation Hexagonale & Frontière Core / Pack (`lint-imports` `AD-19` & `AD-20`)**.
+8. **Garde-Fou GitNexus « Zéro Adaptateur SQL Orphelin » & Seuil de Couverture $\ge 90\%$**.
+9. **Audits UX/UI Automatisés** (isolation `@orcia/ui`, registre central d'icônes `ORCIA_ICONS`, zéro jargon interne).
+10. **Protocole Tech Lead & Overrides BMAD** (`AGENTS.md` §6, `CLAUDE.md`, `TECH-LEAD-REPORT-TEMPLATE.md` §2.5 & §3.3, `_bmad/custom/*.toml`) imposant la revue de toute la pyramide jusqu'au E2E à chaque changement.
 
 ---
 

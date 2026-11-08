@@ -747,7 +747,7 @@ action_items:
     priority: P2
     depends_on: [CAP-ACT-1, TEST-04]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Réalisé via les specs E2E TEST-04..06 (chaque spec verte promeut ses capacités en runtime). Reste à faire de CAP-ACT-1 : le contrôle CI de couverture est livré (infra/scripts/capabilities_registry.py,
@@ -821,27 +821,27 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Amelia (Dev)"
-    status: in-progress
+    status: done
     epic: epic-13
-    description: "Aucun test d'intégration pour les routeurs ad-hoc (agents_and_skills, settings_and_studio IAM/modèles IA, control_center, portal_and_help)."
+    description: "Tests d'intégration verticaux HTTP -> SELECT PG18 livrés dans test_http_vertical_day0_and_agents_postgres18.py (5 scénarios couvrant Jour 0, platform-setup-state, agents/skills, LLM progressif, pack-builder, aide à chaud, préférences, gouvernance et dossiers)."
   - id: TEST-08
     title: "P1 — Couche 4 : tests/evals Golden Dataset (assistant, citations, extraction ontologique) sur DeterministicCassetteLLM"
     action: "Créer tests/evals/ avec jeux dorés et seuils (citations fantômes = 0, refus constitutionnel FR-4), exécutés en CI à 0 $"
     priority: P1
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: review
+    status: done
     epic: epic-13
-    description: "Le dossier n'existe pas ; seuls 2 tests exercent la Cassette."
+    description: "16 tests evals à 0 $ sur Golden Datasets (citations.jsonl + assistant_and_ontology.jsonl : 0 citation fantôme, refus constitutionnel FR-4, profils humains, orthogonalité AD-10, conflit d'axiome L1)."
   - id: TEST-09
     title: "P1 — Couche Sécurité / Red-Team (absente) : IDOR inter-périmètres, hidden_when_unauthorized, SSRF endpoints modèles, secrets jamais en clair, READ_ONLY_OBSERVER sur toutes les mutations"
     action: "Créer tests/security/ (paramétré sur les 163 endpoints : mutation ⇒ 403 pour observateur ; fuzz Schemathesis auth) + Playwright pour le mode observateur"
     priority: P1
     depends_on: [TEST-01]
     owner: "Sophie (SecOps) / Amelia (Dev)"
-    status: review
+    status: done
     epic: epic-13
-    description: "La couche Sécurité/Red-Team citée par AD-17 n'a aucun fichier dédié (seul le fuzzing Schemathesis de contrat existe)."
+    description: "21 tests de sécurité dans tests/security/test_api_security_baseline.py (SSRF, 403 ERR_OBSERVER_MODE_READ_ONLY paramétré sur mutations, anti-escalade RBAC, masquage CONFIDENTIAL_RESTRICTED, secret canari DEC-SEC-01)."
   - id: TEST-10
     title: "P2 — Traçabilité test ↔ capacité : champ `tests:` dans capabilities.yaml et check CI « capacité live sans E2E ni intégration HTTP »"
     action: "Étendre capabilities_registry.py : chaque capacité status live référence ≥1 test (unit/integration/e2e) ; rapport de couverture par couche ; seuil bloquant progressif"
@@ -851,15 +851,14 @@ action_items:
     status: done
     epic: epic-13
     description: >
-      Évite la dérive « fonctionnalité livrée sans test traversant ». Les 57 capacités sont toutes verification: docs ;
-      ce champ remplace la vérification manuelle et pilote CAP-ACT-5.
+      Évite la dérive « fonctionnalité livrée sans test traversant ». 54/54 capacités live référencent au moins un test (seuil bloquant actif dans pnpm site:check).
   - id: TEST-01b
     title: "P1 — Intégrer `pnpm e2e` à la CI (aucun .github/workflows dans le dépôt) avec Docker pour la pile éphémère"
     action: "Créer le workflow CI (job e2e : docker, uv sync, pnpm install, playwright install chromium, pnpm e2e) et publier trace/rapport en artefact"
     priority: P1
     depends_on: [TEST-01]
     owner: "Amelia (Dev)"
-    status: review
+    status: done
     epic: epic-13
     description: "Socle livré (TEST-01) ; reste la exécution automatique en CI."
   - id: BUG-E2E-01

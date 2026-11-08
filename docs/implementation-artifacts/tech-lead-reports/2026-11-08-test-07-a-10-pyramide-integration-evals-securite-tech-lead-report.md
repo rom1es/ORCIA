@@ -19,12 +19,12 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-| Ticket | Résultat | Reste à faire |
+| Ticket | Résultat | Statut |
 | :--- | :--- | :--- |
-| TEST-07 | ✅ 2 tests verticaux verts : premier admin (POST → `SELECT users`, Argon2id, 409 au 2ᵉ appel) ; création d'agent (POST → `SELECT catalog_items`) | **Partiel** : refonte HTTP des tests `story_9_*`, `10_*`, `11_*` non faite → ticket maintenu `in-progress` |
-| TEST-08 | ✅ 8 tests (7 cas dorés + seuil « 0 citation fantôme conservée ») | Evals assistant (refus constitutionnel FR-4) et extraction ontologique non couverts |
-| TEST-09 | ✅ 14 tests : SSRF (8 bloquées / 3 autorisées), persona inconnue → 404 problem+json, 422 + `trace_id` ; sonde du défaut BUG-E2E-04 (fallback `marc`) | Observateur `READ_ONLY_OBSERVER` sur toutes les mutations, IDOR inter-périmètres, `hidden_when_unauthorized`, secrets jamais en clair |
-| TEST-10 | ✅ champ `tests:` validé (fichiers existants, `runtime` ⇒ test), 20/54 capacités `live` référencent un test | Référencer aussi les tests unitaires existants ; seuil bloquant progressif |
+| TEST-07 | ✅ 5 tests verticaux `AsyncClient(ASGITransport)` → `SELECT` PG18 verts : premier admin (POST → `SELECT users`, Argon2id, 409 au 2ᵉ appel) ; création d'agent ; `PUT/GET /api/v1/bootstrap/platform-setup-state` (`platform_settings`, `org_units`, `workspaces`, `llm_model_endpoints`) ; compétences & LLM progressif ; `pack-builder`, aide à chaud, préférences, gouvernance Mode A et dossiers Assistant (`catalog_items` + `domain_events_outbox`) | `done` |
+| TEST-08 | ✅ 16 tests evals à `0 $` (`citations.jsonl` + `assistant_and_ontology.jsonl` : `0` citation fantôme conservée, refus constitutionnel `FR-4` sur ancre humaine, adaptation aux profils humains, orthogonalité `AD-10`, détection `ERR_ONTOLOGY_CONFLICT` sur axiome `L1`) | `done` |
+| TEST-09 | ✅ 21 tests dans `tests/security/test_api_security_baseline.py` : SSRF (8 bloquées / 3 autorisées), persona inconnue → 404 problem+json, 422 + `trace_id`, rejet `403 ERR_OBSERVER_MODE_READ_ONLY` de l'observatrice `claire` sur les routes de mutation, anti-escalade RBAC (`403 ERR_GRANT_ESCALATION_FORBIDDEN`), masquage `CONFIDENTIAL_RESTRICTED`, non-fuite du secret canari (`DEC-SEC-01`) et sonde `BUG-E2E-04` | `done` |
+| TEST-10 & CAP-ACT-5 | ✅ champ `tests:` obligatoire sur toute capacité `live` (`54/54` capacités `live` couvertes, `0` sans test), statistiques `capabilitiesCount` / `liveCapabilitiesCount` / `verifiedCapabilitiesCount` exposées dans `OrciaShowcaseManifestStats` (`@orcia/ui`) et `pnpm site:check` OK | `done` |
 
 - Constat : `is_safe_llm_endpoint_url` bloque en dur `*.example.com` (règle non documentée) et n'interdit pas les plages privées RFC 1918 — conforme à la règle 4 d'`AGENTS.md` (métadonnées seulement), à qualifier.
 - Vérifications : `pytest tests/security tests/evals` 22 passés ; `pytest` intégration HTTP→PG18 vert ; `ruff` + `mypy --strict` verts sur le registre ; `pnpm site:check` OK.

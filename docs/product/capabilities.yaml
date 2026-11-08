@@ -38,6 +38,7 @@ capabilities:
     origin: epic
     origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi
     status: live
+    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py]
     surfaces: { route: /login, api: /api/v1/auth, ui: BiModeLoginView }
   - id: CAP-002
     title: Catalogue fédéré multi-sources (db/git/nexus/confluence/jira) et surcharges 4 niveaux
@@ -45,7 +46,7 @@ capabilities:
     origin: epic
     origin_ref: 1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db
     status: live
-    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
+    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, tests/unit/test_federated_catalog.py]
     surfaces: { route: /catalog, api: /api/v1 (catalog.py), ui: CatalogExplorerPanel }
   - id: CAP-003
     title: Exécution passthrough / service principal et Permission Broker (lien Jira pré-rempli)
@@ -53,6 +54,7 @@ capabilities:
     origin: epic
     origin_ref: 1-4-exécution-passthrough-service-principal-permission-broker-ia
     status: live
+    tests: [tests/unit/test_permission_broker.py]
     surfaces: { api: "/api/v1/permissions/broker (permission_broker.py)" }
   - id: CAP-004
     title: Workflows système d'amorçage Jour 0 et onboarding d'équipe
@@ -60,7 +62,7 @@ capabilities:
     origin: epic
     origin_ref: 1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto
     status: live
-    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts]
+    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, tests/unit/test_system_bootstrap.py]
     surfaces: { route: /bootstrap, api: /api/v1/bootstrap, ui: BootstrapOnboardingPanel }
   - id: CAP-005
     title: Persistance admin Jour 0 et réinitialisation BDD (pnpm db:reset)
@@ -77,6 +79,7 @@ capabilities:
     origin: epic
     origin_ref: 3-2a..3-2f
     status: live
+    tests: [tests/unit/test_story_3_2a_modular_monolith_kernel.py, tests/integration/test_story_3_2c_outbox_postgres18.py]
     surfaces: { migration: "0001+" }
 
   # ───────────── Ontologie & RAG (Epic 2) ─────────────
@@ -86,7 +89,7 @@ capabilities:
     origin: epic
     origin_ref: 2-1, 2-2
     status: live
-    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
+    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, tests/evals/test_assistant_and_ontology_evals.py]
     surfaces: { route: /ontology, api: "/api/v1/ontology-rag (ontology_and_rag.py)" }
   - id: CAP-011
     title: Indexation différenciée incrémentale et graphe tripartite Confluence↔Jira↔Git
@@ -94,6 +97,7 @@ capabilities:
     origin: epic
     origin_ref: 2-3, 2-4
     status: live
+    tests: [tests/unit/test_hybrid_rag_and_tripartite.py, tests/integration/test_epics_1_7_vertical_sql_wiring_postgres18.py]
     surfaces: { route: /ontology, api: /api/v1/ontology-rag }
 
   # ───────────── Orchestration, assistant DAG, human-led (Epic 3) ─────────────
@@ -103,12 +107,14 @@ capabilities:
     origin: epic
     origin_ref: 3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc
     status: live
+    tests: [tests/unit/test_workflow_as_code_and_run_lock.py]
   - id: CAP-021
     title: Moteur d'orchestration durable (DBOS), blackboard, checkpoints, version pinning, exécution réelle des étapes
     fr: [FR-14, FR-15]
     origin: epic
     origin_ref: 3-2, 3-2f
     status: live
+    tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py]
     surfaces: { api: "/api/v1/orchestration + blackboard_and_engine.py" }
   - id: CAP-022
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
@@ -116,6 +122,7 @@ capabilities:
     origin: epic
     origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc
     status: live
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/evals/test_assistant_and_ontology_evals.py]
     surfaces: { api: /api/v1/assistant }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
@@ -123,6 +130,7 @@ capabilities:
     origin: epic
     origin_ref: 3-4
     status: live
+    tests: [apps/web/e2e/03-human-led-anchor-and-arbitration.spec.ts, tests/unit/test_story_3_4_human_anchors_and_arbitration.py]
     surfaces: { ui: HumanLedAnchorCard + ArbitrationTieBreakCard, migration: "0015" }
   - id: CAP-024
     title: Challenge amont What-If et replay ciblé step N
@@ -130,6 +138,7 @@ capabilities:
     origin: epic
     origin_ref: 3-5
     status: live
+    tests: [tests/unit/test_story_3_5_challenge_and_replay.py]
     surfaces: { api: challenge_and_replay.py, ui: UpstreamChallengeRewindModal, migration: "0016" }
 
   # ───────────── Gates, sandbox, Jira (Epic 4) ─────────────
@@ -139,6 +148,7 @@ capabilities:
     origin: epic
     origin_ref: 4-1, 4-1a
     status: live
+    tests: [tests/unit/test_story_4_1_sandbox_tier1_and_pattern_drift.py, tests/unit/test_story_4_1a_bimodal_sandbox_and_roles.py]
     surfaces: { route: /gates, api: gates.py, migration: "0017" }
   - id: CAP-031
     title: Gates agentiques (orthogonalité des modèles, scrub PII, SecretRef DEK/KEK)
@@ -146,12 +156,14 @@ capabilities:
     origin: epic
     origin_ref: 4-2
     status: live
+    tests: [tests/unit/test_story_4_2_agentic_gates_and_secrets.py, tests/evals/test_assistant_and_ontology_evals.py]
   - id: CAP-032
     title: Gates humaines adaptatives, briefing 4 blocs, validation par découpage
     fr: [FR-6, FR-19]
     origin: epic
     origin_ref: 4-3
     status: live
+    tests: [tests/unit/test_story_4_3_adaptive_human_gates.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts]
     surfaces: { route: /gates, api: human_gates.py, ui: CognitiveReviewBriefingGrid, migration: "0018" }
   - id: CAP-033
     title: Actions et transitions Jira multi-projets (staged aux gates)
@@ -159,6 +171,7 @@ capabilities:
     origin: epic
     origin_ref: 4-4
     status: live
+    tests: [tests/unit/test_story_4_4_jira_staged_actions_and_mcp.py]
     surfaces: { api: jira_and_mcp.py }
 
   # ───────────── Supervision & expérience (Epic 5) ─────────────
@@ -168,7 +181,7 @@ capabilities:
     origin: epic
     origin_ref: 5-1
     status: live
-    tests: [apps/web/e2e/04-multi-actor-claim-sse.spec.ts]
+    tests: [apps/web/e2e/04-multi-actor-claim-sse.spec.ts, tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py]
     surfaces: { route: /inbox, api: inbox_and_leases.py }
   - id: CAP-041
     title: Supervision multi-runs et sélecteur de périmètre / centre de pilotage
@@ -176,6 +189,7 @@ capabilities:
     origin: epic
     origin_ref: 5-2
     status: live
+    tests: [tests/unit/test_story_5_2_control_center_and_run_access_guard.py, tests/security/test_api_security_baseline.py]
     surfaces: { route: "/cockpit, /workspaces", api: "/api/v1/control-center (control_center.py)" }
   - id: CAP-042
     title: Responsive 3 breakpoints et compagnon mobile
@@ -200,6 +214,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-05-dialogue-sally-winston-correction-ecran-habilitations-iam
     status: live
+    tests: [packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     surfaces: { route: /settings, ui: SettingsIamOrganizationSection }
   - id: CAP-052
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
@@ -207,7 +222,7 @@ capabilities:
     origin: epic
     origin_ref: 8-2
     status: live
-    tests: [tests/security/test_api_security_baseline.py]
+    tests: [tests/security/test_api_security_baseline.py, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]
@@ -222,6 +237,7 @@ capabilities:
     origin: epic
     origin_ref: 8-4
     status: live
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/security/test_api_security_baseline.py]
     surfaces: { route: /settings }
   - id: CAP-055
     title: Studio workflows et registre des packs
@@ -229,6 +245,7 @@ capabilities:
     origin: epic
     origin_ref: 8-5
     status: live
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx]
     surfaces: { route: /settings, ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
@@ -236,6 +253,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston
     status: live
+    tests: [packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     surfaces: { route: /settings }
   - id: CAP-057
     title: Wizards d'initialisation durables
@@ -243,6 +261,7 @@ capabilities:
     origin: epic
     origin_ref: 8-6
     status: live
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     surfaces: { route: /wizards }
   - id: CAP-058
     title: Coquille Settings avec permission guards
@@ -250,6 +269,7 @@ capabilities:
     origin: epic
     origin_ref: 8-3
     status: live
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     surfaces: { route: "/settings, /configuration", api: settings_and_studio.py }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12 + ad-hoc) ─────────────
@@ -284,6 +304,7 @@ capabilities:
     origin: epic
     origin_ref: 9-4
     status: live
+    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
   - id: CAP-064
     title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide)
     fr: [FR-32]
@@ -307,6 +328,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-05-site-presentation-orcia-3-piliers-human-led-anti-hallucination-et-sync-auto
     status: live
+    tests: [apps/web/src/__tests__/orcia-showcase-site.test.tsx]
     surfaces: { route: /showcase }
 
   # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
@@ -366,6 +388,7 @@ capabilities:
     origin: epic
     origin_ref: 11-2
     status: live
+    tests: [tests/unit/test_epic_11_story_11_2_dna_starlark_and_glossary.py, tests/integration/test_story_11_2_dna_and_glossary_postgres18_redis.py]
     surfaces: { api: dna_and_glossary.py, migration: "0027" }
   - id: CAP-082
     title: Services MCP, agents distants A2A et banc de test
@@ -373,6 +396,7 @@ capabilities:
     origin: epic
     origin_ref: 11-3
     status: live
+    tests: [tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py]
     surfaces: { api: mcp_and_test_bench.py }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
@@ -380,6 +404,7 @@ capabilities:
     origin: epic
     origin_ref: 11-4, 11-5 + 2026-11-05-refonte-atelier-processus-clair-aide-contextuelle-et-menu-processus
     status: live
+    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     surfaces: { route: /processes, api: pack_builder.py }
 
   # ───────────── Agents, skills, MCP (ad-hoc) ─────────────
@@ -398,6 +423,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp
     status: live
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py]
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + WorkspaceAssistantPinnedCard + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
@@ -407,6 +433,7 @@ capabilities:
     origin: adhoc
     origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html"
     status: live
+    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx]
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────
   - id: CAP-043
@@ -415,6 +442,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-06-centre-notifications-equipes-org-et-boutons-grises
     status: live
+    tests: [packages/ui/src/__tests__/inbox-and-cockpit-primitives.test.tsx]
     surfaces: { route: /inbox }
   - id: CAP-067
     title: Rattachement d'équipe, facturation, espaces privés et sélecteur de contexte
@@ -422,6 +450,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte
     status: live
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     surfaces: { route: /spaces, api: org_and_workspaces.py }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
@@ -429,6 +458,7 @@ capabilities:
     origin: adhoc
     origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant"
     status: live
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, packages/ui/src/__tests__/assistant-workspace.test.tsx]
     surfaces: { route: /assistant, api: assistant_background_turns.py }
   - id: CAP-076
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
@@ -436,6 +466,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant
     status: live
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-argon-settings-and-assistant.test.tsx]
     surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
@@ -443,6 +474,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-07-refonte-mes-espaces-et-integration-glossaire-ontologie-option-a + 2026-11-07-processus-generation-documentation-orcia-pack-builder
     status: live
+    tests: [packages/ui/src/__tests__/workspace-governance-and-packs.test.tsx, tests/unit/test_epic_11_story_11_4_pack_builder_processes.py]
     surfaces: { route: /spaces, api: pack_builder.py }
   - id: CAP-092
     title: Menu « Mes agents » — visibilité des packs et pont vers l'assistant
@@ -450,6 +482,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-07-refonte-menu-mes-agents-visibilite-packs-et-pont-assistant
     status: live
+    tests: [packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py]
     surfaces: { route: /agents }
   - id: CAP-068
     title: Documentation / FAQ — lien workspace ↔ org unit
@@ -457,6 +490,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-06-documentation-faq-lien-workspace-org-unit
     status: live
+    tests: [tests/unit/test_epic_9_story_9_5_contextual_help.py]
     surfaces: { route: /help }
 
   # ───────────── Planifié (non livré) ─────────────

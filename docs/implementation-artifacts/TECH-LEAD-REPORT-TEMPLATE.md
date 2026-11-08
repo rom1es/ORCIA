@@ -59,7 +59,15 @@
 ### 2.4 Interface Utilisateur & Expérience (`apps/web/`)
 - Routes TanStack Router (`apps/web/src/...`) et composants React 19 / `@orcia/ui` créés ou modifiés.
 - Respect des Design Tokens Direction C (`DESIGN.md` — zéro hexadécimal en dur hors `tokens.css`, exclusivité du violet `#6D28D9` pour `human-led-anchor-card`) et des 11 règles fondamentales UX/UI.
-- Câblage vertical complet via `@orcia/api-client` (zéro store métier `useState` purement éphémère) et survie au rechargement de l'URL (`F5`).
+- Câblage vertical complet via `@orcia/api-client` (zéro store métier `useState` purement éphémère, zéro court-circuit `isJsdom`) et survie au rechargement de l'URL (`F5`).
+
+### 2.5 Analyse d'Impact sur la Pyramide des Tests (`AD-17` — Couches 1 à 5 + Sécurité, Obligatoire)
+- **Couche 1a (Unitaires Python `tests/unit/`) & Couche 1b (Unitaires/Composants TS `Vitest` sans `isJsdom`)** : [Fichiers de tests unitaires créés ou mis à jour]
+- **Couche 2 (Intégration Verticale `HTTP FastAPI ➔ PostgreSQL 18` `tests/integration/`)** : [Routes HTTP testées contre PostgreSQL 18 + vérification `SELECT`]
+- **Couche 3 (Contrats OpenAPI 3.1 `0-diff`, Schemathesis & `lint-imports`)** : [Impacts éventuels sur les schémas HTTP / SDK `@orcia/api-client`]
+- **Couche 4 (Evals IA « Golden Dataset » `0 $` `tests/evals/`)** : [Jeux dorés `tests/evals/golden/*.jsonl` impactés ou ajoutés]
+- **Couche Sécurité / Red-Team (`tests/security/`)** : [Vérification SSRF, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, masquage `CONFIDENTIAL_RESTRICTED`, zéro secret en clair]
+- **Couche 5 (E2E Navigateur Playwright Bi-Serveur `apps/web/e2e/00..11-*.spec.ts`)** : [Specs Playwright et sélecteurs `data-testid` impactés, mise à jour de `tests:` dans `docs/product/capabilities.yaml`]
 
 ---
 
@@ -83,9 +91,10 @@
   - `lint_spine.py` : `ok: true, 0 findings`
   - `gitnexus_detect_changes()` : [Périmètre vérifié et conforme]
 
-### 3.3 Validation & Procédure de Test (5 Couches `AD-17` + 4 Garde-Fous de Câblage Vertical)
-- **Couche 1 — Tests Unitaires & Propriétés (`pytest` + `hypothesis`, `Vitest`)** : [Détail des invariants testés]
-- **Couche 2 — Tests d'Intégration Verticale `HTTP ➔ PostgreSQL 18` (`testcontainers-python` : PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS)** : [Appel de la route FastAPI + vérification `SELECT` en base, zéro adaptateur SQL orphelin]
-- **Couche 3 — Tests de Contrat API (`openapi-typescript` 0-diff + `Schemathesis`)** : [Validation des schémas et codes RFC 9457]
-- **Couche 4 — Tests d'Orchestration IA (`DeterministicCassetteLLM`)** : [Validation déterministe des flux d'agents et Gates]
-- **Couche 5 — Tests E2E, Survie au `F5` (`unmount()` + `render()`) & Vérité Terrain Jour 0 (`pnpm db:reset`)** : [Scénarios utilisateurs, persistance après rechargement de la page et cas limites validés]
+### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
+- **Couche 1a — Tests Unitaires Python (`pytest` + `hypothesis`, $\ge 90\%$) & Couche 1b — Frontend TS (`Vitest` sans court-circuit `isJsdom`)** : [Détail des invariants testés]
+- **Couche 2 — Tests d'Intégration Verticale `HTTP ➔ PostgreSQL 18` (`testcontainers-python` : PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS)** : [Appel de la route FastAPI (`AsyncClient`) + vérification `SELECT` en base, zéro adaptateur SQL orphelin]
+- **Couche 3 — Tests de Contrat API (`openapi-typescript` `0-diff`, `Schemathesis`, `lint-imports`, `lint_spine.py`)** : [Validation des schémas et codes RFC 9457]
+- **Couche 4 — Tests d'Orchestration IA & Evals Golden Dataset (`DeterministicCassetteLLM`, `tests/evals/`)** : [Validation déterministe à `0 $` des flux d'agents, citations et Gates]
+- **Couche Sécurité / Red-Team (`tests/security/`)** : [Validation SSRF, rejet `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, masquage `CONFIDENTIAL_RESTRICTED`, non-fuite de secrets]
+- **Couche 5 — Tests E2E Navigateur Playwright Bi-Serveur (`pnpm e2e`, `apps/web/e2e/00..11-*.spec.ts`), Survie au `F5` (`unmount()` + `render()`) & Vérité Terrain Jour 0 (`pnpm db:reset`)** : [Scénarios E2E Desktop/Mobile vérifiés, persistance après rechargement de la page et mise à jour du champ `tests:` / `verification: runtime` dans `docs/product/capabilities.yaml`]

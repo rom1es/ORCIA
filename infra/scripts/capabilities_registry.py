@@ -128,4 +128,9 @@ def run_registry_check() -> list[str]:
     data = load_registry()
     errors = validate_registry(data)
     errors += check_coverage(data, discover_routes(), discover_routers())
+    stats = capability_test_stats(data)
+    if stats["without_tests"]:
+        errors.append(
+            f"Capacités `live` sans test référencé (`tests:`): {', '.join(stats['without_tests'])}"
+        )
     return errors
