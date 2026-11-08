@@ -1,0 +1,149 @@
+id: wf-06-decoupe-us
+slug: wf-06-decoupe-us
+title: Découpage en Epic & User Stories INVEST (5 sous-étapes)
+version: 1.0.0
+status: published
+pack_id: orcia-pack-sdlc
+linked_vsm_step_nums:
+- '06'
+execution_mode: native_orcia
+model_override: claude-sonnet-4-6
+effort: medium
+global_system_prompt_or_ref: pack://sdlc/agents/agent-us.md
+guardrails:
+- Chaque User Story doit respecter la Definition of Ready (DoR) et le format Gherkin.
+- Prévisualisation obligatoire avant création par lot dans Jira.
+knowledge_feedback_target_agent: pack://sdlc/agents/crl-socle-generateur.md
+contract:
+  parameters:
+  - name: feature_key
+    label: Clé de la Feature validée (PRD + DA)
+    scalar_type: catalog_ref
+    catalog_entity_uri_pattern: catalog://issue_tracker/work_item/{key}
+    required: true
+  required_markdown_sections:
+  - '# Découpage en User Stories'
+  - '## Epic'
+  - '## User Stories'
+  - '## Critères d''acceptation'
+sub_steps:
+- id: analyse
+  name: Analyse
+  short_label: Analyse
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Dès qu’on lui donne la clé d’une Feature, ou pour reprendre
+    l’analyse après des retours
+  role_description: Lit la Feature, le PRD et l’étude d’architecture, en fait la synthèse
+    et relève les zones d’ombre et les questions (R, C, Q).
+  instruction_prompt_or_ref: pack://sdlc/agents/agentUS#analyse
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: La synthèse et les questions
+  requires_human_checkpoint: true
+  checkpoint_label: le PO répond aux questions
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: epic
+  name: Créateur d’Epic
+  short_label: Epic
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Une fois l’analyse validée et les réponses obtenues
+  role_description: Cherche si un Epic existe déjà pour la Feature. Sinon, prépare
+    sa création, sans parent, et le lie à la Feature.
+  instruction_prompt_or_ref: pack://sdlc/agents/agentUS#epic
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: L’Epic prêt, lié à la Feature
+  requires_human_checkpoint: true
+  checkpoint_label: le PO confirme (« fait », « ok »)
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: decoupe
+  name: Découpe US
+  short_label: Découpe
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Dès que l’Epic est prêt, ou pour réviser le plan ou les
+    US
+  role_description: Propose d’abord un plan de découpage, la liste des US. Après accord
+    sur le plan, rédige chaque US selon le gabarit DoR / INVEST.
+  instruction_prompt_or_ref: pack://sdlc/agents/agentUS#decoupe
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Les US détaillées
+  requires_human_checkpoint: true
+  checkpoint_label: automatiquement, sans attendre
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: controle
+  name: Contrôle
+  short_label: Contrôle
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Automatiquement après la rédaction des US, ou sur demande
+  role_description: 'Évalue la qualité des US : INVEST, DoR, couverture du PRD. Rend
+    un verdict OK ou KO, avec un tableau d’écarts si des corrections sont nécessaires.'
+  instruction_prompt_or_ref: pack://sdlc/agents/agentUS#controle
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Le verdict et le tableau d’écarts
+  requires_human_checkpoint: true
+  checkpoint_label: validation explicite du PO
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: creation
+  name: Création
+  short_label: Création
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Uniquement après validation explicite, suite à un contrôle
+    OK
+  role_description: Crée les Stories dans Jira avec l’Epic pour parent, puis lie les
+    dépendances entre elles.
+  instruction_prompt_or_ref: pack://sdlc/agents/agentUS#creation
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-jira
+    scope: write_preview
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Les Stories créées sous l’Epic, avec leurs dépendances
+  requires_human_checkpoint: true
+  checkpoint_label: Le PO confirme la création (« fait », « ok »)
+  approver_rbac_role: sdlc:po
+  write_preview_required: true
+controls:
+  strategy: fail_fast
+  sandbox_dry_run: true
+  deterministic: []
+  non_deterministic:
+  - id: ndet-06-1
+    name: Sous-agent Contrôle
+    short_label: Sous-agent Contrôle
+    status: place
+    evaluator_type: adversarial_agent
+    agent_ref: pack://sdlc/gates/hunter-archi-contradicteur
+    risk_threshold: 0.7
+    verifies_description: 'Évalue les US : INVEST, DoR, couverture du PRD. Rend un
+      verdict OK ou KO, avec un tableau d’écarts.'
+    hypothesis_note: null
+    on_ko_behavior: Le tableau d’écarts sert à réviser les US avec la Découpe US ;
+      rien n’est créé sans contrôle OK et validation du PO.

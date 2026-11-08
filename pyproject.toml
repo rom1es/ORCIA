@@ -43,36 +43,31 @@ dev = [
 
 [tool.uv.workspace]
 members = [
-    "packages/orcia-kernel",
     "packages/orcia-core",
-    "packages/orcia-pack-sdlc",
-    "packages/orcia-pack-builder",
+    "packages/orcia-connectors",
     "apps/api",
     "apps/worker",
 ]
 
 [tool.uv.sources]
-orcia-kernel = { workspace = true }
 orcia-core = { workspace = true }
-orcia-pack-sdlc = { workspace = true }
-orcia-pack-builder = { workspace = true }
+orcia-connectors = { workspace = true }
 orcia-api = { workspace = true }
 orcia-worker = { workspace = true }
 
 [tool.setuptools.package-dir]
-orcia_kernel = "packages/orcia-kernel/src/orcia_kernel"
+orcia_kernel = "packages/orcia-core/src/orcia_kernel"
 orcia_core = "packages/orcia-core/src/orcia_core"
-orcia_pack_sdlc = "packages/orcia-pack-sdlc/src/orcia_pack_sdlc"
-orcia_pack_builder = "packages/orcia-pack-builder/src/orcia_pack_builder"
+orcia_connectors = "packages/orcia-connectors/src/orcia_connectors"
+orcia_pack_sdlc = "packages/orcia-connectors/src/orcia_pack_sdlc"
+orcia_pack_builder = "packages/orcia-connectors/src/orcia_pack_builder"
 orcia_api = "apps/api/src/orcia_api"
 orcia_worker = "apps/worker/src/orcia_worker"
 
 [tool.setuptools.packages.find]
 where = [
-    "packages/orcia-kernel/src",
     "packages/orcia-core/src",
-    "packages/orcia-pack-sdlc/src",
-    "packages/orcia-pack-builder/src",
+    "packages/orcia-connectors/src",
     "apps/api/src",
     "apps/worker/src",
 ]
@@ -102,23 +97,20 @@ tripartite_graph = "orcia_pack_sdlc.formats_and_indexers:get_tripartite_graph_in
 
 [tool.importlinter]
 root_packages = [
-    "orcia_kernel",
     "orcia_core",
-    "orcia_pack_sdlc",
-    "orcia_pack_builder",
+    "orcia_connectors",
     "orcia_api",
     "orcia_worker",
 ]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "AD-19 Contract 1: Unidirectional Package Layers (api/worker -> pack_sdlc -> core -> kernel)"
+name = "AD-19 Contract 1: Unidirectional Package Layers (api/worker -> connectors -> core)"
 type = "layers"
 layers = [
     "orcia_api | orcia_worker",
-    "orcia_pack_sdlc | orcia_pack_builder",
+    "orcia_connectors",
     "orcia_core",
-    "orcia_kernel",
 ]
 
 [[tool.importlinter.contracts]]
@@ -126,18 +118,19 @@ name = "AD-19 Contract 2: Acyclic Domain Hierarchy in orcia_core (zero circular 
 type = "layers"
 containers = ["orcia_core"]
 layers = [
-    "bootstrap | orchestration",
-    "blackboard | ontology | rag | gates | audit_finops",
+    "bootstrap | orchestration | packs",
+    "blackboard | ontology | rag | gates | audit_finops | workflows",
     "catalog",
     "permissions",
-    "domain | ports | config | observability",
+    "domain | ports | config | observability | storage",
+    "kernel",
 ]
 
 [[tool.importlinter.contracts]]
 name = "AD-19 Contract 3: Pure Hexagonal Kernel & Core Domain/Ports (zero framework/SDK imports)"
 type = "forbidden"
 source_modules = [
-    "orcia_kernel",
+    "orcia_core.kernel",
     "orcia_core.domain",
     "orcia_core.ports",
 ]
@@ -152,20 +145,17 @@ forbidden_modules = [
     "wasmtime",
     "orcia_api",
     "orcia_worker",
-    "orcia_pack_sdlc",
-    "orcia_pack_builder",
+    "orcia_connectors",
 ]
 
 [[tool.importlinter.contracts]]
-name = "AD-20 Contract 4: orcia_kernel and orcia_core never import orcia_pack_sdlc"
+name = "AD-20 Contract 4: orcia_core never imports orcia_connectors"
 type = "forbidden"
 source_modules = [
-    "orcia_kernel",
     "orcia_core",
 ]
 forbidden_modules = [
-    "orcia_pack_sdlc",
-    "orcia_pack_builder",
+    "orcia_connectors",
 ]
 
 [[tool.importlinter.contracts]]
@@ -186,10 +176,8 @@ forbidden_modules = [
 target-version = "py312"
 line-length = 100
 src = [
-    "packages/orcia-kernel/src",
     "packages/orcia-core/src",
-    "packages/orcia-pack-sdlc/src",
-    "packages/orcia-pack-builder/src",
+    "packages/orcia-connectors/src",
     "apps/api/src",
     "apps/worker/src",
     "tests",
@@ -216,10 +204,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
 python_version = "3.12"
 strict = true
 mypy_path = [
-    "packages/orcia-kernel/src",
     "packages/orcia-core/src",
-    "packages/orcia-pack-sdlc/src",
-    "packages/orcia-pack-builder/src",
+    "packages/orcia-connectors/src",
     "apps/api/src",
     "apps/worker/src",
 ]
@@ -240,10 +226,8 @@ ignore_missing_imports = true
 minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = [
-    "packages/orcia-kernel/src",
     "packages/orcia-core/src",
-    "packages/orcia-pack-sdlc/src",
-    "packages/orcia-pack-builder/src",
+    "packages/orcia-connectors/src",
     "apps/api/src",
     "apps/worker/src",
     ".",

@@ -1,0 +1,20 @@
+domain: sdlc
+terms:
+- key: PRD
+  label: Product Requirements Document
+  definition: Expression structurée du besoin produit (contexte, KPI, WSJF, critères
+    d'acceptation).
+- key: WSJF
+  label: Weighted Shortest Job First
+  definition: Indice de priorisation économique SAFe rapportant le coût du délai à
+    la taille du job.
+- key: DE
+  label: Dossier d'Étude Architecture
+  definition: Livrable de cadrage d'architecture en 14 points (scénarios, ADR, sécurité,
+    résilience).
+- key: INVEST
+  label: Independent, Negotiable, Valuable, Estimable, Small, Testable
+  definition: Critères de qualité d'une User Story prête pour le sprint (DoR).
+- key: PIP
+  label: PI Planning
+  definition: Cérémonie de planification trimestrielle du train agile (2 jours).

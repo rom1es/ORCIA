@@ -1,0 +1,117 @@
+id: wf-01-qualification-prd
+slug: wf-01-qualification-prd
+title: Qualification de demande, Rédaction PRD & Création Feature Jira
+version: 1.0.0
+status: published
+pack_id: orcia-pack-sdlc
+linked_vsm_step_nums:
+- '01'
+- '02'
+execution_mode: native_orcia
+model_override: claude-sonnet-4-6
+effort: default
+global_system_prompt_or_ref: pack://sdlc/agents/orchestrateur-produit.md
+guardrails:
+- Ne jamais sauter une sous-étape sans validation humaine du bloc STATUT.
+- Toujours exiger une prévisualisation avant création du ticket Feature dans Jira.
+knowledge_feedback_target_agent: pack://sdlc/agents/crl-socle-generateur.md
+contract:
+  parameters:
+  - name: demande_source
+    label: Expression initiale du besoin ou ticket d'entrée
+    scalar_type: catalog_ref
+    catalog_entity_uri_pattern: catalog://issue_tracker/work_item/{key}
+    required: true
+  required_markdown_sections:
+  - '# PRD'
+  - '## Contexte'
+  - '## Objectifs & KPI'
+  - '## Critères d''acceptation'
+  - '## WSJF'
+sub_steps:
+- id: qualification
+  name: Qualification du besoin
+  short_label: Qualification
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Départ systématique
+  role_description: Définit le qui, le quoi, le pourquoi et le périmètre.
+  instruction_prompt_or_ref: pack://sdlc/agents/orchestrateurProduit#qualification
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Le besoin qualifié
+  requires_human_checkpoint: true
+  checkpoint_label: validé par le PO / PM
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: prd
+  name: Rédaction PRD
+  short_label: PRD
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: 'Après validation du bloc STATUT : QUALIFIÉ'
+  role_description: 'Rédige le PRD Light : KPI, critères d’acceptation, WSJF, effort.'
+  instruction_prompt_or_ref: pack://sdlc/agents/orchestrateurProduit#prd
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Le contenu du PRD, validé par le PO / PM
+  requires_human_checkpoint: true
+  checkpoint_label: validé par le PO / PM
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: jira
+  name: Création Jira
+  short_label: Jira
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: 'Après validation du bloc STATUT : PRD VALIDÉ'
+  role_description: Recherche les doublons et crée la Feature dans le projet MCIA.
+  instruction_prompt_or_ref: pack://sdlc/agents/orchestrateurProduit#jira
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-jira
+    scope: write_preview
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Le ticket Feature, qui est le PRD, créé dans le projet MCIA
+  requires_human_checkpoint: true
+  checkpoint_label: Prévisualisation validée, puis création du ticket
+  approver_rbac_role: sdlc:po
+  write_preview_required: true
+controls:
+  strategy: fail_fast
+  sandbox_dry_run: true
+  deterministic:
+  - id: det-02-1
+    name: Script de contrôle des champs
+    short_label: 'Script : caractères par champ'
+    status: hypothese
+    runner_plugin_id: markdown_contract_runner
+    verifies_description: Contrôle le nombre de caractères de chaque champ du ticket
+      Feature.
+    on_ko_behavior: À préciser.
+    max_self_heal_retries: 3
+    config:
+      required_headings:
+      - '# '
+      min_chars_per_section: 20
+  non_deterministic:
+  - id: ndet-02-1
+    name: Agent challenger du PRD
+    short_label: Agent challenger du PRD
+    status: hypothese
+    evaluator_type: adversarial_agent
+    agent_ref: pack://sdlc/gates/hunter-archi-contradicteur
+    risk_threshold: 0.7
+    verifies_description: Vient challenger le PRD sur le fond.
+    hypothesis_note: 'Hypothèse à confirmer : s’appuyer sur les questions métier que
+      pose l’agent d’étude d’architecture pour améliorer le besoin.'
+    on_ko_behavior: À préciser.

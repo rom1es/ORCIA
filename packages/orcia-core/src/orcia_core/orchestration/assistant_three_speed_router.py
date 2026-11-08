@@ -11,7 +11,7 @@ Implements:
     `< 80 ms` (`0` intermediate LLM calls), and Node 5 executes `1` single SSE streaming LLM call
     with `TTFT < 1.2 s` (`< 1200 ms`).
   - `SPEED_2_AGENT_TOOLS` (`@Agent` / `/Skill`): triggered by `@Agent` or `/Skill` mentions;
-    streams real-time interrogation steps (`🔍 Interrogation de Jira...`) and invokes governed
+    streams real-time interrogation steps (`🔍 Interrogation de <Source>...`) and invokes governed
     connectors (`ConnectorInvoker`) with `TTFT < 2.5 s` (`< 2500 ms`).
   - `SPEED_3_DEEP_AUDIT` (`🧠 Approfondi`): triggered by the `🧠 Approfondi` pill; enables
     intermediate LLM planning, multi-lens verification (`AD-10`), and step-by-step progress.
@@ -382,7 +382,9 @@ class AssistantThreeSpeedRouterService:
             )
 
         if speed_mode == "SPEED_2_AGENT_TOOLS":
-            effective_targets = targets or ("@jira-triage",)
+            effective_targets = targets or ("@tracker-triage",)
+            first_token = effective_targets[0].lstrip("@/").split("-", maxsplit=1)[0]
+            target_source = first_token.capitalize() if first_token else "Connecteur"
             llm_ms = (
                 round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 410.0
             )
@@ -395,7 +397,7 @@ class AssistantThreeSpeedRouterService:
                 ),
                 ThreeSpeedStepProgressItem(
                     step_code="CONNECTOR_INTERROGATION",
-                    label="🔍 Interrogation de Jira...",
+                    label=f"🔍 Interrogation de {target_source}...",
                     duration_ms=520.0,
                     connector_or_lens=", ".join(effective_targets),
                     intermediate_output=(

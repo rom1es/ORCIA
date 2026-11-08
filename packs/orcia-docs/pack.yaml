@@ -1,0 +1,18 @@
+id: orcia-pack-docs
+slug: orcia-docs
+name: Pack Documentation & Aide Contextuelle ORCIA
+version: 2.0.0
+description: Pack déclaratif de génération, validation bilingue FR/EN et rattachement
+  à chaud des articles d'aide contextuelle et guides d'administration ORCIA.
+rbac_namespace: docs
+required_connectors:
+- connector_type: mcp:atlassian-confluence
+  required_scopes:
+  - read
+  - write_preview
+  used_for: Publication gouvernée des guides documentaires validés
+quick_actions:
+- id: qa-gen-help
+  label: Générer & rattacher un article d'aide contextuelle
+  target_workflow_slug: wf-generate-orcia-documentation
+  icon: book-open

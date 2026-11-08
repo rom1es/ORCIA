@@ -258,7 +258,7 @@ class AdaptiveHumanGateService:
                 "amber_border_token": "--color-arbitration-amber",
                 "hypotheses": artifact_payload.get(
                     "hypotheses",
-                    ["Les contraintes amont du PRD et de l'Ontologie sont respectées."],
+                    ["Les contraintes amont du Cadrage et de l'Ontologie sont respectées."],
                 ),
             },
         }

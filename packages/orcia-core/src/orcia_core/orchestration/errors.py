@@ -172,13 +172,13 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
     "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE": {
         "fr": LocalizedErrorCopy(
             "Écriture directe dans le SI interdite depuis Mon Assistant (Verrou V5 AD-15)",
-            "Toute publication vers une source externe (git://, confluence://, jira://) ou "
+            "Toute publication vers une source externe du SI (mcp://, db://, catalog://) ou "
             "officialisation @v1 dans le Coffre requiert obligatoirement le passage par la Gate "
             "de Validation & Publication d'un Processus.",
         ),
         "en": LocalizedErrorCopy(
             "Direct enterprise SI write forbidden from My Assistant (Lock V5 AD-15)",
-            "Any publication to an external source (git://, confluence://, jira://) or @v1 "
+            "Any publication to an external SI source (mcp://, db://, catalog://) or @v1 "
             "officialization in the Vault strictly requires passing through a Process Validation "
             "& Publication Gate.",
         ),

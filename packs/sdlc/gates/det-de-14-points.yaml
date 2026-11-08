@@ -1,0 +1,13 @@
+id: det-de-14-points
+runner_plugin_id: markdown_contract_runner
+required_headings:
+- '# Dossier d''Étude Architecture'
+- '## Contexte & Exigences'
+- '## Scénarios d''Architecture'
+- '## Impacts Applicatifs'
+- '## Sécurité & Résilience'
+min_chars_per_section: 25
+require_mermaid_blocks: 1
+forbid_patterns:
+- TODO
+- FIXME

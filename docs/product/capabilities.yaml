@@ -523,6 +523,26 @@ capabilities:
     tests: [tests/unit/test_epic_9_story_9_5_contextual_help.py]
     surfaces: { route: /help }
 
+  # ───────────── Epics 14 & 15 : ORCIA Process Studio v2, VSM Interactive & Packs 100 % Déclaratifs ─────────────
+  - id: CAP-140
+    title: ORCIA Process Studio v2 — Chaîne de Valeur Interactive (Macro-VSM 11 étapes), Studio 5 Blocs Control-M, Sas Externe Délégué & Arbitrage HITL 4 Actions sur Diff S3 Claim-Check
+    fr: [FR-7, FR-8, FR-9, FR-15, FR-17, FR-29, FR-30, FR-35, FR-36]
+    origin: epic
+    origin_ref: epic-14 (14-1..14-5)
+    status: live
+    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx]
+    verification: runtime
+    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
+  - id: CAP-150
+    title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
+    fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
+    origin: epic
+    origin_ref: epic-15 (15-1..15-3)
+    status: live
+    tests: [tests/unit/connectors/test_connector_protocol_and_write_preview.py, tests/unit/core/test_core_domain_isolation.py, tests/unit/packs/test_declarative_packs_loading.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx]
+    verification: runtime
+    surfaces: { route: /settings/packs, api: "/api/v1/packs (packs.py)", ui: PacksRegistryPage }
+
   # ───────────── Planifié (non livré) ─────────────
   - id: CAP-200
     title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps

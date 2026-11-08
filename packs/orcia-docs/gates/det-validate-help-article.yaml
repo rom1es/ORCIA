@@ -1,0 +1,10 @@
+id: det-validate-help-article
+runner_plugin_id: markdown_contract_runner
+required_headings:
+- '# '
+- '## Objectif'
+- '## Étapes clés'
+min_chars_per_section: 20
+forbid_patterns:
+- TODO
+- TBD

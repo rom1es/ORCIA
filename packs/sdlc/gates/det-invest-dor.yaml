@@ -1,0 +1,10 @@
+id: det-invest-dor
+runner_plugin_id: markdown_contract_runner
+required_headings:
+- '# Découpage en User Stories'
+- '## Epic'
+- '## User Stories'
+- '## Critères d''acceptation'
+min_chars_per_section: 20
+forbid_patterns:
+- TODO

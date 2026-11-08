@@ -94,8 +94,8 @@ def test_ac1_uv_workspace_4_packages_and_kernel_primitives() -> None:
     """Verify the 4 uv workspace packages exist and `orcia_kernel` primitives operate purely."""
     expected_pyprojects = [
         REPO_ROOT / "pyproject.toml",
-        REPO_ROOT / "packages/orcia-kernel/pyproject.toml",
         REPO_ROOT / "packages/orcia-core/pyproject.toml",
+        REPO_ROOT / "packages/orcia-connectors/pyproject.toml",
         REPO_ROOT / "apps/api/pyproject.toml",
         REPO_ROOT / "apps/worker/pyproject.toml",
     ]

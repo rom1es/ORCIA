@@ -38,14 +38,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_ac_e2_zero_sdlc_vocabulary_in_kernel_and_orchestration() -> None:
-    """Verify grep for SDLC vocabulary in `orcia-kernel` & `orcia-core/orchestration` is 0."""
+    """Verify grep for SDLC vocabulary in `orcia_core.kernel` & `orcia-core/orchestration` is 0."""
     proc = subprocess.run(
         [
             "grep",
             "-rnIiE",
             "--exclude-dir=__pycache__",
             "writes_code|BUG_CODE|DOC_OBSOLETE|brownfield|confluence|git://|jira",
-            "packages/orcia-kernel",
+            "packages/orcia-core/src/orcia_core/kernel",
             "packages/orcia-core/src/orcia_core/orchestration",
         ],
         cwd=REPO_ROOT,

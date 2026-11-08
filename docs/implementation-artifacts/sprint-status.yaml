@@ -146,6 +146,22 @@ development_status:
   12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder: done
   12-4-epuration-ux-zero-donnee-fictive-modale-admin-jour-0-grisage-et-purge-nfr: done
   epic-12-retrospective: optional
+
+  # Epic 14 (traduction de specs/epic-09-process-studio) — ORCIA Process Studio v2 : Cartographie VSM, Studio Agentique Déterministe 5 Blocs (Control-M), Gates Multi-Niveaux Auto-Heal 3x & Portail HITL 4 Actions
+  epic-14: done
+  14-1-modele-agnostique-orcia-core-vsm-workflows-bornes-claim-check-et-seed-sdlc: done
+  14-2-vue-cartographie-chaine-de-valeur-macro-vsm-et-comparaison-3-etats: done
+  14-3-studio-conception-workflow-5-blocs-control-m-copilote-et-sous-etapes-dbos: done
+  14-4-pipeline-ordonne-gates-deterministes-auto-heal-3x-probabilistes-et-what-if: done
+  14-5-dispositifs-interaction-humaine-hitl-4-actions-et-boucles-reprise-iteratives: done
+  epic-14-retrospective: optional
+
+  # Epic 15 (traduction de specs/epic-10-packs-simplification) — Simplification Architecturale des Packs & Connecteurs (packages/orcia-connectors, fusion orcia-kernel dans orcia-core & Packs 100 % Déclaratifs packs/<domaine>/)
+  epic-15: done
+  15-1-creation-orcia-connectors-protocol-4-methodes-et-fusion-orcia-kernel-dans-core: done
+  15-2-chargeur-declarative-pack-loader-export-zip-et-conversion-packs-sdlc-orcia-docs: done
+  15-3-ecran-settings-packs-simplifie-et-monitoring-connecteurs-requis: done
+  epic-15-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"

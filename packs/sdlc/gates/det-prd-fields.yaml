@@ -1,0 +1,12 @@
+id: det-prd-fields
+runner_plugin_id: markdown_contract_runner
+required_headings:
+- '# PRD'
+- '## Contexte'
+- '## Objectifs & KPI'
+- '## Critères d''acceptation'
+- '## WSJF'
+min_chars_per_section: 20
+forbid_patterns:
+- TODO
+- TBD

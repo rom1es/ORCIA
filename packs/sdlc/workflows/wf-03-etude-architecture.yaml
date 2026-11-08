@@ -1,0 +1,141 @@
+id: wf-03-etude-architecture
+slug: wf-03-etude-architecture
+title: Étude de Cadrage d'Architecture (CRL-Étude-Archi — 4 sous-étapes)
+version: 1.0.0
+status: published
+pack_id: orcia-pack-sdlc
+linked_vsm_step_nums:
+- '03'
+execution_mode: native_orcia
+model_override: claude-opus-4-6
+effort: high
+global_system_prompt_or_ref: pack://sdlc/agents/crl-etude-archi.md
+guardrails:
+- L'architecte reste l'auteur souverain du Dossier d'Étude (DE).
+- Toute affirmation sur l'existant est vérifiée dans le socle et le code.
+knowledge_feedback_target_agent: pack://sdlc/agents/crl-socle-generateur.md
+contract:
+  parameters:
+  - name: prd_valide_uri
+    label: PRD validé en Comité d'accueil
+    scalar_type: catalog_ref
+    catalog_entity_uri_pattern: catalog://knowledge_base/page/{id}
+    required: true
+  required_markdown_sections:
+  - '# Dossier d''Étude Architecture'
+  - '## Contexte & Exigences'
+  - '## Scénarios d''Architecture'
+  - '## Impacts Applicatifs'
+  - '## Sécurité & Résilience'
+sub_steps:
+- id: comprendre
+  name: Comprendre le besoin et l’existant
+  short_label: Comprendre
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Mode « générer », avec une clé ou une URL de ticket
+  role_description: Lit le ticket et le socle en entier, analyse l’impact, vérifie
+    dans le code, puis pose en un seul questionnaire ce que les sources ne disent
+    pas.
+  instruction_prompt_or_ref: pack://sdlc/agents/etudeArchi#comprendre
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Sa compréhension du besoin, de l’existant impacté et des lacunes
+  requires_human_checkpoint: true
+  checkpoint_label: l’architecte confirme ou corrige la compréhension
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: concevoir
+  name: Concevoir la solution
+  short_label: Concevoir
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Après accord sur la compréhension
+  role_description: Conçoit à partir de l’existant. Si le choix n’est pas tranché,
+    propose 2 ou 3 options et une recommandation. Décide et justifie la stack.
+  instruction_prompt_or_ref: pack://sdlc/agents/etudeArchi#concevoir
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: La solution retenue, ou les options et la recommandation
+  requires_human_checkpoint: true
+  checkpoint_label: l’architecte choisit la solution
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: rediger
+  name: Rédiger par blocs
+  short_label: Rédiger
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Après le choix de la solution
+  role_description: Rédige le DE en six blocs, du contexte aux impacts, et s’arrête
+    après chacun.
+  instruction_prompt_or_ref: pack://sdlc/agents/etudeArchi#rediger
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: Le DE, bloc par bloc
+  requires_human_checkpoint: true
+  checkpoint_label: l’architecte valide, corrige ou complète
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+- id: controler
+  name: Contrôler et rendre compte
+  short_label: Contrôler
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Après le dernier bloc
+  role_description: Vérifie le fichier en 14 points (sources, décisions, stack, diagrammes,
+    sommaire, impacts), puis rend compte.
+  instruction_prompt_or_ref: pack://sdlc/agents/etudeArchi#controler
+  toolbox_mcp_permissions:
+  - connector_id: mcp:atlassian-confluence
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/qualification-besoin
+  - pack://sdlc/skills/redaction-prd-wsjf
+  output_description: 'Le DE et le compte rendu : choix de stack, décisions à justifier,
+    questions ouvertes'
+  requires_human_checkpoint: true
+  checkpoint_label: 'L’architecte relit et complète : l’étude reste la sienne'
+  approver_rbac_role: sdlc:po
+  write_preview_required: false
+controls:
+  strategy: fail_fast
+  sandbox_dry_run: true
+  deterministic: []
+  non_deterministic:
+  - id: ndet-03-1
+    name: Agent contradicteur
+    short_label: Agent contradicteur
+    status: ajouter
+    evaluator_type: adversarial_agent
+    agent_ref: pack://sdlc/gates/hunter-archi-contradicteur
+    risk_threshold: 0.7
+    verifies_description: Relit l’étude générée en position contradictoire et en relève
+      les faiblesses.
+    hypothesis_note: null
+    on_ko_behavior: Ses objections reviennent à l’agent CRL Étude d’architecture,
+      qui améliore l’étude ; l’architecte arbitre.
+  - id: ndet-03-2
+    name: Contrôle final en 14 points
+    short_label: Contrôle final de l’agent
+    status: place
+    evaluator_type: adversarial_agent
+    agent_ref: pack://sdlc/gates/hunter-archi-contradicteur
+    risk_threshold: 0.7
+    verifies_description: 'L’agent vérifie lui-même le DE : sources, décisions, stack,
+      diagrammes, sommaire, impacts.'
+    hypothesis_note: null
+    on_ko_behavior: L’agent corrige ; une correction qui touche un bloc déjà validé
+      est soumise à l’architecte.

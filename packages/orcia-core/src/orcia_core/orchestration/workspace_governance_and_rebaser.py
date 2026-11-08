@@ -354,7 +354,7 @@ class WorkspaceGovernanceAndArtifactRoutingService:
                 allowed_root=effective_root or "/tmp/orcia-workspaces",
             )
 
-        staged = raw_uri.startswith(("git://", "confluence://", "jira://", "local://"))
+        staged = "://" in raw_uri and not raw_uri.startswith("orcia://")
         return ResolvedArtifactDestination(
             selected_level=selected_level,
             resolved_uri=raw_uri,
@@ -519,7 +519,7 @@ class WorkspaceGovernanceAndArtifactRoutingService:
             destination=destination,
             staged_transitions=(
                 f"STAGE_PUBLISH:{destination.resolved_uri}",
-                f"STAGE_JIRA_COMMENT:{ticket_key}",
+                f"STAGE_TICKET_COMMENT:{ticket_key}",
             ),
         )
 

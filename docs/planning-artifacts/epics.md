@@ -1475,3 +1475,47 @@ So that je sache à tout moment ce qui est en place, quelle en est l'origine (ep
 ### Story 13.2 (gabarit) : Évolution Fonctionnelle Rétroactive `13.x`
 
 Toute demande ad-hoc fonctionnelle crée une Story `13.x` (rattachée au `FR-3x` concerné) ainsi qu'une entrée ou mise à jour `CAP-xxx` ; le rapport Tech Lead porte le champ `Capacité(s)`.
+
+## Epic 14: ORCIA Process Studio v2 — Cartographie VSM (`ValueStreamMapSpec`), Studio Agentique Déterministe à 5 Blocs (`Control-M`), Gates Multi-Niveaux Auto-Heal (3x) & Portail HITL 4 Actions (`specs/epic-09-process-studio/`)
+
+Déployer l'**ORCIA Process Studio v2** en séparant la **Cartographie de Chaîne de Valeur (`ValueStreamMapSpec`)** (vue macro de gouvernance en 4 phases, 11 étapes, 5 points de passage humains et 8 boucles de retour extraite de `Workflow agentique 2.html`) et les **Workflows DBOS Unitaires et Bornés (`WorkflowDefinitionV2`)** (`wf-01-qualification-prd`, `wf-03-etude-architecture`, `wf-06-decoupe-us`, `wf-08-dev-external-gate`), avec zéro « Agent Orchestrateur » lisant le chat (`DeterministicSubStepSpec` + `DBOS.recv`), support des modes `NATIVE_ORCIA` et `EXTERNAL_DELEGATED_GATE`, stockage S3 `ClaimCheckPointer` (`> 4 Ko`), idempotence cyclique `:iter-{iteration}` et Studio 5 blocs façon Control-M assisté par Co-pilote.
+
+### Story 14.1: Modèle Agnostique `orcia-core` (VSM + Workflows Bornés + Claim-Check S3) & Seed Déclaratif `packs/sdlc/`
+- **CA-14.1.1 (Zéro fuite SDLC dans Core)** : Aucun mot-clé métier SDLC (`jira`, `confluence`, `git`, `prd`, `wsjf`, `rovo`, `copilot`, `safe`) dans `packages/orcia-core` (`tests/unit/core/test_core_domain_isolation.py`).
+- **CA-14.1.2 (Immuabilité & Fork Draft)** : Toute modification d'un workflow `PUBLISHED` crée une branche `vX.Y.Z-draft` sans impacter les exécutions DBOS actives.
+- **CA-14.1.3 (Claim-Check obligatoire)** : Tout livrable d'étape ou diff `> 4 Ko` est persisté dans SeaweedFS avec empreinte `SHA-256` (`ClaimCheckPointer`).
+
+### Story 14.2: Vue Cartographie de Chaîne de Valeur (Macro-VSM) & Comparaison 3 États (`/processes/vsm/$vsmId`)
+- **CA-14.2.1 (Commutateur 3 États en Consultation)** : Bascule fluide `Aujourd'hui | Avec les agents | Comparer`.
+- **CA-14.2.2 (Boucles de retour SVG sans collision)** : Tracé dynamique des boucles principales et secondaires (`ReturnLoopsSvgOverlay.tsx`), fiche modale à 6 onglets (`StepDetailSheet.tsx`), opportunités `P1..P3` et mode `Présenter`.
+- **CA-14.2.3 (Pont VSM ➔ Workflow Exécutable)** : Ouverture directe du Workflow dans le Studio 5 Blocs ou lancement/suivi d'exécution unitaire.
+
+### Story 14.3: Studio de Conception de Workflow (5 Blocs Control-M + Co-pilote Gauche + Sous-Étapes DBOS `/processes/studio/$workflowId`)
+- **CA-14.3.1 (Co-pilote & Suggestions Catalogue)** : `StudioCopilotSidebar.tsx` suggérant les `Toolboxes MCP`, `Skills` et `Gates` du Pack actif avec attachement `[+]`.
+- **CA-14.3.2 (Séquence de Sous-Étapes Déterministes DBOS)** : Enchaînement de $N$ sous-étapes séparées par des jalons DBOS (`requires_human_checkpoint`) et bypass unitaire (`enabled: false` $\rightarrow$ `SKIPPED`).
+- **CA-14.3.3 (Modes `NATIVE_ORCIA` vs `EXTERNAL_DELEGATED_GATE`)** : Configuration du mode natif ORCIA ou sas externe délégué (IDE Copilot / Rovo / Webhook).
+
+### Story 14.4: Pipeline Ordonné de Gates (4 Runners Déterministes Génériques Auto-Heal 3x ➔ Probabilistes) & Test Mode What-If
+- **CA-14.4.1 (Ordre Inviolable & Auto-Heal)** : Exécution des 4 runners génériques (`markdown_contract_runner`, `json_schema_runner`, `cli_sandbox_runner`, `catalog_invariant_runner`) avec auto-remédiation bornée à `max_self_heal_retries = 3`.
+- **CA-14.4.2 (Gates Probabilistes Conditionnées)** : Exécution des Hunters contradictoires uniquement si 100 % des Gates déterministes sont `NOMINAL`.
+- **CA-14.4.3 (Exécution Sandbox What-If)** : Simulation isolée sans `execute_write` externe retournant `ImpactAssessmentResult`.
+
+### Story 14.5: Les 5 Dispositifs d'Interaction Humaine (HITL) & Boucles de Reprise Itératives (`InteractiveRunDrawer.tsx`)
+- **CA-14.5.1 (Write-Preview Gate Obligatoire)** : Interception de toute écriture externe via `preview_write()` (`WritePreviewCard`) et exigence d'un `SignedApprovalToken` du *Permission Broker* avant `execute_write()`.
+- **CA-14.5.2 (Arbitrage Souverain à 4 Actions sur Diff S3)** : `APPROVE` (Accepter & Signer), `AMEND_DIFF` (Amender directement le Diff S3), `REJECT_AND_LOOP` (Refuser & Choisir la boucle de retour), `SUSPEND_SLA` (Suspendre le SLA).
+- **CA-14.5.3 (Incrémentation d'itération sur Boucle de Retour)** : Clé d'idempotence `f"{run_id}:{sub_step.id}:iter-{iteration}"` et réinjection des remarques en mode `corrections`.
+
+## Epic 15: Simplification Architecturale des Packs & Connecteurs (`packages/orcia-connectors`, Fusion `orcia-kernel` dans `orcia-core` & Packs 100 % Déclaratifs `packs/<domaine>/`) (`specs/epic-10-packs-simplification/`)
+
+Simplifier radicalement l'architecture Python backend autour de **2 uniques packages Python** dans `packages/` (`packages/orcia-core` qui absorbe `orcia-kernel` dans `orcia_core.kernel`, et `packages/orcia-connectors` qui unifie Jira, Confluence, Git, SQL et MCP derrière `OrciaConnectorProtocol` à 4 méthodes) et convertir tous les Packs métiers en **bundles 100 % déclaratifs (YAML + Markdown, zéro code Python/React)** sous `packs/sdlc/` et `packs/orcia-docs/`.
+
+### Story 15.1: Création de `packages/orcia-connectors` (`OrciaConnectorProtocol`) & Fusion de `orcia-kernel` dans `orcia-core` (`TASK-01`)
+- **CA-15.1.1 (Contrat Unique à 4 Méthodes)** : `OrciaConnectorProtocol` (`healthcheck`, `read`, `preview_write`, `execute_write`) et adaptateurs `atlassian_jira.py`, `atlassian_confluence.py`, `git_provider.py`, `sql_readonly.py`, `mcp_client_bridge.py` vérifiant la signature `SignedApprovalToken` du *Permission Broker*.
+- **CA-15.1.2 (2 Packages Python Uniques dans `packages/`)** : Absorption de `packages/orcia-kernel` dans `packages/orcia-core/src/orcia_core/kernel/` et suppression de `packages/orcia-kernel/`.
+
+### Story 15.2: Chargeur `DeclarativePackLoader`, Exportateur `.zip` & Conversion Déclarative `packs/sdlc/` et `packs/orcia-docs/` (`TASK-02` & `TASK-03`)
+- **CA-15.2.1 (Packs 100 % Déclaratifs)** : Chargement à chaud via `DeclarativePackLoader` de `packs/sdlc/` et `packs/orcia-docs/` (YAML + Markdown uniquement) et suppression définitive de `packages/orcia-pack-sdlc/` et `packages/orcia-pack-builder/`.
+- **CA-15.2.2 (Export d'Espace en Archive `.zip` de Pack)** : `POST /api/v1/packs/export/{workspace_id}` exportant les Agents, Skills, Gates et Workflows sous forme d'archive déclarative `.zip`.
+
+### Story 15.3: Écran `/settings/packs` Simplifié (`PacksRegistryPage.tsx`) & Monitoring Temps Réel des Connecteurs Requis (`TASK-06`)
+- **CA-15.3.1 (Registre des Packs Déclaratifs & Healthcheck Connecteurs)** : Affichage des Packs chargés depuis `packs/`, de leur `bundle_sha256`, des compteurs d'objets, du statut `healthcheck()` de leurs `required_connectors` et du bouton d'export `.zip`.

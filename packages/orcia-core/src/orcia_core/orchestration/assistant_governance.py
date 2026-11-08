@@ -83,9 +83,9 @@ class WorkspaceLayerSettings:
         "Respecter le glossaire actif de l'Espace et privilégier les sources RÉFÉRENCE."
     )
     default_checked_sources: tuple[str, ...] = (
-        "git://repo-main",
-        "confluence://architecture-kb",
-        "jira://project-delivery",
+        "orcia://sources/repo-main",
+        "orcia://sources/architecture-kb",
+        "orcia://sources/project-delivery",
     )
     recommended_agents: tuple[str, ...] = ("@spec-architect", "@security-reviewer")
     arbitration_policy: AssistantArbitrationPolicy = "PAUSE_AND_ESCALATE"

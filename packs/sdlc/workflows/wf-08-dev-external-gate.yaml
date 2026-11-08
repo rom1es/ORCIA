@@ -1,0 +1,96 @@
+id: wf-08-dev-external-gate
+slug: wf-08-dev-external-gate
+title: Développement Assisté IDE & Sas de Contrôle Externe avant Revue du Dev
+version: 1.0.0
+status: published
+pack_id: orcia-pack-sdlc
+linked_vsm_step_nums:
+- 08
+execution_mode: external_delegated
+external_tool_label: GitHub Copilot / Claude Code dans l'IDE
+external_completion_event: git:pr_opened
+model_override: team_default
+effort: default
+global_system_prompt_or_ref: pack://sdlc/agents/crl-socle-generateur.md
+guardrails:
+- Aucun merge automatique sans validation humaine en Revue du Dev.
+- Exécution obligatoire des Gates déterministes et contradictoires à l'ouverture de
+  la PR.
+contract:
+  parameters:
+  - name: us_key
+    label: User Story prête (DoR) engagée dans le sprint
+    scalar_type: catalog_ref
+    catalog_entity_uri_pattern: catalog://issue_tracker/work_item/{key}
+    required: true
+  required_markdown_sections:
+  - '# Rapport de Sas Externe PR'
+sub_steps:
+- id: expose-mcp-context
+  name: Exposition du Paquet de Contexte MCP à l'IDE
+  short_label: Contexte MCP
+  enabled: true
+  step_executor_type: program_executor
+  trigger_condition_label: Sélection de l'US par le développeur
+  role_description: Assembler l'US, le DA, le PRD et les conventions d'équipe en bundle
+    MCP.
+  instruction_prompt_or_ref: Expose MCP context bundle for IDE assistant.
+  toolbox_mcp_permissions:
+  - connector_id: mcp:git-provider
+    scope: read
+  skill_refs: []
+  output_description: Paquet de contexte MCP prêt pour l'IDE
+  requires_human_checkpoint: false
+  checkpoint_label: Contexte exposé
+  approver_rbac_role: sdlc:dev
+  write_preview_required: false
+- id: external-pr-gatekeeper
+  name: Sas de Contrôle ORCIA sur la Pull Request soumise
+  short_label: Sas PR
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Réception du webhook git:pr_opened
+  role_description: Exécuter les contrôles déterministes et contradictoires sur le
+    diff de la PR.
+  instruction_prompt_or_ref: Vérifier l'alignement du diff PR avec les critères d'acceptation
+    de l'US et le DA.
+  toolbox_mcp_permissions:
+  - connector_id: mcp:git-provider
+    scope: read
+  skill_refs:
+  - pack://sdlc/skills/decoupe-us-invest
+  output_description: Rapport d'audit pré-Revue du Dev
+  requires_human_checkpoint: true
+  checkpoint_label: Passage en Revue du Dev
+  approver_rbac_role: sdlc:tech_lead
+  write_preview_required: false
+controls:
+  strategy: fail_fast
+  sandbox_dry_run: true
+  deterministic:
+  - id: det-08-pr-contract
+    name: Contrat de conformité Pull Request & Tests
+    short_label: Conformité PR
+    status: place
+    runner_plugin_id: markdown_contract_runner
+    verifies_description: Présence du résumé d'intention, des preuves de tests et
+      zéro marqueur TODO.
+    on_ko_behavior: Blocage avant Revue du Dev avec rapport détaillé.
+    max_self_heal_retries: 3
+    config:
+      required_headings:
+      - '# Rapport de Sas Externe PR'
+      min_chars_per_section: 15
+      forbid_patterns:
+      - TODO
+  non_deterministic:
+  - id: ndet-08-pr-hunter
+    name: Revue contradictoire d'alignement US / DA
+    short_label: Hunter PR
+    status: place
+    evaluator_type: adversarial_agent
+    agent_ref: pack://sdlc/gates/hunter-archi-contradicteur
+    risk_threshold: 0.7
+    verifies_description: Vérifie que l'implémentation respecte les scénarios retenus
+      dans le DA et les critères Gherkin de l'US.
+    on_ko_behavior: Escalade vers l'Anchor Card en Revue du Dev.

@@ -201,9 +201,15 @@ class ContextualHelpResolutionService:
             repo_root / "docs" / "help" / "fr",
             repo_root / "docs" / "help" / "en",
         ]
-        packs_root = repo_root / "packages"
+        packs_root = repo_root / "packs"
         if packs_root.exists():
-            for pack_dir in sorted(packs_root.glob("orcia-pack-*")):
+            for pack_dir in sorted(packs_root.iterdir()):
+                if pack_dir.is_dir():
+                    search_dirs.append(pack_dir / "help" / "fr")
+                    search_dirs.append(pack_dir / "help" / "en")
+        legacy_packs_root = repo_root / "packages"
+        if legacy_packs_root.exists():
+            for pack_dir in sorted(legacy_packs_root.glob("orcia-pack-*")):
                 search_dirs.append(pack_dir / "help" / "fr")
                 search_dirs.append(pack_dir / "help" / "en")
 

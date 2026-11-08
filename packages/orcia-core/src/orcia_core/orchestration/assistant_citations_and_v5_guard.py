@@ -13,8 +13,8 @@ Implements:
 - `< 5 ms` deterministic post-stream phantom citation verifier replacing out-of-bounds tags
   (`[S99]`, `[G42]`, `[O9]`) with `[Citation non vérifiée]` and recording an append-only
   audit entry.
-- **Verrou V5 (`AD-15`)**: blocks any direct write to enterprise SI (`git://`, `confluence://`,
-  `jira://`) or `@v1` Vault officialization from `Mon Assistant` with
+- **Verrou V5 (`AD-15`)**: blocks any direct write to external enterprise SI connectors (`mcp://`,
+  `db://`, `catalog://`) or `@v1` Vault officialization from `Mon Assistant` with
   `HTTP 422 ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE` (`DirectSiWriteRequiresProcessGateError`).
 
 Zero framework/SDK imports (`fastapi`, `sqlalchemy`, `redis`, `litellm`, `dramatiq`).
@@ -367,8 +367,10 @@ class AssistantCitationAndV5GuardService:
         # Verrou V5 (AD-15): No direct SI write or @v1 officialization from Mon Assistant!
         if action_type in ("DIRECT_SI_WRITE", "PUBLISH_V1_VAULT"):
             raise DirectSiWriteRequiresProcessGateError()
-        if target_uri is not None and any(
-            target_uri.startswith(scheme) for scheme in ("git://", "confluence://", "jira://")
+        if (
+            target_uri is not None
+            and "://" in target_uri
+            and not target_uri.startswith(("orcia://", "local://"))
         ):
             raise DirectSiWriteRequiresProcessGateError(
                 detail_override=(

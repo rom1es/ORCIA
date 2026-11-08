@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orcia-connectors"
+version = "0.1.0"
+description = "ORCIA Connectors — Unified Enterprise SI & MCP Connectors governed by Permission Broker & Write-Preview Gate"
+requires-python = ">=3.12"
+dependencies = [
+    "orcia-core>=0.1.0",
+    "pydantic>=2.11.0",
+    "httpx>=0.28.0",
+]
+
+[project.entry-points."orcia.connectors"]
+git = "orcia_connectors.legacy_sdlc:create_git_connector"
+jira = "orcia_connectors.legacy_sdlc:create_jira_connector"
+confluence = "orcia_connectors.legacy_sdlc:create_confluence_connector"
+nexus = "orcia_connectors.legacy_sdlc:create_nexus_connector"
+
+[project.entry-points."orcia.workflow_policies"]
+sdlc_fr13 = "orcia_connectors.legacy_sdlc:create_sdlc_fr13_policy_plugin"
+
+[project.entry-points."orcia.memlog_markers"]
+sdlc_markers = "orcia_connectors.legacy_sdlc:create_sdlc_memlog_marker_plugin"
+
+[project.entry-points."orcia.catalog_formats"]
+bmad_pack = "orcia_connectors.legacy_sdlc:get_bmad_pack_format_adapter"
+
+[project.entry-points."orcia.indexers"]
+code_ast = "orcia_connectors.legacy_sdlc:get_git_code_ast_indexer"
+jira_hybrid = "orcia_connectors.legacy_sdlc:get_jira_hybrid_indexer"
+tripartite_graph = "orcia_connectors.legacy_sdlc:get_tripartite_graph_indexer"
+
+[tool.setuptools.packages.find]
+where = ["src"]

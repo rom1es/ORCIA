@@ -1,0 +1,9 @@
+domain: orcia-docs
+terms:
+- key: HELP_ARTICLE
+  label: Article d'Aide Contextuelle
+  definition: Fiche d'aide bilingue (FR/EN) rattachée à un help_key de l'interface
+    ORCIA.
+- key: ANCHOR_CARD
+  label: Carte d'Arbitrage Souverain
+  definition: Composant de validation humaine finale avant publication documentaire.

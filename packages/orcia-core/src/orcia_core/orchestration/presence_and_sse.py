@@ -76,7 +76,7 @@ class StepPresenceLockPort(Protocol):
 
 
 class InMemoryStepPresenceLockAdapter(StepPresenceLockPort):
-    """Thread-safe atomic `SET NX EX 900` adapter for unit tests."""
+    """Concurrent-ready atomic `SET NX EX 900` adapter for unit tests."""
 
     def __init__(self) -> None:
         self._mutex = threading.Lock()
@@ -189,7 +189,7 @@ class SseBroadcastPort(Protocol):
 
 
 class InMemorySseBrokerAdapter(SseBroadcastPort):
-    """Thread-safe SSE Pub/Sub broker recording sub-500ms dispatch latency (`NFR-PERF-2`)."""
+    """Concurrent-ready SSE Pub/Sub broker recording sub-500ms dispatch latency (`NFR-PERF-2`)."""
 
     def __init__(self) -> None:
         self._mutex = threading.Lock()

@@ -128,7 +128,7 @@ def evaluate_lens1_transverse(
     routed_model_id: str,
     prompt_sha256: str,
 ) -> AgenticLensFinding:
-    """Evaluate Lens 1 (`transverse_alignment_step1`): Step N vs Step 1 PRD & Step 2 Arch."""
+    """Evaluate Lens 1 (`transverse_alignment_step1`): Step N vs Step 1 Cadrage & Step 2 Arch."""
     contradictions: list[str] = []
     lower_art = artifact_json.lower()
     for inv in (*gate_input.step1_prd_invariants, *gate_input.step2_arch_invariants):
@@ -152,7 +152,7 @@ def evaluate_lens1_transverse(
     findings = (
         tuple(contradictions)
         if contradictions
-        else ("Alignement transverse conforme aux invariants Step 1 (PRD) et Step 2 (Arch).",)
+        else ("Alignement transverse conforme aux invariants Step 1 (Cadrage) et Step 2 (Arch).",)
     )
     return AgenticLensFinding(
         lens_id="transverse_alignment_step1",

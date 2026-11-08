@@ -8,16 +8,16 @@ import type { OrciaShowcaseManifestData } from "@orcia/ui";
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-08",
   "stats": {
-    "activeRoutesCount": 20,
+    "activeRoutesCount": 23,
     "uiPrimitivesCount": 91,
-    "installedPacksCount": 2,
-    "alembicMigrationsCount": 27,
+    "installedPacksCount": 0,
+    "alembicMigrationsCount": 28,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 105,
-    "capabilitiesCount": 57,
-    "liveCapabilitiesCount": 54,
-    "verifiedCapabilitiesCount": 33
+    "techLeadReportsCount": 106,
+    "capabilitiesCount": 59,
+    "liveCapabilitiesCount": 56,
+    "verifiedCapabilitiesCount": 35
   },
   "activeRoutes": [
     "/",
@@ -35,7 +35,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/login",
     "/ontology",
     "/processes",
+    "/processes/studio/$workflowId",
+    "/processes/vsm/$vsmId",
     "/settings",
+    "/settings/packs",
     "/showcase",
     "/spaces",
     "/wizards",
@@ -134,18 +137,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "WorkspaceFiveTabsAndExternalRebaseView",
     "WorkspaceTopologyPanel"
   ],
-  "installedPacks": [
-    {
-      "key": "orcia-pack-builder",
-      "version": "0.1.0",
-      "description": "ORCIA System Pack Builder — 4 specialized agents & 5 governed processes for creating, evolving (What-If), certifying (Starlark Tier 1b / Container Tier 2), promoting, and documenting Business Packs"
-    },
-    {
-      "key": "orcia-pack-sdlc",
-      "version": "0.1.0",
-      "description": "ORCIA SDLC Pack — Git, Jira, Confluence, Nexus connectors, FR-13 Intention->Code policy, SDLC markers & BMAD adapter"
-    }
-  ],
+  "installedPacks": [],
   "alembicMigrations": [
     "0001_story_1_1_foundation_extensions",
     "0002_story_1_2_auth_org_workspaces_permissions",
@@ -173,7 +165,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0024_story_10_2_outbox_settings_changed_check",
     "0025_story_10_4_assistant_folders_and_threads",
     "0026_story_11_1_waivers_and_external_rebase",
-    "0027_story_11_2_dna_chain_and_glossary_lifecycle"
+    "0027_story_11_2_dna_chain_and_glossary_lifecycle",
+    "20261108_0910_declarative_packs_and_workflows_v2"
   ],
   "architectureDecisions": [
     {
@@ -428,6 +421,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Epics 14 & 15 — ORCIA Process Studio v2 & Packs 100 % Déclaratifs (TASK-01..08)",
+      "reportFile": "2026-11-08-epics-14-15-process-studio-v2-et-packs-declaratifs-tech-lead-report.md",
+      "domain": "Simplification Architecturale des Packs/Connecteurs (packages/orcia-connectors + fusion orcia-kernel dans orcia_core.kernel + packs/sdlc & packs/orcia-docs 100 % YAML/MD, CAP-150) & Déploiement d'ORCIA Process Studio v2 (ValueStreamMapView 11 étapes, WorkflowFiveBlocksCanvas Control-M, 4 runners déterministes Auto-Heal 3x, ClaimCheckPointer S3 & Portail HITL 4 Actions, CAP-140)",
+      "summary": "Exécution complète de TASK-01 à TASK-08 : suppression de packages/orcia-pack-sdlc, orcia-pack-builder et orcia-kernel au profit de 2 packages Python backend (orcia-core et orcia-connectors) et de packs/<domaine>/ ; extraction fidèle de Workflow agentique 2 (1).html dans vsm-mon-compte-idea-to-prod.yaml et 4 workflows DBOS bornés ; routes FastAPI /api/v1/packs, /api/v1/vsm, /api/v1/workflows/v2, /api/v1/runs et écrans /settings/packs, /processes, /processes/vsm/$vsmId, /processes/studio/$workflowId."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Vague P1 / Bugs E2E (BUG-E2E-05, BUG-E2E-06), Socle Radix UI (UX-DS-RADIX-01) & Registre Capacités (CAP-ACT-1)",

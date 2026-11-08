@@ -36,10 +36,12 @@ from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_ro
 from orcia_api.routers.pack_builder import (
     router as pack_builder_router,
 )
+from orcia_api.routers.packs import router as packs_router
 from orcia_api.routers.permission_broker import router as permission_broker_router
 from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
+from orcia_api.routers.workflows import router as workflows_v2_router
 from orcia_api.routers.workspace_governance import (
     router as workspace_governance_router,
 )
@@ -95,6 +97,8 @@ def create_app() -> FastAPI:
     application.include_router(mcp_and_test_bench_router)
     application.include_router(pack_builder_router)
     application.include_router(agents_and_skills_router)
+    application.include_router(packs_router)
+    application.include_router(workflows_v2_router)
     return application
 
 

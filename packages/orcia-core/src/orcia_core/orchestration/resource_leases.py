@@ -8,7 +8,7 @@ Enforces:
 3. Parent-child cyclic wait detection (`SUB_WORKFLOW` deadlock guard): if a child run attempts to
    acquire a resource currently leased by an ancestor run in its lineage, raises
    `CyclicResourceWaitDetectedError` (`HTTP 409`) immediately.
-4. Lease expiration (`expires_at <= now`) allowing safe preemption with an incremented fencing
+4. Lease expiration (`expires_at <= now`) allowing fenced preemption with an incremented fencing
    token.
 """
 
@@ -38,7 +38,7 @@ def _classify_resource_uri(resource_uri: str) -> str:
 
 
 class ResourceLeaseService(ResourceLeasePort):
-    """Thread-safe shared resource lease manager with monotonic fencing & deadlock guard."""
+    """Concurrent-ready shared resource lease manager with monotonic fencing & deadlock guard."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()

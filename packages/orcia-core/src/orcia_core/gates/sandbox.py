@@ -150,7 +150,7 @@ class SubprocessTier1SandboxAdapter(SandboxPort):
         )
 
     def execute_sync(self, request: SandboxExecutionRequest) -> SandboxExecutionResult:
-        """Synchronous helper safe to call whether an event loop is already running or not."""
+        """Synchronous helper ready to call whether an event loop is already running or not."""
         try:
             asyncio.get_running_loop()
         except RuntimeError:

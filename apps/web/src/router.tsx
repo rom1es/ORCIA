@@ -2,6 +2,10 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRoute, createRouter, type RouterHistory } from "@tanstack/react-router";
 import React from "react";
 import { ModuleWorkspaceView } from "./components/ModuleWorkspaceView";
+import { ProcessesHubPage } from "./features/processes/ProcessesHubPage";
+import { WorkflowFiveBlocksCanvas } from "./features/processes/studio/WorkflowFiveBlocksCanvas";
+import { ValueStreamMapView } from "./features/processes/vsm/ValueStreamMapView";
+import { PacksRegistryPage } from "./features/settings/packs/PacksRegistryPage";
 import { Route as rootRoute } from "./routes/__root";
 import { Route as activityRoute } from "./routes/activity";
 import { Route as bootstrapRoute } from "./routes/bootstrap";
@@ -33,7 +37,41 @@ const processesRoute = createRoute({
   path: "/processes",
   validateSearch: validateOrciaRouteSearch,
   component: function ProcessesRouteComponent() {
-    return <ModuleWorkspaceView moduleKey="gates" />;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <ProcessesHubPage />
+        <ModuleWorkspaceView moduleKey="gates" />
+      </div>
+    );
+  },
+});
+
+const processesVsmRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/processes/vsm/$vsmId",
+  validateSearch: validateOrciaRouteSearch,
+  component: function ProcessesVsmRouteComponent() {
+    const { vsmId } = processesVsmRoute.useParams();
+    return <ValueStreamMapView vsmId={vsmId} />;
+  },
+});
+
+const processesStudioRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/processes/studio/$workflowId",
+  validateSearch: validateOrciaRouteSearch,
+  component: function ProcessesStudioRouteComponent() {
+    const { workflowId } = processesStudioRoute.useParams();
+    return <WorkflowFiveBlocksCanvas workflowId={workflowId} />;
+  },
+});
+
+const settingsPacksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings/packs",
+  validateSearch: validateOrciaRouteSearch,
+  component: function SettingsPacksRouteComponent() {
+    return <PacksRegistryPage />;
   },
 });
 
@@ -84,10 +122,13 @@ export const routeTree = rootRoute.addChildren([
   workspacesRoute,
   bootstrapRoute,
   settingsRoute,
+  settingsPacksRoute,
   showcaseRoute,
   wizardsRoute,
   assistantRoute,
   processesRoute,
+  processesVsmRoute,
+  processesStudioRoute,
   agentsRoute,
   spacesRoute,
   configurationRoute,

@@ -1,0 +1,36 @@
+id: orcia-pack-sdlc
+slug: sdlc
+name: Pack Ingénierie Logicielle & SDLC (SAFe / Mon Compte)
+version: 2.4.0
+description: Chaîne de valeur de l'idée à la production (11 étapes, 4 phases, 6 jalons
+  humains, 3 agents multi-sous-étapes et sas de contrôle externe).
+rbac_namespace: sdlc
+required_connectors:
+- connector_type: mcp:atlassian-jira
+  required_scopes:
+  - read
+  - write_preview
+  used_for: Lecture/écriture gouvernée des Features, Epics et User Stories Jira
+- connector_type: mcp:atlassian-confluence
+  required_scopes:
+  - read
+  - write_preview
+  used_for: Consultation du socle documentaire et publication des PRD et DA
+- connector_type: mcp:git-provider
+  required_scopes:
+  - read
+  - webhook
+  used_for: Lecture de l'arbre d'impact du code et réception des événements PR/MR
+quick_actions:
+- id: qa-qualif-prd
+  label: Qualifier une demande & rédiger le PRD
+  target_workflow_slug: wf-01-qualification-prd
+  icon: sparkles
+- id: qa-etude-archi
+  label: Lancer une étude de cadrage d'architecture (DA)
+  target_workflow_slug: wf-03-etude-architecture
+  icon: layers
+- id: qa-decoupe-us
+  label: Découper une Feature en User Stories INVEST
+  target_workflow_slug: wf-06-decoupe-us
+  icon: list-checks

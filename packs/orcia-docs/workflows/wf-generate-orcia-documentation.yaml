@@ -1,0 +1,63 @@
+id: wf-generate-orcia-documentation
+slug: wf-generate-orcia-documentation
+title: Génération & Validation d'Article d'Aide Contextuelle ORCIA
+version: 2.0.0
+status: published
+pack_id: orcia-pack-docs
+linked_vsm_step_nums: []
+execution_mode: native_orcia
+model_override: claude-sonnet-4-6
+effort: default
+global_system_prompt_or_ref: pack://orcia-docs/agents/redacteur-documentation-orcia.md
+guardrails:
+- Toujours produire une version française et une version anglaise alignées.
+- Ne jamais exposer de secret ou d'URL interne non gouvernée.
+contract:
+  parameters:
+  - name: help_key
+    label: 'Clé d''aide contextuelle cible (ex: studio.five-blocks)'
+    scalar_type: string
+    required: true
+  required_markdown_sections:
+  - '# '
+  - '## Objectif'
+  - '## Étapes clés'
+sub_steps:
+- id: draft-bilingual-help
+  name: Rédaction bilingue FR/EN par @Redacteur-Documentation-Orcia
+  short_label: Rédaction
+  enabled: true
+  step_executor_type: agent_executor
+  trigger_condition_label: Demande de génération d'aide
+  role_description: Rédiger la fiche d'aide contextuelle structurée.
+  instruction_prompt_or_ref: pack://orcia-docs/agents/redacteur-documentation-orcia.md
+  toolbox_mcp_permissions: []
+  skill_refs:
+  - pack://orcia-docs/skills/redaction-aide-bilingue
+  output_description: Fiche Markdown FR/EN
+  requires_human_checkpoint: true
+  checkpoint_label: Validation éditoriale & rattachement
+  approver_rbac_role: docs:editor
+  write_preview_required: false
+controls:
+  strategy: fail_fast
+  sandbox_dry_run: true
+  deterministic:
+  - id: det-docs-markdown
+    name: Contrat de structure d'aide contextuelle
+    short_label: Contrat Markdown
+    status: place
+    runner_plugin_id: markdown_contract_runner
+    verifies_description: Présence des sections Objectif et Étapes clés sans TODO.
+    on_ko_behavior: Auto-remédiation immédiate par le rédacteur.
+    max_self_heal_retries: 3
+    config:
+      required_headings:
+      - '# '
+      - '## Objectif'
+      - '## Étapes clés'
+      min_chars_per_section: 20
+      forbid_patterns:
+      - TODO
+      - TBD
+  non_deterministic: []
