@@ -226,6 +226,14 @@ def test_story_5_1_fastapi_endpoints_and_sse_stream() -> None:
     """Verify HTTP endpoints for Unified Inbox, Claim/Release, SSE stream, and Resource Leases."""
     app = create_app()
     with TestClient(app) as client:
+        # 0. Arrange : la plateforme ne sème plus de notification fictive au démarrage.
+        app.state.notification_service.seed_default_notifications(
+            workspace_id="0195f000-0000-7000-8000-000000000301",
+            team_id="0195f000-0000-7000-8000-000000000103",
+            user_id="0195f000-0000-7000-8000-000000000203",
+            run_id="0195f000-0000-7000-8000-000000000701",
+            step_execution_id="0195f000-0000-7000-8000-000000000801",
+        )
         # 1. List seeded notifications
         res_list = client.get("/api/v1/inbox/notifications")
         assert res_list.status_code == 200

@@ -901,12 +901,15 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
       Constaté pendant TEST-04 : resolve_user() retombe sur la persona `marc` quand aucun jeton n'est fourni (le web n'envoie pas
       de Bearer) ; initialize_app_services() sème 4 notifications fictives (ids 0195f000-…) en mémoire, contraire à la politique
       zéro donnée fictive et au garde-fou « jamais de singleton en mémoire en production ». Risque sécurité (usurpation) à qualifier.
+      Correctif borné livré (2026-11-08, branche fix/p0-e2e-bugs) : hors ORCIA_ENV local/test, Bearer obligatoire
+      (401 ERR_AUTH_REQUIRED) et persona_key refusé ; notifications d'amorce semées uniquement sur la pile E2E
+      (ORCIA_E2E_SEED_FIXTURES=1). Reste traité par AUTH-01 (authentification réelle de bout en bout).
   - id: BUG-E2E-05
     title: "CognitiveReviewBriefingGrid et ChunkValidationCard (Epic 4, FR-6/FR-19) non montés dans apps/web"
     action: "Câbler le briefing de revue 4 blocs et la validation par découpage dans le portail via @orcia/api-client puis activer le test.fixme de e2e/06-gates-review-and-anti-rubber-stamping.spec.ts"
@@ -929,3 +932,27 @@ action_items:
     description: >
       Révélé par TEST-06 (spec 10) : `GET/POST` de recherche fédérée → 422 au Jour 0 (workspace null). ShellContainer.runFederatedSpeed2Search
       retombe sur un « Passage pertinent » fabriqué côté client (donnée fictive + catch silencieux).
+  - id: AUTH-01
+    title: "Authentification réelle de bout en bout : comptes PostgreSQL (users) au lieu des personas en mémoire, jeton Bearer envoyé par apps/web"
+    action: "Brancher AuthAndOrganizationService sur la table users (1er admin Jour 0 compris), connexion /login qui stocke le jeton et l'envoie dans @orcia/api-client, suppression des personas hors tests, lecture d'ORCIA_ENV / ORCIA_BOOTSTRAP_TOKEN dans get_accostage_service (codés en dur à \"local\" aujourd'hui), persistance des notifications en PostgreSQL"
+    priority: P0
+    depends_on: [BUG-E2E-04]
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Suite de BUG-E2E-04. Constat : le 1er administrateur créé au Jour 0 n'est pas connu du service d'authentification
+      (utilisateurs en mémoire), apps/web n'envoie jamais de Bearer, et la vérification ORCIA_BOOTSTRAP_TOKEN est
+      neutralisée (orcia_env="local" codé en dur dans dependencies/portal_and_assistant.py). Impact GitNexus CRITICAL
+      (resolve_user : 90 appelants).
+  - id: TEST-HYG-01
+    title: "Deux tests d'architecture rouges sur main : vocabulaire SDLC et chaînes `simulated_*` dans orcia_core/orchestration"
+    action: "Purger le vocabulaire métier et les paramètres simulated_* de orchestration/remote_test_bench_and_mcp_exposure.py (et fichiers signalés) ou les déplacer vers le pack concerné ; remettre au vert test_ac_e2_* et test_ac_f2_*"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-13
+    description: >
+      Constaté le 2026-11-08 lors de la non-régression de BUG-E2E-04 : échecs présents sur main indépendamment du correctif
+      (AD-20 règle 1 et clôture EC-1 de la Story 3.2f régressées par des évolutions ultérieures).

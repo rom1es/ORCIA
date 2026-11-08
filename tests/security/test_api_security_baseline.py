@@ -1,7 +1,7 @@
 """TEST-09 — Socle Sécurité / Red-Team (couche `AD-17`) : garde-fous sans infrastructure.
 
 Couvre : SSRF des endpoints de modèles IA (règle 4 de `AGENTS.md`), refus d'identités inconnues,
-enveloppe RFC 9457 + `trace_id` sur les erreurs, et sondes de défauts connus (BUG-E2E-04).
+enveloppe RFC 9457 + `trace_id` sur les erreurs, et persona réservée au mode local (BUG-E2E-04).
 """
 
 from __future__ import annotations
@@ -62,14 +62,14 @@ def test_validation_errors_use_problem_details_with_trace_id(client: TestClient)
     assert body["error_code"] and len(body["trace_id"]) == 32
 
 
-def test_missing_bearer_falls_back_to_default_persona_known_defect(client: TestClient) -> None:
-    """BUG-E2E-04 : sans jeton, l'API retombe sur la persona `marc` (TEAM_LEAD).
+def test_missing_bearer_uses_reference_persona_only_in_local_mode(client: TestClient) -> None:
+    """En `ORCIA_ENV=local` uniquement, l'absence de jeton sélectionne la persona de référence.
 
-    Ce test documente le défaut : il doit être INVERSÉ (attendre 401) quand le correctif
-    « Bearer obligatoire hors mode test » sera livré.
+    Hors local / test, le même appel est rejeté en `401 ERR_AUTH_REQUIRED`
+    (voir `tests/security/test_authentication_enforcement.py`, BUG-E2E-04).
     """
     res = client.get("/api/v1/inbox/notifications")
-    assert res.status_code == 200, "défaut BUG-E2E-04 corrigé ? inverser ce test (attendre 401)"
+    assert res.status_code == 200
 
 
 @pytest.mark.parametrize(

@@ -86,6 +86,7 @@ from orcia_core.permissions.service import (
     InMemoryRevocationStore,
     KeyValueRevocationStore,
     RevocationStoreProtocol,
+    persona_impersonation_allowed,
 )
 
 DOMAIN_NAME: str = "permissions"
@@ -93,8 +94,14 @@ DOMAIN_NAME: str = "permissions"
 
 def build_default_auth_and_org_service(
     revocation_store: RevocationStoreProtocol | None = None,
+    *,
+    allow_persona_impersonation: bool = True,
 ) -> AuthAndOrganizationService:
-    """Build the reference Story 1.2 topology (`Karim`, `Claire`, `Marc`, `Nadia`, `Partenaire`)."""
+    """Build the reference topology (`Karim`, `Claire`, `Marc`, `Nadia`, `Partenaire`).
+
+    Persona selection defaults to allowed for local tooling and tests; the API Composition Root
+    passes `persona_impersonation_allowed(ORCIA_ENV)` so it is refused outside local / test.
+    """
     hasher = Argon2idPasswordHasher(time_cost=1, memory_cost=8192, parallelism=1)
     org_units = tuple(
         OrgUnitNode(
@@ -255,6 +262,7 @@ def build_default_auth_and_org_service(
         persona_map=persona_map,
         hasher=hasher,
         revocation_store=revocation_store,
+        allow_persona_impersonation=allow_persona_impersonation,
     )
 
 
@@ -285,6 +293,7 @@ __all__ = [
     "AccessMode",
     "Argon2idPasswordHasher",
     "AuthAndOrganizationService",
+    "persona_impersonation_allowed",
     "AuthMode",
     "BrokerConnectorScheme",
     "BrokerStepState",

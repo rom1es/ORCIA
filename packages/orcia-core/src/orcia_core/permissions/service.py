@@ -19,6 +19,7 @@ from orcia_core.permissions.crypto import (
     TotpManager,
 )
 from orcia_core.permissions.errors import (
+    AuthenticationRequiredError,
     InvalidCredentialsError,
     InvalidMfaCodeError,
     ObserverModeReadOnlyError,
@@ -95,6 +96,18 @@ class KeyValueRevocationStore:
         return bool(self._kv.exists(f"{self._prefix}{jti}"))
 
 
+PERSONA_IMPERSONATION_ENVIRONMENTS: frozenset[str] = frozenset({"local", "test"})
+
+
+def persona_impersonation_allowed(orcia_env: str) -> bool:
+    """Return `True` only for `ORCIA_ENV` local / test (empty means local) — BUG-E2E-04.
+
+    Outside these environments, identity must come from a verified Bearer JWT: the
+    reference personas (`karim`, `claire`, `marc`, `nadia`) can never be selected by a caller.
+    """
+    return (orcia_env.strip().lower() or "local") in PERSONA_IMPERSONATION_ENVIRONMENTS
+
+
 class AuthAndOrganizationService:
     """Application service orchestrating hybrid auth, session revocation, and RBAC evaluation."""
 
@@ -108,8 +121,10 @@ class AuthAndOrganizationService:
         jwt_manager: JwtSessionManager | None = None,
         vault_cipher: PassthroughVaultCipher | None = None,
         revocation_store: RevocationStoreProtocol | None = None,
+        allow_persona_impersonation: bool = False,
     ) -> None:
         self.evaluator = evaluator
+        self.allow_persona_impersonation = allow_persona_impersonation
         self.hasher = hasher or Argon2idPasswordHasher()
         self.jwt_manager = jwt_manager or JwtSessionManager(
             signing_secret=get_env(
@@ -146,10 +161,16 @@ class AuthAndOrganizationService:
         bearer_token: str | None = None,
         now_ts: int | None = None,
     ) -> UserIdentity:
-        """Resolve caller identity from Bearer JWT, persona key, or default `marc` (`TEAM_LEAD`)."""
+        """Resolve caller identity from Bearer JWT, else (local / test only) a reference persona.
+
+        Without `allow_persona_impersonation`, a missing Bearer raises `AuthenticationRequiredError`
+        and any `persona_key` is ignored, so no caller can impersonate another user.
+        """
         if bearer_token:
             raw = bearer_token.removeprefix("Bearer ").removeprefix("bearer ").strip()
             return self.authenticate_access_token(raw, now_ts=now_ts)
+        if not self.allow_persona_impersonation:
+            raise AuthenticationRequiredError()
         key = (persona_key or "marc").strip().lower()
         user_id = self._persona_map.get(key)
         if user_id is None:

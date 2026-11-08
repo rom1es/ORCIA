@@ -47,6 +47,7 @@ from orcia_core.permissions import (
     RolePermissionGrant,
     build_default_auth_and_org_service,
     build_default_permission_broker_service,
+    persona_impersonation_allowed,
 )
 from orcia_core.rag import (
     CatalogAndBlackboardContextSourceAdapter,
@@ -81,6 +82,11 @@ def _resolve_default_llm_gateway() -> LLMPort:
     )
 
 
+def _e2e_fixtures_enabled() -> bool:
+    """`True` only on the isolated E2E stack (`ORCIA_E2E_SEED_FIXTURES=1`)."""
+    return os.environ.get("ORCIA_E2E_SEED_FIXTURES", "").strip() == "1"
+
+
 def initialize_app_services(app: FastAPI) -> None:
     """Wire and attach all domain services to `app.state` (idempotent Composition Root)."""
     activate_sdlc_pack()
@@ -94,7 +100,12 @@ def initialize_app_services(app: FastAPI) -> None:
     )
 
     if getattr(app.state, "auth_service", None) is None:
-        auth_service = build_default_auth_and_org_service()
+        # BUG-E2E-04 : hors ORCIA_ENV local / test, Bearer obligatoire (aucune persona).
+        auth_service = build_default_auth_and_org_service(
+            allow_persona_impersonation=persona_impersonation_allowed(
+                os.environ.get("ORCIA_ENV", "local")
+            )
+        )
         app.state.auth_service = auth_service
     else:
         auth_service = app.state.auth_service
@@ -127,13 +138,16 @@ def initialize_app_services(app: FastAPI) -> None:
 
     if getattr(app.state, "notification_service", None) is None:
         notif_svc = UnifiedNotificationAndClaimService()
-        notif_svc.seed_default_notifications(
-            workspace_id="0195f000-0000-7000-8000-000000000301",
-            team_id="0195f000-0000-7000-8000-000000000103",
-            user_id="0195f000-0000-7000-8000-000000000203",
-            run_id="0195f000-0000-7000-8000-000000000701",
-            step_execution_id="0195f000-0000-7000-8000-000000000801",
-        )
+        # Zéro donnée fictive : les notifications d'amorce ne sont semées que pour la pile E2E
+        # isolée (ORCIA_E2E_SEED_FIXTURES=1, posé uniquement par infra/scripts/e2e/).
+        if _e2e_fixtures_enabled():
+            notif_svc.seed_default_notifications(
+                workspace_id="0195f000-0000-7000-8000-000000000301",
+                team_id="0195f000-0000-7000-8000-000000000103",
+                user_id="0195f000-0000-7000-8000-000000000203",
+                run_id="0195f000-0000-7000-8000-000000000701",
+                step_execution_id="0195f000-0000-7000-8000-000000000801",
+            )
         app.state.notification_service = notif_svc
 
     if getattr(app.state, "resource_lease_service", None) is None:

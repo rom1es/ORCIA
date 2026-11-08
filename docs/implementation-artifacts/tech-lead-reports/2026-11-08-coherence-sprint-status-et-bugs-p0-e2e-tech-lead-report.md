@@ -27,13 +27,26 @@
 
 L'étude d'impact détaillée (GitNexus) de chaque bug est consignée en Section 2 au fur et à mesure, avant chaque modification de code.
 
+### 1.3 Résultats de l'investigation (causes racines)
+| Bug | Cause racine constatée | Impact GitNexus |
+| :--- | :--- | :--- |
+| `BUG-E2E-04` | L'identité repose sur des **personas en mémoire** (`karim`, `claire`, `marc`, `nadia`) : `AuthAndOrganizationService.resolve_user` retombe sur `marc` sans jeton, et **tout appelant peut passer `?persona_key=karim`** (admin). Le 1er administrateur créé au Jour 0 dans PostgreSQL (`users`) n'est pas connu de `AuthAndOrganizationService`, et `apps/web` n'envoie jamais de `Bearer`. `initialize_app_services` sème 4 notifications fictives. | `resolve_user` : **CRITICAL** (90 appelants, 86 processus) ; `seed_default_notifications` : **CRITICAL** (87 dépendants) |
+| `BUG-E2E-01` | `AssistantFoldersAndSharingService` est **100 % en mémoire** (`self._folders: dict`) alors que la migration `0025` crée `assistant_folders`, `assistant_threads`, `assistant_folder_shares` : adaptateur SQL manquant (garde-fou n°1). Côté web, création locale avec identifiant client puis `POST` vers un `workspace_id` de repli fictif (`…000301`), et aucun `GET` au démarrage. | Service + routeur + `apps/web/src/features/inbox/index.tsx` |
+| `BUG-E2E-03` | `GET /api/v1/events/stream` lit `list_recent_events()` puis termine le générateur ; `workspace_id` par défaut fictif (`…000301`) ; aucun `EventSource` dans `apps/web`. | Routeur `inbox_and_leases.py` + broker SSE + web |
+| `BUG-E2E-02` | Composants `@orcia/ui` existants mais jamais montés ; nécessite un écran de run porteur d'une ancre / d'un arbitrage (aucun run au Jour 0). | `apps/web` (nouvel écran ou panneau du cockpit) |
+
+Chaque bug P0 relève d'une story à part entière, et non d'un correctif ponctuel. `BUG-E2E-04` en particulier impose une décision d'architecture (modèle d'authentification de bout en bout).
+
 ## 2. Plan d'Implémentation
 
 ### 2.0 Étape 0 — Cohérence documentaire
 - Corriger `sprint-status.yaml` (statuts, rattachements, annotations, `last_updated`) et la ligne `CAP-ACT-5` / `TEST-07` du rapport `2026-11-08-test-07-a-10-...`.
 
-### 2.1 à 2.4 — Bugs P0
-Plan par bug complété ci-dessous après analyse d'impact.
+### 2.1 BUG-E2E-04 — Correctif de sécurité borné (décision utilisateur du 2026-11-08)
+- Core (`permissions`) : `AuthenticationRequiredError` (`401 ERR_AUTH_REQUIRED`, catalogue FR/EN), fonction pure `persona_impersonation_allowed(orcia_env)` (vrai seulement pour `local` / `test`), paramètre `allow_persona_impersonation` de `AuthAndOrganizationService` (défaut `False`, sûr) : sans Bearer et sans autorisation, `resolve_user` lève `AuthenticationRequiredError` et ignore tout `persona_key`.
+- Composition Root : `allow_persona_impersonation=persona_impersonation_allowed(ORCIA_ENV)` ; notifications d'amorce semées uniquement si `ORCIA_E2E_SEED_FIXTURES=1` (posé par `infra/scripts/e2e/e2e_stack_config.py`).
+- Hors périmètre (ticket `AUTH-01`) : authentification sur la table `users`, jeton envoyé par `apps/web`, lecture d'`ORCIA_ENV` / `ORCIA_BOOTSTRAP_TOKEN` dans `get_accostage_service`, persistance des notifications.
+- Pyramide : Couche Sécurité (`tests/security/test_authentication_enforcement.py`, 12 tests) ; Couche 1 (`test_story_5_1_*` arrange explicite des notifications) ; Couche 5 : la pile E2E reste en `local` et sème ses fixtures, spec `04` inchangée.
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
@@ -47,5 +60,19 @@ Plan par bug complété ci-dessous après analyse d'impact.
 | Story `13.1` | `review` | `review` justifié (attend CAP-ACT-1 / CAP-ACT-5) |
 | `last_updated` | 09:30 | 14:40 |
 
-### 3.1 Bugs P0
-_En cours — complété après chaque correction._
+### 3.1 BUG-E2E-04 (fait — correctif borné)
+| Fichier | Modification |
+| :--- | :--- |
+| `packages/orcia-core/src/orcia_core/permissions/errors.py` | `AuthenticationRequiredError` + entrée de catalogue `ERR_AUTH_REQUIRED` (FR/EN) |
+| `packages/orcia-core/src/orcia_core/permissions/service.py` | `persona_impersonation_allowed`, paramètre `allow_persona_impersonation`, refus sans Bearer |
+| `packages/orcia-core/src/orcia_core/permissions/__init__.py` | Export + paramètre du constructeur de topologie de référence |
+| `apps/api/src/orcia_api/dependencies/core_and_lifespan.py` | Lecture d'`ORCIA_ENV`, suppression des notifications fictives hors pile E2E |
+| `infra/scripts/e2e/e2e_stack_config.py` | `ORCIA_E2E_SEED_FIXTURES=1` |
+| `tests/security/test_authentication_enforcement.py` | Nouveau (12 tests : 401 sans Bearer, 401 malgré `persona_key=karim`, Bearer valide accepté, persona en local, zéro notification au démarrage) |
+| `tests/security/test_api_security_baseline.py`, `tests/unit/test_story_5_1_*` | Sonde inversée / arrange explicite |
+
+- Vérifications : `pytest tests/security` 33 passés ; `pytest tests/unit tests/contract tests/conformance tests/evals` (hors conteneurs) vert sauf 2 échecs **préexistants sur `main`** (`test_ac_e2_*`, `test_ac_f2_*`) → ticket `TEST-HYG-01` ; `ruff`, `mypy --strict`, `lint-imports` (5/5) verts.
+- Impact GitNexus pré-édition : `resolve_user` et `seed_default_notifications` **CRITICAL** ; comportement inchangé en `local` / `test` (défaut de la pile E2E et des tests), seul le mode non local change.
+
+### 3.2 BUG-E2E-01, 03, 02
+_En cours._
