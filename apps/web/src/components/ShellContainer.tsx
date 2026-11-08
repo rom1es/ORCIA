@@ -16,6 +16,7 @@ import {
   type EightFixedMenuKey,
   type TopSearchFamilyKey,
   type TopSearchHitItem,
+  type TopSearchScopeMode,
   type UiHumanProfileBadge,
   type UiModuleKey,
   type UiNotificationCenterItem,
@@ -97,47 +98,58 @@ function InnerShellContainer({
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
   const [speed2Hits, setSpeed2Hits] = useState<readonly TopSearchHitItem[]>([]);
   const [speed2Loading, setSpeed2Loading] = useState<boolean>(false);
+  const [speed2Executed, setSpeed2Executed] = useState<boolean>(false);
+  const [speed2Error, setSpeed2Error] = useState<string | null>(null);
   const [helpColumnOpen, setHelpColumnOpen] = useState<boolean>(() =>
     computeDefaultHelpColumnOpen(1440, runs.length),
   );
   const [activeHelpSectionId, setActiveHelpSectionId] = useState<string | null>(null);
 
-  const runFederatedSpeed2Search = (query: string) => {
+  const mapBackendSearchFamily = (rawFamily: string): TopSearchFamilyKey => {
+    if (rawFamily === "AGENTS_SKILLS") return "AGENTS_TOOLS";
+    if (rawFamily === "GLOSSARY_RULES") return "ONTOLOGY_GLOSSARY";
+    if (
+      rawFamily === "FOLDERS_DISCUSSIONS" ||
+      rawFamily === "PROCESSES_EXECUTIONS" ||
+      rawFamily === "AGENTS_TOOLS" ||
+      rawFamily === "DELIVERABLES_ARTIFACTS" ||
+      rawFamily === "SOURCES_SNIPPETS" ||
+      rawFamily === "ONTOLOGY_GLOSSARY" ||
+      rawFamily === "HELP_ACTIONS"
+    ) {
+      return rawFamily;
+    }
+    return "SOURCES_SNIPPETS";
+  };
+
+  const runFederatedSpeed2Search = (
+    query: string,
+    requestedScope: TopSearchScopeMode = "ALL_WORKSPACES",
+  ) => {
     const trimmed = query.trim();
     if (!trimmed) {
       setSpeed2Hits([]);
       setSpeed2Loading(false);
+      setSpeed2Executed(false);
+      setSpeed2Error(null);
       return;
     }
     setSpeed2Loading(true);
-    const localSemanticHit: TopSearchHitItem = {
-      itemId: `semantic-${trimmed.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
-      family: "SOURCES_SNIPPETS",
-      title: isFr
-        ? `Passage pertinent pour « ${trimmed} »`
-        : `Relevant passage for "${trimmed}"`,
-      snippet: isFr
-        ? `Recherche approfondie sur l'espace « ${activeWorkspaceName} »`
-        : `Deep search across workspace "${activeWorkspaceName}"`,
-      workspaceId: activeScopeId,
-      screenRoute: pathname ?? "/cockpit",
-      deepLinkUri: pathname ?? "/cockpit",
-      speedTier: 2,
-      lockedTop: false,
-      score: 0.88,
-      badge: "✨ Passage proche",
-      highlightDurationMs: 2000,
-      opensContextualHelpColumn: false,
-    };
+    setSpeed2Executed(false);
+    setSpeed2Error(null);
+    const activeWsId = workspaces[0]?.workspaceId ?? null;
+    const effectiveScope: TopSearchScopeMode =
+      activeWsId === null && requestedScope === "WORKSPACE" ? "ALL_WORKSPACES" : requestedScope;
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
-      .searchFederated(trimmed, "GLOBAL", workspaces[0]?.workspaceId ?? null, pathname ?? "/spaces")
+      .searchFederated(trimmed, effectiveScope, activeWsId, pathname ?? "/cockpit", true)
       .then((res) => {
         setSpeed2Loading(false);
+        setSpeed2Executed(Boolean(res.speed2_executed ?? true));
         const mapped = (res.hits ?? []).map(
           (hit): TopSearchHitItem => ({
             itemId: hit.item_id,
-            family: (hit.family as TopSearchFamilyKey) ?? "SOURCES_SNIPPETS",
+            family: mapBackendSearchFamily(String(hit.family ?? "")),
             title: hit.title,
             snippet: hit.snippet,
             workspaceId: hit.workspace_id,
@@ -151,11 +163,18 @@ function InnerShellContainer({
             opensContextualHelpColumn: Boolean(hit.opens_contextual_help_column),
           }),
         );
-        setSpeed2Hits(mapped.length > 0 ? mapped : [localSemanticHit]);
+        setSpeed2Hits(mapped);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         setSpeed2Loading(false);
-        setSpeed2Hits([localSemanticHit]);
+        setSpeed2Executed(false);
+        setSpeed2Hits([]);
+        const detail = err instanceof Error ? err.message : String(err);
+        setSpeed2Error(
+          isFr
+            ? `Erreur lors de la recherche fédérée (Vitesse 2) : ${detail}`
+            : `Federated search error (Speed 2): ${detail}`,
+        );
       });
   };
 
@@ -805,13 +824,17 @@ function InnerShellContainer({
             ]}
             speed2Hits={speed2Hits}
             speed2Loading={speed2Loading}
+            speed2Executed={speed2Executed}
+            speed2Error={speed2Error}
             onQueryChange={(query) => {
               if (!query.trim()) {
                 setSpeed2Hits([]);
                 setSpeed2Loading(false);
+                setSpeed2Executed(false);
+                setSpeed2Error(null);
               }
             }}
-            onTriggerSpeed2Now={(query) => runFederatedSpeed2Search(query)}
+            onTriggerSpeed2Now={(query, scope) => runFederatedSpeed2Search(query, scope)}
             onSelectDeepLink={(payload) => {
               setSearchModalOpen(false);
               dispatchNavigation(payload.deepLinkUri);

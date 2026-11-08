@@ -1513,6 +1513,27 @@ export function OrciaProductShowcaseSiteView({
                   {isFr ? "Rapports Tech Lead" : "Tech Lead Reports"}
                 </div>
               </div>
+
+              {manifest.stats.capabilitiesCount !== undefined ? (
+                <div
+                  data-testid="showcase-stat-capabilities"
+                  className="rounded-lg border p-3 text-center"
+                  style={{
+                    backgroundColor: "var(--color-bg-elevated)",
+                    borderColor: "var(--color-border-subtle)",
+                  }}
+                >
+                  <div className="text-lg font-bold" style={{ color: "var(--color-action-primary)" }}>
+                    {manifest.stats.verifiedCapabilitiesCount ?? 0} /{" "}
+                    {manifest.stats.liveCapabilitiesCount ?? manifest.stats.capabilitiesCount}
+                  </div>
+                  <div style={{ color: "var(--color-text-secondary)" }}>
+                    {isFr
+                      ? "Capacités Vérifiées Runtime (capabilities.yaml)"
+                      : "Runtime-Verified Capabilities (capabilities.yaml)"}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-xs">

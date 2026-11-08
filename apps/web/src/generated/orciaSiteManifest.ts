@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-08",
   "stats": {
     "activeRoutesCount": 20,
-    "uiPrimitivesCount": 86,
+    "uiPrimitivesCount": 91,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 104,
+    "techLeadReportsCount": 105,
     "capabilitiesCount": 57,
     "liveCapabilitiesCount": 54,
-    "verifiedCapabilitiesCount": 5
+    "verifiedCapabilitiesCount": 33
   },
   "activeRoutes": [
     "/",
@@ -91,13 +91,18 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
+    "OrciaDialog",
+    "OrciaDropdownMenu",
     "OrciaIcon",
     "OrciaInput",
     "OrciaProductShowcaseSiteView",
+    "OrciaRadixSelect",
     "OrciaSectionCard",
     "OrciaSelect",
+    "OrciaSwitch",
     "OrciaTabBar",
     "OrciaTextarea",
+    "OrciaTooltip",
     "PackBuilderProcessesStudioView",
     "PermissionBrokerCard",
     "PermissionGuard",
@@ -423,6 +428,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Vague P1 / Bugs E2E (BUG-E2E-05, BUG-E2E-06), Socle Radix UI (UX-DS-RADIX-01) & Registre Capacités (CAP-ACT-1)",
+      "reportFile": "2026-11-08-bugs-p1-e2e-et-socle-radix-ui-tech-lead-report.md",
+      "domain": "Montage du Briefing 4 Blocs & Validation par Découpage (BUG-E2E-05), Correction Recherche ⌘K Vitesse 2 sans localSemanticHit (BUG-E2E-06), Socle Radix UI + shadcn/ui dans @orcia/ui (UX-DS-RADIX-01, AD-22) & Promotion Runtime du Registre des Capacités (CAP-ACT-1)",
+      "summary": "Création de GatesAdaptiveHumanReviewSection.tsx (CognitiveReviewBriefingGrid, ChunkValidationCard, garde-fou < 15 s, actions Jira et survie F5), correction de GET /api/v1/search au Jour 0 et suppression de localSemanticHit, création de RadixDesignSystemPrimitives.tsx (@radix-ui/react-tabs, dialog, select, dropdown-menu, tooltip, switch), promotion de 33/54 capacités live en verification: runtime et passage au vert de e2e/06 et e2e/10."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Sprint & Bugs P0 (BUG-E2E-01..04)",

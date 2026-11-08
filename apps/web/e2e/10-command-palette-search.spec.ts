@@ -24,10 +24,6 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
   });
 
   test("la recherche fédérée (vitesse 2) aboutit côté API", async ({ page }) => {
-    // DÉFAUT PRODUIT RÉEL (BUG-E2E-06) : l'appel fédéré de l'UI reçoit un 422 (sans espace de
-    // travail), l'erreur est avalée et l'UI affiche un « passage proche » local fabriqué.
-    // `test.fail` : passe tant que le défaut existe, échoue dès la correction (retirer la ligne).
-    test.fail(true, "BUG-E2E-06 : recherche fédérée en 422, résultat local factice affiché");
     await page.keyboard.press("Control+k");
     await page.getByTestId("cmdk-search-input").fill("agents");
     const federated = page.waitForResponse(
@@ -35,6 +31,9 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
       { timeout: 20000 },
     );
     await page.getByTestId("cmdk-trigger-speed2-btn").click();
-    expect((await federated).status(), "recherche fédérée (vitesse 2)").toBeLessThan(400);
+    const res = await federated;
+    expect(res.status(), "recherche fédérée (vitesse 2)").toBeLessThan(400);
+    await expect(page.getByTestId("cmdk-speed2-error-banner")).toHaveCount(0);
+    await expect(page.getByTestId("cmdk-speed2-appended-group")).toBeVisible();
   });
 });

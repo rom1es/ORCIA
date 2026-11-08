@@ -249,48 +249,23 @@ export function OrciaSectionCard({
   );
 }
 
-export interface OrciaTabItem<T extends string = string> {
-  readonly key: T;
-  readonly label: string;
-  readonly testId?: string;
-}
-
-export interface OrciaTabBarProps<T extends string = string> {
-  readonly tabs: readonly OrciaTabItem<T>[];
-  readonly activeTab: T;
-  readonly onSelectTab: (tabKey: T) => void;
-  readonly ariaLabel: string;
-  readonly testIdPrefix?: string;
-}
-
-export function OrciaTabBar<T extends string = string>({
-  tabs,
-  activeTab,
-  onSelectTab,
-  ariaLabel,
-  testIdPrefix = "orcia-tab",
-}: OrciaTabBarProps<T>): React.ReactElement {
-  return (
-    <nav role="tablist" aria-label={ariaLabel} className="orcia-ds-tabs">
-      {tabs.map((tab) => {
-        const isSelected = tab.key === activeTab;
-        return (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            aria-selected={isSelected}
-            data-testid={tab.testId ?? `${testIdPrefix}-${tab.key}`}
-            onClick={() => onSelectTab(tab.key)}
-            className="orcia-ds-tab"
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
+export {
+  OrciaDialog,
+  OrciaDropdownMenu,
+  OrciaRadixSelect,
+  OrciaSwitch,
+  OrciaTabBar,
+  OrciaTooltip,
+  type OrciaDialogProps,
+  type OrciaDropdownMenuItem,
+  type OrciaDropdownMenuProps,
+  type OrciaRadixSelectOption,
+  type OrciaRadixSelectProps,
+  type OrciaSwitchProps,
+  type OrciaTabBarProps,
+  type OrciaTabItem,
+  type OrciaTooltipProps,
+} from "./RadixDesignSystemPrimitives";
 
 export type OrciaAlertTone = "emerald" | "amber" | "crimson" | "cobalt";
 

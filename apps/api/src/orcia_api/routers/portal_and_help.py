@@ -95,8 +95,10 @@ def _serialize_help_article(art: HelpArticleCatalogItem) -> HelpArticleSchemaIte
 async def execute_two_speed_federated_search(
     request: Request,
     q: str = Query(default="", max_length=256),
-    scope: Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES"] = Query(default="WORKSPACE"),
-    workspace_id: str = Query(default="ws-claims-alpha", min_length=1, max_length=128),
+    scope: Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES", "GLOBAL", "CONTEXTUAL"] = Query(
+        default="WORKSPACE"
+    ),
+    workspace_id: str | None = Query(default="ws-claims-alpha", max_length=128),
     screen_route: str = Query(default="/cockpit", min_length=1, max_length=128),
     include_speed2: bool = Query(default=True),
     force_semantic: bool = Query(default=False),
@@ -104,10 +106,18 @@ async def execute_two_speed_federated_search(
 ) -> TwoSpeedSearchResponse:
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_two_speed_search_service(request)
+    normalized_scope: Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES"]
+    if scope == "GLOBAL":
+        normalized_scope = "ALL_WORKSPACES"
+    elif scope == "CONTEXTUAL":
+        normalized_scope = "WORKSPACE"
+    else:
+        normalized_scope = scope
+    effective_ws = (workspace_id or "").strip() or "ws-claims-alpha"
     report = svc.execute_search(
         query=q,
-        scope=scope,
-        active_workspace_id=workspace_id,
+        scope=normalized_scope,
+        active_workspace_id=effective_ws,
         active_screen_route=screen_route,
         user_role=user.platform_role,
         include_speed2=include_speed2,

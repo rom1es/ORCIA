@@ -65,6 +65,10 @@ export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEval
 
 export type HumanGateEvaluateRequest = components["schemas"]["HumanGateEvaluateRequest"];
 export type HumanGateEvaluateResponse = components["schemas"]["HumanGateEvaluateResponse"];
+export type HumanGateEvaluationListResponse =
+  components["schemas"]["HumanGateEvaluationListResponse"];
+export type HumanGateEvaluationSchemaItem =
+  components["schemas"]["HumanGateEvaluationSchemaItem"];
 export type HumanGateChunkDecideRequest = components["schemas"]["HumanGateChunkDecideRequest"];
 export type HumanGateChunkDecideResponse = components["schemas"]["HumanGateChunkDecideResponse"];
 export type HumanGateFinalizeRequest = components["schemas"]["HumanGateFinalizeRequest"];
@@ -74,6 +78,8 @@ export type JiraJqlSearchRequest = components["schemas"]["JiraJqlSearchRequest"]
 export type JiraJqlSearchResponse = components["schemas"]["JiraJqlSearchResponse"];
 export type StageJiraActionRequest = components["schemas"]["StageJiraActionRequest"];
 export type StageJiraActionResponse = components["schemas"]["StageJiraActionResponse"];
+export type StagedJiraActionListResponse = components["schemas"]["StagedJiraActionListResponse"];
+export type StagedJiraActionItemSchema = components["schemas"]["StagedJiraActionItemSchema"];
 export type CommitStagedJiraActionRequest =
   components["schemas"]["CommitStagedJiraActionRequest"];
 export type CommitStagedJiraActionResponse =
@@ -362,6 +368,22 @@ export function createEpics1To7OperationsDomainClient(requestJson: RequestJsonFn
         payload,
       );
     },
+    listHumanGateEvaluations(
+      workspaceId?: string,
+      personaKey?: string,
+    ): Promise<HumanGateEvaluationListResponse> {
+      const params = new URLSearchParams();
+      if (workspaceId && workspaceId.trim()) {
+        params.set("workspace_id", workspaceId.trim());
+      }
+      if (personaKey && personaKey.trim()) {
+        params.set("persona_key", personaKey.trim());
+      }
+      const qs = params.toString();
+      return requestJson<HumanGateEvaluationListResponse>(
+        `/api/v1/gates/human/evaluations${qs ? `?${qs}` : ""}`,
+      );
+    },
     evaluateHumanGate(
       payload: HumanGateEvaluateRequest,
       personaKey?: string,
@@ -412,6 +434,22 @@ export function createEpics1To7OperationsDomainClient(requestJson: RequestJsonFn
         `/api/v1/jira/jql/search${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
+      );
+    },
+    listStagedJiraActions(
+      workspaceId?: string,
+      personaKey?: string,
+    ): Promise<StagedJiraActionListResponse> {
+      const params = new URLSearchParams();
+      if (workspaceId && workspaceId.trim()) {
+        params.set("workspace_id", workspaceId.trim());
+      }
+      if (personaKey && personaKey.trim()) {
+        params.set("persona_key", personaKey.trim());
+      }
+      const qs = params.toString();
+      return requestJson<StagedJiraActionListResponse>(
+        `/api/v1/jira/actions/staged${qs ? `?${qs}` : ""}`,
       );
     },
     stageJiraWorkflowAction(
