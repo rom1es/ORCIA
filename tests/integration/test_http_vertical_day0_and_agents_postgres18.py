@@ -160,7 +160,15 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
                             "name": "BU Sinistres Vertical",
                             "slug": "bu-vertical-claims",
                             "level": "BU",
-                        }
+                            "parentId": "scope-global",
+                        },
+                        {
+                            "id": "team-vertical-rts",
+                            "name": "Équipe RTS Vertical",
+                            "slug": "team-vertical-rts",
+                            "level": "TEAM",
+                            "parentId": "bu-vertical-claims",
+                        },
                     ],
                     "rbac_grants": [{"id": "g-vert-1", "role": "TEAM_LEAD", "scope": "GLOBAL"}],
                     "llm_tiers": [
@@ -177,6 +185,7 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
                             "slug": "ws-vertical-alpha",
                             "visibilityMode": "STANDARD",
                             "lifecyclePhase": "RUN",
+                            "ownerOrgUnitId": "team-vertical-rts",
                         }
                     ],
                     "datasources": [{"id": "ds-v1", "uri": "git://claims/vertical"}],
@@ -194,6 +203,10 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
             get_res = await client.get("/api/v1/bootstrap/platform-setup-state")
             assert get_res.status_code == 200, get_res.text
             assert get_res.json()["org_units"][0]["slug"] == "bu-vertical-claims"
+            assert get_res.json()["org_units"][1]["slug"] == "team-vertical-rts"
+            assert (
+                get_res.json()["workspaces"][0]["ownerOrgUnitName"] == "Équipe RTS Vertical"
+            )
 
         async with engine.connect() as conn:
             settings_count = (
@@ -206,7 +219,10 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
             ).scalar_one()
             org_count = (
                 await conn.execute(
-                    sa.text("SELECT count(*) FROM org_units WHERE slug = 'bu-vertical-claims'")
+                    sa.text(
+                        "SELECT count(*) FROM org_units "
+                        "WHERE slug IN ('bu-vertical-claims', 'team-vertical-rts')"
+                    )
                 )
             ).scalar_one()
             ws_count = (
@@ -223,9 +239,58 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
                 )
             ).scalar_one()
         assert settings_count == 1
-        assert org_count == 1
+        assert org_count == 2
         assert ws_count == 1
         assert llm_count == 1
+
+        # Verify symmetric reconciliation when JSONB org_units/workspaces are empty
+        async with engine.begin() as conn:
+            await conn.execute(
+                sa.text(
+                    "DELETE FROM platform_settings WHERE key = 'platform_setup_state_v1'"
+                )
+            )
+        async with app_client_factory() as client:
+            reconciled_res = await client.get("/api/v1/bootstrap/platform-setup-state")
+            assert reconciled_res.status_code == 200
+            reconciled_body = reconciled_res.json()
+            reconciled_slugs = [u["slug"] for u in reconciled_body["org_units"]]
+            assert "bu-vertical-claims" in reconciled_slugs
+            assert "team-vertical-rts" in reconciled_slugs
+            assert len(reconciled_body["workspaces"]) == 1
+            assert (
+                reconciled_body["workspaces"][0]["ownerOrgUnitName"] == "Équipe RTS Vertical"
+            )
+
+            # Verify relational purge on deletion (no ghost workspace or org_unit)
+            purge_res = await client.put(
+                "/api/v1/bootstrap/platform-setup-state",
+                json={
+                    "org_units": [
+                        {
+                            "id": "bu-vertical-claims",
+                            "name": "BU Sinistres Vertical",
+                            "slug": "bu-vertical-claims",
+                            "level": "BU",
+                        }
+                    ],
+                    "rbac_grants": [],
+                    "llm_tiers": [],
+                    "workspaces": [],
+                    "datasources": [],
+                    "packs": [],
+                    "workflows": [],
+                    "runs": [],
+                    "catalog_items": [],
+                    "ontology_concepts": [],
+                    "audit_events": [],
+                },
+            )
+            assert purge_res.status_code == 200
+            after_purge_get = await client.get("/api/v1/bootstrap/platform-setup-state")
+            assert after_purge_get.status_code == 200
+            assert len(after_purge_get.json()["org_units"]) == 1
+            assert after_purge_get.json()["workspaces"] == []
     finally:
         await engine.dispose()
 

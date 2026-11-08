@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-08",
   "stats": {
     "activeRoutesCount": 23,
-    "uiPrimitivesCount": 91,
+    "uiPrimitivesCount": 96,
     "installedPacksCount": 0,
     "alembicMigrationsCount": 28,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 107,
+    "techLeadReportsCount": 108,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -45,6 +45,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/workspaces"
   ],
   "uiPrimitives": [
+    "AGENT_STUDIO_BLOCKS",
     "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
@@ -73,6 +74,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "CommandPaletteModal",
     "ContextualHelpColumnAndCenter",
     "ContextualInfoTriggerButton",
+    "DIALOGUE_MECHANISM_LABELS_FR",
     "DisabledButtonAlertIndicator",
     "DnaStarlarkCompilerAndGlossaryLifecycleView",
     "DurableWizardRunnerView",
@@ -82,15 +84,18 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FourZoneDirectionCShell",
     "GlobalSidebar",
     "GuidanceDrawer",
+    "HUMAN_PARTNER_ROLE_LABELS_FR",
     "HelpArticleGeneratorAndValidatorView",
     "HumanLedAnchorCard",
     "InferenceTierBadge",
+    "LLM_MODEL_TIER_LABELS_FR",
     "LayersInspectorPopover",
     "MobileCompanionView",
     "ORCIA_EIGHT_MENU_ICON_NAMES",
     "ORCIA_ICONS",
     "ORCIA_MODULE_ICON_NAMES",
     "ORCIA_SCOPE_LEVEL_ICON_NAMES",
+    "OUTPUT_CONTRACT_FORMAT_LABELS_FR",
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
@@ -421,6 +426,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Sélecteur d'Entête & Synchronisation SQL org_units/workspaces (CAP-067, CAP-061)",
+      "reportFile": "2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units-tech-lead-report.md",
+      "domain": "Distinction Visuelle Explicite 👥 Équipe vs 📦 Espace dans le Sélecteur d'Entête (TopHeaderBar) & Synchronisation Bidirectionnelle PostgreSQL 18 org_units / workspaces",
+      "summary": "Création de shellScopeOptions.ts (👥 Équipe · <nom>, 📦 Espace · <nom>, 🔒 Espace · <nom>, 🏢 Direction (BU) · <nom>) et FirstBootAdminSetupModal.tsx (réduisant ShellContainer.tsx de 871 à 385 lignes) ; création de sql_platform_setup_relational_sync.py assurant la synchronisation hiérarchique (parent_id, owner_org_unit_id), la purge des entités supprimées et la réconciliation symétrique org_units + workspaces ; et isolation du fuzzing Schemathesis (ORCIA_DISABLE_PG_BOOTSTRAP_SYNC=\"1\")."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Refonte UX Mes Processus & Studio Métier (CAP-140, CAP-150)",

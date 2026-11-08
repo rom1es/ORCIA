@@ -31,8 +31,13 @@ def upgrade() -> None:
                 bundle_sha256 CHAR(64) NOT NULL,
                 manifest_jsonb JSONB NOT NULL DEFAULT '{}'::jsonb,
                 loaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-
+            )
+            """
+        )
+    )
+    op.execute(
+        sa.text(
+            """
             CREATE TABLE IF NOT EXISTS vsm_definitions_v2 (
                 id UUID PRIMARY KEY,
                 vsm_id VARCHAR(128) NOT NULL UNIQUE,
@@ -41,8 +46,13 @@ def upgrade() -> None:
                 title VARCHAR(255) NOT NULL,
                 spec_jsonb JSONB NOT NULL DEFAULT '{}'::jsonb,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-
+            )
+            """
+        )
+    )
+    op.execute(
+        sa.text(
+            """
             CREATE TABLE IF NOT EXISTS workflow_definitions_v2 (
                 id UUID PRIMARY KEY,
                 workflow_id VARCHAR(128) NOT NULL,
@@ -54,8 +64,13 @@ def upgrade() -> None:
                 spec_jsonb JSONB NOT NULL DEFAULT '{}'::jsonb,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 CONSTRAINT uq_workflow_definitions_v2_id_ver UNIQUE (workflow_id, version)
-            );
-
+            )
+            """
+        )
+    )
+    op.execute(
+        sa.text(
+            """
             CREATE TABLE IF NOT EXISTS claim_check_artifacts (
                 id UUID PRIMARY KEY,
                 run_id VARCHAR(128) NOT NULL,
@@ -66,10 +81,15 @@ def upgrade() -> None:
                 byte_size BIGINT NOT NULL CHECK (byte_size >= 0),
                 mime_type VARCHAR(128) NOT NULL DEFAULT 'text/markdown',
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-
+            )
+            """
+        )
+    )
+    op.execute(
+        sa.text(
+            """
             CREATE INDEX IF NOT EXISTS ix_claim_check_artifacts_run_step_iter
-                ON claim_check_artifacts (run_id, step_id, iteration_index);
+                ON claim_check_artifacts (run_id, step_id, iteration_index)
             """
         )
     )
@@ -77,14 +97,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop tables created in 20261108_0910."""
-    op.execute(
-        sa.text(
-            """
-            DROP INDEX IF EXISTS ix_claim_check_artifacts_run_step_iter;
-            DROP TABLE IF EXISTS claim_check_artifacts;
-            DROP TABLE IF EXISTS workflow_definitions_v2;
-            DROP TABLE IF EXISTS vsm_definitions_v2;
-            DROP TABLE IF EXISTS declarative_pack_bundles;
-            """
-        )
-    )
+    op.execute(sa.text("DROP INDEX IF EXISTS ix_claim_check_artifacts_run_step_iter"))
+    op.execute(sa.text("DROP TABLE IF EXISTS claim_check_artifacts"))
+    op.execute(sa.text("DROP TABLE IF EXISTS workflow_definitions_v2"))
+    op.execute(sa.text("DROP TABLE IF EXISTS vsm_definitions_v2"))
+    op.execute(sa.text("DROP TABLE IF EXISTS declarative_pack_bundles"))

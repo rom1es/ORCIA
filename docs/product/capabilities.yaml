@@ -444,14 +444,14 @@ capabilities:
     verification: runtime
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: AgentsAndSkillsManagerView }
   - id: CAP-091
-    title: Refonte complète écran Agents, Skills et MCP
+    title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]
     origin: adhoc
-    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp
+    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes
     status: live
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + WorkspaceAssistantPinnedCard + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal" }
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
   - id: CAP-100
@@ -476,9 +476,9 @@ capabilities:
     title: Rattachement d'équipe, facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-34]
     origin: adhoc
-    origin_ref: 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte
+    origin_ref: 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
     surfaces: { route: /spaces, api: org_and_workspaces.py }
   - id: CAP-075

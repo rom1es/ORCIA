@@ -305,6 +305,27 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
             setCatalogItems(hydrated.catalogItems);
             setOntologyConcepts(hydrated.ontologyConcepts);
             setAuditEvents(hydrated.auditEvents);
+            if (!hasMutatedSinceMountRef.current && status.first_admin_initialized && status.first_admin_email) {
+              const remoteTeamIds = hydrated.orgUnits
+                .filter((u) => u.level === "TEAM")
+                .map((u) => u.id);
+              const existingLocal = readCachedPlatformAdmin();
+              const validLocalTeams = (existingLocal?.memberTeamIds ?? []).filter((id) =>
+                remoteTeamIds.includes(id),
+              );
+              const effectiveTeamIds =
+                validLocalTeams.length > 0 ? validLocalTeams : remoteTeamIds;
+              if (effectiveTeamIds.length > 0) {
+                const updatedAdmin: ConfiguredPlatformAdmin = {
+                  displayName: status.first_admin_display_name ?? status.first_admin_email,
+                  email: status.first_admin_email,
+                  role: "PLATFORM_ADMIN",
+                  memberTeamIds: effectiveTeamIds,
+                };
+                writeCachedPlatformAdmin(updatedAdmin);
+                setPlatformAdmin(updatedAdmin);
+              }
+            }
           }
         }
       })
@@ -782,8 +803,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         resourceType: "workflow",
         sourceFormat: "ORCIA",
         version: input.version,
-        sha256Short: "e3b0c44298fc",
-        casKey: "cas/e3b0c44298fc",
+        sha256Short: "e3b0c44298fc", // pragma: allowlist secret
+        casKey: "cas/e3b0c44298fc", // pragma: allowlist secret
         visibilityScope: "PUBLISHED_ORG",
         grantedPermissions: ["DISCOVER", "EXECUTE"],
         sourceMasked: false,

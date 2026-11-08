@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from dataclasses import dataclass, field
 from typing import Any
-from uuid import UUID, uuid5
+from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -21,26 +20,21 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from orcia_core.bootstrap._internal.sql_first_user_guard import (
     get_first_platform_admin_from_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_platform_setup_relational_sync import (
+    ROOT_ORG_UNIT_ID,
+    deterministic_setup_uuid,
+    normalize_setup_slug,
+    sync_relational_tables_on_postgres18,
+)
 from orcia_core.bootstrap.models import LlmModelEndpoint
 from orcia_kernel.ids import new_uuid7_str
 
 GLOBAL_SETUP_SCOPE_ID = UUID("0192c4e0-0000-7000-8000-000000000000")
-ROOT_ORG_UNIT_ID = UUID("0192c4e0-0000-7000-8000-000000000001")
 PLATFORM_SETUP_SETTING_KEY = "platform_setup_state_v1"
-_NAMESPACE_ORCIA_SETUP = UUID("0192c4e0-0000-7000-8000-000000000099")
-_SLUG_CLEAN_RE = re.compile(r"[^a-z0-9-]+")
 
-
-def _deterministic_uuid(seed: str) -> UUID:
-    try:
-        return UUID(seed)
-    except (ValueError, TypeError):
-        return uuid5(_NAMESPACE_ORCIA_SETUP, seed)
-
-
-def _normalize_slug(raw: str, fallback: str) -> str:
-    cleaned = _SLUG_CLEAN_RE.sub("-", raw.strip().lower()).strip("-")
-    return (cleaned or fallback)[:120]
+# Re-exported aliases for internal compatibility
+_deterministic_uuid = deterministic_setup_uuid
+_normalize_slug = normalize_setup_slug
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,131 +73,125 @@ class PlatformSetupSnapshotRecord:
         }
 
 
-async def _ensure_root_org_unit(conn: AsyncConnection) -> UUID:
-    row = (
-        await conn.execute(
-            sa.text(
-                """
-                INSERT INTO org_units (id, slug, name, unit_type, parent_id)
-                VALUES (:id, 'orcia-root', 'ORCIA Root Organization', 'ENTERPRISE', NULL)
-                ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
-                RETURNING id
-                """
-            ),
-            {"id": ROOT_ORG_UNIT_ID},
-        )
-    ).first()
-    if row is not None and row[0] is not None:
-        return UUID(str(row[0]))
-    return ROOT_ORG_UNIT_ID
-
-
-async def _sync_relational_tables_on_postgres18(
+async def _reconcile_org_units_on_load(
     conn: AsyncConnection,
-    snapshot: PlatformSetupSnapshotRecord,
-) -> None:
-    root_org_id = await _ensure_root_org_unit(conn)
+    raw_org_units: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Reconcile `org_units` from the relational `org_units` table when JSONB list is empty."""
+    if raw_org_units:
+        return list(raw_org_units)
 
-    # 1. Synchronize org_units (BU / TEAM)
-    for idx, org in enumerate(snapshot.org_units):
-        org_key = str(org.get("id") or f"org-{idx + 1}")
-        org_uuid = _deterministic_uuid(f"org:{org_key}")
-        name = str(org.get("name") or org_key).strip() or org_key
-        slug = _normalize_slug(str(org.get("slug") or name), f"org-{idx + 1}")
-        level = str(org.get("level") or "BU").upper()
-        unit_type = "TEAM" if level == "TEAM" else "BU"
+    org_rows = (
         await conn.execute(
             sa.text(
                 """
-                INSERT INTO org_units (id, slug, name, unit_type, parent_id)
-                VALUES (:id, :slug, :name, :unit_type, :parent_id)
-                ON CONFLICT (slug) DO UPDATE
-                SET name = EXCLUDED.name,
-                    unit_type = EXCLUDED.unit_type
+                SELECT id, slug, name, unit_type, parent_id
+                FROM org_units
+                WHERE unit_type IN ('BU', 'TEAM')
+                ORDER BY CASE WHEN unit_type = 'BU' THEN 0 ELSE 1 END, created_at ASC
                 """
-            ),
-            {
-                "id": org_uuid,
-                "slug": slug,
-                "name": name[:255],
-                "unit_type": unit_type,
-                "parent_id": root_org_id,
-            },
+            )
         )
+    ).fetchall()
+    ui_id_by_db_uuid: dict[str, str] = {}
+    reconciled: list[dict[str, Any]] = []
+    for idx, org_row in enumerate(org_rows):
+        db_uuid_str = str(org_row[0])
+        ui_id = f"org-{idx + 1}"
+        ui_id_by_db_uuid[db_uuid_str] = ui_id
+        parent_db_str = str(org_row[4]) if org_row[4] is not None else ""
+        parent_ui_id = ui_id_by_db_uuid.get(parent_db_str, "scope-global")
+        level = "TEAM" if str(org_row[3]).upper() == "TEAM" else "BU"
+        reconciled.append(
+            {
+                "id": ui_id,
+                "name": str(org_row[2]),
+                "slug": str(org_row[1]),
+                "level": level,
+                "parentId": parent_ui_id,
+            }
+        )
+    return reconciled
 
-    # 2. Synchronize workspaces
-    for idx, ws in enumerate(snapshot.workspaces):
-        ws_key = str(ws.get("workspaceId") or ws.get("id") or f"ws-{idx + 1}")
-        ws_uuid = _deterministic_uuid(f"ws:{ws_key}")
-        name = str(ws.get("name") or ws_key).strip() or ws_key
-        raw_slug = str(ws.get("slug") or name)
-        slug = _normalize_slug(raw_slug, f"ws-{idx + 1}")
-        vis_raw = str(ws.get("visibilityMode") or "STANDARD").upper()
-        visibility_mode = (
-            "CONFIDENTIAL_RESTRICTED" if vis_raw == "CONFIDENTIAL_RESTRICTED" else "STANDARD"
-        )
-        phase = str(ws.get("lifecyclePhase") or "BUILD").upper()
-        settings_json = json.dumps({"lifecycle_phase": phase, "ui_workspace_id": ws_key})
-        await conn.execute(
-            sa.text(
-                """
-                INSERT INTO workspaces (
-                    id, slug, name, owner_org_unit_id, visibility_mode, settings_jsonb
-                )
-                VALUES (
-                    :id, :slug, :name, :owner_org_unit_id, :visibility_mode,
-                    CAST(:settings_jsonb AS jsonb)
-                )
-                ON CONFLICT (slug) DO UPDATE
-                SET name = EXCLUDED.name,
-                    visibility_mode = EXCLUDED.visibility_mode,
-                    settings_jsonb = EXCLUDED.settings_jsonb
-                """
-            ),
-            {
-                "id": ws_uuid,
-                "slug": slug,
-                "name": name[:255],
-                "owner_org_unit_id": root_org_id,
-                "visibility_mode": visibility_mode,
-                "settings_jsonb": settings_json,
-            },
-        )
 
-    # 3. Synchronize llm_model_endpoints from llm_tiers
-    for idx, tier_item in enumerate(snapshot.llm_tiers):
-        tier_name = str(tier_item.get("tier") or f"tier-{idx + 1}").strip().lower()
-        primary_model = str(tier_item.get("primaryModel") or "model-primary").strip()
-        model_family = str(tier_item.get("modelFamily") or "family-a").strip()
-        endpoint_key = _normalize_slug(f"tier-{tier_name}-{primary_model}", f"tier-{idx + 1}")
-        ep_uuid = _deterministic_uuid(f"llm-ep:{endpoint_key}")
-        provider_slug = primary_model.split("/", 1)[0] if "/" in primary_model else "openai-compat"
-        await conn.execute(
-            sa.text(
-                """
-                INSERT INTO llm_model_endpoints (
-                    id, endpoint_key, provider_slug, model_family, model_name,
-                    endpoint_uri, connectivity_verified, is_active
+async def _reconcile_workspaces_on_load(
+    conn: AsyncConnection,
+    raw_workspaces: list[dict[str, Any]],
+    org_units: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Reconcile `workspaces` from relational `workspaces` and enrich `ownerOrgUnitName`."""
+    org_by_ref: dict[str, dict[str, Any]] = {}
+    for u in org_units:
+        uid = str(u.get("id") or "")
+        uslug = str(u.get("slug") or "")
+        if uid:
+            org_by_ref[uid] = u
+        if uslug:
+            org_by_ref[uslug] = u
+
+    workspaces = [dict(ws) for ws in raw_workspaces]
+    if not workspaces:
+        ws_rows = (
+            await conn.execute(
+                sa.text(
+                    """
+                    SELECT w.id, w.slug, w.name, w.visibility_mode, w.settings_jsonb,
+                           w.finops_cost_usd, o.slug, o.name, o.unit_type
+                    FROM workspaces w
+                    LEFT JOIN org_units o ON o.id = w.owner_org_unit_id
+                    ORDER BY w.created_at ASC
+                    """
                 )
-                VALUES (
-                    :id, :endpoint_key, :provider_slug, :model_family, :model_name,
-                    :endpoint_uri, TRUE, TRUE
+            )
+        ).fetchall()
+        for ws_row in ws_rows:
+            st_raw = ws_row[4]
+            st_dict = (
+                json.loads(st_raw)
+                if isinstance(st_raw, str)
+                else (st_raw if isinstance(st_raw, dict) else {})
+            )
+            owner_slug = str(ws_row[6] or "")
+            owner_unit_type = str(ws_row[8] or "").upper()
+            matched_org = org_by_ref.get(str(st_dict.get("owner_org_unit_id") or "")) or (
+                org_by_ref.get(owner_slug) if owner_unit_type in ("BU", "TEAM") else None
+            )
+            owner_org_id = (
+                str(matched_org["id"])
+                if matched_org
+                else str(st_dict.get("owner_org_unit_id") or "")
+            )
+            owner_org_name = (
+                str(matched_org["name"])
+                if matched_org
+                else str(
+                    st_dict.get("owner_org_unit_name")
+                    or (ws_row[7] if owner_unit_type in ("BU", "TEAM") else "")
                 )
-                ON CONFLICT (endpoint_key) DO UPDATE
-                SET model_family = EXCLUDED.model_family,
-                    model_name = EXCLUDED.model_name,
-                    is_active = TRUE
-                """
-            ),
-            {
-                "id": ep_uuid,
-                "endpoint_key": endpoint_key[:128],
-                "provider_slug": provider_slug[:64] or "local",
-                "model_family": model_family[:64] or "family-a",
-                "model_name": primary_model[:128] or "default-model",
-                "endpoint_uri": f"https://llm.orcia.local/{endpoint_key}",
-            },
-        )
+            )
+            ws_entry: dict[str, Any] = {
+                "workspaceId": str(st_dict.get("ui_workspace_id") or ws_row[0]),
+                "name": str(ws_row[2]),
+                "slug": str(ws_row[1]),
+                "visibilityMode": str(st_dict.get("ui_visibility_mode") or ws_row[3]),
+                "lifecyclePhase": str(st_dict.get("lifecycle_phase") or "BUILD"),
+                "suggestedWorkflows": [],
+                "accessMode": "CONTRIBUTOR_ACTION_REQUIRED",
+                "finopsCostUsd": float(ws_row[5] or 0.0),
+            }
+            if owner_org_id:
+                ws_entry["ownerOrgUnitId"] = owner_org_id
+            if owner_org_name:
+                ws_entry["ownerOrgUnitName"] = owner_org_name
+            workspaces.append(ws_entry)
+
+    for ws in workspaces:
+        if not ws.get("ownerOrgUnitName"):
+            owner_ref = str(ws.get("ownerOrgUnitId") or "").strip()
+            matched = org_by_ref.get(owner_ref)
+            if matched and matched.get("name"):
+                ws["ownerOrgUnitName"] = str(matched["name"])
+    return workspaces
 
 
 async def save_platform_setup_state_to_postgres18(
@@ -244,7 +232,12 @@ async def save_platform_setup_state_to_postgres18(
                 "etag": etag,
             },
         )
-        await _sync_relational_tables_on_postgres18(conn, snapshot)
+        await sync_relational_tables_on_postgres18(
+            conn,
+            org_units=list(snapshot.org_units),
+            workspaces=list(snapshot.workspaces),
+            llm_tiers=list(snapshot.llm_tiers),
+        )
 
     admin_rec = await get_first_platform_admin_from_postgres18(engine, orcia_env=orcia_env)
     return PlatformSetupSnapshotRecord(
@@ -303,7 +296,6 @@ async def load_platform_setup_state_from_postgres18(
             elif isinstance(loaded, dict):
                 raw_value = dict(loaded)
 
-        # Fallback reconciliation from llm_model_endpoints if llm_tiers in JSONB is empty
         llm_tiers = list(raw_value.get("llm_tiers") or [])
         if not llm_tiers:
             ep_rows = (
@@ -330,44 +322,16 @@ async def load_platform_setup_state_from_postgres18(
                     }
                 )
 
-        workspaces = list(raw_value.get("workspaces") or [])
-        if not workspaces:
-            ws_rows = (
-                await conn.execute(
-                    sa.text(
-                        """
-                        SELECT id, slug, name, visibility_mode, settings_jsonb, finops_cost_usd
-                        FROM workspaces
-                        ORDER BY created_at ASC
-                        """
-                    )
-                )
-            ).fetchall()
-            for ws_row in ws_rows:
-                st_raw = ws_row[4]
-                st_dict = (
-                    json.loads(st_raw)
-                    if isinstance(st_raw, str)
-                    else (st_raw if isinstance(st_raw, dict) else {})
-                )
-                workspaces.append(
-                    {
-                        "workspaceId": str(st_dict.get("ui_workspace_id") or ws_row[0]),
-                        "name": str(ws_row[2]),
-                        "slug": str(ws_row[1]),
-                        "visibilityMode": str(ws_row[3]),
-                        "lifecyclePhase": str(st_dict.get("lifecycle_phase") or "BUILD"),
-                        "suggestedWorkflows": [],
-                        "accessMode": "CONTRIBUTOR_ACTION_REQUIRED",
-                        "finopsCostUsd": float(ws_row[5] or 0.0),
-                    }
-                )
+        org_units = await _reconcile_org_units_on_load(conn, list(raw_value.get("org_units") or []))
+        workspaces = await _reconcile_workspaces_on_load(
+            conn, list(raw_value.get("workspaces") or []), org_units
+        )
 
     return PlatformSetupSnapshotRecord(
         first_admin_initialized=admin_rec is not None,
         first_admin_email=admin_rec.email if admin_rec is not None else None,
         first_admin_display_name=admin_rec.display_name if admin_rec is not None else None,
-        org_units=list(raw_value.get("org_units") or []),
+        org_units=org_units,
         rbac_grants=list(raw_value.get("rbac_grants") or []),
         llm_tiers=llm_tiers,
         workspaces=workspaces,
@@ -386,7 +350,7 @@ async def persist_progressive_llm_endpoint_to_postgres18(
     endpoint: LlmModelEndpoint,
 ) -> None:
     """Persist a progressive Day-0 LLM endpoint into `llm_model_endpoints` on PostgreSQL 18."""
-    ep_uuid = _deterministic_uuid(f"llm-ep:{endpoint.endpoint_key}")
+    ep_uuid = deterministic_setup_uuid(f"llm-ep:{endpoint.endpoint_key}")
     async with engine.begin() as conn:
         await conn.execute(
             sa.text(
@@ -419,3 +383,14 @@ async def persist_progressive_llm_endpoint_to_postgres18(
                 "is_active": endpoint.is_active,
             },
         )
+
+
+__all__ = [
+    "GLOBAL_SETUP_SCOPE_ID",
+    "PLATFORM_SETUP_SETTING_KEY",
+    "ROOT_ORG_UNIT_ID",
+    "PlatformSetupSnapshotRecord",
+    "load_platform_setup_state_from_postgres18",
+    "persist_progressive_llm_endpoint_to_postgres18",
+    "save_platform_setup_state_to_postgres18",
+]

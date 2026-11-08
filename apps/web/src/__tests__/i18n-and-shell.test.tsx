@@ -1787,8 +1787,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(dropdownMenu.textContent).toContain("🔒 Mes Espaces Privés");
     expect(dropdownMenu.textContent).toContain("👥 Mes Équipes & Espaces");
     expect(dropdownMenu.textContent).toContain("🏢 Supervision Organisation");
-    expect(dropdownMenu.textContent).toContain("Mon Bac à Sable R&D · Équipe Core IA");
-    expect(dropdownMenu.textContent).toContain("Projet Socle IA · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("👥 Équipe · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("🔒 Espace · Mon Bac à Sable R&D · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("📦 Espace · Projet Socle IA · Équipe Core IA");
 
     // Select the Private Workspace ("ws-1") in the TopHeader -> filters /workspaces to that private workspace
     fireEvent.click(screen.getByTestId("topbar-workspace-option-ws-1"));

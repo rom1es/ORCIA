@@ -326,3 +326,135 @@ def test_story_9_2_api_endpoints_welcome_setup_and_accostage(
     assert acc6["completed_count"] == 6
     assert acc6["badge_label"] == "Accostage 6/6"
     assert acc6["llm_tier_mode"] == "FULL_ORTHOGONAL_AD10"
+
+
+@pytest.mark.asyncio
+async def test_sql_platform_setup_relational_sync_and_reconciliation_unit() -> None:
+    """Unit test `sync_relational_tables_on_postgres18` and `_reconcile_*_on_load`."""
+    from unittest.mock import AsyncMock, MagicMock
+    from uuid import uuid4
+
+    from orcia_core.bootstrap._internal.sql_platform_setup_relational_sync import (
+        ROOT_ORG_UNIT_ID,
+        deterministic_setup_uuid,
+        normalize_setup_slug,
+        sync_relational_tables_on_postgres18,
+    )
+    from orcia_core.bootstrap._internal.sql_platform_setup_store import (
+        _reconcile_org_units_on_load,
+        _reconcile_workspaces_on_load,
+    )
+
+    assert normalize_setup_slug("  Équipe RTS #1 ", "fallback") == "quipe-rts-1"
+    u1 = deterministic_setup_uuid("org:org-1")
+    assert deterministic_setup_uuid(str(u1)) == u1
+
+    stale_org_id = uuid4()
+    stale_ws_id = uuid4()
+
+    async def _fake_execute(stmt: object, params: dict[str, object] | None = None) -> MagicMock:
+        sql = str(stmt)
+        res = MagicMock()
+        if "INSERT INTO org_units" in sql and "'orcia-root'" in sql:
+            res.first.return_value = (ROOT_ORG_UNIT_ID,)
+        elif "INSERT INTO org_units" in sql:
+            res.first.return_value = (params["id"] if params else uuid4(),)
+        elif "SELECT id FROM org_units" in sql:
+            res.fetchall.return_value = [(stale_org_id,)]
+        elif "INSERT INTO workspaces" in sql:
+            res.first.return_value = (params["id"] if params else uuid4(),)
+        elif "SELECT id FROM workspaces" in sql:
+            res.fetchall.return_value = [(stale_ws_id,)]
+        elif "SELECT count(*) FROM blackboard_snapshots" in sql:
+            res.scalar_one.return_value = 0
+        elif "SELECT id, slug, name, unit_type, parent_id" in sql:
+            bu_uuid = uuid4()
+            team_uuid = uuid4()
+            res.fetchall.return_value = [
+                (bu_uuid, "123", "123", "BU", ROOT_ORG_UNIT_ID),
+                (team_uuid, "moncompte", "MonCompte", "TEAM", bu_uuid),
+            ]
+        elif "FROM workspaces w" in sql:
+            res.fetchall.return_value = [
+                (
+                    uuid4(),
+                    "rts",
+                    "RTS",
+                    "STANDARD",
+                    '{"lifecycle_phase": "MIGRATION", "ui_workspace_id": "ws-1"}',
+                    0.0,
+                    "moncompte",
+                    "MonCompte",
+                    "TEAM",
+                )
+            ]
+        return res
+
+    conn = AsyncMock()
+    conn.execute.side_effect = _fake_execute
+
+    await sync_relational_tables_on_postgres18(
+        conn,
+        org_units=[
+            {
+                "id": "org-1",
+                "name": "123",
+                "slug": "123",
+                "level": "BU",
+                "parentId": "scope-global",
+            },
+            {
+                "id": "org-2",
+                "name": "MonCompte",
+                "slug": "moncompte",
+                "level": "TEAM",
+                "parentId": "org-1",
+            },
+        ],
+        workspaces=[
+            {
+                "workspaceId": "ws-1",
+                "name": "RTS",
+                "slug": "rts",
+                "visibilityMode": "STANDARD",
+                "lifecyclePhase": "MIGRATION",
+                "ownerOrgUnitId": "org-2",
+            }
+        ],
+        llm_tiers=[
+            {"tier": "medium", "primaryModel": "openai/gpt-4o", "modelFamily": "openai"}
+        ],
+    )
+
+    reconciled_orgs = await _reconcile_org_units_on_load(conn, [])
+    assert len(reconciled_orgs) == 2
+    assert reconciled_orgs[0] == {
+        "id": "org-1",
+        "name": "123",
+        "slug": "123",
+        "level": "BU",
+        "parentId": "scope-global",
+    }
+    assert reconciled_orgs[1] == {
+        "id": "org-2",
+        "name": "MonCompte",
+        "slug": "moncompte",
+        "level": "TEAM",
+        "parentId": "org-1",
+    }
+
+    reconciled_ws = await _reconcile_workspaces_on_load(conn, [], reconciled_orgs)
+    assert len(reconciled_ws) == 1
+    assert reconciled_ws[0]["name"] == "RTS"
+    assert reconciled_ws[0]["ownerOrgUnitId"] == "org-2"
+    assert reconciled_ws[0]["ownerOrgUnitName"] == "MonCompte"
+
+    # Also exercise non-empty pass-through & ownerOrgUnitName enrichment
+    passthrough_orgs = await _reconcile_org_units_on_load(conn, reconciled_orgs)
+    assert passthrough_orgs == reconciled_orgs
+    enriched_ws = await _reconcile_workspaces_on_load(
+        conn,
+        [{"workspaceId": "ws-1", "name": "RTS", "ownerOrgUnitId": "org-2"}],
+        reconciled_orgs,
+    )
+    assert enriched_ws[0]["ownerOrgUnitName"] == "MonCompte"
