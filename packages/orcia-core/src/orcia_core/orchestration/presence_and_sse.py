@@ -7,12 +7,15 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Protocol, runtime_checkable
 
+from orcia_core.observability.logging import get_logger
 from orcia_kernel.ids import new_uuid7_str
+
+logger = get_logger(__name__)
 
 NotificationType = Literal[
     "HUMAN_GATE",
@@ -175,6 +178,15 @@ class SseBroadcastPort(Protocol):
         """Return recent SSE events for inspection and streaming."""
         ...
 
+    def subscribe(
+        self,
+        listener: Callable[[SseEventEnvelope], object],
+        *,
+        workspace_id: str | None = None,
+    ) -> Callable[[], None]:
+        """Register a real-time subscriber callback (`< 500 ms`, `AD-4`); return `unsubscribe()`."""
+        ...
+
 
 class InMemorySseBrokerAdapter(SseBroadcastPort):
     """Thread-safe SSE Pub/Sub broker recording sub-500ms dispatch latency (`NFR-PERF-2`)."""
@@ -182,6 +194,7 @@ class InMemorySseBrokerAdapter(SseBroadcastPort):
     def __init__(self) -> None:
         self._mutex = threading.Lock()
         self._events: list[SseEventEnvelope] = []
+        self._subscribers: list[tuple[str | None, Callable[[SseEventEnvelope], object]]] = []
 
     def publish(
         self,
@@ -209,6 +222,12 @@ class InMemorySseBrokerAdapter(SseBroadcastPort):
         )
         with self._mutex:
             self._events.append(envelope)
+            targets = [cb for ws, cb in self._subscribers if ws is None or ws == workspace_id]
+        for callback in targets:
+            try:
+                callback(envelope)
+            except Exception as exc:
+                logger.warning("sse_subscriber_callback_failed", error=str(exc))
         return envelope
 
     def list_recent_events(self, workspace_id: str | None = None) -> tuple[SseEventEnvelope, ...]:
@@ -216,6 +235,23 @@ class InMemorySseBrokerAdapter(SseBroadcastPort):
             if workspace_id is None:
                 return tuple(self._events)
             return tuple(e for e in self._events if e.workspace_id == workspace_id)
+
+    def subscribe(
+        self,
+        listener: Callable[[SseEventEnvelope], object],
+        *,
+        workspace_id: str | None = None,
+    ) -> Callable[[], None]:
+        entry = (workspace_id, listener)
+        with self._mutex:
+            self._subscribers.append(entry)
+
+        def _unsubscribe() -> None:
+            with self._mutex:
+                if entry in self._subscribers:
+                    self._subscribers.remove(entry)
+
+        return _unsubscribe
 
 
 @dataclass(frozen=True, slots=True)

@@ -25,6 +25,7 @@ import { useI18n } from "../i18n";
 import { buildContextualHelpArticle } from "./contextualHelpCatalog";
 import { useOrciaNavigation } from "./navigationAdapter";
 import { PlatformSetupProvider, usePlatformSetup } from "./platformSetupStore";
+import { useWorkspaceEventsSse } from "./useWorkspaceEventsSse";
 import {
   DEFAULT_HUMAN_PROFILE,
   DEFAULT_SHELL_MODULES,
@@ -210,6 +211,7 @@ function InnerShellContainer({
 
   const activeWorkspaceName =
     selectedScope.name ?? workspaces[0]?.name ?? "Plateforme Globale ORCIA";
+  const { lastClaimEvent } = useWorkspaceEventsSse(workspaces[0]?.workspaceId);
 
   const isFr = locale === "fr";
   const privateWorkspaces = workspaces.filter((ws) => ws.visibilityMode === "PRIVATE_USER");
@@ -367,6 +369,26 @@ function InnerShellContainer({
       targetRoute: "/cockpit",
       ctaLabel: isFr ? "Ouvrir →" : "Open →",
     })),
+    ...(lastClaimEvent
+      ? [
+          {
+            id: `sse-claim-${lastClaimEvent.eventId}`,
+            kind: "DECISION_WAITING" as const,
+            badgeLabel: isFr ? "Présence temps réel" : "Live presence",
+            title:
+              lastClaimEvent.eventName === "task.claim.locked"
+                ? isFr
+                  ? `Étape prise en charge (${lastClaimEvent.stepExecutionId})`
+                  : `Step claimed (${lastClaimEvent.stepExecutionId})`
+                : isFr
+                  ? `Étape libérée (${lastClaimEvent.stepExecutionId})`
+                  : `Step released (${lastClaimEvent.stepExecutionId})`,
+            description: `${lastClaimEvent.workspaceId} • ${lastClaimEvent.dispatchLatencyMs} ms`,
+            targetRoute: "/cockpit",
+            ctaLabel: isFr ? "Voir →" : "View →",
+          },
+        ]
+      : []),
   ];
 
   const contextualHelpArticle = buildContextualHelpArticle({

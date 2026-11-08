@@ -74,7 +74,7 @@ development_status:
   epic-4-retrospective: optional
 
   epic-5: done
-  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done # claim OK ; diffusion SSE temps réel absente → BUG-E2E-03
+  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done # claim + diffusion SSE temps réel < 500 ms OK (BUG-E2E-03 résolu)
   5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: done
   5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: done
   5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
@@ -893,11 +893,12 @@ action_items:
     priority: P0
     depends_on: []
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      Révélé par TEST-04 (spec 04). Le claim exclusif fonctionne (200 puis 409 ERR_STEP_ALREADY_CLAIMED_BY_PEER) mais le verrou
-      visuel chez un pair en < 500 ms (FR-2) n'est pas réalisé : pas de push, et le service de notifications est en mémoire.
+      Révélé par TEST-04 (spec 04). Corrigé (2026-11-08, branche fix/p0-e2e-bugs) : SseBroadcastPort.subscribe() + file asyncio
+      temps réel sur GET /api/v1/events/stream (< 500 ms, AD-4), consommateur EventSource useWorkspaceEventsSse dans ShellContainer,
+      et retrait de test.fail dans e2e/04-multi-actor-claim-sse.spec.ts (2 passed).
   - id: BUG-E2E-04
     title: "Composition Root : identité par défaut `marc` (TEAM_LEAD) sans jeton et notifications d'amorce fictives en mémoire"
     action: "Exiger un Bearer en dehors du mode test, supprimer la persona de repli et les seed_default_notifications à identifiants fixes de initialize_app_services (zéro donnée fictive), persister les notifications en PostgreSQL"

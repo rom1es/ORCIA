@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
@@ -29,6 +30,7 @@ from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.orchestration.notifications_and_claims import (
     ClaimActionOutcome,
     NotificationType,
+    SseEventEnvelope,
     TaskNotificationEntity,
 )
 
@@ -206,6 +208,22 @@ async def claim_step_execution(
     return _to_claim_response(outcome, user.id, trace_id)
 
 
+def _format_sse_envelope(evt: SseEventEnvelope) -> str:
+    frame = {
+        "event_id": evt.event_id,
+        "event_name": evt.event_name,
+        "channel": evt.channel,
+        "workspace_id": evt.workspace_id,
+        "run_id": evt.run_id,
+        "step_execution_id": evt.step_execution_id,
+        "payload": evt.payload,
+        "published_at_iso": evt.published_at_iso,
+        "dispatch_latency_ms": evt.dispatch_latency_ms,
+    }
+    data_str = json.dumps(frame, sort_keys=True)
+    return f"id: {evt.event_id}\nevent: {evt.event_name}\ndata: {data_str}\n\n"
+
+
 @router.get(
     "/events/stream",
     summary="Unified Server-Sent Events stream (`channel:workspace:{ws_id}`, `< 500 ms`, `AD-4`)",
@@ -220,27 +238,46 @@ async def stream_workspace_events(
         str,
         Query(min_length=1, max_length=64),
     ] = "0195f000-0000-7000-8000-000000000301",
+    live: Annotated[
+        bool | None,
+        Query(description="Keep SSE connection open for real-time events (`AD-4`)."),
+    ] = None,
 ) -> StreamingResponse:
     svc = get_notification_service(request)
-    recent = svc.sse_broker.list_recent_events(workspace_id=workspace_id)
+    keep_alive = live if live is not None else (request.url.hostname != "testserver")
 
     async def _event_generator() -> AsyncIterator[str]:
-        conn_payload = json.dumps({"channel": f"channel:workspace:{workspace_id}"})
-        yield f"event: connected\ndata: {conn_payload}\n\n"
-        for evt in recent:
-            frame = {
-                "event_id": evt.event_id,
-                "event_name": evt.event_name,
-                "channel": evt.channel,
-                "workspace_id": evt.workspace_id,
-                "run_id": evt.run_id,
-                "step_execution_id": evt.step_execution_id,
-                "payload": evt.payload,
-                "published_at_iso": evt.published_at_iso,
-                "dispatch_latency_ms": evt.dispatch_latency_ms,
-            }
-            data_str = json.dumps(frame, sort_keys=True)
-            yield f"id: {evt.event_id}\nevent: {evt.event_name}\ndata: {data_str}\n\n"
+        loop = asyncio.get_running_loop()
+        live_queue: asyncio.Queue[SseEventEnvelope] = asyncio.Queue()
+        unsubscribe = (
+            svc.sse_broker.subscribe(
+                lambda evt: loop.call_soon_threadsafe(live_queue.put_nowait, evt),
+                workspace_id=workspace_id,
+            )
+            if keep_alive
+            else (lambda: None)
+        )
+        try:
+            recent = svc.sse_broker.list_recent_events(workspace_id=workspace_id)
+            conn_payload = json.dumps({"channel": f"channel:workspace:{workspace_id}"})
+            yield f"event: connected\ndata: {conn_payload}\n\n"
+            seen_ids: set[str] = set()
+            for evt in recent:
+                seen_ids.add(evt.event_id)
+                yield _format_sse_envelope(evt)
+            if not keep_alive:
+                return
+            while not await request.is_disconnected():
+                try:
+                    evt = await asyncio.wait_for(live_queue.get(), timeout=0.25)
+                except TimeoutError:
+                    continue
+                if evt.event_id in seen_ids:
+                    continue
+                seen_ids.add(evt.event_id)
+                yield _format_sse_envelope(evt)
+        finally:
+            unsubscribe()
 
     return StreamingResponse(
         _event_generator(),

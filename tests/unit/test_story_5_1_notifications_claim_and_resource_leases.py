@@ -111,7 +111,12 @@ def test_outbox_consumption_and_atomic_claim_lifecycle() -> None:
         svc.claim_by_task_id(observer, task_id=n1.id)
     assert obs_exc.value.error_code == "ERR_OBSERVER_MODE_READ_ONLY"
 
-    # Alice claims the task (< 500ms SSE broadcast)
+    # Alice claims the task (< 500ms SSE broadcast + live subscriber push)
+    live_pushed: list[str] = []
+    unsub = svc.sse_broker.subscribe(
+        lambda evt: live_pushed.append(evt.event_name),
+        workspace_id="ws-501",
+    )
     t0 = datetime.now(UTC)
     t_start = time.perf_counter()
     outcome = svc.claim_by_task_id(alice, task_id=n1.id, ttl_seconds=900, now_utc=t0)
@@ -121,6 +126,7 @@ def test_outbox_consumption_and_atomic_claim_lifecycle() -> None:
     assert outcome.peer_presence_state == "CLAIMED_BY_PEER"
     assert outcome.sse_event.event_name == "task.claim.locked"
     assert outcome.sse_event.payload["peer_opacity"] == 0.85
+    assert live_pushed == ["task.claim.locked"]
 
     # Bob sees CLAIMED_BY_PEER and gets 409 ERR_STEP_ALREADY_CLAIMED_BY_PEER on concurrent claim
     assert outcome.notification.resolve_presence_state(bob.id, now_utc=t0) == "CLAIMED_BY_PEER"
@@ -142,6 +148,8 @@ def test_outbox_consumption_and_atomic_claim_lifecycle() -> None:
     rel = svc.release_claim(bob, task_id=n1.id, force=True, now_utc=t_after_15m)
     assert rel.notification.status == "OPEN"
     assert rel.sse_event.event_name == "task.claim.released"
+    assert live_pushed == ["task.claim.locked", "task.claim.released"]
+    unsub()
 
 
 def test_dec_conc_01_resource_leases_fencing_tokens_and_cyclic_wait_detection() -> None:
