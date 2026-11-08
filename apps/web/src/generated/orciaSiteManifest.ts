@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 27,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 95
+    "techLeadReportsCount": 96
   },
   "activeRoutes": [
     "/",
@@ -420,6 +420,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Tests (TEST-02)",
+      "reportFile": "2026-11-08-test-02-reparation-shell-spec-e2e-tech-lead-report.md",
+      "domain": "Réécriture de shell.spec.ts sur le shell 4 zones réel (FourZoneDirectionCShell, Epic 12) et l'état Jour 0",
+      "summary": "4 tests Playwright sur la pile E2E isolée, 2 viewports ; ancien parcours fictif supprimé."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Post-Epic 12 / Design System @orcia/ui & Centralisation des Icônes",
