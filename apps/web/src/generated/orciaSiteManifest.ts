@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 28,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 106,
+    "techLeadReportsCount": 107,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -421,6 +421,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Refonte UX Mes Processus & Studio Métier (CAP-140, CAP-150)",
+      "reportFile": "2026-11-08-refonte-ux-mes-processus-et-studio-metier-tech-lead-report.md",
+      "domain": "Suppression de l'empilement « Sapin de Noël » sur /processes, Séparation de l'Exécution de Dossiers vs Studio de Conception & Éradication du Jargon Technique (DBOS, S3 Claim-Check, SHA-256, WAITING_SUBSTEP_HITL)",
+      "summary": "Suppression du montage doublon <ModuleWorkspaceView moduleKey=\"gates\" /> sous /processes, hiérarchisation de ProcessesHubPage autour des 3 usages réels (1. Dossiers en cours & lancement/validation sur place, 2. Processus métiers par étape, 3. Vue d'ensemble de la Chaîne de Valeur), et refonte en langage 100 % métier de InteractiveRunDrawer, WorkflowFiveBlocksCanvas et StudioCopilotSidebar."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Epics 14 & 15 — ORCIA Process Studio v2 & Packs 100 % Déclaratifs (TASK-01..08)",

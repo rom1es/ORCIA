@@ -37,12 +37,7 @@ const processesRoute = createRoute({
   path: "/processes",
   validateSearch: validateOrciaRouteSearch,
   component: function ProcessesRouteComponent() {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <ProcessesHubPage />
-        <ModuleWorkspaceView moduleKey="gates" />
-      </div>
-    );
+    return <ProcessesHubPage />;
   },
 });
 

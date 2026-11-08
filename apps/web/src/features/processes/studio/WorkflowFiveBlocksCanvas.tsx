@@ -12,6 +12,28 @@ import { StudioCopilotSidebar } from "./StudioCopilotSidebar";
 
 export type StudioViewMode = "design" | "what_if" | "yaml";
 
+const HUMAN_TOOL_LABELS: Record<string, string> = {
+  "mcp:atlassian-jira (read)": "Jira — Consultation des demandes & tickets",
+  "mcp:atlassian-jira (write_preview)": "Jira — Création / mise à jour (avec confirmation)",
+  "mcp:atlassian-confluence (read)": "Confluence — Lecture du socle documentaire",
+  "mcp:atlassian-confluence (write_preview)": "Confluence — Publication de page (avec confirmation)",
+  "mcp:git-provider (read)": "Git — Lecture du code & des Pull Requests",
+  "mcp:git-provider (write_preview)": "Git — Préparation de branche / Pull Request",
+};
+
+const HUMAN_SKILL_LABELS: Record<string, string> = {
+  "pack://sdlc/skills/qualification-besoin": "Qualification structurée du besoin",
+  "pack://sdlc/skills/redaction-prd-wsjf": "Rédaction du PRD & calcul de priorité (WSJF)",
+  "pack://sdlc/skills/diagrammes-mermaid": "Schémas d'architecture & parcours",
+  "pack://sdlc/skills/decoupe-us-invest": "Découpage en User Stories (INVEST & Gherkin)",
+  "pack://orcia-docs/skills/redaction-aide-bilingue": "Rédaction de guides utilisateurs FR/EN",
+};
+
+const HUMAN_KB_LABELS: Record<string, string> = {
+  "pack://sdlc/agents/crl-socle-generateur.md": "Socle de connaissance produit & architecture (Confluence)",
+  "pack://orcia-docs/agents/redacteur-documentation-orcia.md": "Référentiel documentaire ORCIA",
+};
+
 export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }) {
   const { locale } = useI18n();
   const { navigateToRoute } = useShellNavigation();
@@ -45,7 +67,6 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     }
   };
 
-  // Auto-fork as -draft when editing a published workflow (CA-9.1.2)
   const ensureDraftOnEdit = (base: WorkflowDefinitionV2Item): WorkflowDefinitionV2Item => {
     if (base.status === "published") {
       const cleanVer = base.version.replace(/-draft$/, "");
@@ -71,8 +92,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     persistUpdate(
       updated,
       isFr
-        ? `Sous-étape « ${toggled?.short_label} » ${toggled?.enabled ? "activée" : "skippée"} dans le brouillon ${updated.version} (persiste au F5).`
-        : `Sub-step "${toggled?.short_label}" ${toggled?.enabled ? "enabled" : "skipped"} in draft ${updated.version}.`,
+        ? `Étape « ${toggled?.short_label} » ${toggled?.enabled ? "activée" : "ignorée"} dans votre copie de travail.`
+        : `Step "${toggled?.short_label}" ${toggled?.enabled ? "enabled" : "skipped"} in your working draft.`,
     );
   };
 
@@ -83,7 +104,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
       execution_mode: mode,
       external_tool_label:
         mode === "external_delegated"
-          ? base.external_tool_label ?? "GitHub Copilot / Claude Code (IDE)"
+          ? base.external_tool_label ?? "IDE / Git de l'équipe"
           : base.external_tool_label,
       external_completion_event:
         mode === "external_delegated"
@@ -93,7 +114,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     persistUpdate(
       updated,
       isFr
-        ? `Mode d'exécution basculé sur « ${mode === "external_delegated" ? "Sas Externe Délégué" : "Natif ORCIA"} » (${updated.version}).`
+        ? `Mode de réalisation basculé sur « ${mode === "external_delegated" ? "Réalisation dans l'IDE / Git de l'équipe" : "Exécution guidée dans ORCIA"} ».`
         : `Execution mode switched to "${mode}".`,
     );
   };
@@ -103,8 +124,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     persistUpdate(
       drafted,
       isFr
-        ? `Copie de travail enregistrée : ${drafted.id} (${drafted.version}, statut : ${drafted.status}).`
-        : `Draft copy saved: ${drafted.id} (${drafted.version}).`,
+        ? `Brouillon enregistré (${drafted.version}).`
+        : `Draft saved (${drafted.version}).`,
     );
   };
 
@@ -120,8 +141,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     persistUpdate(
       published,
       isFr
-        ? `Workflow publié avec succès en version ${published.version} (statut : published).`
-        : `Workflow published as version ${published.version}.`,
+        ? `Processus publié et activé (version ${published.version}).`
+        : `Process published as version ${published.version}.`,
     );
   };
 
@@ -136,8 +157,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     setViewMode("what_if");
     setStatusBanner(
       isFr
-        ? `Simulation What-If isolée terminée : ${enabledCount} sous-étape(s) évaluée(s), 0 écriture externe exécutée (sandbox_isolated = true).`
-        : `Isolated What-If dry-run completed: ${enabledCount} sub-steps evaluated, 0 external writes executed.`,
+        ? `Simulation à blanc terminée : ${enabledCount} étape(s) vérifiée(s), aucune modification envoyée aux outils externes.`
+        : `Dry-run completed: ${enabledCount} steps verified, 0 external writes executed.`,
     );
   };
 
@@ -147,7 +168,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
       data-workflow-id={workflow.id}
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
-      {/* Top Studio Control Bar */}
+      {/* Barre supérieure de l'Atelier */}
       <header
         className="orcia-bento-card"
         style={{
@@ -166,7 +187,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
               onClick={() => navigateToRoute("/processes")}
               className="orcia-ds-btn-secondary"
             >
-              {isFr ? "← Hub Processus" : "← Processes Hub"}
+              {isFr ? "← Retour à Mes Processus" : "← Back to My Processes"}
             </button>
             {workflow.vsm_step_num ? (
               <button
@@ -176,13 +197,13 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                 className="orcia-ds-btn-secondary"
               >
                 {isFr
-                  ? `🗺️ Étape VSM ${workflow.vsm_step_num}`
-                  : `🗺️ VSM Step ${workflow.vsm_step_num}`}
+                  ? `🗺️ Voir l'Étape ${workflow.vsm_step_num} dans la chaîne de valeur`
+                  : `🗺️ View Step ${workflow.vsm_step_num} in Value Stream`}
               </button>
             ) : null}
             <span
               data-testid="studio-workflow-version-badge"
-              className="rounded px-2 py-0.5 text-xs font-bold"
+              className="rounded px-2.5 py-0.5 text-xs font-semibold"
               style={{
                 backgroundColor:
                   workflow.status === "published"
@@ -192,29 +213,34 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                   workflow.status === "published"
                     ? "var(--color-gate-emerald)"
                     : "var(--color-arbitration-amber)",
-                fontFamily: "var(--font-mono)",
               }}
             >
-              {workflow.id} · v{workflow.version} ({workflow.status})
+              {workflow.status === "published"
+                ? isFr
+                  ? `Actif · v${workflow.version}`
+                  : `Active · v${workflow.version}`
+                : isFr
+                  ? `En préparation · v${workflow.version}`
+                  : `Draft · v${workflow.version}`}
+              <span className="sr-only">{` v${workflow.version} (${workflow.status})`}</span>
             </span>
           </div>
           <h1 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
-            {workflow.title}
+            {isFr ? `Atelier d'adaptation — ${workflow.title}` : `Process Studio — ${workflow.title}`}
           </h1>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          {/* View Mode Switcher: Design | Test What-If | YAML */}
           <div
             role="tablist"
-            aria-label="Modes du Studio"
+            aria-label="Modes de l'atelier"
             className="orcia-ds-tabs"
           >
             {(
               [
-                { key: "design", label: isFr ? "Design 5 Blocs" : "5-Block Design" },
-                { key: "what_if", label: isFr ? "Test What-If (Sandbox)" : "What-If Sandbox" },
-                { key: "yaml", label: "YAML Déclaratif" },
+                { key: "design", label: isFr ? "Étapes & Règles" : "Steps & Rules" },
+                { key: "what_if", label: isFr ? "Tester à blanc" : "Dry-Run Test" },
+                { key: "yaml", label: isFr ? "Définition (YAML)" : "YAML Spec" },
               ] as const
             ).map((tab) => (
               <button
@@ -243,7 +269,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             onClick={handleSaveAsDraft}
             className="orcia-ds-btn-secondary"
           >
-            {isFr ? "💾 Enregistrer Draft (-draft)" : "💾 Save Draft (-draft)"}
+            {isFr ? "Enregistrer le brouillon" : "Save draft"}
           </button>
 
           <button
@@ -252,7 +278,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             onClick={handlePublishWorkflow}
             className="orcia-ds-btn-secondary"
           >
-            {isFr ? "🚀 Publier" : "🚀 Publish"}
+            {isFr ? "Publier" : "Publish"}
           </button>
 
           <button
@@ -261,7 +287,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             onClick={() => setShowRunDrawer(true)}
             className="orcia-ds-btn-primary"
           >
-            {isFr ? "▷ Exécuter Run DBOS & HITL" : "▷ Run DBOS & HITL"}
+            {isFr ? "▷ Tester l'exécution" : "▷ Test run"}
           </button>
         </div>
       </header>
@@ -281,7 +307,6 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         </div>
       ) : null}
 
-      {/* Interactive DBOS Run & 4-Action HITL Drawer */}
       {showRunDrawer ? (
         <InteractiveRunDrawer
           workflow={workflow}
@@ -290,11 +315,11 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         />
       ) : null}
 
-      {/* Main Layout: Left Copilot Sidebar + Right 5-Block Control-M Canvas */}
+      {/* Agencement : Catalogue d'aide à gauche + Configuration métier à droite */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(280px, 340px) 1fr",
+          gridTemplateColumns: "minmax(270px, 320px) 1fr",
           gap: "16px",
           alignItems: "start",
         }}
@@ -307,8 +332,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             persistUpdate(
               { ...base, skills_refs: [...base.skills_refs, skillUri] },
               isFr
-                ? `Skill « ${skillUri} » attaché au Bloc 4 (${base.version}).`
-                : `Skill "${skillUri}" attached to Block 4.`,
+                ? "Savoir-faire ajouté au processus."
+                : "Business skill attached to the process.",
             );
           }}
           onAttachMcpTool={(toolPerm) => {
@@ -321,8 +346,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             persistUpdate(
               { ...base, sub_steps: nextSubs },
               isFr
-                ? `Outil MCP « ${toolPerm} » attaché au Bloc 3 (${base.version}).`
-                : `MCP tool "${toolPerm}" attached to Block 3.`,
+                ? "Outil connecté autorisé sur ce processus."
+                : "Connected tool enabled for this process.",
             );
           }}
           onAttachDeterministicGate={(gate) => {
@@ -347,13 +372,12 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                 },
               },
               isFr
-                ? `Gate déterministe « ${gate.name} » (${gate.runner}) ajoutée au Bloc 5 (${base.version}).`
-                : `Deterministic gate "${gate.name}" added to Block 5.`,
+                ? `Contrôle qualité « ${gate.name} » ajouté.`
+                : `Quality check "${gate.name}" added.`,
             );
           }}
         />
 
-        {/* Right Panel: Design Mode (5 Blocks) | What-If Sandbox | YAML */}
         {viewMode === "yaml" ? (
           <div
             data-testid="studio-yaml-preview-panel"
@@ -361,8 +385,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
           >
             <h3 style={{ margin: "0 0 8px 0", fontSize: "15px" }}>
               {isFr
-                ? `Spécification Déclarative YAML (packs/sdlc/workflows/${workflow.slug}.yaml)`
-                : `Declarative YAML Spec (packs/sdlc/workflows/${workflow.slug}.yaml)`}
+                ? "Définition déclarative du processus"
+                : "Declarative Process Definition"}
             </h3>
             <pre
               style={{
@@ -388,8 +412,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ margin: 0, fontSize: "16px" }}>
                 {isFr
-                  ? "🧪 Simulation What-If en Bac à Sable Isolé (Dry-Run — 0 Écriture Externe)"
-                  : "🧪 Isolated Sandbox What-If Simulation (Dry-Run — 0 External Writes)"}
+                  ? "Simulation à blanc (sans écriture dans Jira, Confluence ou Git)"
+                  : "Dry-Run Simulation (zero external writes)"}
               </h3>
               <button
                 type="button"
@@ -397,7 +421,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                 onClick={handleRunWhatIfSimulation}
                 className="orcia-ds-btn-primary"
               >
-                {isFr ? "↻ Relancer la simulation" : "↻ Re-run simulation"}
+                {isFr ? "↻ Relancer le test à blanc" : "↻ Re-run simulation"}
               </button>
             </div>
             <div
@@ -408,27 +432,27 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
               }}
             >
               <div className="rounded border p-3" style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}>
-                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Sous-étapes actives évaluées</div>
+                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Étapes actives testées</div>
                 <div data-testid="what-if-substeps-count" style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-primary-cobalt)" }}>
                   {whatIfResult?.subStepsEvaluated ?? workflow.sub_steps.filter((s) => s.enabled).length}
                 </div>
               </div>
               <div className="rounded border p-3" style={{ backgroundColor: "var(--color-gate-emerald-bg)", borderColor: "var(--color-gate-emerald)" }}>
-                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Écritures externes exécutées</div>
+                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Modifications externes</div>
                 <div data-testid="what-if-external-writes-count" style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-gate-emerald)" }}>
-                  0 (Isolé)
+                  0 (Mode isolé)
                 </div>
               </div>
               <div className="rounded border p-3" style={{ backgroundColor: "var(--color-gate-emerald-bg)", borderColor: "var(--color-gate-emerald)" }}>
-                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Gates Déterministes</div>
+                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Contrôles qualité</div>
                 <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-gate-emerald)" }}>
-                  PASS
+                  Conformes
                 </div>
               </div>
               <div className="rounded border p-3" style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}>
-                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Coût FinOps estimé</div>
+                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Coût estimé par dossier</div>
                 <div style={{ fontSize: "18px", fontWeight: 700 }}>
-                  {whatIfResult?.estimatedCostUsd ?? 0.045} USD
+                  {whatIfResult?.estimatedCostUsd ?? 0.045} $
                 </div>
               </div>
             </div>
@@ -438,20 +462,15 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             data-testid="studio-five-blocks-canvas"
             style={{ display: "flex", flexDirection: "column", gap: "14px" }}
           >
-            {/* BLOC 1 : TRIGGERS & CONTRAT D'ENTRÉE/SORTIE */}
+            {/* 1. ENTRÉES & LIVRABLE ATTENDU */}
             <div
               data-testid="studio-block-1-triggers-contract"
               className="orcia-bento-card"
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-                  BLOC 1 — Déclencheurs & Contrat d&apos;Entrée / Sortie Typé
-                </strong>
-                <span style={{ fontSize: "11.5px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>
-                  Format : {workflow.contract.expected_format ?? "markdown"}
-                </span>
-              </div>
+              <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
+                1. Éléments d&apos;entrée & Livrable attendu
+              </strong>
               <div
                 style={{
                   display: "grid",
@@ -461,27 +480,29 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                 }}
               >
                 <div className="rounded border p-2.5" style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}>
-                  <strong>Entrées requises :</strong>
+                  <strong>Éléments en entrée :</strong>
                   <div style={{ marginTop: "4px", color: "var(--color-text-secondary)" }}>
                     {workflow.contract.inputs.join(" · ")}
                   </div>
                 </div>
                 <div className="rounded border p-2.5" style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}>
-                  <strong>Sections Markdown attendues :</strong>
-                  <div style={{ marginTop: "4px", fontFamily: "var(--font-mono)", fontSize: "11.5px" }}>
-                    {workflow.contract.outputs.join(", ")}
+                  <strong>Rubriques attendues dans le livrable :</strong>
+                  <div style={{ marginTop: "4px", fontSize: "12px" }}>
+                    {workflow.contract.outputs.map((h) => h.replace(/^#+\s*/, "")).join(" · ")}
                   </div>
                 </div>
                 <div className="rounded border p-2.5" style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}>
-                  <strong>Critères de sortie :</strong>
+                  <strong>Conditions de validation :</strong>
                   <div style={{ marginTop: "4px", color: "var(--color-gate-emerald)" }}>
-                    {workflow.contract.exit_criteria.join(" · ")}
+                    {isFr
+                      ? "Contrôles de complétude validés · Approbation du responsable"
+                      : "Completeness checks passed · Owner sign-off"}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* BLOC 2 : SÉQUENCE DE SOUS-ÉTAPES DÉTERMINISTES DBOS & MODE SAS EXTERNE */}
+            {/* 2. DÉROULEMENT DES ÉTAPES */}
             <div
               data-testid="studio-block-2-deterministic-substeps"
               className="orcia-bento-card"
@@ -498,14 +519,13 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
               >
                 <div>
                   <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-                    BLOC 2 — Séquence de Sous-Étapes Déterministes DBOS (Zéro Agent Orchestrateur Chat)
+                    2. Déroulement des étapes du processus
                   </strong>
                   <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-                    Chaque sous-étape peut être activée ou skippée par le PO sans casser le workflow (`CA-9.3.1`).
+                    Activez ou ignorez chaque étape selon les besoins de votre projet.
                   </div>
                 </div>
 
-                {/* Execution Mode Switch: Natif ORCIA vs Sas Externe Délégué */}
                 <div style={{ display: "flex", gap: "6px" }}>
                   <button
                     type="button"
@@ -517,7 +537,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                         : "orcia-ds-btn-secondary"
                     }
                   >
-                    Natif ORCIA
+                    Exécution guidée ORCIA
                   </button>
                   <button
                     type="button"
@@ -529,7 +549,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                         : "orcia-ds-btn-secondary"
                     }
                   >
-                    Sas Externe Délégué (IDE/CI)
+                    Réalisation dans l&apos;IDE / Git
                   </button>
                 </div>
               </div>
@@ -543,10 +563,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                     borderColor: "var(--color-arbitration-amber)",
                   }}
                 >
-                  <strong>🔌 Mode Sas Externe Délégué actif :</strong> Outil délégué{" "}
-                  <code>{workflow.external_tool_label ?? "GitHub Copilot / Claude Code"}</code> ·
-                  Événement attendu{" "}
-                  <code>{workflow.external_completion_event ?? "git:pr_opened"}</code>.
+                  <strong>🛠️ Réalisation confiée à l&apos;équipe dans son IDE / Git :</strong> ORCIA prépare le dossier de contexte et vérifie automatiquement la conformité dès que la Pull Request est proposée.
                 </div>
               ) : null}
 
@@ -578,13 +595,12 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                         <span
                           style={{
-                            fontFamily: "var(--font-mono)",
-                            fontSize: "11.5px",
+                            fontSize: "12px",
                             fontWeight: 700,
                             color: "var(--color-primary-cobalt)",
                           }}
                         >
-                          #{idx + 1} · {sub.id}
+                          Étape {idx + 1}
                         </span>
                         <strong style={{ fontSize: "13.5px" }}>{sub.name}</strong>
                         {sub.requires_human_checkpoint ? (
@@ -595,7 +611,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                               color: "var(--color-arbitration-amber)",
                             }}
                           >
-                            ◆ Checkpoint Humain DBOS.recv
+                            Validation humaine
                           </span>
                         ) : null}
                         {sub.write_preview_required ? (
@@ -606,7 +622,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                               color: "var(--color-gate-emerald)",
                             }}
                           >
-                            🛡️ WritePreviewCard Requise
+                            Confirmation avant publication
                           </span>
                         ) : null}
                       </div>
@@ -619,100 +635,104 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                       >
                         {sub.enabled
                           ? isFr
-                            ? "✓ Activée (Cliquer pour Skipper)"
-                            : "✓ Enabled (Click to Skip)"
+                            ? "✓ Étape activée (Ignorer)"
+                            : "✓ Step enabled (Skip)"
                           : isFr
-                            ? "⏭ Skippée (Cliquer pour Activer)"
-                            : "⏭ Skipped (Click to Enable)"}
+                            ? "Étape ignorée (Activer)"
+                            : "Step skipped (Enable)"}
                       </button>
                     </div>
 
                     <div style={{ fontSize: "12px", color: "var(--color-text-secondary)", marginTop: "6px" }}>
-                      <strong>Rôle :</strong> {sub.role_description}
+                      <strong>Objectif :</strong> {sub.role_description}
                     </div>
                     <div style={{ fontSize: "12px", marginTop: "3px" }}>
-                      <strong>Sortie S3 Claim-Check :</strong> {sub.output_description}
+                      <strong>Livrable produit :</strong> {sub.output_description}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* BLOC 3 : PERMISSIONS & TOOLBOXES MCP */}
+            {/* 3. OUTILS CONNECTÉS & SAVOIR-FAIRE MOBILISÉS */}
             <div
-              data-testid="studio-block-3-mcp-toolboxes"
-              className="orcia-bento-card"
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "12px",
+              }}
             >
-              <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-                BLOC 3 — Permissions & Toolboxes MCP (packages/orcia-connectors)
-              </strong>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {Array.from(
-                  new Set(workflow.sub_steps.flatMap((s) => s.mcp_tools_allowed)),
-                ).map((tool) => (
-                  <span
-                    key={tool}
-                    className="rounded border px-2.5 py-1 text-xs font-semibold"
-                    style={{
-                      backgroundColor: "var(--color-bg-elevated)",
-                      borderColor: "var(--color-border-subtle)",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    🔌 {tool}
-                  </span>
-                ))}
+              <div
+                data-testid="studio-block-3-mcp-toolboxes"
+                className="orcia-bento-card"
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              >
+                <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
+                  3. Outils connectés mobilisés
+                </strong>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {Array.from(
+                    new Set(workflow.sub_steps.flatMap((s) => s.mcp_tools_allowed)),
+                  ).map((tool) => (
+                    <span
+                      key={tool}
+                      className="rounded border px-2.5 py-1 text-xs font-medium"
+                      style={{
+                        backgroundColor: "var(--color-bg-elevated)",
+                        borderColor: "var(--color-border-subtle)",
+                      }}
+                    >
+                      🔌 {HUMAN_TOOL_LABELS[tool] ?? tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                data-testid="studio-block-4-skills-knowledge"
+                className="orcia-bento-card"
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              >
+                <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
+                  4. Savoir-faire métier & Socle documentaire
+                </strong>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {workflow.skills_refs.map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded px-2.5 py-1 text-xs font-medium"
+                      style={{
+                        backgroundColor: "var(--color-ontology-bg)",
+                        color: "var(--color-ontology-cyan)",
+                      }}
+                    >
+                      📘 {HUMAN_SKILL_LABELS[skill] ?? skill}
+                    </span>
+                  ))}
+                  {workflow.knowledge_base_refs.map((kb) => (
+                    <span
+                      key={kb}
+                      className="rounded px-2.5 py-1 text-xs font-medium"
+                      style={{
+                        backgroundColor: "var(--color-action-primary-subtle)",
+                        color: "var(--color-primary-cobalt)",
+                      }}
+                    >
+                      🏛️ {HUMAN_KB_LABELS[kb] ?? kb}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* BLOC 4 : SKILLS MARKDOWN & SOCLE CONFLUENCE */}
-            <div
-              data-testid="studio-block-4-skills-knowledge"
-              className="orcia-bento-card"
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-            >
-              <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-                BLOC 4 — Skills Déclaratifs & Socle de Connaissance Confluence
-              </strong>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {workflow.skills_refs.map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded px-2.5 py-1 text-xs font-semibold"
-                    style={{
-                      backgroundColor: "var(--color-ontology-bg)",
-                      color: "var(--color-ontology-cyan)",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    📘 {skill}
-                  </span>
-                ))}
-                {workflow.knowledge_base_refs.map((kb) => (
-                  <span
-                    key={kb}
-                    className="rounded px-2.5 py-1 text-xs font-semibold"
-                    style={{
-                      backgroundColor: "var(--color-action-primary-subtle)",
-                      color: "var(--color-primary-cobalt)",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    🏛️ Socle : {kb}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* BLOC 5 : PIPELINE DE GATES (DÉTERMINISTES AUTO-HEAL 3X -> AGENTS CONTRADICTEURS) */}
+            {/* 5. CONTRÔLES DE QUALITÉ AVANT VALIDATION */}
             <div
               data-testid="studio-block-5-gates-pipeline"
               className="orcia-bento-card"
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
               <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-                BLOC 5 — Pipeline de Gates (1. Runners Déterministes Auto-Heal 3x ➔ 2. Agents Contradicteurs)
+                5. Contrôles de qualité avant validation humaine
               </strong>
 
               <div
@@ -730,14 +750,11 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                   }}
                 >
                   <div style={{ fontWeight: 700, fontSize: "12.5px", color: "var(--color-gate-emerald)" }}>
-                    1. Runners Déterministes Génériques (0 Token LLM · Auto-Heal max 3x)
+                    1. Vérifications automatiques de complétude
                   </div>
                   {workflow.controls.deterministic_gates.map((dg) => (
-                    <div key={dg.id} style={{ marginTop: "6px", fontSize: "12px" }}>
-                      <strong>{dg.name}</strong>{" "}
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px" }}>
-                        [{dg.runner} · retries={dg.max_self_heal_retries}]
-                      </span>
+                    <div key={dg.id} style={{ marginTop: "6px", fontSize: "12.5px" }}>
+                      ✓ <strong>{dg.name}</strong>
                     </div>
                   ))}
                 </div>
@@ -750,11 +767,11 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
                   }}
                 >
                   <div style={{ fontWeight: 700, fontSize: "12.5px", color: "var(--color-arbitration-amber)" }}>
-                    2. Évaluateurs & Agents Contradicteurs (Après PASS Déterministe)
+                    2. Relecture critique par un agent contradicteur
                   </div>
                   {workflow.controls.probabilistic_evaluations.map((pg) => (
-                    <div key={pg.id} style={{ marginTop: "6px", fontSize: "12px" }}>
-                      <strong>{pg.name}</strong> — {pg.rubric_ref}
+                    <div key={pg.id} style={{ marginTop: "6px", fontSize: "12.5px" }}>
+                      🔍 <strong>{pg.name}</strong> — {pg.rubric_ref}
                     </div>
                   ))}
                 </div>

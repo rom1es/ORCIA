@@ -366,9 +366,18 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
 
-    // Navigate to /processes -> SimplifiedProcessBuilderSection + PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
+    // Navigate to /processes -> clean ProcessesHubPage (zero stacked legacy forms or pack builders)
     await act(async () => {
       await router.navigate({ to: "/processes" });
+    });
+    expect(screen.getByTestId("processes-hub-v2-page")).toBeDefined();
+    expect(screen.getByTestId("processes-active-dossiers-card")).toBeDefined();
+    expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
+    expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
+
+    // Navigate to /gates -> SimplifiedProcessBuilderSection + PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
+    await act(async () => {
+      await router.navigate({ to: "/gates" });
     });
     const processStudioSection = screen.getByTestId("settings-workflows-section");
     expect(processStudioSection).toBeDefined();

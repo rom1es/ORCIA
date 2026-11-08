@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 import {
+  formatAgentHumanLabel,
+  InteractiveRunDrawer,
+} from "./execution/InteractiveRunDrawer";
+import {
   INITIAL_VSM_SPEC,
   loadPersistedWorkflowsV2,
   type WorkflowDefinitionV2Item,
@@ -16,6 +20,7 @@ export function ProcessesHubPage() {
 
   const [workflows] = useState<WorkflowDefinitionV2Item[]>(() => loadPersistedWorkflowsV2());
   const [filter, setFilter] = useState<WorkflowHubFilter>("all");
+  const [activeRunWorkflowId, setActiveRunWorkflowId] = useState<string | null>(null);
 
   const filteredWorkflows = workflows.filter((wf) => {
     if (filter === "published") return wf.status === "published";
@@ -24,14 +29,18 @@ export function ProcessesHubPage() {
     return true;
   });
 
+  const activeRunWorkflow =
+    workflows.find((w) => w.id === activeRunWorkflowId) ?? null;
+  const featuredPendingWorkflow = workflows[0] ?? null;
+
   return (
     <section
       data-testid="processes-hub-v2-page"
-      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "18px" }}
     >
-      {/* NIVEAU 1 : CHAÎNE DE VALEUR MÉTIER INTERACTIVE (MACRO-VSM) */}
+      {/* ZONE 1 (PRIORITÉ 1) : DOSSIERS EN COURS & ACTIONS ATTENDUES */}
       <div
-        data-testid="processes-hub-vsm-hero-card"
+        data-testid="processes-active-dossiers-card"
         className="orcia-bento-card"
         style={{
           display: "flex",
@@ -49,100 +58,104 @@ export function ProcessesHubPage() {
             gap: "12px",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-              <span
-                className="rounded px-2 py-0.5 text-xs font-semibold"
-                style={{
-                  backgroundColor: "var(--color-action-primary-subtle)",
-                  color: "var(--color-primary-cobalt)",
-                }}
-              >
-                {isFr
-                  ? "NIVEAU 1 — CHAÎNE DE VALEUR INTERACTIVE (MACRO-VSM)"
-                  : "LEVEL 1 — INTERACTIVE VALUE STREAM MAP (MACRO-VSM)"}
-              </span>
-              <span
-                className="rounded px-2 py-0.5 text-xs font-semibold"
-                style={{
-                  backgroundColor: "var(--color-gate-emerald-bg)",
-                  color: "var(--color-gate-emerald)",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                packs/sdlc/workflows/vsm-mon-compte-idea-to-prod.yaml
-              </span>
-            </div>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
-              {INITIAL_VSM_SPEC.title} — {INITIAL_VSM_SPEC.subtitle}
-            </h2>
-            <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
+          <div>
+            <span
+              className="rounded px-2.5 py-0.5 text-xs font-semibold"
+              style={{
+                backgroundColor: "var(--color-arbitration-bg)",
+                color: "var(--color-arbitration-amber)",
+              }}
+            >
+              {isFr ? "1 validation en attente de votre décision" : "1 review awaiting your decision"}
+            </span>
+            <h2 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
               {isFr
-                ? "Cartographie bout-en-bout en 11 étapes et 4 phases (01 Cadrage, 02 Priorisation, 03 Réalisation, 04 Mise en production), avec comparaison Aujourd'hui vs Demain, 6 points de passage humains (losanges) et 13 boucles de retour."
-                : "End-to-end 11-step Value Stream Map across 4 phases with Today vs Tomorrow comparison, 6 human checkpoints (diamonds), and 13 return loops."}
+                ? "Mes dossiers en cours & validations à traiter"
+                : "Active Dossiers & Pending Reviews"}
+            </h2>
+            <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "var(--color-text-secondary)" }}>
+              {isFr
+                ? "Examinez les livrables préparés par vos agents, validez les étapes clés ou demandez des ajustements sans quitter cette page."
+                : "Review deliverables prepared by your agents, approve milestones, or request adjustments directly from this page."}
             </p>
           </div>
 
-          <button
-            type="button"
-            data-testid="open-interactive-vsm-btn"
-            onClick={() => navigateToRoute(`/processes/vsm/${INITIAL_VSM_SPEC.id}`)}
-            className="orcia-ds-btn-primary"
-          >
-            {isFr
-              ? "🗺️ Explorer la Chaîne de Valeur Interactive (11 étapes)"
-              : "🗺️ Explore Interactive Value Stream Map (11 steps)"}
-          </button>
+          {featuredPendingWorkflow && !activeRunWorkflow ? (
+            <button
+              type="button"
+              data-testid="resume-featured-dossier-btn"
+              onClick={() => setActiveRunWorkflowId(featuredPendingWorkflow.id)}
+              className="orcia-ds-btn-primary"
+            >
+              {isFr
+                ? "▷ Examiner & Valider le dossier en attente"
+                : "▷ Review & Approve Pending Dossier"}
+            </button>
+          ) : null}
         </div>
 
-        {/* Mini Frieze of the 4 Phases */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-            gap: "10px",
-          }}
-        >
-          {INITIAL_VSM_SPEC.phases.map((phase) => (
-            <div
-              key={phase.num}
-              data-testid={`vsm-hero-phase-${phase.num}`}
-              className="rounded border p-2.5"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border-subtle)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Résumé du dossier en attente lorsque le tiroir n'est pas encore déployé */}
+        {featuredPendingWorkflow && !activeRunWorkflow ? (
+          <div
+            className="rounded border p-3"
+            style={{
+              backgroundColor: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border-subtle)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <strong style={{ fontSize: "14px" }}>
+                  Dossier « Mon Compte » — {featuredPendingWorkflow.title}
+                </strong>
                 <span
+                  className="rounded px-2 py-0.5 text-xs font-semibold"
                   style={{
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono)",
+                    backgroundColor: "var(--color-action-primary-subtle)",
                     color: "var(--color-primary-cobalt)",
                   }}
                 >
-                  PHASE {phase.num} · {phase.steps_range}
-                </span>
-                <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                  {phase.steps.length} {isFr ? "étapes" : "steps"}
+                  {isFr ? "Étape 1/3 : Qualification du besoin" : "Step 1/3: Qualification"}
                 </span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: "13.5px", marginTop: "2px" }}>
-                {phase.name}
-              </div>
-              <div style={{ fontSize: "11.5px", color: "var(--color-text-secondary)", marginTop: "2px" }}>
-                {phase.goal}
-              </div>
+              <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                {formatAgentHumanLabel(featuredPendingWorkflow.agent_ref)} ·{" "}
+                {isFr
+                  ? "Livrable prêt pour relecture et validation Product Owner"
+                  : "Deliverable ready for Product Owner review"}
+              </span>
             </div>
-          ))}
-        </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveRunWorkflowId(featuredPendingWorkflow.id)}
+              className="orcia-ds-btn-secondary"
+            >
+              {isFr ? "Ouvrir le livrable" : "Open deliverable"}
+            </button>
+          </div>
+        ) : null}
+
+        {/* Espace d'Exécution & Revue de Livrable directement intégré dans Mes Processus */}
+        {activeRunWorkflow ? (
+          <InteractiveRunDrawer
+            key={activeRunWorkflow.id}
+            workflow={activeRunWorkflow}
+            onClose={() => setActiveRunWorkflowId(null)}
+            isFr={isFr}
+          />
+        ) : null}
       </div>
 
-      {/* NIVEAU 2 : WORKFLOWS EXÉCUTABLES UNITAIRES BORNÉS (DBOS) */}
+      {/* ZONE 2 : PROCESSUS MÉTIERS DISPONIBLES PAR ÉTAPE */}
       <div
         className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+        style={{ display: "flex", flexDirection: "column", gap: "14px" }}
       >
         <div
           style={{
@@ -156,29 +169,29 @@ export function ProcessesHubPage() {
           <div>
             <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
               {isFr
-                ? "Niveau 2 — Workflows Exécutables Unitaires Bornés (DBOS Transact)"
-                : "Level 2 — Bounded Executable Unit Workflows (DBOS Transact)"}
+                ? "Processus métiers disponibles"
+                : "Available Business Processes"}
             </h3>
-            <p style={{ margin: 0, fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
+            <p style={{ margin: "2px 0 0 0", fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
               {isFr
-                ? "Chaque étape outillée de la VSM est rattachée à un workflow DBOS court et déterministe (0 agent orchestrateur lisant le chat)."
-                : "Each instrumented VSM step links to a short deterministic DBOS workflow (0 chat-reading orchestrator agent)."}
+                ? "Lancez une étape métier sur un dossier ou ouvrez l'Atelier (Studio) si vous souhaitez adapter son déroulement."
+                : "Launch a business step on a dossier, or open the Studio if you want to customize its flow."}
             </p>
           </div>
 
           <div
             role="tablist"
-            aria-label="Workflow status filters"
+            aria-label="Filtrer les processus"
             className="orcia-ds-tabs"
           >
             {(
               [
                 { key: "all", label: isFr ? "Tous" : "All" },
-                { key: "published", label: isFr ? "Publiés" : "Published" },
-                { key: "draft", label: isFr ? "Brouillons (-draft)" : "Drafts (-draft)" },
+                { key: "published", label: isFr ? "Actifs" : "Active" },
+                { key: "draft", label: isFr ? "En préparation" : "Drafts" },
                 {
                   key: "external_delegated",
-                  label: isFr ? "Sas Externe Délégué" : "External Gate",
+                  label: isFr ? "Réalisation IDE / Git" : "External IDE / Git",
                 },
               ] as const
             ).map((tab) => (
@@ -206,6 +219,7 @@ export function ProcessesHubPage() {
         >
           {filteredWorkflows.map((wf) => {
             const isExternal = wf.execution_mode === "external_delegated";
+            const activeSubStepsCount = wf.sub_steps.filter((s) => s.enabled).length;
             return (
               <article
                 key={`${wf.id}-${wf.version}`}
@@ -232,36 +246,32 @@ export function ProcessesHubPage() {
                   >
                     <span
                       style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 700,
                         color: "var(--color-primary-cobalt)",
                       }}
                     >
-                      {wf.vsm_step_num ? `Étape ${wf.vsm_step_num} · ` : ""}
-                      {wf.id} (v{wf.version})
+                      {wf.vsm_step_num
+                        ? isFr
+                          ? `Étape ${wf.vsm_step_num} du parcours`
+                          : `Step ${wf.vsm_step_num}`
+                        : isFr
+                          ? "Processus transverse"
+                          : "Cross-cutting process"}
                     </span>
 
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                      <span
-                        className="rounded px-2 py-0.5 text-xs font-semibold"
-                        style={{
-                          backgroundColor: isExternal
-                            ? "var(--color-arbitration-bg)"
-                            : "var(--color-action-primary-subtle)",
-                          color: isExternal
-                            ? "var(--color-arbitration-amber)"
-                            : "var(--color-primary-cobalt)",
-                        }}
-                      >
-                        {isExternal
-                          ? isFr
-                            ? "Sas Externe Délégué"
-                            : "External Delegated Gate"
-                          : isFr
-                            ? "Natif ORCIA"
-                            : "Native ORCIA"}
-                      </span>
+                      {isExternal ? (
+                        <span
+                          className="rounded px-2 py-0.5 text-xs font-semibold"
+                          style={{
+                            backgroundColor: "var(--color-arbitration-bg)",
+                            color: "var(--color-arbitration-amber)",
+                          }}
+                        >
+                          {isFr ? "Équipe & IDE" : "IDE & Team"}
+                        </span>
+                      ) : null}
                       <span
                         className="rounded px-2 py-0.5 text-xs font-semibold"
                         style={{
@@ -277,10 +287,10 @@ export function ProcessesHubPage() {
                       >
                         {wf.status === "published"
                           ? isFr
-                            ? "Publié"
-                            : "Published"
+                            ? "Actif"
+                            : "Active"
                           : isFr
-                            ? "Brouillon"
+                            ? "En préparation"
                             : "Draft"}
                       </span>
                     </div>
@@ -288,36 +298,139 @@ export function ProcessesHubPage() {
 
                   <h4 style={{ margin: 0, fontSize: "15px" }}>{wf.title}</h4>
 
-                  <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-                    Agent : <strong>{wf.agent_ref}</strong> ·{" "}
-                    {wf.sub_steps.filter((s) => s.enabled).length}{" "}
-                    {isFr ? "sous-étapes DBOS" : "DBOS sub-steps"} ·{" "}
-                    {wf.controls.deterministic_gates.length}{" "}
-                    {isFr ? "gate(s) déterministe(s)" : "deterministic gate(s)"}
+                  <div style={{ fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
+                    {formatAgentHumanLabel(wf.agent_ref)} · {activeSubStepsCount}{" "}
+                    {isFr ? "étape(s) guidée(s)" : "guided step(s)"}
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    paddingTop: "4px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    data-testid={`execute-workflow-btn-${wf.id}`}
+                    onClick={() => setActiveRunWorkflowId(wf.id)}
+                    className="orcia-ds-btn-primary"
+                  >
+                    {isFr ? "▷ Lancer ce processus" : "▷ Launch process"}
+                  </button>
+
                   <button
                     type="button"
                     data-testid={`open-studio-btn-${wf.id}`}
                     onClick={() => navigateToRoute(`/processes/studio/${wf.id}`)}
                     className="orcia-ds-btn-secondary"
                   >
-                    {isFr ? "✏️ Studio 5 Blocs" : "✏️ 5-Block Studio"}
-                  </button>
-                  <button
-                    type="button"
-                    data-testid={`execute-workflow-btn-${wf.id}`}
-                    onClick={() => navigateToRoute(`/processes/studio/${wf.id}`)}
-                    className="orcia-ds-btn-primary"
-                  >
-                    {isFr ? "▷ Exécuter / Simuler" : "▷ Execute / Simulate"}
+                    {isFr ? "Adapter dans le Studio" : "Customize in Studio"}
                   </button>
                 </div>
               </article>
             );
           })}
+        </div>
+      </div>
+
+      {/* ZONE 3 : VUE D'ENSEMBLE DE LA CHAÎNE DE VALEUR (4 PHASES · 11 ÉTAPES) */}
+      <div
+        data-testid="processes-hub-vsm-hero-card"
+        className="orcia-bento-card"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "var(--color-primary-cobalt)",
+              }}
+            >
+              {isFr
+                ? "VUE D'ENSEMBLE DU PARCOURS MÉTIER (4 PHASES · 11 ÉTAPES)"
+                : "END-TO-END VALUE STREAM (4 PHASES · 11 STEPS)"}
+            </span>
+            <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
+              {INITIAL_VSM_SPEC.title} — {INITIAL_VSM_SPEC.subtitle}
+            </h3>
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
+              {isFr
+                ? "Visualisez comment s'articulent les 11 étapes entre les équipes et les agents IA, les points de validation humaine et l'évolution des pratiques."
+                : "Explore how the 11 steps connect teams and AI agents, human decision points, and process improvements."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            data-testid="open-interactive-vsm-btn"
+            onClick={() => navigateToRoute(`/processes/vsm/${INITIAL_VSM_SPEC.id}`)}
+            className="orcia-ds-btn-secondary"
+          >
+            {isFr
+              ? "🗺️ Explorer la chaîne de valeur complète (11 étapes)"
+              : "🗺️ Explore full 11-step Value Stream"}
+          </button>
+        </div>
+
+        {/* Synthèse des 4 Phases */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+            gap: "10px",
+          }}
+        >
+          {INITIAL_VSM_SPEC.phases.map((phase) => (
+            <div
+              key={phase.num}
+              data-testid={`vsm-hero-phase-${phase.num}`}
+              className="rounded border p-2.5"
+              style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-border-subtle)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: "var(--color-primary-cobalt)",
+                  }}
+                >
+                  Phase {phase.num} · Étapes {phase.steps_range}
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
+                  {phase.steps.length} {isFr ? "étapes" : "steps"}
+                </span>
+              </div>
+              <div style={{ fontWeight: 700, fontSize: "13.5px", marginTop: "2px" }}>
+                {phase.name}
+              </div>
+              <div style={{ fontSize: "11.5px", color: "var(--color-text-secondary)", marginTop: "2px" }}>
+                {phase.goal}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
