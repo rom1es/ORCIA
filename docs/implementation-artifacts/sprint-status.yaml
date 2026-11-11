@@ -162,6 +162,14 @@ development_status:
   15-2-chargeur-declarative-pack-loader-export-zip-et-conversion-packs-sdlc-orcia-docs: done
   15-3-ecran-settings-packs-simplifie-et-monitoring-connecteurs-requis: done
   epic-15-retrospective: optional
+
+  # Epic 17 — Refonte Gouvernance IAM par Délégation Hiérarchique, Organigramme en Modales, Annuaire des Comptes & Mon Compte, Connecteurs Socle vs Sources Passthrough et Coquille @orcia/ui
+  epic-17: in-progress
+  17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration: ready-for-dev
+  17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation: backlog
+  17-3-annuaire-comptes-matrice-roles-delegues-secops-et-suppression-secrets-exposes: backlog
+  17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag: backlog
+  epic-17-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
