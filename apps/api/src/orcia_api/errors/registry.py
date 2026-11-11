@@ -9,6 +9,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from orcia_core.agents.errors import (
+    ReflexiveInvalidStateError,
+    ReflexiveSessionExpiredError,
+)
 from orcia_core.audit_finops.errors import AuditLedgerImmutableViolationError
 from orcia_core.blackboard.errors import BlackboardAppendOnlyViolationError
 from orcia_core.bootstrap.errors import ModelOrthogonalityViolationError
@@ -77,6 +81,8 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     ScopeAccessDeniedError,
     BlackboardAppendOnlyViolationError,
     AuditLedgerImmutableViolationError,
+    ReflexiveInvalidStateError,
+    ReflexiveSessionExpiredError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {

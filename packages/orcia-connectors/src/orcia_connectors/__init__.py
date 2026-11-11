@@ -50,6 +50,10 @@ from orcia_connectors.protocol import (
     sign_approval_token_payload,
     verify_signed_approval_token,
 )
+from orcia_connectors.reflexive_write_gate import (
+    ConnectorReflexiveWriteGateAdapter,
+    issue_broker_write_approval,
+)
 from orcia_connectors.surgical import (
     SurgicalContextExplorer,
     extract_outline_nodes,
@@ -63,6 +67,7 @@ __all__ = [
     "AtlassianConfluenceConnector",
     "AtlassianJiraConnector",
     "ConnectorHealthStatus",
+    "ConnectorReflexiveWriteGateAdapter",
     "GitProviderConnector",
     "JiraAccessRequestChannelAdapter",
     "JiraTransitionSpec",
@@ -97,6 +102,7 @@ __all__ = [
     "get_git_code_ast_indexer",
     "get_jira_hybrid_indexer",
     "get_tripartite_graph_indexer",
+    "issue_broker_write_approval",
     "register_all_sdlc_connectors",
     "register_jira_access_request_channel",
     "resolve_file_badge_code",

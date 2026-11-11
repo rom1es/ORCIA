@@ -118,7 +118,7 @@ name = "AD-19 Contract 2: Acyclic Domain Hierarchy in orcia_core (zero circular 
 type = "layers"
 containers = ["orcia_core"]
 layers = [
-    "bootstrap | orchestration | packs",
+    "bootstrap | orchestration | packs | agents",
     "blackboard | ontology | rag | gates | audit_finops | workflows",
     "catalog",
     "permissions",

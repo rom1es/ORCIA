@@ -40,6 +40,11 @@ from orcia_api.dependencies.portal_and_assistant import (
     get_two_speed_search_service,
     get_user_preferences_and_mcp_token_service,
 )
+from orcia_api.dependencies.reflexive_execution import (
+    get_reflexive_event_stream_broker,
+    get_reflexive_runtime_service,
+    get_reflexive_write_gate_service,
+)
 from orcia_api.dependencies.workspace_and_packs import (
     get_agents_and_skills_service,
     get_dna_starlark_and_glossary_service,
@@ -77,6 +82,9 @@ __all__ = [
     "get_pack_builder_system_service",
     "get_permission_broker_service",
     "get_platform_settings_service",
+    "get_reflexive_event_stream_broker",
+    "get_reflexive_runtime_service",
+    "get_reflexive_write_gate_service",
     "get_remote_test_bench_and_mcp_service",
     "get_resource_lease_service",
     "get_studio_and_pack_service",

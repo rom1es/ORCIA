@@ -22,6 +22,7 @@ from orcia_api.routers.control_center import router as control_center_router
 from orcia_api.routers.dna_and_glossary import (
     router as dna_and_glossary_router,
 )
+from orcia_api.routers.executions_trace import router as executions_trace_router
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
@@ -101,6 +102,7 @@ def create_app() -> FastAPI:
     application.include_router(packs_router)
     application.include_router(workflows_v2_router)
     application.include_router(sources_surgical_router)
+    application.include_router(executions_trace_router)
     return application
 
 

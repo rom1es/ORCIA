@@ -558,6 +558,209 @@
         "title": "AgentItemResponse",
         "type": "object"
       },
+      "AgentTraceEventItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport item for a typed SSE / timeline `AgentTraceEvent`.",
+        "properties": {
+          "check_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Label"
+          },
+          "delegate_agent_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delegate Agent Slug"
+          },
+          "delta_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Text"
+          },
+          "display_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Filename"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "file_badge_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "M↓",
+                  "Y",
+                  "TS",
+                  "PY",
+                  "DOC",
+                  "JSON",
+                  "SQL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Badge Code"
+          },
+          "formatted_badge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted Badge"
+          },
+          "group_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Title"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TraceEventKind"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "resource_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Uri"
+          },
+          "sequence_index": {
+            "minimum": 0.0,
+            "title": "Sequence Index",
+            "type": "integer"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "status_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Label"
+          },
+          "thought_duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thought Duration Ms"
+          },
+          "timestamp_utc": {
+            "title": "Timestamp Utc",
+            "type": "string"
+          },
+          "turn_index": {
+            "minimum": 0.0,
+            "title": "Turn Index",
+            "type": "integer"
+          },
+          "write_preview_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Write Preview Id"
+          }
+        },
+        "required": [
+          "event_id",
+          "execution_id",
+          "sequence_index",
+          "turn_index",
+          "kind",
+          "timestamp_utc"
+        ],
+        "title": "AgentTraceEventItem",
+        "type": "object"
+      },
       "AgenticGateEvaluateRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/gates/agentic/evaluate` (`Story 4.2`, `AD-10`, `FR-18`).",
@@ -790,6 +993,44 @@
           "trace_id"
         ],
         "title": "AgentsAndSkillsListResponse",
+        "type": "object"
+      },
+      "ApproveReflexiveWriteRequest": {
+        "additionalProperties": false,
+        "description": "HTTP request payload for `POST /api/v1/executions/{execution_id}/approve-write`.",
+        "properties": {
+          "approval_token": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignedApprovalTokenInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved": {
+            "default": true,
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "preview_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Preview Id",
+            "type": "string"
+          },
+          "rejection_reason": {
+            "default": "",
+            "maxLength": 1024,
+            "title": "Rejection Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preview_id"
+        ],
+        "title": "ApproveReflexiveWriteRequest",
         "type": "object"
       },
       "ArbitrationOptionSchemaItem": {
@@ -3127,6 +3368,48 @@
           "byte_size"
         ],
         "title": "ClaimCheckPointer",
+        "type": "object"
+      },
+      "ClaimCheckPointerItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport envelope for a SHA-256 `ClaimCheckPointer` artifact.",
+        "properties": {
+          "byte_size": {
+            "minimum": 0.0,
+            "title": "Byte Size",
+            "type": "integer"
+          },
+          "inline_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inline Preview"
+          },
+          "mime_type": {
+            "default": "text/markdown",
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "s3_uri": {
+            "title": "S3 Uri",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "s3_uri",
+          "sha256",
+          "byte_size"
+        ],
+        "title": "ClaimCheckPointerItem",
         "type": "object"
       },
       "ClaimTaskRequest": {
@@ -12515,6 +12798,61 @@
         "title": "PatternDriftFindingSchemaItem",
         "type": "object"
       },
+      "PendingWritePreviewItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport envelope for a pending `WritePreviewCard` (`WAITING_WRITE_PREVIEW`).",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "action_summary": {
+            "title": "Action Summary",
+            "type": "string"
+          },
+          "connector_type": {
+            "title": "Connector Type",
+            "type": "string"
+          },
+          "created_at_utc": {
+            "title": "Created At Utc",
+            "type": "string"
+          },
+          "diff_or_payload_preview": {
+            "additionalProperties": true,
+            "title": "Diff Or Payload Preview",
+            "type": "object"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "payload_sha256": {
+            "title": "Payload Sha256",
+            "type": "string"
+          },
+          "preview_id": {
+            "title": "Preview Id",
+            "type": "string"
+          },
+          "target_resource_uri": {
+            "title": "Target Resource Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preview_id",
+          "connector_type",
+          "action",
+          "target_resource_uri",
+          "action_summary",
+          "payload_sha256",
+          "created_at_utc"
+        ],
+        "title": "PendingWritePreviewItem",
+        "type": "object"
+      },
       "PermissionBrokerPolicyItem": {
         "additionalProperties": false,
         "description": "Serialized Permission Broker KB policy (`permission_broker_policies`, FR-22).",
@@ -13609,6 +13947,15 @@
         "title": "ProblemDetails",
         "type": "object"
       },
+      "ProcessOrchestrationType": {
+        "description": "Dual process orchestration modes (`Story 16.2` & `Story 16.3`).",
+        "enum": [
+          "non_deterministic",
+          "deterministic_dbos"
+        ],
+        "title": "ProcessOrchestrationType",
+        "type": "string"
+      },
       "ProgressiveLlmEndpointRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/progressive-llm` (`Story 9.2`).",
@@ -14137,6 +14484,245 @@
         "title": "RecursiveRunLockManifestSchemaItem",
         "type": "object"
       },
+      "ReflexiveExecutionSnapshotResponse": {
+        "additionalProperties": false,
+        "description": "HTTP response envelope for `ReflexiveSessionSnapshot` (`Story 16.2`, `F5` survival).",
+        "properties": {
+          "actor_slug": {
+            "title": "Actor Slug",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor User Id"
+          },
+          "allow_sub_agent_delegation": {
+            "default": false,
+            "title": "Allow Sub Agent Delegation",
+            "type": "boolean"
+          },
+          "artifact_pointer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimCheckPointerItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "available_delegate_agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Delegate Agents",
+            "type": "array"
+          },
+          "created_at_utc": {
+            "title": "Created At Utc",
+            "type": "string"
+          },
+          "delegation_depth": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Delegation Depth",
+            "type": "integer"
+          },
+          "effort_level": {
+            "$ref": "#/components/schemas/EffortLevel"
+          },
+          "effort_mode": {
+            "enum": [
+              "standard",
+              "approfondi"
+            ],
+            "title": "Effort Mode",
+            "type": "string"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "expires_at_utc": {
+            "title": "Expires At Utc",
+            "type": "string"
+          },
+          "final_markdown": {
+            "default": "",
+            "title": "Final Markdown",
+            "type": "string"
+          },
+          "force_final": {
+            "default": false,
+            "title": "Force Final",
+            "type": "boolean"
+          },
+          "max_budget_tokens": {
+            "minimum": 256.0,
+            "title": "Max Budget Tokens",
+            "type": "integer"
+          },
+          "max_turns": {
+            "minimum": 1.0,
+            "title": "Max Turns",
+            "type": "integer"
+          },
+          "objective": {
+            "title": "Objective",
+            "type": "string"
+          },
+          "orchestration_type": {
+            "$ref": "#/components/schemas/ProcessOrchestrationType"
+          },
+          "pending_write_preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PendingWritePreviewItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scratchpad": {
+            "items": {
+              "$ref": "#/components/schemas/ReflexiveScratchpadItem"
+            },
+            "title": "Scratchpad",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "RUNNING",
+              "WAITING_WRITE_PREVIEW",
+              "COMPLETED",
+              "CANCELLED",
+              "FAILED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tokens_used": {
+            "minimum": 0.0,
+            "title": "Tokens Used",
+            "type": "integer"
+          },
+          "trace_events": {
+            "items": {
+              "$ref": "#/components/schemas/AgentTraceEventItem"
+            },
+            "title": "Trace Events",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "turns_used": {
+            "minimum": 0.0,
+            "title": "Turns Used",
+            "type": "integer"
+          },
+          "updated_at_utc": {
+            "title": "Updated At Utc",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "execution_id",
+          "actor_slug",
+          "objective",
+          "orchestration_type",
+          "effort_level",
+          "effort_mode",
+          "status",
+          "delegation_depth",
+          "turns_used",
+          "max_turns",
+          "tokens_used",
+          "max_budget_tokens",
+          "created_at_utc",
+          "updated_at_utc",
+          "expires_at_utc",
+          "trace_id"
+        ],
+        "title": "ReflexiveExecutionSnapshotResponse",
+        "type": "object"
+      },
+      "ReflexiveScratchpadItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport item for a `ReflexiveScratchpadEntry`.",
+        "properties": {
+          "action_kind": {
+            "title": "Action Kind",
+            "type": "string"
+          },
+          "excerpt": {
+            "default": "",
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "formatted_badge": {
+            "default": "",
+            "title": "Formatted Badge",
+            "type": "string"
+          },
+          "line_anchor": {
+            "default": "",
+            "title": "Line Anchor",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "resource_uri": {
+            "default": "",
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "turn_index": {
+            "minimum": 0.0,
+            "title": "Turn Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turn_index",
+          "action_kind"
+        ],
+        "title": "ReflexiveScratchpadItem",
+        "type": "object"
+      },
       "RegisterExceptionWaiverRequest": {
         "additionalProperties": false,
         "description": "Request to register an exception waiver governed by the causal DNA chain (`Verrou V1`).",
@@ -14365,6 +14951,49 @@
           "finops_meta_usage"
         ],
         "title": "RemoteServiceTestAndDiscoverResponse",
+        "type": "object"
+      },
+      "RequestedWritePreviewInput": {
+        "additionalProperties": false,
+        "description": "HTTP transport input specifying an external write preview to gate (`Story 16.2`).",
+        "properties": {
+          "action": {
+            "default": "write_resource",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "action_summary": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Action Summary",
+            "type": "string"
+          },
+          "connector_type": {
+            "default": "mcp:default",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Connector Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "target_resource_uri": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Target Resource Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_resource_uri",
+          "action_summary"
+        ],
+        "title": "RequestedWritePreviewInput",
         "type": "object"
       },
       "RequiredConnectorSpec": {
@@ -15605,6 +16234,51 @@
         "title": "SignedApprovalToken",
         "type": "object"
       },
+      "SignedApprovalTokenInput": {
+        "additionalProperties": false,
+        "description": "HTTP transport representation of an HMAC-SHA256 `SignedApprovalToken`.",
+        "properties": {
+          "approved_at_utc": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Approved At Utc",
+            "type": "string"
+          },
+          "approver_user_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Approver User Id",
+            "type": "string"
+          },
+          "broker_signature": {
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Broker Signature",
+            "type": "string"
+          },
+          "payload_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Payload Sha256",
+            "type": "string"
+          },
+          "preview_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Preview Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preview_id",
+          "approver_user_id",
+          "approved_at_utc",
+          "payload_sha256",
+          "broker_signature"
+        ],
+        "title": "SignedApprovalTokenInput",
+        "type": "object"
+      },
       "SkillItemResponse": {
         "additionalProperties": false,
         "description": "Transport schema for a reusable Skill (`🛠️ Compétence`).",
@@ -16153,6 +16827,103 @@
           "message_fr"
         ],
         "title": "StarlarkVerdictSchema",
+        "type": "object"
+      },
+      "StartReflexiveExecutionRequest": {
+        "additionalProperties": false,
+        "description": "HTTP request payload for `POST /api/v1/executions/reflexive` (`Story 16.2`).",
+        "properties": {
+          "actor_slug": {
+            "default": "assistant-agent",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Actor Slug",
+            "type": "string"
+          },
+          "allow_sub_agent_delegation": {
+            "default": false,
+            "title": "Allow Sub Agent Delegation",
+            "type": "boolean"
+          },
+          "available_delegate_agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Delegate Agents",
+            "type": "array"
+          },
+          "effort_level": {
+            "$ref": "#/components/schemas/EffortLevel",
+            "default": "medium"
+          },
+          "effort_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "standard",
+                  "approfondi"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort Mode"
+          },
+          "initial_resources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Initial Resources",
+            "type": "array"
+          },
+          "objective": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "requested_write_preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestedWritePreviewInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run_in_background": {
+            "default": false,
+            "title": "Run In Background",
+            "type": "boolean"
+          },
+          "step_delay_ms": {
+            "default": 0,
+            "maximum": 5000.0,
+            "minimum": 0.0,
+            "title": "Step Delay Ms",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "objective"
+        ],
+        "title": "StartReflexiveExecutionRequest",
         "type": "object"
       },
       "StartWorkflowV2RunRequest": {
@@ -18747,6 +19518,24 @@
         },
         "title": "ToggleAgentGovernanceRequest",
         "type": "object"
+      },
+      "TraceEventKind": {
+        "description": "Canonical event kinds streamed over SSE and persisted in `ReflexiveSessionSnapshot`.",
+        "enum": [
+          "group_header",
+          "thought_delta",
+          "thought_completed",
+          "check_executed",
+          "file_analyzed",
+          "agent_delegated",
+          "write_preview_requested",
+          "answer_token_delta",
+          "status_working",
+          "loop_completed",
+          "loop_cancelled"
+        ],
+        "title": "TraceEventKind",
+        "type": "string"
       },
       "TripartiteTraceEdgeSchemaItem": {
         "additionalProperties": false,
@@ -31924,6 +32713,793 @@
         "summary": "Unified Server-Sent Events stream (`channel:workspace:{ws_id}`, `< 500 ms`, `AD-4`)",
         "tags": [
           "inbox"
+        ]
+      }
+    },
+    "/api/v1/executions/reflexive": {
+      "post": {
+        "description": "Launch a reflexive execution loop (`run_in_background=True` or synchronous await).",
+        "operationId": "start_reflexive_execution_endpoint_api_v1_executions_reflexive_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartReflexiveExecutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReflexiveExecutionSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Start a pure `asyncio` reflexive execution (`Standard` or `Approfondi`)",
+        "tags": [
+          "executions-reflexive"
+        ]
+      }
+    },
+    "/api/v1/executions/{execution_id}": {
+      "get": {
+        "description": "Return active or PostgreSQL 18 persisted `ReflexiveSessionSnapshot`.",
+        "operationId": "get_reflexive_execution_endpoint_api_v1_executions__execution_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "execution_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReflexiveExecutionSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Rehydrate `ReflexiveSessionSnapshot` by `execution_id` (`F5` page reload survival)",
+        "tags": [
+          "executions-reflexive"
+        ]
+      }
+    },
+    "/api/v1/executions/{execution_id}/approve-write": {
+      "post": {
+        "description": "Statelessly reload `WAITING_WRITE_PREVIEW` session, enforce write gate, and resume.",
+        "operationId": "approve_reflexive_write_endpoint_api_v1_executions__execution_id__approve_write_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "execution_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveReflexiveWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReflexiveExecutionSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Approve (`SignedApprovalToken` verified) or reject `WritePreviewCard` and resume loop",
+        "tags": [
+          "executions-reflexive"
+        ]
+      }
+    },
+    "/api/v1/executions/{execution_id}/cancel": {
+      "post": {
+        "description": "Cancel an in-flight or waiting reflexive execution without triggering synthesis.",
+        "operationId": "cancel_reflexive_execution_endpoint_api_v1_executions__execution_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "execution_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReflexiveExecutionSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Immediately cancel `execution_id` (`■ Arrêter` — `0` extra LLM calls)",
+        "tags": [
+          "executions-reflexive"
+        ]
+      }
+    },
+    "/api/v1/executions/{execution_id}/synthesize-now": {
+      "post": {
+        "description": "Request immediate synthesis on the active or paused reflexive session.",
+        "operationId": "synthesize_reflexive_execution_now_endpoint_api_v1_executions__execution_id__synthesize_now_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "execution_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReflexiveExecutionSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Raise `force_final=True` (`Synthétiser maintenant`) for immediate synthesis",
+        "tags": [
+          "executions-reflexive"
+        ]
+      }
+    },
+    "/api/v1/executions/{execution_id}/trace-stream": {
+      "get": {
+        "description": "Consume real `AsyncIterator` trace events without space splitting.",
+        "operationId": "stream_reflexive_execution_trace_endpoint_api_v1_executions__execution_id__trace_stream_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "execution_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Stream real-time `AgentTraceEvent` SSE events (`text/event-stream`, `\\n` preserved)",
+        "tags": [
+          "executions-reflexive"
         ]
       }
     },

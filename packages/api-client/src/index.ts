@@ -50,6 +50,6 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
-    ...createReflexiveExecutionDomainClient(requestJson),
+    ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
   };
 }

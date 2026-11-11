@@ -7,6 +7,20 @@ from orcia_core.ports.llm_port import (
     assert_model_orthogonality,
     compute_prompt_sha256,
 )
+from orcia_core.ports.reflexive_runtime_ports import (
+    AgentTraceEvent,
+    PendingWritePreviewSpec,
+    ReflexiveActionKind,
+    ReflexiveEventStreamPort,
+    ReflexiveLlmChunk,
+    ReflexiveLlmPort,
+    ReflexiveSessionStorePort,
+    ReflexiveTurnDecision,
+    ReflexiveTurnInput,
+    ReflexiveWriteApprovalInput,
+    ReflexiveWriteGatePort,
+    TraceEventKind,
+)
 from orcia_core.ports.surgical_explorer_port import (
     MAX_SURGICAL_LINES,
     SurgicalExplorerPort,
@@ -20,10 +34,21 @@ from orcia_core.ports.surgical_explorer_port import (
 )
 
 __all__ = [
+    "AgentTraceEvent",
     "LlmCompletionResponse",
     "LlmGatewayPort",
     "LlmPromptRequest",
     "MAX_SURGICAL_LINES",
+    "PendingWritePreviewSpec",
+    "ReflexiveActionKind",
+    "ReflexiveEventStreamPort",
+    "ReflexiveLlmChunk",
+    "ReflexiveLlmPort",
+    "ReflexiveSessionStorePort",
+    "ReflexiveTurnDecision",
+    "ReflexiveTurnInput",
+    "ReflexiveWriteApprovalInput",
+    "ReflexiveWriteGatePort",
     "SurgicalExplorerPort",
     "SurgicalFileBadgeCode",
     "SurgicalLineEntry",
@@ -32,6 +57,7 @@ __all__ = [
     "SurgicalOutlineNode",
     "SurgicalPrimitiveName",
     "SurgicalSnippetMatch",
+    "TraceEventKind",
     "assert_model_orthogonality",
     "compute_prompt_sha256",
 ]

@@ -40,6 +40,7 @@ PROTECTED_TABLES: frozenset[str] = frozenset(
 
 ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
     "domain_events_outbox",
+    "reflexive_execution_sessions",
     "upstream_challenges",
     "human_arbitration_requests",
     "human_anchor_signatures",

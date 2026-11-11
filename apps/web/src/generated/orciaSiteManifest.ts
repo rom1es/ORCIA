@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 23,
     "uiPrimitivesCount": 96,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 28,
+    "alembicMigrationsCount": 29,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 110,
+    "techLeadReportsCount": 111,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -171,7 +171,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0025_story_10_4_assistant_folders_and_threads",
     "0026_story_11_1_waivers_and_external_rebase",
     "0027_story_11_2_dna_chain_and_glossary_lifecycle",
-    "20261108_0910_declarative_packs_and_workflows_v2"
+    "20261108_0910_declarative_packs_and_workflows_v2",
+    "20261111_01_reflexive_execution_sessions"
   ],
   "architectureDecisions": [
     {
@@ -426,6 +427,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.2",
+      "reportFile": "16-2-moteur-reflexif-non-deterministe-asyncio-sse-et-suspend-resume-tech-lead-report.md",
+      "domain": "Moteur Réflexif Non-Déterministe Pur asyncio (NonDeterministicReflexiveRuntime, 0 DBOS), Streaming SSE Temps Réel (/trace-stream), Délégation Bornée (depth <= 1) & Suspend/Resume sans État sur WritePreviewCard (WAITING_WRITE_PREVIEW, Survie F5, CAP-160)",
+      "summary": "Création des ports reflexive_runtime_ports.py, du moteur orcia_core.agents (Standard 4 tours / 8k tokens vs Approfondi 25 tours / 48k tokens, séparation cancel_execution vs request_synthesize_now, archivage ClaimCheckPointer), de la migration Alembic 20261111_01 (reflexive_execution_sessions UUIDv7), de SqlReflexiveSessionStore (PG18) + ReflexiveEventStreamBroker (Redis 7.4), de ConnectorReflexiveWriteGateAdapter (SignedApprovalToken), des routes executions_trace.py (403 ERR_OBSERVER_MODE_READ_ONLY sur mutations) + SDK OpenAPI 3.1 0-diff, couverture unitaire 93.48 %, intégration PG18 + Redis 7.4 (2 passed) et Playwright E2E (6 passed)."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 16.1",
