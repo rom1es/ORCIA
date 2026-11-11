@@ -52,9 +52,26 @@ class MatrixPermissionEvaluator:
     def workspaces(self) -> tuple[WorkspaceEntity, ...]:
         return tuple(self._workspaces_by_id.values())
 
+    def get_org_unit(self, org_unit_id_or_slug: str) -> OrgUnitNode | None:
+        if org_unit_id_or_slug in self._org_units_by_id:
+            return self._org_units_by_id[org_unit_id_or_slug]
+        return next(
+            (u for u in self._org_units_by_id.values() if u.slug == org_unit_id_or_slug), None
+        )
+
     def upsert_org_unit(self, node: OrgUnitNode) -> OrgUnitNode:
         self._org_units_by_id[node.id] = node
         return node
+
+    def remove_org_unit_node(self, org_unit_id: str) -> None:
+        self._org_units_by_id.pop(org_unit_id, None)
+
+    def replace_org_units(self, nodes: tuple[OrgUnitNode, ...]) -> None:
+        enterprise_roots = {
+            uid: u for uid, u in self._org_units_by_id.items() if u.unit_type == "ENTERPRISE"
+        }
+        enterprise_roots.update({u.id: u for u in nodes})
+        self._org_units_by_id = enterprise_roots
 
     def get_workspace(self, workspace_id_or_slug: str) -> WorkspaceEntity | None:
         if workspace_id_or_slug in self._workspaces_by_id:

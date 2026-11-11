@@ -81,11 +81,14 @@ async def _reconcile_org_units_on_load(
     if raw_org_units:
         return list(raw_org_units)
 
+    from orcia_core.permissions.org_hierarchy import sort_org_unit_dicts_topologically
+
     org_rows = (
         await conn.execute(
             sa.text(
                 """
-                SELECT id, slug, name, unit_type, parent_id
+                SELECT id, slug, name, unit_type, parent_id,
+                       billing_enabled, lead_user_id, member_user_ids_jsonb
                 FROM org_units
                 WHERE unit_type IN ('BU', 'TEAM')
                 ORDER BY CASE WHEN unit_type = 'BU' THEN 0 ELSE 1 END, created_at ASC
@@ -93,24 +96,56 @@ async def _reconcile_org_units_on_load(
             )
         )
     ).fetchall()
+    raw_dicts: list[dict[str, Any]] = []
+    for org_row in org_rows:
+        db_uuid_str = str(org_row[0])
+        parent_db_str = str(org_row[4]) if org_row[4] is not None else ""
+        level = "TEAM" if str(org_row[3]).upper() == "TEAM" else "BU"
+        entry: dict[str, Any] = {
+            "id": db_uuid_str,
+            "name": str(org_row[2]),
+            "slug": str(org_row[1]),
+            "level": level,
+            "parentId": parent_db_str or "scope-global",
+        }
+        if len(org_row) > 5 and org_row[5] is False:
+            entry["billingEnabled"] = False
+        if len(org_row) > 6 and org_row[6]:
+            entry["leadUserId"] = str(org_row[6])
+        if len(org_row) > 7 and org_row[7]:
+            raw_mem = org_row[7]
+            parsed_mem = (
+                json.loads(raw_mem)
+                if isinstance(raw_mem, str)
+                else (raw_mem if isinstance(raw_mem, list) else [])
+            )
+            if parsed_mem:
+                entry["memberUserIds"] = [str(m) for m in parsed_mem if str(m).strip()]
+        raw_dicts.append(entry)
+
+    sorted_dicts = sort_org_unit_dicts_topologically(raw_dicts)
     ui_id_by_db_uuid: dict[str, str] = {}
     reconciled: list[dict[str, Any]] = []
-    for idx, org_row in enumerate(org_rows):
-        db_uuid_str = str(org_row[0])
+    for idx, item in enumerate(sorted_dicts):
+        db_uuid_str = str(item["id"])
         ui_id = f"org-{idx + 1}"
         ui_id_by_db_uuid[db_uuid_str] = ui_id
-        parent_db_str = str(org_row[4]) if org_row[4] is not None else ""
+        parent_db_str = str(item.get("parentId") or "")
         parent_ui_id = ui_id_by_db_uuid.get(parent_db_str, "scope-global")
-        level = "TEAM" if str(org_row[3]).upper() == "TEAM" else "BU"
-        reconciled.append(
-            {
-                "id": ui_id,
-                "name": str(org_row[2]),
-                "slug": str(org_row[1]),
-                "level": level,
-                "parentId": parent_ui_id,
-            }
-        )
+        reconciled_item: dict[str, Any] = {
+            "id": ui_id,
+            "name": str(item["name"]),
+            "slug": str(item["slug"]),
+            "level": str(item["level"]),
+            "parentId": parent_ui_id,
+        }
+        if "billingEnabled" in item:
+            reconciled_item["billingEnabled"] = item["billingEnabled"]
+        if "leadUserId" in item:
+            reconciled_item["leadUserId"] = item["leadUserId"]
+        if "memberUserIds" in item:
+            reconciled_item["memberUserIds"] = item["memberUserIds"]
+        reconciled.append(reconciled_item)
     return reconciled
 
 

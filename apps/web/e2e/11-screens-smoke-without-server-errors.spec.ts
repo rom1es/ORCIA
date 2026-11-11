@@ -5,7 +5,7 @@ import { watchApiServerErrors } from "./support/apiErrors";
 
 const SCREENS: ReadonlyArray<{ route: string; testId: string }> = [
   { route: "/cockpit", testId: "four-zone-central-workspace" },
-  { route: "/configuration", testId: "create-org-unit-form" },
+  { route: "/configuration", testId: "settings-organization-section" },
   { route: "/ontology", testId: "four-zone-central-workspace" },
   { route: "/catalog", testId: "four-zone-central-workspace" },
   { route: "/activity", testId: "four-zone-central-workspace" },

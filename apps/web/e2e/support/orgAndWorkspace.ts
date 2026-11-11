@@ -1,6 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 
 async function createOrgUnit(page: Page, level: "BU" | "TEAM", name: string, slug: string) {
+  await page.getByTestId("open-create-org-unit-modal-btn").click();
+  await expect(page.getByTestId("create-org-unit-form")).toBeVisible({ timeout: 15000 });
   await page.getByTestId("org-unit-level-select").selectOption(level);
   await page.getByTestId("org-unit-name-input").fill(name);
   await page.getByTestId("org-unit-slug-input").fill(slug);
@@ -10,7 +12,7 @@ async function createOrgUnit(page: Page, level: "BU" | "TEAM", name: string, slu
 /** Crée une Direction (BU) puis une Équipe rattachée, via /configuration (parcours réel). */
 export async function createBuAndTeamViaUi(page: Page): Promise<void> {
   await page.goto("/configuration");
-  await expect(page.getByTestId("create-org-unit-form")).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId("settings-organization-section")).toBeVisible({ timeout: 30000 });
   await createOrgUnit(page, "BU", "Direction E2E", "bu-e2e");
   await expect(page.getByTestId("iam-org-units-empty-state")).toBeHidden({ timeout: 15000 });
   await createOrgUnit(page, "TEAM", "Equipe E2E", "team-e2e");

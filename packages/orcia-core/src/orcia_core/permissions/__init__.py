@@ -62,6 +62,20 @@ from orcia_core.permissions.models import (
     WorkspaceMembershipEntity,
     WorkspaceVisibilityMode,
 )
+from orcia_core.permissions.org_hierarchy import (
+    OrgUnitKind,
+    OrgUnitSummary,
+    assert_org_unit_deletable,
+    assert_unique_org_unit_slug,
+    build_org_unit_summary,
+    generate_new_org_unit_id,
+    list_evaluator_org_unit_summaries,
+    normalize_member_user_ids,
+    normalize_org_unit_slug,
+    sort_org_unit_dicts_topologically,
+    sort_org_unit_summaries_dfs,
+    validate_org_unit_hierarchy,
+)
 from orcia_core.permissions.platform_settings import (
     REGISTERED_IDEMPOTENT_OUTBOX_CONSUMERS,
     DefaultMemorySecretProvider,
@@ -161,7 +175,9 @@ def build_default_auth_and_org_service(
             can_read_source=False,
             can_edit=False,
             can_admin=False,
-            system_prompt_secret="SYSTEM_SECRET: Audit OWASP & PCI-DSS strict ruleset v2.1",
+            system_prompt_secret=(  # pragma: allowlist secret
+                "SYSTEM_SECRET: Audit OWASP & PCI-DSS strict ruleset v2.1"
+            ),
         ),
         CatalogAclEntry(
             id="0192c4e0-0000-7000-8000-000000000502",
@@ -176,7 +192,9 @@ def build_default_auth_and_org_service(
             can_read_source=True,
             can_edit=True,
             can_admin=True,
-            system_prompt_secret="OPEN_SKILL_SOURCE: Checkout validation workflow steps",
+            system_prompt_secret=(  # pragma: allowlist secret
+                "OPEN_SKILL_SOURCE: Checkout validation workflow steps"
+            ),
         ),
     )
     users = (
@@ -309,7 +327,9 @@ __all__ = [
     "JwtSessionManager",
     "KeyValueRevocationStore",
     "MatrixPermissionEvaluator",
+    "OrgUnitKind",
     "OrgUnitNode",
+    "OrgUnitSummary",
     "OrgUnitType",
     "PassthroughCredentialRecord",
     "PassthroughVaultCipher",
@@ -328,10 +348,20 @@ __all__ = [
     "WorkspaceEntity",
     "WorkspaceMembershipEntity",
     "WorkspaceVisibilityMode",
+    "assert_org_unit_deletable",
+    "assert_unique_org_unit_slug",
     "build_default_auth_and_org_service",
     "build_default_permission_broker_service",
+    "build_org_unit_summary",
     "build_prefilled_jira_request_url",
     "compute_salted_secret_fingerprint",
     "extract_connector_scheme",
+    "generate_new_org_unit_id",
+    "list_evaluator_org_unit_summaries",
+    "normalize_member_user_ids",
+    "normalize_org_unit_slug",
     "parse_permission_kb_markdown",
+    "sort_org_unit_dicts_topologically",
+    "sort_org_unit_summaries_dfs",
+    "validate_org_unit_hierarchy",
 ]

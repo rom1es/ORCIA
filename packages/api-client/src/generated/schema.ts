@@ -1927,6 +1927,38 @@ export interface components {
       trace_id: string;
       workflows: (components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"])[];
     };
+    OrgUnitCreateRequest: {
+      billing_enabled?: boolean;
+      kind: "BU" | "TEAM";
+      lead_user_id?: string | null;
+      member_user_ids?: (string)[];
+      name: string;
+      parent_id?: string | null;
+      slug?: string | null;
+    };
+    OrgUnitDeleteResponse: {
+      deleted?: boolean;
+      deleted_id: string;
+      trace_id: string;
+    };
+    OrgUnitPatchRequest: {
+      billing_enabled?: boolean | null;
+      lead_user_id?: string | null;
+      member_user_ids?: (string)[] | null;
+      name?: string | null;
+      parent_id?: string | null;
+    };
+    OrgUnitResponse: {
+      attached_workspaces_count?: number;
+      billing_enabled?: boolean;
+      id: string;
+      kind: "BU" | "TEAM";
+      lead_user_id?: string | null;
+      member_user_ids?: (string)[];
+      name: string;
+      parent_id?: string | null;
+      slug: string;
+    };
     OrgUnitSummaryResponse: {
       id: string;
       name: string;
@@ -1940,6 +1972,10 @@ export interface components {
       parent_id?: string | null;
       slug: string;
       unit_type: "ENTERPRISE" | "BU" | "TRIBE" | "TEAM" | "SUB_TEAM";
+    };
+    OrgUnitsListResponse: {
+      org_units: (components["schemas"]["OrgUnitResponse"])[];
+      trace_id: string;
     };
     OutboxReplayRequest: {
       actor_persona?: string;
@@ -4338,6 +4374,30 @@ export interface paths {
       };
     };
   };
+  "/api/v1/org-units": {
+    get: {
+      responses: {
+        200: components["schemas"]["OrgUnitsListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: components["schemas"]["OrgUnitResponse"];
+      };
+    };
+  };
+  "/api/v1/org-units/{org_unit_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["OrgUnitDeleteResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["OrgUnitResponse"];
+      };
+    };
+  };
   "/api/v1/pack-builder/installed-packs": {
     get: {
       responses: {
@@ -4980,8 +5040,13 @@ export type OntologyResolveResponse = components["schemas"]["OntologyResolveResp
 export type OntologyTermInputItem = components["schemas"]["OntologyTermInputItem"];
 export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsertConceptRequest"];
 export type OrchestrationSetupStateResponse = components["schemas"]["OrchestrationSetupStateResponse"];
+export type OrgUnitCreateRequest = components["schemas"]["OrgUnitCreateRequest"];
+export type OrgUnitDeleteResponse = components["schemas"]["OrgUnitDeleteResponse"];
+export type OrgUnitPatchRequest = components["schemas"]["OrgUnitPatchRequest"];
+export type OrgUnitResponse = components["schemas"]["OrgUnitResponse"];
 export type OrgUnitSummaryResponse = components["schemas"]["OrgUnitSummaryResponse"];
 export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
+export type OrgUnitsListResponse = components["schemas"]["OrgUnitsListResponse"];
 export type OutboxReplayRequest = components["schemas"]["OutboxReplayRequest"];
 export type OutboxReplayResponse = components["schemas"]["OutboxReplayResponse"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];

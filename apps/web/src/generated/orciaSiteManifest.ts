@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 23,
     "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 28,
+    "alembicMigrationsCount": 29,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 110,
+    "techLeadReportsCount": 111,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -174,7 +174,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0025_story_10_4_assistant_folders_and_threads",
     "0026_story_11_1_waivers_and_external_rebase",
     "0027_story_11_2_dna_chain_and_glossary_lifecycle",
-    "20261108_0910_declarative_packs_and_workflows_v2"
+    "20261108_0910_declarative_packs_and_workflows_v2",
+    "20261111_1702_story_17_2_org_units_billing_and_members"
   ],
   "architectureDecisions": [
     {
@@ -429,6 +430,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.2 (CAP-051, CAP-067)",
+      "reportFile": "17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation-tech-lead-report.md",
+      "domain": "Organigramme Hiérarchique Indenté Multi-Niveaux (BU → Sous-BU / Pôle → Équipe), CRUD /api/v1/org-units PostgreSQL 18, 4 Modales RGAA d'Édition / Membres / Facturation & Suppression Sécurisée (HTTP 409 ERR_ORG_UNIT_NOT_EMPTY)",
+      "summary": "Migration Alembic 20261111_1702 (billing_enabled, lead_user_id, member_user_ids_jsonb), domaine org_hierarchy.py + adaptateur SQL sans N+1 sql_org_units.py, synchronisation topologique multi-niveaux sql_platform_setup_relational_sync.py, routes FastAPI GET/POST/PATCH/DELETE /api/v1/org-units + SDK @orcia/api-client (0-diff), encart pédagogique BU / Équipe / Espace, arbre indenté Direction C, purge des contrôles personnels et 4 modales RGAA (CreateOrgUnitModal, EditOrgUnitModal, ManageOrgUnitMembersModal, ConfirmDeleteOrgUnitModal .orcia-ds-btn-danger)."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 17.1 (CAP-058, CAP-060, CAP-100)",

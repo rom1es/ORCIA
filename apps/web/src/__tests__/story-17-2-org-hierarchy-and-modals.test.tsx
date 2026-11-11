@@ -1,0 +1,220 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { clearPlatformSetupStorage } from "../components/platformSetupStore";
+import { createOrciaQueryClient, createOrciaRouter } from "../router";
+import { resetAuthSessionStore, useAuthSessionStore } from "../stores/authSessionStore";
+
+async function renderOrganizationSettings(initialEntry = "/settings") {
+  const queryClient = createOrciaQueryClient();
+  const history = createMemoryHistory({ initialEntries: [initialEntry] });
+  const router = createOrciaRouter({ queryClient, history });
+  await router.load();
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  return { ...view, router };
+}
+
+function dismissFirstBootAdminIfOpen() {
+  if (screen.queryByTestId("first-boot-admin-name-input")) {
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Claire Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "claire.admin@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+  }
+}
+
+describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps & F5 Survival", () => {
+  beforeEach(() => {
+    clearPlatformSetupStorage();
+    resetAuthSessionStore();
+    useAuthSessionStore.getState().setAuthSession({
+      email: "claire.admin@orcia.fr",
+      roles: ["PLATFORM_ADMIN"],
+      activeHat: "PLATFORM_ADMIN",
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    clearPlatformSetupStorage();
+    resetAuthSessionStore();
+  });
+
+  it("renders pedagogical callout + /workspaces CTA, creates multi-level BU -> Sous-BU -> TEAM hierarchy with depth indentation, edits, manages members, enforces danger/non-empty delete, and survives F5 reload", async () => {
+    const firstMount = await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+
+    // 1. Pedagogical header & zero legacy personal attachment UI ("Retirer mon rattachement")
+    const callout = screen.getByTestId("organization-pedagogical-callout");
+    expect(callout.textContent).toContain("Direction / BU");
+    expect(callout.textContent).toContain("Équipe");
+    expect(callout.textContent).toContain("Mes Espaces");
+    expect(document.body.textContent ?? "").not.toContain("Retirer mon rattachement");
+
+    // 2. Create Root BU ("Direction Produit", depth 0)
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    expect(screen.getByTestId("create-org-unit-modal")).toBeDefined();
+    // Parent select is visible even for BU (root vs Sous-BU)
+    expect(screen.getByTestId("org-unit-parent-select")).toBeDefined();
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Produit" },
+    });
+    fireEvent.change(screen.getByTestId("org-unit-lead-input"), {
+      target: { value: "vp.produit@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    const rootRow = await screen.findByTestId("org-unit-row-org-1");
+    expect(rootRow.getAttribute("data-depth")).toBe("0");
+    expect(screen.getByTestId("org-unit-kind-badge-org-1").textContent).toBe("Direction / BU");
+    expect(screen.getByTestId("org-unit-lead-badge-org-1").textContent).toContain(
+      "vp.produit@orcia.fr",
+    );
+
+    // 3. Create Sub-BU ("Pôle IA Générative", kind = BU, parent = org-1 -> depth 1, "Pôle / Sous-BU")
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-parent-select"), {
+      target: { value: "org-1" },
+    });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Pôle IA Générative" },
+    });
+    fireEvent.click(screen.getByTestId("org-unit-billing-checkbox")); // toggle off FinOps
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    const subBuRow = await screen.findByTestId("org-unit-row-org-2");
+    expect(subBuRow.getAttribute("data-depth")).toBe("1");
+    expect(screen.getByTestId("org-unit-tree-connector-org-2").textContent).toContain("└─");
+    expect(screen.getByTestId("org-unit-kind-badge-org-2").textContent).toBe("Pôle / Sous-BU");
+    expect(screen.getByTestId("org-unit-billing-badge-org-2").textContent).toBe(
+      "Sans imputation FinOps",
+    );
+
+    // 4. Create TEAM: selecting "TEAM" auto-preselects the first BU (org-1), then we select Sub-BU (org-2 -> depth 2)
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-level-select"), {
+      target: { value: "TEAM" },
+    });
+    expect((screen.getByTestId("org-unit-parent-select") as HTMLSelectElement).value).toBe(
+      "org-1",
+    );
+    fireEvent.change(screen.getByTestId("org-unit-parent-select"), {
+      target: { value: "org-2" },
+    });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Équipe Agents RAG" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    const teamRow = await screen.findByTestId("org-unit-row-org-3");
+    expect(teamRow.getAttribute("data-depth")).toBe("2");
+    expect(screen.getByTestId("org-unit-kind-badge-org-3").textContent).toBe("ÉQUIPE");
+    expect(screen.getByTestId("org-unit-billing-badge-org-3").textContent).toBe(
+      "Facturation FinOps active",
+    );
+
+    // 5. Edit Modal (PATCH): rename Sub-BU & exclude self/descendants from parent options
+    fireEvent.click(screen.getByTestId("edit-org-unit-btn-org-1"));
+    const editRootParentSelect = screen.getByTestId(
+      "edit-org-unit-parent-select",
+    ) as HTMLSelectElement;
+    const optionValues = Array.from(editRootParentSelect.options).map((o) => o.value);
+    expect(optionValues).not.toContain("org-1");
+    expect(optionValues).not.toContain("org-2"); // descendant excluded!
+    fireEvent.click(screen.getByTestId("cancel-edit-org-unit-btn"));
+
+    fireEvent.click(screen.getByTestId("edit-org-unit-btn-org-2"));
+    fireEvent.change(screen.getByTestId("edit-org-unit-name-input"), {
+      target: { value: "Pôle IA & Connaissances" },
+    });
+    fireEvent.click(screen.getByTestId("edit-org-unit-billing-checkbox")); // enable FinOps
+    fireEvent.click(screen.getByTestId("save-edit-org-unit-btn"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("org-unit-row-org-2").textContent).toContain(
+      "Pôle IA & Connaissances",
+    );
+    expect(screen.getByTestId("org-unit-billing-badge-org-2").textContent).toBe(
+      "Facturation FinOps active",
+    );
+
+    // 6. Manage Members Modal (PATCH): assign lead + 2 members on Team (org-3)
+    fireEvent.click(screen.getByTestId("manage-members-org-unit-btn-org-3"));
+    fireEvent.change(screen.getByTestId("org-unit-members-lead-input"), {
+      target: { value: "marc.lead@orcia.fr" },
+    });
+    fireEvent.change(screen.getByTestId("org-unit-add-member-input"), {
+      target: { value: "alice@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("org-unit-add-member-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-add-member-input"), {
+      target: { value: "bob@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("org-unit-add-member-btn"));
+    fireEvent.click(screen.getByTestId("save-org-unit-members-btn"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("org-unit-members-count-org-3").textContent).toBe("2 membres");
+    expect(screen.getByTestId("org-unit-lead-badge-org-3").textContent).toContain(
+      "marc.lead@orcia.fr",
+    );
+
+    // 7. Confirm Delete Modal: danger button (.orcia-ds-btn-danger), FinOps warning, and 409 non-empty block
+    expect(
+      screen.getByTestId("delete-org-unit-btn-org-2").className,
+    ).toContain("orcia-ds-btn-danger");
+    fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
+    expect(screen.getByTestId("confirm-delete-org-unit-modal")).toBeDefined();
+    expect(screen.getByTestId("org-unit-delete-finops-warning")).toBeDefined();
+    expect(screen.getByTestId("org-unit-delete-blocked-banner")).toBeDefined();
+    expect(
+      screen.getByTestId("confirm-delete-org-unit-btn-org-2").className,
+    ).toContain("orcia-ds-btn-danger");
+    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-2"));
+    const deleteFeedback = await screen.findByTestId("org-unit-delete-feedback");
+    expect(deleteFeedback.textContent).toContain("Suppression refusée");
+    expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
+
+    // 8. CTA "Ouvrir Mes Espaces ->" navigates cleanly to /workspaces
+    fireEvent.click(screen.getByTestId("organization-open-workspaces-btn"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(firstMount.router.state.location.pathname).toBe("/workspaces");
+
+    // 9. F5 Reload Survival Gate: unmount() and remount fresh router on /settings?tab=organization
+    firstMount.unmount();
+    await renderOrganizationSettings();
+
+    expect((await screen.findByTestId("org-unit-row-org-1")).getAttribute("data-depth")).toBe("0");
+    expect(screen.getByTestId("org-unit-row-org-2").getAttribute("data-depth")).toBe("1");
+    expect(screen.getByTestId("org-unit-row-org-3").getAttribute("data-depth")).toBe("2");
+    expect(screen.getByTestId("org-unit-members-count-org-3").textContent).toBe("2 membres");
+    expect(document.body.textContent ?? "").not.toContain("Retirer mon rattachement");
+  });
+
+  it("enforces read-only access banner for OBSERVER on /settings", async () => {
+    useAuthSessionStore.getState().setAuthSession({
+      email: "obs@orcia.fr",
+      roles: ["OBSERVER"],
+      activeHat: "OBSERVER",
+      readOnlyObserver: true,
+    });
+
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+
+    expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
+    expect(screen.getByTestId("settings-readonly-access-banner")).toBeDefined();
+  });
+});

@@ -85,6 +85,16 @@ export interface PlatformSetupContextValue {
     readonly deleted: boolean;
     readonly blockedReason: string | null;
   };
+  readonly syncOrgUnitsFromServer: (
+    units: readonly ConfiguredOrgUnit[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopeId?: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => void;
   readonly addRbacGrant: (input: Omit<ConfiguredRbacGrant, "id">) => void;
   readonly removeRbacGrant: (grantId: string) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
@@ -209,10 +219,24 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     Promise.all([
       client.getAccostageStatus(),
       client.getPlatformSetupState().catch(() => null),
+      client.listOrgUnits().catch(() => null),
     ])
-      .then(([status, remoteState]) => {
+      .then(([status, remoteState, remoteOrgUnitsResp]) => {
         if (cancelled) return;
-        if (status.first_admin_initialized === false) {
+        const mappedApiOrgUnits: ConfiguredOrgUnit[] = (
+          remoteOrgUnitsResp?.org_units ?? []
+        ).map((dto) => ({
+          id: dto.id,
+          name: dto.name,
+          slug: dto.slug,
+          level: dto.kind,
+          parentId: dto.parent_id ?? "scope-global",
+          billingEnabled: dto.billing_enabled ?? true,
+          leadUserId: dto.lead_user_id ?? null,
+          memberUserIds: dto.member_user_ids ?? [],
+          attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
+        }));
+        if (status.first_admin_initialized === false && mappedApiOrgUnits.length === 0) {
           if (hasMutatedSinceMountRef.current || readCachedPlatformAdmin() !== null) {
             return;
           }
@@ -243,18 +267,21 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           writeCachedPlatformAdmin(synced);
           setPlatformAdmin(synced);
         }
-        if (remoteState) {
-          const rOrgUnits = remoteState.org_units ?? [];
-          const rRbacGrants = remoteState.rbac_grants ?? [];
-          const rLlmTiers = remoteState.llm_tiers ?? [];
-          const rWorkspaces = remoteState.workspaces ?? [];
-          const rDatasources = remoteState.datasources ?? [];
-          const rPacks = remoteState.packs ?? [];
-          const rWorkflows = remoteState.workflows ?? [];
-          const rRuns = remoteState.runs ?? [];
-          const rCatalogItems = remoteState.catalog_items ?? [];
-          const rOntologyConcepts = remoteState.ontology_concepts ?? [];
-          const rAuditEvents = remoteState.audit_events ?? [];
+        if (remoteState || mappedApiOrgUnits.length > 0) {
+          const rOrgUnits =
+            mappedApiOrgUnits.length > 0
+              ? mappedApiOrgUnits
+              : ((remoteState?.org_units ?? []) as unknown as ConfiguredOrgUnit[]);
+          const rRbacGrants = remoteState?.rbac_grants ?? [];
+          const rLlmTiers = remoteState?.llm_tiers ?? [];
+          const rWorkspaces = remoteState?.workspaces ?? [];
+          const rDatasources = remoteState?.datasources ?? [];
+          const rPacks = remoteState?.packs ?? [];
+          const rWorkflows = remoteState?.workflows ?? [];
+          const rRuns = remoteState?.runs ?? [];
+          const rCatalogItems = remoteState?.catalog_items ?? [];
+          const rOntologyConcepts = remoteState?.ontology_concepts ?? [];
+          const rAuditEvents = remoteState?.audit_events ?? [];
           const hasRemoteEntities =
             rOrgUnits.length > 0 ||
             rRbacGrants.length > 0 ||
@@ -268,7 +295,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
             rOntologyConcepts.length > 0;
           if (hasRemoteEntities) {
             const hydrated: CachedPlatformSetupState = {
-              orgUnits: rOrgUnits as unknown as ConfiguredOrgUnit[],
+              orgUnits: rOrgUnits,
               rbacGrants: rRbacGrants as unknown as ConfiguredRbacGrant[],
               llmTiers: rLlmTiers.map((raw) => ({
                 tier: (raw.tier ?? raw.tierKey ?? "medium") as UiInferenceTier,
@@ -485,6 +512,10 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       slug: input.slug,
       level: input.level,
       parentId: input.parentId,
+      billingEnabled: input.billingEnabled ?? true,
+      leadUserId: input.leadUserId ?? null,
+      memberUserIds: input.memberUserIds ?? [],
+      attachedWorkspacesCount: input.attachedWorkspacesCount ?? 0,
     };
     const nextOrgUnits = [...orgUnits, newUnit];
     const shouldAttachAdmin =
@@ -513,6 +544,31 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     setOrgUnits(nextOrgUnits);
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
+  };
+
+  const syncOrgUnitsFromServer = (
+    units: readonly ConfiguredOrgUnit[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopeId?: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => {
+    setOrgUnits(units);
+    if (auditMeta) {
+      const nextAudit = appendAudit(auditMeta.eventType, auditMeta.summary, {
+        scopeId: auditMeta.scopeId,
+        scopePath: auditMeta.scopePath,
+        scopeLabel: auditMeta.scopeLabel,
+      });
+      setAuditEvents(nextAudit);
+      persistSnapshot(buildSnapshot({ orgUnits: units, auditEvents: nextAudit }));
+    } else {
+      hasMutatedSinceMountRef.current = true;
+      writeCachedPlatformSetupState(buildSnapshot({ orgUnits: units }));
+    }
   };
 
   const removeOrgUnit = (
@@ -1088,6 +1144,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         toggleAdminTeamMembership,
         addOrgUnit,
         removeOrgUnit,
+        syncOrgUnitsFromServer,
         addRbacGrant,
         removeRbacGrant,
         upsertLlmTier,

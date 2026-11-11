@@ -81,6 +81,10 @@ export interface ConfiguredOrgUnit {
   readonly slug: string;
   readonly level: "BU" | "TEAM";
   readonly parentId: string;
+  readonly billingEnabled?: boolean;
+  readonly leadUserId?: string | null;
+  readonly memberUserIds?: readonly string[];
+  readonly attachedWorkspacesCount?: number;
 }
 
 export interface ConfiguredRbacGrant {

@@ -239,13 +239,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // Journal d'Activité is no longer a tab inside /settings
     expect(screen.queryByTestId("settings-tab-audit")).toBeNull();
 
-    // Tab 1: IAM (starts empty, create Org Unit)
+    // Tab 1: Organization (starts empty, create Org Unit via modal)
     expect(screen.getByTestId("iam-org-units-empty-state")).toBeDefined();
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Technique" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
-    expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain("Direction Technique");
+    expect((await screen.findByTestId("org-unit-row-org-1")).textContent).toContain(
+      "Direction Technique",
+    );
 
     // Tab 3: AI Models (starts empty, bind tier)
     fireEvent.click(screen.getByTestId("settings-tab-models"));
@@ -590,11 +593,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // 2. Switch to Organization tab, create a BU ("BU Finance") -> unlocks IAM tab!
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "BU Finance" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
-    expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain("BU Finance");
+    expect((await screen.findByTestId("org-unit-row-org-1")).textContent).toContain("BU Finance");
 
     // IAM tab is now unlocked!
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
@@ -606,11 +610,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
 
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },
     });
-    // Parent BU selector is displayed for Espace (TEAM)
+    // Parent BU selector auto-selects first BU (org-1) when TEAM is selected
     const parentSelect = screen.getByTestId("org-unit-parent-select") as HTMLSelectElement;
     expect(parentSelect.value).toBe("org-1");
 
@@ -621,6 +626,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "aqwZSX" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-2");
 
     // Verify TopHeader workspace selector opens a dropdown list instead of blindly cycling
     const wsTrigger = screen.getByTestId("topbar-fixed-workspace-selector");
@@ -635,17 +641,17 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // Attempt to delete parent BU while child Espace is attached -> blocked by orphan protection
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-1"));
     fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-1"));
-    const feedback = screen.getByTestId("org-unit-delete-feedback");
+    const feedback = await screen.findByTestId("org-unit-delete-feedback");
     expect(feedback.textContent).toContain("Suppression refusée");
     expect(screen.getByTestId("org-unit-row-org-1")).toBeDefined();
 
-    // 3 & 4. Habilitations: Beneficiary (Chef1) vs Target Scope selected from the single dropdown (aqwZSX), "Tous" checkbox, and French display
+    // 3 & 4. Habilitations: Beneficiary (Chef1) vs Target Scope selected from the single dropdown (aqwzsx), "Tous" checkbox, and French display
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     fireEvent.change(screen.getByTestId("rbac-subject-input"), {
       target: { value: "Chef1" },
     });
     fireEvent.change(screen.getByTestId("rbac-scope-preset-select"), {
-      target: { value: "aqwZSX" },
+      target: { value: "aqwzsx" },
     });
     // Click "Tous" verb checkbox to select all 6 verbs
     fireEvent.click(screen.getByTestId("rbac-verb-checkbox-all"));
@@ -655,7 +661,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(grantRow.textContent).toContain("Rôle : Chef1");
     expect(grantRow.textContent).not.toContain("(ROLE:");
     expect(grantRow.textContent).toContain("Périmètre cible :");
-    expect(grantRow.textContent).toContain("Équipe : Espace Comptabilité (aqwZSX)");
+    expect(grantRow.textContent).toContain("Équipe : Espace Comptabilité (aqwzsx)");
     expect(grantRow.textContent).toContain("Déléguer des droits · Autorisé");
     expect(grantRow.textContent).not.toContain("(ALLOW)");
 
@@ -774,10 +780,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // 3. Configure an Organization Unit in /settings -> Organization tab (satisfies milestone 2)
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Persistance" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
 
     // 4. Navigate to /workspaces and create a Workspace (unlocks FinOps)
     await act(async () => {
@@ -1123,10 +1131,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // Create a BU so it appears in the scope selector
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Produit" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
 
     // Switch to Packs Métiers tab
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
@@ -1414,10 +1424,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(activityMenuBtn.textContent).toContain("Journal d'Activité");
 
     // 3. Perform actions on two different scopes: a BU ("Direction Produit") and Global Platform (activate/deactivate pack)
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Produit" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
 
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
     fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-builder"));
@@ -1588,12 +1600,14 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Structure de l'Organisation (Directions / BU & Équipes)",
     );
     expect(orgSection.textContent).not.toContain("Espace (Équipe)");
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     expect(
       (screen.getByTestId("org-unit-level-select") as HTMLSelectElement).textContent,
     ).toContain("Équipe");
     expect(
       (screen.getByTestId("org-unit-level-select") as HTMLSelectElement).textContent,
     ).not.toContain("Espace");
+    fireEvent.click(screen.getByTestId("cancel-create-org-unit-btn"));
 
     // - IAM tab "+ Ajouter la règle" button is disabled and shows the red '!' circle badge + red tooltip
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
@@ -1611,10 +1625,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") in Organization tab -> createGrantBtn becomes enabled!
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Tech" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
 
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(
@@ -1625,6 +1641,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).toBeNull();
 
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },
     });
@@ -1632,7 +1649,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Équipe Plateforme" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
-    expect(screen.getByTestId("org-unit-row-org-2").textContent).toContain("ÉQUIPE");
+    expect((await screen.findByTestId("org-unit-row-org-2")).textContent).toContain("ÉQUIPE");
     expect(screen.getByTestId("org-unit-row-org-1").textContent).toContain(
       "1 Équipe rattachée",
     );
@@ -1697,11 +1714,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
-    // Verify the warning badge in /settings > Organisation & Habilitations shows 0 billing Team attached
-    const membershipSummaryBadge = screen.getByTestId("admin-team-membership-summary-badge");
-    expect(membershipSummaryBadge.textContent).toContain(
-      "Aucune Équipe de facturation rattachée",
-    );
+    // Verify empty state in /settings > Organisation before creating any team, and Notification Center alert
+    expect(screen.getByTestId("iam-org-units-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("admin-team-membership-summary-badge")).toBeNull();
 
     // Verify Notification Center includes the "setup-billing-team-missing" alert
     fireEvent.click(screen.getByTestId("topbar-notifications-toggle"));
@@ -1710,51 +1725,52 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).toContain("Aucune Équipe de facturation rattachée");
     fireEvent.click(screen.getByTestId("topbar-notifications-close"));
 
-    // 2. Step B: Create a BU ("Direction Produit") and two Teams ("Équipe Core IA" & "Équipe Data")
+    // 2. Step B: Create a BU ("Direction Produit") and two Teams ("Équipe Core IA" & "Équipe Data") via Story 17.2 modals
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Produit" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
 
-    const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
-    fireEvent.change(levelSelect, { target: { value: "TEAM" } });
-
-    // Verify the "Rattacher mon compte à cette équipe" checkbox appears and is checked by default
-    const attachCheckbox = screen.getByTestId(
-      "org-unit-attach-admin-checkbox",
-    ) as HTMLInputElement;
-    expect(attachCheckbox.checked).toBe(true);
-
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-level-select"), {
+      target: { value: "TEAM" },
+    });
+    expect(screen.queryByTestId("org-unit-attach-admin-checkbox")).toBeNull();
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Équipe Core IA" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-2");
 
-    // Admin is now attached to "Équipe Core IA" (org-2)
-    expect(screen.getByTestId("admin-team-membership-summary-badge").textContent).toContain(
-      "Équipe Core IA",
-    );
-    expect(screen.getByTestId("org-unit-member-badge-org-2").textContent).toContain(
-      "Membre (Facturation active)",
+    expect(screen.getByTestId("org-unit-billing-badge-org-2").textContent).toContain(
+      "Facturation FinOps active",
     );
 
-    // Create a second Team ("Équipe Data", org-3) with attachCheckbox unchecked, then attach in 1 click (Multi-Teams!)
-    fireEvent.click(screen.getByTestId("org-unit-attach-admin-checkbox"));
+    // Create a second Team ("Équipe Data", org-3)
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-level-select"), {
+      target: { value: "TEAM" },
+    });
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Équipe Data" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
-    expect(screen.getByTestId("org-unit-member-badge-org-3").textContent).toContain(
-      "Non rattaché",
-    );
+    await screen.findByTestId("org-unit-row-org-3");
 
-    // Click "+ Rattacher mon compte" on org-3 -> Admin now belongs to BOTH teams!
-    fireEvent.click(screen.getByTestId("toggle-team-membership-btn-org-3"));
-    expect(screen.getByTestId("org-unit-member-badge-org-3").textContent).toContain(
-      "Membre (Facturation active)",
-    );
-    expect(screen.getByTestId("admin-team-membership-summary-badge").textContent).toContain(
-      "Équipe Core IA, Équipe Data",
+    // Manage members of "Équipe Core IA" (org-2) via ManageOrgUnitMembersModal
+    fireEvent.click(screen.getByTestId("manage-members-org-unit-btn-org-2"));
+    fireEvent.change(screen.getByTestId("org-unit-add-member-input"), {
+      target: { value: "romain@orcia.fr" },
+    });
+    fireEvent.click(screen.getByTestId("org-unit-add-member-btn"));
+    fireEvent.click(screen.getByTestId("save-org-unit-members-btn"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("org-unit-members-count-org-2").textContent).toContain(
+      "1 membre",
     );
 
     // 3. Navigate to /workspaces and create both a Collective Workspace (STANDARD) and a Private Workspace (PRIVATE_USER, Option 2 FinOps)
@@ -1824,7 +1840,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
     fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-2"));
-    expect(screen.getByTestId("org-unit-delete-feedback").textContent).toContain(
+    expect((await screen.findByTestId("org-unit-delete-feedback")).textContent).toContain(
       "2 Espaces de Travail sont rattachés à « Équipe Core IA »",
     );
     expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
@@ -1855,12 +1871,14 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
     fireEvent.change(levelSelect, { target: { value: "TEAM" } });
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Équipe Produit IA" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
 
     // Verify duplicate Glossary & Rules tab has been removed from /settings (now exclusively in /workspaces)
     expect(screen.queryByTestId("settings-tab-glossary")).toBeNull();

@@ -1,52 +1,84 @@
-import { StatusBadge } from "@orcia/ui";
+import { OrciaButton, OrciaIcon, StatusBadge } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
+import type { OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
+import type { AdminAndStudioDictionarySection } from "../i18n/locales/admin_and_studio_labels";
 import { formatCountNoun } from "../stores/authSessionStore";
 
 export interface SettingsOrganizationUnitRowProps {
-  readonly unit: ConfiguredOrgUnit;
+  readonly rowItem: OrgTreeRowItem;
   readonly isFr: boolean;
   readonly canMutate: boolean;
-  readonly parentNode: ConfiguredOrgUnit | undefined;
-  readonly childCount: number;
-  readonly isAdminMember: boolean;
-  readonly isConfirming: boolean;
-  readonly onToggleAdminTeamMembership?: (teamId: string) => void;
-  readonly onRequestDelete: (unitId: string) => void;
-  readonly onConfirmDelete: (unitId: string) => void;
-  readonly onCancelDelete: () => void;
+  readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"];
+  readonly onEdit: (unit: ConfiguredOrgUnit) => void;
+  readonly onManageMembers: (unit: ConfiguredOrgUnit) => void;
+  readonly onRequestDelete: (rowItem: OrgTreeRowItem) => void;
 }
 
 export function SettingsOrganizationUnitRow({
-  unit,
+  rowItem,
   isFr,
   canMutate,
-  parentNode,
-  childCount,
-  isAdminMember,
-  isConfirming,
-  onToggleAdminTeamMembership,
+  labels,
+  onEdit,
+  onManageMembers,
   onRequestDelete,
-  onConfirmDelete,
-  onCancelDelete,
-}: SettingsOrganizationUnitRowProps) {
-  const levelDisplay = unit.level === "TEAM" ? (isFr ? "ÉQUIPE" : "TEAM") : "BU";
-  const attachedChildrenLabel = isFr
-    ? formatCountNoun(childCount, "Équipe rattachée", "Équipes rattachées", "fr")
-    : formatCountNoun(childCount, "attached Team", "attached Teams", "en");
+}: SettingsOrganizationUnitRowProps): React.ReactElement {
+  const {
+    unit,
+    depth,
+    isSubBu,
+    parentNode,
+    attachedTeamsCount,
+    attachedWorkspacesCount,
+  } = rowItem;
+  const locale = isFr ? "fr" : "en";
+
+  const kindLabel =
+    unit.level === "TEAM"
+      ? labels.badges.team
+      : isSubBu
+        ? labels.badges.subBu
+        : labels.badges.rootBu;
+
+  const kindTone = unit.level === "TEAM" ? "emerald" : "cobalt";
+  const membersCount = (unit.memberUserIds ?? []).length;
+  const membersBadgeText = formatCountNoun(
+    membersCount,
+    labels.nouns.memberSingular,
+    labels.nouns.memberPlural,
+    locale,
+  );
+  const workspacesBadgeText = formatCountNoun(
+    attachedWorkspacesCount,
+    labels.nouns.workspaceSingular,
+    labels.nouns.workspacePlural,
+    locale,
+  );
+  const attachedTeamsLabel = formatCountNoun(
+    attachedTeamsCount,
+    labels.nouns.childTeamSingular,
+    labels.nouns.childTeamPlural,
+    locale,
+  );
+  const billingActive = unit.billingEnabled !== false;
 
   return (
     <div
       data-testid={`org-unit-row-${unit.id}`}
+      data-depth={String(depth)}
       style={{
-        padding: "8px 10px",
+        padding: "10px 12px",
+        paddingLeft: `${12 + depth * 28}px`,
         borderRadius: "var(--radius-sm)",
         border: "1px solid var(--color-border)",
+        backgroundColor:
+          depth === 0 ? "var(--color-surface-card)" : "var(--color-surface-secondary)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         flexWrap: "wrap",
-        gap: "8px",
+        gap: "10px",
       }}
     >
       <div
@@ -57,98 +89,110 @@ export function SettingsOrganizationUnitRow({
           flexWrap: "wrap",
         }}
       >
+        {depth > 0 ? (
+          <span
+            data-testid={`org-unit-tree-connector-${unit.id}`}
+            aria-hidden="true"
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "var(--color-primary-cobalt)",
+            }}
+          >
+            └─
+          </span>
+        ) : null}
+
+        <OrciaIcon
+          name={unit.level === "TEAM" ? "team" : "organizationBu"}
+          size={15}
+        />
+
         <strong>{unit.name}</strong>
+
+        <StatusBadge
+          testId={`org-unit-kind-badge-${unit.id}`}
+          label={kindLabel}
+          tone={kindTone}
+        />
+
+        <StatusBadge
+          testId={`org-unit-slug-badge-${unit.id}`}
+          label={unit.slug}
+          tone="neutral"
+          monospace
+        />
+
         <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
           {parentNode
-            ? isFr
-              ? `↳ Rattaché à la BU : ${parentNode.name}`
-              : `↳ Parent BU: ${parentNode.name}`
-            : isFr
-              ? "↳ Niveau Racine (Plateforme entière)"
-              : "↳ Root Level (Entire platform)"}
+            ? `↳ ${labels.badges.parentAttachmentPrefix} ${parentNode.name}`
+            : `↳ ${labels.badges.rootAttachment}`}
         </span>
-        {childCount > 0 && (
+
+        {attachedTeamsCount > 0 ? (
           <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-            ({attachedChildrenLabel})
+            {`(${attachedTeamsLabel})`}
           </span>
-        )}
+        ) : null}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-        {unit.level === "TEAM" && (
-          <>
-            <StatusBadge
-              testId={`org-unit-member-badge-${unit.id}`}
-              label={
-                isAdminMember
-                  ? isFr
-                    ? "Membre (Facturation active)"
-                    : "Member (Billing active)"
-                  : isFr
-                    ? "Non rattaché"
-                    : "Not attached"
-              }
-              tone={isAdminMember ? "emerald" : "neutral"}
-            />
-            {onToggleAdminTeamMembership && (
-              <button
-                type="button"
-                disabled={!canMutate}
-                data-testid={`toggle-team-membership-btn-${unit.id}`}
-                onClick={() => onToggleAdminTeamMembership(unit.id)}
-                className="orcia-ds-btn orcia-ds-btn-secondary"
-                style={{ padding: "5px 10px", fontSize: "12px" }}
-              >
-                {isAdminMember
-                  ? isFr
-                    ? "Retirer mon rattachement"
-                    : "Detach my account"
-                  : isFr
-                    ? "+ Rattacher mon compte"
-                    : "+ Attach my account"}
-              </button>
-            )}
-          </>
-        )}
-        <StatusBadge label={`${levelDisplay} · ${unit.slug}`} tone="cobalt" monospace />
-        {!isConfirming ? (
-          <button
-            type="button"
-            disabled={!canMutate}
-            data-testid={`delete-org-unit-btn-${unit.id}`}
-            onClick={() => onRequestDelete(unit.id)}
-            className="orcia-ds-btn orcia-ds-btn-danger"
-            style={{ padding: "5px 10px", fontSize: "12px" }}
-          >
-            {isFr ? "Supprimer" : "Delete"}
-          </button>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-              {isFr
-                ? "Attention : vérifie l'absence d'éléments orphelins"
-                : "Warning: checks for orphan dependencies"}
-            </span>
-            <button
-              type="button"
-              disabled={!canMutate}
-              data-testid={`confirm-delete-org-unit-btn-${unit.id}`}
-              onClick={() => onConfirmDelete(unit.id)}
-              className="orcia-ds-btn orcia-ds-btn-danger"
-              style={{ padding: "5px 10px", fontSize: "12px" }}
-            >
-              {isFr ? "Confirmer la suppression" : "Confirm delete"}
-            </button>
-            <button
-              type="button"
-              data-testid={`cancel-delete-org-unit-btn-${unit.id}`}
-              onClick={onCancelDelete}
-              className="orcia-ds-btn orcia-ds-btn-secondary"
-              style={{ padding: "5px 10px", fontSize: "12px" }}
-            >
-              {isFr ? "Annuler" : "Cancel"}
-            </button>
-          </div>
-        )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+        {unit.leadUserId ? (
+          <StatusBadge
+            testId={`org-unit-lead-badge-${unit.id}`}
+            label={`${labels.badges.leadPrefix} ${unit.leadUserId}`}
+            tone="cobalt"
+          />
+        ) : null}
+
+        <StatusBadge
+          testId={`org-unit-members-count-${unit.id}`}
+          label={membersBadgeText}
+          tone="neutral"
+        />
+
+        <StatusBadge
+          testId={`org-unit-workspaces-count-${unit.id}`}
+          label={workspacesBadgeText}
+          tone="neutral"
+        />
+
+        <StatusBadge
+          testId={`org-unit-billing-badge-${unit.id}`}
+          label={billingActive ? labels.badges.billingActive : labels.badges.billingDisabled}
+          tone={billingActive ? "emerald" : "neutral"}
+        />
+
+        <OrciaButton
+          variant="secondary"
+          testId={`edit-org-unit-btn-${unit.id}`}
+          disabled={!canMutate}
+          onClick={() => onEdit(unit)}
+          style={{ padding: "5px 10px", fontSize: "12px" }}
+        >
+          {labels.rowActions.edit}
+        </OrciaButton>
+
+        <OrciaButton
+          variant="secondary"
+          testId={`manage-members-org-unit-btn-${unit.id}`}
+          disabled={!canMutate}
+          onClick={() => onManageMembers(unit)}
+          style={{ padding: "5px 10px", fontSize: "12px" }}
+        >
+          {labels.rowActions.members}
+        </OrciaButton>
+
+        <OrciaButton
+          variant="danger"
+          testId={`delete-org-unit-btn-${unit.id}`}
+          disabled={!canMutate}
+          onClick={() => onRequestDelete(rowItem)}
+          style={{ padding: "5px 10px", fontSize: "12px" }}
+        >
+          {labels.rowActions.delete}
+        </OrciaButton>
       </div>
     </div>
   );

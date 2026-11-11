@@ -143,37 +143,62 @@ async def sync_relational_tables_on_postgres18(
     llm_tiers: list[dict[str, Any]],
 ) -> None:
     """Synchronize `org_units`, `workspaces`, and `llm_model_endpoints` with the setup snapshot."""
+    from orcia_core.permissions.org_hierarchy import (
+        normalize_member_user_ids,
+        sort_org_unit_dicts_topologically,
+    )
+
     root_org_id = await ensure_root_org_unit(conn)
 
-    # 1. Synchronize org_units (BU first, then TEAM to preserve parent_id hierarchy)
-    indexed_orgs = list(enumerate(org_units))
-    indexed_orgs.sort(
-        key=lambda pair: 0 if str(pair[1].get("level") or "BU").upper() != "TEAM" else 1
-    )
+    # 1. Synchronize org_units in strict topological order (BU -> Sous-BU/Pôle -> TEAM)
+    sorted_orgs = sort_org_unit_dicts_topologically(org_units)
     org_uuid_by_ref: dict[str, UUID] = {}
     org_name_by_ref: dict[str, str] = {}
     active_org_uuids: list[UUID] = []
 
-    for idx, org in indexed_orgs:
+    for idx, org in enumerate(sorted_orgs):
         org_key = str(org.get("id") or f"org-{idx + 1}")
-        org_uuid = deterministic_setup_uuid(f"org:{org_key}")
+        try:
+            org_uuid = UUID(org_key)
+        except (ValueError, TypeError):
+            org_uuid = deterministic_setup_uuid(f"org:{org_key}")
         name = str(org.get("name") or org_key).strip() or org_key
         slug = normalize_setup_slug(str(org.get("slug") or name), f"org-{idx + 1}")
-        level = str(org.get("level") or "BU").upper()
+        level = str(org.get("level") or org.get("kind") or "BU").upper()
         unit_type = "TEAM" if level == "TEAM" else "BU"
-        raw_parent = str(org.get("parentId") or "").strip()
+        raw_parent = str(org.get("parentId") or org.get("parent_id") or "").strip()
         resolved_parent_uuid = org_uuid_by_ref.get(raw_parent, root_org_id)
+
+        raw_billing = org.get("billingEnabled", org.get("billing_enabled", True))
+        billing_enabled = bool(raw_billing) if raw_billing is not None else True
+        raw_lead = org.get("leadUserId", org.get("lead_user_id"))
+        lead_user_id = str(raw_lead).strip() if raw_lead else None
+        raw_members = org.get("memberUserIds", org.get("member_user_ids"))
+        member_ids = (
+            normalize_member_user_ids([str(x) for x in raw_members])
+            if isinstance(raw_members, list)
+            else ()
+        )
 
         row = (
             await conn.execute(
                 sa.text(
                     """
-                    INSERT INTO org_units (id, slug, name, unit_type, parent_id)
-                    VALUES (:id, :slug, :name, :unit_type, :parent_id)
+                    INSERT INTO org_units (
+                        id, slug, name, unit_type, parent_id,
+                        billing_enabled, lead_user_id, member_user_ids_jsonb
+                    )
+                    VALUES (
+                        :id, :slug, :name, :unit_type, :parent_id,
+                        :billing_enabled, :lead_user_id, CAST(:member_user_ids_jsonb AS jsonb)
+                    )
                     ON CONFLICT (slug) DO UPDATE
                     SET name = EXCLUDED.name,
                         unit_type = EXCLUDED.unit_type,
-                        parent_id = EXCLUDED.parent_id
+                        parent_id = EXCLUDED.parent_id,
+                        billing_enabled = EXCLUDED.billing_enabled,
+                        lead_user_id = EXCLUDED.lead_user_id,
+                        member_user_ids_jsonb = EXCLUDED.member_user_ids_jsonb
                     RETURNING id
                     """
                 ),
@@ -183,14 +208,19 @@ async def sync_relational_tables_on_postgres18(
                     "name": name[:255],
                     "unit_type": unit_type,
                     "parent_id": resolved_parent_uuid,
+                    "billing_enabled": billing_enabled,
+                    "lead_user_id": lead_user_id,
+                    "member_user_ids_jsonb": json.dumps(list(member_ids)),
                 },
             )
         ).first()
         persisted_uuid = UUID(str(row[0])) if row is not None and row[0] is not None else org_uuid
         active_org_uuids.append(persisted_uuid)
         org_uuid_by_ref[org_key] = persisted_uuid
+        org_uuid_by_ref[str(persisted_uuid)] = persisted_uuid
         org_uuid_by_ref[slug] = persisted_uuid
         org_name_by_ref[org_key] = name
+        org_name_by_ref[str(persisted_uuid)] = name
         org_name_by_ref[slug] = name
 
     await _purge_removed_org_units(conn, root_org_id=root_org_id, active_org_uuids=active_org_uuids)

@@ -133,12 +133,13 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
     expect(screen.getByTestId("settings-organization-section")).toBeDefined();
     expect(screen.queryByTestId("settings-iam-section")).toBeNull();
 
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Risques" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
 
-    const deleteOrgBtn = screen.getByTestId("delete-org-unit-btn-org-1");
+    const deleteOrgBtn = await screen.findByTestId("delete-org-unit-btn-org-1");
     expect(deleteOrgBtn.className).toContain("orcia-ds-btn-danger");
 
     // Tab 2 (iam) shows IAM Permission Grants ONLY, not Organization Units

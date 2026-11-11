@@ -1,6 +1,11 @@
 import type {
   CatalogResourceInspectionResponse,
   CatalogResourceSourceResponse,
+  OrgUnitCreateRequest,
+  OrgUnitDeleteResponse,
+  OrgUnitPatchRequest,
+  OrgUnitResponse,
+  OrgUnitsListResponse,
 } from "../generated/auth_and_org";
 import type {
   BmadSkillPackImportRequest,
@@ -29,6 +34,39 @@ type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
 export function createCatalogAndPermissionsDomainClient(requestJson: RequestJsonFn) {
   return {
+    listOrgUnits(personaKey?: string): Promise<OrgUnitsListResponse> {
+      return requestJson<OrgUnitsListResponse>(`/api/v1/org-units${buildPersonaQuery(personaKey)}`);
+    },
+    createOrgUnit(
+      payload: OrgUnitCreateRequest,
+      personaKey?: string,
+    ): Promise<OrgUnitResponse> {
+      return requestJson<OrgUnitResponse>(
+        `/api/v1/org-units${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    updateOrgUnit(
+      orgUnitId: string,
+      payload: OrgUnitPatchRequest,
+      personaKey?: string,
+    ): Promise<OrgUnitResponse> {
+      return requestJson<OrgUnitResponse>(
+        `/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`,
+        "PATCH",
+        payload,
+      );
+    },
+    deleteOrgUnit(
+      orgUnitId: string,
+      personaKey?: string,
+    ): Promise<OrgUnitDeleteResponse> {
+      return requestJson<OrgUnitDeleteResponse>(
+        `/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
     inspectCatalogResource(
       resourceId: string,
       personaKey?: string,

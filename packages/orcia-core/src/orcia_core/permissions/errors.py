@@ -152,6 +152,50 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "attached to a Workspace with CONFIDENTIAL_RESTRICTED visibility (AD-21).",
         ),
     },
+    "ERR_ORG_UNIT_INVALID_PARENT_KIND": {
+        "fr": LocalizedErrorCopy(
+            "Rattachement hiérarchique invalide",
+            "Une Direction ou un Pôle (BU) ne peut pas être rattaché sous une Équipe (TEAM).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid organizational parent kind",
+            "A Division or Sub-Division (BU) cannot be attached under a Team (TEAM).",
+        ),
+    },
+    "ERR_ORG_UNIT_HIERARCHY_CYCLE": {
+        "fr": LocalizedErrorCopy(
+            "Cycle détecté dans l'organigramme",
+            "Une unité organisationnelle ne peut pas être rattachée à elle-même ni à l'une de "
+            "ses sous-unités descendantes.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Organizational hierarchy cycle detected",
+            "An organizational unit cannot be attached to itself or to any of its descendant "
+            "sub-units.",
+        ),
+    },
+    "ERR_ORG_UNIT_DUPLICATE_SLUG": {
+        "fr": LocalizedErrorCopy(
+            "Identifiant court d'unité déjà utilisé",
+            "Une unité organisationnelle utilise déjà cet identifiant court (slug).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Duplicate organizational unit slug",
+            "Another organizational unit already uses this short identifier (slug).",
+        ),
+    },
+    "ERR_ORG_UNIT_NOT_EMPTY": {
+        "fr": LocalizedErrorCopy(
+            "Unité organisationnelle non vide",
+            "Impossible de supprimer cette unité tant que des sous-unités ou des espaces de "
+            "travail y sont rattachés. Déplacez ou supprimez d'abord ces éléments.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Organizational unit is not empty",
+            "Cannot delete this unit while child units or workspaces are still attached to it. "
+            "Move or delete those items first.",
+        ),
+    },
 }
 
 register_domain_error_catalog(PERMISSIONS_ERROR_CATALOG)
@@ -216,6 +260,26 @@ class C3WorkspaceRequiredError(OrciaDomainError):
     http_status, type_slug = 403, "c3-workspace-required"
 
 
+class OrgUnitInvalidParentKindError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_INVALID_PARENT_KIND"
+    http_status, type_slug = 422, "org-unit-invalid-parent-kind"
+
+
+class OrgUnitHierarchyCycleError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_HIERARCHY_CYCLE"
+    http_status, type_slug = 422, "org-unit-hierarchy-cycle"
+
+
+class OrgUnitDuplicateSlugError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_DUPLICATE_SLUG"
+    http_status, type_slug = 409, "org-unit-duplicate-slug"
+
+
+class OrgUnitNotEmptyError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_NOT_EMPTY"
+    http_status, type_slug = 409, "org-unit-not-empty"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "C3WorkspaceRequiredError",
@@ -225,6 +289,10 @@ __all__ = [
     "InvalidMfaCodeError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "OrgUnitDuplicateSlugError",
+    "OrgUnitHierarchyCycleError",
+    "OrgUnitInvalidParentKindError",
+    "OrgUnitNotEmptyError",
     "PermissionBrokerDeniedError",
     "PreconditionRequiredError",
     "ReadSourceDeniedError",

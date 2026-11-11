@@ -42,16 +42,13 @@ export function SettingsHubView() {
   });
 
   const {
-    platformAdmin,
     orgUnits,
     rbacGrants,
     llmTiers,
     workspaces,
     datasources,
     packs,
-    toggleAdminTeamMembership,
-    addOrgUnit,
-    removeOrgUnit,
+    syncOrgUnitsFromServer,
     addRbacGrant,
     removeRbacGrant,
     upsertLlmTier,
@@ -181,12 +178,10 @@ export function SettingsHubView() {
               <SettingsOrganizationUnitsBlock
                 isFr={isFr}
                 canMutate={access.canMutate}
-                platformAdmin={platformAdmin}
                 orgUnits={orgUnits}
+                workspaces={workspaces}
                 openHelpSection={openHelpSection}
-                toggleAdminTeamMembership={toggleAdminTeamMembership}
-                addOrgUnit={addOrgUnit}
-                removeOrgUnit={removeOrgUnit}
+                syncOrgUnitsFromServer={syncOrgUnitsFromServer}
               />
             ) : effectiveTab === "iam" ? (
               <SettingsIamOrganizationSection

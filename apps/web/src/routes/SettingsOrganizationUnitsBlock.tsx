@@ -1,68 +1,225 @@
-import { ContextualInfoTriggerButton, OrciaIcon } from "@orcia/ui";
-import React, { useState } from "react";
-import type {
-  ConfiguredOrgUnit,
-  ConfiguredPlatformAdmin,
-} from "../components/platformSetupStore";
-import { formatCountNoun } from "../stores/authSessionStore";
+import {
+  ContextualInfoTriggerButton,
+  OrciaAlertBanner,
+  OrciaButton,
+  OrciaIcon,
+  type ControlCenterWorkspaceGovItem,
+} from "@orcia/ui";
+import React, { useEffect, useState } from "react";
+import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
+import { useShellNavigation } from "../components/ShellContainer";
+import { ConfirmDeleteOrgUnitModal } from "../features/admin/organization/ConfirmDeleteOrgUnitModal";
+import {
+  CreateOrgUnitModal,
+  type CreateOrgUnitFormValues,
+} from "../features/admin/organization/CreateOrgUnitModal";
+import {
+  EditOrgUnitModal,
+  type EditOrgUnitFormValues,
+} from "../features/admin/organization/EditOrgUnitModal";
+import { ManageOrgUnitMembersModal } from "../features/admin/organization/ManageOrgUnitMembersModal";
+import { buildIndentedOrgTree, type OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
+import {
+  createOrgUnitViaApi,
+  deleteOrgUnitViaApi,
+  fetchOrgUnitsFromApi,
+  patchOrgUnitViaApi,
+} from "../features/admin/organization/orgUnitsApiBridge";
+import { useI18n } from "../i18n";
 import { SettingsOrganizationUnitRow } from "./SettingsOrganizationUnitRow";
 
 export interface SettingsOrganizationUnitsBlockProps {
   readonly isFr: boolean;
   readonly canMutate?: boolean;
-  readonly platformAdmin?: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
+  readonly workspaces?: readonly ControlCenterWorkspaceGovItem[];
   readonly openHelpSection: (sectionId: string) => void;
-  readonly toggleAdminTeamMembership?: (teamId: string) => void;
-  readonly addOrgUnit: (
-    input: Omit<ConfiguredOrgUnit, "id"> & { readonly attachCurrentAdmin?: boolean },
+  readonly syncOrgUnitsFromServer: (
+    units: readonly ConfiguredOrgUnit[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopeId?: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
   ) => void;
-  readonly removeOrgUnit: (orgUnitId: string) => {
-    readonly deleted: boolean;
-    readonly blockedReason: string | null;
-  };
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-card)",
-  color: "var(--color-foreground)",
-};
 
 export function SettingsOrganizationUnitsBlock({
   isFr,
   canMutate = true,
-  platformAdmin,
   orgUnits,
+  workspaces = [],
   openHelpSection,
-  toggleAdminTeamMembership,
-  addOrgUnit,
-  removeOrgUnit,
-}: SettingsOrganizationUnitsBlockProps) {
-  const [orgName, setOrgName] = useState("");
-  const [orgSlug, setOrgSlug] = useState("");
-  const [orgLevel, setOrgLevel] = useState<"BU" | "TEAM">("BU");
-  const [orgParentId, setOrgParentId] = useState("scope-global");
-  const [attachAdminToNewTeam, setAttachAdminToNewTeam] = useState(true);
+  syncOrgUnitsFromServer,
+}: SettingsOrganizationUnitsBlockProps): React.ReactElement {
+  const { dictionary, locale } = useI18n();
+  const { navigateToRoute } = useShellNavigation();
+  const labels = dictionary.settingsHub.organizationTab;
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<ConfiguredOrgUnit | null>(null);
+  const [managingMembersUnit, setManagingMembersUnit] = useState<ConfiguredOrgUnit | null>(null);
+  const [deletingRowItem, setDeletingRowItem] = useState<OrgTreeRowItem | null>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [orgDeleteFeedback, setOrgDeleteFeedback] = useState<string | null>(null);
-  const [confirmDeleteOrgId, setConfirmDeleteOrgId] = useState<string | null>(null);
 
-  const buUnits = orgUnits.filter((u) => u.level === "BU");
-  const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
-  const memberTeamIds = platformAdmin?.memberTeamIds ?? [];
-  const attachedTeams = teamUnits.filter((t) => memberTeamIds.includes(t.id));
+  useEffect(() => {
+    let cancelled = false;
+    void fetchOrgUnitsFromApi(locale).then((res) => {
+      if (cancelled) return;
+      if (res.ok) {
+        if (res.units.length > 0) {
+          syncOrgUnitsFromServer(res.units);
+        }
+      } else {
+        setOrgDeleteFeedback(res.errorMessage);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
 
-  const attachedBillingLabel = isFr
-    ? `Compte rattaché à ${formatCountNoun(attachedTeams.length, "Équipe de facturation", "Équipes de facturation", "fr")} : ${attachedTeams.map((t) => t.name).join(", ")}`
-    : `Account attached to ${formatCountNoun(attachedTeams.length, "billing Team", "billing Teams", "en")}: ${attachedTeams.map((t) => t.name).join(", ")}`;
+  const treeRows = buildIndentedOrgTree(orgUnits, workspaces);
+
+  const handleCreateSubmit = async (values: CreateOrgUnitFormValues) => {
+    setIsSubmitting(true);
+    setModalError(null);
+    setOrgDeleteFeedback(null);
+    const parentPayload =
+      values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
+    const res = await createOrgUnitViaApi(
+      {
+        name: values.name,
+        kind: values.kind,
+        slug: values.slug || null,
+        parent_id: parentPayload,
+        billing_enabled: values.billingEnabled,
+        lead_user_id: values.leadUserId || null,
+        member_user_ids: [],
+      },
+      locale,
+    );
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setModalError(res.errorMessage);
+      return;
+    }
+    const nextUnits = [
+      ...orgUnits.filter((u) => u.id !== res.unit.id),
+      res.unit,
+    ];
+    const levelLabel = values.kind === "BU" ? "Direction (BU)" : "Équipe";
+    syncOrgUnitsFromServer(nextUnits, {
+      eventType: "OrgUnitCreated",
+      summary: `${levelLabel} "${res.unit.name}" (${res.unit.slug}) créée`,
+      scopeId: res.unit.id,
+      scopePath: res.unit.slug,
+      scopeLabel: `${levelLabel} · ${res.unit.name}`,
+    });
+    setCreateModalOpen(false);
+  };
+
+  const handleEditSave = async (orgUnitId: string, values: EditOrgUnitFormValues) => {
+    setIsSubmitting(true);
+    setModalError(null);
+    const parentPayload =
+      values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
+    const res = await patchOrgUnitViaApi(
+      orgUnitId,
+      {
+        name: values.name,
+        parent_id: parentPayload,
+        billing_enabled: values.billingEnabled,
+      },
+      locale,
+    );
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setModalError(res.errorMessage);
+      return;
+    }
+    const nextUnits = orgUnits.map((u) => (u.id === orgUnitId ? res.unit : u));
+    const levelLabel = res.unit.level === "BU" ? "Direction (BU)" : "Équipe";
+    syncOrgUnitsFromServer(nextUnits, {
+      eventType: "SettingsChanged",
+      summary: `${levelLabel} "${res.unit.name}" mise à jour`,
+      scopeId: res.unit.id,
+      scopePath: res.unit.slug,
+      scopeLabel: `${levelLabel} · ${res.unit.name}`,
+    });
+    setEditingUnit(null);
+  };
+
+  const handleMembersSave = async (
+    orgUnitId: string,
+    values: { readonly leadUserId: string | null; readonly memberUserIds: readonly string[] },
+  ) => {
+    setIsSubmitting(true);
+    setModalError(null);
+    const res = await patchOrgUnitViaApi(
+      orgUnitId,
+      {
+        lead_user_id: values.leadUserId,
+        member_user_ids: [...values.memberUserIds],
+      },
+      locale,
+    );
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setModalError(res.errorMessage);
+      return;
+    }
+    const nextUnits = orgUnits.map((u) => (u.id === orgUnitId ? res.unit : u));
+    const levelLabel = res.unit.level === "BU" ? "Direction (BU)" : "Équipe";
+    syncOrgUnitsFromServer(nextUnits, {
+      eventType: "PermissionGranted",
+      summary: `Membres de ${levelLabel} "${res.unit.name}" mis à jour (${res.unit.memberUserIds?.length ?? 0})`,
+      scopeId: res.unit.id,
+      scopePath: res.unit.slug,
+      scopeLabel: `${levelLabel} · ${res.unit.name}`,
+    });
+    setManagingMembersUnit(null);
+  };
+
+  const handleConfirmDelete = async (orgUnitId: string) => {
+    setIsSubmitting(true);
+    setModalError(null);
+    const target = orgUnits.find((u) => u.id === orgUnitId);
+    const res = await deleteOrgUnitViaApi(orgUnitId, locale);
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setOrgDeleteFeedback(res.errorMessage);
+      setDeletingRowItem(null);
+      return;
+    }
+    const nextUnits = orgUnits.filter((u) => u.id !== orgUnitId);
+    const levelLabel = target?.level === "BU" ? "Direction (BU)" : "Équipe";
+    syncOrgUnitsFromServer(
+      nextUnits,
+      target
+        ? {
+            eventType: "OrgUnitDeleted",
+            summary: `${levelLabel} "${target.name}" (${target.slug}) supprimée`,
+            scopeId: target.id,
+            scopePath: target.slug,
+            scopeLabel: `${levelLabel} · ${target.name}`,
+          }
+        : undefined,
+    );
+    setOrgDeleteFeedback(null);
+    setDeletingRowItem(null);
+  };
 
   return (
     <section
       data-testid="settings-organization-section"
       className="orcia-bento-card"
-      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "14px" }}
     >
       <div
         style={{
@@ -74,221 +231,68 @@ export function SettingsOrganizationUnitsBlock({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h2 style={{ margin: 0, fontSize: "15px" }}>
-            {isFr
-              ? "Structure de l'Organisation (Directions / BU & Équipes)"
-              : "Organization Structure (Divisions / BUs & Teams)"}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: "15px" }}>{labels.sectionTitle}</h2>
           <ContextualInfoTriggerButton
             sectionId="iam-org-tree"
-            label={
-              isFr
-                ? "Comprendre la structure Directions (BU) et Équipes"
-                : "Understand Divisions (BUs) and Teams structure"
-            }
+            label={labels.helpTriggerLabel}
             onOpenHelpSection={openHelpSection}
           />
         </div>
-        <span
-          data-testid="admin-team-membership-summary-badge"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "11px",
-            fontWeight: 600,
-            padding: "4px 8px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid var(--color-border)",
-            backgroundColor: "var(--color-surface-card)",
-            color:
-              attachedTeams.length > 0
-                ? "var(--color-text-primary)"
-                : "var(--color-status-error)",
+
+        <OrciaButton
+          variant="primary"
+          testId="open-create-org-unit-modal-btn"
+          disabled={!canMutate}
+          onClick={() => {
+            setModalError(null);
+            setOrgDeleteFeedback(null);
+            setCreateModalOpen(true);
           }}
         >
-          {attachedTeams.length > 0 ? (
-            <>
-              <OrciaIcon name="team" size={13} />
-              <span>{attachedBillingLabel}</span>
-            </>
-          ) : (
-            <>
-              <OrciaIcon name="warning" size={13} />
-              <span>
-                {isFr
-                  ? "Aucune Équipe de facturation rattachée à votre compte (appels IA verrouillés)"
-                  : "No billing Team attached to your account (AI calls locked)"}
-              </span>
-            </>
-          )}
-        </span>
+          {labels.openCreateModalCta}
+        </OrciaButton>
       </div>
 
-      <form
-        data-testid="create-org-unit-form"
-        autoComplete="off"
-        data-lpignore="true"
-        data-1p-ignore="true"
-        data-bwignore="true"
-        data-form-type="other"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!canMutate || !orgName.trim()) return;
-          const resolvedParentId =
-            orgLevel === "BU" ? "scope-global" : orgParentId || "scope-global";
-          addOrgUnit({
-            name: orgName.trim(),
-            slug: orgSlug.trim() || orgName.trim().toLowerCase().replace(/\s+/g, "-"),
-            level: orgLevel,
-            parentId: resolvedParentId,
-            attachCurrentAdmin: orgLevel === "TEAM" ? attachAdminToNewTeam : false,
-          });
-          setOrgName("");
-          setOrgSlug("");
-          setOrgDeleteFeedback(null);
-        }}
+      <div
+        data-testid="organization-pedagogical-callout"
         style={{
+          padding: "10px 12px",
+          borderRadius: "var(--radius-sm)",
+          border: "1px solid var(--color-border)",
+          backgroundColor: "var(--color-surface-secondary)",
           display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
+          justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
         }}
       >
-        <select
-          data-testid="org-unit-level-select"
-          disabled={!canMutate}
-          value={orgLevel}
-          onChange={(e) => {
-            const nextLevel = e.target.value as "BU" | "TEAM";
-            setOrgLevel(nextLevel);
-            if (nextLevel === "BU") {
-              setOrgParentId("scope-global");
-            } else if (buUnits.length > 0 && orgParentId === "scope-global") {
-              setOrgParentId(buUnits[0]!.id);
-            }
-          }}
-          style={inputStyle}
-        >
-          <option value="BU">
-            {isFr ? "Direction / Pôle (BU)" : "Division / Business Unit (BU)"}
-          </option>
-          <option value="TEAM">{isFr ? "Équipe" : "Team"}</option>
-        </select>
-
-        {orgLevel === "TEAM" && (
-          <select
-            data-testid="org-unit-parent-select"
-            aria-label={isFr ? "BU parente de rattachement" : "Parent BU"}
-            disabled={!canMutate}
-            value={orgParentId}
-            onChange={(e) => setOrgParentId(e.target.value)}
-            style={inputStyle}
-          >
-            <option value="scope-global">
-              {isFr ? "Rattachement : Plateforme entière" : "Parent: Entire platform"}
-            </option>
-            {buUnits.map((bu) => (
-              <option key={bu.id} value={bu.id}>
-                {isFr ? `Rattaché à la BU : ${bu.name}` : `Attached to BU: ${bu.name}`}
-              </option>
-            ))}
-          </select>
-        )}
-
-        <input
-          type="text"
-          autoComplete="off"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-bwignore="true"
-          data-form-type="other"
-          data-testid="org-unit-name-input"
-          disabled={!canMutate}
-          value={orgName}
-          onChange={(e) => setOrgName(e.target.value)}
-          placeholder={
-            orgLevel === "BU"
-              ? isFr
-                ? "Nom de la BU (ex: Direction Produit)..."
-                : "BU name..."
-              : isFr
-                ? "Nom de l'Équipe (ex: Équipe Paiement)..."
-                : "Team name..."
-          }
-          style={{ ...inputStyle, flex: 1, minWidth: "180px" }}
-        />
-        <input
-          type="text"
-          autoComplete="off"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-bwignore="true"
-          data-form-type="other"
-          data-testid="org-unit-slug-input"
-          disabled={!canMutate}
-          value={orgSlug}
-          onChange={(e) => setOrgSlug(e.target.value)}
-          placeholder={
-            isFr ? "Identifiant court (optionnel)..." : "Short identifier (optional)..."
-          }
-          style={inputStyle}
-        />
-
-        {orgLevel === "TEAM" && (
-          <label
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: canMutate ? "pointer" : "not-allowed",
-            }}
-          >
-            <input
-              type="checkbox"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid="org-unit-attach-admin-checkbox"
-              disabled={!canMutate}
-              checked={attachAdminToNewTeam}
-              onChange={(e) => setAttachAdminToNewTeam(e.target.checked)}
-            />
-            <span>
-              {isFr
-                ? "Rattacher mon compte à cette équipe (facturation & accès)"
-                : "Attach my account to this team (billing & access)"}
-            </span>
-          </label>
-        )}
-
-        <button
-          type="submit"
-          disabled={!canMutate}
-          data-testid="create-org-unit-btn"
-          className="orcia-ds-btn orcia-ds-btn-primary"
-        >
-          {isFr ? "+ Créer l'unité" : "+ Create unit"}
-        </button>
-      </form>
-
-      {orgDeleteFeedback && (
-        <div
-          role="alert"
-          data-testid="org-unit-delete-feedback"
-          className="orcia-ds-alert orcia-ds-alert-warning"
-          style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
-        >
-          <OrciaIcon name="warning" size={14} />
-          <span>{orgDeleteFeedback}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12.5px" }}>
+          <strong style={{ color: "var(--color-foreground)" }}>{labels.pedagogyTitle}</strong>
+          <span style={{ color: "var(--color-muted-foreground)" }}>
+            {`${labels.pedagogyBuSummary} · ${labels.pedagogyTeamSummary} · ${labels.pedagogyWorkspaceSummary}`}
+          </span>
         </div>
-      )}
+        <OrciaButton
+          variant="secondary"
+          testId="organization-open-workspaces-btn"
+          onClick={() => navigateToRoute("/workspaces")}
+        >
+          <OrciaIcon name="spaces" size={14} />
+          <span>{labels.openWorkspacesCta}</span>
+        </OrciaButton>
+      </div>
 
-      {orgUnits.length === 0 ? (
+      {orgDeleteFeedback ? (
+        <OrciaAlertBanner tone="amber" role="alert" testId="org-unit-delete-feedback">
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+            <OrciaIcon name="warning" size={14} />
+            <span>{orgDeleteFeedback}</span>
+          </span>
+        </OrciaAlertBanner>
+      ) : null}
+
+      {treeRows.length === 0 ? (
         <p
           data-testid="iam-org-units-empty-state"
           style={{
@@ -297,41 +301,98 @@ export function SettingsOrganizationUnitsBlock({
             color: "var(--color-muted-foreground)",
           }}
         >
-          {isFr
-            ? "Aucune unité d'organisation (BU ou Équipe) configurée."
-            : "No organization unit (BU or Team) configured yet."}
+          {labels.emptyStateText}
         </p>
       ) : (
-        <div style={{ display: "grid", gap: "6px" }}>
-          {orgUnits.map((u) => (
+        <div
+          data-testid="settings-organization-tree"
+          style={{ display: "grid", gap: "6px" }}
+        >
+          {treeRows.map((rowItem) => (
             <SettingsOrganizationUnitRow
-              key={u.id}
-              unit={u}
+              key={rowItem.unit.id}
+              rowItem={rowItem}
               isFr={isFr}
               canMutate={canMutate}
-              parentNode={orgUnits.find((p) => p.id === u.parentId)}
-              childCount={orgUnits.filter((c) => c.parentId === u.id).length}
-              isAdminMember={u.level === "TEAM" && memberTeamIds.includes(u.id)}
-              isConfirming={confirmDeleteOrgId === u.id}
-              onToggleAdminTeamMembership={toggleAdminTeamMembership}
-              onRequestDelete={(unitId) => {
+              labels={labels}
+              onEdit={(unit) => {
+                setModalError(null);
+                setEditingUnit(unit);
+              }}
+              onManageMembers={(unit) => {
+                setModalError(null);
+                setManagingMembersUnit(unit);
+              }}
+              onRequestDelete={(item) => {
+                setModalError(null);
                 setOrgDeleteFeedback(null);
-                setConfirmDeleteOrgId(unitId);
+                setDeletingRowItem(item);
               }}
-              onConfirmDelete={(unitId) => {
-                const res = removeOrgUnit(unitId);
-                if (!res.deleted && res.blockedReason) {
-                  setOrgDeleteFeedback(res.blockedReason);
-                } else {
-                  setOrgDeleteFeedback(null);
-                }
-                setConfirmDeleteOrgId(null);
-              }}
-              onCancelDelete={() => setConfirmDeleteOrgId(null)}
             />
           ))}
         </div>
       )}
+
+      <CreateOrgUnitModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        canMutate={canMutate}
+        orgUnits={orgUnits}
+        labels={labels.createModal}
+        errorMessage={modalError}
+        isSubmitting={isSubmitting}
+        onSubmit={(values) => {
+          void handleCreateSubmit(values);
+        }}
+      />
+
+      <EditOrgUnitModal
+        unit={editingUnit}
+        open={editingUnit !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingUnit(null);
+        }}
+        canMutate={canMutate}
+        orgUnits={orgUnits}
+        labels={labels.editModal}
+        parentPrefixLabel={labels.createModal.parentBuOptionPrefix}
+        errorMessage={modalError}
+        isSubmitting={isSubmitting}
+        onSave={(orgUnitId, values) => {
+          void handleEditSave(orgUnitId, values);
+        }}
+      />
+
+      <ManageOrgUnitMembersModal
+        unit={managingMembersUnit}
+        open={managingMembersUnit !== null}
+        onOpenChange={(open) => {
+          if (!open) setManagingMembersUnit(null);
+        }}
+        canMutate={canMutate}
+        labels={labels.membersModal}
+        errorMessage={modalError}
+        isSubmitting={isSubmitting}
+        onSave={(orgUnitId, values) => {
+          void handleMembersSave(orgUnitId, values);
+        }}
+      />
+
+      <ConfirmDeleteOrgUnitModal
+        rowItem={deletingRowItem}
+        open={deletingRowItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingRowItem(null);
+        }}
+        isFr={isFr}
+        canMutate={canMutate}
+        labels={labels.deleteModal}
+        errorMessage={modalError}
+        isSubmitting={isSubmitting}
+        onConfirmDelete={(orgUnitId) => {
+          void handleConfirmDelete(orgUnitId);
+        }}
+      />
     </section>
   );
 }
