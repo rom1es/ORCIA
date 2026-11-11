@@ -22,7 +22,7 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "iam-role-grants",
     title: "Règles d'accès : Qui ? et Sur quoi ?",
-    body: "Chaque règle associe un bénéficiaire (Rôle ou Utilisateur, ex. Rôle : Chef1) à un périmètre cible (Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex. aqwZSX) et précise les habilitations attribuées (Créer, Lire / Voir les secrets, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits).",
+    body: "Chaque règle associe un bénéficiaire (Rôle ou Utilisateur, ex. Rôle : Chef1) à un périmètre cible (Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex. aqwZSX) et précise les habilitations attribuées (Créer, Consulter les ressources, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits). Aucun secret n'est jamais lisible après enregistrement.",
     category: "terms",
   },
   {
@@ -97,7 +97,7 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "iam-role-grants",
     title: "Access rules: Who? and On what?",
-    body: "Each rule links a beneficiary (Role or User, e.g. Role: Chef1) to a target scope (Entire platform, BU, Team, or Workspace, e.g. aqwZSX) and specifies granted permissions (Create, Read / View secrets, Update, Delete, Execute / Use, Delegate rights).",
+    body: "Each rule links a beneficiary (Role or User, e.g. Role: Chef1) to a target scope (Entire platform, BU, Team, or Workspace, e.g. aqwZSX) and specifies granted permissions (Create, Read & view resources, Update, Delete, Execute / Use, Delegate rights). Secrets are strictly write-only and never readable.",
     category: "terms",
   },
   {
@@ -312,18 +312,18 @@ export function buildContextualHelpArticle({
       packName: "orcia-core",
       boundRoutes: [pathname ?? "/settings"],
       summaryWhatFor: isFr
-        ? "Cet écran structure votre organisation (Directions / BU et Équipes), pilote vos règles d'habilitation (Créer, Lire / Voir les secrets, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits), vos modèles IA et vos connecteurs."
-        : "This screen structures your organization (BUs and Teams), governs permission rules (Create, Read / View secrets, Update, Delete, Execute / Use, Delegate rights), AI models, and connectors.",
+        ? "Cet écran structure votre organisation (Directions / BU et Équipes), gère l'annuaire des comptes et pilote vos règles d'habilitation (Créer, Consulter les ressources, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits), vos modèles IA et vos connecteurs."
+        : "This screen structures your organization (BUs and Teams), manages the accounts directory, and governs permission rules (Create, Read & view resources, Update, Delete, Execute / Use, Delegate rights), AI models, and connectors.",
       stepByStepItems: isFr
         ? [
-            "1. Créez d'abord au moins une Direction (BU) ou une Équipe dans la section 1. La section 2 se déverrouille dès qu'une unité d'organisation existe.",
-            "2. Dans Habilitations, indiquez Qui ? (Bénéficiaire : Rôle ou Utilisateur, ex: Rôle : Chef1) et choisissez Sur quoi ? (Périmètre cible : Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex: aqwZSX).",
-            "3. Cochez les habilitations à attribuer (ou Tous) et choisissez l'effet de la règle (Autoriser, Interdire ou Isoler ce périmètre). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
+            "1. Gérez vos comptes utilisateurs et comptes techniques dans l'annuaire, puis consultez la matrice des 6 rôles officiels de la plateforme.",
+            "2. Dans Exceptions & Isolation SecOps, indiquez Qui ? (Rôle ou Compte, ex: Rôle : Chef1) et choisissez Sur quoi ? (Périmètre cible : Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex: aqwZSX).",
+            "3. Cochez les habilitations à attribuer et choisissez l'effet de la règle (Autoriser, Interdire ou Isoler ce périmètre). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
           ]
         : [
-            "1. First create at least one Division (BU) or Team in section 1. Section 2 unlocks as soon as an organization unit exists.",
-            "2. In Permissions, specify Who? (Beneficiary: Role or User, e.g. Role: Chef1) and select On what? (Target scope: Entire platform, BU, Team, or Workspace, e.g. aqwZSX).",
-            "3. Check the permissions to grant (or All) and choose the rule effect (Allow, Deny, or Isolate this scope). Use the list checkboxes to delete one or more rules.",
+            "1. Manage human and service accounts in the directory, then review the native 6-role matrix.",
+            "2. In SecOps Exceptions & Isolation, specify Who? (Role or Account, e.g. Role: Chef1) and select On what? (Target scope: Entire platform, BU, Team, or Workspace, e.g. aqwZSX).",
+            "3. Check the permissions to grant and choose the rule effect (Allow, Deny, or Isolate this scope). Use the list checkboxes to delete one or more rules.",
           ],
       keyTermsItems: isFr
         ? [
@@ -331,7 +331,7 @@ export function buildContextualHelpArticle({
             "Protection contre les suppressions accidentelles : Impossible de supprimer une Direction (BU) ou une Équipe tant que des Équipes rattachées ou des règles d'habilitation y font référence.",
             "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : Dans « Rôle : Chef1 → aqwZSX », Chef1 est le Bénéficiaire (le rôle ou l'utilisateur qui reçoit le droit) et aqwZSX est le Périmètre cible (la Direction, l'Équipe, l'Espace de travail ou toute la plateforme où s'applique ce droit).",
             "Qu'est-ce que le Périmètre cible (« Sur quoi ? ») ? : Le périmètre cible désigne l'endroit précis de votre organisation où s'applique la règle d'habilitation : soit toute la plateforme, soit une Direction (BU) entière et ses équipes, soit une Équipe, soit un seul Espace de travail.",
-            "Les 6 habilitations : Créer, Lire / Voir les secrets (consulter la configuration), Modifier, Supprimer, Exécuter / Utiliser (utiliser un agent, modèle ou connecteur sans voir ses clés secrètes), Déléguer des droits.",
+            "Les 6 habilitations : Créer, Consulter les ressources (métadonnées et configuration hors secrets — aucun secret n'est jamais lisible après enregistrement), Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits.",
             "Autoriser : Accorde explicitement les actions cochées au bénéficiaire sur le périmètre cible.",
             "Interdire (prioritaire) : Bloque explicitement ces actions. Une interdiction l'emporte toujours sur une autorisation.",
             "Isoler ce périmètre (INHERITANCE_BLOCK) : N'applique pas les droits hérités de la Direction parente ou de la plateforme sur cette Équipe ou cet Espace confidentiel, afin de repartir d'une feuille blanche locale.",
@@ -341,22 +341,22 @@ export function buildContextualHelpArticle({
             "Accidental deletion protection: A BU or Team cannot be deleted while child Teams or permission rules still depend on it.",
             "Who? (Beneficiary) vs On what? (Target scope): In 'Role: Chef1 → aqwZSX', Chef1 is the Beneficiary (the role or user receiving the right) and aqwZSX is the Target scope (the BU, Team, Workspace, or entire platform).",
             "What is Target scope ('On what?')?: The target scope identifies the exact level of your organization where the permission rule applies: the entire platform, a Division (BU), a Team, or a single Workspace.",
-            "The 6 permissions: Create, Read / View secrets, Update, Delete, Execute / Use (run an agent/model/connector without viewing secret keys), Delegate rights.",
+            "The 6 permissions: Create, Read & view resources (metadata and configuration without secrets — secret keys are write-only and never readable after saving), Update, Delete, Execute / Use, Delegate rights.",
             "Allow: Explicitly grants the checked actions to the beneficiary on the target scope.",
             "Deny (Priority override): Explicitly blocks the checked actions. Deny always overrides any Allow.",
             "Isolate this scope (INHERITANCE_BLOCK): Stops automatic inheritance of permissions from parent levels (Entire platform or parent BU) on this scope, starting from a clean local slate.",
           ],
       faqItems: isFr
         ? [
-            "Pourquoi la section 2 est-elle grisée au démarrage ? → Tant qu'aucune Direction (BU) ni aucune Équipe n'est créée dans la section 1, il n'existe aucun périmètre d'organisation sur lequel appliquer des règles.",
+            "Pourquoi le volet Exceptions & Isolation SecOps est-il réservé aux responsables sécurité ? → Pour confiner la création d'exceptions fines et de blocages d'héritage aux titulaires du rôle Responsable Sécurité (SecOps).",
             "Pourquoi ne puis-je pas supprimer une BU ou une Équipe ? → Pour éviter d'isoler des Équipes rattachées ou des règles d'habilitation qui y font référence. Supprimez ou détachez d'abord les éléments dépendants.",
-            "Quelle est la différence entre Exécuter / Utiliser et Lire / Voir les secrets ? → Exécuter / Utiliser permet de mobiliser un modèle IA ou un connecteur dans un processus sans pouvoir afficher sa clé secrète.",
+            "Quelle est la différence entre Exécuter / Utiliser et Consulter les ressources ? → Exécuter / Utiliser permet de mobiliser un modèle IA ou un connecteur dans un processus ; Consulter les ressources affiche la configuration sans jamais exposer les clés secrètes (strictement non lisibles après enregistrement).",
             "Quand choisir « Isoler ce périmètre » ? → Lorsqu'une Équipe ou un Espace confidentiel ne doit plus hériter des accès larges accordés au niveau de sa Direction (BU) parente.",
           ]
         : [
-            "Why is section 2 greyed out initially? → Until at least one Division (BU) or Team is created in section 1, there is no organizational scope to attach rules to.",
+            "Why is the SecOps Exceptions & Isolation drawer restricted to security officers? → To confine fine-grained exceptions and inheritance blocks to Security Officer (SecOps) role holders.",
             "Why can't I delete a BU or Team? → To prevent isolating child Teams or permission rules that reference it. Remove dependent items first.",
-            "What is the difference between Execute / Use and Read / View secrets? → Execute / Use lets a user run an AI model or connector without viewing its secret key.",
+            "What is the difference between Execute / Use and Read & view resources? → Execute / Use lets a user run an AI model or connector; Read & view resources displays configuration metadata while secrets remain strictly write-only and never readable.",
             "When should I use 'Isolate this scope'? → When a confidential Team or Workspace must stop inheriting broad permissions granted at its parent BU level.",
           ],
       sections: isFr ? CONFIGURATION_SECTIONS_FR : CONFIGURATION_SECTIONS_EN,

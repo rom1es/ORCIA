@@ -23,8 +23,12 @@ from orcia_core.orchestration.errors import (
     UnknownWorkflowPolicyError,
 )
 from orcia_core.permissions.errors import (
+    AdminLockoutPreventedError,
     ConfusedDeputyBlockedError,
+    DuplicateIamPrincipalError,
+    GrantEscalationForbiddenError,
     InvalidCredentialsError,
+    InvalidIamRoleError,
     InvalidMfaCodeError,
     ObserverModeReadOnlyError,
     OrgUnitDuplicateSlugError,
@@ -34,6 +38,7 @@ from orcia_core.permissions.errors import (
     PermissionBrokerDeniedError,
     RevokedTokenError,
     ScopeAccessDeniedError,
+    SecretConfigReadDeniedError,
 )
 from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_kernel.errors import (
@@ -71,6 +76,11 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     UnknownWorkflowPolicyError,
     PermissionBrokerDeniedError,
     ConfusedDeputyBlockedError,
+    AdminLockoutPreventedError,
+    GrantEscalationForbiddenError,
+    SecretConfigReadDeniedError,
+    InvalidIamRoleError,
+    DuplicateIamPrincipalError,
     OrgUnitDuplicateSlugError,
     OrgUnitHierarchyCycleError,
     OrgUnitInvalidParentKindError,

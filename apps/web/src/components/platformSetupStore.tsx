@@ -97,6 +97,15 @@ export interface PlatformSetupContextValue {
   ) => void;
   readonly addRbacGrant: (input: Omit<ConfiguredRbacGrant, "id">) => void;
   readonly removeRbacGrant: (grantId: string) => void;
+  readonly syncRbacGrantsFromServer: (
+    grants: readonly ConfiguredRbacGrant[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
   readonly createWorkspace: (input: {
     name: string;
@@ -220,8 +229,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       client.getAccostageStatus(),
       client.getPlatformSetupState().catch(() => null),
       client.listOrgUnits().catch(() => null),
+      client.listIamGrants().catch(() => null),
     ])
-      .then(([status, remoteState, remoteOrgUnitsResp]) => {
+      .then(([status, remoteState, remoteOrgUnitsResp, remoteIamGrantsResp]) => {
         if (cancelled) return;
         const mappedApiOrgUnits: ConfiguredOrgUnit[] = (
           remoteOrgUnitsResp?.org_units ?? []
@@ -236,7 +246,22 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           memberUserIds: dto.member_user_ids ?? [],
           attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
         }));
-        if (status.first_admin_initialized === false && mappedApiOrgUnits.length === 0) {
+        const mappedApiGrants: ConfiguredRbacGrant[] = Array.isArray(remoteIamGrantsResp)
+          ? remoteIamGrantsResp.map((g) => ({
+              id: g.id,
+              subjectType: g.subject_type,
+              subjectId: g.subject_id,
+              scopePath: g.scope_path,
+              verb: g.verb,
+              effect: g.effect,
+              resourceKind: g.resource_kind ?? "ALL",
+            }))
+          : [];
+        if (
+          status.first_admin_initialized === false &&
+          mappedApiOrgUnits.length === 0 &&
+          mappedApiGrants.length === 0
+        ) {
           if (hasMutatedSinceMountRef.current || readCachedPlatformAdmin() !== null) {
             return;
           }
@@ -267,12 +292,15 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           writeCachedPlatformAdmin(synced);
           setPlatformAdmin(synced);
         }
-        if (remoteState || mappedApiOrgUnits.length > 0) {
+        if (remoteState || mappedApiOrgUnits.length > 0 || mappedApiGrants.length > 0) {
           const rOrgUnits =
             mappedApiOrgUnits.length > 0
               ? mappedApiOrgUnits
               : ((remoteState?.org_units ?? []) as unknown as ConfiguredOrgUnit[]);
-          const rRbacGrants = remoteState?.rbac_grants ?? [];
+          const rRbacGrants =
+            mappedApiGrants.length > 0
+              ? mappedApiGrants
+              : ((remoteState?.rbac_grants ?? []) as unknown as ConfiguredRbacGrant[]);
           const rLlmTiers = remoteState?.llm_tiers ?? [];
           const rWorkspaces = remoteState?.workspaces ?? [];
           const rDatasources = remoteState?.datasources ?? [];
@@ -675,6 +703,29 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     setRbacGrants(nextRbacGrants);
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ rbacGrants: nextRbacGrants, auditEvents: nextAudit }));
+  };
+
+  const syncRbacGrantsFromServer = (
+    grants: readonly ConfiguredRbacGrant[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => {
+    setRbacGrants(grants);
+    if (auditMeta) {
+      const nextAudit = appendAudit(auditMeta.eventType, auditMeta.summary, {
+        scopePath: auditMeta.scopePath,
+        scopeLabel: auditMeta.scopeLabel,
+      });
+      setAuditEvents(nextAudit);
+      persistSnapshot(buildSnapshot({ rbacGrants: grants, auditEvents: nextAudit }));
+    } else {
+      hasMutatedSinceMountRef.current = true;
+      writeCachedPlatformSetupState(buildSnapshot({ rbacGrants: grants }));
+    }
   };
 
   const upsertLlmTier = (input: ConfiguredLlmTierMapping) => {
@@ -1147,6 +1198,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         syncOrgUnitsFromServer,
         addRbacGrant,
         removeRbacGrant,
+        syncRbacGrantsFromServer,
         upsertLlmTier,
         createWorkspace,
         updateWorkspacePhase,

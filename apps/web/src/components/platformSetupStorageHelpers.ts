@@ -89,11 +89,12 @@ export interface ConfiguredOrgUnit {
 
 export interface ConfiguredRbacGrant {
   readonly id: string;
-  readonly subjectType: "ROLE" | "USER";
+  readonly subjectType: "ROLE" | "USER" | "SERVICE_PRINCIPAL";
   readonly subjectId: string;
   readonly scopePath: string;
   readonly verb: UiPermissionVerb;
   readonly effect: "ALLOW" | "DENY" | "INHERITANCE_BLOCK";
+  readonly resourceKind?: "ALL" | "WORKFLOW" | "AGENT" | "DATASOURCE" | "CONNECTOR";
 }
 
 export type LlmAuthMode = "api_key" | "env_var" | "none_local";

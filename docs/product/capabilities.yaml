@@ -212,22 +212,23 @@ capabilities:
 
   # ───────────── Settings & gouvernance (Epic 8 + ad-hoc) ─────────────
   - id: CAP-050
-    title: Modèle d'habilitations RBAC/ABAC à 6 verbes (hidden_when_unauthorized, ABAC staging/budget)
+    title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 6 rôles et exceptions SecOps
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-1
+    origin_ref: 8-1, 17-3
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py]
     verification: runtime
-    surfaces: { route: /settings, api: "/api/v1/settings/iam" }
+    surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py)", migration: "20261111_1703" }
   - id: CAP-051
-    title: Écran Habilitations IAM (correction après dialogue UX)
+    title: Annuaire des comptes (anti-lockout), matrice des 6 rôles officiels, tiroir d'exceptions SecOps et secrets en saisie seule
     fr: [FR-31]
-    origin: adhoc
-    origin_ref: 2026-11-05-dialogue-sally-winston-correction-ecran-habilitations-iam
+    origin: epic
+    origin_ref: 17-3
     status: live
-    tests: [packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
-    surfaces: { route: /settings, ui: SettingsIamOrganizationSection }
+    tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py]
+    verification: runtime
+    surfaces: { route: /settings, api: iam_accounts.py, ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamNativeRoleMatrixCard + IamSecopsExceptionsDrawer" }
   - id: CAP-052
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
@@ -258,7 +259,7 @@ capabilities:
     origin_ref: 8-5
     status: live
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx]
-    surfaces: { route: /settings, ui: SettingsPacksSection }
+    surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
@@ -275,7 +276,7 @@ capabilities:
     origin_ref: 8-6
     status: live
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
-    surfaces: { route: /wizards }
+    surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
     title: Coquille Settings à 5 onglets adaptatifs avec permission guards dynamiques
     fr: [FR-31]

@@ -11,6 +11,17 @@ from orcia_core.bootstrap._internal.sql_first_user_guard import (
     create_first_platform_admin_on_postgres18,
     get_first_platform_admin_from_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_iam_accounts import (
+    create_iam_account_on_postgres18,
+    delete_iam_account_on_postgres18,
+    sync_and_list_iam_accounts_from_postgres18,
+    update_iam_account_on_postgres18,
+)
+from orcia_core.bootstrap._internal.sql_iam_grants import (
+    create_iam_grants_on_postgres18,
+    delete_iam_grant_on_postgres18,
+    list_iam_grants_from_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_org_units import (
     create_org_unit_on_postgres18,
     delete_org_unit_on_postgres18,
@@ -191,12 +202,19 @@ __all__ = [
     "build_litellm_gateway_plugin",
     "build_postgres_upsert_sql",
     "create_first_platform_admin_on_postgres18",
+    "create_iam_account_on_postgres18",
+    "create_iam_grants_on_postgres18",
     "create_org_unit_on_postgres18",
+    "delete_iam_account_on_postgres18",
+    "delete_iam_grant_on_postgres18",
     "delete_org_unit_on_postgres18",
     "get_first_platform_admin_from_postgres18",
+    "list_iam_grants_from_postgres18",
     "list_org_units_from_postgres18",
     "load_platform_setup_state_from_postgres18",
     "persist_progressive_llm_endpoint_to_postgres18",
     "save_platform_setup_state_to_postgres18",
+    "sync_and_list_iam_accounts_from_postgres18",
+    "update_iam_account_on_postgres18",
     "update_org_unit_on_postgres18",
 ]

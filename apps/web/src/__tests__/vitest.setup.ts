@@ -58,6 +58,10 @@ const backendState: MockBackendState = {
 };
 
 import { resetAuthSessionStore } from "../stores/authSessionStore";
+import {
+  handleVitestIamRoute,
+  resetVitestIamMockState,
+} from "./vitestIamMockHandlers";
 
 function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit[] {
   if (!Array.isArray(rawUnits)) return [];
@@ -183,6 +187,7 @@ export function resetVitestApiBackend(): void {
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
   backendState.recordedCalls = [];
+  resetVitestIamMockState();
   resetAuthSessionStore();
 }
 
@@ -562,6 +567,23 @@ async function vitestFetchTransport(
         trace_id: "0195f000000070008000000000000999",
       });
     }
+  }
+
+  // 1c. Story 17.3 IAM Accounts Directory, Native 6-Role Matrix & SecOps Exceptions
+  const iamResp = handleVitestIamRoute({
+    method,
+    path,
+    parsedUrl,
+    body,
+    reqHeaders,
+    firstAdmin: backendState.firstAdmin,
+    orgUnits: backendState.orgUnits,
+    syncSetupOrgUnits: syncSetupOrgUnitsFromMock,
+    jsonResponse,
+    problemResponse,
+  });
+  if (iamResp !== null) {
+    return iamResp;
   }
 
   // 2. Mon Assistant SSE Stream & Turn Actions

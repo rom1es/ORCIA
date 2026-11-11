@@ -574,24 +574,18 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(iamSectionInitialText).not.toContain(forbiddenEnglishParen);
     }
 
-    // 1b. Redundant free-text scope input and competing "Action principale" select are removed
+    // 1b. Redundant free-text scope/subject inputs and "Tous" verb checkbox are removed; SecOps drawer is collapsed by default
     expect(screen.queryByTestId("rbac-scope-input")).toBeNull();
     expect(screen.queryByTestId("rbac-verb-select")).toBeNull();
+    expect(screen.queryByTestId("rbac-subject-input")).toBeNull();
+    expect(screen.queryByTestId("rbac-verb-checkbox-all")).toBeNull();
+    expect(screen.getByTestId("iam-accounts-directory-card")).toBeDefined();
+    expect(screen.getByTestId("iam-native-role-matrix-card")).toBeDefined();
+    expect(
+      screen.getByTestId("iam-secops-drawer-toggle").getAttribute("aria-expanded"),
+    ).toBe("false");
 
-    // 1c. IAM tab is initially greyed out (disabled) when no organization (BU or Espace) exists in DB
-    expect(screen.getByTestId("rbac-grants-disabled-no-org-hint")).toBeDefined();
-    expect((screen.getByTestId("rbac-subject-type-select") as HTMLSelectElement).disabled).toBe(
-      true,
-    );
-    expect((screen.getByTestId("rbac-subject-input") as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByTestId("rbac-scope-preset-select") as HTMLSelectElement).disabled).toBe(
-      true,
-    );
-    expect((screen.getByTestId("rbac-effect-select") as HTMLSelectElement).disabled).toBe(true);
-    expect((screen.getByTestId("rbac-verb-checkbox-all") as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(true);
-
-    // 2. Switch to Organization tab, create a BU ("BU Finance") -> unlocks IAM tab!
+    // 2. Switch to Organization tab, create a BU ("BU Finance") and a Team ("Espace Comptabilité", slug aqwZSX)
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -600,16 +594,6 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     expect((await screen.findByTestId("org-unit-row-org-1")).textContent).toContain("BU Finance");
 
-    // IAM tab is now unlocked!
-    fireEvent.click(screen.getByTestId("settings-tab-iam"));
-    expect(screen.queryByTestId("rbac-grants-disabled-no-org-hint")).toBeNull();
-    expect((screen.getByTestId("rbac-subject-input") as HTMLInputElement).disabled).toBe(false);
-    expect((screen.getByTestId("rbac-scope-preset-select") as HTMLSelectElement).disabled).toBe(
-      false,
-    );
-    expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(false);
-
-    fireEvent.click(screen.getByTestId("settings-tab-organization"));
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
 
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
@@ -645,30 +629,30 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(feedback.textContent).toContain("Suppression refusée");
     expect(screen.getByTestId("org-unit-row-org-1")).toBeDefined();
 
-    // 3 & 4. Habilitations: Beneficiary (Chef1) vs Target Scope selected from the single dropdown (aqwzsx), "Tous" checkbox, and French display
+    // 3 & 4. Habilitations (Story 17.3 SecOps Drawer): closed Beneficiary select (TEAM_LEAD) vs Target Scope (aqwzsx), individual grant verb, and French display
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
-    fireEvent.change(screen.getByTestId("rbac-subject-input"), {
-      target: { value: "Chef1" },
+    fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
+    fireEvent.change(screen.getByTestId("rbac-subject-select"), {
+      target: { value: "TEAM_LEAD" },
     });
     fireEvent.change(screen.getByTestId("rbac-scope-preset-select"), {
       target: { value: "aqwzsx" },
     });
-    // Click "Tous" verb checkbox to select all 6 verbs
-    fireEvent.click(screen.getByTestId("rbac-verb-checkbox-all"));
+    fireEvent.click(screen.getByTestId("rbac-verb-checkbox-grant"));
     fireEvent.click(screen.getByTestId("create-rbac-grant-btn"));
 
-    const grantRow = screen.getByTestId("rbac-grant-row-grant-1");
-    expect(grantRow.textContent).toContain("Rôle : Chef1");
+    const grantRow = await screen.findByTestId("rbac-grant-row-grant-1");
+    expect(grantRow.textContent).toContain("Rôle : Responsable d'Équipe");
     expect(grantRow.textContent).not.toContain("(ROLE:");
-    expect(grantRow.textContent).toContain("Périmètre cible :");
     expect(grantRow.textContent).toContain("Équipe : Espace Comptabilité (aqwzsx)");
-    expect(grantRow.textContent).toContain("Déléguer des droits · Autorisé");
-    expect(grantRow.textContent).not.toContain("(ALLOW)");
+    const secopsBodyText = screen.getByTestId("iam-secops-drawer-body").textContent ?? "";
+    expect(secopsBodyText).toContain("Déléguer des droits · Autorisé");
+    expect(secopsBodyText).not.toContain("(ALLOW)");
 
-    // Select all grants via "Tous" checkbox and bulk delete
+    // Select all grants and bulk delete
     fireEvent.click(screen.getByTestId("rbac-grants-select-all-checkbox"));
     fireEvent.click(screen.getByTestId("rbac-grants-bulk-delete-btn"));
-    expect(screen.getByTestId("iam-grants-empty-state")).toBeDefined();
+    expect(await screen.findByTestId("iam-grants-empty-state")).toBeDefined();
 
     // 5. Right-hand contextual help explains Target Scope, BU vs Équipe vs Espace de travail, and Beneficiary vs Target Scope
     const helpTerms = screen.getByTestId("help-accordion-terms-content");
@@ -697,6 +681,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
     ).toBe("false");
 
+    fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
     fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-target-scope"));
     const targetScopeHelpSection = screen.getByTestId("help-section-iam-target-scope");
     expect(targetScopeHelpSection.getAttribute("data-active")).toBe("true");
@@ -1609,30 +1594,20 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).not.toContain("Espace");
     fireEvent.click(screen.getByTestId("cancel-create-org-unit-btn"));
 
-    // - IAM tab "+ Ajouter la règle" button is disabled and shows the red '!' circle badge + red tooltip
+    // - IAM tab SecOps drawer "+ Ajouter l'exception" button shows DisabledButtonAlertIndicator when no verb is selected
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
+    fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
+    fireEvent.click(screen.getByTestId("rbac-verb-checkbox-execute"));
+    fireEvent.click(screen.getByTestId("rbac-verb-checkbox-read"));
     expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(
       true,
     );
     expect(
       screen.getByTestId("disabled-button-alert-icon-create-rbac-grant-btn"),
     ).toBeDefined();
-    expect(
-      screen
-        .getByTestId("disabled-button-alert-tooltip-create-rbac-grant-btn")
-        .getAttribute("data-tooltip-text"),
-    ).toContain("Créez d'abord au moins une Direction (BU) ou une Équipe");
 
-    // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") in Organization tab -> createGrantBtn becomes enabled!
-    fireEvent.click(screen.getByTestId("settings-tab-organization"));
-    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
-    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
-      target: { value: "Direction Tech" },
-    });
-    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
-    await screen.findByTestId("org-unit-row-org-1");
-
-    fireEvent.click(screen.getByTestId("settings-tab-iam"));
+    // Re-checking execute re-enables create-rbac-grant-btn (and auto-holds read)
+    fireEvent.click(screen.getByTestId("rbac-verb-checkbox-execute"));
     expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(
       false,
     );
@@ -1640,7 +1615,14 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.queryByTestId("disabled-button-alert-icon-create-rbac-grant-btn"),
     ).toBeNull();
 
+    // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") in Organization tab
     fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Tech" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },

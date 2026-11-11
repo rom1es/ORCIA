@@ -49,8 +49,7 @@ export function SettingsHubView() {
     datasources,
     packs,
     syncOrgUnitsFromServer,
-    addRbacGrant,
-    removeRbacGrant,
+    syncRbacGrantsFromServer,
     upsertLlmTier,
     registerDatasource,
     registerPack,
@@ -187,13 +186,13 @@ export function SettingsHubView() {
               <SettingsIamOrganizationSection
                 isFr={isFr}
                 canMutate={access.canMutate}
-                allowedVerbs={access.allowedVerbs}
+                iamLabels={copy.iamTab}
                 orgUnits={orgUnits}
                 workspaces={workspaces}
                 rbacGrants={rbacGrants}
                 openHelpSection={openHelpSection}
-                addRbacGrant={addRbacGrant}
-                removeRbacGrant={removeRbacGrant}
+                syncOrgUnitsFromServer={syncOrgUnitsFromServer}
+                syncRbacGrantsFromServer={syncRbacGrantsFromServer}
               />
             ) : effectiveTab === "models" ? (
               <SettingsAiModelsSection

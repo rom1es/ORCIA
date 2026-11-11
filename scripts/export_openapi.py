@@ -39,6 +39,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "blackboard",
     "bootstrap",
     "catalog",
+    "iam_accounts",
     "ontology_and_rag",
     "orchestration",
     "permission_broker",

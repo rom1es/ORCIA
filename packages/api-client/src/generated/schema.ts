@@ -753,9 +753,10 @@ export interface components {
     DelegateGrantRequest: {
       actor_persona?: string;
       conditions?: Record<string, unknown>;
-      effect?: "ALLOW" | "DENY";
+      effect?: "ALLOW" | "DENY" | "INHERITANCE_BLOCK";
       hidden_when_unauthorized?: boolean;
       inheritance_block?: boolean;
+      resource_kind?: "ALL" | "WORKFLOW" | "AGENT" | "DATASOURCE" | "CONNECTOR";
       scope_path?: string;
       subject_id?: string;
       subject_type?: "USER" | "ROLE" | "SERVICE_PRINCIPAL";
@@ -1221,6 +1222,10 @@ export interface components {
       tool_name: string;
       workspace_slug: string;
     };
+    GrantDeleteResponse: {
+      deleted_id: string;
+      trace_id: string;
+    };
     GuidanceStepItemResponse: {
       action_command: string;
       description_fr: string;
@@ -1441,6 +1446,44 @@ export interface components {
       step_title: string;
       step_type: "AGENT" | "SKILL" | "SUB_WORKFLOW" | "HUMAN_TASK" | "HTTP_ACTION" | "POST_ACTION_VERIFICATION";
       undeclared_artifacts_leaked?: number;
+    };
+    IamAccountCreateRequest: {
+      account_kind?: "HUMAN" | "SERVICE_PRINCIPAL";
+      auth_source?: "LOCAL_BOOTSTRAP" | "OIDC_FEDERATED" | "SERVICE_TOKEN" | null;
+      display_name?: string;
+      email?: string | null;
+      principal_id?: string | null;
+      roles?: (string)[];
+      status?: "ACTIVE" | "INVITED" | "DISABLED";
+      team_ids?: (string)[];
+    };
+    IamAccountDeleteResponse: {
+      deleted_id: string;
+      trace_id: string;
+    };
+    IamAccountPatchRequest: {
+      display_name?: string | null;
+      email?: string | null;
+      roles?: (string)[] | null;
+      status?: "ACTIVE" | "INVITED" | "DISABLED" | null;
+      team_ids?: (string)[] | null;
+    };
+    IamAccountResponse: {
+      account_kind: "HUMAN" | "SERVICE_PRINCIPAL";
+      auth_source: "LOCAL_BOOTSTRAP" | "OIDC_FEDERATED" | "SERVICE_TOKEN";
+      created_at_iso: string;
+      display_name: string;
+      email?: string | null;
+      id: string;
+      principal_id: string;
+      roles: ("PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER")[];
+      status: "ACTIVE" | "INVITED" | "DISABLED";
+      team_ids: (string)[];
+      updated_at_iso: string;
+    };
+    IamAccountsListResponse: {
+      accounts: (components["schemas"]["IamAccountResponse"])[];
+      trace_id: string;
     };
     ImpactAssessmentResult: {
       deterministic_gates_passed: boolean;
@@ -2356,14 +2399,27 @@ export interface components {
       target_sub_step_id?: string | null;
       when_condition: string;
     };
+    RoleMatrixEntryResponse: {
+      native_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
+      natural_scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      resource_permissions: Record<string, ("create" | "read" | "update" | "delete" | "execute" | "grant")[]>;
+      role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER";
+      secret_visibility: "WRITE_ONLY_NEVER_READABLE";
+    };
+    RoleMatrixResponse: {
+      roles: (components["schemas"]["RoleMatrixEntryResponse"])[];
+      secret_visibility_policy: "WRITE_ONLY_NEVER_READABLE";
+      trace_id: string;
+    };
     RolePermissionGrantResponse: {
       conditions: Record<string, unknown>;
       created_at_iso: string;
-      effect: "ALLOW" | "DENY";
+      effect: "ALLOW" | "DENY" | "INHERITANCE_BLOCK";
       granted_by_user_id?: string | null;
       hidden_when_unauthorized: boolean;
       id: string;
       inheritance_block: boolean;
+      resource_kind?: "ALL" | "WORKFLOW" | "AGENT" | "DATASOURCE" | "CONNECTOR";
       scope_path: string;
       subject_id: string;
       subject_type: "USER" | "ROLE" | "SERVICE_PRINCIPAL";
@@ -4599,6 +4655,30 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/iam/accounts": {
+    get: {
+      responses: {
+        200: components["schemas"]["IamAccountsListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: components["schemas"]["IamAccountResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/iam/accounts/{account_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["IamAccountDeleteResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["IamAccountResponse"];
+      };
+    };
+  };
   "/api/v1/settings/iam/evaluate": {
     post: {
       responses: {
@@ -4607,9 +4687,28 @@ export interface paths {
     };
   };
   "/api/v1/settings/iam/grants": {
+    get: {
+      responses: {
+        200: (components["schemas"]["RolePermissionGrantResponse"])[];
+      };
+    };
     post: {
       responses: {
         200: (components["schemas"]["RolePermissionGrantResponse"])[];
+      };
+    };
+  };
+  "/api/v1/settings/iam/grants/{grant_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GrantDeleteResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/iam/role-matrix": {
+    get: {
+      responses: {
+        200: components["schemas"]["RoleMatrixResponse"];
       };
     };
   };
@@ -4956,6 +5055,7 @@ export type GeneratedStarlarkMechanismResponse = components["schemas"]["Generate
 export type GlossaryCandidateSchema = components["schemas"]["GlossaryCandidateSchema"];
 export type GovernedMcpInvokeRequest = components["schemas"]["GovernedMcpInvokeRequest"];
 export type GovernedMcpInvokeResponse = components["schemas"]["GovernedMcpInvokeResponse"];
+export type GrantDeleteResponse = components["schemas"]["GrantDeleteResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
@@ -4981,6 +5081,11 @@ export type HybridRagHitSchemaItem = components["schemas"]["HybridRagHitSchemaIt
 export type HybridRagSearchRequest = components["schemas"]["HybridRagSearchRequest"];
 export type HybridRagSearchResponse = components["schemas"]["HybridRagSearchResponse"];
 export type HydratedStepContextSchemaItem = components["schemas"]["HydratedStepContextSchemaItem"];
+export type IamAccountCreateRequest = components["schemas"]["IamAccountCreateRequest"];
+export type IamAccountDeleteResponse = components["schemas"]["IamAccountDeleteResponse"];
+export type IamAccountPatchRequest = components["schemas"]["IamAccountPatchRequest"];
+export type IamAccountResponse = components["schemas"]["IamAccountResponse"];
+export type IamAccountsListResponse = components["schemas"]["IamAccountsListResponse"];
 export type ImpactAssessmentResult = components["schemas"]["ImpactAssessmentResult"];
 export type InFlowPromotionRequest = components["schemas"]["InFlowPromotionRequest"];
 export type InFlowPromotionResponse = components["schemas"]["InFlowPromotionResponse"];
@@ -5091,6 +5196,8 @@ export type ResolvedArtifactDestinationResponse = components["schemas"]["Resolve
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type ReturnLoopSpec = components["schemas"]["ReturnLoopSpec"];
+export type RoleMatrixEntryResponse = components["schemas"]["RoleMatrixEntryResponse"];
+export type RoleMatrixResponse = components["schemas"]["RoleMatrixResponse"];
 export type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
 export type RunBlackboardStateResponse = components["schemas"]["RunBlackboardStateResponse"];
 export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];

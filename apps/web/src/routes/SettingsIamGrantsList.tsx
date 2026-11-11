@@ -1,6 +1,10 @@
 import { StatusBadge, type UiPermissionVerb } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredRbacGrant } from "../components/platformSetupStore";
+import type {
+  GrantResourceKindKey,
+  OfficialIamRoleKey,
+} from "../features/admin/iam/iamApiBridge";
 
 export interface SettingsIamGrantsListProps {
   readonly isFr: boolean;
@@ -9,6 +13,13 @@ export interface SettingsIamGrantsListProps {
   readonly selectedGrantIds: readonly string[];
   readonly verbDescriptions: Readonly<Record<UiPermissionVerb, string>>;
   readonly effectBadgeLabels: Readonly<Record<"ALLOW" | "DENY" | "INHERITANCE_BLOCK", string>>;
+  readonly resourceKindLabels?: Readonly<Record<GrantResourceKindKey, string>>;
+  readonly roleDisplayLabels?: Readonly<Record<OfficialIamRoleKey, string>>;
+  readonly subjectPrefixes: Readonly<Record<"ROLE" | "USER" | "SERVICE_PRINCIPAL", string>>;
+  readonly emptyStateText: string;
+  readonly selectAllLabel: string;
+  readonly deleteSelectedCta: string;
+  readonly deleteSingleLabel: string;
   readonly formatTargetScopeLabel: (scopePath: string) => string;
   readonly onToggleSelectAll: (checked: boolean) => void;
   readonly onToggleSelectGrant: (grantId: string, checked: boolean) => void;
@@ -17,12 +28,18 @@ export interface SettingsIamGrantsListProps {
 }
 
 export function SettingsIamGrantsList({
-  isFr,
   canMutate,
   rbacGrants,
   selectedGrantIds,
   verbDescriptions,
   effectBadgeLabels,
+  resourceKindLabels,
+  roleDisplayLabels,
+  subjectPrefixes,
+  emptyStateText,
+  selectAllLabel,
+  deleteSelectedCta,
+  deleteSingleLabel,
   formatTargetScopeLabel,
   onToggleSelectAll,
   onToggleSelectGrant,
@@ -35,9 +52,7 @@ export function SettingsIamGrantsList({
         data-testid="iam-grants-empty-state"
         style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
       >
-        {isFr
-          ? "Aucune règle d'habilitation personnalisée."
-          : "No custom permission rule configured."}
+        {emptyStateText}
       </p>
     );
   }
@@ -80,9 +95,9 @@ export function SettingsIamGrantsList({
             checked={allGrantsChecked}
             onChange={(e) => onToggleSelectAll(e.target.checked)}
           />
-          <span>{isFr ? "Tous (Tout sélectionner)" : "All (Select all)"}</span>
+          <span>{selectAllLabel}</span>
         </label>
-        {selectedGrantIds.length > 0 && (
+        {selectedGrantIds.length > 0 ? (
           <button
             type="button"
             disabled={!canMutate}
@@ -91,81 +106,87 @@ export function SettingsIamGrantsList({
             className="orcia-ds-btn orcia-ds-btn-danger"
             style={{ padding: "5px 10px", fontSize: "12px" }}
           >
-            {isFr
-              ? `Supprimer la sélection (${selectedGrantIds.length})`
-              : `Delete selected (${selectedGrantIds.length})`}
+            {`${deleteSelectedCta} (${selectedGrantIds.length})`}
           </button>
-        )}
+        ) : null}
       </div>
 
-      {rbacGrants.map((g) => (
-        <div
-          key={g.id}
-          data-testid={`rbac-grant-row-${g.id}`}
-          style={{
-            padding: "8px 10px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid var(--color-border)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "8px",
-          }}
-        >
-          <label
+      {rbacGrants.map((g) => {
+        const subjectLabel =
+          g.subjectType === "ROLE" && roleDisplayLabels
+            ? (roleDisplayLabels[g.subjectId as OfficialIamRoleKey] ?? g.subjectId)
+            : g.subjectId;
+        const rk = g.resourceKind ?? "ALL";
+        const rkLabel =
+          rk !== "ALL" && resourceKindLabels ? resourceKindLabels[rk] : null;
+        return (
+          <div
+            key={g.id}
+            data-testid={`rbac-grant-row-${g.id}`}
             style={{
-              display: "inline-flex",
+              padding: "8px 10px",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--color-border)",
+              display: "flex",
+              justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
               gap: "8px",
-              cursor: canMutate ? "pointer" : "not-allowed",
             }}
           >
-            <input
-              type="checkbox"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid={`rbac-grant-checkbox-${g.id}`}
-              disabled={!canMutate}
-              checked={selectedGrantIds.includes(g.id)}
-              onChange={(e) => onToggleSelectGrant(g.id, e.target.checked)}
-            />
-            <span>
-              <strong>
-                {g.subjectType === "ROLE"
-                  ? isFr
-                    ? "Rôle :"
-                    : "Role:"
-                  : isFr
-                    ? "Utilisateur :"
-                    : "User:"}{" "}
-                {g.subjectId}
-              </strong>{" "}
-              → {isFr ? "Périmètre cible :" : "Target scope:"}{" "}
-              <code>{formatTargetScopeLabel(g.scopePath)}</code>
-            </span>
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <StatusBadge
-              label={`${verbDescriptions[g.verb]} · ${effectBadgeLabels[g.effect]}`}
-              tone={g.effect === "ALLOW" ? "emerald" : "crimson"}
-            />
-            <button
-              type="button"
-              disabled={!canMutate}
-              data-testid={`delete-rbac-grant-btn-${g.id}`}
-              onClick={() => onDeleteGrant(g.id)}
-              className="orcia-ds-btn orcia-ds-btn-danger"
-              style={{ padding: "5px 10px", fontSize: "12px" }}
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: canMutate ? "pointer" : "not-allowed",
+              }}
             >
-              {isFr ? "Supprimer" : "Delete"}
-            </button>
+              <input
+                type="checkbox"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
+                data-testid={`rbac-grant-checkbox-${g.id}`}
+                disabled={!canMutate}
+                checked={selectedGrantIds.includes(g.id)}
+                onChange={(e) => onToggleSelectGrant(g.id, e.target.checked)}
+              />
+              <span>
+                <strong>
+                  {`${subjectPrefixes[g.subjectType]} : ${subjectLabel}`}
+                </strong>{" "}
+                → <code>{formatTargetScopeLabel(g.scopePath)}</code>
+              </span>
+            </label>
+            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+              {rkLabel ? <StatusBadge label={rkLabel} tone="neutral" /> : null}
+              <StatusBadge
+                label={`${verbDescriptions[g.verb]} · ${effectBadgeLabels[g.effect]}`}
+                tone={
+                  g.effect === "ALLOW"
+                    ? "emerald"
+                    : g.effect === "INHERITANCE_BLOCK"
+                      ? "amber"
+                      : "crimson"
+                }
+              />
+              <button
+                type="button"
+                disabled={!canMutate}
+                data-testid={`delete-rbac-grant-btn-${g.id}`}
+                onClick={() => onDeleteGrant(g.id)}
+                className="orcia-ds-btn orcia-ds-btn-danger"
+                style={{ padding: "5px 10px", fontSize: "12px" }}
+              >
+                {deleteSingleLabel}
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

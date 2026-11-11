@@ -20,6 +20,14 @@ import type {
   EffectiveWorkflowResolveResponse,
 } from "../generated/catalog";
 import type {
+  IamAccountCreateRequest,
+  IamAccountDeleteResponse,
+  IamAccountPatchRequest,
+  IamAccountResponse,
+  IamAccountsListResponse,
+  RoleMatrixResponse,
+} from "../generated/iam_accounts";
+import type {
   PermissionBrokerStateResponse,
   PermissionCheckRequest,
   PermissionCheckResponse,
@@ -28,9 +36,13 @@ import type {
   PermissionTicketActionRequest,
   PermissionTicketActionResponse,
 } from "../generated/permission_broker";
+import type { components } from "../generated/schema";
 import { buildPersonaQuery, type createRequestJson } from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
+type DelegateGrantRequest = components["schemas"]["DelegateGrantRequest"];
+type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
+type GrantDeleteResponse = components["schemas"]["GrantDeleteResponse"];
 
 export function createCatalogAndPermissionsDomainClient(requestJson: RequestJsonFn) {
   return {
@@ -64,6 +76,62 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
     ): Promise<OrgUnitDeleteResponse> {
       return requestJson<OrgUnitDeleteResponse>(
         `/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
+    getIamRoleMatrix(): Promise<RoleMatrixResponse> {
+      return requestJson<RoleMatrixResponse>("/api/v1/settings/iam/role-matrix");
+    },
+    listIamAccounts(personaKey?: string): Promise<IamAccountsListResponse> {
+      return requestJson<IamAccountsListResponse>(
+        `/api/v1/settings/iam/accounts${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    createIamAccount(
+      payload: IamAccountCreateRequest,
+      personaKey?: string,
+    ): Promise<IamAccountResponse> {
+      return requestJson<IamAccountResponse>(
+        `/api/v1/settings/iam/accounts${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    updateIamAccount(
+      accountId: string,
+      payload: IamAccountPatchRequest,
+      personaKey?: string,
+    ): Promise<IamAccountResponse> {
+      return requestJson<IamAccountResponse>(
+        `/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}${buildPersonaQuery(personaKey)}`,
+        "PATCH",
+        payload,
+      );
+    },
+    deleteIamAccount(
+      accountId: string,
+      personaKey?: string,
+    ): Promise<IamAccountDeleteResponse> {
+      return requestJson<IamAccountDeleteResponse>(
+        `/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
+    listIamGrants(scopePath?: string): Promise<RolePermissionGrantResponse[]> {
+      const qs = scopePath ? `?scope_path=${encodeURIComponent(scopePath)}` : "";
+      return requestJson<RolePermissionGrantResponse[]>(`/api/v1/settings/iam/grants${qs}`);
+    },
+    createIamGrant(payload: DelegateGrantRequest): Promise<RolePermissionGrantResponse[]> {
+      return requestJson<RolePermissionGrantResponse[]>(
+        "/api/v1/settings/iam/grants",
+        "POST",
+        payload,
+      );
+    },
+    deleteIamGrant(grantId: string, actorPersona?: string): Promise<GrantDeleteResponse> {
+      const qs = actorPersona ? `?actor_persona=${encodeURIComponent(actorPersona)}` : "";
+      return requestJson<GrantDeleteResponse>(
+        `/api/v1/settings/iam/grants/${encodeURIComponent(grantId)}${qs}`,
         "DELETE",
       );
     },

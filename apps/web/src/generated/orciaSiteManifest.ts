@@ -11,13 +11,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 23,
     "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 29,
+    "alembicMigrationsCount": 30,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 111,
+    "techLeadReportsCount": 112,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 35
+    "verifiedCapabilitiesCount": 36
   },
   "activeRoutes": [
     "/",
@@ -175,7 +175,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0026_story_11_1_waivers_and_external_rebase",
     "0027_story_11_2_dna_chain_and_glossary_lifecycle",
     "20261108_0910_declarative_packs_and_workflows_v2",
-    "20261111_1702_story_17_2_org_units_billing_and_members"
+    "20261111_1702_story_17_2_org_units_billing_and_members",
+    "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind"
   ],
   "architectureDecisions": [
     {
@@ -430,6 +431,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.3 (CAP-050, CAP-051)",
+      "reportFile": "17-3-annuaire-comptes-matrice-roles-delegues-secops-et-suppression-secrets-exposes-tech-lead-report.md",
+      "domain": "Annuaire des Comptes dès le Jour 0 (PLATFORM_ADMIN + SECOPS, Humains & SERVICE_PRINCIPAL, Anti-Lockout 422), Matrice des 6 Rôles Délégués (BU_LEAD), Éradication de « Lire / Voir les secrets » (AD-21) & Tiroir d'Isolation SECOPS",
+      "summary": "Migration Alembic 20261111_1703 (iam_accounts + role_permission_grants.resource_kind & INHERITANCE_BLOCK), domaine pur iam_accounts.py + role_matrix.py, adaptateur PG18 sql_iam_accounts.py, routeur iam_accounts.py (/api/v1/settings/iam/accounts, /role-matrix, /grants), modale IamAccountModal à sélecteurs fermés, matrice native des 6 rôles et tiroir d'exceptions réservé SECOPS."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 17.2 (CAP-051, CAP-067)",

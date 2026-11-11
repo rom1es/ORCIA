@@ -25,6 +25,7 @@ from orcia_api.routers.dna_and_glossary import (
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
+from orcia_api.routers.iam_accounts import router as iam_accounts_router
 from orcia_api.routers.inbox_and_leases import router as inbox_and_leases_router
 from orcia_api.routers.jira_and_mcp import router as jira_and_mcp_router
 from orcia_api.routers.mcp_and_test_bench import (
@@ -41,6 +42,7 @@ from orcia_api.routers.permission_broker import router as permission_broker_rout
 from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
+from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
 from orcia_api.routers.workflows import router as workflows_v2_router
 from orcia_api.routers.workspace_governance import (
     router as workspace_governance_router,
@@ -82,7 +84,9 @@ def create_app() -> FastAPI:
     application.include_router(human_gates_router)
     application.include_router(inbox_and_leases_router)
     application.include_router(control_center_router)
+    application.include_router(iam_accounts_router)
     application.include_router(settings_and_studio_router)
+    application.include_router(studio_and_wizards_router)
     application.include_router(jira_and_mcp_router)
     application.include_router(bootstrap_router)
     application.include_router(ontology_and_rag_router)

@@ -4821,7 +4821,7 @@
       },
       "DelegateGrantRequest": {
         "additionalProperties": false,
-        "description": "Request to delegate a subset of held permissions (`grant` confinement, `Story 8.1`).",
+        "description": "Request to delegate held permissions (`grant` confinement, `Story 8.1` / `17.3`).",
         "properties": {
           "actor_persona": {
             "default": "marc",
@@ -4837,7 +4837,8 @@
             "default": "ALLOW",
             "enum": [
               "ALLOW",
-              "DENY"
+              "DENY",
+              "INHERITANCE_BLOCK"
             ],
             "title": "Effect",
             "type": "string"
@@ -4852,9 +4853,21 @@
             "title": "Inheritance Block",
             "type": "boolean"
           },
+          "resource_kind": {
+            "default": "ALL",
+            "enum": [
+              "ALL",
+              "WORKFLOW",
+              "AGENT",
+              "DATASOURCE",
+              "CONNECTOR"
+            ],
+            "title": "Resource Kind",
+            "type": "string"
+          },
           "scope_path": {
             "default": "org/orcia/bu/claims/team/alpha",
-            "minLength": 3,
+            "minLength": 2,
             "title": "Scope Path",
             "type": "string"
           },
@@ -7699,6 +7712,26 @@
         "title": "GovernedMcpInvokeResponse",
         "type": "object"
       },
+      "GrantDeleteResponse": {
+        "additionalProperties": false,
+        "description": "Envelope returned by `DELETE /api/v1/settings/iam/grants/{grant_id}` (`Story 17.3`).",
+        "properties": {
+          "deleted_id": {
+            "title": "Deleted Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deleted_id",
+          "trace_id"
+        ],
+        "title": "GrantDeleteResponse",
+        "type": "object"
+      },
       "GuidanceStepItemResponse": {
         "additionalProperties": false,
         "description": "Methodological guidance step in `<GuidanceDrawer />` (Tab 2).",
@@ -9135,6 +9168,317 @@
           "resolved_inputs"
         ],
         "title": "HydratedStepContextSchemaItem",
+        "type": "object"
+      },
+      "IamAccountCreateRequest": {
+        "additionalProperties": false,
+        "description": "Payload for `POST /api/v1/settings/iam/accounts` (`Story 17.3`).",
+        "properties": {
+          "account_kind": {
+            "default": "HUMAN",
+            "enum": [
+              "HUMAN",
+              "SERVICE_PRINCIPAL"
+            ],
+            "title": "Account Kind",
+            "type": "string"
+          },
+          "auth_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "LOCAL_BOOTSTRAP",
+                  "OIDC_FEDERATED",
+                  "SERVICE_TOKEN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Source"
+          },
+          "display_name": {
+            "default": "Nouveau Compte",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "principal_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal Id"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Roles",
+            "type": "array"
+          },
+          "status": {
+            "default": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INVITED",
+              "DISABLED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "team_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Team Ids",
+            "type": "array"
+          }
+        },
+        "title": "IamAccountCreateRequest",
+        "type": "object"
+      },
+      "IamAccountDeleteResponse": {
+        "additionalProperties": false,
+        "description": "Envelope returned by `DELETE /api/v1/settings/iam/accounts/{account_id}` (`Story 17.3`).",
+        "properties": {
+          "deleted_id": {
+            "title": "Deleted Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deleted_id",
+          "trace_id"
+        ],
+        "title": "IamAccountDeleteResponse",
+        "type": "object"
+      },
+      "IamAccountPatchRequest": {
+        "additionalProperties": false,
+        "description": "Payload for `PATCH /api/v1/settings/iam/accounts/{account_id}` (`Story 17.3`).",
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 12,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "INVITED",
+                  "DISABLED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "team_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Ids"
+          }
+        },
+        "title": "IamAccountPatchRequest",
+        "type": "object"
+      },
+      "IamAccountResponse": {
+        "additionalProperties": false,
+        "description": "Serialized IAM directory account (`HUMAN` or `SERVICE_PRINCIPAL`, `Story 17.3`).",
+        "properties": {
+          "account_kind": {
+            "enum": [
+              "HUMAN",
+              "SERVICE_PRINCIPAL"
+            ],
+            "title": "Account Kind",
+            "type": "string"
+          },
+          "auth_source": {
+            "enum": [
+              "LOCAL_BOOTSTRAP",
+              "OIDC_FEDERATED",
+              "SERVICE_TOKEN"
+            ],
+            "title": "Auth Source",
+            "type": "string"
+          },
+          "created_at_iso": {
+            "title": "Created At Iso",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "enum": [
+                "PLATFORM_ADMIN",
+                "SECOPS",
+                "BU_LEAD",
+                "TEAM_LEAD",
+                "CONTRIBUTOR",
+                "OBSERVER"
+              ],
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "INVITED",
+              "DISABLED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "team_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Team Ids",
+            "type": "array"
+          },
+          "updated_at_iso": {
+            "title": "Updated At Iso",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "principal_id",
+          "display_name",
+          "account_kind",
+          "auth_source",
+          "roles",
+          "team_ids",
+          "status",
+          "created_at_iso",
+          "updated_at_iso"
+        ],
+        "title": "IamAccountResponse",
+        "type": "object"
+      },
+      "IamAccountsListResponse": {
+        "additionalProperties": false,
+        "description": "Envelope returned by `GET /api/v1/settings/iam/accounts` (`Story 17.3`).",
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/IamAccountResponse"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accounts",
+          "trace_id"
+        ],
+        "title": "IamAccountsListResponse",
         "type": "object"
       },
       "ImpactAssessmentResult": {
@@ -15018,9 +15362,113 @@
         "title": "ReturnLoopSpec",
         "type": "object"
       },
+      "RoleMatrixEntryResponse": {
+        "additionalProperties": false,
+        "description": "Native role descriptor in the closed 6-role matrix (`Story 17.3`, `AD-21`).",
+        "properties": {
+          "native_verbs": {
+            "items": {
+              "enum": [
+                "create",
+                "read",
+                "update",
+                "delete",
+                "execute",
+                "grant"
+              ],
+              "type": "string"
+            },
+            "title": "Native Verbs",
+            "type": "array"
+          },
+          "natural_scope": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Natural Scope",
+            "type": "string"
+          },
+          "resource_permissions": {
+            "additionalProperties": {
+              "items": {
+                "enum": [
+                  "create",
+                  "read",
+                  "update",
+                  "delete",
+                  "execute",
+                  "grant"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Resource Permissions",
+            "type": "object"
+          },
+          "role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
+              "TEAM_LEAD",
+              "CONTRIBUTOR",
+              "OBSERVER"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "secret_visibility": {
+            "const": "WRITE_ONLY_NEVER_READABLE",
+            "title": "Secret Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "natural_scope",
+          "native_verbs",
+          "resource_permissions",
+          "secret_visibility"
+        ],
+        "title": "RoleMatrixEntryResponse",
+        "type": "object"
+      },
+      "RoleMatrixResponse": {
+        "additionalProperties": false,
+        "description": "Envelope returned by `GET /api/v1/settings/iam/role-matrix` (`Story 17.3`, `AD-21`).",
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleMatrixEntryResponse"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "secret_visibility_policy": {
+            "const": "WRITE_ONLY_NEVER_READABLE",
+            "title": "Secret Visibility Policy",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret_visibility_policy",
+          "roles",
+          "trace_id"
+        ],
+        "title": "RoleMatrixResponse",
+        "type": "object"
+      },
       "RolePermissionGrantResponse": {
         "additionalProperties": false,
-        "description": "6-verb RBAC/ABAC grant representation (`Story 8.1`).",
+        "description": "6-verb RBAC/ABAC grant representation (`Story 8.1`, `Story 17.3`).",
         "properties": {
           "conditions": {
             "additionalProperties": true,
@@ -15034,7 +15482,8 @@
           "effect": {
             "enum": [
               "ALLOW",
-              "DENY"
+              "DENY",
+              "INHERITANCE_BLOCK"
             ],
             "title": "Effect",
             "type": "string"
@@ -15061,6 +15510,18 @@
           "inheritance_block": {
             "title": "Inheritance Block",
             "type": "boolean"
+          },
+          "resource_kind": {
+            "default": "ALL",
+            "enum": [
+              "ALL",
+              "WORKFLOW",
+              "AGENT",
+              "DATASOURCE",
+              "CONNECTOR"
+            ],
+            "title": "Resource Kind",
+            "type": "string"
           },
           "scope_path": {
             "title": "Scope Path",
@@ -41199,6 +41660,8 @@
             "name": "mapping_id",
             "required": true,
             "schema": {
+              "maxLength": 128,
+              "minLength": 1,
               "title": "Mapping Id",
               "type": "string"
             }
@@ -41469,6 +41932,8 @@
             "name": "document_id",
             "required": true,
             "schema": {
+              "maxLength": 128,
+              "minLength": 1,
               "title": "Document Id",
               "type": "string"
             }
@@ -41837,6 +42302,8 @@
             "name": "connector_id",
             "required": true,
             "schema": {
+              "maxLength": 128,
+              "minLength": 1,
               "title": "Connector Id",
               "type": "string"
             }
@@ -42208,6 +42675,560 @@
         ]
       }
     },
+    "/api/v1/settings/iam/accounts": {
+      "get": {
+        "operationId": "list_iam_accounts_api_v1_settings_iam_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IamAccountsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List IAM human & service accounts with automatic Day-0 admin synchronization",
+        "tags": [
+          "iam-accounts"
+        ]
+      },
+      "post": {
+        "operationId": "create_iam_account_api_v1_settings_iam_accounts_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IamAccountCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IamAccountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Create a human user or technical `SERVICE_PRINCIPAL` in the IAM directory",
+        "tags": [
+          "iam-accounts"
+        ]
+      }
+    },
+    "/api/v1/settings/iam/accounts/{account_id}": {
+      "delete": {
+        "operationId": "delete_iam_account_api_v1_settings_iam_accounts__account_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IamAccountDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Delete an IAM account with deterministic anti-lockout (`422` if last active admin)",
+        "tags": [
+          "iam-accounts"
+        ]
+      },
+      "patch": {
+        "operationId": "update_iam_account_api_v1_settings_iam_accounts__account_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IamAccountPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IamAccountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Update roles, teams, display name or status with deterministic anti-lockout",
+        "tags": [
+          "iam-accounts"
+        ]
+      }
+    },
     "/api/v1/settings/iam/evaluate": {
       "post": {
         "description": "Evaluate 6-verb RBAC/ABAC access on a resource (`Story 8.1`).",
@@ -42329,8 +43350,139 @@
       }
     },
     "/api/v1/settings/iam/grants": {
+      "get": {
+        "description": "List SecOps RBAC/ABAC exceptions and isolation rules (`Story 17.3`).",
+        "operationId": "list_rbac_grants_api_v1_settings_iam_grants_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope_path",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RolePermissionGrantResponse"
+                  },
+                  "title": "Response List Rbac Grants Api V1 Settings Iam Grants Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Rbac Grants",
+        "tags": [
+          "settings-and-studio"
+        ]
+      },
       "post": {
-        "description": "Delegate a subset of held permissions (`grant` confinement, `Story 8.1`).",
+        "description": "Delegate a subset of held permissions or isolate scope (`Story 8.1`, `Story 17.3`).",
         "operationId": "delegate_rbac_grants_api_v1_settings_iam_grants_post",
         "requestBody": {
           "content": {
@@ -42452,6 +43604,250 @@
         ]
       }
     },
+    "/api/v1/settings/iam/grants/{grant_id}": {
+      "delete": {
+        "description": "Revoke an IAM exception / isolation rule (`Story 17.3`).",
+        "operationId": "revoke_rbac_grant_endpoint_api_v1_settings_iam_grants__grant_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Grant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "default": "karim",
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Actor Persona",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrantDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Revoke Rbac Grant Endpoint",
+        "tags": [
+          "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/settings/iam/role-matrix": {
+      "get": {
+        "operationId": "get_iam_role_matrix_api_v1_settings_iam_role_matrix_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleMatrixResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Return the native 6-role permission matrix (`WRITE_ONLY_NEVER_READABLE`)",
+        "tags": [
+          "iam-accounts"
+        ]
+      }
+    },
     "/api/v1/studio/revisions/{revision_id}/dry-run": {
       "post": {
         "description": "Execute isolated Studio *What-If* dry-run (`▷ Tester`, `Story 8.5`).",
@@ -42462,6 +43858,8 @@
             "name": "revision_id",
             "required": true,
             "schema": {
+              "maxLength": 128,
+              "minLength": 1,
               "title": "Revision Id",
               "type": "string"
             }
@@ -42579,7 +43977,7 @@
         },
         "summary": "Studio What If Dry Run Endpoint",
         "tags": [
-          "settings-and-studio"
+          "studio-and-wizards"
         ]
       }
     },
@@ -43914,7 +45312,7 @@
         },
         "summary": "Provision Demo Workspace Endpoint",
         "tags": [
-          "settings-and-studio"
+          "studio-and-wizards"
         ]
       }
     },
@@ -44034,7 +45432,7 @@
         },
         "summary": "Start Or Resume Wizard Endpoint",
         "tags": [
-          "settings-and-studio"
+          "studio-and-wizards"
         ]
       }
     },
@@ -44048,6 +45446,8 @@
             "name": "session_id",
             "required": true,
             "schema": {
+              "maxLength": 128,
+              "minLength": 1,
               "title": "Session Id",
               "type": "string"
             }
@@ -44165,7 +45565,7 @@
         },
         "summary": "Save Wizard Step Endpoint",
         "tags": [
-          "settings-and-studio"
+          "studio-and-wizards"
         ]
       }
     },

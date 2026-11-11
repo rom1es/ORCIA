@@ -196,6 +196,28 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "Move or delete those items first.",
         ),
     },
+    "ERR_IAM_INVALID_ROLE": {
+        "fr": LocalizedErrorCopy(
+            "Rôle d'habilitation invalide",
+            "Le rôle demandé n'appartient pas aux 6 rôles officiels (PLATFORM_ADMIN, SECOPS, "
+            "BU_LEAD, TEAM_LEAD, CONTRIBUTOR, OBSERVER).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid IAM role",
+            "The requested role is not among the 6 official roles (PLATFORM_ADMIN, SECOPS, "
+            "BU_LEAD, TEAM_LEAD, CONTRIBUTOR, OBSERVER).",
+        ),
+    },
+    "ERR_IAM_DUPLICATE_PRINCIPAL": {
+        "fr": LocalizedErrorCopy(
+            "Identifiant de compte déjà enregistré",
+            "Un compte humain ou un compte de service utilise déjà cet identifiant principal.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Duplicate account principal identifier",
+            "A human account or service principal already uses this principal identifier.",
+        ),
+    },
 }
 
 register_domain_error_catalog(PERMISSIONS_ERROR_CATALOG)
@@ -280,12 +302,24 @@ class OrgUnitNotEmptyError(OrciaDomainError):
     http_status, type_slug = 409, "org-unit-not-empty"
 
 
+class InvalidIamRoleError(OrciaDomainError):
+    error_code = "ERR_IAM_INVALID_ROLE"
+    http_status, type_slug = 422, "iam-invalid-role"
+
+
+class DuplicateIamPrincipalError(OrciaDomainError):
+    error_code = "ERR_IAM_DUPLICATE_PRINCIPAL"
+    http_status, type_slug = 409, "iam-duplicate-principal"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "C3WorkspaceRequiredError",
     "ConfusedDeputyBlockedError",
+    "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
     "InvalidCredentialsError",
+    "InvalidIamRoleError",
     "InvalidMfaCodeError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
