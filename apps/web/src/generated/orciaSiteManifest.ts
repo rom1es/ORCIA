@@ -15,7 +15,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
     "techLeadReportsCount": 109,
-    "capabilitiesCount": 59,
+    "capabilitiesCount": 60,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
   },

@@ -558,3 +558,10 @@ capabilities:
     origin: epic
     origin_ref: epic-7 (7-1..7-4, backlog)
     status: planned
+  - id: CAP-160
+    title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
+    fr: [FR-1, FR-14, FR-20, FR-22, FR-24, FR-33, FR-36]
+    origin: epic
+    origin_ref: epic-16 (16-1..16-4)
+    status: planned
+    surfaces: { route: "/assistant + /agents + /processes + /processes/studio/$workflowId", ui: "AgentExecutionTrace + SourceLineInspectorDrawer" }

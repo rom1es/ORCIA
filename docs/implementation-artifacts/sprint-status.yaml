@@ -162,6 +162,14 @@ development_status:
   15-2-chargeur-declarative-pack-loader-export-zip-et-conversion-packs-sdlc-orcia-docs: done
   15-3-ecran-settings-packs-simplifie-et-monitoring-connecteurs-requis: done
   epic-15-retrospective: optional
+
+  # Epic 16 (traduction consolidée de specs/epic-16-reflexive-agent-harness) — Orchestration Réflexive (Mon Assistant, Mes Agents & Processus Pilotés par l'Objectif), Exploration Chirurgicale #Lstart-end & Articulation avec les Processus Pilotés par les Jalons (CAP-160)
+  epic-16: in-progress
+  16-1-quatre-primitives-exploration-chirurgicale-et-ports-hexagonaux: ready-for-dev
+  16-2-moteur-reflexif-non-deterministe-asyncio-sse-et-suspend-resume: backlog
+  16-3-double-mode-processus-objectif-vs-jalons-dispatcher-et-packs: backlog
+  16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout: backlog
+  epic-16-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
