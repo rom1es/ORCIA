@@ -293,7 +293,7 @@
       },
       "AgentItemResponse": {
         "additionalProperties": false,
-        "description": "Transport schema for a configured Agent (`🤖 Agent`).",
+        "description": "Transport schema for a configured Agent (`🤖 Agent`) with 6 Governance Blocks.",
         "properties": {
           "agent_id": {
             "maxLength": 128,
@@ -310,15 +310,51 @@
             "title": "Agent Kind",
             "type": "string"
           },
+          "allowed_rag_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Rag Sources",
+            "type": "array"
+          },
+          "dialogue_mechanism": {
+            "default": "questionnaire_prealable",
+            "enum": [
+              "questionnaire_prealable",
+              "pause_par_bloc",
+              "direct"
+            ],
+            "title": "Dialogue Mechanism",
+            "type": "string"
+          },
           "enabled_in_workspace": {
             "default": true,
             "title": "Enabled In Workspace",
             "type": "boolean"
           },
+          "guardrails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Guardrails",
+            "type": "array"
+          },
           "handle": {
             "maxLength": 130,
             "minLength": 2,
             "title": "Handle",
+            "type": "string"
+          },
+          "human_partner_role": {
+            "default": "PO_PM",
+            "enum": [
+              "PO_PM",
+              "ARCHITECT",
+              "TECH_LEAD",
+              "SECURITY_QA",
+              "ALL"
+            ],
+            "title": "Human Partner Role",
             "type": "string"
           },
           "instructions": {
@@ -327,16 +363,87 @@
             "title": "Instructions",
             "type": "string"
           },
+          "invocation_modes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invocation Modes",
+            "type": "array"
+          },
+          "llm_model_tier": {
+            "default": "team_default",
+            "enum": [
+              "team_default",
+              "fast",
+              "deep",
+              "discovery"
+            ],
+            "title": "Llm Model Tier",
+            "type": "string"
+          },
+          "max_tokens": {
+            "default": 4096,
+            "maximum": 65536.0,
+            "minimum": 256.0,
+            "title": "Max Tokens",
+            "type": "integer"
+          },
           "mcp_exposed": {
             "default": false,
             "title": "Mcp Exposed",
             "type": "boolean"
+          },
+          "mcp_tool_permissions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Mcp Tool Permissions",
+            "type": "object"
           },
           "name": {
             "maxLength": 255,
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "ontology_views": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ontology Views",
+            "type": "array"
+          },
+          "output_contract_format": {
+            "default": "markdown_structure",
+            "enum": [
+              "markdown_structure",
+              "confluence_draft",
+              "jira_draft",
+              "gate_risk_json"
+            ],
+            "title": "Output Contract Format",
+            "type": "string"
+          },
+          "posture": {
+            "default": "PRODUCER",
+            "enum": [
+              "PRODUCER",
+              "EVALUATOR_GATE"
+            ],
+            "title": "Posture",
+            "type": "string"
+          },
+          "prompt_ref": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Ref"
           },
           "remote_endpoint_url": {
             "anyOf": [
@@ -387,6 +494,18 @@
             ],
             "title": "Source Pack Key"
           },
+          "temperature": {
+            "default": 0.2,
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "type": "number"
+          },
+          "test_bench_validated": {
+            "default": false,
+            "title": "Test Bench Validated",
+            "type": "boolean"
+          },
           "thinking_level": {
             "default": "medium",
             "enum": [
@@ -420,6 +539,11 @@
             ],
             "title": "Visibility Scope",
             "type": "string"
+          },
+          "write_preview_required": {
+            "default": true,
+            "title": "Write Preview Required",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2106,6 +2230,146 @@
         "title": "BmadSkillStepInputItem",
         "type": "object"
       },
+      "BoundedWorkflowRunState": {
+        "properties": {
+          "audit_trail": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Audit Trail",
+            "type": "array"
+          },
+          "current_sub_step_index": {
+            "default": 0,
+            "title": "Current Sub Step Index",
+            "type": "integer"
+          },
+          "execution_mode": {
+            "$ref": "#/components/schemas/ExecutionMode"
+          },
+          "final_artifact_pointer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimCheckPointer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gate_report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatePipelineExecutionReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "iteration": {
+            "default": 1,
+            "title": "Iteration",
+            "type": "integer"
+          },
+          "mcp_context_bundle": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp Context Bundle"
+          },
+          "reentry_mode": {
+            "default": "initial",
+            "enum": [
+              "initial",
+              "corrections"
+            ],
+            "title": "Reentry Mode",
+            "type": "string"
+          },
+          "return_loop_remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Loop Remarks"
+          },
+          "return_loop_target_step_num": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Loop Target Step Num"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "RUNNING",
+            "enum": [
+              "RUNNING",
+              "WAITING_SUBSTEP_HITL",
+              "WAITING_EXTERNAL_GATE",
+              "WAITING_FINAL_ANCHOR",
+              "COMPLETED_APPROVED",
+              "RETURN_LOOP_TRIGGERED",
+              "SLA_SUSPENDED",
+              "FAILED_GATES"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sub_step_records": {
+            "items": {
+              "$ref": "#/components/schemas/SubStepExecutionRecord"
+            },
+            "title": "Sub Step Records",
+            "type": "array"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_slug": {
+            "title": "Workflow Slug",
+            "type": "string"
+          },
+          "workflow_version": {
+            "title": "Workflow Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workflow_id",
+          "workflow_slug",
+          "workflow_version",
+          "execution_mode"
+        ],
+        "title": "BoundedWorkflowRunState",
+        "type": "object"
+      },
       "CasObjectResponse": {
         "additionalProperties": false,
         "description": "Response payload for `GET /api/v1/cas/{sha256}`.",
@@ -2820,6 +3084,51 @@
         "title": "ChunkApprovalSchemaItem",
         "type": "object"
       },
+      "ClaimCheckPointer": {
+        "description": "Immutable reference to an artifact stored in SeaweedFS (S3) (`ADR-02` / `ADR-10`).",
+        "properties": {
+          "byte_size": {
+            "minimum": 0.0,
+            "title": "Byte Size",
+            "type": "integer"
+          },
+          "inline_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional short preview (< 4 KB) when payload is small.",
+            "title": "Inline Preview"
+          },
+          "mime_type": {
+            "default": "text/markdown",
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "s3_uri": {
+            "pattern": "^s3://orcia-artifacts/.+$",
+            "title": "S3 Uri",
+            "type": "string"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "s3_uri",
+          "sha256",
+          "byte_size"
+        ],
+        "title": "ClaimCheckPointer",
+        "type": "object"
+      },
       "ClaimTaskRequest": {
         "additionalProperties": false,
         "description": "Request body for claiming a task notification or step execution (`AD-4`).",
@@ -3529,6 +3838,73 @@
         "title": "ConfigureWorkspaceTabsRequest",
         "type": "object"
       },
+      "ConnectorHealthStatus": {
+        "description": "Health check status for an enterprise connector (`OrciaConnectorProtocol.healthcheck`).",
+        "properties": {
+          "connector_type": {
+            "description": "Ex: mcp:atlassian-jira, mcp:git-provider",
+            "title": "Connector Type",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "latency_ms": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "connector_type",
+          "ok"
+        ],
+        "title": "ConnectorHealthStatus",
+        "type": "object"
+      },
+      "ConnectorRequirementHealthItemResponse": {
+        "properties": {
+          "connector_type": {
+            "title": "Connector Type",
+            "type": "string"
+          },
+          "health": {
+            "$ref": "#/components/schemas/ConnectorHealthStatus"
+          },
+          "required_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Scopes",
+            "type": "array"
+          },
+          "used_for": {
+            "title": "Used For",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_type",
+          "required_scopes",
+          "used_for",
+          "health"
+        ],
+        "title": "ConnectorRequirementHealthItemResponse",
+        "type": "object"
+      },
       "ConnectorTestConnectionResponse": {
         "additionalProperties": false,
         "description": "Fail-fast DBOS connector healthcheck response (`< 5 s`, `Story 8.4`).",
@@ -3741,6 +4117,66 @@
         "title": "ContextualHelpRollbackRequest",
         "type": "object"
       },
+      "ContractParameter": {
+        "description": "Generic input parameter referencing Federated Catalog URIs without domain coupling.",
+        "properties": {
+          "catalog_entity_uri_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ex: catalog://issue_tracker/work_item/{key} or catalog://hr_system/employee/{id}",
+            "title": "Catalog Entity Uri Pattern"
+          },
+          "default_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Value"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "default": true,
+            "title": "Required",
+            "type": "boolean"
+          },
+          "scalar_type": {
+            "default": "string",
+            "enum": [
+              "string",
+              "integer",
+              "boolean",
+              "enum",
+              "catalog_ref"
+            ],
+            "title": "Scalar Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "label"
+        ],
+        "title": "ContractParameter",
+        "type": "object"
+      },
       "ControlCenterOverviewResponse": {
         "additionalProperties": false,
         "description": "Consolidated 4-tab fractal payload (`GET /api/v1/control-center/overview`, `Story 5.2`).",
@@ -3857,6 +4293,15 @@
         ],
         "title": "ControlCenterOverviewResponse",
         "type": "object"
+      },
+      "ControlMaturityStatus": {
+        "enum": [
+          "place",
+          "ajouter",
+          "hypothese"
+        ],
+        "title": "ControlMaturityStatus",
+        "type": "string"
       },
       "ConversationTurnMessageItem": {
         "additionalProperties": false,
@@ -4248,6 +4693,132 @@
         "title": "DeclarativeOverrideLayerResponse",
         "type": "object"
       },
+      "DeclarativePackSummaryResponse": {
+        "properties": {
+          "agents_count": {
+            "title": "Agents Count",
+            "type": "integer"
+          },
+          "agents_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Agents Slugs",
+            "type": "array"
+          },
+          "bundle_sha256": {
+            "title": "Bundle Sha256",
+            "type": "string"
+          },
+          "connector_health": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectorRequirementHealthItemResponse"
+            },
+            "title": "Connector Health",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "gates_count": {
+            "title": "Gates Count",
+            "type": "integer"
+          },
+          "gates_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gates Slugs",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quick_actions": {
+            "items": {
+              "$ref": "#/components/schemas/QuickActionSpec"
+            },
+            "title": "Quick Actions",
+            "type": "array"
+          },
+          "rbac_namespace": {
+            "title": "Rbac Namespace",
+            "type": "string"
+          },
+          "required_connectors": {
+            "items": {
+              "$ref": "#/components/schemas/RequiredConnectorSpec"
+            },
+            "title": "Required Connectors",
+            "type": "array"
+          },
+          "skills_count": {
+            "title": "Skills Count",
+            "type": "integer"
+          },
+          "skills_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills Slugs",
+            "type": "array"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "vsm_count": {
+            "title": "Vsm Count",
+            "type": "integer"
+          },
+          "workflows_count": {
+            "title": "Workflows Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "version",
+          "description",
+          "rbac_namespace",
+          "bundle_sha256",
+          "agents_count",
+          "skills_count",
+          "gates_count",
+          "vsm_count",
+          "workflows_count"
+        ],
+        "title": "DeclarativePackSummaryResponse",
+        "type": "object"
+      },
+      "DeclarativePacksListResponse": {
+        "properties": {
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/DeclarativePackSummaryResponse"
+            },
+            "title": "Packs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "packs"
+        ],
+        "title": "DeclarativePacksListResponse",
+        "type": "object"
+      },
       "DelegateGrantRequest": {
         "additionalProperties": false,
         "description": "Request to delegate a subset of held permissions (`grant` confinement, `Story 8.1`).",
@@ -4492,6 +5063,110 @@
         "title": "DeploymentRolesListResponse",
         "type": "object"
       },
+      "DeterministicControlExecutionRecord": {
+        "properties": {
+          "attempts": {
+            "default": 1,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "control_id": {
+            "title": "Control Id",
+            "type": "string"
+          },
+          "diagnostic_stderr": {
+            "default": "",
+            "title": "Diagnostic Stderr",
+            "type": "string"
+          },
+          "runner_plugin_id": {
+            "title": "Runner Plugin Id",
+            "type": "string"
+          },
+          "self_healed": {
+            "default": false,
+            "title": "Self Healed",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "NOMINAL",
+              "FAILED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Violations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "control_id",
+          "runner_plugin_id",
+          "status"
+        ],
+        "title": "DeterministicControlExecutionRecord",
+        "type": "object"
+      },
+      "DeterministicControlSpec": {
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_self_heal_retries": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Max Self Heal Retries",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "on_ko_behavior": {
+            "title": "On Ko Behavior",
+            "type": "string"
+          },
+          "runner_plugin_id": {
+            "description": "Generic runner ID in Core (`markdown_contract_runner`, etc.)",
+            "title": "Runner Plugin Id",
+            "type": "string"
+          },
+          "short_label": {
+            "title": "Short Label",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ControlMaturityStatus",
+            "default": "place"
+          },
+          "verifies_description": {
+            "title": "Verifies Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "short_label",
+          "runner_plugin_id",
+          "verifies_description",
+          "on_ko_behavior"
+        ],
+        "title": "DeterministicControlSpec",
+        "type": "object"
+      },
       "DeterministicGateEvaluateRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/gates/deterministic/evaluate` (`AD-9`, `FR-17`).",
@@ -4639,6 +5314,103 @@
           "trace_id"
         ],
         "title": "DeterministicGateEvaluateResponse",
+        "type": "object"
+      },
+      "DeterministicSubStepSpec": {
+        "description": "DBOS-orchestrated deterministic sub-step (`ADR-01` & `ADR-02`).",
+        "properties": {
+          "approver_rbac_role": {
+            "default": "workspace:member",
+            "title": "Approver Rbac Role",
+            "type": "string"
+          },
+          "checkpoint_label": {
+            "description": "Ex: Validation de la Qualification",
+            "title": "Checkpoint Label",
+            "type": "string"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "instruction_prompt_or_ref": {
+            "title": "Instruction Prompt Or Ref",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "output_description": {
+            "title": "Output Description",
+            "type": "string"
+          },
+          "requires_human_checkpoint": {
+            "default": true,
+            "title": "Requires Human Checkpoint",
+            "type": "boolean"
+          },
+          "role_description": {
+            "title": "Role Description",
+            "type": "string"
+          },
+          "short_label": {
+            "title": "Short Label",
+            "type": "string"
+          },
+          "skill_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skill Refs",
+            "type": "array"
+          },
+          "step_executor_type": {
+            "default": "agent_executor",
+            "enum": [
+              "agent_executor",
+              "program_executor"
+            ],
+            "title": "Step Executor Type",
+            "type": "string"
+          },
+          "toolbox_mcp_permissions": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Toolbox Mcp Permissions",
+            "type": "array"
+          },
+          "trigger_condition_label": {
+            "title": "Trigger Condition Label",
+            "type": "string"
+          },
+          "write_preview_required": {
+            "default": false,
+            "description": "If True, Permission Broker blocks external write until human preview approval",
+            "title": "Write Preview Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "short_label",
+          "trigger_condition_label",
+          "role_description",
+          "instruction_prompt_or_ref",
+          "output_description",
+          "checkpoint_label"
+        ],
+        "title": "DeterministicSubStepSpec",
         "type": "object"
       },
       "DiscoveredRemoteCapabilitySchema": {
@@ -5141,6 +5913,16 @@
         ],
         "title": "EffectiveWorkflowResolveResponse",
         "type": "object"
+      },
+      "EffortLevel": {
+        "enum": [
+          "default",
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "EffortLevel",
+        "type": "string"
       },
       "EvaluateResourceAccessRequest": {
         "additionalProperties": false,
@@ -5861,6 +6643,14 @@
         "title": "ExecuteTierRoutingRequest",
         "type": "object"
       },
+      "ExecutionMode": {
+        "enum": [
+          "native_orcia",
+          "external_delegated"
+        ],
+        "title": "ExecutionMode",
+        "type": "string"
+      },
       "ExportFromWorkspaceToPackRequest": {
         "additionalProperties": false,
         "description": "Request payload for Process 4 (`export-from-workspace-to-pack`).",
@@ -6275,6 +7065,66 @@
           "trace_id"
         ],
         "title": "GateEvaluationsListResponse",
+        "type": "object"
+      },
+      "GateExecutionStrategy": {
+        "enum": [
+          "fail_fast",
+          "aggregated_audit"
+        ],
+        "title": "GateExecutionStrategy",
+        "type": "string"
+      },
+      "GatePipelineExecutionReport": {
+        "properties": {
+          "deterministic_passed": {
+            "title": "Deterministic Passed",
+            "type": "boolean"
+          },
+          "deterministic_records": {
+            "items": {
+              "$ref": "#/components/schemas/DeterministicControlExecutionRecord"
+            },
+            "title": "Deterministic Records",
+            "type": "array"
+          },
+          "final_artifact_text": {
+            "title": "Final Artifact Text",
+            "type": "string"
+          },
+          "overall_status": {
+            "enum": [
+              "NOMINAL",
+              "FAILED_DETERMINISTIC",
+              "ESCALATED_PROBABILISTIC"
+            ],
+            "title": "Overall Status",
+            "type": "string"
+          },
+          "probabilistic_invoked": {
+            "title": "Probabilistic Invoked",
+            "type": "boolean"
+          },
+          "probabilistic_records": {
+            "items": {
+              "$ref": "#/components/schemas/ProbabilisticControlExecutionRecord"
+            },
+            "title": "Probabilistic Records",
+            "type": "array"
+          },
+          "total_self_heal_retries_used": {
+            "default": 0,
+            "title": "Total Self Heal Retries Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "overall_status",
+          "final_artifact_text",
+          "deterministic_passed",
+          "probabilistic_invoked"
+        ],
+        "title": "GatePipelineExecutionReport",
         "type": "object"
       },
       "GenerateAndAttachHelpRequest": {
@@ -7047,6 +7897,113 @@
           "markdown_body"
         ],
         "title": "HelpArticleSchemaItem",
+        "type": "object"
+      },
+      "HitlSignalRequest": {
+        "properties": {
+          "action": {
+            "enum": [
+              "APPROVE",
+              "AMEND_DIFF",
+              "REJECT_RETRY_SUBSTEP",
+              "REJECT_AND_LOOP",
+              "SUSPEND_SLA"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_id": {
+            "default": "u-claire-po",
+            "title": "Actor Id",
+            "type": "string"
+          },
+          "actor_role": {
+            "default": "sdlc:po",
+            "title": "Actor Role",
+            "type": "string"
+          },
+          "amended_markdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amended Markdown"
+          },
+          "correction_remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correction Remarks"
+          },
+          "external_event_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Event Payload"
+          },
+          "signed_approval_token": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignedApprovalToken"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sub_step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Step Id"
+          },
+          "target_step_num": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Step Num"
+          },
+          "target_sub_step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Sub Step Id"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "HitlSignalRequest",
         "type": "object"
       },
       "HumanAnchorSignRequest": {
@@ -8178,6 +9135,68 @@
           "resolved_inputs"
         ],
         "title": "HydratedStepContextSchemaItem",
+        "type": "object"
+      },
+      "ImpactAssessmentResult": {
+        "description": "Result matrix returned by What-If sandbox simulation (`POST .../what-if`).",
+        "properties": {
+          "deterministic_gates_passed": {
+            "title": "Deterministic Gates Passed",
+            "type": "boolean"
+          },
+          "estimated_cost_usd": {
+            "title": "Estimated Cost Usd",
+            "type": "number"
+          },
+          "estimated_tokens": {
+            "title": "Estimated Tokens",
+            "type": "integer"
+          },
+          "external_writes_executed": {
+            "default": 0,
+            "title": "External Writes Executed",
+            "type": "integer"
+          },
+          "findings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "probabilistic_gates_passed": {
+            "title": "Probabilistic Gates Passed",
+            "type": "boolean"
+          },
+          "sandbox_isolated": {
+            "default": true,
+            "title": "Sandbox Isolated",
+            "type": "boolean"
+          },
+          "sub_steps_evaluated": {
+            "title": "Sub Steps Evaluated",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "version",
+          "sub_steps_evaluated",
+          "deterministic_gates_passed",
+          "probabilistic_gates_passed",
+          "estimated_tokens",
+          "estimated_cost_usd"
+        ],
+        "title": "ImpactAssessmentResult",
         "type": "object"
       },
       "InFlowPromotionRequest": {
@@ -10451,6 +11470,89 @@
         "title": "MemberInvitationInputItem",
         "type": "object"
       },
+      "NonDeterministicControlSpec": {
+        "properties": {
+          "agent_ref": {
+            "description": "Agent reference in the Pack Registry",
+            "title": "Agent Ref",
+            "type": "string"
+          },
+          "evaluator_type": {
+            "enum": [
+              "adversarial_agent",
+              "custom_agent_evaluator",
+              "self_check"
+            ],
+            "title": "Evaluator Type",
+            "type": "string"
+          },
+          "hypothesis_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis Note"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Recommended: distinct model family from producer",
+            "title": "Model Override"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "on_ko_behavior": {
+            "title": "On Ko Behavior",
+            "type": "string"
+          },
+          "risk_threshold": {
+            "default": 0.7,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Risk Threshold",
+            "type": "number"
+          },
+          "short_label": {
+            "title": "Short Label",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ControlMaturityStatus",
+            "default": "place"
+          },
+          "verifies_description": {
+            "title": "Verifies Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "short_label",
+          "evaluator_type",
+          "agent_ref",
+          "verifies_description",
+          "on_ko_behavior"
+        ],
+        "title": "NonDeterministicControlSpec",
+        "type": "object"
+      },
       "OidcLoginRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/auth/login/oidc` (Enterprise SSO OIDC / OAuth 2.1).",
@@ -12391,6 +13493,48 @@
         "title": "PlatformSetupStateResponse",
         "type": "object"
       },
+      "ProbabilisticControlExecutionRecord": {
+        "properties": {
+          "agent_ref": {
+            "title": "Agent Ref",
+            "type": "string"
+          },
+          "control_id": {
+            "title": "Control Id",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "risk_score": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Risk Score",
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "NOMINAL",
+              "ALERT",
+              "ESCALATED"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "control_id",
+          "agent_ref",
+          "status",
+          "risk_score"
+        ],
+        "title": "ProbabilisticControlExecutionRecord",
+        "type": "object"
+      },
       "ProblemDetails": {
         "additionalProperties": false,
         "description": "RFC 9457 Problem Details envelope returned on all ORCIA API errors.",
@@ -12545,6 +13689,34 @@
           "content_sha256"
         ],
         "title": "PromptLayerBlockSchemaItem",
+        "type": "object"
+      },
+      "QuickActionSpec": {
+        "properties": {
+          "icon": {
+            "default": "play",
+            "title": "Icon",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "target_workflow_slug": {
+            "title": "Target Workflow Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "target_workflow_slug"
+        ],
+        "title": "QuickActionSpec",
         "type": "object"
       },
       "RagReciprocityResponse": {
@@ -13195,6 +14367,32 @@
         "title": "RemoteServiceTestAndDiscoverResponse",
         "type": "object"
       },
+      "RequiredConnectorSpec": {
+        "properties": {
+          "connector_type": {
+            "description": "Ex: mcp:enterprise-tracker",
+            "title": "Connector Type",
+            "type": "string"
+          },
+          "required_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Scopes",
+            "type": "array"
+          },
+          "used_for": {
+            "title": "Used For",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_type",
+          "used_for"
+        ],
+        "title": "RequiredConnectorSpec",
+        "type": "object"
+      },
       "ResetAssistantStudioGraphRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/governance/mode-b/reset` (`Story 10.1`).",
@@ -13474,6 +14672,78 @@
           "expires_at"
         ],
         "title": "ResourceLeaseItemResponse",
+        "type": "object"
+      },
+      "ReturnLoopSpec": {
+        "properties": {
+          "behavior_actuel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Behavior Actuel"
+          },
+          "behavior_ia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Behavior Ia"
+          },
+          "is_primary": {
+            "default": false,
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "reentry_mode": {
+            "default": "corrections",
+            "title": "Reentry Mode",
+            "type": "string"
+          },
+          "remarks_carried": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks Carried"
+          },
+          "target_step_num": {
+            "title": "Target Step Num",
+            "type": "string"
+          },
+          "target_sub_step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Sub Step Id"
+          },
+          "when_condition": {
+            "title": "When Condition",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_step_num",
+          "when_condition"
+        ],
+        "title": "ReturnLoopSpec",
         "type": "object"
       },
       "RolePermissionGrantResponse": {
@@ -13887,6 +15157,40 @@
         "title": "SaveAssistantStudioGraphRequest",
         "type": "object"
       },
+      "SaveWorkflowV2Request": {
+        "properties": {
+          "publish": {
+            "default": false,
+            "title": "Publish",
+            "type": "boolean"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowDefinitionV2-Input"
+          }
+        },
+        "required": [
+          "workflow"
+        ],
+        "title": "SaveWorkflowV2Request",
+        "type": "object"
+      },
+      "SaveWorkflowV2Response": {
+        "properties": {
+          "forked_as_draft": {
+            "title": "Forked As Draft",
+            "type": "boolean"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowDefinitionV2-Output"
+          }
+        },
+        "required": [
+          "workflow",
+          "forked_as_draft"
+        ],
+        "title": "SaveWorkflowV2Response",
+        "type": "object"
+      },
       "ScopeMutationCheckResponse": {
         "additionalProperties": false,
         "description": "Response for `POST /api/v1/workspaces/{workspace_id}/mutations/check`.",
@@ -14262,6 +15566,43 @@
           "trace_id"
         ],
         "title": "ShellNavigationResponse",
+        "type": "object"
+      },
+      "SignedApprovalToken": {
+        "description": "Token issued by the Permission Broker after human validation of a `WritePreviewCard`.",
+        "properties": {
+          "approved_at_utc": {
+            "title": "Approved At Utc",
+            "type": "string"
+          },
+          "approver_user_id": {
+            "title": "Approver User Id",
+            "type": "string"
+          },
+          "broker_signature": {
+            "minLength": 16,
+            "title": "Broker Signature",
+            "type": "string"
+          },
+          "payload_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Payload Sha256",
+            "type": "string"
+          },
+          "preview_id": {
+            "title": "Preview Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preview_id",
+          "approver_user_id",
+          "approved_at_utc",
+          "payload_sha256",
+          "broker_signature"
+        ],
+        "title": "SignedApprovalToken",
         "type": "object"
       },
       "SkillItemResponse": {
@@ -14812,6 +16153,145 @@
           "message_fr"
         ],
         "title": "StarlarkVerdictSchema",
+        "type": "object"
+      },
+      "StartWorkflowV2RunRequest": {
+        "properties": {
+          "auto_approve_checkpoints": {
+            "default": false,
+            "title": "Auto Approve Checkpoints",
+            "type": "boolean"
+          },
+          "correction_remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correction Remarks"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "iteration": {
+            "default": 1,
+            "title": "Iteration",
+            "type": "integer"
+          },
+          "reentry_mode": {
+            "default": "initial",
+            "title": "Reentry Mode",
+            "type": "string"
+          }
+        },
+        "title": "StartWorkflowV2RunRequest",
+        "type": "object"
+      },
+      "StepControlsPipeline-Input": {
+        "properties": {
+          "delegated_to_step_num": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delegated To Step Num"
+          },
+          "delegation_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delegation Note"
+          },
+          "deterministic": {
+            "items": {
+              "$ref": "#/components/schemas/DeterministicControlSpec"
+            },
+            "title": "Deterministic",
+            "type": "array"
+          },
+          "non_deterministic": {
+            "items": {
+              "$ref": "#/components/schemas/NonDeterministicControlSpec"
+            },
+            "title": "Non Deterministic",
+            "type": "array"
+          },
+          "sandbox_dry_run": {
+            "default": true,
+            "title": "Sandbox Dry Run",
+            "type": "boolean"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/GateExecutionStrategy",
+            "default": "fail_fast"
+          }
+        },
+        "title": "StepControlsPipeline",
+        "type": "object"
+      },
+      "StepControlsPipeline-Output": {
+        "properties": {
+          "delegated_to_step_num": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delegated To Step Num"
+          },
+          "delegation_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delegation Note"
+          },
+          "deterministic": {
+            "items": {
+              "$ref": "#/components/schemas/DeterministicControlSpec"
+            },
+            "title": "Deterministic",
+            "type": "array"
+          },
+          "non_deterministic": {
+            "items": {
+              "$ref": "#/components/schemas/NonDeterministicControlSpec"
+            },
+            "title": "Non Deterministic",
+            "type": "array"
+          },
+          "sandbox_dry_run": {
+            "default": true,
+            "title": "Sandbox Dry Run",
+            "type": "boolean"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/GateExecutionStrategy",
+            "default": "fail_fast"
+          }
+        },
+        "title": "StepControlsPipeline",
         "type": "object"
       },
       "StepExecuteRequest": {
@@ -15408,6 +16888,88 @@
           "external_writes_count"
         ],
         "title": "StudioDryRunResponse",
+        "type": "object"
+      },
+      "SubStepExecutionRecord": {
+        "properties": {
+          "artifact_pointer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimCheckPointer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "correction_remarks_applied": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correction Remarks Applied"
+          },
+          "human_actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Actor Id"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "iteration": {
+            "title": "Iteration",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "WAITING_CHECKPOINT",
+              "WAITING_WRITE_PREVIEW",
+              "WAITING_EXTERNAL_EVENT",
+              "COMPLETED",
+              "SKIPPED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sub_step_id": {
+            "title": "Sub Step Id",
+            "type": "string"
+          },
+          "sub_step_name": {
+            "title": "Sub Step Name",
+            "type": "string"
+          },
+          "write_preview_card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WritePreviewCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sub_step_id",
+          "sub_step_name",
+          "iteration",
+          "idempotency_key",
+          "status"
+        ],
+        "title": "SubStepExecutionRecord",
         "type": "object"
       },
       "SubWorkflowLockSchemaItem": {
@@ -16644,6 +18206,17 @@
             ],
             "title": "Mcp Exposed"
           },
+          "test_bench_validated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Bench Validated"
+          },
           "thinking_level": {
             "anyOf": [
               {
@@ -17201,6 +18774,36 @@
             ],
             "title": "Agent Kind"
           },
+          "allowed_rag_sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Rag Sources"
+          },
+          "dialogue_mechanism": {
+            "anyOf": [
+              {
+                "enum": [
+                  "questionnaire_prealable",
+                  "pause_par_bloc",
+                  "direct"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dialogue Mechanism"
+          },
           "enabled_in_workspace": {
             "anyOf": [
               {
@@ -17212,11 +18815,87 @@
             ],
             "title": "Enabled In Workspace"
           },
+          "guardrails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardrails"
+          },
+          "human_partner_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PO_PM",
+                  "ARCHITECT",
+                  "TECH_LEAD",
+                  "SECURITY_QA",
+                  "ALL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Partner Role"
+          },
           "instructions": {
             "maxLength": 8000,
             "minLength": 1,
             "title": "Instructions",
             "type": "string"
+          },
+          "invocation_modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invocation Modes"
+          },
+          "llm_model_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "team_default",
+                  "fast",
+                  "deep",
+                  "discovery"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model Tier"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "maximum": 65536.0,
+                "minimum": 256.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
           },
           "mcp_exposed": {
             "anyOf": [
@@ -17229,11 +18908,83 @@
             ],
             "title": "Mcp Exposed"
           },
+          "mcp_tool_permissions": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp Tool Permissions"
+          },
           "name": {
             "maxLength": 255,
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "ontology_views": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Views"
+          },
+          "output_contract_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "markdown_structure",
+                  "confluence_draft",
+                  "jira_draft",
+                  "gate_risk_json"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Contract Format"
+          },
+          "posture": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PRODUCER",
+                  "EVALUATOR_GATE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posture"
+          },
+          "prompt_ref": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Ref"
           },
           "remote_endpoint_url": {
             "anyOf": [
@@ -17272,6 +19023,30 @@
             ],
             "title": "Source Pack Key"
           },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "test_bench_validated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Bench Validated"
+          },
           "thinking_level": {
             "default": "medium",
             "enum": [
@@ -17305,6 +19080,17 @@
               }
             ],
             "title": "Visibility Scope"
+          },
+          "write_preview_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Write Preview Required"
           }
         },
         "required": [
@@ -18350,6 +20136,112 @@
         "title": "ValidateHelpArticleResponse",
         "type": "object"
       },
+      "ValueStreamMapSpec": {
+        "properties": {
+          "agents_catalog": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Agents Catalog",
+            "type": "object"
+          },
+          "guiding_principle": {
+            "title": "Guiding Principle",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "knowledge_foundation": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Knowledge Foundation",
+            "type": "object"
+          },
+          "nodes": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "passage": "#/components/schemas/VsmPassageNodeSpec",
+                  "step": "#/components/schemas/VsmStepNodeSpec"
+                },
+                "propertyName": "node_type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/VsmStepNodeSpec"
+                },
+                {
+                  "$ref": "#/components/schemas/VsmPassageNodeSpec"
+                }
+              ]
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "opportunities": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Opportunities",
+            "type": "object"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "phases": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Phases",
+            "type": "array"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "source_note": {
+            "title": "Source Note",
+            "type": "string"
+          },
+          "subtitle": {
+            "title": "Subtitle",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tools_note": {
+            "default": "",
+            "title": "Tools Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "subtitle",
+          "source_note",
+          "guiding_principle",
+          "pack_id",
+          "phases",
+          "nodes"
+        ],
+        "title": "ValueStreamMapSpec",
+        "type": "object"
+      },
       "VerifyAndFilterCitationsRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/citations/verify-turn` (`Story 10.3`).",
@@ -18488,6 +20380,361 @@
         "title": "VerifyAndFilterCitationsResponse",
         "type": "object"
       },
+      "VsmListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ValueStreamMapSpec"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "VsmListResponse",
+        "type": "object"
+      },
+      "VsmPassageNodeSpec": {
+        "properties": {
+          "ai_assistable_scope": {
+            "title": "Ai Assistable Scope",
+            "type": "string"
+          },
+          "approver_rbac_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Approver Rbac Roles",
+            "type": "array"
+          },
+          "delegable_long_term": {
+            "title": "Delegable Long Term",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "human_mandatory_rationale": {
+            "title": "Human Mandatory Rationale",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "node_type": {
+            "const": "passage",
+            "default": "passage",
+            "title": "Node Type",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "phase_id": {
+            "title": "Phase Id",
+            "type": "string"
+          },
+          "return_loops": {
+            "items": {
+              "$ref": "#/components/schemas/ReturnLoopSpec"
+            },
+            "title": "Return Loops",
+            "type": "array"
+          },
+          "short_title": {
+            "title": "Short Title",
+            "type": "string"
+          },
+          "sla_timeout_hours": {
+            "default": 72,
+            "title": "Sla Timeout Hours",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "phase_id",
+          "short_title",
+          "title",
+          "description",
+          "human_mandatory_rationale",
+          "ai_assistable_scope",
+          "delegable_long_term"
+        ],
+        "title": "VsmPassageNodeSpec",
+        "type": "object"
+      },
+      "VsmStepNodeSpec": {
+        "properties": {
+          "actor_actuel": {
+            "title": "Actor Actuel",
+            "type": "string"
+          },
+          "actor_ia": {
+            "title": "Actor Ia",
+            "type": "string"
+          },
+          "actor_ia_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Ia Short"
+          },
+          "agent_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ref"
+          },
+          "badge_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Label"
+          },
+          "controls": {
+            "$ref": "#/components/schemas/StepControlsPipeline-Output"
+          },
+          "detail_markdown": {
+            "default": "",
+            "title": "Detail Markdown",
+            "type": "string"
+          },
+          "human_co_author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Co Author"
+          },
+          "humans_actuel": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Humans Actuel",
+            "type": "array"
+          },
+          "humans_ia": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Humans Ia",
+            "type": "array"
+          },
+          "input_actuel": {
+            "title": "Input Actuel",
+            "type": "string"
+          },
+          "input_ia": {
+            "title": "Input Ia",
+            "type": "string"
+          },
+          "input_ia_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Ia Short"
+          },
+          "interactions_actuel": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Interactions Actuel",
+            "type": "array"
+          },
+          "interactions_ia": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Interactions Ia",
+            "type": "array"
+          },
+          "interactions_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interactions Note"
+          },
+          "linked_workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Workflow Id"
+          },
+          "node_type": {
+            "const": "step",
+            "default": "step",
+            "title": "Node Type",
+            "type": "string"
+          },
+          "num": {
+            "title": "Num",
+            "type": "string"
+          },
+          "opportunity_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Opportunity Codes",
+            "type": "array"
+          },
+          "output_actuel": {
+            "title": "Output Actuel",
+            "type": "string"
+          },
+          "output_ia": {
+            "title": "Output Ia",
+            "type": "string"
+          },
+          "output_ia_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Ia Short"
+          },
+          "phase_id": {
+            "title": "Phase Id",
+            "type": "string"
+          },
+          "platform_badge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform Badge"
+          },
+          "sub_step_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sub Step Ids",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tools_actuel": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools Actuel",
+            "type": "array"
+          },
+          "tools_ia": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools Ia",
+            "type": "array"
+          },
+          "validation_actuel": {
+            "title": "Validation Actuel",
+            "type": "string"
+          },
+          "validation_ia": {
+            "title": "Validation Ia",
+            "type": "string"
+          },
+          "validation_ia_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation Ia Short"
+          }
+        },
+        "required": [
+          "num",
+          "phase_id",
+          "title",
+          "input_actuel",
+          "input_ia",
+          "output_actuel",
+          "output_ia",
+          "actor_actuel",
+          "actor_ia",
+          "validation_actuel",
+          "validation_ia"
+        ],
+        "title": "VsmStepNodeSpec",
+        "type": "object"
+      },
       "WelcomeSetupFirstAdminRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`).",
@@ -18594,25 +20841,6 @@
           "trace_id"
         ],
         "title": "WelcomeSetupFirstAdminResponse",
-        "type": "object"
-      },
-      "WhatIfSimulationRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "concept_key": {
-            "title": "Concept Key",
-            "type": "string"
-          },
-          "proposed_change": {
-            "title": "Proposed Change",
-            "type": "string"
-          }
-        },
-        "required": [
-          "concept_key",
-          "proposed_change"
-        ],
-        "title": "WhatIfSimulationRequest",
         "type": "object"
       },
       "WhatIfSimulationResponse": {
@@ -19034,6 +21262,38 @@
         "title": "WorkflowAsCodeDefinitionSchemaItem",
         "type": "object"
       },
+      "WorkflowContract": {
+        "properties": {
+          "output_schema_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ex: pack://domain-pack/schemas/study-v1.json",
+            "title": "Output Schema Uri"
+          },
+          "parameters": {
+            "items": {
+              "$ref": "#/components/schemas/ContractParameter"
+            },
+            "title": "Parameters",
+            "type": "array"
+          },
+          "required_markdown_sections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Markdown Sections",
+            "type": "array"
+          }
+        },
+        "title": "WorkflowContract",
+        "type": "object"
+      },
       "WorkflowDefinitionResponseItem": {
         "additionalProperties": false,
         "description": "Serialized workflow definition (`ORCIA` native or `BMAD_PACK`).",
@@ -19166,6 +21426,264 @@
         ],
         "title": "WorkflowDefinitionResponseItem",
         "type": "object"
+      },
+      "WorkflowDefinitionV2-Input": {
+        "description": "Bounded executable DBOS workflow attachable to a VSM step.",
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/WorkflowContract"
+          },
+          "controls": {
+            "$ref": "#/components/schemas/StepControlsPipeline-Input"
+          },
+          "effort": {
+            "$ref": "#/components/schemas/EffortLevel",
+            "default": "default"
+          },
+          "execution_mode": {
+            "$ref": "#/components/schemas/ExecutionMode",
+            "default": "native_orcia"
+          },
+          "external_completion_event": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Outbox event triggering the ORCIA Gatekeeper after external work",
+            "title": "External Completion Event"
+          },
+          "external_tool_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Informational label when EXTERNAL_DELEGATED_GATE",
+            "title": "External Tool Label"
+          },
+          "global_system_prompt_or_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global System Prompt Or Ref"
+          },
+          "guardrails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Guardrails",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "knowledge_feedback_target_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Feedback Target Agent"
+          },
+          "linked_vsm_step_nums": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Linked Vsm Step Nums",
+            "type": "array"
+          },
+          "model_override": {
+            "default": "team_default",
+            "title": "Model Override",
+            "type": "string"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkflowLifecycleStatus",
+            "default": "draft"
+          },
+          "sub_steps": {
+            "items": {
+              "$ref": "#/components/schemas/DeterministicSubStepSpec"
+            },
+            "title": "Sub Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "pack_id"
+        ],
+        "title": "WorkflowDefinitionV2",
+        "type": "object"
+      },
+      "WorkflowDefinitionV2-Output": {
+        "description": "Bounded executable DBOS workflow attachable to a VSM step.",
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/WorkflowContract"
+          },
+          "controls": {
+            "$ref": "#/components/schemas/StepControlsPipeline-Output"
+          },
+          "effort": {
+            "$ref": "#/components/schemas/EffortLevel",
+            "default": "default"
+          },
+          "execution_mode": {
+            "$ref": "#/components/schemas/ExecutionMode",
+            "default": "native_orcia"
+          },
+          "external_completion_event": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Outbox event triggering the ORCIA Gatekeeper after external work",
+            "title": "External Completion Event"
+          },
+          "external_tool_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Informational label when EXTERNAL_DELEGATED_GATE",
+            "title": "External Tool Label"
+          },
+          "global_system_prompt_or_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global System Prompt Or Ref"
+          },
+          "guardrails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Guardrails",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "knowledge_feedback_target_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Feedback Target Agent"
+          },
+          "linked_vsm_step_nums": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Linked Vsm Step Nums",
+            "type": "array"
+          },
+          "model_override": {
+            "default": "team_default",
+            "title": "Model Override",
+            "type": "string"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkflowLifecycleStatus",
+            "default": "draft"
+          },
+          "sub_steps": {
+            "items": {
+              "$ref": "#/components/schemas/DeterministicSubStepSpec"
+            },
+            "title": "Sub Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "pack_id"
+        ],
+        "title": "WorkflowDefinitionV2",
+        "type": "object"
+      },
+      "WorkflowLifecycleStatus": {
+        "enum": [
+          "draft",
+          "validated_what_if",
+          "published",
+          "archived"
+        ],
+        "title": "WorkflowLifecycleStatus",
+        "type": "string"
       },
       "WorkflowManifestRegisterRequest": {
         "additionalProperties": false,
@@ -19783,6 +22301,18 @@
         "title": "WorkflowStepSpecSchemaItem",
         "type": "object"
       },
+      "WorkflowV2RunResponse": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/BoundedWorkflowRunState"
+          }
+        },
+        "required": [
+          "run"
+        ],
+        "title": "WorkflowV2RunResponse",
+        "type": "object"
+      },
       "WorkflowValidationFindingSchemaItem": {
         "additionalProperties": false,
         "description": "Line-accurate validation finding for a Workflow-as-Code YAML/JSON manifest.",
@@ -19812,6 +22342,22 @@
           "message"
         ],
         "title": "WorkflowValidationFindingSchemaItem",
+        "type": "object"
+      },
+      "WorkflowsV2ListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowDefinitionV2-Output"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "WorkflowsV2ListResponse",
         "type": "object"
       },
       "WorkspaceBootstrapInputItem": {
@@ -20425,6 +22971,47 @@
         "title": "WorkspacesListResponse",
         "type": "object"
       },
+      "WritePreviewCard": {
+        "description": "Preview card returned before any external write (`Write-Preview Gate`, CA-9.5.1).",
+        "properties": {
+          "action_summary": {
+            "title": "Action Summary",
+            "type": "string"
+          },
+          "connector_type": {
+            "title": "Connector Type",
+            "type": "string"
+          },
+          "diff_or_payload_preview": {
+            "additionalProperties": true,
+            "title": "Diff Or Payload Preview",
+            "type": "object"
+          },
+          "payload_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Payload Sha256",
+            "type": "string"
+          },
+          "preview_id": {
+            "title": "Preview Id",
+            "type": "string"
+          },
+          "target_resource_uri": {
+            "title": "Target Resource Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_type",
+          "target_resource_uri",
+          "action_summary",
+          "diff_or_payload_preview",
+          "payload_sha256"
+        ],
+        "title": "WritePreviewCard",
+        "type": "object"
+      },
       "XyFlowEdgeSchemaItem": {
         "additionalProperties": false,
         "description": "`@xyflow/react` v12 edge schema item for Cockpit Canvas (`UX-DR15`).",
@@ -20493,6 +23080,47 @@
           "human_authored_required"
         ],
         "title": "XyFlowNodeSchemaItem",
+        "type": "object"
+      },
+      "orcia_api__schemas__ontology_and_rag__WhatIfSimulationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "proposed_change": {
+            "title": "Proposed Change",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept_key",
+          "proposed_change"
+        ],
+        "title": "WhatIfSimulationRequest",
+        "type": "object"
+      },
+      "orcia_api__schemas__process_studio_v2__WhatIfSimulationRequest": {
+        "properties": {
+          "sample_artifact_markdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Artifact Markdown"
+          },
+          "sample_inputs": {
+            "additionalProperties": true,
+            "title": "Sample Inputs",
+            "type": "object"
+          }
+        },
+        "title": "WhatIfSimulationRequest",
         "type": "object"
       }
     }
@@ -32410,7 +35038,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/WhatIfSimulationRequest"
+                "$ref": "#/components/schemas/orcia_api__schemas__ontology_and_rag__WhatIfSimulationRequest"
               }
             }
           },
@@ -36079,6 +38707,223 @@
         ]
       }
     },
+    "/api/v1/packs": {
+      "get": {
+        "description": "Return all declarative packs from `packs/<domain>/` with real-time connector healthchecks.",
+        "operationId": "list_declarative_packs_api_v1_packs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclarativePacksListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Declarative Packs",
+        "tags": [
+          "Declarative Packs (Epic 15)"
+        ]
+      }
+    },
+    "/api/v1/packs/export/{workspace_id}": {
+      "post": {
+        "description": "Export a workspace's active declarative pack into a downloadable `.zip` (`CA-10.2.2`).",
+        "operationId": "export_workspace_as_declarative_pack_zip_api_v1_packs_export__workspace_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pack_id",
+            "required": false,
+            "schema": {
+              "default": "orcia-pack-sdlc",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Export Workspace As Declarative Pack Zip",
+        "tags": [
+          "Declarative Packs (Epic 15)"
+        ]
+      }
+    },
     "/api/v1/permissions/broker/check-access": {
       "post": {
         "description": "Execute governed connector access check with anti-Confused Deputy and Jira KB brokering.",
@@ -36867,6 +39712,236 @@
         "summary": "Validate monotonic fencing token before shared resource write (`DEC-CONC-01`)",
         "tags": [
           "inbox"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}": {
+      "get": {
+        "description": "Fetch the live state of a bounded workflow v2 run.",
+        "operationId": "get_workflow_v2_run_api_v1_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowV2RunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Workflow V2 Run",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/hitl-signal": {
+      "post": {
+        "description": "Deliver a human checkpoint, WritePreview approval, or 4-action Anchor Card signal.",
+        "operationId": "send_hitl_signal_to_workflow_v2_run_api_v1_runs__run_id__hitl_signal_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HitlSignalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowV2RunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Send Hitl Signal To Workflow V2 Run",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
         ]
       }
     },
@@ -39609,6 +42684,215 @@
         ]
       }
     },
+    "/api/v1/vsm": {
+      "get": {
+        "description": "List all declarative Value Stream Maps (`ValueStreamMapSpec`).",
+        "operationId": "list_value_stream_maps_api_v1_vsm_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VsmListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Value Stream Maps",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/vsm/{vsm_id}": {
+      "get": {
+        "description": "Fetch a single `ValueStreamMapSpec` by ID or slug.",
+        "operationId": "get_value_stream_map_api_v1_vsm__vsm_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vsm_id",
+            "required": true,
+            "schema": {
+              "title": "Vsm Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValueStreamMapSpec"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Value Stream Map",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
     "/api/v1/webhooks/jira/issue-updated": {
       "post": {
         "description": "Process `jira:issue_updated` (`Done`) and publish Replay event to `domain_events_outbox`.",
@@ -40094,6 +43378,573 @@
         "summary": "Save Wizard Step Endpoint",
         "tags": [
           "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/workflows/v2": {
+      "get": {
+        "description": "List all bounded executable `WorkflowDefinitionV2` definitions.",
+        "operationId": "list_workflows_v2_api_v1_workflows_v2_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowsV2ListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Workflows V2",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/workflows/v2/{workflow_id}": {
+      "get": {
+        "description": "Fetch a bounded `WorkflowDefinitionV2` by ID or slug.",
+        "operationId": "get_workflow_v2_api_v1_workflows_v2__workflow_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowDefinitionV2-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Workflow V2",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      },
+      "put": {
+        "description": "Save a workflow in the Studio; auto-forks a `-draft` copy if `PUBLISHED` (`CA-9.1.2`).",
+        "operationId": "save_or_fork_workflow_v2_api_v1_workflows_v2__workflow_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveWorkflowV2Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveWorkflowV2Response"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Save Or Fork Workflow V2",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/workflows/v2/{workflow_id}/runs": {
+      "post": {
+        "description": "Start a bounded DBOS workflow run (`run_bounded_workflow_v2`).",
+        "operationId": "start_workflow_v2_run_api_v1_workflows_v2__workflow_id__runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartWorkflowV2RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowV2RunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Start Workflow V2 Run",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/workflows/v2/{workflow_id}/what-if": {
+      "post": {
+        "description": "Execute an isolated dry-run simulation (`external_writes_executed = 0`, `CA-9.3.4`).",
+        "operationId": "run_workflow_v2_what_if_simulation_api_v1_workflows_v2__workflow_id__what_if_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/orcia_api__schemas__process_studio_v2__WhatIfSimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactAssessmentResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Run Workflow V2 What If Simulation",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
         ]
       }
     },

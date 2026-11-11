@@ -90,7 +90,8 @@ def _json_schema_to_ts(schema: dict[str, Any], indent: int = 4) -> str:
         for prop_name, prop_schema in sorted(props.items()):
             opt = "" if prop_name in required_set else "?"
             prop_ts = _json_schema_to_ts(prop_schema, indent + 2)
-            lines.append(f"{pad}{prop_name}{opt}: {prop_ts};")
+            prop_key = prop_name if prop_name.isidentifier() else json.dumps(prop_name)
+            lines.append(f"{pad}{prop_key}{opt}: {prop_ts};")
         lines.append(f"{closing_pad}}}")
         return "\n".join(lines)
 
@@ -112,7 +113,8 @@ def render_typescript_schema(openapi_spec: dict[str, Any]) -> str:
 
     for name in sorted(schemas.keys()):
         ts_body = _json_schema_to_ts(schemas[name], indent=4)
-        lines.append(f"    {name}: {ts_body};")
+        schema_key = name if name.isidentifier() else json.dumps(name)
+        lines.append(f"    {schema_key}: {ts_body};")
 
     lines.extend(
         [
@@ -147,7 +149,8 @@ def render_typescript_schema(openapi_spec: dict[str, Any]) -> str:
     lines.append("}")
     lines.append("")
     for name in sorted(schemas.keys()):
-        lines.append(f'export type {name} = components["schemas"]["{name}"];')
+        safe_alias = name if name.isidentifier() else name.replace("-", "_")
+        lines.append(f'export type {safe_alias} = components["schemas"]["{name}"];')
     lines.append("")
     return "\n".join(lines)
 
@@ -159,11 +162,16 @@ def render_domain_shards(openapi_spec: dict[str, Any]) -> dict[str, str]:
 
     for domain_mod in SCHEMA_DOMAIN_MODULES:
         mod = importlib.import_module(f"orcia_api.schemas.{domain_mod}")
-        model_names = sorted(
-            name
-            for name, obj in inspect.getmembers(mod, inspect.isclass)
-            if issubclass(obj, BaseModel) and obj.__module__ == mod.__name__ and name in schemas
-        )
+        model_entries: list[tuple[str, str]] = []
+        for name, obj in inspect.getmembers(mod, inspect.isclass):
+            if not (issubclass(obj, BaseModel) and obj.__module__ == mod.__name__):
+                continue
+            disambiguated = f"orcia_api__schemas__{domain_mod}__{name}"
+            if name in schemas:
+                model_entries.append((name, name))
+            elif disambiguated in schemas:
+                model_entries.append((name, disambiguated))
+        model_entries.sort(key=lambda item: item[0])
         header = (
             f" * AUTO-GENERATED DOMAIN SHARD (`{domain_mod}`) "
             f"FROM `orcia_api.schemas.{domain_mod}` — DO NOT EDIT MANUALLY."
@@ -177,8 +185,8 @@ def render_domain_shards(openapi_spec: dict[str, Any]) -> dict[str, str]:
             'import type { components } from "./schema";',
             "",
         ]
-        for model_name in model_names:
-            lines.append(f'export type {model_name} = components["schemas"]["{model_name}"];')
+        for model_name, schema_ref_key in model_entries:
+            lines.append(f'export type {model_name} = components["schemas"]["{schema_ref_key}"];')
         lines.append("")
         shards[f"{domain_mod}.ts"] = "\n".join(lines)
 

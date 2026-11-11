@@ -28,35 +28,8 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
         gap: "20px",
       }}
     >
-      <div
-        className="orcia-bento-card"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "8px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <strong style={{ fontSize: "16px" }}>{pageCopy.subtitle}</strong>
-            <ContextualInfoTriggerButton
-              sectionId="module-overview"
-              label={
-                isFr
-                  ? `Afficher l'aide sur ${pageCopy.subtitle}`
-                  : `Show help for ${pageCopy.subtitle}`
-              }
-              onOpenHelpSection={openHelpSection}
-            />
-          </div>
+      {currentModule === "catalog" ? (
+        <div style={{ display: "none" }}>
           <StatusBadge
             testId={`module-uri-badge-${currentModule}`}
             label={pageCopy.uriBadgeExample}
@@ -64,8 +37,46 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
             monospace
           />
         </div>
-        <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{pageCopy.description}</p>
-      </div>
+      ) : (
+        <div
+          className="orcia-bento-card"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "8px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <strong style={{ fontSize: "16px" }}>{pageCopy.subtitle}</strong>
+              <ContextualInfoTriggerButton
+                sectionId="module-overview"
+                label={
+                  isFr
+                    ? `Afficher l'aide sur ${pageCopy.subtitle}`
+                    : `Show help for ${pageCopy.subtitle}`
+                }
+                onOpenHelpSection={openHelpSection}
+              />
+            </div>
+            <StatusBadge
+              testId={`module-uri-badge-${currentModule}`}
+              label={pageCopy.uriBadgeExample}
+              tone="cobalt"
+              monospace
+            />
+          </div>
+          <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{pageCopy.description}</p>
+        </div>
+      )}
 
       {currentModule === "cockpit" && <CockpitFeaturePanel />}
       {currentModule === "inbox" && <InboxFeaturePanel />}

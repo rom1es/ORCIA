@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 28,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 108,
+    "techLeadReportsCount": 109,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -426,6 +426,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Refonte Studio de Gouvernance des Agents LLM en 6 Blocs (CAP-091, CAP-090)",
+      "reportFile": "2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes-tech-lead-report.md",
+      "domain": "Refonte de la Création, Configuration et Gouvernance des Agents LLM en 6 Blocs (🤖 Mes Agents : Blocs A Identité/Posture/Binôme, B Moteur Cognitif/Température/Budget, C Instructions/prompt_ref/Modes/Dialogue, D Cloisonnement RAG & Ontologie, E Toolbox MCP READ_ONLY/WRITE_PREVIEW & /Skills, F Garde-fous & Contrat de Sortie + Checklist 6/6 Conditions d'Invocation 💬 Mon Assistant + Correction Opacité Modales tokens.css)",
+      "summary": "Résolution du fond transparent des modales (*Text Bleed*) dans tokens.css et suppression du double en-tête sur /agents ; création de AgentGovernanceTypesAndDefaults.ts, AgentSixBlocksFormSections.tsx et AgentSixBlocksKnowledgeToolsGuardrailsSections.tsx ; enrichissement bout-en-bout (ManagedAgentRecord, sql_agents_and_skills.py JSONB PG18, schemas/agents_and_skills.py, OpenAPI 3.1 0-diff, AgentStudioCardItem.tsx Passeport 6 Blocs, AgentDetailAndSandboxModal.tsx certification Banc de Test test_bench_validated=true) et validation Playwright E2E 08-agents-skills-persistence.spec.ts."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Ajustement Transverse / Sélecteur d'Entête & Synchronisation SQL org_units/workspaces (CAP-067, CAP-061)",

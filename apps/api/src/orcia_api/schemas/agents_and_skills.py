@@ -9,6 +9,13 @@ from pydantic import BaseModel, ConfigDict, Field
 AgentThinkingLevelSchema = Literal["simple", "medium", "complex", "auto"]
 AgentSkillVisibilityScopeSchema = Literal["PRIVATE", "TEAM", "PACK"]
 AgentKindTypeSchema = Literal["LOCAL", "REMOTE_MCP_A2A"]
+AgentPostureTypeSchema = Literal["PRODUCER", "EVALUATOR_GATE"]
+AgentHumanPartnerRoleSchema = Literal["PO_PM", "ARCHITECT", "TECH_LEAD", "SECURITY_QA", "ALL"]
+AgentLlmModelTierSchema = Literal["team_default", "fast", "deep", "discovery"]
+AgentDialogueMechanismSchema = Literal["questionnaire_prealable", "pause_par_bloc", "direct"]
+AgentOutputContractFormatSchema = Literal[
+    "markdown_structure", "confluence_draft", "jira_draft", "gate_risk_json"
+]
 
 
 class SkillItemResponse(BaseModel):
@@ -75,7 +82,7 @@ class ExecuteSkillResponse(BaseModel):
 
 
 class AgentItemResponse(BaseModel):
-    """Transport schema for a configured Agent (`🤖 Agent`)."""
+    """Transport schema for a configured Agent (`🤖 Agent`) with 6 Governance Blocks."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -96,6 +103,39 @@ class AgentItemResponse(BaseModel):
     mcp_exposed: bool = False
     agent_kind: AgentKindTypeSchema = "LOCAL"
     remote_endpoint_url: str | None = Field(default=None, max_length=512)
+    posture: AgentPostureTypeSchema = "PRODUCER"
+    human_partner_role: AgentHumanPartnerRoleSchema = "PO_PM"
+    llm_model_tier: AgentLlmModelTierSchema = "team_default"
+    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+    max_tokens: int = Field(default=4096, ge=256, le=65536)
+    prompt_ref: str | None = Field(default=None, max_length=512)
+    invocation_modes: list[str] = Field(
+        default_factory=lambda: ["generer", "corrections", "section"]
+    )
+    dialogue_mechanism: AgentDialogueMechanismSchema = "questionnaire_prealable"
+    allowed_rag_sources: list[str] = Field(default_factory=lambda: ["all_workspace_sources"])
+    ontology_views: list[str] = Field(
+        default_factory=lambda: ["glossary", "apis_adr", "prd_regles_metier"]
+    )
+    mcp_tool_permissions: dict[str, str] = Field(
+        default_factory=lambda: {
+            "search_tool": "READ_ONLY",
+            "confluence": "WRITE_PREVIEW",
+            "jira": "WRITE_PREVIEW",
+            "git": "READ_ONLY",
+        }
+    )
+    guardrails: list[str] = Field(
+        default_factory=lambda: [
+            "citations_obligatoires",
+            "aucun_fait_invente",
+            "isolation_prompt_injection",
+            "filtrage_dcp_pii",
+        ]
+    )
+    output_contract_format: AgentOutputContractFormatSchema = "markdown_structure"
+    write_preview_required: bool = True
+    test_bench_validated: bool = False
 
 
 class UpsertAgentRequest(BaseModel):
@@ -116,6 +156,21 @@ class UpsertAgentRequest(BaseModel):
     mcp_exposed: bool | None = None
     agent_kind: AgentKindTypeSchema | None = None
     remote_endpoint_url: str | None = Field(default=None, max_length=512)
+    posture: AgentPostureTypeSchema | None = None
+    human_partner_role: AgentHumanPartnerRoleSchema | None = None
+    llm_model_tier: AgentLlmModelTierSchema | None = None
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    max_tokens: int | None = Field(default=None, ge=256, le=65536)
+    prompt_ref: str | None = Field(default=None, max_length=512)
+    invocation_modes: list[str] | None = None
+    dialogue_mechanism: AgentDialogueMechanismSchema | None = None
+    allowed_rag_sources: list[str] | None = None
+    ontology_views: list[str] | None = None
+    mcp_tool_permissions: dict[str, str] | None = None
+    guardrails: list[str] | None = None
+    output_contract_format: AgentOutputContractFormatSchema | None = None
+    write_preview_required: bool | None = None
+    test_bench_validated: bool | None = None
 
 
 class DuplicateAgentRequest(BaseModel):
@@ -136,6 +191,7 @@ class ToggleAgentGovernanceRequest(BaseModel):
     mcp_exposed: bool | None = None
     visibility_scope: Literal["PRIVATE", "TEAM"] | None = None
     thinking_level: AgentThinkingLevelSchema | None = None
+    test_bench_validated: bool | None = None
 
 
 class UpdateAgentSkillsRequest(BaseModel):

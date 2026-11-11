@@ -452,4 +452,98 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     );
     expect(usedInAssistant).toContain("/revue-architecture");
   });
+
+  it("renders the 6 ORCIA Agent Governance Blocks (A..F), auto-sets temperature=0.0 on EVALUATOR_GATE posture, and displays the 6/6 Conversational Readiness checklist", () => {
+    const submittedAgents: unknown[] = [];
+
+    render(
+      <AgentsAndSkillsManagerView
+        agents={[]}
+        skills={[]}
+        labels={TEST_LABELS}
+        onCreateSkill={() => undefined}
+        onDeleteSkill={() => undefined}
+        onExecuteSkill={() => undefined}
+        onCreateAgent={(draft) => submittedAgents.push(draft)}
+        onToggleAgentSkill={() => undefined}
+        onDeleteAgent={() => undefined}
+        onExecuteAgent={() => undefined}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("open-create-agent-drawer-btn"));
+    expect(screen.getByTestId("create-agent-modal")).toBeDefined();
+
+    // Verify all 6 blocks A..F and the 6 readiness conditions are rendered
+    for (const blk of ["A", "B", "C", "D", "E", "F"] as const) {
+      expect(screen.getByTestId(`create-agent-block-${blk}`)).toBeDefined();
+    }
+    for (const idx of [1, 2, 3, 4, 5, 6] as const) {
+      expect(screen.getByTestId(`readiness-condition-${idx}`)).toBeDefined();
+    }
+
+    // Block A: Fill Identity, switch Posture to EVALUATOR_GATE -> auto-adjusts temperature to 0 & contract to gate_risk_json
+    fireEvent.change(screen.getByTestId("agent-name-input"), {
+      target: { value: "Auditeur Sécurité Gate" },
+    });
+    expect(screen.getByTestId("create-agent-handle-preview").textContent).toBe(
+      "@auditeur-securite-gate",
+    );
+    fireEvent.change(screen.getByTestId("create-agent-posture-select"), {
+      target: { value: "EVALUATOR_GATE" },
+    });
+    fireEvent.change(screen.getByTestId("create-agent-human-partner-select"), {
+      target: { value: "SECURITY_QA" },
+    });
+    fireEvent.change(screen.getByTestId("agent-role-input"), {
+      target: { value: "Chasser les angles morts de sécurité (Blind & Compliance Hunter)" },
+    });
+
+    // Block B: Verify temperature was auto-set to 0 and select deep model + 8192 tokens
+    expect(
+      (screen.getByTestId("create-agent-temperature-select") as HTMLSelectElement).value,
+    ).toBe("0");
+    fireEvent.change(screen.getByTestId("create-agent-llm-model-tier-select"), {
+      target: { value: "deep" },
+    });
+    fireEvent.change(screen.getByTestId("create-agent-max-tokens-select"), {
+      target: { value: "8192" },
+    });
+
+    // Block C: Fill instructions, prompt_ref, dialogue mechanism
+    fireEvent.change(screen.getByTestId("agent-instructions-input"), {
+      target: { value: "Contrôler systématiquement OWASP Top 10 et secrets." },
+    });
+    fireEvent.change(screen.getByTestId("create-agent-prompt-ref-input"), {
+      target: { value: "git://sec-pack/prompts/compliance-hunter.md@main" },
+    });
+    fireEvent.change(screen.getByTestId("create-agent-dialogue-mechanism-select"), {
+      target: { value: "direct" },
+    });
+
+    // Block D & E: Toggle RAG source, Ontology view & MCP tool permission
+    fireEvent.click(screen.getByTestId("create-agent-rag-git_repositories"));
+    fireEvent.click(screen.getByTestId("create-agent-ontology-securite_conformite"));
+    fireEvent.change(screen.getByTestId("create-agent-mcp-tool-jira"), {
+      target: { value: "WRITE_PREVIEW" },
+    });
+
+    // Readiness pill shows 6/6
+    expect(screen.getByTestId("create-agent-readiness-pill").textContent).toContain("6/6");
+
+    fireEvent.click(screen.getByTestId("create-agent-submit-btn"));
+    expect(submittedAgents).toHaveLength(1);
+    expect(submittedAgents[0]).toMatchObject({
+      name: "Auditeur Sécurité Gate",
+      posture: "EVALUATOR_GATE",
+      humanPartnerRole: "SECURITY_QA",
+      llmModelTier: "deep",
+      temperature: 0,
+      maxTokens: 8192,
+      promptRef: "git://sec-pack/prompts/compliance-hunter.md@main",
+      dialogueMechanism: "direct",
+      outputContractFormat: "gate_risk_json",
+      writePreviewRequired: true,
+    });
+  });
 });

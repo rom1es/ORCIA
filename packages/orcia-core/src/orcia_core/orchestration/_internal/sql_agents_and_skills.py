@@ -1,7 +1,8 @@
 """PostgreSQL 18 SQL Adapter for User-Created Agents & Skills (`catalog_items`).
 
 Persists user-created Skills (`resource_type='skill'`, `item_type='USER_SKILL'`) and Agents
-(`resource_type='agent'`, `item_type='USER_AGENT'`) in `catalog_items` with full `metadata_jsonb`.
+(`resource_type='agent'`, `item_type='USER_AGENT'`) in `catalog_items` with full `metadata_jsonb`
+including the 6 ORCIA Agent Governance Blocks.
 """
 
 from __future__ import annotations
@@ -14,7 +15,17 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from orcia_core.orchestration.agents_and_skills_models import (
+    DEFAULT_ALLOWED_RAG_SOURCES,
+    DEFAULT_GUARDRAILS,
+    DEFAULT_INVOCATION_MODES,
+    DEFAULT_MCP_TOOL_PERMISSIONS,
+    DEFAULT_ONTOLOGY_VIEWS,
+    AgentDialogueMechanism,
+    AgentHumanPartnerRole,
     AgentKindType,
+    AgentLlmModelTier,
+    AgentOutputContractFormat,
+    AgentPostureType,
     AgentSkillVisibilityScope,
     AgentThinkingLevel,
     ManagedAgentRecord,
@@ -67,6 +78,120 @@ def _parse_agent_kind(raw_val: object) -> AgentKindType:
     return "LOCAL"
 
 
+def _parse_str_tuple(raw_val: object, default: tuple[str, ...]) -> tuple[str, ...]:
+    if not isinstance(raw_val, list):
+        return default
+    cleaned = tuple(str(item).strip() for item in raw_val if str(item).strip())
+    return cleaned or default
+
+
+def _parse_mcp_perms(raw_val: object) -> tuple[tuple[str, str], ...]:
+    if isinstance(raw_val, dict):
+        return tuple((str(k).strip(), str(v).strip()) for k, v in raw_val.items() if str(k).strip())
+    return DEFAULT_MCP_TOOL_PERMISSIONS
+
+
+def _hydrate_agent_record(
+    *,
+    resource_id: str,
+    uri: str,
+    title: str,
+    description: str,
+    version: str,
+    sha256: str,
+    meta: dict[str, object],
+    slug: str,
+    vis_scope: AgentSkillVisibilityScope,
+    source_pack_key: str | None,
+    enabled_in_workspace: bool,
+) -> ManagedAgentRecord:
+    raw_skills = meta.get("skill_ids") or []
+    skill_ids = (
+        tuple(str(s) for s in raw_skills if str(s).strip()) if isinstance(raw_skills, list) else ()
+    )
+    raw_level = str(meta.get("thinking_level") or "medium")
+    thinking_level: AgentThinkingLevel = (
+        cast(AgentThinkingLevel, raw_level)
+        if raw_level in ("simple", "medium", "complex", "auto")
+        else "medium"
+    )
+    raw_remote = meta.get("remote_endpoint_url")
+    remote_endpoint_url = str(raw_remote).strip() if raw_remote else None
+    raw_posture = str(meta.get("posture") or "PRODUCER").upper()
+    posture: AgentPostureType = (
+        cast(AgentPostureType, raw_posture)
+        if raw_posture in ("PRODUCER", "EVALUATOR_GATE")
+        else "PRODUCER"
+    )
+    raw_partner = str(meta.get("human_partner_role") or "PO_PM").upper()
+    human_partner_role: AgentHumanPartnerRole = (
+        cast(AgentHumanPartnerRole, raw_partner)
+        if raw_partner in ("PO_PM", "ARCHITECT", "TECH_LEAD", "SECURITY_QA", "ALL")
+        else "PO_PM"
+    )
+    raw_tier = str(meta.get("llm_model_tier") or "team_default")
+    llm_model_tier: AgentLlmModelTier = (
+        cast(AgentLlmModelTier, raw_tier)
+        if raw_tier in ("team_default", "fast", "deep", "discovery")
+        else "team_default"
+    )
+    raw_dialogue = str(meta.get("dialogue_mechanism") or "questionnaire_prealable")
+    dialogue_mechanism: AgentDialogueMechanism = (
+        cast(AgentDialogueMechanism, raw_dialogue)
+        if raw_dialogue in ("questionnaire_prealable", "pause_par_bloc", "direct")
+        else "questionnaire_prealable"
+    )
+    raw_fmt = str(meta.get("output_contract_format") or "markdown_structure")
+    output_contract_format: AgentOutputContractFormat = (
+        cast(AgentOutputContractFormat, raw_fmt)
+        if raw_fmt in ("markdown_structure", "confluence_draft", "jira_draft", "gate_risk_json")
+        else "markdown_structure"
+    )
+    raw_prompt_ref = meta.get("prompt_ref")
+    default_temp = 0.0 if posture == "EVALUATOR_GATE" else 0.2
+    raw_temp = meta.get("temperature")
+    temperature = float(str(raw_temp)) if raw_temp is not None else default_temp
+    raw_tokens = meta.get("max_tokens")
+    max_tokens = int(str(raw_tokens)) if raw_tokens is not None else 4096
+
+    return ManagedAgentRecord(
+        agent_id=resource_id,
+        slug=slug,
+        handle=str(meta.get("handle") or f"@{slug}"),
+        uri=uri,
+        name=title,
+        role_mission=description,
+        instructions=str(meta.get("instructions") or ""),
+        thinking_level=thinking_level,
+        skill_ids=skill_ids,
+        version=version,
+        sha256=sha256,
+        visibility_scope=vis_scope,
+        source_pack_key=source_pack_key,
+        enabled_in_workspace=enabled_in_workspace,
+        mcp_exposed=bool(meta.get("mcp_exposed", False)),
+        agent_kind=_parse_agent_kind(meta.get("agent_kind")),
+        remote_endpoint_url=remote_endpoint_url,
+        posture=posture,
+        human_partner_role=human_partner_role,
+        llm_model_tier=llm_model_tier,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        prompt_ref=str(raw_prompt_ref).strip() if raw_prompt_ref else None,
+        invocation_modes=_parse_str_tuple(meta.get("invocation_modes"), DEFAULT_INVOCATION_MODES),
+        dialogue_mechanism=dialogue_mechanism,
+        allowed_rag_sources=_parse_str_tuple(
+            meta.get("allowed_rag_sources"), DEFAULT_ALLOWED_RAG_SOURCES
+        ),
+        ontology_views=_parse_str_tuple(meta.get("ontology_views"), DEFAULT_ONTOLOGY_VIEWS),
+        mcp_tool_permissions=_parse_mcp_perms(meta.get("mcp_tool_permissions")),
+        guardrails=_parse_str_tuple(meta.get("guardrails"), DEFAULT_GUARDRAILS),
+        output_contract_format=output_contract_format,
+        write_preview_required=bool(meta.get("write_preview_required", True)),
+        test_bench_validated=bool(meta.get("test_bench_validated", False)),
+    )
+
+
 async def load_agents_and_skills_from_postgres18(
     engine: AsyncEngine,
 ) -> tuple[tuple[ManagedSkillRecord, ...], tuple[ManagedAgentRecord, ...]]:
@@ -89,14 +214,8 @@ async def load_agents_and_skills_from_postgres18(
         ).fetchall()
 
     for row in rows:
-        resource_id = str(row[0])
-        uri = str(row[1])
-        title = str(row[2])
-        description = str(row[3])
-        version = str(row[5])
-        sha256 = str(row[6])
-        item_type = str(row[7])
-        raw_meta = row[8]
+        resource_id, uri, title, description = str(row[0]), str(row[1]), str(row[2]), str(row[3])
+        version, sha256, item_type, raw_meta = str(row[5]), str(row[6]), str(row[7]), row[8]
         meta = raw_meta if isinstance(raw_meta, dict) else json.loads(str(raw_meta or "{}"))
         slug = str(meta.get("slug") or resource_id)
         vis_scope = _parse_visibility_scope(meta.get("visibility_scope"))
@@ -128,35 +247,19 @@ async def load_agents_and_skills_from_postgres18(
                 )
             )
         elif item_type == "USER_AGENT":
-            raw_skills = meta.get("skill_ids") or []
-            skill_ids = tuple(str(s) for s in raw_skills if str(s).strip())
-            raw_level = str(meta.get("thinking_level") or "medium")
-            thinking_level: AgentThinkingLevel = (
-                cast(AgentThinkingLevel, raw_level)
-                if raw_level in ("simple", "medium", "complex", "auto")
-                else "medium"
-            )
-            raw_remote = meta.get("remote_endpoint_url")
-            remote_endpoint_url = str(raw_remote).strip() if raw_remote else None
             agents.append(
-                ManagedAgentRecord(
-                    agent_id=resource_id,
-                    slug=slug,
-                    handle=str(meta.get("handle") or f"@{slug}"),
+                _hydrate_agent_record(
+                    resource_id=resource_id,
                     uri=uri,
-                    name=title,
-                    role_mission=description,
-                    instructions=str(meta.get("instructions") or ""),
-                    thinking_level=thinking_level,
-                    skill_ids=skill_ids,
+                    title=title,
+                    description=description,
                     version=version,
                     sha256=sha256,
-                    visibility_scope=vis_scope,
+                    meta=meta,
+                    slug=slug,
+                    vis_scope=vis_scope,
                     source_pack_key=source_pack_key,
                     enabled_in_workspace=enabled_in_workspace,
-                    mcp_exposed=bool(meta.get("mcp_exposed", False)),
-                    agent_kind=_parse_agent_kind(meta.get("agent_kind")),
-                    remote_endpoint_url=remote_endpoint_url,
                 )
             )
 
@@ -236,6 +339,21 @@ async def persist_agent_to_postgres18(
         "mcp_exposed": agent.mcp_exposed,
         "agent_kind": agent.agent_kind,
         "remote_endpoint_url": agent.remote_endpoint_url,
+        "posture": agent.posture,
+        "human_partner_role": agent.human_partner_role,
+        "llm_model_tier": agent.llm_model_tier,
+        "temperature": agent.temperature,
+        "max_tokens": agent.max_tokens,
+        "prompt_ref": agent.prompt_ref,
+        "invocation_modes": list(agent.invocation_modes),
+        "dialogue_mechanism": agent.dialogue_mechanism,
+        "allowed_rag_sources": list(agent.allowed_rag_sources),
+        "ontology_views": list(agent.ontology_views),
+        "mcp_tool_permissions": dict(agent.mcp_tool_permissions),
+        "guardrails": list(agent.guardrails),
+        "output_contract_format": agent.output_contract_format,
+        "write_preview_required": agent.write_preview_required,
+        "test_bench_validated": agent.test_bench_validated,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)

@@ -421,9 +421,7 @@ async def test_sql_platform_setup_relational_sync_and_reconciliation_unit() -> N
                 "ownerOrgUnitId": "org-2",
             }
         ],
-        llm_tiers=[
-            {"tier": "medium", "primaryModel": "openai/gpt-4o", "modelFamily": "openai"}
-        ],
+        llm_tiers=[{"tier": "medium", "primaryModel": "openai/gpt-4o", "modelFamily": "openai"}],
     )
 
     reconciled_orgs = await _reconcile_org_units_on_load(conn, [])

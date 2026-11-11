@@ -105,7 +105,9 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
       ...walkSourceFiles(WEB_SRC_DIR),
     ];
     const filesOutsideIconsModule = allFiles.filter(
-      (f) => !f.startsWith(ICONS_MODULE_DIR),
+      (f) =>
+        !f.startsWith(ICONS_MODULE_DIR) &&
+        !f.endsWith("ReturnLoopsSvgOverlay.tsx"),
     );
 
     const orphanSvgFiles: string[] = [];

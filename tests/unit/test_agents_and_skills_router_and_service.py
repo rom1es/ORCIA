@@ -398,6 +398,21 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
         mcp_exposed=True,
         agent_kind="REMOTE_MCP_A2A",
         remote_endpoint_url="https://mcp.internal/dpo-agent",
+        posture="EVALUATOR_GATE",
+        human_partner_role="SECURITY_QA",
+        llm_model_tier="deep",
+        temperature=0.0,
+        max_tokens=8192,
+        prompt_ref="git://rgpd-pack/prompts/dpo.md@main",
+        invocation_modes=["generer", "corrections"],
+        dialogue_mechanism="direct",
+        allowed_rag_sources=["all_workspace_sources", "confluence_architecture"],
+        ontology_views=["glossary", "securite_conformite"],
+        mcp_tool_permissions={"search_tool": "READ_ONLY", "jira": "WRITE_PREVIEW"},
+        guardrails=["citations_obligatoires", "filtrage_dcp_pii"],
+        output_contract_format="gate_risk_json",
+        write_preview_required=True,
+        test_bench_validated=True,
     )
 
     await persist_skill_to_postgres18(engine, skill)
@@ -418,6 +433,27 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
     assert loaded_agents[0].mcp_exposed is True
     assert loaded_agents[0].agent_kind == "REMOTE_MCP_A2A"
     assert loaded_agents[0].remote_endpoint_url == "https://mcp.internal/dpo-agent"
+    assert loaded_agents[0].posture == "EVALUATOR_GATE"
+    assert loaded_agents[0].human_partner_role == "SECURITY_QA"
+    assert loaded_agents[0].llm_model_tier == "deep"
+    assert loaded_agents[0].temperature == 0.0
+    assert loaded_agents[0].max_tokens == 8192
+    assert loaded_agents[0].prompt_ref == "git://rgpd-pack/prompts/dpo.md@main"
+    assert loaded_agents[0].invocation_modes == ("generer", "corrections")
+    assert loaded_agents[0].dialogue_mechanism == "direct"
+    assert loaded_agents[0].allowed_rag_sources == (
+        "all_workspace_sources",
+        "confluence_architecture",
+    )
+    assert loaded_agents[0].ontology_views == ("glossary", "securite_conformite")
+    assert dict(loaded_agents[0].mcp_tool_permissions) == {
+        "search_tool": "READ_ONLY",
+        "jira": "WRITE_PREVIEW",
+    }
+    assert loaded_agents[0].guardrails == ("citations_obligatoires", "filtrage_dcp_pii")
+    assert loaded_agents[0].output_contract_format == "gate_risk_json"
+    assert loaded_agents[0].write_preview_required is True
+    assert loaded_agents[0].test_bench_validated is True
 
     _, detached_ids = svc.delete_skill(skill.skill_id)
     updated_agents = tuple(svc.get_agent(aid) for aid in detached_ids)
