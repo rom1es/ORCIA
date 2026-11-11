@@ -25,6 +25,13 @@ class ExecutionMode(StrEnum):
     EXTERNAL_DELEGATED_GATE = "external_delegated"
 
 
+class ProcessOrchestrationType(StrEnum):
+    """Dual process orchestration modes (`Story 16.2` & `Story 16.3`)."""
+
+    NON_DETERMINISTIC = "non_deterministic"
+    DETERMINISTIC_DBOS = "deterministic_dbos"
+
+
 class EffortLevel(StrEnum):
     DEFAULT = "default"
     LOW = "low"
@@ -139,6 +146,9 @@ class WorkflowDefinitionV2(BaseModel):
     status: WorkflowLifecycleStatus = WorkflowLifecycleStatus.DRAFT
     pack_id: str
     linked_vsm_step_nums: list[str] = Field(default_factory=list)
+    orchestration_type: ProcessOrchestrationType = ProcessOrchestrationType.DETERMINISTIC_DBOS
+    reflexive_objective: str | None = None
+    allowed_delegate_agents: list[str] = Field(default_factory=list)
     execution_mode: ExecutionMode = ExecutionMode.NATIVE_ORCIA
     external_tool_label: str | None = Field(
         default=None,
@@ -285,6 +295,7 @@ __all__ = [
     "GateExecutionStrategy",
     "ImpactAssessmentResult",
     "NonDeterministicControlSpec",
+    "ProcessOrchestrationType",
     "ReturnLoopSpec",
     "StepControlsPipeline",
     "ValueStreamMapSpec",

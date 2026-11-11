@@ -80,6 +80,29 @@ export interface components {
       visibility_scope?: "PRIVATE" | "TEAM" | "PACK";
       write_preview_required?: boolean;
     };
+    AgentTraceEvent: {
+      check_label?: string | null;
+      delegate_agent_slug?: string | null;
+      delta_text?: string | null;
+      display_filename?: string | null;
+      end_line?: number | null;
+      event_id?: string;
+      execution_id: string;
+      file_badge_code?: "M\u2193" | "Y" | "TS" | "PY" | "DOC" | "JSON" | "SQL" | null;
+      formatted_badge?: string | null;
+      group_title?: string | null;
+      kind: components["schemas"]["TraceEventKind"];
+      metadata?: Record<string, unknown>;
+      redacted?: boolean;
+      resource_uri?: string | null;
+      sequence_index: number;
+      start_line?: number | null;
+      status_label?: string | null;
+      thought_duration_ms?: number | null;
+      timestamp_utc?: string;
+      turn_index: number;
+      write_preview_id?: string | null;
+    };
     AgentTraceEventItem: {
       check_label?: string | null;
       delegate_agent_slug?: string | null;
@@ -385,12 +408,15 @@ export interface components {
       inputs?: Record<string, unknown>;
       iteration?: number;
       mcp_context_bundle?: Record<string, unknown> | null;
+      orchestration_type?: components["schemas"]["ProcessOrchestrationType"];
       reentry_mode?: "initial" | "corrections";
+      reflexive_execution_id?: string | null;
       return_loop_remarks?: string | null;
       return_loop_target_step_num?: string | null;
       run_id: string;
       status?: "RUNNING" | "WAITING_SUBSTEP_HITL" | "WAITING_EXTERNAL_GATE" | "WAITING_FINAL_ANCHOR" | "COMPLETED_APPROVED" | "RETURN_LOOP_TRIGGERED" | "SLA_SUSPENDED" | "FAILED_GATES";
       sub_step_records?: (components["schemas"]["SubStepExecutionRecord"])[];
+      trace_events?: (components["schemas"]["AgentTraceEvent"])[];
       workflow_id: string;
       workflow_slug: string;
       workflow_version: string;
@@ -2779,6 +2805,7 @@ export interface components {
       human_actor_id?: string | null;
       idempotency_key: string;
       iteration: number;
+      reflexive_execution_id?: string | null;
       status: "WAITING_CHECKPOINT" | "WAITING_WRITE_PREVIEW" | "WAITING_EXTERNAL_EVENT" | "COMPLETED" | "SKIPPED";
       sub_step_id: string;
       sub_step_name: string;
@@ -3475,6 +3502,7 @@ export interface components {
       workspace_id?: string | null;
     };
     "WorkflowDefinitionV2-Input": {
+      allowed_delegate_agents?: (string)[];
       contract?: components["schemas"]["WorkflowContract"];
       controls?: components["schemas"]["StepControlsPipeline-Input"];
       effort?: components["schemas"]["EffortLevel"];
@@ -3487,7 +3515,9 @@ export interface components {
       knowledge_feedback_target_agent?: string | null;
       linked_vsm_step_nums?: (string)[];
       model_override?: string;
+      orchestration_type?: components["schemas"]["ProcessOrchestrationType"];
       pack_id: string;
+      reflexive_objective?: string | null;
       slug: string;
       status?: components["schemas"]["WorkflowLifecycleStatus"];
       sub_steps?: (components["schemas"]["DeterministicSubStepSpec"])[];
@@ -3495,6 +3525,7 @@ export interface components {
       version?: string;
     };
     "WorkflowDefinitionV2-Output": {
+      allowed_delegate_agents?: (string)[];
       contract?: components["schemas"]["WorkflowContract"];
       controls?: components["schemas"]["StepControlsPipeline-Output"];
       effort?: components["schemas"]["EffortLevel"];
@@ -3507,7 +3538,9 @@ export interface components {
       knowledge_feedback_target_agent?: string | null;
       linked_vsm_step_nums?: (string)[];
       model_override?: string;
+      orchestration_type?: components["schemas"]["ProcessOrchestrationType"];
       pack_id: string;
+      reflexive_objective?: string | null;
       slug: string;
       status?: components["schemas"]["WorkflowLifecycleStatus"];
       sub_steps?: (components["schemas"]["DeterministicSubStepSpec"])[];
@@ -5011,6 +5044,7 @@ export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourc
 export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];
 export type ActiveBackgroundTurnStatusResponse = components["schemas"]["ActiveBackgroundTurnStatusResponse"];
 export type AgentItemResponse = components["schemas"]["AgentItemResponse"];
+export type AgentTraceEvent = components["schemas"]["AgentTraceEvent"];
 export type AgentTraceEventItem = components["schemas"]["AgentTraceEventItem"];
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
 export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];

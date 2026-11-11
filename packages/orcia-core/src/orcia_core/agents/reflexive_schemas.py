@@ -11,7 +11,6 @@ Enforces:
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum
 from typing import Any, Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -27,7 +26,12 @@ from orcia_core.ports.reflexive_runtime_ports import (
     TraceEventKind,
 )
 from orcia_core.storage.claim_check import ClaimCheckPointer
-from orcia_core.workflows.schemas_v2 import EffortLevel
+from orcia_core.workflows.schemas_v2 import (
+    EffortLevel,
+)
+from orcia_core.workflows.schemas_v2 import (
+    ProcessOrchestrationType as ProcessOrchestrationType,
+)
 
 STANDARD_MAX_TURNS: Final[int] = 4
 STANDARD_MAX_TOKENS: Final[int] = 8_000
@@ -44,13 +48,6 @@ ReflexiveExecutionStatus = Literal[
     "CANCELLED",
     "FAILED",
 ]
-
-
-class ProcessOrchestrationType(StrEnum):
-    """Dual process orchestration modes (`Story 16.2` & `Story 16.3`)."""
-
-    NON_DETERMINISTIC = "non_deterministic"
-    DETERMINISTIC_DBOS = "deterministic_dbos"
 
 
 def resolve_effort_budget(effort: EffortLevel) -> tuple[ReflexiveEffortMode, int, int]:

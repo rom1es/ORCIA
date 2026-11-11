@@ -37,6 +37,7 @@ import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio
 import type { AssistantDictionarySection } from "./locales/assistant_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
+import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
 
 export interface TranslationDictionary
@@ -44,7 +45,8 @@ export interface TranslationDictionary
     AdminAndStudioDictionarySection,
     ShellAndSearchDictionarySection,
     AssistantDictionarySection,
-    GovernanceAndPacksDictionarySection {
+    GovernanceAndPacksDictionarySection,
+    ProcessOrchestrationModesDictionarySection {
   locale: SupportedWebLocale;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {

@@ -55,6 +55,10 @@ export interface WorkflowDefinitionV2Item {
   vsm_step_num?: string | null;
   version: string;
   status: "draft" | "published" | "archived";
+  orchestration_type?: "non_deterministic" | "deterministic_dbos";
+  reflexive_objective?: string | null;
+  allowed_delegate_agents?: string[];
+  effort?: "default" | "low" | "medium" | "high";
   execution_mode: "native_orcia" | "external_delegated";
   external_tool_label?: string | null;
   external_completion_event?: string | null;
@@ -97,7 +101,7 @@ export const INITIAL_DECLARATIVE_PACKS: DeclarativePackItem[] = [
     name: "Pack SDLC — Mon Compte (De l'idée à la production)",
     version: "2.0.0",
     description:
-      "Chaîne de valeur complète en 11 étapes et 4 phases avec 4 workflows DBOS bornés, 4 agents spécialisés, 4 skills et 6 gates.",
+      "Chaîne de valeur complète en 11 étapes et 4 phases avec 4 processus métiers guidés, 4 agents spécialisés, 4 compétences et 6 contrôles qualité.",
     rbac_namespace: "pack:sdlc",
     bundle_sha256: "sha256-sdlc-pack-bundle-v2-0000000000000000000000000000000000001",
     agents_count: 4,
@@ -141,7 +145,7 @@ export const INITIAL_DECLARATIVE_PACKS: DeclarativePackItem[] = [
     slug: "orcia-docs",
     name: "Pack Documentation & Aide Contextuelle ORCIA",
     version: "2.0.0",
-    description: "Pack déclaratif de génération et validation déterministe de l'aide bilingue FR/EN.",
+    description: "Pack déclaratif de génération et validation automatique de l'aide bilingue FR/EN.",
     rbac_namespace: "pack:orcia-docs",
     bundle_sha256: "sha256-docs-pack-bundle-v2-0000000000000000000000000000000000002",
     agents_count: 1,
@@ -1077,6 +1081,7 @@ export const INITIAL_WORKFLOWS_V2: WorkflowDefinitionV2Item[] = [
     "vsm_step_num": "01",
     "version": "1.0.0",
     "status": "published",
+    "orchestration_type": "deterministic_dbos",
     "execution_mode": "native_orcia",
     "external_tool_label": null,
     "external_completion_event": null,
@@ -1202,6 +1207,7 @@ export const INITIAL_WORKFLOWS_V2: WorkflowDefinitionV2Item[] = [
     "vsm_step_num": "03",
     "version": "1.0.0",
     "status": "published",
+    "orchestration_type": "deterministic_dbos",
     "execution_mode": "native_orcia",
     "external_tool_label": null,
     "external_completion_event": null,
@@ -1337,6 +1343,7 @@ export const INITIAL_WORKFLOWS_V2: WorkflowDefinitionV2Item[] = [
     "vsm_step_num": "06",
     "version": "1.0.0",
     "status": "published",
+    "orchestration_type": "deterministic_dbos",
     "execution_mode": "native_orcia",
     "external_tool_label": null,
     "external_completion_event": null,
@@ -1479,6 +1486,7 @@ export const INITIAL_WORKFLOWS_V2: WorkflowDefinitionV2Item[] = [
     "vsm_step_num": "08",
     "version": "1.0.0",
     "status": "published",
+    "orchestration_type": "deterministic_dbos",
     "execution_mode": "external_delegated",
     "external_tool_label": "GitHub Copilot / Claude Code dans l'IDE",
     "external_completion_event": "git:pr_opened",
@@ -1586,6 +1594,9 @@ export const INITIAL_WORKFLOWS_V2: WorkflowDefinitionV2Item[] = [
     "vsm_step_num": null,
     "version": "2.0.0",
     "status": "published",
+    "orchestration_type": "non_deterministic",
+    "reflexive_objective": "Explorer le contexte fonctionnel de l'écran cible, rédiger un article d'aide contextuelle bilingue FR/EN clair et sans jargon technique, puis vérifier toutes les sections obligatoires avant validation éditoriale.",
+    "allowed_delegate_agents": ["redacteur-documentation-orcia"],
     "execution_mode": "native_orcia",
     "external_tool_label": null,
     "external_completion_event": null,

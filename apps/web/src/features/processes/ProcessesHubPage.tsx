@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { ContextualInfoTriggerButton, OrciaIcon } from "@orcia/ui";
+import React, { useEffect, useState } from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 import {
@@ -6,28 +7,66 @@ import {
   InteractiveRunDrawer,
 } from "./execution/InteractiveRunDrawer";
 import {
+  ProcessCatalogCardGrid,
+  type WorkflowHubFilter,
+} from "./ProcessCatalogCardGrid";
+import {
   INITIAL_VSM_SPEC,
   loadPersistedWorkflowsV2,
+  savePersistedWorkflowV2,
   type WorkflowDefinitionV2Item,
 } from "./processStudioV2Data";
+import {
+  createProcessesApiClient,
+  mapApiWorkflowV2ToUiItem,
+} from "./studio/studioLabelsAndMappers";
 
-export type WorkflowHubFilter = "all" | "published" | "draft" | "external_delegated";
+export type { WorkflowHubFilter };
 
 export function ProcessesHubPage() {
-  const { locale } = useI18n();
-  const { navigateToRoute } = useShellNavigation();
+  const { locale, dictionary } = useI18n();
+  const { navigateToRoute, openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
+  const modesCopy = dictionary.processOrchestrationModes;
 
-  const [workflows] = useState<WorkflowDefinitionV2Item[]>(() => loadPersistedWorkflowsV2());
+  const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>(() =>
+    loadPersistedWorkflowsV2(),
+  );
   const [filter, setFilter] = useState<WorkflowHubFilter>("all");
   const [activeRunWorkflowId, setActiveRunWorkflowId] = useState<string | null>(null);
+  const [hubErrorBanner, setHubErrorBanner] = useState<string | null>(null);
 
-  const filteredWorkflows = workflows.filter((wf) => {
-    if (filter === "published") return wf.status === "published";
-    if (filter === "draft") return wf.status === "draft";
-    if (filter === "external_delegated") return wf.execution_mode === "external_delegated";
-    return true;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    createProcessesApiClient(locale)
+      .listWorkflowsV2()
+      .then((res) => {
+        if (cancelled || !Array.isArray(res?.items) || res.items.length === 0) {
+          return;
+        }
+        setWorkflows((prev) => {
+          const mapped = res.items.map((apiWf) => {
+            const existing = prev.find((p) => p.id === apiWf.id || p.slug === apiWf.slug);
+            const uiItem = mapApiWorkflowV2ToUiItem(apiWf, existing);
+            savePersistedWorkflowV2(uiItem);
+            return uiItem;
+          });
+          return mapped;
+        });
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const detail = err instanceof Error ? err.message : String(err);
+        setHubErrorBanner(
+          isFr
+            ? `Impossible d'actualiser le catalogue de processus depuis le serveur (${detail}).`
+            : `Unable to refresh processes catalog from server (${detail}).`,
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, isFr]);
 
   const activeRunWorkflow =
     workflows.find((w) => w.id === activeRunWorkflowId) ?? null;
@@ -38,6 +77,21 @@ export function ProcessesHubPage() {
       data-testid="processes-hub-v2-page"
       style={{ display: "flex", flexDirection: "column", gap: "18px" }}
     >
+      {hubErrorBanner ? (
+        <div
+          role="alert"
+          data-testid="processes-hub-error-banner"
+          className="rounded border px-3 py-2 text-xs font-medium"
+          style={{
+            backgroundColor: "var(--color-stale-bg)",
+            borderColor: "var(--color-stale-crimson)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {hubErrorBanner}
+        </div>
+      ) : null}
+
       {/* ZONE 1 (PRIORITÉ 1) : DOSSIERS EN COURS & ACTIONS ATTENDUES */}
       <div
         data-testid="processes-active-dossiers-card"
@@ -59,15 +113,22 @@ export function ProcessesHubPage() {
           }}
         >
           <div>
-            <span
-              className="rounded px-2.5 py-0.5 text-xs font-semibold"
-              style={{
-                backgroundColor: "var(--color-arbitration-bg)",
-                color: "var(--color-arbitration-amber)",
-              }}
-            >
-              {isFr ? "1 validation en attente de votre décision" : "1 review awaiting your decision"}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span
+                className="rounded px-2.5 py-0.5 text-xs font-semibold"
+                style={{
+                  backgroundColor: "var(--color-arbitration-bg)",
+                  color: "var(--color-arbitration-amber)",
+                }}
+              >
+                {isFr ? "1 validation en attente de votre décision" : "1 review awaiting your decision"}
+              </span>
+              <ContextualInfoTriggerButton
+                sectionId="workflows-overview"
+                label={isFr ? "Comprendre Mes Processus" : "Understand My Processes"}
+                onOpenHelpSection={openHelpSection}
+              />
+            </div>
             <h2 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
               {isFr
                 ? "Mes dossiers en cours & validations à traiter"
@@ -86,15 +147,18 @@ export function ProcessesHubPage() {
               data-testid="resume-featured-dossier-btn"
               onClick={() => setActiveRunWorkflowId(featuredPendingWorkflow.id)}
               className="orcia-ds-btn-primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
-              {isFr
-                ? "▷ Examiner & Valider le dossier en attente"
-                : "▷ Review & Approve Pending Dossier"}
+              <OrciaIcon name="play" />
+              <span>
+                {isFr
+                  ? "Examiner & Valider le dossier en attente"
+                  : "Review & Approve Pending Dossier"}
+              </span>
             </button>
           ) : null}
         </div>
 
-        {/* Résumé du dossier en attente lorsque le tiroir n'est pas encore déployé */}
         {featuredPendingWorkflow && !activeRunWorkflow ? (
           <div
             className="rounded border p-3"
@@ -141,7 +205,6 @@ export function ProcessesHubPage() {
           </div>
         ) : null}
 
-        {/* Espace d'Exécution & Revue de Livrable directement intégré dans Mes Processus */}
         {activeRunWorkflow ? (
           <InteractiveRunDrawer
             key={activeRunWorkflow.id}
@@ -153,190 +216,15 @@ export function ProcessesHubPage() {
       </div>
 
       {/* ZONE 2 : PROCESSUS MÉTIERS DISPONIBLES PAR ÉTAPE */}
-      <div
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "10px",
-          }}
-        >
-          <div>
-            <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-              {isFr
-                ? "Processus métiers disponibles"
-                : "Available Business Processes"}
-            </h3>
-            <p style={{ margin: "2px 0 0 0", fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
-              {isFr
-                ? "Lancez une étape métier sur un dossier ou ouvrez l'Atelier (Studio) si vous souhaitez adapter son déroulement."
-                : "Launch a business step on a dossier, or open the Studio if you want to customize its flow."}
-            </p>
-          </div>
-
-          <div
-            role="tablist"
-            aria-label="Filtrer les processus"
-            className="orcia-ds-tabs"
-          >
-            {(
-              [
-                { key: "all", label: isFr ? "Tous" : "All" },
-                { key: "published", label: isFr ? "Actifs" : "Active" },
-                { key: "draft", label: isFr ? "En préparation" : "Drafts" },
-                {
-                  key: "external_delegated",
-                  label: isFr ? "Réalisation IDE / Git" : "External IDE / Git",
-                },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={filter === tab.key}
-                data-testid={`workflows-hub-filter-${tab.key}`}
-                onClick={() => setFilter(tab.key)}
-                className="orcia-ds-tab"
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))",
-            gap: "12px",
-          }}
-        >
-          {filteredWorkflows.map((wf) => {
-            const isExternal = wf.execution_mode === "external_delegated";
-            const activeSubStepsCount = wf.sub_steps.filter((s) => s.enabled).length;
-            return (
-              <article
-                key={`${wf.id}-${wf.version}`}
-                data-testid={`bounded-workflow-card-${wf.id}`}
-                className="rounded border p-3.5"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  borderColor: "var(--color-border-subtle)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "6px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "var(--color-primary-cobalt)",
-                      }}
-                    >
-                      {wf.vsm_step_num
-                        ? isFr
-                          ? `Étape ${wf.vsm_step_num} du parcours`
-                          : `Step ${wf.vsm_step_num}`
-                        : isFr
-                          ? "Processus transverse"
-                          : "Cross-cutting process"}
-                    </span>
-
-                    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                      {isExternal ? (
-                        <span
-                          className="rounded px-2 py-0.5 text-xs font-semibold"
-                          style={{
-                            backgroundColor: "var(--color-arbitration-bg)",
-                            color: "var(--color-arbitration-amber)",
-                          }}
-                        >
-                          {isFr ? "Équipe & IDE" : "IDE & Team"}
-                        </span>
-                      ) : null}
-                      <span
-                        className="rounded px-2 py-0.5 text-xs font-semibold"
-                        style={{
-                          backgroundColor:
-                            wf.status === "published"
-                              ? "var(--color-gate-emerald-bg)"
-                              : "var(--color-arbitration-bg)",
-                          color:
-                            wf.status === "published"
-                              ? "var(--color-gate-emerald)"
-                              : "var(--color-arbitration-amber)",
-                        }}
-                      >
-                        {wf.status === "published"
-                          ? isFr
-                            ? "Actif"
-                            : "Active"
-                          : isFr
-                            ? "En préparation"
-                            : "Draft"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h4 style={{ margin: 0, fontSize: "15px" }}>{wf.title}</h4>
-
-                  <div style={{ fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
-                    {formatAgentHumanLabel(wf.agent_ref)} · {activeSubStepsCount}{" "}
-                    {isFr ? "étape(s) guidée(s)" : "guided step(s)"}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    paddingTop: "4px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    data-testid={`execute-workflow-btn-${wf.id}`}
-                    onClick={() => setActiveRunWorkflowId(wf.id)}
-                    className="orcia-ds-btn-primary"
-                  >
-                    {isFr ? "▷ Lancer ce processus" : "▷ Launch process"}
-                  </button>
-
-                  <button
-                    type="button"
-                    data-testid={`open-studio-btn-${wf.id}`}
-                    onClick={() => navigateToRoute(`/processes/studio/${wf.id}`)}
-                    className="orcia-ds-btn-secondary"
-                  >
-                    {isFr ? "Adapter dans le Studio" : "Customize in Studio"}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </div>
+      <ProcessCatalogCardGrid
+        workflows={workflows}
+        filter={filter}
+        modesCopy={modesCopy}
+        isFr={isFr}
+        onChangeFilter={setFilter}
+        onExecuteWorkflow={(wfId) => setActiveRunWorkflowId(wfId)}
+        onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
+      />
 
       {/* ZONE 3 : VUE D'ENSEMBLE DE LA CHAÎNE DE VALEUR (4 PHASES · 11 ÉTAPES) */}
       <div
@@ -384,14 +272,17 @@ export function ProcessesHubPage() {
             data-testid="open-interactive-vsm-btn"
             onClick={() => navigateToRoute(`/processes/vsm/${INITIAL_VSM_SPEC.id}`)}
             className="orcia-ds-btn-secondary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
           >
-            {isFr
-              ? "🗺️ Explorer la chaîne de valeur complète (11 étapes)"
-              : "🗺️ Explore full 11-step Value Stream"}
+            <OrciaIcon name="compass" />
+            <span>
+              {isFr
+                ? "Explorer la chaîne de valeur complète (11 étapes)"
+                : "Explore full 11-step Value Stream"}
+            </span>
           </button>
         </div>
 
-        {/* Synthèse des 4 Phases */}
         <div
           style={{
             display: "grid",
@@ -417,7 +308,9 @@ export function ProcessesHubPage() {
                     color: "var(--color-primary-cobalt)",
                   }}
                 >
-                  Phase {phase.num} · Étapes {phase.steps_range}
+                  {isFr
+                    ? `Phase ${phase.num} · Étapes ${phase.steps_range}`
+                    : `Phase ${phase.num} · Steps ${phase.steps_range}`}
                 </span>
                 <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
                   {phase.steps.length} {isFr ? "étapes" : "steps"}

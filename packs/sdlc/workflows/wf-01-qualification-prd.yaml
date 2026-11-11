@@ -7,6 +7,7 @@ pack_id: orcia-pack-sdlc
 linked_vsm_step_nums:
 - '01'
 - '02'
+orchestration_type: deterministic_dbos
 execution_mode: native_orcia
 model_override: claude-sonnet-4-6
 effort: default

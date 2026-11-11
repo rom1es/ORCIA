@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 29,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 111,
+    "techLeadReportsCount": 112,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -427,6 +427,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.3",
+      "reportFile": "16-3-double-mode-processus-objectif-vs-jalons-dispatcher-et-packs-tech-lead-report.md",
+      "domain": "Double Mode de Processus (Piloté par l'objectif vs Piloté par les jalons), ProcessExecutionDispatcher, Encapsulation Principe 7 (ClaimCheckPointer + reflexive_execution_id sans bloat scratchpad), Persistance PG18 SqlWorkflowDefinitionsV2Store & Studio 5-Blocs Bilingue sans Jargon (CAP-160)",
+      "summary": "Enrichissement rétrocompatible de WorkflowDefinitionV2 (orchestration_type, reflexive_objective, allowed_delegate_agents), création de BoundedWorkflowLauncherPort + BoundedWorkflowLauncherAdapter + ProcessExecutionDispatcher + SqlWorkflowDefinitionsV2Store, mise à jour des packs déclaratifs (packs/orcia-docs en non_deterministic et packs/sdlc en deterministic_dbos), routes workflows.py protégées 403 ERR_OBSERVER_MODE_READ_ONLY + SDK OpenAPI 3.1 workflowsV2.ts (0-diff), découpage modulaire du Hub /processes et du Studio 5-Blocs (WorkflowOrchestrationModeSelector, WorkflowBlock2ExecutionSection, survie F5), intégration PG18 + Redis 7.4 et Playwright E2E bi-serveur (2 passed)."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 16.2",

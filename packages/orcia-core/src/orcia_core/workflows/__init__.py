@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from orcia_core.workflows._internal.sql_workflows_v2 import SqlWorkflowDefinitionsV2Store
 from orcia_core.workflows.schemas_v2 import (
     ClaimCheckPointer,
     ContractParameter,
@@ -13,6 +14,7 @@ from orcia_core.workflows.schemas_v2 import (
     GateExecutionStrategy,
     ImpactAssessmentResult,
     NonDeterministicControlSpec,
+    ProcessOrchestrationType,
     ReturnLoopSpec,
     StepControlsPipeline,
     ValueStreamMapSpec,
@@ -35,7 +37,9 @@ __all__ = [
     "GateExecutionStrategy",
     "ImpactAssessmentResult",
     "NonDeterministicControlSpec",
+    "ProcessOrchestrationType",
     "ReturnLoopSpec",
+    "SqlWorkflowDefinitionsV2Store",
     "StepControlsPipeline",
     "ValueStreamMapSpec",
     "VsmPassageNodeSpec",

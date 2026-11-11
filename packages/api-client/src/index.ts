@@ -8,6 +8,11 @@ import {
   createReflexiveExecutionDomainClient,
   type InspectSourceLinesParams,
 } from "./domains/reflexiveExecution";
+import {
+  createWorkflowsV2DomainClient,
+  type ApiImpactAssessmentResult,
+  type ApiWorkflowDefinitionV2,
+} from "./domains/workflowsV2";
 import type { paths } from "./generated/schema";
 import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from "./helpers";
 
@@ -19,7 +24,10 @@ export {
   createCatalogAndPermissionsDomainClient,
   createEpics1To7OperationsDomainClient,
   createReflexiveExecutionDomainClient,
+  createWorkflowsV2DomainClient,
   OrciaProblemError,
+  type ApiImpactAssessmentResult,
+  type ApiWorkflowDefinitionV2,
   type InspectSourceLinesParams,
   type OrciaApiClientOptions,
 };
@@ -51,5 +59,6 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
     ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
+    ...createWorkflowsV2DomainClient(requestJson),
   };
 }

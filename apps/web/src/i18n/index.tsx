@@ -24,12 +24,15 @@ const I18nContext = createContext<I18nContextValue>({
   toggleLocale: () => undefined,
 });
 
+const I18nMountedContext = createContext<boolean>(false);
+
 export interface I18nProviderProps {
   initialLocale?: SupportedWebLocale;
   children: React.ReactNode;
 }
 
 export function I18nProvider({ initialLocale = "fr", children }: I18nProviderProps) {
+  const hasParentProvider = useContext(I18nMountedContext);
   const [locale, setLocale] = useState<SupportedWebLocale>(initialLocale);
 
   const value = useMemo<I18nContextValue>(
@@ -42,7 +45,15 @@ export function I18nProvider({ initialLocale = "fr", children }: I18nProviderPro
     [locale],
   );
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  if (hasParentProvider) {
+    return <>{children}</>;
+  }
+
+  return (
+    <I18nMountedContext.Provider value={true}>
+      <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
+    </I18nMountedContext.Provider>
+  );
 }
 
 export function useI18n(): I18nContextValue {

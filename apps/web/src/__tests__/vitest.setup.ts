@@ -1,9 +1,12 @@
+import type { ApiWorkflowDefinitionV2 } from "@orcia/api-client";
 import type { UiAssistantSpeedMode, UiInferenceEffort } from "@orcia/ui";
 import { beforeEach } from "vitest";
 import {
   detectAdaptiveThinkingStepsForQuestion,
   shouldUseProgressiveStepThinking,
 } from "../features/inbox/assistantBackgroundStreamStore";
+import { INITIAL_WORKFLOWS_V2 } from "../features/processes/processStudioV2Data";
+import { mapUiItemToApiWorkflowV2 } from "../features/processes/studio/studioLabelsAndMappers";
 import { buildLocalLlmConnectionSuccessFeedback } from "../routes/settingsAiModelsPresets";
 
 export interface RecordedVitestApiCall {
@@ -29,7 +32,17 @@ interface MockBackendState {
     draft_artifact: Record<string, unknown>;
     committed_snapshot_id: string | null;
   }>;
+  workflowsV2: Map<string, ApiWorkflowDefinitionV2>;
   recordedCalls: RecordedVitestApiCall[];
+}
+
+function buildInitialWorkflowsV2Map(): Map<string, ApiWorkflowDefinitionV2> {
+  const map = new Map<string, ApiWorkflowDefinitionV2>();
+  for (const wf of INITIAL_WORKFLOWS_V2) {
+    const apiWf = mapUiItemToApiWorkflowV2(wf);
+    map.set(apiWf.id, apiWf);
+  }
+  return map;
 }
 
 const backendState: MockBackendState = {
@@ -39,6 +52,7 @@ const backendState: MockBackendState = {
   skills: [],
   assistantFolders: [],
   orchestrationRuns: [],
+  workflowsV2: buildInitialWorkflowsV2Map(),
   recordedCalls: [],
 };
 
@@ -49,6 +63,7 @@ export function resetVitestApiBackend(): void {
   backendState.skills = [];
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
+  backendState.workflowsV2 = buildInitialWorkflowsV2Map();
   backendState.recordedCalls = [];
 }
 
@@ -870,6 +885,86 @@ async function vitestFetchTransport(
         superseded_snapshot_ids: [],
       },
       trace_id: "0195f000000070008000000000000999",
+    });
+  }
+
+  // Process Studio v2 & Dual-Mode Orchestration (Story 16.3)
+  if (path === "/api/v1/workflows/v2" && method === "GET") {
+    const items = Array.from(backendState.workflowsV2.values());
+    return jsonResponse({ items });
+  }
+
+  const wfV2WhatIfMatch = /^\/api\/v1\/workflows\/v2\/([^/]+)\/what-if$/.exec(path);
+  if (wfV2WhatIfMatch && method === "POST") {
+    const wfId = decodeURIComponent(wfV2WhatIfMatch[1] ?? "");
+    return jsonResponse({
+      workflow_id: wfId,
+      version: "1.0.0",
+      sandbox_isolated: true,
+      external_writes_executed: 0,
+      sub_steps_evaluated: 2,
+      deterministic_gates_passed: true,
+      probabilistic_gates_passed: true,
+      estimated_tokens: 2900,
+      estimated_cost_usd: 0.03,
+      findings: [],
+    });
+  }
+
+  const wfV2RunsMatch = /^\/api\/v1\/workflows\/v2\/([^/]+)\/runs$/.exec(path);
+  if (wfV2RunsMatch && method === "POST") {
+    const wfId = decodeURIComponent(wfV2RunsMatch[1] ?? "");
+    const existing = backendState.workflowsV2.get(wfId);
+    const orchType = existing?.orchestration_type ?? "deterministic_dbos";
+    return jsonResponse({
+      run: {
+        run_id: `run-${wfId}-01`,
+        workflow_id: wfId,
+        workflow_slug: existing?.slug ?? wfId,
+        workflow_version: existing?.version ?? "1.0.0",
+        orchestration_type: orchType,
+        execution_mode: existing?.execution_mode ?? "native_orcia",
+        status: "WAITING_FINAL_ANCHOR",
+        iteration: 1,
+        reentry_mode: "initial",
+        current_sub_step_index: 0,
+        inputs: {},
+        mcp_context_bundle: null,
+        sub_step_records: [],
+        gate_report: null,
+        final_artifact_pointer: null,
+        reflexive_execution_id: `reflx-${wfId}-01`,
+        trace_events: [],
+        return_loop_target_step_num: null,
+        return_loop_remarks: null,
+        audit_trail: [],
+      },
+    });
+  }
+
+  const wfV2ItemMatch = /^\/api\/v1\/workflows\/v2\/([^/]+)$/.exec(path);
+  if (wfV2ItemMatch && method === "GET") {
+    const wfId = decodeURIComponent(wfV2ItemMatch[1] ?? "");
+    const found =
+      backendState.workflowsV2.get(wfId) ??
+      Array.from(backendState.workflowsV2.values()).find((w) => w.slug === wfId);
+    if (!found) {
+      return jsonResponse({ detail: `Workflow '${wfId}' introuvable.` }, 404);
+    }
+    return jsonResponse(found);
+  }
+
+  if (wfV2ItemMatch && method === "PUT") {
+    const wfId = decodeURIComponent(wfV2ItemMatch[1] ?? "");
+    const incoming = (body.workflow ?? {}) as ApiWorkflowDefinitionV2;
+    const saved: ApiWorkflowDefinitionV2 = {
+      ...incoming,
+      id: incoming.id || wfId,
+    };
+    backendState.workflowsV2.set(saved.id, saved);
+    return jsonResponse({
+      workflow: saved,
+      forked_as_draft: false,
     });
   }
 

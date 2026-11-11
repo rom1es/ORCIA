@@ -79,6 +79,7 @@ ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
     "user_passthrough_credentials",
     "user_transverse_groups",
     "transverse_groups",
+    "workflow_definitions_v2",
     "workflow_definitions",
     "llm_model_endpoints",
     "workspaces",

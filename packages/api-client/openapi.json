@@ -558,6 +558,210 @@
         "title": "AgentItemResponse",
         "type": "object"
       },
+      "AgentTraceEvent": {
+        "additionalProperties": false,
+        "description": "Single immutable trace event emitted during a reflexive execution turn.",
+        "properties": {
+          "check_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Label"
+          },
+          "delegate_agent_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delegate Agent Slug"
+          },
+          "delta_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Text"
+          },
+          "display_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Filename"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "file_badge_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "M↓",
+                  "Y",
+                  "TS",
+                  "PY",
+                  "DOC",
+                  "JSON",
+                  "SQL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Badge Code"
+          },
+          "formatted_badge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted Badge"
+          },
+          "group_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Title"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TraceEventKind"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "resource_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Uri"
+          },
+          "sequence_index": {
+            "minimum": 0.0,
+            "title": "Sequence Index",
+            "type": "integer"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "status_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Label"
+          },
+          "thought_duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thought Duration Ms"
+          },
+          "timestamp_utc": {
+            "title": "Timestamp Utc",
+            "type": "string"
+          },
+          "turn_index": {
+            "minimum": 0.0,
+            "title": "Turn Index",
+            "type": "integer"
+          },
+          "write_preview_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Write Preview Id"
+          }
+        },
+        "required": [
+          "execution_id",
+          "sequence_index",
+          "turn_index",
+          "kind"
+        ],
+        "title": "AgentTraceEvent",
+        "type": "object"
+      },
       "AgentTraceEventItem": {
         "additionalProperties": false,
         "description": "HTTP transport item for a typed SSE / timeline `AgentTraceEvent`.",
@@ -2472,6 +2676,7 @@
         "type": "object"
       },
       "BoundedWorkflowRunState": {
+        "description": "Unified run state exposed by `/api/v1/workflows/v2/{id}/runs` and `/api/v1/runs/{id}`.",
         "properties": {
           "audit_trail": {
             "items": {
@@ -2531,6 +2736,10 @@
             ],
             "title": "Mcp Context Bundle"
           },
+          "orchestration_type": {
+            "$ref": "#/components/schemas/ProcessOrchestrationType",
+            "default": "deterministic_dbos"
+          },
           "reentry_mode": {
             "default": "initial",
             "enum": [
@@ -2539,6 +2748,17 @@
             ],
             "title": "Reentry Mode",
             "type": "string"
+          },
+          "reflexive_execution_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflexive Execution Id"
           },
           "return_loop_remarks": {
             "anyOf": [
@@ -2586,6 +2806,13 @@
               "$ref": "#/components/schemas/SubStepExecutionRecord"
             },
             "title": "Sub Step Records",
+            "type": "array"
+          },
+          "trace_events": {
+            "items": {
+              "$ref": "#/components/schemas/AgentTraceEvent"
+            },
+            "title": "Trace Events",
             "type": "array"
           },
           "workflow_id": {
@@ -17662,6 +17889,7 @@
         "type": "object"
       },
       "SubStepExecutionRecord": {
+        "description": "Persisted record of a single bounded sub-step (Principle 7: pointer + exec ID only).",
         "properties": {
           "artifact_pointer": {
             "anyOf": [
@@ -17702,6 +17930,17 @@
           "iteration": {
             "title": "Iteration",
             "type": "integer"
+          },
+          "reflexive_execution_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflexive Execution Id"
           },
           "status": {
             "enum": [
@@ -22714,6 +22953,13 @@
       "WorkflowDefinitionV2-Input": {
         "description": "Bounded executable DBOS workflow attachable to a VSM step.",
         "properties": {
+          "allowed_delegate_agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Delegate Agents",
+            "type": "array"
+          },
           "contract": {
             "$ref": "#/components/schemas/WorkflowContract"
           },
@@ -22797,9 +23043,24 @@
             "title": "Model Override",
             "type": "string"
           },
+          "orchestration_type": {
+            "$ref": "#/components/schemas/ProcessOrchestrationType",
+            "default": "deterministic_dbos"
+          },
           "pack_id": {
             "title": "Pack Id",
             "type": "string"
+          },
+          "reflexive_objective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflexive Objective"
           },
           "slug": {
             "title": "Slug",
@@ -22838,6 +23099,13 @@
       "WorkflowDefinitionV2-Output": {
         "description": "Bounded executable DBOS workflow attachable to a VSM step.",
         "properties": {
+          "allowed_delegate_agents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Delegate Agents",
+            "type": "array"
+          },
           "contract": {
             "$ref": "#/components/schemas/WorkflowContract"
           },
@@ -22921,9 +23189,24 @@
             "title": "Model Override",
             "type": "string"
           },
+          "orchestration_type": {
+            "$ref": "#/components/schemas/ProcessOrchestrationType",
+            "default": "deterministic_dbos"
+          },
           "pack_id": {
             "title": "Pack Id",
             "type": "string"
+          },
+          "reflexive_objective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflexive Objective"
           },
           "slug": {
             "title": "Slug",
@@ -41788,7 +42071,7 @@
     },
     "/api/v1/runs/{run_id}": {
       "get": {
-        "description": "Fetch the live state of a bounded workflow v2 run.",
+        "description": "Fetch the live state of a workflow v2 run.",
         "operationId": "get_workflow_v2_run_api_v1_runs__run_id__get",
         "parameters": [
           {
@@ -41908,6 +42191,24 @@
             "schema": {
               "title": "Run Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -45755,7 +46056,7 @@
     },
     "/api/v1/workflows/v2": {
       "get": {
-        "description": "List all bounded executable `WorkflowDefinitionV2` definitions.",
+        "description": "List all `WorkflowDefinitionV2` definitions (pack baselines + persisted overrides).",
         "operationId": "list_workflows_v2_api_v1_workflows_v2_get",
         "responses": {
           "200": {
@@ -45854,7 +46155,7 @@
     },
     "/api/v1/workflows/v2/{workflow_id}": {
       "get": {
-        "description": "Fetch a bounded `WorkflowDefinitionV2` by ID or slug.",
+        "description": "Fetch a `WorkflowDefinitionV2` by ID or slug.",
         "operationId": "get_workflow_v2_api_v1_workflows_v2__workflow_id__get",
         "parameters": [
           {
@@ -45962,7 +46263,7 @@
         ]
       },
       "put": {
-        "description": "Save a workflow in the Studio; auto-forks a `-draft` copy if `PUBLISHED` (`CA-9.1.2`).",
+        "description": "Save a workflow in the Studio; auto-forks `-draft` if `PUBLISHED` and persists to PG18.",
         "operationId": "save_or_fork_workflow_v2_api_v1_workflows_v2__workflow_id__put",
         "parameters": [
           {
@@ -45972,6 +46273,24 @@
             "schema": {
               "title": "Workflow Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -46082,7 +46401,7 @@
     },
     "/api/v1/workflows/v2/{workflow_id}/runs": {
       "post": {
-        "description": "Start a bounded DBOS workflow run (`run_bounded_workflow_v2`).",
+        "description": "Start a dual-mode workflow run (`ProcessExecutionDispatcher`: Goal vs Milestone).",
         "operationId": "start_workflow_v2_run_api_v1_workflows_v2__workflow_id__runs_post",
         "parameters": [
           {
@@ -46092,6 +46411,24 @@
             "schema": {
               "title": "Workflow Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],

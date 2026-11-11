@@ -1,4 +1,4 @@
-"""Reflexive Agent Runtime bounded context (`orcia_core.agents`, `Story 16.2`, `AD-19`)."""
+"""Reflexive Agent Runtime bounded context (`orcia_core.agents`, `Story 16.2` & `16.3`, `AD-19`)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,10 @@ from orcia_core.agents.errors import (
     ReflexiveSessionExpiredError,
 )
 from orcia_core.agents.llm_adapter import GatewayReflexiveLlmAdapter
+from orcia_core.agents.process_dispatcher import (
+    ProcessExecutionDispatcher,
+    UnifiedProcessRunResult,
+)
 from orcia_core.agents.reflexive_runtime import NonDeterministicReflexiveRuntime
 from orcia_core.agents.reflexive_schemas import (
     APPROFONDI_MAX_TOKENS,
@@ -42,6 +46,7 @@ __all__ = [
     "MAX_DELEGATION_DEPTH_CAP",
     "NonDeterministicReflexiveRuntime",
     "PendingWritePreviewSpec",
+    "ProcessExecutionDispatcher",
     "ProcessOrchestrationType",
     "ReflexiveActionKind",
     "ReflexiveEffortMode",
@@ -60,6 +65,7 @@ __all__ = [
     "STANDARD_MAX_TURNS",
     "SqlReflexiveSessionStore",
     "TraceEventKind",
+    "UnifiedProcessRunResult",
     "compute_default_session_expiry_utc",
     "resolve_effort_budget",
 ]

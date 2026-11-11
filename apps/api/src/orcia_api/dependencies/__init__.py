@@ -41,9 +41,11 @@ from orcia_api.dependencies.portal_and_assistant import (
     get_user_preferences_and_mcp_token_service,
 )
 from orcia_api.dependencies.reflexive_execution import (
+    get_process_execution_dispatcher,
     get_reflexive_event_stream_broker,
     get_reflexive_runtime_service,
     get_reflexive_write_gate_service,
+    get_workflows_v2_sql_store,
 )
 from orcia_api.dependencies.workspace_and_packs import (
     get_agents_and_skills_service,
@@ -82,6 +84,7 @@ __all__ = [
     "get_pack_builder_system_service",
     "get_permission_broker_service",
     "get_platform_settings_service",
+    "get_process_execution_dispatcher",
     "get_reflexive_event_stream_broker",
     "get_reflexive_runtime_service",
     "get_reflexive_write_gate_service",
@@ -91,6 +94,7 @@ __all__ = [
     "get_surgical_explorer_service",
     "get_two_speed_search_service",
     "get_user_preferences_and_mcp_token_service",
+    "get_workflows_v2_sql_store",
     "get_workspace_governance_and_rebaser_service",
     "initialize_app_services",
 ]

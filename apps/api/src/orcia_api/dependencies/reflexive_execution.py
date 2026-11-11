@@ -1,8 +1,10 @@
-"""Composition Root `Depends` providers for `Story 16.2` Non-Deterministic Reflexive Runtime.
+"""Composition Root `Depends` providers for `Story 16.2` & `Story 16.3` Dual-Mode Runtime.
 
 Wires `NonDeterministicReflexiveRuntime`, `SqlReflexiveSessionStore` (PostgreSQL 18),
-`ReflexiveEventStreamBroker` (Redis 7.4 / `asyncio.Queue`), `GatewayReflexiveLlmAdapter`,
-`SurgicalContextExplorer`, and `ConnectorReflexiveWriteGateAdapter` on `request.app.state`.
+`SqlWorkflowDefinitionsV2Store` (PostgreSQL 18 `workflow_definitions_v2`),
+`ProcessExecutionDispatcher`, `BoundedWorkflowLauncherAdapter`, `ReflexiveEventStreamBroker`
+(Redis 7.4 / `asyncio.Queue`), `GatewayReflexiveLlmAdapter`, `SurgicalContextExplorer`, and
+`ConnectorReflexiveWriteGateAdapter` on `request.app.state`.
 """
 
 from __future__ import annotations
@@ -18,13 +20,16 @@ from orcia_api.dependencies.core_and_lifespan import (
 )
 from orcia_api.dependencies.workspace_and_packs import get_surgical_explorer_service
 from orcia_connectors import ConnectorReflexiveWriteGateAdapter
+from orcia_connectors.bounded_workflow_v2 import BoundedWorkflowLauncherAdapter
 from orcia_core.agents import (
     GatewayReflexiveLlmAdapter,
     NonDeterministicReflexiveRuntime,
+    ProcessExecutionDispatcher,
     ReflexiveEventStreamBroker,
     SqlReflexiveSessionStore,
 )
 from orcia_core.storage.claim_check import get_claim_check_storage
+from orcia_core.workflows import SqlWorkflowDefinitionsV2Store
 
 
 def _resolve_reflexive_session_maker(
@@ -108,3 +113,35 @@ def get_reflexive_runtime_service(request: Request) -> NonDeterministicReflexive
     )
     request.app.state.reflexive_runtime_service = runtime
     return runtime
+
+
+def get_workflows_v2_sql_store(request: Request) -> SqlWorkflowDefinitionsV2Store:
+    """FastAPI `Depends` provider returning `SqlWorkflowDefinitionsV2Store` (PostgreSQL 18)."""
+    store: SqlWorkflowDefinitionsV2Store | None = getattr(
+        request.app.state, "workflows_v2_sql_store", None
+    )
+    if store is None:
+        session_maker = _resolve_reflexive_session_maker(request)
+        strict_sql = os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
+        store = SqlWorkflowDefinitionsV2Store(
+            session_maker=session_maker,
+            strict_sql=strict_sql,
+        )
+        request.app.state.workflows_v2_sql_store = store
+    return store
+
+
+def get_process_execution_dispatcher(request: Request) -> ProcessExecutionDispatcher:
+    """FastAPI `Depends` provider returning `ProcessExecutionDispatcher` (`Story 16.3`)."""
+    dispatcher: ProcessExecutionDispatcher | None = getattr(
+        request.app.state, "process_execution_dispatcher", None
+    )
+    if dispatcher is None:
+        claim_storage = get_claim_check_storage()
+        dispatcher = ProcessExecutionDispatcher(
+            reflexive_runtime=get_reflexive_runtime_service(request),
+            bounded_launcher=BoundedWorkflowLauncherAdapter(storage=claim_storage),
+            claim_check_storage=claim_storage,
+        )
+        request.app.state.process_execution_dispatcher = dispatcher
+    return dispatcher

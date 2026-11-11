@@ -1,5 +1,12 @@
 """Hexagonal ports for ORCIA Core (pure Python Protocols, zero adapter dependencies)."""
 
+from orcia_core.ports.bounded_workflow_port import (
+    BoundedSubStepAgentCallback,
+    BoundedWorkflowLauncherPort,
+    BoundedWorkflowLaunchOutcome,
+    BoundedWorkflowSubStepDto,
+    SubStepAgentExecutionOutcome,
+)
 from orcia_core.ports.llm_port import (
     LlmCompletionResponse,
     LlmGatewayPort,
@@ -35,6 +42,10 @@ from orcia_core.ports.surgical_explorer_port import (
 
 __all__ = [
     "AgentTraceEvent",
+    "BoundedSubStepAgentCallback",
+    "BoundedWorkflowLaunchOutcome",
+    "BoundedWorkflowLauncherPort",
+    "BoundedWorkflowSubStepDto",
     "LlmCompletionResponse",
     "LlmGatewayPort",
     "LlmPromptRequest",
@@ -49,6 +60,7 @@ __all__ = [
     "ReflexiveTurnInput",
     "ReflexiveWriteApprovalInput",
     "ReflexiveWriteGatePort",
+    "SubStepAgentExecutionOutcome",
     "SurgicalExplorerPort",
     "SurgicalFileBadgeCode",
     "SurgicalLineEntry",

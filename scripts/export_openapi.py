@@ -44,6 +44,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "orchestration",
     "permission_broker",
     "problem_details",
+    "process_studio_v2",
     "reflexive_execution",
     "shell",
 )

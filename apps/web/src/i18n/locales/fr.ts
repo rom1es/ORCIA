@@ -3,6 +3,7 @@ import { ADMIN_AND_STUDIO_FR_LABELS } from "./admin_and_studio_labels";
 import { ASSISTANT_FR_LABELS } from "./assistant_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
+import { PROCESS_ORCHESTRATION_MODES_FR_LABELS } from "./process_orchestration_modes_labels";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
 
 export const frDictionary: TranslationDictionary = {
@@ -11,6 +12,7 @@ export const frDictionary: TranslationDictionary = {
   ...SHELL_AND_SEARCH_FR_LABELS,
   ...ASSISTANT_FR_LABELS,
   ...GOVERNANCE_AND_PACKS_FR_LABELS,
+  ...PROCESS_ORCHESTRATION_MODES_FR_LABELS,
   locale: "fr",
   shell: {
     brandTitle: "ORCIA",
