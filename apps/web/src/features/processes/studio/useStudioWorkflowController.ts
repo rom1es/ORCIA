@@ -50,8 +50,10 @@ export function useStudioWorkflowController({
   const [viewMode, setViewMode] = useState<StudioViewMode>("design");
   const [statusBanner, setStatusBanner] = useState<StudioStatusBannerState | null>(null);
   const [whatIfResult, setWhatIfResult] = useState<WhatIfSummaryState | null>(null);
+  const hasUserEditedRef = useRef<boolean>(false);
 
   useEffect(() => {
+    hasUserEditedRef.current = false;
     setWorkflow(initialWf);
   }, [initialWf]);
 
@@ -60,7 +62,7 @@ export function useStudioWorkflowController({
     createProcessesApiClient(locale)
       .getWorkflowV2(targetId)
       .then((apiWf) => {
-        if (cancelled || !isMountedRef.current || !apiWf?.id) return;
+        if (cancelled || !isMountedRef.current || hasUserEditedRef.current || !apiWf?.id) return;
         const hydrated = mapApiWorkflowV2ToUiItem(apiWf, initialWf);
         savePersistedWorkflowV2(hydrated);
         setWorkflow((prev) =>
@@ -87,6 +89,7 @@ export function useStudioWorkflowController({
     bannerMessage?: string,
     publish = false,
   ) => {
+    hasUserEditedRef.current = true;
     setWorkflow(nextWf);
     savePersistedWorkflowV2(nextWf);
     if (bannerMessage) {

@@ -176,6 +176,7 @@ export interface AssistantResponseFooterActionsAndCitationsProps {
   readonly onSaveDraft?: (content: string) => void;
   readonly onContinueInProcess?: (content: string) => void;
   readonly onFeedbackChange?: (feedback: "LIKE" | "DISLIKE" | null) => void;
+  readonly onInspectCitation?: (source: UiAssistantRagCitationItem, index: number) => void;
 }
 
 export function AssistantResponseFooterActionsAndCitations({
@@ -189,6 +190,7 @@ export function AssistantResponseFooterActionsAndCitations({
   onSaveDraft,
   onContinueInProcess,
   onFeedbackChange,
+  onInspectCitation,
 }: AssistantResponseFooterActionsAndCitationsProps): React.JSX.Element {
   const [feedback, setFeedback] = useState<"LIKE" | "DISLIKE" | null>(initialFeedback);
   const [copied, setCopied] = useState<boolean>(false);
@@ -245,7 +247,20 @@ export function AssistantResponseFooterActionsAndCitations({
         <div data-testid="assistant-rag-citations-list" className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-medium text-text-secondary">{isFr ? "Sources consultées :" : "Consulted sources:"}</span>
           {ragCitations.map((source, index) => (
-            <a key={`${source.uri}-${index}`} href={source.uri} target="_blank" rel="noopener noreferrer" data-testid={`assistant-rag-citation-link-${index}`} className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline">
+            <a
+              key={`${source.uri}-${index}`}
+              href={source.uri}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid={`assistant-rag-citation-link-${index}`}
+              onClick={(e) => {
+                if (onInspectCitation) {
+                  e.preventDefault();
+                  onInspectCitation(source, index);
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-2.5 py-0.5 text-[11px] font-medium text-action-primary hover:underline"
+            >
               <OrciaIcon name="document" /> {source.title} <OrciaIcon name="externalLink" />
             </a>
           ))}

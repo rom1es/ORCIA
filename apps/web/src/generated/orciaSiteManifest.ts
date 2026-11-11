@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-11",
   "stats": {
     "activeRoutesCount": 23,
-    "uiPrimitivesCount": 96,
+    "uiPrimitivesCount": 98,
     "installedPacksCount": 0,
     "alembicMigrationsCount": 29,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 112,
+    "techLeadReportsCount": 113,
     "capabilitiesCount": 60,
-    "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 35
+    "liveCapabilitiesCount": 57,
+    "verifiedCapabilitiesCount": 36
   },
   "activeRoutes": [
     "/",
@@ -50,6 +50,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
     "AgentDetailAndSandboxModal",
+    "AgentExecutionTrace",
     "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
     "AppShell",
@@ -127,6 +128,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "SecretField",
     "SkillDetailAndSandboxModal",
     "SkillStudioCardItem",
+    "SourceLineInspectorDrawer",
     "SprintContextWidget",
     "StatusBadge",
     "StreamlinedCockpitView",
@@ -427,6 +429,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.4 (Clôture Epic 16)",
+      "reportFile": "16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout-tech-lead-report.md",
+      "domain": "Trace d'Exécution Vivante <AgentExecutionTrace /> (Groupes Repliables, Délégation @Agent, [Synthétiser maintenant] vs ■ Arrêter, WritePreviewCard), Inspecteur Chirurgical de Lignes <SourceLineInspectorDrawer /> (#Lstart-end & Garde READ_SOURCE 0 ligne exposée) & Intégration Bout-en-Bout sur les 3 Surfaces (CAP-160 live)",
+      "summary": "Création des composants purs @orcia/ui <AgentExecutionTrace /> et <SourceLineInspectorDrawer /> (@radix-ui/react-dialog), dictionnaires bilingues FR/EN zéro jargon, contrôleurs partagés useSourceLineInspector + useReflexiveExecutionController + reflexiveTraceMappers, câblage vertical + survie F5 sur 💬 Mon Assistant (2 modes Standard/Approfondi, zéro double boîte de réflexion), 🤖 Mes Agents (Banc de Test) et ☍ Mes Processus (InteractiveRunDrawer), découpage intégral < 350 lignes/fichier, Vitest 144 passed, couverture Python Epic 16 94.00 %, Playwright E2E réel desktop + mobile (2 passed + 8 passed régression) et promotion CAP-160 status: live."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 16.3",

@@ -8,6 +8,10 @@ import {
 import { INITIAL_WORKFLOWS_V2 } from "../features/processes/processStudioV2Data";
 import { mapUiItemToApiWorkflowV2 } from "../features/processes/studio/studioLabelsAndMappers";
 import { buildLocalLlmConnectionSuccessFeedback } from "../routes/settingsAiModelsPresets";
+import {
+  resetVitestReflexiveBackend,
+  tryHandleVitestReflexiveEndpoint,
+} from "./vitestReflexiveBackend";
 
 export interface RecordedVitestApiCall {
   readonly method: string;
@@ -65,6 +69,7 @@ export function resetVitestApiBackend(): void {
   backendState.orchestrationRuns = [];
   backendState.workflowsV2 = buildInitialWorkflowsV2Map();
   backendState.recordedCalls = [];
+  resetVitestReflexiveBackend();
 }
 
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
@@ -966,6 +971,17 @@ async function vitestFetchTransport(
       workflow: saved,
       forked_as_draft: false,
     });
+  }
+
+  const reflexiveResp = await tryHandleVitestReflexiveEndpoint({
+    path,
+    parsedUrl,
+    method,
+    body,
+    ...(init ? { init } : {}),
+  });
+  if (reflexiveResp) {
+    return reflexiveResp;
   }
 
   return jsonResponse({});

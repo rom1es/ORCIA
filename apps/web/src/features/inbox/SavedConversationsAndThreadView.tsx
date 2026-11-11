@@ -1,4 +1,5 @@
 import {
+  AgentExecutionTrace,
   AssistantResponseFooterActionsAndCitations,
   AssistantThinkingSubWindow,
   AssistantUserQuestionBubble,
@@ -6,7 +7,9 @@ import {
   FormattedMarkdownContent,
   OrciaIcon,
   sanitizeAssistantDisplayReply,
+  type AgentExecutionTraceLabels,
   type UiAssistantRagCitationItem,
+  type UiSourceLineInspectTarget,
 } from "@orcia/ui";
 import React from "react";
 import type { SavedAssistantConversation } from "./savedConversationsStore";
@@ -71,9 +74,7 @@ export function AssistantTopToolbar({
           className="rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary"
         >
           <OrciaIcon name="folder" />{" "}
-          {isFr
-            ? `Dossiers (${foldersCount})`
-            : `Folders (${foldersCount})`}
+          {isFr ? `Dossiers (${foldersCount})` : `Folders (${foldersCount})`}
         </button>
       </div>
 
@@ -139,7 +140,10 @@ export function SavedConversationsPanel({
             : "No saved conversation yet. Ask a question below to start and automatically save your first thread."}
         </p>
       ) : (
-        <ul className="space-y-1.5" data-testid="assistant-saved-conversations-list">
+        <ul
+          className="space-y-1.5"
+          data-testid="assistant-saved-conversations-list"
+        >
           {conversations.map((conv) => {
             const isCurrent = conv.id === activeConversationId;
             return (
@@ -158,7 +162,9 @@ export function SavedConversationsPanel({
                   onClick={() => onResumeConversation(conv.id)}
                   className="flex-1 text-left"
                 >
-                  <div className="font-semibold text-text-primary">{conv.title}</div>
+                  <div className="font-semibold text-text-primary">
+                    {conv.title}
+                  </div>
                   <div className="text-[11px] text-text-secondary">
                     {conv.turns.length}{" "}
                     {isFr
@@ -193,10 +199,22 @@ export interface ActiveConversationMessagesViewProps {
   readonly isFr: boolean;
   readonly isGenerating?: boolean;
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
+  readonly traceLabels: AgentExecutionTraceLabels;
+  readonly onInspectLines: (target: UiSourceLineInspectTarget) => void;
+  readonly onInspectCitation: (
+    source: UiAssistantRagCitationItem,
+    index: number,
+  ) => void;
+  readonly onSynthesizeNow: () => void;
+  readonly onApproveWrite: (previewId: string) => void;
+  readonly onRejectWrite: (previewId: string) => void;
   readonly onRegenerateTurn?: (userPrompt: string) => void;
   readonly onSaveDraft?: (content: string) => void;
   readonly onContinueInProcess?: (content: string) => void;
-  readonly onFeedbackTurn?: (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => void;
+  readonly onFeedbackTurn?: (
+    turnId: string,
+    feedback: "LIKE" | "DISLIKE" | null,
+  ) => void;
 }
 
 export function ActiveConversationMessagesView({
@@ -204,6 +222,12 @@ export function ActiveConversationMessagesView({
   isFr,
   isGenerating = false,
   ragCitations = [],
+  traceLabels,
+  onInspectLines,
+  onInspectCitation,
+  onSynthesizeNow,
+  onApproveWrite,
+  onRejectWrite,
   onRegenerateTurn,
   onSaveDraft,
   onContinueInProcess,
@@ -222,8 +246,12 @@ export function ActiveConversationMessagesView({
         const cleanReply = sanitizeAssistantDisplayReply(turn.assistantReply);
         const turnCitations = turn.usedSources ?? ragCitations;
         const turnSteps = turn.stepProgress ?? [];
-        const turnSeconds = turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
+        const turnSeconds =
+          turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
         const isLastSavedTurn = idx === conversation.turns.length - 1;
+        const hasReflexiveTrace = Boolean(
+          turn.reflexiveTraceEvents && turn.reflexiveTraceEvents.length > 0,
+        );
         return (
           <div
             key={turn.turnId}
@@ -235,7 +263,9 @@ export function ActiveConversationMessagesView({
               isFr={isFr}
               modelLabel={turn.modelLabel}
               effortLabel={turn.effortLabel}
-              {...(turn.attachedFiles ? { attachedFiles: turn.attachedFiles } : {})}
+              {...(turn.attachedFiles
+                ? { attachedFiles: turn.attachedFiles }
+                : {})}
               testId={
                 isLastSavedTurn && !isGenerating
                   ? "assistant-user-question-bubble"
@@ -244,12 +274,26 @@ export function ActiveConversationMessagesView({
             />
 
             <div className="pt-1 space-y-2">
-              <AssistantThinkingSubWindow
-                stepProgress={turnSteps}
-                isGenerating={false}
-                hasStreamedResponse={true}
-                elapsedSecondsOverride={turnSeconds}
-              />
+              {hasReflexiveTrace ? (
+                <AgentExecutionTrace
+                  status="COMPLETED"
+                  events={turn.reflexiveTraceEvents!}
+                  pendingWritePreview={null}
+                  labels={traceLabels}
+                  defaultCollapsedWhenCompleted={true}
+                  onInspectLines={onInspectLines}
+                  onSynthesizeNow={onSynthesizeNow}
+                  onApproveWrite={onApproveWrite}
+                  onRejectWrite={onRejectWrite}
+                />
+              ) : (
+                <AssistantThinkingSubWindow
+                  stepProgress={turnSteps}
+                  isGenerating={false}
+                  hasStreamedResponse={true}
+                  elapsedSecondsOverride={turnSeconds}
+                />
+              )}
               <FormattedMarkdownContent
                 content={cleanReply}
                 testId={`assistant-turn-markdown-${idx + 1}`}
@@ -266,6 +310,7 @@ export function ActiveConversationMessagesView({
                   onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
                   onSaveDraft={onSaveDraft}
                   onContinueInProcess={onContinueInProcess}
+                  onInspectCitation={onInspectCitation}
                 />
               )}
             </div>

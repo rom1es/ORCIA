@@ -1,18 +1,22 @@
 import type {
   ArbitrationTieBreakCardLabels,
-  ChunkValidationCardLabels,
-  CognitiveReviewBriefingLabels,
   HumanLedAnchorCardLabels,
   PresenceClaimPillLabels,
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
-  UiModuleKey,
   UiOntologyExplorerLabels,
   UiPermissionBrokerLabels,
   UiShellLabels,
   UiWorkspaceTopologyLabels,
-  UpstreamChallengeModalLabels,
 } from "@orcia/ui";
+import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
+import type { AssistantDictionarySection } from "./locales/assistant_labels";
+import type { GatesAndModulesDictionarySection } from "./locales/gates_and_modules_labels";
+import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
+import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
+import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
+import type { ReflexiveTraceAndInspectorDictionarySection } from "./locales/reflexive_trace_and_inspector_labels";
+import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
 
 export type SupportedWebLocale = "fr" | "en";
 
@@ -33,20 +37,15 @@ export interface InboxAndClaimsCopy {
   presencePill: PresenceClaimPillLabels;
 }
 
-import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
-import type { AssistantDictionarySection } from "./locales/assistant_labels";
-import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
-import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
-import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
-import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
-
 export interface TranslationDictionary
   extends InboxAndCockpitDictionarySection,
     AdminAndStudioDictionarySection,
     ShellAndSearchDictionarySection,
     AssistantDictionarySection,
     GovernanceAndPacksDictionarySection,
-    ProcessOrchestrationModesDictionarySection {
+    ProcessOrchestrationModesDictionarySection,
+    ReflexiveTraceAndInspectorDictionarySection,
+    GatesAndModulesDictionarySection {
   locale: SupportedWebLocale;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
@@ -58,16 +57,9 @@ export interface TranslationDictionary
     defaultQuestionTitle: string;
     defaultContextSummary: string;
   };
-  upstreamChallengeModal: UpstreamChallengeModalLabels;
-  humanGates: {
-    briefing: CognitiveReviewBriefingLabels;
-    chunkValidation: ChunkValidationCardLabels;
-  };
-  inboxAndClaims: InboxAndClaimsCopy;
   workspaceTopology: UiWorkspaceTopologyLabels;
   catalogExplorer: UiCatalogExplorerLabels;
   permissionBroker: UiPermissionBrokerLabels;
   bootstrapOnboarding: UiBootstrapOnboardingLabels;
   ontologyExplorer: UiOntologyExplorerLabels;
-  modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

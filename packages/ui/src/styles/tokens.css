@@ -854,3 +854,121 @@ form[data-lpignore="true"] div[data-lastpass-root] {
   background-color: var(--color-action-primary);
   animation: orciaThinkingBounce 1.1s infinite ease-in-out;
 }
+
+/* ============================================================================
+ * Epic 16 (Story 16.4) — Live Execution Trace & Surgical Source Line Inspector
+ * ============================================================================ */
+.orcia-execution-trace {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-elevated);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.orcia-execution-trace-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-surface-card);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.orcia-execution-trace-pill:hover,
+.orcia-execution-trace-pill:focus-visible {
+  border-color: var(--color-action-primary);
+  background-color: var(--color-action-primary-subtle);
+  outline: none;
+}
+
+.orcia-execution-trace-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--color-action-primary-subtle);
+  color: var(--color-action-primary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.orcia-line-inspector-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background-color: var(--color-modal-backdrop);
+}
+
+.orcia-line-inspector-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 76;
+  width: min(560px, 45vw);
+  max-width: 100vw;
+  background-color: var(--color-surface-card);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-dropdown);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.orcia-line-inspector-code-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  line-height: 1.55;
+  background-color: var(--color-bg-elevated);
+}
+
+.orcia-line-inspector-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 10px;
+  padding: 1px 12px;
+  border-left: 3px solid transparent;
+  color: var(--color-text-primary);
+}
+
+.orcia-line-inspector-row[data-highlighted="true"] {
+  background-color: var(--color-action-primary-subtle);
+  border-left-color: var(--color-action-primary);
+}
+
+.orcia-line-inspector-gutter {
+  user-select: none;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .orcia-line-inspector-drawer {
+    left: 0;
+    width: 100vw;
+    max-width: 100vw;
+    border-left: none;
+  }
+}

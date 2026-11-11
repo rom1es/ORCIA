@@ -22,9 +22,9 @@ Pour faire évoluer l'écran **« Mes Processus »** d'ORCIA sans créer une « 
 2. **Zéro « Agent Orchestrateur » lisant le chat (Respect strict ADR-01 & ADR-02) :**
    * Un LLM ne pilote jamais la transition d'une sous-étape à une autre en lisant une chaîne de texte (`STATUT : QUALIFIÉ`).
    * Les séquences multi-étapes (ex. *Qualification $\rightarrow$ PRD $\rightarrow$ Création Ticket*) sont orchestrées par une **Séquence Déterministe de Sous-Étapes DBOS (`DeterministicSubStep`)** dont les verrous de validation humaine sont gérés par la machine à états PostgreSQL.
-3. **Divulgation Progressive UX (Sans collision KORE / Control-M / POC) :**
+3. **Divulgation Progressive UX (Sans collision EXEMPLE / Control-M / POC) :**
    * **Niveau Macro (Gouvernance & Consultation VSM) :** Reprend l'ergonomie du POC HTML (bascule `Aujourd'hui | Avec les agents | Comparer`, points de passage losanges, boucles de retour en pointillés orange, fiche à 6 onglets, mode Présentation).
-   * **Niveau Micro (Conception & Exécution Technique d'un Workflow) :** Reprend l'ergonomie épurée à **5 blocs de BMC Control-M** (`Triggers`, `Steps & Agent Pipeline`, `Toolbox MCP`, `Gates Pipeline`, `Skills & Contract`) assistée par le **Co-pilote IA à gauche** et le commutateur `Design Mode | Test Mode (What-If) | YAML`. Le popup redondant `COUCHES` de KORE est supprimé.
+   * **Niveau Micro (Conception & Exécution Technique d'un Workflow) :** Reprend l'ergonomie épurée à **5 blocs de BMC Control-M** (`Triggers`, `Steps & Agent Pipeline`, `Toolbox MCP`, `Gates Pipeline`, `Skills & Contract`) assistée par le **Co-pilote IA à gauche** et le commutateur `Design Mode | Test Mode (What-If) | YAML`. Le popup redondant `COUCHES` de EXEMPLE est supprimé.
 4. **Étanchéité Absolue `orcia-core` vs `orcia-pack-*` :**
    * `packages/orcia-core` est 100 % agnostique : aucune mention de `Jira`, `Git`, `PRD`, `WSJF`, `SAFe`, `Rovo` ou `Copilot` n'existe dans ses schémas Pydantic. Tout typage métier passe par des URI génériques du Catalogue Fédéré (`catalog://{connector}/{entity_type}`) et des références de Pack (`pack://{pack_id}/...`).
    * Le seed complet du POC *« Mon Compte — De l'idée à la production »* est logé exclusivement dans `packages/orcia-pack-sdlc`.

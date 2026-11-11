@@ -130,6 +130,32 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
                 tokens_used=tokens,
             )
 
+        # Step 1b: Governed @Agent sub-delegation when enabled & available (depth-capped by runtime)
+        has_delegated = any(
+            item.get("action_kind")
+            in ("sub_agent_result", "delegation_blocked", "delegate_sub_agent")
+            for item in turn_input.scratchpad
+        )
+        if (
+            turn_input.allow_sub_agent_delegation
+            and turn_input.available_delegate_agents
+            and not has_delegated
+        ):
+            delegate_slug = turn_input.available_delegate_agents[0]
+            return ReflexiveTurnDecision(
+                group_title="Vérification croisée par un agent spécialisé",
+                thought_text=(
+                    f"Sollicitons @{delegate_slug} pour croiser les constats documentaires\n"
+                    "avec les exigences métier de l'Espace."
+                ),
+                action_kind="delegate_sub_agent",
+                delegate_agent_slug=delegate_slug,
+                delegate_sub_objective=(
+                    f"Vérifier la cohérence métier pour : {turn_input.objective}"
+                ),
+                tokens_used=tokens,
+            )
+
         # Step 2: Optional governed external write preview if requested and not yet resolved
         write_spec = turn_input.requested_write_preview
         has_write_resolution = any(

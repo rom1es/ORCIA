@@ -20,8 +20,15 @@ import {
   createProcessesApiClient,
   mapApiWorkflowV2ToUiItem,
 } from "./studio/studioLabelsAndMappers";
+import {
+  readPersistedReflexiveId,
+  writePersistedReflexiveId,
+} from "../shared/reflexiveTraceMappers";
 
 export type { WorkflowHubFilter };
+
+export const ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY =
+  "orcia.processes.active_run_workflow_id.v1";
 
 export function ProcessesHubPage() {
   const { locale, dictionary } = useI18n();
@@ -33,7 +40,13 @@ export function ProcessesHubPage() {
     loadPersistedWorkflowsV2(),
   );
   const [filter, setFilter] = useState<WorkflowHubFilter>("all");
-  const [activeRunWorkflowId, setActiveRunWorkflowId] = useState<string | null>(null);
+  const [activeRunWorkflowId, setActiveRunWorkflowIdState] = useState<
+    string | null
+  >(() => readPersistedReflexiveId(ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY));
+  const setActiveRunWorkflowId = (nextId: string | null) => {
+    setActiveRunWorkflowIdState(nextId);
+    writePersistedReflexiveId(ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY, nextId);
+  };
   const [hubErrorBanner, setHubErrorBanner] = useState<string | null>(null);
 
   useEffect(() => {

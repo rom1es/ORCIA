@@ -458,6 +458,25 @@ export {
   type AgentDetailAndSandboxModalProps,
 } from "./components/AgentDetailAndSandboxModal";
 export {
+  AgentExecutionTrace,
+  type AgentExecutionTraceProps,
+} from "./components/AgentExecutionTrace";
+export {
+  SourceLineInspectorDrawer,
+  type SourceLineInspectorDrawerProps,
+} from "./components/SourceLineInspectorDrawer";
+export type {
+  AgentExecutionTraceLabels,
+  SourceLineInspectorLabels,
+  SourceLineInspectorLineItem,
+  UiAgentTraceEventItem,
+  UiFileBadgeCode,
+  UiReflexivePendingWritePreview,
+  UiReflexiveSessionStatus,
+  UiSourceLineInspectTarget,
+  UiTraceEventKind,
+} from "./components/AgentExecutionTraceTypes";
+export {
   SkillDetailAndSandboxModal,
   type SkillDetailAndSandboxModalProps,
 } from "./components/SkillDetailAndSandboxModal";

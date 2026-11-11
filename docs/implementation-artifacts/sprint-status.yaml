@@ -164,11 +164,11 @@ development_status:
   epic-15-retrospective: optional
 
   # Epic 16 (traduction consolidée de specs/epic-16-reflexive-agent-harness) — Orchestration Réflexive (Mon Assistant, Mes Agents & Processus Pilotés par l'Objectif), Exploration Chirurgicale #Lstart-end & Articulation avec les Processus Pilotés par les Jalons (CAP-160)
-  epic-16: in-progress
+  epic-16: done
   16-1-quatre-primitives-exploration-chirurgicale-et-ports-hexagonaux: done
   16-2-moteur-reflexif-non-deterministe-asyncio-sse-et-suspend-resume: done
   16-3-double-mode-processus-objectif-vs-jalons-dispatcher-et-packs: done
-  16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout: ready-for-dev
+  16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout: done
   epic-16-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
