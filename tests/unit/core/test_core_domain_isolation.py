@@ -71,6 +71,7 @@ def test_core_domain_isolation_ast_and_regex() -> None:
         ORCIA_CORE_SRC / "kernel",
         ORCIA_CORE_SRC / "orchestration",
         ORCIA_CORE_SRC / "gates",
+        ORCIA_CORE_SRC / "ports",
     )
     isolated_pattern = re.compile(
         r"\b(jira|confluence|git_branch|wsjf|rovo|copilot|safe|prd)\b",

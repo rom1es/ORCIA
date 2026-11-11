@@ -24,6 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 for rel_src in (
     "packages/orcia-kernel/src",
     "packages/orcia-core/src",
+    "packages/orcia-connectors/src",
     "apps/api/src",
     "apps/worker/src",
 ):
@@ -43,6 +44,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "orchestration",
     "permission_broker",
     "problem_details",
+    "reflexive_execution",
     "shell",
 )
 

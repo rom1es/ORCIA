@@ -41,6 +41,7 @@ from orcia_api.routers.permission_broker import router as permission_broker_rout
 from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
+from orcia_api.routers.sources_surgical import router as sources_surgical_router
 from orcia_api.routers.workflows import router as workflows_v2_router
 from orcia_api.routers.workspace_governance import (
     router as workspace_governance_router,
@@ -99,6 +100,7 @@ def create_app() -> FastAPI:
     application.include_router(agents_and_skills_router)
     application.include_router(packs_router)
     application.include_router(workflows_v2_router)
+    application.include_router(sources_surgical_router)
     return application
 
 

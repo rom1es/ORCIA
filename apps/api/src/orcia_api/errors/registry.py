@@ -35,6 +35,7 @@ from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_kernel.errors import (
     ERROR_CATALOG,
     OrciaDomainError,
+    PolicyDeniedError,
     ResourceNotFoundError,
     SupportedLocale,
     ValidationDomainError,
@@ -66,6 +67,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     IntentionBeforeCodeRequiredError,
     UnknownWorkflowPolicyError,
     PermissionBrokerDeniedError,
+    PolicyDeniedError,
     ConfusedDeputyBlockedError,
     ResourceNotFoundError,
     ValidationDomainError,
@@ -126,6 +128,7 @@ __all__ = [
     "OntologyConflictError",
     "OrciaDomainError",
     "PermissionBrokerDeniedError",
+    "PolicyDeniedError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",
     "RevokedTokenError",

@@ -46,6 +46,7 @@ from orcia_api.dependencies.workspace_and_packs import (
     get_help_generation_and_attachment_service,
     get_pack_builder_system_service,
     get_remote_test_bench_and_mcp_service,
+    get_surgical_explorer_service,
     get_workspace_governance_and_rebaser_service,
 )
 
@@ -79,6 +80,7 @@ __all__ = [
     "get_remote_test_bench_and_mcp_service",
     "get_resource_lease_service",
     "get_studio_and_pack_service",
+    "get_surgical_explorer_service",
     "get_two_speed_search_service",
     "get_user_preferences_and_mcp_token_service",
     "get_workspace_governance_and_rebaser_service",

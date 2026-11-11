@@ -2710,6 +2710,77 @@ export interface components {
       workspace_id: string;
       workspace_name: string;
     };
+    SurgicalExploreRequest: {
+      end_line?: number;
+      max_results?: number;
+      primitive: components["schemas"]["SurgicalPrimitiveName"];
+      query?: string;
+      resource_uri?: string;
+      start_line?: number;
+      workspace_id?: string | null;
+    };
+    SurgicalExploreResponse: {
+      check_label?: string | null;
+      display_filename: string;
+      end_line?: number | null;
+      exists?: boolean;
+      file_badge_code?: "M\u2193" | "Y" | "TS" | "PY" | "DOC" | "JSON" | "SQL";
+      formatted_badge?: string;
+      kind?: components["schemas"]["SurgicalPrimitiveName"];
+      lines?: (components["schemas"]["SurgicalLineEntryItem"])[];
+      outline?: (components["schemas"]["SurgicalOutlineNodeItem"])[];
+      permission_request_hint?: string | null;
+      redacted?: boolean;
+      redacted_reason?: string | null;
+      resource_uri: string;
+      sha256?: string | null;
+      snippets?: (components["schemas"]["SurgicalSnippetMatchItem"])[];
+      start_line?: number | null;
+      summary?: string;
+      total_lines?: number;
+      trace_id: string;
+    };
+    SurgicalInspectLinesResponse: {
+      check_label?: string | null;
+      display_filename: string;
+      end_line?: number | null;
+      exists?: boolean;
+      file_badge_code?: "M\u2193" | "Y" | "TS" | "PY" | "DOC" | "JSON" | "SQL";
+      formatted_badge?: string;
+      kind?: components["schemas"]["SurgicalPrimitiveName"];
+      lines?: (components["schemas"]["SurgicalLineEntryItem"])[];
+      outline?: (components["schemas"]["SurgicalOutlineNodeItem"])[];
+      permission_request_hint?: string | null;
+      redacted?: boolean;
+      redacted_reason?: string | null;
+      resource_uri: string;
+      sha256?: string | null;
+      snippets?: (components["schemas"]["SurgicalSnippetMatchItem"])[];
+      start_line?: number | null;
+      summary?: string;
+      total_lines?: number;
+      trace_id: string;
+    };
+    SurgicalLineEntryItem: {
+      content: string;
+      line_number: number;
+    };
+    SurgicalOutlineNodeItem: {
+      kind: string;
+      level?: number;
+      line_number: number;
+      title: string;
+    };
+    SurgicalPrimitiveName: "check_resource_state" | "outline_resource_structure" | "search_workspace_snippets" | "inspect_resource_lines";
+    SurgicalSnippetMatchItem: {
+      display_filename: string;
+      end_line: number;
+      excerpt: string;
+      file_badge_code?: "M\u2193" | "Y" | "TS" | "PY" | "DOC" | "JSON" | "SQL";
+      line_anchor?: string;
+      resource_uri: string;
+      start_line: number;
+    };
     SystemBootstrapRunItem: {
       execution_payload: Record<string, unknown>;
       gate_passed: boolean;
@@ -4553,6 +4624,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/sources/inspect-lines": {
+    get: {
+      responses: {
+        200: components["schemas"]["SurgicalInspectLinesResponse"];
+      };
+    };
+  };
+  "/api/v1/sources/surgical-explore": {
+    post: {
+      responses: {
+        200: components["schemas"]["SurgicalExploreResponse"];
+      };
+    };
+  };
   "/api/v1/studio/revisions/{revision_id}/dry-run": {
     post: {
       responses: {
@@ -5074,6 +5159,13 @@ export type SubStepExecutionRecord = components["schemas"]["SubStepExecutionReco
 export type SubWorkflowLockSchemaItem = components["schemas"]["SubWorkflowLockSchemaItem"];
 export type SupervisedDatasourceItemResponse = components["schemas"]["SupervisedDatasourceItemResponse"];
 export type SupervisedRunItemResponse = components["schemas"]["SupervisedRunItemResponse"];
+export type SurgicalExploreRequest = components["schemas"]["SurgicalExploreRequest"];
+export type SurgicalExploreResponse = components["schemas"]["SurgicalExploreResponse"];
+export type SurgicalInspectLinesResponse = components["schemas"]["SurgicalInspectLinesResponse"];
+export type SurgicalLineEntryItem = components["schemas"]["SurgicalLineEntryItem"];
+export type SurgicalOutlineNodeItem = components["schemas"]["SurgicalOutlineNodeItem"];
+export type SurgicalPrimitiveName = components["schemas"]["SurgicalPrimitiveName"];
+export type SurgicalSnippetMatchItem = components["schemas"]["SurgicalSnippetMatchItem"];
 export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunItem"];
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];

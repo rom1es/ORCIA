@@ -17217,6 +17217,501 @@
         "title": "SupervisedRunItemResponse",
         "type": "object"
       },
+      "SurgicalExploreRequest": {
+        "additionalProperties": false,
+        "description": "HTTP request payload for `POST /api/v1/sources/surgical-explore`.",
+        "properties": {
+          "end_line": {
+            "default": 200,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "End Line",
+            "type": "integer"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "primitive": {
+            "$ref": "#/components/schemas/SurgicalPrimitiveName"
+          },
+          "query": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Query",
+            "type": "string"
+          },
+          "resource_uri": {
+            "default": "",
+            "maxLength": 1024,
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "start_line": {
+            "default": 1,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "primitive"
+        ],
+        "title": "SurgicalExploreRequest",
+        "type": "object"
+      },
+      "SurgicalExploreResponse": {
+        "additionalProperties": false,
+        "description": "HTTP response envelope for `POST /api/v1/sources/surgical-explore`.",
+        "properties": {
+          "check_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Label"
+          },
+          "display_filename": {
+            "title": "Display Filename",
+            "type": "string"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "exists": {
+            "default": true,
+            "title": "Exists",
+            "type": "boolean"
+          },
+          "file_badge_code": {
+            "default": "DOC",
+            "enum": [
+              "M↓",
+              "Y",
+              "TS",
+              "PY",
+              "DOC",
+              "JSON",
+              "SQL"
+            ],
+            "title": "File Badge Code",
+            "type": "string"
+          },
+          "formatted_badge": {
+            "default": "",
+            "title": "Formatted Badge",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SurgicalPrimitiveName",
+            "default": "inspect_resource_lines"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/SurgicalLineEntryItem"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "outline": {
+            "items": {
+              "$ref": "#/components/schemas/SurgicalOutlineNodeItem"
+            },
+            "title": "Outline",
+            "type": "array"
+          },
+          "permission_request_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permission Request Hint"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "redacted_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redacted Reason"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "snippets": {
+            "items": {
+              "$ref": "#/components/schemas/SurgicalSnippetMatchItem"
+            },
+            "title": "Snippets",
+            "type": "array"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "total_lines": {
+            "default": 0,
+            "title": "Total Lines",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_uri",
+          "display_filename",
+          "trace_id"
+        ],
+        "title": "SurgicalExploreResponse",
+        "type": "object"
+      },
+      "SurgicalInspectLinesResponse": {
+        "additionalProperties": false,
+        "description": "HTTP response envelope for `GET /api/v1/sources/inspect-lines`.",
+        "properties": {
+          "check_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Label"
+          },
+          "display_filename": {
+            "title": "Display Filename",
+            "type": "string"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "exists": {
+            "default": true,
+            "title": "Exists",
+            "type": "boolean"
+          },
+          "file_badge_code": {
+            "default": "DOC",
+            "enum": [
+              "M↓",
+              "Y",
+              "TS",
+              "PY",
+              "DOC",
+              "JSON",
+              "SQL"
+            ],
+            "title": "File Badge Code",
+            "type": "string"
+          },
+          "formatted_badge": {
+            "default": "",
+            "title": "Formatted Badge",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SurgicalPrimitiveName",
+            "default": "inspect_resource_lines"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/SurgicalLineEntryItem"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "outline": {
+            "items": {
+              "$ref": "#/components/schemas/SurgicalOutlineNodeItem"
+            },
+            "title": "Outline",
+            "type": "array"
+          },
+          "permission_request_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permission Request Hint"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "redacted_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redacted Reason"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "snippets": {
+            "items": {
+              "$ref": "#/components/schemas/SurgicalSnippetMatchItem"
+            },
+            "title": "Snippets",
+            "type": "array"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "total_lines": {
+            "default": 0,
+            "title": "Total Lines",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_uri",
+          "display_filename",
+          "trace_id"
+        ],
+        "title": "SurgicalInspectLinesResponse",
+        "type": "object"
+      },
+      "SurgicalLineEntryItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport item representing a single 1-indexed line slice entry.",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "line_number": {
+            "minimum": 1.0,
+            "title": "Line Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "line_number",
+          "content"
+        ],
+        "title": "SurgicalLineEntryItem",
+        "type": "object"
+      },
+      "SurgicalOutlineNodeItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport item representing a structural heading, key, or symbol.",
+        "properties": {
+          "kind": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "default": 1,
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Level",
+            "type": "integer"
+          },
+          "line_number": {
+            "minimum": 1.0,
+            "title": "Line Number",
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "line_number"
+        ],
+        "title": "SurgicalOutlineNodeItem",
+        "type": "object"
+      },
+      "SurgicalPrimitiveName": {
+        "description": "Canonical names of the 4 read-only surgical exploration primitives.",
+        "enum": [
+          "check_resource_state",
+          "outline_resource_structure",
+          "search_workspace_snippets",
+          "inspect_resource_lines"
+        ],
+        "title": "SurgicalPrimitiveName",
+        "type": "string"
+      },
+      "SurgicalSnippetMatchItem": {
+        "additionalProperties": false,
+        "description": "HTTP transport item representing a bounded `#Lstart-end` workspace match.",
+        "properties": {
+          "display_filename": {
+            "title": "Display Filename",
+            "type": "string"
+          },
+          "end_line": {
+            "minimum": 1.0,
+            "title": "End Line",
+            "type": "integer"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "file_badge_code": {
+            "default": "DOC",
+            "enum": [
+              "M↓",
+              "Y",
+              "TS",
+              "PY",
+              "DOC",
+              "JSON",
+              "SQL"
+            ],
+            "title": "File Badge Code",
+            "type": "string"
+          },
+          "line_anchor": {
+            "default": "",
+            "title": "Line Anchor",
+            "type": "string"
+          },
+          "resource_uri": {
+            "title": "Resource Uri",
+            "type": "string"
+          },
+          "start_line": {
+            "minimum": 1.0,
+            "title": "Start Line",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resource_uri",
+          "display_filename",
+          "start_line",
+          "end_line",
+          "excerpt"
+        ],
+        "title": "SurgicalSnippetMatchItem",
+        "type": "object"
+      },
       "SystemBootstrapRunItem": {
         "additionalProperties": false,
         "description": "Execution record of a system bootstrap workflow run (`FR-28`).",
@@ -41661,6 +42156,307 @@
         "summary": "Delegate Rbac Grants",
         "tags": [
           "settings-and-studio"
+        ]
+      }
+    },
+    "/api/v1/sources/inspect-lines": {
+      "get": {
+        "description": "Return a 1-indexed source slice or a governed `redacted=True` observation.",
+        "operationId": "inspect_source_lines_endpoint_api_v1_sources_inspect_lines_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "uri",
+            "required": true,
+            "schema": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Uri",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_line",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "Start Line",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_line",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "End Line",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurgicalInspectLinesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Inspect a governed `#Lstart-end` source slice (`<= 250` lines, `READ_SOURCE` checked)",
+        "tags": [
+          "sources-surgical"
+        ]
+      }
+    },
+    "/api/v1/sources/surgical-explore": {
+      "post": {
+        "description": "Execute `check_resource_state`, `outline_resource_structure`, `search_workspace_snippets`,\nor `inspect_resource_lines` under RBAC `READ_SOURCE` governance.",
+        "operationId": "execute_surgical_explore_endpoint_api_v1_sources_surgical_explore_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurgicalExploreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurgicalExploreResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Execute one of the 4 read-only surgical context exploration primitives",
+        "tags": [
+          "sources-surgical"
         ]
       }
     },

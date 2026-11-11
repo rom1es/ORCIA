@@ -40,9 +40,9 @@ DEFAULT_GUARDRAILS: tuple[str, ...] = (
 )
 DEFAULT_MCP_TOOL_PERMISSIONS: tuple[tuple[str, str], ...] = (
     ("search_tool", "READ_ONLY"),
-    ("confluence", "WRITE_PREVIEW"),
-    ("jira", "WRITE_PREVIEW"),
-    ("git", "READ_ONLY"),
+    ("knowledge_base_tool", "WRITE_PREVIEW"),
+    ("work_tracker_tool", "WRITE_PREVIEW"),
+    ("repository_tool", "READ_ONLY"),
 )
 
 _SLUG_CLEAN_RE = re.compile(r"[^a-z0-9]+")

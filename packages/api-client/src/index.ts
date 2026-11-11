@@ -4,6 +4,10 @@ import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
+import {
+  createReflexiveExecutionDomainClient,
+  type InspectSourceLinesParams,
+} from "./domains/reflexiveExecution";
 import type { paths } from "./generated/schema";
 import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from "./helpers";
 
@@ -14,7 +18,9 @@ export {
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
   createEpics1To7OperationsDomainClient,
+  createReflexiveExecutionDomainClient,
   OrciaProblemError,
+  type InspectSourceLinesParams,
   type OrciaApiClientOptions,
 };
 
@@ -44,5 +50,6 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
+    ...createReflexiveExecutionDomainClient(requestJson),
   };
 }

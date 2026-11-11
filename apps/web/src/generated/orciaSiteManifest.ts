@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-08",
+  "lastSyncedDate": "2026-11-11",
   "stats": {
     "activeRoutesCount": 23,
     "uiPrimitivesCount": 96,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 28,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 109,
+    "techLeadReportsCount": 110,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -426,6 +426,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.1",
+      "reportFile": "16-1-quatre-primitives-exploration-chirurgicale-et-ports-hexagonaux-tech-lead-report.md",
+      "domain": "Quatre Primitives d'Exploration Chirurgicale (#Lstart-end), Port Hexagonal SurgicalExplorerPort, Adaptateur Gouverné SurgicalContextExplorer & Routes REST /api/v1/sources/inspect-lines / /surgical-explore (CAP-160)",
+      "summary": "Création du port pur SurgicalExplorerPort (orcia_core.ports), de l'adaptateur asynchrone SurgicalContextExplorer (orcia_connectors.surgical, plafond MAX_SURGICAL_LINES = 250, badges M↓/Y/TS/PY/JSON/SQL/DOC, masquage READ_SOURCE à 0 ligne fuitée, garde-fous Path Traversal & SSRF), des routes FastAPI sources_surgical.py + SDK OpenAPI 3.1 reflexive_execution (0-diff), couverture unitaire 92.44 %, intégration PostgreSQL 18 et validation Playwright E2E 00-stack-smoke.spec.ts."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Refonte Studio de Gouvernance des Agents LLM en 6 Blocs (CAP-091, CAP-090)",
