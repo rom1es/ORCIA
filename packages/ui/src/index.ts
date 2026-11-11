@@ -207,6 +207,9 @@ export {
   type TopSearchScopeMode,
 } from "./primitives/TopHeaderSearchCommand";
 export {
+  resolveUserRoleDisplayLabel,
+  ROLE_DISPLAY_LABELS_EN,
+  ROLE_DISPLAY_LABELS_FR,
   UserAccountDropdownAndSettingsModal,
   type UiLocalePreference,
   type UiMcpTargetKind,
@@ -243,6 +246,7 @@ export {
   getOrciaIconDefinition,
   getOrciaIconGlyph,
   ORCIA_EIGHT_MENU_ICON_NAMES,
+  ORCIA_ICON_SVG_PATHS,
   ORCIA_ICONS,
   ORCIA_MODULE_ICON_NAMES,
   ORCIA_SCOPE_LEVEL_ICON_NAMES,

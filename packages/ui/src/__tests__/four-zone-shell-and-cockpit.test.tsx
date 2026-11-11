@@ -750,9 +750,9 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     // Initially closed
     expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
 
-    // Click the 'i' info trigger button
+    // Click the 'i' info trigger button (wireframe SVG)
     const triggerBtn = screen.getByTestId("contextual-info-trigger-iam-org-tree");
-    expect(triggerBtn.textContent).toBe("i");
+    expect(triggerBtn.querySelector("svg")).not.toBeNull();
     expect(triggerBtn.getAttribute("aria-label")).toBe("Voir l'aide sur l'organigramme");
     fireEvent.click(triggerBtn);
 
@@ -905,7 +905,7 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(btn.disabled).toBe(true);
     const alertIcon = screen.getByTestId("disabled-button-alert-icon-sample-action-btn");
     const alertTooltip = screen.getByTestId("disabled-button-alert-tooltip-sample-action-btn");
-    expect(alertIcon.textContent).toBe("!");
+    expect(alertIcon.querySelector("svg")).not.toBeNull();
     expect(alertTooltip.style.color).toBe("var(--color-status-error)");
     expect(alertTooltip.getAttribute("data-tooltip-text")).toBe(
       "Complétez d'abord les champs obligatoires.",

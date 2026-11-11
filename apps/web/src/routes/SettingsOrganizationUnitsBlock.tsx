@@ -1,12 +1,15 @@
-import { ContextualInfoTriggerButton, StatusBadge } from "@orcia/ui";
+import { ContextualInfoTriggerButton, OrciaIcon } from "@orcia/ui";
 import React, { useState } from "react";
 import type {
   ConfiguredOrgUnit,
   ConfiguredPlatformAdmin,
 } from "../components/platformSetupStore";
+import { formatCountNoun } from "../stores/authSessionStore";
+import { SettingsOrganizationUnitRow } from "./SettingsOrganizationUnitRow";
 
 export interface SettingsOrganizationUnitsBlockProps {
   readonly isFr: boolean;
+  readonly canMutate?: boolean;
   readonly platformAdmin?: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly openHelpSection: (sectionId: string) => void;
@@ -28,29 +31,9 @@ const inputStyle: React.CSSProperties = {
   color: "var(--color-foreground)",
 };
 
-const primaryBtnStyle: React.CSSProperties = {
-  padding: "7px 14px",
-  borderRadius: "var(--radius-sm)",
-  border: "none",
-  backgroundColor: "var(--color-primary-cobalt)",
-  color: "var(--color-primary-foreground)",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const dangerBtnStyle: React.CSSProperties = {
-  padding: "5px 10px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-card)",
-  color: "var(--color-foreground)",
-  fontSize: "12px",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
 export function SettingsOrganizationUnitsBlock({
   isFr,
+  canMutate = true,
   platformAdmin,
   orgUnits,
   openHelpSection,
@@ -71,8 +54,16 @@ export function SettingsOrganizationUnitsBlock({
   const memberTeamIds = platformAdmin?.memberTeamIds ?? [];
   const attachedTeams = teamUnits.filter((t) => memberTeamIds.includes(t.id));
 
+  const attachedBillingLabel = isFr
+    ? `Compte rattaché à ${formatCountNoun(attachedTeams.length, "Équipe de facturation", "Équipes de facturation", "fr")} : ${attachedTeams.map((t) => t.name).join(", ")}`
+    : `Account attached to ${formatCountNoun(attachedTeams.length, "billing Team", "billing Teams", "en")}: ${attachedTeams.map((t) => t.name).join(", ")}`;
+
   return (
-    <div>
+    <section
+      data-testid="settings-organization-section"
+      className="orcia-bento-card"
+      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+    >
       <div
         style={{
           display: "flex",
@@ -85,8 +76,8 @@ export function SettingsOrganizationUnitsBlock({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <h2 style={{ margin: 0, fontSize: "15px" }}>
             {isFr
-              ? "1. Structure de l'Organisation (Directions / BU & Équipes)"
-              : "1. Organization Structure (Divisions / BUs & Teams)"}
+              ? "Structure de l'Organisation (Directions / BU & Équipes)"
+              : "Organization Structure (Divisions / BUs & Teams)"}
           </h2>
           <ContextualInfoTriggerButton
             sectionId="iam-org-tree"
@@ -101,6 +92,9 @@ export function SettingsOrganizationUnitsBlock({
         <span
           data-testid="admin-team-membership-summary-badge"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
             fontSize: "11px",
             fontWeight: 600,
             padding: "4px 8px",
@@ -113,13 +107,21 @@ export function SettingsOrganizationUnitsBlock({
                 : "var(--color-status-error)",
           }}
         >
-          {attachedTeams.length > 0
-            ? isFr
-              ? `👥 Compte rattaché à ${attachedTeams.length} Équipe(s) de facturation : ${attachedTeams.map((t) => t.name).join(", ")}`
-              : `👥 Account attached to ${attachedTeams.length} billing Team(s): ${attachedTeams.map((t) => t.name).join(", ")}`
-            : isFr
-              ? "⚠️ Aucune Équipe de facturation rattachée à votre compte (appels IA verrouillés)"
-              : "⚠️ No billing Team attached to your account (AI calls locked)"}
+          {attachedTeams.length > 0 ? (
+            <>
+              <OrciaIcon name="team" size={13} />
+              <span>{attachedBillingLabel}</span>
+            </>
+          ) : (
+            <>
+              <OrciaIcon name="warning" size={13} />
+              <span>
+                {isFr
+                  ? "Aucune Équipe de facturation rattachée à votre compte (appels IA verrouillés)"
+                  : "No billing Team attached to your account (AI calls locked)"}
+              </span>
+            </>
+          )}
         </span>
       </div>
 
@@ -127,10 +129,12 @@ export function SettingsOrganizationUnitsBlock({
         data-testid="create-org-unit-form"
         autoComplete="off"
         data-lpignore="true"
+        data-1p-ignore="true"
+        data-bwignore="true"
         data-form-type="other"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!orgName.trim()) return;
+          if (!canMutate || !orgName.trim()) return;
           const resolvedParentId =
             orgLevel === "BU" ? "scope-global" : orgParentId || "scope-global";
           addOrgUnit({
@@ -148,12 +152,12 @@ export function SettingsOrganizationUnitsBlock({
           display: "flex",
           flexWrap: "wrap",
           gap: "8px",
-          marginTop: "10px",
           alignItems: "center",
         }}
       >
         <select
           data-testid="org-unit-level-select"
+          disabled={!canMutate}
           value={orgLevel}
           onChange={(e) => {
             const nextLevel = e.target.value as "BU" | "TEAM";
@@ -176,6 +180,7 @@ export function SettingsOrganizationUnitsBlock({
           <select
             data-testid="org-unit-parent-select"
             aria-label={isFr ? "BU parente de rattachement" : "Parent BU"}
+            disabled={!canMutate}
             value={orgParentId}
             onChange={(e) => setOrgParentId(e.target.value)}
             style={inputStyle}
@@ -199,6 +204,7 @@ export function SettingsOrganizationUnitsBlock({
           data-bwignore="true"
           data-form-type="other"
           data-testid="org-unit-name-input"
+          disabled={!canMutate}
           value={orgName}
           onChange={(e) => setOrgName(e.target.value)}
           placeholder={
@@ -220,6 +226,7 @@ export function SettingsOrganizationUnitsBlock({
           data-bwignore="true"
           data-form-type="other"
           data-testid="org-unit-slug-input"
+          disabled={!canMutate}
           value={orgSlug}
           onChange={(e) => setOrgSlug(e.target.value)}
           placeholder={
@@ -236,7 +243,7 @@ export function SettingsOrganizationUnitsBlock({
               gap: "6px",
               fontSize: "12px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: canMutate ? "pointer" : "not-allowed",
             }}
           >
             <input
@@ -247,6 +254,7 @@ export function SettingsOrganizationUnitsBlock({
               data-bwignore="true"
               data-form-type="other"
               data-testid="org-unit-attach-admin-checkbox"
+              disabled={!canMutate}
               checked={attachAdminToNewTeam}
               onChange={(e) => setAttachAdminToNewTeam(e.target.checked)}
             />
@@ -258,7 +266,12 @@ export function SettingsOrganizationUnitsBlock({
           </label>
         )}
 
-        <button type="submit" data-testid="create-org-unit-btn" style={primaryBtnStyle}>
+        <button
+          type="submit"
+          disabled={!canMutate}
+          data-testid="create-org-unit-btn"
+          className="orcia-ds-btn orcia-ds-btn-primary"
+        >
           {isFr ? "+ Créer l'unité" : "+ Create unit"}
         </button>
       </form>
@@ -267,17 +280,11 @@ export function SettingsOrganizationUnitsBlock({
         <div
           role="alert"
           data-testid="org-unit-delete-feedback"
-          style={{
-            marginTop: "10px",
-            padding: "8px 12px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid var(--color-border)",
-            backgroundColor: "var(--color-surface-card)",
-            fontSize: "12px",
-            fontWeight: 600,
-          }}
+          className="orcia-ds-alert orcia-ds-alert-warning"
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
         >
-          ⚠️ {orgDeleteFeedback}
+          <OrciaIcon name="warning" size={14} />
+          <span>{orgDeleteFeedback}</span>
         </div>
       )}
 
@@ -285,7 +292,7 @@ export function SettingsOrganizationUnitsBlock({
         <p
           data-testid="iam-org-units-empty-state"
           style={{
-            margin: "10px 0 0 0",
+            margin: 0,
             fontSize: "13px",
             color: "var(--color-muted-foreground)",
           }}
@@ -295,138 +302,36 @@ export function SettingsOrganizationUnitsBlock({
             : "No organization unit (BU or Team) configured yet."}
         </p>
       ) : (
-        <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
-          {orgUnits.map((u) => {
-            const parentNode = orgUnits.find((p) => p.id === u.parentId);
-            const childCount = orgUnits.filter((c) => c.parentId === u.id).length;
-            const levelDisplay = u.level === "TEAM" ? (isFr ? "ÉQUIPE" : "TEAM") : "BU";
-            const isConfirming = confirmDeleteOrgId === u.id;
-            const isAdminMember = u.level === "TEAM" && memberTeamIds.includes(u.id);
-            return (
-              <div
-                key={u.id}
-                data-testid={`org-unit-row-${u.id}`}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <strong>{u.name}</strong>
-                  <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-                    {parentNode
-                      ? isFr
-                        ? `↳ Rattaché à la BU : ${parentNode.name}`
-                        : `↳ Parent BU: ${parentNode.name}`
-                      : isFr
-                        ? "↳ Niveau Racine (Plateforme entière)"
-                        : "↳ Root Level (Entire platform)"}
-                  </span>
-                  {childCount > 0 && (
-                    <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-                      ({childCount} {isFr ? "Équipe(s) rattachée(s)" : "attached Team(s)"})
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                  {u.level === "TEAM" && (
-                    <>
-                      <StatusBadge
-                        testId={`org-unit-member-badge-${u.id}`}
-                        label={
-                          isAdminMember
-                            ? isFr
-                              ? "✓ Membre (Facturation active)"
-                              : "✓ Member (Billing active)"
-                            : isFr
-                              ? "Non rattaché"
-                              : "Not attached"
-                        }
-                        tone={isAdminMember ? "emerald" : "neutral"}
-                      />
-                      {toggleAdminTeamMembership && (
-                        <button
-                          type="button"
-                          data-testid={`toggle-team-membership-btn-${u.id}`}
-                          onClick={() => toggleAdminTeamMembership(u.id)}
-                          style={dangerBtnStyle}
-                        >
-                          {isAdminMember
-                            ? isFr
-                              ? "Retirer mon rattachement"
-                              : "Detach my account"
-                            : isFr
-                              ? "+ Rattacher mon compte"
-                              : "+ Attach my account"}
-                        </button>
-                      )}
-                    </>
-                  )}
-                  <StatusBadge label={`${levelDisplay} · ${u.slug}`} tone="cobalt" monospace />
-                  {!isConfirming ? (
-                    <button
-                      type="button"
-                      data-testid={`delete-org-unit-btn-${u.id}`}
-                      onClick={() => {
-                        setOrgDeleteFeedback(null);
-                        setConfirmDeleteOrgId(u.id);
-                      }}
-                      style={dangerBtnStyle}
-                    >
-                      {isFr ? "Supprimer" : "Delete"}
-                    </button>
-                  ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-                        {isFr
-                          ? "Attention : vérifie l'absence d'éléments orphelins"
-                          : "Warning: checks for orphan dependencies"}
-                      </span>
-                      <button
-                        type="button"
-                        data-testid={`confirm-delete-org-unit-btn-${u.id}`}
-                        onClick={() => {
-                          const res = removeOrgUnit(u.id);
-                          if (!res.deleted && res.blockedReason) {
-                            setOrgDeleteFeedback(res.blockedReason);
-                          } else {
-                            setOrgDeleteFeedback(null);
-                          }
-                          setConfirmDeleteOrgId(null);
-                        }}
-                        style={dangerBtnStyle}
-                      >
-                        {isFr ? "Confirmer la suppression" : "Confirm delete"}
-                      </button>
-                      <button
-                        type="button"
-                        data-testid={`cancel-delete-org-unit-btn-${u.id}`}
-                        onClick={() => setConfirmDeleteOrgId(null)}
-                        style={dangerBtnStyle}
-                      >
-                        {isFr ? "Annuler" : "Cancel"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div style={{ display: "grid", gap: "6px" }}>
+          {orgUnits.map((u) => (
+            <SettingsOrganizationUnitRow
+              key={u.id}
+              unit={u}
+              isFr={isFr}
+              canMutate={canMutate}
+              parentNode={orgUnits.find((p) => p.id === u.parentId)}
+              childCount={orgUnits.filter((c) => c.parentId === u.id).length}
+              isAdminMember={u.level === "TEAM" && memberTeamIds.includes(u.id)}
+              isConfirming={confirmDeleteOrgId === u.id}
+              onToggleAdminTeamMembership={toggleAdminTeamMembership}
+              onRequestDelete={(unitId) => {
+                setOrgDeleteFeedback(null);
+                setConfirmDeleteOrgId(unitId);
+              }}
+              onConfirmDelete={(unitId) => {
+                const res = removeOrgUnit(unitId);
+                if (!res.deleted && res.blockedReason) {
+                  setOrgDeleteFeedback(res.blockedReason);
+                } else {
+                  setOrgDeleteFeedback(null);
+                }
+                setConfirmDeleteOrgId(null);
+              }}
+              onCancelDelete={() => setConfirmDeleteOrgId(null)}
+            />
+          ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -277,25 +277,25 @@ capabilities:
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     surfaces: { route: /wizards }
   - id: CAP-058
-    title: Coquille Settings avec permission guards
+    title: Coquille Settings à 5 onglets adaptatifs avec permission guards dynamiques
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3
+    origin_ref: 8-3, 17-1
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx]
     verification: runtime
-    surfaces: { route: "/settings, /configuration", api: settings_and_studio.py }
+    surfaces: { route: "/settings, /configuration", api: settings_and_studio.py, ui: "SettingsHubView (organization, iam, models, connectors, packs) + authSessionStore" }
 
-  # ───────────── Shell, navigation, aide (Epic 9, 12 + ad-hoc) ─────────────
+  # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
-    title: Shell 4 zones Direction C (8 entrées) et cockpit épuré
+    title: Shell 4 zones Direction C (8 entrées, icônes SVG filaires 16px, barre de repli & Mon Compte) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1
+    origin_ref: 9-1, 12-1, 17-1
     status: live
-    tests: [apps/web/e2e/shell.spec.ts]
+    tests: [apps/web/e2e/shell.spec.ts, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx]
     verification: runtime
-    surfaces: { ui: AppShell + CollapsibleAppRail, api: /api/v1/navigation }
+    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: /api/v1/navigation }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]

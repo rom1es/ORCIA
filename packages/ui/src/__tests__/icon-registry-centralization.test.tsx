@@ -176,14 +176,17 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
       expect(getOrciaIconGlyph(name)).toBe(def.glyph);
     }
 
-    // Decorative icon by default (aria-hidden="true")
+    // Decorative wireframe SVG icon by default (aria-hidden="true")
     const { unmount } = render(
       <OrciaIcon name="cockpit" testId="icon-decorative" />,
     );
     const dec = screen.getByTestId("icon-decorative");
     expect(dec.getAttribute("aria-hidden")).toBe("true");
     expect(dec.getAttribute("data-orcia-icon")).toBe("cockpit");
-    expect(dec.textContent).toBe(ORCIA_ICONS.cockpit.glyph);
+    const svg = dec.querySelector("svg");
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(svg?.getAttribute("stroke")).toBe("currentColor");
     unmount();
 
     // Semantic labelled icon (role="img" + aria-label)

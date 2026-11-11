@@ -339,9 +339,9 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     expect(screen.getByTestId("assistant-prompt-telemetry-log-section").textContent).toContain(
       "Quels sont les points critiques de l'architecture ?",
     );
-    expect(screen.getByTestId("assistant-telemetry-feedback-0").textContent).toContain(
-      "👍 Bonne réponse",
-    );
+    const feedbackEl = screen.getByTestId("assistant-telemetry-feedback-0");
+    expect(feedbackEl.querySelector("svg")).not.toBeNull();
+    expect(feedbackEl.textContent).toContain("Bonne réponse");
     fireEvent.click(screen.getByTestId("assistant-telemetry-toggle-context-0"));
     expect(screen.getByTestId("assistant-telemetry-context-box-0").textContent).toContain(
       "[SPEED=SPEED_3_DEEP_AUDIT]",

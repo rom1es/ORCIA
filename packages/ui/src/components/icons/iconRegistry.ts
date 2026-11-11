@@ -107,7 +107,16 @@ export type OrciaIconName =
   | "menuProcesses"
   | "menuActivity"
   | "cmdkShortcut"
-  | "bulletDot";
+  | "bulletDot"
+  | "nav.collapse"
+  | "nav.expand"
+  | "nav.account"
+  | "settings.org"
+  | "settings.iam"
+  | "settings.models"
+  | "settings.connectors"
+  | "settings.packs"
+  | "trash";
 
 export interface OrciaIconDefinition {
   glyph: string;
@@ -218,7 +227,22 @@ export const ORCIA_ICONS: Record<OrciaIconName, OrciaIconDefinition> = {
   menuActivity: { glyph: "📜", category: "navigation", description: "Journal d'Activité" },
   cmdkShortcut: { glyph: "⌘K", category: "action", description: "Raccourci Recherche Globale" },
   bulletDot: { glyph: "·", category: "chevron", description: "Séparateur ponctuel" },
+  "nav.collapse": { glyph: "⇤", category: "navigation", description: "Replier le menu latéral" },
+  "nav.expand": { glyph: "⇥", category: "navigation", description: "Déplier le menu latéral" },
+  "nav.account": { glyph: "◎", category: "navigation", description: "Mon Compte" },
+  "settings.org": { glyph: "◫", category: "governance", description: "Organisation (Directions & Équipes)" },
+  "settings.iam": { glyph: "⚿", category: "governance", description: "Comptes & Habilitations" },
+  "settings.models": { glyph: "◇", category: "governance", description: "Modèles IA" },
+  "settings.connectors": { glyph: "⊶", category: "governance", description: "Connecteurs & SSO" },
+  "settings.packs": { glyph: "▣", category: "governance", description: "Packs Métiers" },
+  trash: { glyph: "✕", category: "action", description: "Supprimer" },
 };
+
+const INITIAL_ORCIA_ICON_GLYPHS: Readonly<Record<OrciaIconName, string>> = Object.freeze(
+  Object.fromEntries(
+    (Object.keys(ORCIA_ICONS) as OrciaIconName[]).map((key) => [key, ORCIA_ICONS[key].glyph]),
+  ) as Record<OrciaIconName, string>,
+);
 
 export function getOrciaIconDefinition(name: OrciaIconName): OrciaIconDefinition {
   return ORCIA_ICONS[name];
@@ -226,6 +250,10 @@ export function getOrciaIconDefinition(name: OrciaIconName): OrciaIconDefinition
 
 export function getOrciaIconGlyph(name: OrciaIconName): string {
   return ORCIA_ICONS[name].glyph;
+}
+
+export function hasCustomGlyphOverride(name: OrciaIconName): boolean {
+  return ORCIA_ICONS[name].glyph !== INITIAL_ORCIA_ICON_GLYPHS[name];
 }
 
 export const ORCIA_EIGHT_MENU_ICON_NAMES: Record<EightFixedMenuKey, OrciaIconName> = {

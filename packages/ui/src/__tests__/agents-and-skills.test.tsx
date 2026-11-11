@@ -419,13 +419,15 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     fireEvent.click(screen.getByTestId("create-agent-submit-btn"));
 
     const badge = screen.getByTestId("agent-visibility-badge-agent-perso-1");
-    expect(badge.textContent).toContain("🔒 Privé");
+    expect(badge.querySelector('[data-orcia-icon="lock"] svg')).not.toBeNull();
+    expect(badge.textContent).toContain("Privé");
 
     // 4. Toggle visibility PRIVATE -> TEAM in 1 click and verify auto-save badge '✓ Enregistré'
     fireEvent.click(badge);
-    expect(badge.textContent).toContain("👥 Équipe");
+    expect(badge.querySelector('[data-orcia-icon="team"] svg')).not.toBeNull();
+    expect(badge.textContent).toContain("Équipe");
     expect(screen.getByTestId("agent-autosaved-badge-agent-perso-1").textContent).toContain(
-      "✓ Enregistré",
+      "Enregistré",
     );
 
     // 5. Change thinking level inline and verify FormattedMarkdownContent is rendered
@@ -443,9 +445,9 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     expect(usedInAssistant).toContain("@perso-1");
 
     fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
-    expect(
-      screen.getByTestId("skill-visibility-badge-skill-revue-architecture").textContent,
-    ).toContain("📦 Pack Métier (orcia-pack-sdlc)");
+    const skillBadge = screen.getByTestId("skill-visibility-badge-skill-revue-architecture");
+    expect(skillBadge.querySelector("svg")).not.toBeNull();
+    expect(skillBadge.textContent).toContain("Pack Métier (orcia-pack-sdlc)");
     expect(screen.queryByTestId("delete-skill-btn-skill-revue-architecture")).toBeNull();
     fireEvent.click(
       screen.getByTestId("use-skill-in-assistant-btn-skill-revue-architecture"),

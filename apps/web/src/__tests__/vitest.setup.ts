@@ -42,6 +42,8 @@ const backendState: MockBackendState = {
   recordedCalls: [],
 };
 
+import { resetAuthSessionStore } from "../stores/authSessionStore";
+
 export function resetVitestApiBackend(): void {
   backendState.firstAdmin = null;
   backendState.platformSetupState = null;
@@ -50,6 +52,7 @@ export function resetVitestApiBackend(): void {
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
   backendState.recordedCalls = [];
+  resetAuthSessionStore();
 }
 
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */

@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import {
-  RgaaDialogFooterActions,
-  RgaaUnsavedChangesAlert,
   resolveRgaaModalGuardLabels,
   useUnsavedChangesDialogGuard,
   type RgaaModalGuardLabels,
 } from "../components/RgaaModalDialog";
-import { UserSettingsModalTabs } from "./UserSettingsModalTabs";
+import { UserAccountDropdownMenu } from "./UserAccountDropdownMenu";
+import { UserSettingsModalDialog } from "./UserSettingsModalDialog";
 
 export type UiThemePreference = "light" | "dark" | "system";
 export type UiLocalePreference = "fr" | "en";
@@ -72,6 +71,8 @@ export interface UserAccountDropdownAndSettingsModalProps {
   readonly initialLocale?: UiLocalePreference;
   readonly initialHat?: string;
   readonly initialMcpTokens?: readonly UiPersonalMcpTokenItem[];
+  readonly modalOpen?: boolean;
+  readonly onModalOpenChange?: (open: boolean) => void;
   readonly labels: UserAccountDropdownAndSettingsLabels;
   readonly onPreferencesSync?: (patch: UserAccountPreferencesPatch) => void;
   readonly onLogout?: () => void;
@@ -80,11 +81,39 @@ export interface UserAccountDropdownAndSettingsModalProps {
 
 export const ROLE_DISPLAY_LABELS_FR: Record<string, string> = {
   PLATFORM_ADMIN: "Administrateur de la plateforme",
+  SECOPS: "Responsable Sécurité & Habilitations",
+  BU_LEAD: "Responsable de Direction (BU)",
+  TEAM_LEAD: "Responsable d'Équipe",
+  CONTRIBUTOR: "Contributeur",
+  OBSERVER: "Observateur (Lecture seule)",
+  READ_ONLY_OBSERVER: "Observateur (Lecture seule)",
   ANALYST_PM_PO: "Product Manager / Métier",
   ARCHITECT: "Architecte",
   TECH_LEAD_DEV: "Tech Lead / Développeur",
   SECURITY_COMPLIANCE: "Sécurité & Conformité",
 };
+
+export const ROLE_DISPLAY_LABELS_EN: Record<string, string> = {
+  PLATFORM_ADMIN: "Platform Administrator",
+  SECOPS: "Security & Access Officer",
+  BU_LEAD: "Business Unit Lead",
+  TEAM_LEAD: "Team Lead",
+  CONTRIBUTOR: "Contributor",
+  OBSERVER: "Observer (Read-only)",
+  READ_ONLY_OBSERVER: "Observer (Read-only)",
+  ANALYST_PM_PO: "Product Manager / Business",
+  ARCHITECT: "Architect",
+  TECH_LEAD_DEV: "Tech Lead / Developer",
+  SECURITY_COMPLIANCE: "Security & Compliance",
+};
+
+export function resolveUserRoleDisplayLabel(
+  roleKey: string,
+  locale: UiLocalePreference = "fr",
+): string {
+  const map = locale === "en" ? ROLE_DISPLAY_LABELS_EN : ROLE_DISPLAY_LABELS_FR;
+  return map[roleKey] ?? roleKey;
+}
 
 export function UserAccountDropdownAndSettingsModal({
   userDisplayName,
@@ -94,18 +123,18 @@ export function UserAccountDropdownAndSettingsModal({
   initialLocale = "fr",
   initialHat,
   initialMcpTokens = [],
+  modalOpen: controlledModalOpen,
+  onModalOpenChange,
   labels,
   onPreferencesSync,
   onLogout,
   onNavigateAssistantBehavior,
 }: UserAccountDropdownAndSettingsModalProps): React.ReactElement {
   const defaultRoleKey =
-    initialHat ?? (userRole === "PLATFORM_ADMIN" ? "PLATFORM_ADMIN" : "ANALYST_PM_PO");
+    initialHat ?? (userRole in ROLE_DISPLAY_LABELS_FR ? userRole : "ANALYST_PM_PO");
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<UiUserSettingsTabKey>(
-    "PREFERENCES_DISPLAY",
-  );
+  const [internalModalOpen, setInternalModalOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<UiUserSettingsTabKey>("PREFERENCES_DISPLAY");
   const [theme, setTheme] = useState<UiThemePreference>(initialTheme);
   const [locale, setLocale] = useState<UiLocalePreference>(initialLocale);
   const [hat, setHat] = useState<string>(defaultRoleKey);
@@ -114,18 +143,29 @@ export function UserAccountDropdownAndSettingsModal({
   const [loggedOut, setLoggedOut] = useState<boolean>(false);
   const [passthroughTested, setPassthroughTested] = useState<boolean>(false);
 
-  // Tab 4: Scoped Personal MCP Keys state
   const [mcpTargetKind, setMcpTargetKind] = useState<UiMcpTargetKind>("SPACE");
   const [mcpTargetSlug, setMcpTargetSlug] = useState<string>("");
   const [mcpExpiryDays, setMcpExpiryDays] = useState<30 | 90>(30);
   const [mcpRpmLimit, setMcpRpmLimit] = useState<number>(60);
-  const [mcpTokens, setMcpTokens] = useState<readonly UiPersonalMcpTokenItem[]>(
-    initialMcpTokens,
-  );
-  const [lastIssuedPlaintext, setLastIssuedPlaintext] = useState<string | null>(
-    null,
-  );
+  const [mcpTokens, setMcpTokens] = useState<readonly UiPersonalMcpTokenItem[]>(initialMcpTokens);
+  const [lastIssuedPlaintext, setLastIssuedPlaintext] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState<boolean>(false);
+
+  const modalOpen = controlledModalOpen !== undefined ? controlledModalOpen : internalModalOpen;
+  const setModalOpen = (next: boolean): void => {
+    setInternalModalOpen(next);
+    onModalOpenChange?.(next);
+  };
+
+  useEffect(() => {
+    if (initialHat) {
+      setHat(initialHat);
+    }
+  }, [initialHat]);
+
+  useEffect(() => {
+    setLocale(initialLocale);
+  }, [initialLocale]);
 
   const guardLabels = resolveRgaaModalGuardLabels(labels, locale);
 
@@ -176,29 +216,11 @@ export function UserAccountDropdownAndSettingsModal({
     onPreferencesSync?.(patch);
   };
 
-  const handleToggleThemeQuick = (): void => {
-    const nextTheme: UiThemePreference = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    persistZeroMsAntiFouc(nextTheme, locale, { theme: nextTheme });
-  };
-
-  const handleToggleLocaleQuick = (): void => {
-    const nextLocale: UiLocalePreference = locale === "fr" ? "en" : "fr";
-    setLocale(nextLocale);
-    persistZeroMsAntiFouc(theme, nextLocale, { locale: nextLocale });
-  };
-
   const handleOpenSettingsModal = (tab: UiUserSettingsTabKey): void => {
     setDropdownOpen(false);
     setActiveTab(tab);
     setIsDirty(false);
     setModalOpen(true);
-  };
-
-  const handleLogoutClick = (): void => {
-    setDropdownOpen(false);
-    setLoggedOut(true);
-    onLogout?.();
   };
 
   const handleIssueMcpToken = (): void => {
@@ -237,32 +259,11 @@ export function UserAccountDropdownAndSettingsModal({
     setIsDirty(false);
   };
 
-  const handleRevokeMcpToken = (tokenId: string): void => {
-    setMcpTokens((prev) =>
-      prev.map((t) => (t.tokenId === tokenId ? { ...t, revoked: true } : t)),
-    );
-  };
-
-  const handleSaveModalChanges = (): void => {
-    onPreferencesSync?.({
-      theme,
-      locale,
-      defaultHat: hat,
-      autoOpenContextualHelp: autoOpenHelp,
-      notificationsEnabled,
-    });
-    setIsDirty(false);
-    setModalOpen(false);
-  };
-
-  const displayRoleLabel = ROLE_DISPLAY_LABELS_FR[hat] ?? hat;
+  const displayRoleLabel = resolveUserRoleDisplayLabel(hat, locale);
+  const roleMap = locale === "en" ? ROLE_DISPLAY_LABELS_EN : ROLE_DISPLAY_LABELS_FR;
 
   return (
-    <div
-      data-testid="user-account-control-root"
-      className="relative inline-flex items-center"
-    >
-      {/* TopHeaderBar Trigger Button: 👤 Nom · Rôle */}
+    <div data-testid="user-account-control-root" className="relative inline-flex items-center">
       <button
         type="button"
         aria-label={labels.triggerAriaLabel}
@@ -271,248 +272,121 @@ export function UserAccountDropdownAndSettingsModal({
         onClick={() => setDropdownOpen((prev) => !prev)}
         className="px-2.5 py-1 rounded-md text-xs font-medium border border-surface-border bg-surface-secondary text-text-primary flex items-center gap-1.5"
       >
-        <span>
-          <OrciaIcon name="user" /> {userDisplayName}
+        <span className="inline-flex items-center gap-1.5">
+          <OrciaIcon name="user" size={15} />
+          <span>{userDisplayName}</span>
         </span>
-        <span
-          data-testid="user-account-role-pill"
-          className="text-[11px] text-text-secondary"
-        >
+        <span data-testid="user-account-role-pill" className="text-[11px] text-text-secondary">
           · {displayRoleLabel}
         </span>
       </button>
 
       {loggedOut && (
-        <span
-          data-testid="user-logged-out-redirect-pill"
-          className="ml-2 text-xs text-text-secondary"
-        >
-          Déconnecté
+        <span data-testid="user-logged-out-redirect-pill" className="ml-2 text-xs text-text-secondary">
+          {locale === "en" ? "Signed out" : "Déconnecté"}
         </span>
       )}
 
-      {/* UserAccountDropdown */}
       {dropdownOpen && (
-        <div
-          role="menu"
-          aria-label="UserAccountDropdown"
-          data-testid="user-account-dropdown-menu"
-          className="absolute right-0 top-10 z-30 w-[280px] rounded-xl border border-surface-border bg-surface-elevated p-3 shadow-lg space-y-2.5 text-xs text-text-primary"
-        >
-          <div className="border-b border-surface-border pb-2">
-            <div className="font-semibold">{userDisplayName}</div>
-            <div className="text-[11px] text-text-secondary">
-              {userEmail} · {ROLE_DISPLAY_LABELS_FR[userRole] ?? userRole}
-            </div>
-          </div>
-
-          {/* Role Selector */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-text-secondary">{labels.hatSelectorLabel}</span>
-            <select
-              aria-label={labels.hatSelectorLabel}
-              data-testid="dropdown-hat-selector"
-              value={hat}
-              onChange={(e) => {
-                const nextHat = e.target.value;
-                setHat(nextHat);
-                onPreferencesSync?.({ defaultHat: nextHat });
-              }}
-              className="rounded border border-surface-border bg-surface-primary px-1.5 py-0.5 text-xs"
-            >
-              <option value="PLATFORM_ADMIN">Administrateur de la plateforme</option>
-              <option value="ANALYST_PM_PO">Product Manager / Métier</option>
-              <option value="ARCHITECT">Architecte</option>
-              <option value="TECH_LEAD_DEV">Tech Lead / Développeur</option>
-              <option value="SECURITY_COMPLIANCE">Sécurité &amp; Conformité</option>
-            </select>
-          </div>
-
-          {/* 1-Click Theme & Language Switches */}
-          <div className="flex items-center justify-between gap-2">
-            <span>{labels.themeQuickToggleLabel}</span>
-            <button
-              type="button"
-              data-testid="dropdown-quick-theme-switch"
-              onClick={handleToggleThemeQuick}
-              className="px-2 py-0.5 rounded border border-surface-border bg-surface-secondary font-mono text-[11px]"
-            >
-              {theme === "light" ? (
-                <>
-                  <OrciaIcon name="sun" /> Clair
-                </>
-              ) : (
-                <>
-                  <OrciaIcon name="moon" /> Sombre
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <span>{labels.localeQuickToggleLabel}</span>
-            <button
-              type="button"
-              data-testid="dropdown-quick-locale-switch"
-              onClick={handleToggleLocaleQuick}
-              className="px-2 py-0.5 rounded border border-surface-border bg-surface-secondary font-mono text-[11px]"
-            >
-              {locale.toUpperCase()}
-            </button>
-          </div>
-
-          <div className="border-t border-surface-border pt-2 space-y-1">
-            <button
-              type="button"
-              data-testid="dropdown-open-settings-modal-btn"
-              onClick={() => handleOpenSettingsModal("PREFERENCES_DISPLAY")}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-surface-secondary flex items-center justify-between"
-            >
-              <span>{labels.openAccountSettingsLabel}</span>
-              <span className="font-mono text-[10px] text-text-secondary">
-                g u
-              </span>
-            </button>
-            <button
-              type="button"
-              data-testid="dropdown-open-passthrough-btn"
-              onClick={() => handleOpenSettingsModal("PASSTHROUGH_SOURCES")}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-surface-secondary"
-            >
-              {labels.openPassthroughSourcesLabel}
-            </button>
-          </div>
-
-          <div className="border-t border-surface-border pt-2">
-            <button
-              type="button"
-              data-testid="dropdown-logout-btn"
-              onClick={handleLogoutClick}
-              className="w-full text-left px-2 py-1.5 rounded font-medium text-status-error hover:bg-surface-secondary"
-            >
-              {labels.logoutButtonLabel}
-            </button>
-          </div>
-        </div>
+        <UserAccountDropdownMenu
+          userDisplayName={userDisplayName}
+          userEmail={userEmail}
+          userRole={userRole}
+          hat={hat}
+          theme={theme}
+          locale={locale}
+          roleMap={roleMap}
+          labels={labels}
+          onChangeHat={(nextHat) => {
+            setHat(nextHat);
+            onPreferencesSync?.({ defaultHat: nextHat });
+          }}
+          onToggleTheme={() => {
+            const nextTheme: UiThemePreference = theme === "light" ? "dark" : "light";
+            setTheme(nextTheme);
+            persistZeroMsAntiFouc(nextTheme, locale, { theme: nextTheme });
+          }}
+          onToggleLocale={() => {
+            const nextLocale: UiLocalePreference = locale === "fr" ? "en" : "fr";
+            setLocale(nextLocale);
+            persistZeroMsAntiFouc(theme, nextLocale, { locale: nextLocale });
+          }}
+          onOpenSettingsModal={handleOpenSettingsModal}
+          onLogoutClick={() => {
+            setDropdownOpen(false);
+            setLoggedOut(true);
+            onLogout?.();
+          }}
+        />
       )}
 
-      {/* UserSettingsModal */}
       {modalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={labels.modalTitle}
-          data-testid="user-settings-modal"
-          className="fixed inset-0 z-40 flex items-center justify-center bg-surface-primary/80 p-4"
-        >
-          <div className="w-[720px] max-h-[600px] flex flex-col rounded-xl border border-surface-border bg-surface-elevated text-text-primary shadow-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between">
-              <h2 className="text-sm font-semibold">{labels.modalTitle}</h2>
-              <button
-                type="button"
-                data-testid="user-settings-modal-close-btn"
-                onClick={requestClose}
-                className="px-2 py-1 rounded text-xs border border-surface-border text-text-secondary"
-              >
-                Fermer (Esc)
-              </button>
-            </div>
-
-            <div className="px-4 pt-2">
-              <RgaaUnsavedChangesAlert
-                testIdPrefix="user-settings-modal"
-                isOpen={showUnsavedAlert}
-                labels={guardLabels}
-                locale={locale}
-                onStay={cancelDiscard}
-                onConfirmDiscard={confirmDiscard}
-              />
-            </div>
-
-            {/* 4 Tabs Navigation */}
-            <div
-              role="tablist"
-              data-testid="user-settings-tabs"
-              className="orcia-ds-tabs px-4 pt-2 pb-2 border-b border-surface-border items-center text-xs"
-            >
-              {(
-                [
-                  ["PREFERENCES_DISPLAY", labels.tab1PreferencesTitle],
-                  ["PROFILE_SECURITY", labels.tab2SecurityTitle],
-                  ["PASSTHROUGH_SOURCES", labels.tab3PassthroughTitle],
-                  ["IDE_MCP_KEYS", labels.tab4McpKeysTitle],
-                ] as const
-              ).map(([tabKey, tabLabel]) => (
-                <button
-                  key={tabKey}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tabKey}
-                  data-testid={`user-settings-tab-${tabKey}`}
-                  onClick={() => setActiveTab(tabKey)}
-                  className="orcia-ds-tab"
-                >
-                  {tabLabel}
-                </button>
-              ))}
-            </div>
-
-            <UserSettingsModalTabs
-              activeTab={activeTab}
-              userEmail={userEmail}
-              userRole={userRole}
-              autoOpenHelp={autoOpenHelp}
-              notificationsEnabled={notificationsEnabled}
-              passthroughTested={passthroughTested}
-              mcpTargetKind={mcpTargetKind}
-              mcpTargetSlug={mcpTargetSlug}
-              mcpExpiryDays={mcpExpiryDays}
-              mcpRpmLimit={mcpRpmLimit}
-              mcpTokens={mcpTokens}
-              lastIssuedPlaintext={lastIssuedPlaintext}
-              labels={labels}
-              onChangeAutoOpenHelp={(next) => {
-                setAutoOpenHelp(next);
-                setIsDirty(true);
-              }}
-              onChangeNotificationsEnabled={(next) => {
-                setNotificationsEnabled(next);
-                setIsDirty(true);
-              }}
-              onPreferencesSync={onPreferencesSync}
-              onNavigateAssistantBehavior={onNavigateAssistantBehavior}
-              onTestPassthrough={() => setPassthroughTested(true)}
-              onChangeMcpTargetKind={(kind) => {
-                setMcpTargetKind(kind);
-                setIsDirty(true);
-              }}
-              onChangeMcpTargetSlug={(slug) => {
-                setMcpTargetSlug(slug);
-                setIsDirty(slug.trim().length > 0);
-              }}
-              onChangeMcpExpiryDays={(days) => {
-                setMcpExpiryDays(days);
-                setIsDirty(true);
-              }}
-              onChangeMcpRpmLimit={(rpm) => {
-                setMcpRpmLimit(rpm);
-                setIsDirty(true);
-              }}
-              onIssueMcpToken={handleIssueMcpToken}
-              onRevokeMcpToken={handleRevokeMcpToken}
-            />
-
-            <div className="px-4 py-3 border-t border-surface-border bg-surface-secondary">
-              <RgaaDialogFooterActions
-                testIdPrefix="user-settings-modal"
-                cancelLabel={guardLabels.cancelButtonLabel}
-                submitLabel={guardLabels.submitButtonLabel}
-                onCancel={requestClose}
-                onSubmit={handleSaveModalChanges}
-              />
-            </div>
-          </div>
-        </div>
+        <UserSettingsModalDialog
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          userEmail={userEmail}
+          userRole={userRole}
+          locale={locale}
+          autoOpenHelp={autoOpenHelp}
+          notificationsEnabled={notificationsEnabled}
+          passthroughTested={passthroughTested}
+          mcpTargetKind={mcpTargetKind}
+          mcpTargetSlug={mcpTargetSlug}
+          mcpExpiryDays={mcpExpiryDays}
+          mcpRpmLimit={mcpRpmLimit}
+          mcpTokens={mcpTokens}
+          lastIssuedPlaintext={lastIssuedPlaintext}
+          labels={labels}
+          guardLabels={guardLabels}
+          showUnsavedAlert={showUnsavedAlert}
+          onRequestClose={requestClose}
+          onCancelDiscard={cancelDiscard}
+          onConfirmDiscard={confirmDiscard}
+          onSaveChanges={() => {
+            onPreferencesSync?.({
+              theme,
+              locale,
+              defaultHat: hat,
+              autoOpenContextualHelp: autoOpenHelp,
+              notificationsEnabled,
+            });
+            setIsDirty(false);
+            setModalOpen(false);
+          }}
+          onChangeAutoOpenHelp={(next) => {
+            setAutoOpenHelp(next);
+            setIsDirty(true);
+          }}
+          onChangeNotificationsEnabled={(next) => {
+            setNotificationsEnabled(next);
+            setIsDirty(true);
+          }}
+          onPreferencesSync={onPreferencesSync}
+          onNavigateAssistantBehavior={onNavigateAssistantBehavior}
+          onTestPassthrough={() => setPassthroughTested(true)}
+          onChangeMcpTargetKind={(kind) => {
+            setMcpTargetKind(kind);
+            setIsDirty(true);
+          }}
+          onChangeMcpTargetSlug={(slug) => {
+            setMcpTargetSlug(slug);
+            setIsDirty(slug.trim().length > 0);
+          }}
+          onChangeMcpExpiryDays={(days) => {
+            setMcpExpiryDays(days);
+            setIsDirty(true);
+          }}
+          onChangeMcpRpmLimit={(rpm) => {
+            setMcpRpmLimit(rpm);
+            setIsDirty(true);
+          }}
+          onIssueMcpToken={handleIssueMcpToken}
+          onRevokeMcpToken={(tokenId) => {
+            setMcpTokens((prev) =>
+              prev.map((t) => (t.tokenId === tokenId ? { ...t, revoked: true } : t)),
+            );
+          }}
+        />
       )}
     </div>
   );

@@ -6,15 +6,15 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-08",
+  "lastSyncedDate": "2026-11-11",
   "stats": {
     "activeRoutesCount": 23,
-    "uiPrimitivesCount": 96,
+    "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
     "alembicMigrationsCount": 28,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 109,
+    "techLeadReportsCount": 110,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 35
@@ -93,6 +93,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "MobileCompanionView",
     "ORCIA_EIGHT_MENU_ICON_NAMES",
     "ORCIA_ICONS",
+    "ORCIA_ICON_SVG_PATHS",
     "ORCIA_MODULE_ICON_NAMES",
     "ORCIA_SCOPE_LEVEL_ICON_NAMES",
     "OUTPUT_CONTRACT_FORMAT_LABELS_FR",
@@ -117,6 +118,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "PresenceClaimPill",
     "ProductLifecycleCard",
     "ProgressiveDay0AccostageBanner",
+    "ROLE_DISPLAY_LABELS_EN",
+    "ROLE_DISPLAY_LABELS_FR",
     "RemoteServiceTestBenchAndMcpExposureView",
     "RgaaDialogFooterActions",
     "RgaaModalDialog",
@@ -426,6 +429,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.1 (CAP-058, CAP-060, CAP-100)",
+      "reportFile": "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration-tech-lead-report.md",
+      "domain": "Coquille UI Direction C : Reset CSS <button>, Registre d'Icônes <svg> Filaires Monochromes 16px, Barre de Repli Propre (<kbd>[</kbd>), Entrée Sidebar Mon Compte & 5 Onglets Adaptatifs /settings Gouvernés par Rôle",
+      "summary": "Ajout du reset @layer base { button } et des états .orcia-ds-btn-danger (--color-stale-crimson) dans tokens.css ; rendu <svg> filaire 24x24 stroke=\"currentColor\" (strokeWidth=1.75) dans <OrciaIcon /> sur les 106 clés (iconSvgPaths.ts) ; découpage modulaire de FourZoneDirectionCShell.tsx, UserAccountDropdownAndSettingsModal.tsx et ShellContainer.tsx ; création de authSessionStore.ts (resolveSettingsAccess) gouvernant les 5 onglets /settings (organization, iam, models, connectors, packs — suppression des doublons workflows & glossary) et l'accès direct Mon Compte en pied de Sidebar."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Refonte Studio de Gouvernance des Agents LLM en 6 Blocs (CAP-091, CAP-090)",

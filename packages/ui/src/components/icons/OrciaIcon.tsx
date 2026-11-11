@@ -1,5 +1,10 @@
 import React from "react";
-import { getOrciaIconGlyph, type OrciaIconName } from "./iconRegistry";
+import {
+  getOrciaIconGlyph,
+  hasCustomGlyphOverride,
+  type OrciaIconName,
+} from "./iconRegistry";
+import { ORCIA_ICON_SVG_PATHS } from "./iconSvgPaths";
 
 export interface OrciaIconProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Semantic icon key from the centralized `ORCIA_ICONS` registry. */
@@ -11,23 +16,27 @@ export interface OrciaIconProps extends React.HTMLAttributes<HTMLSpanElement> {
   readonly ariaLabel?: string;
   /** Optional deterministic `data-testid` attribute. */
   readonly testId?: string;
+  /** Pixel dimension of the square wireframe SVG (defaults to `16`). */
+  readonly size?: number;
 }
 
 /**
- * Centralized Design System icon component (`@orcia/ui`).
- * Reads its glyph dynamically from `ORCIA_ICONS[name]` so any update to the
- * central registry immediately propagates across all views and components.
+ * Centralized Design System wireframe SVG icon component (`@orcia/ui`).
+ * Renders a monochrome `16px` `<svg>` stroked with `currentColor` (`strokeWidth={1.75}`).
  */
 export function OrciaIcon({
   name,
   ariaLabel,
   testId,
+  size = 16,
   className,
   style,
   ...rest
 }: OrciaIconProps): React.ReactElement {
   const glyph = getOrciaIconGlyph(name);
+  const paths = ORCIA_ICON_SVG_PATHS[name];
   const isDecorative = !ariaLabel || ariaLabel.trim().length === 0;
+  const customGlyphOverride = hasCustomGlyphOverride(name);
 
   return (
     <span
@@ -38,9 +47,34 @@ export function OrciaIcon({
       aria-label={isDecorative ? undefined : ariaLabel}
       aria-hidden={isDecorative ? "true" : undefined}
       className={className}
-      style={style}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        lineHeight: 1,
+        ...style,
+      }}
     >
-      {glyph}
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        focusable="false"
+      >
+        {paths.map((d, idx) => (
+          <path key={idx} d={d} />
+        ))}
+      </svg>
+      {customGlyphOverride ? (
+        <span style={{ fontSize: 0, lineHeight: 0 }}>{glyph}</span>
+      ) : null}
     </span>
   );
 }

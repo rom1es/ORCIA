@@ -524,16 +524,24 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     }
     const childUnits = orgUnits.filter((u) => u.parentId === target.id);
     if (childUnits.length > 0) {
+      const childLabel =
+        childUnits.length > 1
+          ? `${childUnits.length} Équipes sont rattachées`
+          : "1 Équipe est rattachée";
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${childUnits.length} sous-unité(s) / Équipe(s) sont rattachées à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
+        blockedReason: `Suppression refusée : ${childLabel} à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
       };
     }
     const attachedWorkspaces = workspaces.filter((w) => w.ownerOrgUnitId === target.id);
     if (attachedWorkspaces.length > 0) {
+      const wsLabel =
+        attachedWorkspaces.length > 1
+          ? `${attachedWorkspaces.length} Espaces de Travail sont rattachés`
+          : "1 Espace de Travail est rattaché";
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${attachedWorkspaces.length} Espace(s) de Travail sont rattachés à « ${target.name} » (${attachedWorkspaces.map((w) => w.name).join(", ")}). Supprimez ou réattribuez d'abord ces espaces.`,
+        blockedReason: `Suppression refusée : ${wsLabel} à « ${target.name} » (${attachedWorkspaces.map((w) => w.name).join(", ")}). Supprimez ou réattribuez d'abord ces espaces.`,
       };
     }
     const dependentGrants = rbacGrants.filter(
@@ -544,9 +552,13 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         g.scopePath.startsWith(`${target.slug}/`),
     );
     if (dependentGrants.length > 0) {
+      const grantLabel =
+        dependentGrants.length > 1
+          ? `${dependentGrants.length} règles d'habilitation ciblent`
+          : "1 règle d'habilitation cible";
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${dependentGrants.length} règle(s) d'habilitation ciblent « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
+        blockedReason: `Suppression refusée : ${grantLabel} « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
       };
     }
     const nextOrgUnits = orgUnits.filter((u) => u.id !== orgUnitId);

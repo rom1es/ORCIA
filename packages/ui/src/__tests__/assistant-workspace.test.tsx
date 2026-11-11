@@ -309,11 +309,11 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
         />,
       );
 
-      // 1. When idle (!isGenerating), send button displays triangle play icon (▶)
-      expect(screen.getByTestId("assistant-send-play-icon").textContent).toBe("▶");
+      // 1. When idle (!isGenerating), send button displays triangle play wireframe SVG icon
+      expect(screen.getByTestId("assistant-send-play-icon").querySelector("svg")).not.toBeNull();
       expect(screen.queryByTestId("assistant-stop-square-icon")).toBeNull();
 
-      // 2. When generating starts (isGenerating=true), button is NOT disabled and shows filled square (■)
+      // 2. When generating starts (isGenerating=true), button is NOT disabled and shows square stop SVG icon
       rerender(
         <AssistantSpeedSelectorAndStreamView
           workspaceId="ws-claims-alpha"
@@ -345,7 +345,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
 
       const actionBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
       expect(actionBtn.disabled).toBe(false);
-      expect(screen.getByTestId("assistant-stop-square-icon").textContent).toBe("■");
+      expect(screen.getByTestId("assistant-stop-square-icon").querySelector("svg")).not.toBeNull();
 
       // Thinking sub-window is open by default while thinking (data-expanded="true")
       const subWindow = screen.getByTestId("assistant-thinking-subwindow");
@@ -465,9 +465,10 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
         />,
       );
 
-      expect(screen.getByTestId("assistant-send-play-icon").textContent).toBe("▶");
+      expect(screen.getByTestId("assistant-send-play-icon").querySelector("svg")).not.toBeNull();
+      expect(screen.getByTestId("assistant-generation-stopped-badge").querySelector("svg")).not.toBeNull();
       expect(screen.getByTestId("assistant-generation-stopped-badge").textContent).toContain(
-        "⏹ Génération interrompue par l'utilisateur",
+        "Génération interrompue par l'utilisateur",
       );
       expect(screen.getByTestId("assistant-streamed-response-box").textContent).toContain(
         "Voici le début de la réponse générée progressivement...",
@@ -894,14 +895,14 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(citationLink.textContent).toContain("Politique de Sécurité des Espaces");
 
     const likeBtn = screen.getByTestId("assistant-action-like-btn");
-    expect(likeBtn.textContent).toBe("👍");
+    expect(likeBtn.querySelector('[data-orcia-icon="like"] svg')).not.toBeNull();
     fireEvent.click(likeBtn);
     expect(likeBtn.getAttribute("aria-pressed")).toBe("true");
 
     const copyBtn = screen.getByTestId("assistant-action-copy-btn");
-    expect(copyBtn.textContent).toBe("📋");
+    expect(copyBtn.querySelector('[data-orcia-icon="copy"] svg')).not.toBeNull();
     fireEvent.click(copyBtn);
-    expect(copyBtn.textContent).toBe("✓");
+    expect(copyBtn.querySelector('[data-orcia-icon="check"] svg')).not.toBeNull();
     expect(copyBtn.getAttribute("title")).toContain("Copié");
 
     const detailsBtn = screen.getByTestId("assistant-action-details-btn");
@@ -978,8 +979,9 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(onSaveUserPrefs).toHaveBeenCalledWith(
       expect.objectContaining({ defaultHat: "TECH_LEAD" }),
     );
+    expect(screen.getByTestId("assistant-gov-autosaved-badge").querySelector("svg")).not.toBeNull();
     expect(screen.getByTestId("assistant-gov-autosaved-badge").textContent).toContain(
-      "✓ Enregistré",
+      "Enregistré",
     );
   });
 
@@ -1053,7 +1055,9 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     const responseBox = screen.getByTestId("assistant-streamed-response-box");
     expect(responseBox.textContent).not.toContain("PLATFORM_ADMIN");
     expect(screen.getByTestId("assistant-action-like-btn").className).toContain("border-0");
-    expect(screen.getByTestId("assistant-action-regenerate-btn").textContent).toBe("↻");
+    expect(
+      screen.getByTestId("assistant-action-regenerate-btn").querySelector("svg"),
+    ).not.toBeNull();
 
     // 2. Rule B: Progressive steps in Approfondi mode -> Step 1 starts RUNNING (collapse show)
     rerender(
@@ -1288,7 +1292,8 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     fireEvent.scroll(streamEl);
     expect(streamEl.getAttribute("data-pinned-to-bottom")).toBe("false");
     const resumeBtn = screen.getByTestId("assistant-resume-autoscroll-btn");
-    expect(resumeBtn.textContent).toContain("↓ Suivre la réponse en direct");
+    expect(resumeBtn.querySelector("svg")).not.toBeNull();
+    expect(resumeBtn.textContent).toContain("Suivre la réponse en direct");
 
     // 5. Subsequent streaming chunks append at the bottom WITHOUT hijacking user's manual scrollTop (stays 150)
     Object.defineProperty(streamEl, "scrollHeight", { value: 1400, configurable: true });
@@ -1399,9 +1404,10 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     fireEvent.click(screen.getByTestId("assistant-gov-tab-FULL_ASSEMBLY"));
     const telemetrySection = screen.getByTestId("assistant-prompt-telemetry-log-section");
     expect(telemetrySection.textContent).toContain("Journal des Prompts, Contextes & Retours Utilisateurs");
-    expect(screen.getByTestId("assistant-telemetry-feedback-0").textContent).toContain("👍 Bonne réponse");
+    expect(screen.getByTestId("assistant-telemetry-feedback-0").querySelector("svg")).not.toBeNull();
+    expect(screen.getByTestId("assistant-telemetry-feedback-0").textContent).toContain("Bonne réponse");
     expect(screen.getByTestId("assistant-prompt-telemetry-item-0").textContent).toContain("Résume la politique DORA");
-    expect(screen.getByTestId("assistant-prompt-telemetry-item-0").textContent).toContain("📁 Dossier : Audit DORA 2026");
+    expect(screen.getByTestId("assistant-prompt-telemetry-item-0").textContent).toContain("Dossier : Audit DORA 2026");
 
     // Click 'Inspecter le contexte envoyé au LLM' to reveal the exact assembledSystemPrompt
     fireEvent.click(screen.getByTestId("assistant-telemetry-toggle-context-0"));
