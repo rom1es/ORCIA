@@ -38,6 +38,14 @@ from orcia_worker.roles import (
 )
 
 if TYPE_CHECKING:
+    from orcia_worker.codegraph_indexer import (
+        CodegraphIndexExecutionResult,
+        codegraph_indexer_actor,
+        execute_codegraph_index_job,
+        execute_codegraph_index_job_async,
+        purge_confined_graph_dir,
+        resolve_confined_graph_dir,
+    )
     from orcia_worker.docling_indexer import (
         DoclingIndexExecutionResult,
         docling_indexer_actor,
@@ -50,17 +58,31 @@ _DOCLING_EXPORTS = {
     "execute_docling_index_job",
 }
 
+_CODEGRAPH_EXPORTS = {
+    "CodegraphIndexExecutionResult",
+    "codegraph_indexer_actor",
+    "execute_codegraph_index_job",
+    "execute_codegraph_index_job_async",
+    "purge_confined_graph_dir",
+    "resolve_confined_graph_dir",
+}
+
 
 def __getattr__(name: str) -> Any:
     if name in _DOCLING_EXPORTS:
         from orcia_worker import docling_indexer
 
         return getattr(docling_indexer, name)
+    if name in _CODEGRAPH_EXPORTS:
+        from orcia_worker import codegraph_indexer
+
+        return getattr(codegraph_indexer, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [
     "CANONICAL_DEPLOYMENT_ROLES",
+    "CodegraphIndexExecutionResult",
     "DbosOutboxRelay",
     "DeploymentRoleName",
     "DeploymentRoleSpec",
@@ -69,17 +91,22 @@ __all__ = [
     "OutboxEventBus",
     "ProcessedPingRegistry",
     "StepRunnerExecutionResult",
+    "codegraph_indexer_actor",
     "configure_broker",
     "dbos_outbox_relay_workflow",
     "dbos_step_runner_workflow",
     "dispatch_durable_step",
     "docling_indexer_actor",
+    "execute_codegraph_index_job",
+    "execute_codegraph_index_job_async",
     "execute_docling_index_job",
     "execute_step_runner_job",
     "execute_system_ping",
     "get_deployment_role_spec",
     "list_deployment_role_specs",
     "outbox_relay_actor",
+    "purge_confined_graph_dir",
+    "resolve_confined_graph_dir",
     "system_ping_actor",
     "verify_role_process_isolation",
 ]

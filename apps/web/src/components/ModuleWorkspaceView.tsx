@@ -11,7 +11,17 @@ import { WorkspacesFeaturePanel } from "../features/workspaces";
 import { useI18n } from "../i18n";
 import { useShellNavigation } from "./ShellContainer";
 
-export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
+export interface ModuleWorkspaceViewProps {
+  readonly moduleKey: UiModuleKey;
+  readonly initialWorkspaceId?: string;
+  readonly initialTab?: string;
+}
+
+export function ModuleWorkspaceView({
+  moduleKey,
+  initialWorkspaceId,
+  initialTab,
+}: ModuleWorkspaceViewProps) {
   const { dictionary, locale } = useI18n();
   const { activeModuleKey, openHelpSection } = useShellNavigation();
 
@@ -84,7 +94,12 @@ export function ModuleWorkspaceView({ moduleKey }: { moduleKey: UiModuleKey }) {
       {currentModule === "ontology" && <OntologyFeaturePanel />}
       {currentModule === "gates" && <GatesFeaturePanel />}
       {currentModule === "finops" && <FinopsFeaturePanel />}
-      {currentModule === "admin" && <WorkspacesFeaturePanel />}
+      {currentModule === "admin" && (
+        <WorkspacesFeaturePanel
+          initialWorkspaceId={initialWorkspaceId}
+          initialTab={initialTab}
+        />
+      )}
       {currentModule === "bootstrap" && <AdminFeaturePanel />}
     </div>
   );

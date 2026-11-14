@@ -3836,6 +3836,127 @@
         "title": "ClaimTaskResponse",
         "type": "object"
       },
+      "CodegraphActiveRepoResponse": {
+        "description": "Code repository datasource enabled for codegraph indexing in the workspace.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "codegraph_enabled": {
+            "default": true,
+            "title": "Codegraph Enabled",
+            "type": "boolean"
+          },
+          "codegraph_head_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Head Sha"
+          },
+          "codegraph_status": {
+            "default": "READY",
+            "title": "Codegraph Status",
+            "type": "string"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "source_nature": {
+            "default": "SOURCE_CODE",
+            "title": "Source Nature",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "datasource_id",
+          "alias",
+          "uri"
+        ],
+        "title": "CodegraphActiveRepoResponse",
+        "type": "object"
+      },
+      "CodegraphToolItemResponse": {
+        "description": "Specification of an available read-only MCP codegraph tool.",
+        "properties": {
+          "description": {
+            "description": "Tool summary for agent tool-calling",
+            "title": "Description",
+            "type": "string"
+          },
+          "input_schema": {
+            "additionalProperties": true,
+            "description": "JSON Schema for arguments",
+            "title": "Input Schema",
+            "type": "object"
+          },
+          "name": {
+            "description": "Normalized tool name",
+            "title": "Name",
+            "type": "string"
+          },
+          "read_only": {
+            "default": true,
+            "description": "Always true for codegraph-mcp tools",
+            "title": "Read Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "CodegraphToolItemResponse",
+        "type": "object"
+      },
+      "CodegraphToolsListResponse": {
+        "description": "Payload returned by `GET /api/v1/workspaces/{workspace_id}/codegraph/tools`.",
+        "properties": {
+          "active_repositories": {
+            "items": {
+              "$ref": "#/components/schemas/CodegraphActiveRepoResponse"
+            },
+            "title": "Active Repositories",
+            "type": "array"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/CodegraphToolItemResponse"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "provider",
+          "trace_id"
+        ],
+        "title": "CodegraphToolsListResponse",
+        "type": "object"
+      },
       "CognitiveRoutingOutcomeResponse": {
         "additionalProperties": false,
         "description": "Cognitive routing outcome response (`Story 8.2`).",
@@ -5268,6 +5389,32 @@
             "title": "Alias",
             "type": "string"
           },
+          "codegraph_auth_mode": {
+            "default": "SERVICE_ACCOUNT",
+            "enum": [
+              "SERVICE_ACCOUNT",
+              "WORKSPACE_LEAD_TOKEN"
+            ],
+            "title": "Codegraph Auth Mode",
+            "type": "string"
+          },
+          "codegraph_enabled": {
+            "default": false,
+            "title": "Codegraph Enabled",
+            "type": "boolean"
+          },
+          "codegraph_owner_user_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Owner User Id"
+          },
           "connector_id": {
             "anyOf": [
               {
@@ -5309,6 +5456,23 @@
             ],
             "title": "Service Account Id"
           },
+          "source_nature": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DOCUMENT_KB",
+                  "WORK_TRACKER",
+                  "SOURCE_CODE",
+                  "RELATIONAL_SCHEMA"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Nature"
+          },
           "sync_identity_mode": {
             "default": "SERVICE_ACCOUNT",
             "enum": [
@@ -5317,6 +5481,39 @@
             ],
             "title": "Sync Identity Mode",
             "type": "string"
+          },
+          "sync_mode": {
+            "default": "POLLING_24H",
+            "enum": [
+              "WEBHOOK_PUSH",
+              "POLLING_24H"
+            ],
+            "title": "Sync Mode",
+            "type": "string"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_scope": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope"
           },
           "uri": {
             "minLength": 1,
@@ -5330,6 +5527,46 @@
           "uri"
         ],
         "title": "CreateWorkspaceDatasourceRequest",
+        "type": "object"
+      },
+      "DatasourceWebhookIngressResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/webhooks/datasources/{datasource_id}`.",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "delivery_key": {
+            "title": "Delivery Key",
+            "type": "string"
+          },
+          "outbox_published": {
+            "title": "Outbox Published",
+            "type": "boolean"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accepted",
+          "outcome",
+          "delivery_key",
+          "datasource_id",
+          "outbox_published",
+          "trace_id"
+        ],
+        "title": "DatasourceWebhookIngressResponse",
         "type": "object"
       },
       "DbDdlIndexRequest": {
@@ -11583,6 +11820,61 @@
         "title": "InvalidatePromptCacheResponse",
         "type": "object"
       },
+      "InvokeCodegraphToolRequest": {
+        "description": "Payload sent to `POST /api/v1/workspaces/{workspace_id}/codegraph/invoke`.",
+        "properties": {
+          "arguments": {
+            "additionalProperties": true,
+            "description": "Tool arguments (repo_alias, query, etc.)",
+            "title": "Arguments",
+            "type": "object"
+          },
+          "tool_name": {
+            "description": "Normalized tool name to invoke",
+            "title": "Tool Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name"
+        ],
+        "title": "InvokeCodegraphToolRequest",
+        "type": "object"
+      },
+      "InvokeCodegraphToolResponse": {
+        "description": "Payload returned by `POST /api/v1/workspaces/{workspace_id}/codegraph/invoke`.",
+        "properties": {
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "tool_name",
+          "provider",
+          "trace_id"
+        ],
+        "title": "InvokeCodegraphToolResponse",
+        "type": "object"
+      },
       "InvokedSkillTraceResponseItem": {
         "additionalProperties": false,
         "description": "Trace item of a Skill mobilized during Agent execution.",
@@ -15501,6 +15793,100 @@
         "title": "RebasedSectionChunkSchema",
         "type": "object"
       },
+      "ReconcileWorkspaceStalenessItem": {
+        "additionalProperties": false,
+        "description": "Evaluation summary for a single datasource during 24h staleness reconciliation.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "delta_sync_needed": {
+            "title": "Delta Sync Needed",
+            "type": "boolean"
+          },
+          "elapsed_hours": {
+            "title": "Elapsed Hours",
+            "type": "number"
+          },
+          "freshness_status": {
+            "title": "Freshness Status",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "probed_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probed Fingerprint"
+          }
+        },
+        "required": [
+          "datasource_id",
+          "alias",
+          "freshness_status",
+          "outcome",
+          "elapsed_hours",
+          "delta_sync_needed"
+        ],
+        "title": "ReconcileWorkspaceStalenessItem",
+        "type": "object"
+      },
+      "ReconcileWorkspaceStalenessResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/workspaces/{workspace_id}/datasources/reconcile-staleness`.",
+        "properties": {
+          "evaluated_count": {
+            "title": "Evaluated Count",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ReconcileWorkspaceStalenessItem"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "stale_count": {
+            "title": "Stale Count",
+            "type": "integer"
+          },
+          "synced_count": {
+            "title": "Synced Count",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "evaluated_count",
+          "stale_count",
+          "synced_count",
+          "results",
+          "trace_id"
+        ],
+        "title": "ReconcileWorkspaceStalenessResponse",
+        "type": "object"
+      },
       "RecordAssistantTurnFeedbackRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/three-speed/feedback` (`Story 10.2`).",
@@ -18563,6 +18949,18 @@
               }
             ]
           },
+          "codegraph_impact": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Impact"
+          },
           "correction_remarks_applied": {
             "anyOf": [
               {
@@ -19914,6 +20312,25 @@
         "title": "ToggleAgentGovernanceRequest",
         "type": "object"
       },
+      "TriggerWorkspaceDatasourceSyncResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync`.",
+        "properties": {
+          "datasource": {
+            "$ref": "#/components/schemas/WorkspaceDatasourceItemResponse"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "datasource",
+          "trace_id"
+        ],
+        "title": "TriggerWorkspaceDatasourceSyncResponse",
+        "type": "object"
+      },
       "TripartiteTraceEdgeSchemaItem": {
         "additionalProperties": false,
         "properties": {
@@ -20336,6 +20753,44 @@
             ],
             "title": "Alias"
           },
+          "codegraph_auth_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "SERVICE_ACCOUNT",
+                  "WORKSPACE_LEAD_TOKEN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Auth Mode"
+          },
+          "codegraph_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Enabled"
+          },
+          "codegraph_owner_user_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Owner User Id"
+          },
           "connector_id": {
             "anyOf": [
               {
@@ -20371,6 +20826,23 @@
             ],
             "title": "Service Account Id"
           },
+          "source_nature": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DOCUMENT_KB",
+                  "WORK_TRACKER",
+                  "SOURCE_CODE",
+                  "RELATIONAL_SCHEMA"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Nature"
+          },
           "sync_identity_mode": {
             "anyOf": [
               {
@@ -20385,6 +20857,45 @@
               }
             ],
             "title": "Sync Identity Mode"
+          },
+          "sync_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "WEBHOOK_PUSH",
+                  "POLLING_24H"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Mode"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_scope": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope"
           },
           "uri": {
             "anyOf": [
@@ -24383,6 +24894,36 @@
         "title": "WorkspaceBootstrapInputItem",
         "type": "object"
       },
+      "WorkspaceDatasourceDeleteResponse": {
+        "additionalProperties": false,
+        "description": "Response for `DELETE /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`.",
+        "properties": {
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "deleted": {
+            "default": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "datasource_id",
+          "trace_id"
+        ],
+        "title": "WorkspaceDatasourceDeleteResponse",
+        "type": "object"
+      },
       "WorkspaceDatasourceItem": {
         "additionalProperties": false,
         "description": "Federated datasource (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`).",
@@ -24440,11 +24981,81 @@
       },
       "WorkspaceDatasourceItemResponse": {
         "additionalProperties": false,
-        "description": "Workspace datasource with deterministic RAG sync health (`CA-17.4.3`).",
+        "description": "Workspace datasource with deterministic RAG health (`CA-17.4.3`) & Codegraph.",
         "properties": {
           "alias": {
             "title": "Alias",
             "type": "string"
+          },
+          "codegraph_auth_mode": {
+            "default": "SERVICE_ACCOUNT",
+            "enum": [
+              "SERVICE_ACCOUNT",
+              "WORKSPACE_LEAD_TOKEN"
+            ],
+            "title": "Codegraph Auth Mode",
+            "type": "string"
+          },
+          "codegraph_enabled": {
+            "default": false,
+            "title": "Codegraph Enabled",
+            "type": "boolean"
+          },
+          "codegraph_head_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Head Sha"
+          },
+          "codegraph_last_indexed_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Last Indexed At Iso"
+          },
+          "codegraph_owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Owner User Id"
+          },
+          "codegraph_status": {
+            "default": "DISABLED",
+            "enum": [
+              "DISABLED",
+              "INDEXING",
+              "READY",
+              "PAUSED_REFERENT_RENEWAL_REQUIRED",
+              "ERROR"
+            ],
+            "title": "Codegraph Status",
+            "type": "string"
+          },
+          "codegraph_status_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Status Reason"
           },
           "connector_id": {
             "anyOf": [
@@ -24461,9 +25072,53 @@
             "title": "Created At Iso",
             "type": "string"
           },
+          "fingerprint_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint Hash"
+          },
+          "freshness_status": {
+            "default": "PENDING_INITIAL_SYNC",
+            "enum": [
+              "SYNCED",
+              "STALE",
+              "SYNC_ERROR",
+              "PENDING_INITIAL_SYNC"
+            ],
+            "title": "Freshness Status",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "last_probe_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Probe At Iso"
+          },
+          "last_sync_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync At Iso"
           },
           "referent_user_id": {
             "anyOf": [
@@ -24491,6 +25146,17 @@
             ],
             "title": "Service Account Id"
           },
+          "source_nature": {
+            "default": "DOCUMENT_KB",
+            "enum": [
+              "DOCUMENT_KB",
+              "WORK_TRACKER",
+              "SOURCE_CODE",
+              "RELATIONAL_SCHEMA"
+            ],
+            "title": "Source Nature",
+            "type": "string"
+          },
           "sync_identity_mode": {
             "default": "SERVICE_ACCOUNT",
             "enum": [
@@ -24498,6 +25164,15 @@
               "TEAM_REFERENT_USER"
             ],
             "title": "Sync Identity Mode",
+            "type": "string"
+          },
+          "sync_mode": {
+            "default": "POLLING_24H",
+            "enum": [
+              "WEBHOOK_PUSH",
+              "POLLING_24H"
+            ],
+            "title": "Sync Mode",
             "type": "string"
           },
           "sync_status": {
@@ -24524,6 +25199,28 @@
               }
             ],
             "title": "Sync Status Reason"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope"
           },
           "uri": {
             "title": "Uri",
@@ -48011,6 +48708,177 @@
         ]
       }
     },
+    "/api/v1/webhooks/datasources/{datasource_id}": {
+      "post": {
+        "description": "Ingest a provider webhook with HMAC-SHA256 verification and SHA-256 short-circuit.",
+        "operationId": "ingest_datasource_webhook_api_v1_webhooks_datasources__datasource_id__post",
+        "parameters": [
+          {
+            "description": "Target datasource ID",
+            "in": "path",
+            "name": "datasource_id",
+            "required": true,
+            "schema": {
+              "description": "Target datasource ID",
+              "title": "Datasource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-orcia-webhook-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Orcia-Webhook-Signature"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-hub-signature-256",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Hub-Signature-256"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-webhook-delivery-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Webhook-Delivery-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasourceWebhookIngressResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Ingest Datasource Webhook",
+        "tags": [
+          "datasource-webhooks"
+        ]
+      }
+    },
     "/api/v1/webhooks/jira/issue-updated": {
       "post": {
         "description": "Process `jira:issue_updated` (`Done`) and publish Replay event to `domain_events_outbox`.",
@@ -49479,6 +50347,256 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/codegraph/invoke": {
+      "post": {
+        "operationId": "invoke_codegraph_tool_api_v1_workspaces__workspace_id__codegraph_invoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvokeCodegraphToolRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeCodegraphToolResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Invoke a normalized read-only Code Graph MCP tool",
+        "tags": [
+          "codegraph-mcp"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/codegraph/tools": {
+      "get": {
+        "operationId": "list_codegraph_tools_api_v1_workspaces__workspace_id__codegraph_tools_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodegraphToolsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List normalized read-only Code Graph MCP tools and active repositories",
+        "tags": [
+          "codegraph-mcp"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/datasources": {
       "get": {
         "operationId": "list_workspace_datasources_api_v1_workspaces__workspace_id__datasources_get",
@@ -49737,13 +50855,279 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Attach a new datasource to a workspace with identity sync mode",
+        "summary": "Attach a new datasource to a workspace with multi-nature and codegraph options",
         "tags": [
           "workspace-datasources"
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/datasources/reconcile-staleness": {
+      "post": {
+        "description": "Evaluate 24h freshness on workspace datasources and trigger delta sync if stale.",
+        "operationId": "reconcile_workspace_staleness_api_v1_workspaces__workspace_id__datasources_reconcile_staleness_post",
+        "parameters": [
+          {
+            "description": "Target workspace ID",
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "description": "Target workspace ID",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconcileWorkspaceStalenessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Reconcile Workspace Staleness",
+        "tags": [
+          "datasource-webhooks"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}": {
+      "delete": {
+        "operationId": "delete_workspace_datasource_api_v1_workspaces__workspace_id__datasources__datasource_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "datasource_id",
+            "required": true,
+            "schema": {
+              "title": "Datasource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceDatasourceDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Delete a datasource from a workspace",
+        "tags": [
+          "workspace-datasources"
+        ]
+      },
       "patch": {
         "operationId": "update_workspace_datasource_api_v1_workspaces__workspace_id__datasources__datasource_id__patch",
         "parameters": [
@@ -49892,7 +51276,152 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Update datasource settings or renew referent user",
+        "summary": "Update datasource settings, sync mode or codegraph options",
+        "tags": [
+          "workspace-datasources"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync": {
+      "post": {
+        "operationId": "trigger_workspace_datasource_sync_api_v1_workspaces__workspace_id__datasources__datasource_id__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "datasource_id",
+            "required": true,
+            "schema": {
+              "title": "Datasource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerWorkspaceDatasourceSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Trigger manual synchronization of a datasource",
         "tags": [
           "workspace-datasources"
         ]

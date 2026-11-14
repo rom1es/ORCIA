@@ -104,6 +104,32 @@ const configurationRoute = createRoute({
   component: SettingsHubView,
 });
 
+const workspaceDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$wsId",
+  validateSearch: validateOrciaRouteSearch,
+  component: function WorkspaceDetailRouteComponent() {
+    const { wsId } = workspaceDetailRoute.useParams();
+    return <ModuleWorkspaceView moduleKey="admin" initialWorkspaceId={wsId} />;
+  },
+});
+
+const workspaceSourcesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$wsId/sources",
+  validateSearch: validateOrciaRouteSearch,
+  component: function WorkspaceSourcesRouteComponent() {
+    const { wsId } = workspaceSourcesRoute.useParams();
+    return (
+      <ModuleWorkspaceView
+        moduleKey="admin"
+        initialWorkspaceId={wsId}
+        initialTab="SOURCES"
+      />
+    );
+  },
+});
+
 const helpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/help",
@@ -124,6 +150,8 @@ export const routeTree = rootRoute.addChildren([
   finopsRoute,
   activityRoute,
   workspacesRoute,
+  workspaceDetailRoute,
+  workspaceSourcesRoute,
   bootstrapRoute,
   settingsRoute,
   settingsPacksRoute,

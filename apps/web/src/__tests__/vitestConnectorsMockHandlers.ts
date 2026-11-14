@@ -36,6 +36,16 @@ export interface MockWorkspaceDatasourceItem {
   sync_identity_mode: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
   service_account_id: string | null;
   referent_user_id: string | null;
+  source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA";
+  sync_mode?: "POLLING_24H" | "WEBHOOK_PUSH";
+  target_scope?: string | null;
+  target_ref?: string | null;
+  codegraph_enabled?: boolean;
+  codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN";
+  codegraph_owner_user_id?: string | null;
+  codegraph_status?: "DISABLED" | "INDEXING" | "READY" | "PAUSED_REFERENT_RENEWAL_REQUIRED" | "ERROR";
+  freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC";
+  last_sync_at_iso?: string | null;
   created_at_iso: string;
 }
 
@@ -271,7 +281,27 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
     }
   }
 
-  // 4. /api/v1/workspaces/{workspace_id}/datasources
+  // 4a. /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync
+  const wsDsSyncMatch = /^\/api\/v1\/workspaces\/([^/]+)\/datasources\/([^/]+)\/sync$/.exec(path);
+  if (wsDsSyncMatch && method === "POST") {
+    if (isObserver) {
+      return problemResponse(403, "Mode observateur lecture seule", "Mutation interdite", "ERR_OBSERVER_MODE_READ_ONLY");
+    }
+    const syncWsId = wsDsSyncMatch[1];
+    const syncDsId = wsDsSyncMatch[2];
+    const existing = datasources.find((d) => d.id === syncDsId && d.workspace_id === syncWsId);
+    if (!existing) {
+      return problemResponse(404, "Datasource introuvable", "Introuvable", "ERR_RESOURCE_NOT_FOUND");
+    }
+    existing.last_sync_at_iso = new Date().toISOString();
+    existing.freshness_status = "SYNCED";
+    return jsonResponse({
+      datasource: existing,
+      trace_id: "0195f000-0000-7000-8000-000000000999",
+    });
+  }
+
+  // 4b. /api/v1/workspaces/{workspace_id}/datasources
   const wsDsMatch = /^\/api\/v1\/workspaces\/([^/]+)\/datasources(?:\/([^/]+))?$/.exec(path);
   if (wsDsMatch) {
     const wsId = decodeURIComponent(wsDsMatch[1] ?? "");
@@ -304,6 +334,7 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
         return problemResponse(403, "Mode observateur lecture seule", "Mutation interdite", "ERR_OBSERVER_MODE_READ_ONLY");
       }
       datasourceSeq += 1;
+      const cgEnabled = Boolean(body.codegraph_enabled);
       const newDs: MockWorkspaceDatasourceItem = {
         id: `ds-${datasourceSeq}`,
         workspace_id: wsId,
@@ -314,6 +345,16 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
         sync_identity_mode: (body.sync_identity_mode as any) ?? "SERVICE_ACCOUNT",
         service_account_id: (body.service_account_id as string) || null,
         referent_user_id: (body.referent_user_id as string) || null,
+        source_nature: (body.source_nature as any) ?? "DOCUMENT_KB",
+        sync_mode: (body.sync_mode as any) ?? "POLLING_24H",
+        target_scope: (body.target_scope as string) || null,
+        target_ref: (body.target_ref as string) || null,
+        codegraph_enabled: cgEnabled,
+        codegraph_auth_mode: (body.codegraph_auth_mode as any) ?? "SERVICE_ACCOUNT",
+        codegraph_owner_user_id: (body.codegraph_owner_user_id as string) || null,
+        codegraph_status: cgEnabled ? "READY" : "DISABLED",
+        freshness_status: "PENDING_INITIAL_SYNC",
+        last_sync_at_iso: null,
         created_at_iso: new Date().toISOString(),
       };
       datasources.push(newDs);
@@ -338,6 +379,14 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
       );
     }
 
+    if (dsId && method === "DELETE") {
+      if (isObserver) {
+        return problemResponse(403, "Mode observateur lecture seule", "Mutation interdite", "ERR_OBSERVER_MODE_READ_ONLY");
+      }
+      datasources = datasources.filter((d) => d.id !== dsId || d.workspace_id !== wsId);
+      return jsonResponse({ deleted: true, datasource_id: dsId, trace_id: "0195f000-0000-7000-8000-000000000999" });
+    }
+
     if (dsId && method === "PATCH") {
       if (isObserver) {
         return problemResponse(403, "Mode observateur lecture seule", "Mutation interdite", "ERR_OBSERVER_MODE_READ_ONLY");
@@ -352,6 +401,16 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
       if (body.sync_identity_mode !== undefined) existing.sync_identity_mode = body.sync_identity_mode as any;
       if (body.service_account_id !== undefined) existing.service_account_id = (body.service_account_id as string) || null;
       if (body.referent_user_id !== undefined) existing.referent_user_id = (body.referent_user_id as string) || null;
+      if (body.source_nature !== undefined) existing.source_nature = body.source_nature as any;
+      if (body.sync_mode !== undefined) existing.sync_mode = body.sync_mode as any;
+      if (body.target_scope !== undefined) existing.target_scope = (body.target_scope as string) || null;
+      if (body.target_ref !== undefined) existing.target_ref = (body.target_ref as string) || null;
+      if (body.codegraph_enabled !== undefined) {
+        existing.codegraph_enabled = Boolean(body.codegraph_enabled);
+        existing.codegraph_status = existing.codegraph_enabled ? "READY" : "DISABLED";
+      }
+      if (body.codegraph_auth_mode !== undefined) existing.codegraph_auth_mode = body.codegraph_auth_mode as any;
+      if (body.codegraph_owner_user_id !== undefined) existing.codegraph_owner_user_id = (body.codegraph_owner_user_id as string) || null;
 
       let sync_status: "ACTIVE" | "PAUSED_REFERENT_RENEWAL_REQUIRED" = "ACTIVE";
       let sync_status_reason: string | null = null;

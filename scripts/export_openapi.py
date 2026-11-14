@@ -40,6 +40,8 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "blackboard",
     "bootstrap",
     "catalog",
+    "codegraph_mcp",
+    "datasource_webhooks",
     "enterprise_connectors",
     "iam_accounts",
     "ontology_and_rag",

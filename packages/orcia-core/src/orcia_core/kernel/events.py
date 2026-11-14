@@ -414,3 +414,93 @@ class SettingsChanged(DomainEvent):
             key=key,
             version=version,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class DatasourceSyncRequested(DomainEvent):
+    """Published when an incremental sync is required for a workspace datasource (`Story 18.2`)."""
+
+    datasource_id: str = ""
+    source_nature: str = ""
+    trigger_reason: str = "WEBHOOK_PUSH"
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        datasource_id: str,
+        workspace_id: str,
+        source_nature: str,
+        trigger_reason: str = "WEBHOOK_PUSH",
+        target_ref: str | None = None,
+        delivery_key: str | None = None,
+        remote_fingerprint_sha256: str | None = None,
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> DatasourceSyncRequested:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="DatasourceSyncRequested",
+            aggregate_type="workspace_datasource",
+            aggregate_id=datasource_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "datasource_id": datasource_id,
+                "workspace_id": workspace_id,
+                "source_nature": source_nature,
+                "trigger_reason": trigger_reason,
+                "target_ref": target_ref,
+                "delivery_key": delivery_key,
+                "remote_fingerprint_sha256": remote_fingerprint_sha256,
+            },
+            trace_id=trace_id,
+            datasource_id=datasource_id,
+            source_nature=source_nature,
+            trigger_reason=trigger_reason,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class DatasourceFreshnessEvaluated(DomainEvent):
+    """Published when a freshness probe evaluates a workspace datasource (`Story 18.2`)."""
+
+    datasource_id: str = ""
+    freshness_status: str = "SYNCED"
+    outcome: str = "QUIET_UNCHANGED"
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        datasource_id: str,
+        workspace_id: str,
+        source_nature: str,
+        freshness_status: str,
+        outcome: str,
+        elapsed_hours: float = 0.0,
+        stored_fingerprint: str | None = None,
+        probed_fingerprint: str | None = None,
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> DatasourceFreshnessEvaluated:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="DatasourceFreshnessEvaluated",
+            aggregate_type="workspace_datasource",
+            aggregate_id=datasource_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "datasource_id": datasource_id,
+                "workspace_id": workspace_id,
+                "source_nature": source_nature,
+                "freshness_status": freshness_status,
+                "outcome": outcome,
+                "elapsed_hours": elapsed_hours,
+                "stored_fingerprint": stored_fingerprint,
+                "probed_fingerprint": probed_fingerprint,
+            },
+            trace_id=trace_id,
+            datasource_id=datasource_id,
+            freshness_status=freshness_status,
+            outcome=outcome,
+        )

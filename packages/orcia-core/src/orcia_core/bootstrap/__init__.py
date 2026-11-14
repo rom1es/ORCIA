@@ -48,7 +48,10 @@ from orcia_core.bootstrap._internal.sql_platform_setup_store import (
 )
 from orcia_core.bootstrap._internal.sql_workspace_datasources import (
     create_workspace_datasource_on_postgres18,
+    delete_workspace_datasource_on_postgres18,
+    get_workspace_datasource_from_postgres18,
     list_workspace_datasources_from_postgres18,
+    trigger_workspace_datasource_sync_on_postgres18,
     update_workspace_datasource_on_postgres18,
 )
 from orcia_core.bootstrap.durable_wizards import (
@@ -230,8 +233,10 @@ __all__ = [
     "delete_iam_account_on_postgres18",
     "delete_iam_grant_on_postgres18",
     "delete_org_unit_on_postgres18",
+    "delete_workspace_datasource_on_postgres18",
     "get_first_platform_admin_from_postgres18",
     "get_user_account_profile_from_postgres18",
+    "get_workspace_datasource_from_postgres18",
     "list_enterprise_connectors_from_postgres18",
     "list_iam_grants_from_postgres18",
     "list_org_units_from_postgres18",
@@ -242,6 +247,7 @@ __all__ = [
     "revoke_user_passthrough_token_on_postgres18",
     "save_platform_setup_state_to_postgres18",
     "sync_and_list_iam_accounts_from_postgres18",
+    "trigger_workspace_datasource_sync_on_postgres18",
     "update_enterprise_connector_on_postgres18",
     "update_iam_account_on_postgres18",
     "update_org_unit_on_postgres18",

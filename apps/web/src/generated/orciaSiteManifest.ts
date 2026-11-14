@@ -8,16 +8,16 @@ import type { OrciaShowcaseManifestData } from "@orcia/ui";
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-14",
   "stats": {
-    "activeRoutesCount": 24,
+    "activeRoutesCount": 26,
     "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 32,
+    "alembicMigrationsCount": 34,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 114,
-    "capabilitiesCount": 59,
-    "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 40
+    "techLeadReportsCount": 118,
+    "capabilitiesCount": 60,
+    "liveCapabilitiesCount": 57,
+    "verifiedCapabilitiesCount": 41
   },
   "activeRoutes": [
     "/",
@@ -43,7 +43,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/showcase",
     "/spaces",
     "/wizards",
-    "/workspaces"
+    "/workspaces",
+    "/workspaces/$wsId",
+    "/workspaces/$wsId/sources"
   ],
   "uiPrimitives": [
     "AGENT_STUDIO_BLOCKS",
@@ -179,7 +181,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261111_1702_story_17_2_org_units_billing_and_members",
     "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
     "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent",
-    "20261114_1705_story_17_5_ai_models_hub_secrets_and_health"
+    "20261114_1705_story_17_5_ai_models_hub_secrets_and_health",
+    "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
+    "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events"
   ],
   "architectureDecisions": [
     {
@@ -434,6 +438,34 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 18.4 (CAP-054, CAP-080, CAP-180)",
+      "reportFile": "18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites-tech-lead-report.md",
+      "domain": "Infrastructure docker-compose.yml (gitnexus-mcp Isolé :ro), Registre des Capacités (CAP-180), Résorption Volumétrique & Validation Pyramide AD-17",
+      "summary": "Déploiement souverain du sidecar gitnexus-mcp (ghcr.io/abhigyanpatwari/gitnexus:latest) sur volume dédié gitnexus_graphs: monté en lecture seule :ro et réseau interne isolé codegraph-internal sans aucun port hôte ni jeton Git, découpage de WorkspaceSourceAttachModal.tsx sous 280 lignes et providers.py sous 300 lignes, enregistrement de CAP-180 dans capabilities.yaml avec vérification site:sync && site:check (57/57 live), et suite de tests de sécurité et d'isolation Red-Team (anti-SSRF, HMAC, RBAC, confinement d'espace et zero fuite de secret)."
+    },
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 18.3 (CAP-082, CAP-180)",
+      "reportFile": "18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact-tech-lead-report.md",
+      "domain": "Contrat d'Outils Normalisé codegraph-mcp Lecture Seule (5 Outils), Providers Interchangeables (GitNexus / Sourcegraph SCIP), Rayon d'Impact & Alerte de Dérive (GRAPH_MOVED_SINCE_RUN_LOCK)",
+      "summary": "Contrat normalisé à 5 outils (codegraph_locate_symbol, codegraph_get_call_hierarchy, codegraph_find_references, codegraph_calculate_blast_radius, codegraph_read_span avec max 250 lignes et anti-path traversal), providers interchangeables pilotés par CODEGRAPH_PROVIDER, connecteur CodegraphMcpConnector(OrciaConnectorProtocol) strictement en lecture seule (PermissionError sur écriture) avec confinement d'espace et vérification des sources autorisées, routeur FastAPI /api/v1/workspaces/{workspace_id}/codegraph/* (GET /tools, POST /invoke), intégration de mcp:codegraph dans le workflow de revue d'architecture wf-03-etude-architecture.yaml avec consignation de la dérive, régénération SDK OpenAPI 0-diff et couverture orcia_connectors à 90.29%."
+    },
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 18.2 (CAP-011, CAP-080, CAP-180)",
+      "reportFile": "18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus-tech-lead-report.md",
+      "domain": "Moteur de Fraîcheur Différentiel (SHA-256), Webhooks Outbox, Sonde 24h & Indexeur GitNexus",
+      "summary": "Migration Alembic 20261114_1802 (datasource_webhook_deliveries + contrainte domain_events_outbox), événements DatasourceSyncRequested et DatasourceFreshnessEvaluated, réconciliateur source_freshness_reconciler.py (court-circuit 0 $ LLM, sonde 24h week-end calme vs drift auto-heal), routeur webhooks HMAC constant-time (401 ERR_WEBHOOK_SIGNATURE_INVALID), réconciliation fraîcheur espace (403 observateur), worker Dramatiq codegraph_indexer confiné anti-path-traversal avec purge immédiate, bouton de réconciliation UI actif, et SDK typé 0-diff."
+    },
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 18.1 (CAP-011, CAP-080)",
+      "reportFile": "18-1-deport-sources-espaces-url-wsid-filtres-multi-nature-et-modale-rattachement-tech-lead-report.md",
+      "domain": "Déport des Sources Documentaires dans /workspaces/$workspaceId/sources, Filtres Multi-Nature (DOCUMENT, STRUCTURED_DATA, SOURCE_CODE), Modale Dédiée OrciaDialog & Gouvernance GitNexus",
+      "summary": "Migration Alembic 20261114_1801 (colonnes codegraph_* sur workspace_datasources), route TanStack /workspaces/$workspaceId/sources, table maîtresse WorkspaceSourcesMasterTable.tsx, modale WorkspaceSourceAttachModal.tsx avec validation de schéma selon la nature, routes FastAPI /api/v1/workspaces/{id}/datasources et SDK OpenAPI 3.1 0-diff."
+    },
     {
       "date": "2026-11-14",
       "phaseOrStory": "Story 17.5 (CAP-052, CAP-053)",

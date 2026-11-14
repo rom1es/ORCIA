@@ -20,6 +20,8 @@ export type WorkspaceQuickFilterKey = "ALL" | "TEAM" | "PRIVATE";
 
 export interface WorkspaceStudioCardsAndDetailViewProps {
   readonly isFr: boolean;
+  readonly initialWorkspaceId?: string;
+  readonly initialTab?: string;
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly datasources: readonly ControlCenterDatasourceItem[];
   readonly ontologyConcepts: readonly UiOntologyConceptView[];
@@ -47,6 +49,8 @@ const inputStyle: React.CSSProperties = {
 
 export function WorkspaceStudioCardsAndDetailView({
   isFr,
+  initialWorkspaceId,
+  initialTab,
   workspaces,
   datasources,
   ontologyConcepts,
@@ -65,7 +69,7 @@ export function WorkspaceStudioCardsAndDetailView({
 }: WorkspaceStudioCardsAndDetailViewProps): React.ReactElement {
   const [filterMode, setFilterMode] = useState<WorkspaceQuickFilterKey>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedWsId, setSelectedWsId] = useState<string>("");
+  const [selectedWsId, setSelectedWsId] = useState<string>(initialWorkspaceId || "");
   const [autosavedWsIds, setAutosavedWsIds] = useState<readonly string[]>([]);
 
   const teamWorkspacesCount = workspaces.filter((w) => w.visibilityMode !== "PRIVATE_USER").length;
@@ -401,18 +405,41 @@ export function WorkspaceStudioCardsAndDetailView({
       )}
 
       {activeWorkspace && (
-        <WorkspaceDetailTabsPanel
-          isFr={isFr}
-          activeWorkspace={activeWorkspace}
-          datasources={datasources}
-          ontologyConcepts={ontologyConcepts}
-          orgUnits={orgUnits}
-          openHelpSection={openHelpSection}
-          onRegisterDatasource={onRegisterDatasource}
-          onAddOntologyConcept={onAddOntologyConcept}
-          onPromoteOntologyConcept={onPromoteOntologyConcept}
-          onFeedback={onFeedback}
-        />
+        <>
+          <nav
+            data-testid="workspace-sources-breadcrumb"
+            aria-label="Fil d'Ariane Sources"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "12px",
+              color: "var(--color-muted-foreground)",
+              padding: "2px 4px",
+            }}
+          >
+            <span>{isFr ? "Mes Espaces" : "My Workspaces"}</span>
+            <span>›</span>
+            <strong>{activeWorkspace.name}</strong>
+            <span>›</span>
+            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>
+              {isFr ? "Sources" : "Sources"}
+            </span>
+          </nav>
+          <WorkspaceDetailTabsPanel
+            isFr={isFr}
+            initialTab={initialTab}
+            activeWorkspace={activeWorkspace}
+            datasources={datasources}
+            ontologyConcepts={ontologyConcepts}
+            orgUnits={orgUnits}
+            openHelpSection={openHelpSection}
+            onRegisterDatasource={onRegisterDatasource}
+            onAddOntologyConcept={onAddOntologyConcept}
+            onPromoteOntologyConcept={onPromoteOntologyConcept}
+            onFeedback={onFeedback}
+          />
+        </>
       )}
     </div>
   );

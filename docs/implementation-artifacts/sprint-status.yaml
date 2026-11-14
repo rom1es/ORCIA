@@ -171,6 +171,14 @@ development_status:
   17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag: done
   17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage: done
   epic-17-retrospective: optional
+
+  # Epic 18 — Refonte Multi-Nature des Sources d'Espace (/workspaces/$wsId/sources), Moteur de Fraîcheur (SHA-256 & Sonde 24h), Contrat codegraph-mcp & Service GitNexus
+  epic-18: done
+  18-1-deport-sources-espaces-url-wsid-filtres-multi-nature-et-modale-rattachement: done
+  18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus: done
+  18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact: done
+  18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites: done
+  epic-18-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
@@ -1043,3 +1051,32 @@ action_items:
     epic: epic-15
     description: >
       Constaté lors de l'exécution globale de tests/unit/test_site_catalog_sync.py : assertion installedPacksCount >= 2 en échec depuis la migration Epic 15 vers packs/orcia-docs et packs/sdlc.
+  - id: DEVOPS-HELM-01
+    title: "Chart Helm Kubernetes complet des 9 services ORCIA incluant gitnexus-mcp (:ro) et NetworkPolicies"
+    action: "Créer deploy/helm/orcia/ (pgvector, redis, seaweedfs, api, workers, gitnexus-mcp avec secret/NetworkPolicy/PDB) conformément à l'Arbitrage 6A"
+    priority: P2
+    depends_on: []
+    owner: "Winston (Architect) / DevOps"
+    status: open
+    epic: epic-18
+    story_ref: "18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites"
+  - id: DEBT-CONNECTORS-WORKFLOW-MERGE
+    title: "Consolider le doublon bounded_workflow_v2.py hors de packages/orcia-connectors"
+    action: "Consolider le doublon bounded_workflow_v2.py exclusivement vers apps/worker/src/orcia_worker/workflows/bounded_workflow_v2.py et découpler les tests unitaires orcia_connectors"
+    priority: P2
+    depends_on: []
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-18
+    description: >
+      FINDING-01 architect review : duplication de bounded_workflow_v2.py dans orcia_connectors à rationaliser vers orcia_worker avec découplage strict des tests.
+  - id: SEC-WEBHOOK-ENUM-01
+    title: "Vérification HMAC / réponse 401 uniforme avant 404 sur datasource_id inconnu"
+    action: "Vérifier l'authentification/signature HMAC ou répondre uniformément 401 Unauthorized avant de lever 404 sur datasource_id inconnu dans apps/api/src/orcia_api/routers/datasource_webhooks.py"
+    priority: P3
+    depends_on: []
+    owner: "Amelia (Dev) / SecOps"
+    status: open
+    epic: epic-18
+    description: >
+      FINDING-02 architect review : durcissement anti-énumération des datasources sur l'endpoint webhook entrant.

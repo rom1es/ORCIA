@@ -578,6 +578,28 @@ export interface components {
       trace_id: string;
       viewer_presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
     };
+    CodegraphActiveRepoResponse: {
+      alias: string;
+      codegraph_enabled?: boolean;
+      codegraph_head_sha?: string | null;
+      codegraph_status?: string;
+      datasource_id: string;
+      source_nature?: string;
+      uri: string;
+    };
+    CodegraphToolItemResponse: {
+      description: string;
+      input_schema?: Record<string, unknown>;
+      name: string;
+      read_only?: boolean;
+    };
+    CodegraphToolsListResponse: {
+      active_repositories?: (components["schemas"]["CodegraphActiveRepoResponse"])[];
+      provider: string;
+      tools?: (components["schemas"]["CodegraphToolItemResponse"])[];
+      trace_id: string;
+      workspace_id: string;
+    };
     CognitiveRoutingOutcomeResponse: {
       attempts: (components["schemas"]["InferenceAttemptResponse"])[];
       effort: "default" | "fast" | "balanced" | "deep";
@@ -799,12 +821,27 @@ export interface components {
     };
     CreateWorkspaceDatasourceRequest: {
       alias: string;
+      codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN";
+      codegraph_enabled?: boolean;
+      codegraph_owner_user_id?: string | null;
       connector_id?: string | null;
       referent_user_id?: string | null;
       scheme: string;
       service_account_id?: string | null;
+      source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA" | null;
       sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
+      sync_mode?: "WEBHOOK_PUSH" | "POLLING_24H";
+      target_ref?: string | null;
+      target_scope?: string | null;
       uri: string;
+    };
+    DatasourceWebhookIngressResponse: {
+      accepted: boolean;
+      datasource_id: string;
+      delivery_key: string;
+      outbox_published: boolean;
+      outcome: string;
+      trace_id: string;
     };
     DbDdlIndexRequest: {
       datasource_alias: string;
@@ -1794,6 +1831,17 @@ export interface components {
       reason: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       workspace_id: string;
     };
+    InvokeCodegraphToolRequest: {
+      arguments?: Record<string, unknown>;
+      tool_name: string;
+    };
+    InvokeCodegraphToolResponse: {
+      provider: string;
+      result?: Record<string, unknown>;
+      tool_name: string;
+      trace_id: string;
+      workspace_id: string;
+    };
     InvokedSkillTraceResponseItem: {
       command_handle: string;
       output_summary: string;
@@ -2402,6 +2450,23 @@ export interface components {
       section_title: string;
       status: "APPROVED" | "HUMAN_AMENDED_EXTERNAL";
     };
+    ReconcileWorkspaceStalenessItem: {
+      alias: string;
+      datasource_id: string;
+      delta_sync_needed: boolean;
+      elapsed_hours: number;
+      freshness_status: string;
+      outcome: string;
+      probed_fingerprint?: string | null;
+    };
+    ReconcileWorkspaceStalenessResponse: {
+      evaluated_count: number;
+      results: (components["schemas"]["ReconcileWorkspaceStalenessItem"])[];
+      stale_count: number;
+      synced_count: number;
+      trace_id: string;
+      workspace_id: string;
+    };
     RecordAssistantTurnFeedbackRequest: {
       assembled_system_prompt?: string;
       assistant_reply?: string;
@@ -2877,6 +2942,7 @@ export interface components {
     };
     SubStepExecutionRecord: {
       artifact_pointer?: components["schemas"]["ClaimCheckPointer"] | null;
+      codegraph_impact?: Record<string, unknown> | null;
       correction_remarks_applied?: string | null;
       human_actor_id?: string | null;
       idempotency_key: string;
@@ -3062,6 +3128,10 @@ export interface components {
       thinking_level?: "simple" | "medium" | "complex" | "auto" | null;
       visibility_scope?: "PRIVATE" | "TEAM" | null;
     };
+    TriggerWorkspaceDatasourceSyncResponse: {
+      datasource: components["schemas"]["WorkspaceDatasourceItemResponse"];
+      trace_id: string;
+    };
     TripartiteTraceEdgeSchemaItem: {
       edge_key: string;
       id: string;
@@ -3125,10 +3195,17 @@ export interface components {
     };
     UpdateWorkspaceDatasourceRequest: {
       alias?: string | null;
+      codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN" | null;
+      codegraph_enabled?: boolean | null;
+      codegraph_owner_user_id?: string | null;
       connector_id?: string | null;
       referent_user_id?: string | null;
       service_account_id?: string | null;
+      source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA" | null;
       sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER" | null;
+      sync_mode?: "WEBHOOK_PUSH" | "POLLING_24H" | null;
+      target_ref?: string | null;
+      target_scope?: string | null;
       uri?: string | null;
     };
     UpdateWorkspaceLayerSettingsRequest: {
@@ -3692,6 +3769,12 @@ export interface components {
       workspace_ontology_terms?: (components["schemas"]["OntologyTermInputItem"])[];
       workspace_override_scalars?: Record<string, string | number | boolean>;
     };
+    WorkspaceDatasourceDeleteResponse: {
+      datasource_id: string;
+      deleted?: boolean;
+      trace_id: string;
+      workspace_id: string;
+    };
     WorkspaceDatasourceItem: {
       alias: string;
       execution_identity: "passthrough" | "service_principal";
@@ -3704,15 +3787,30 @@ export interface components {
     };
     WorkspaceDatasourceItemResponse: {
       alias: string;
+      codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN";
+      codegraph_enabled?: boolean;
+      codegraph_head_sha?: string | null;
+      codegraph_last_indexed_at_iso?: string | null;
+      codegraph_owner_user_id?: string | null;
+      codegraph_status?: "DISABLED" | "INDEXING" | "READY" | "PAUSED_REFERENT_RENEWAL_REQUIRED" | "ERROR";
+      codegraph_status_reason?: string | null;
       connector_id?: string | null;
       created_at_iso: string;
+      fingerprint_hash?: string | null;
+      freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC";
       id: string;
+      last_probe_at_iso?: string | null;
+      last_sync_at_iso?: string | null;
       referent_user_id?: string | null;
       scheme: string;
       service_account_id?: string | null;
+      source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA";
       sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
+      sync_mode?: "WEBHOOK_PUSH" | "POLLING_24H";
       sync_status?: "ACTIVE" | "PAUSED_REFERENT_RENEWAL_REQUIRED";
       sync_status_reason?: "REFERENT_LEFT_TEAM" | "REFERENT_ACCOUNT_DISABLED" | "REFERENT_TOKEN_MISSING" | null;
+      target_ref?: string | null;
+      target_scope?: string | null;
       uri: string;
       workspace_id: string;
     };
@@ -5037,6 +5135,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/webhooks/datasources/{datasource_id}": {
+    post: {
+      responses: {
+        200: components["schemas"]["DatasourceWebhookIngressResponse"];
+      };
+    };
+  };
   "/api/v1/webhooks/jira/issue-updated": {
     post: {
       responses: {
@@ -5119,6 +5224,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/codegraph/invoke": {
+    post: {
+      responses: {
+        200: components["schemas"]["InvokeCodegraphToolResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/codegraph/tools": {
+    get: {
+      responses: {
+        200: components["schemas"]["CodegraphToolsListResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/datasources": {
     get: {
       responses: {
@@ -5131,10 +5250,29 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/datasources/reconcile-staleness": {
+    post: {
+      responses: {
+        200: components["schemas"]["ReconcileWorkspaceStalenessResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["WorkspaceDatasourceDeleteResponse"];
+      };
+    };
     patch: {
       responses: {
         200: components["schemas"]["WorkspaceDatasourceItemResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync": {
+    post: {
+      responses: {
+        200: components["schemas"]["TriggerWorkspaceDatasourceSyncResponse"];
       };
     };
   };
@@ -5259,6 +5397,9 @@ export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchema
 export type ClaimCheckPointer = components["schemas"]["ClaimCheckPointer"];
 export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
 export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
+export type CodegraphActiveRepoResponse = components["schemas"]["CodegraphActiveRepoResponse"];
+export type CodegraphToolItemResponse = components["schemas"]["CodegraphToolItemResponse"];
+export type CodegraphToolsListResponse = components["schemas"]["CodegraphToolsListResponse"];
 export type CognitiveRoutingOutcomeResponse = components["schemas"]["CognitiveRoutingOutcomeResponse"];
 export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteEntryResponse"];
 export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
@@ -5287,6 +5428,7 @@ export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPac
 export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];
 export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
 export type CreateWorkspaceDatasourceRequest = components["schemas"]["CreateWorkspaceDatasourceRequest"];
+export type DatasourceWebhookIngressResponse = components["schemas"]["DatasourceWebhookIngressResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DeclarativePackSummaryResponse = components["schemas"]["DeclarativePackSummaryResponse"];
@@ -5400,6 +5542,8 @@ export type InstalledBusinessPackItemResponse = components["schemas"]["Installed
 export type InstalledBusinessPackListResponse = components["schemas"]["InstalledBusinessPackListResponse"];
 export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
 export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
+export type InvokeCodegraphToolRequest = components["schemas"]["InvokeCodegraphToolRequest"];
+export type InvokeCodegraphToolResponse = components["schemas"]["InvokeCodegraphToolResponse"];
 export type InvokedSkillTraceResponseItem = components["schemas"]["InvokedSkillTraceResponseItem"];
 export type JiraIssueUpdatedWebhookRequest = components["schemas"]["JiraIssueUpdatedWebhookRequest"];
 export type JiraIssueUpdatedWebhookResponse = components["schemas"]["JiraIssueUpdatedWebhookResponse"];
@@ -5474,6 +5618,8 @@ export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandi
 export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
 export type RebaseExternalArtifactEditsRequest = components["schemas"]["RebaseExternalArtifactEditsRequest"];
 export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChunkSchema"];
+export type ReconcileWorkspaceStalenessItem = components["schemas"]["ReconcileWorkspaceStalenessItem"];
+export type ReconcileWorkspaceStalenessResponse = components["schemas"]["ReconcileWorkspaceStalenessResponse"];
 export type RecordAssistantTurnFeedbackRequest = components["schemas"]["RecordAssistantTurnFeedbackRequest"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];
@@ -5549,6 +5695,7 @@ export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnRespon
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type ToggleAgentGovernanceRequest = components["schemas"]["ToggleAgentGovernanceRequest"];
+export type TriggerWorkspaceDatasourceSyncResponse = components["schemas"]["TriggerWorkspaceDatasourceSyncResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type TwoPassExtractionRequest = components["schemas"]["TwoPassExtractionRequest"];
 export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtractionResponse"];
@@ -5613,6 +5760,7 @@ export type WorkflowV2RunResponse = components["schemas"]["WorkflowV2RunResponse
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkflowsV2ListResponse = components["schemas"]["WorkflowsV2ListResponse"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
+export type WorkspaceDatasourceDeleteResponse = components["schemas"]["WorkspaceDatasourceDeleteResponse"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
 export type WorkspaceDatasourceItemResponse = components["schemas"]["WorkspaceDatasourceItemResponse"];
 export type WorkspaceDatasourcesListResponse = components["schemas"]["WorkspaceDatasourcesListResponse"];

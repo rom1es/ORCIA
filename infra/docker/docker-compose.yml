@@ -65,9 +65,15 @@ services:
     profiles: ["app-roles"]
     env_file:
       - ../../.env
+    networks:
+      - default
+      - codegraph-internal
     environment:
       ORCIA_DEPLOYMENT_ROLE: "api"
       ORCIA_DOCLING_ENABLED: "false"
+      CODEGRAPH_MCP_ENDPOINT: http://gitnexus-mcp:8095/mcp
+      CODEGRAPH_PROVIDER: ${CODEGRAPH_PROVIDER:-gitnexus}
+      ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
     command: ["uvicorn", "orcia_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
     depends_on:
       - postgres
@@ -80,9 +86,15 @@ services:
     profiles: ["app-roles"]
     env_file:
       - ../../.env
+    networks:
+      - default
+      - codegraph-internal
     environment:
       ORCIA_DEPLOYMENT_ROLE: "worker-orchestration"
       ORCIA_DOCLING_ENABLED: "false"
+      CODEGRAPH_MCP_ENDPOINT: http://gitnexus-mcp:8095/mcp
+      CODEGRAPH_PROVIDER: ${CODEGRAPH_PROVIDER:-gitnexus}
+      ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
     command: ["python", "-m", "orcia_worker.roles", "--role", "worker-orchestration"]
     depends_on:
       - postgres
@@ -99,11 +111,39 @@ services:
       ORCIA_DEPLOYMENT_ROLE: "worker-indexing"
       ORCIA_DOCLING_ENABLED: "true"
       ORCIA_WORKER_EXTRA: "orcia-worker[indexing]"
+      GITNEXUS_STORAGE_ROOT: /data/graphs
+      GITNEXUS_CONTENT_RETENTION: symbol
     command: ["dramatiq", "orcia_worker.docling_indexer", "--queues", "indexing"]
+    volumes:
+      - gitnexus_graphs:/data/graphs
     depends_on:
       - postgres
       - redis
       - seaweedfs
+
+  gitnexus-mcp:
+    image: ghcr.io/abhigyanpatwari/gitnexus:latest
+    container_name: orcia-gitnexus-mcp
+    restart: unless-stopped
+    command: ["mcp", "--http", "--port", "8095"]
+    volumes:
+      - gitnexus_graphs:/data/graphs:ro
+    networks:
+      - codegraph-internal
+    environment:
+      GITNEXUS_STORAGE_ROOT: /data/graphs
+      GITNEXUS_CONTENT_RETENTION: symbol
+      ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8095/health || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   trigger-dispatcher:
     image: orcia-backend:latest
@@ -140,3 +180,9 @@ volumes:
   orcia_pg_data:
   orcia_redis_data:
   orcia_seaweedfs_data:
+  gitnexus_graphs:
+
+networks:
+  default:
+  codegraph-internal:
+    internal: true

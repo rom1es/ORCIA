@@ -28,6 +28,9 @@ import type {
   RoleMatrixResponse,
 } from "../generated/iam_accounts";
 import type {
+  ReconcileWorkspaceStalenessResponse,
+} from "../generated/datasource_webhooks";
+import type {
   CreateWorkspaceDatasourceRequest,
   EnterpriseConnectorCreateRequest,
   EnterpriseConnectorDeleteResponse,
@@ -35,11 +38,13 @@ import type {
   EnterpriseConnectorUpdateRequest,
   EnterpriseConnectorsListResponse,
   RevokePassthroughTokenResponse,
+  TriggerWorkspaceDatasourceSyncResponse,
   UpdateWorkspaceDatasourceRequest,
   UpsertPassthroughTokenRequest,
   UserAccountProfileResponse,
   UserPassthroughConnectorItemResponse,
   UserPassthroughTokensListResponse,
+  WorkspaceDatasourceDeleteResponse,
   WorkspaceDatasourceItemResponse,
   WorkspaceDatasourcesListResponse,
 } from "../generated/enterprise_connectors";
@@ -355,6 +360,35 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
         `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}${buildPersonaQuery(personaKey)}`,
         "PATCH",
         payload,
+      );
+    },
+    deleteWorkspaceDatasource(
+      workspaceId: string,
+      datasourceId: string,
+      personaKey?: string,
+    ): Promise<WorkspaceDatasourceDeleteResponse> {
+      return requestJson<WorkspaceDatasourceDeleteResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
+    triggerWorkspaceDatasourceSync(
+      workspaceId: string,
+      datasourceId: string,
+      personaKey?: string,
+    ): Promise<TriggerWorkspaceDatasourceSyncResponse> {
+      return requestJson<TriggerWorkspaceDatasourceSyncResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}/sync${buildPersonaQuery(personaKey)}`,
+        "POST",
+      );
+    },
+    reconcileWorkspaceStaleness(
+      workspaceId: string,
+      personaKey?: string,
+    ): Promise<ReconcileWorkspaceStalenessResponse> {
+      return requestJson<ReconcileWorkspaceStalenessResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/reconcile-staleness${buildPersonaQuery(personaKey)}`,
+        "POST",
       );
     },
   };

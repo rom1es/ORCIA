@@ -152,6 +152,30 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "attached to a Workspace with CONFIDENTIAL_RESTRICTED visibility (AD-21).",
         ),
     },
+    "ERR_CODEGRAPH_WORKSPACE_LEAD_REQUIRED": {
+        "fr": LocalizedErrorCopy(
+            "Rôle Responsable d'espace requis pour GitNexus",
+            "L'activation ou la modification du graphe de code GitNexus requiert au moins "
+            "l'un des rôles : TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN, SECOPS.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Workspace Lead role required for GitNexus",
+            "Activating or modifying GitNexus code graph requires at least one of the "
+            "following roles: TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN, SECOPS.",
+        ),
+    },
+    "ERR_WEBHOOK_SIGNATURE_INVALID": {
+        "fr": LocalizedErrorCopy(
+            "Signature webhook invalide ou manquante",
+            "L'en-tête de signature HMAC-SHA256 du webhook entrant est invalide, absente ou "
+            "ne correspond pas au secret configuré.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid or missing webhook signature",
+            "The incoming webhook HMAC-SHA256 signature header is missing, invalid, or "
+            "does not match the configured secret.",
+        ),
+    },
     "ERR_ORG_UNIT_INVALID_PARENT_KIND": {
         "fr": LocalizedErrorCopy(
             "Rattachement hiérarchique invalide",
@@ -331,9 +355,20 @@ class UnsafeConnectorEndpointUrlError(OrciaDomainError):
     http_status, type_slug = 422, "unsafe-connector-endpoint-url"
 
 
+class CodegraphWorkspaceLeadRequiredError(OrciaDomainError):
+    error_code = "ERR_CODEGRAPH_WORKSPACE_LEAD_REQUIRED"
+    http_status, type_slug = 403, "codegraph-workspace-lead-required"
+
+
+class WebhookSignatureInvalidError(OrciaDomainError):
+    error_code = "ERR_WEBHOOK_SIGNATURE_INVALID"
+    http_status, type_slug = 401, "webhook-signature-invalid"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "C3WorkspaceRequiredError",
+    "CodegraphWorkspaceLeadRequiredError",
     "ConfusedDeputyBlockedError",
     "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
@@ -356,4 +391,5 @@ __all__ = [
     "SettingsVersionConflictError",
     "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
+    "WebhookSignatureInvalidError",
 ]

@@ -1,41 +1,51 @@
-"""Story 17.4 — Domain Model for Enterprise Connectors, Passthrough & RAG Referent.
-
-Zero SQL / FastAPI imports:
-- Anti-SSRF URL validation (`validate_safe_connector_base_url`)
-- `AES-256-GCM` secret packing via `PassthroughVaultCipher` + `ConnectorSecretStatus`
-- Deterministic `TEAM_REFERENT_USER` RAG sync health state machine
-- In-memory `EnterpriseConnectorsGovernanceService` for unit tests & non-PG mode
-"""
+"""Story 17.4 & 18.1 — Domain Model for Enterprise Connectors, Passthrough & RAG Referent."""
 
 from __future__ import annotations
 
-import hashlib
-import hmac
-import ipaddress
-from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Literal
-from urllib.parse import urlparse
 
 from orcia_core.permissions.crypto import PassthroughVaultCipher
+from orcia_core.permissions.enterprise_connectors_crypto import (
+    compute_secret_fingerprint as compute_secret_fingerprint,
+)
+from orcia_core.permissions.enterprise_connectors_crypto import (
+    extract_url_host as extract_url_host,
+)
+from orcia_core.permissions.enterprise_connectors_crypto import (
+    pack_encrypted_secret as pack_encrypted_secret,
+)
+from orcia_core.permissions.enterprise_connectors_crypto import (
+    unpack_encrypted_secret as unpack_encrypted_secret,
+)
+from orcia_core.permissions.enterprise_connectors_crypto import (
+    validate_safe_connector_base_url as validate_safe_connector_base_url,
+)
 from orcia_core.permissions.errors import (
     ResourceNotFoundError,
-    UnsafeConnectorEndpointUrlError,
     ValidationDomainError,
 )
-from orcia_core.permissions.iam_accounts import IamAccountRecord
-from orcia_core.permissions.models import OrgUnitNode
+from orcia_core.permissions.workspace_sources_governance import (
+    DatasourceSyncReason as DatasourceSyncReason,
+)
+from orcia_core.permissions.workspace_sources_governance import (
+    DatasourceSyncStatus as DatasourceSyncStatus,
+)
+from orcia_core.permissions.workspace_sources_governance import (
+    SyncIdentityMode as SyncIdentityMode,
+)
+from orcia_core.permissions.workspace_sources_governance import (
+    WorkspaceDatasourceRecord as WorkspaceDatasourceRecord,
+)
+from orcia_core.permissions.workspace_sources_governance import (
+    evaluate_datasource_sync_health as evaluate_datasource_sync_health,
+)
 from orcia_kernel.ids import new_uuid7_str
 
 EnterpriseConnectorKind = Literal["GITLAB", "JIRA", "CONFLUENCE", "OIDC_SSO", "S3_OBJECT_STORE"]
 EnterpriseConnectorAuthMode = Literal[
     "OAUTH2_PASSTHROUGH", "PERSONAL_ACCESS_TOKEN", "OIDC_FEDERATION", "SERVICE_SECRET"
-]
-SyncIdentityMode = Literal["SERVICE_ACCOUNT", "TEAM_REFERENT_USER"]
-DatasourceSyncStatus = Literal["ACTIVE", "PAUSED_REFERENT_RENEWAL_REQUIRED"]
-DatasourceSyncReason = Literal[
-    "REFERENT_LEFT_TEAM", "REFERENT_ACCOUNT_DISABLED", "REFERENT_TOKEN_MISSING"
 ]
 
 VALID_CONNECTOR_KINDS: tuple[EnterpriseConnectorKind, ...] = (
@@ -51,102 +61,10 @@ VALID_CONNECTOR_AUTH_MODES: tuple[EnterpriseConnectorAuthMode, ...] = (
     "OIDC_FEDERATION",
     "SERVICE_SECRET",
 )
-VALID_SYNC_IDENTITY_MODES: tuple[SyncIdentityMode, ...] = (
-    "SERVICE_ACCOUNT",
-    "TEAM_REFERENT_USER",
-)
-
-_BLOCKED_METADATA_HOSTS: frozenset[str] = frozenset(
-    {
-        "169.254.169.254",
-        "metadata.google.internal",
-        "metadata",
-        "100.100.100.200",
-        "instance-data",
-    }
-)
 
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
-
-
-def validate_safe_connector_base_url(base_url: str, *, instance: str | None = None) -> str:
-    """Validate `base_url` against SSRF while allowing `.local` and `.internal`."""
-    raw = (base_url or "").strip()
-    if not raw:
-        raise UnsafeConnectorEndpointUrlError(instance=instance)
-    try:
-        parsed = urlparse(raw)
-    except ValueError as exc:
-        raise UnsafeConnectorEndpointUrlError(instance=instance) from exc
-    if parsed.scheme not in ("http", "https"):
-        raise UnsafeConnectorEndpointUrlError(instance=instance)
-    host = (parsed.hostname or "").strip().lower().rstrip(".")
-    if not host or host in _BLOCKED_METADATA_HOSTS or host.endswith(".google.internal"):
-        raise UnsafeConnectorEndpointUrlError(instance=instance)
-    try:
-        ip = ipaddress.ip_address(host)
-        if ip.is_link_local or ip.is_unspecified or ip.is_multicast:
-            raise UnsafeConnectorEndpointUrlError(instance=instance)
-    except ValueError:
-        pass
-    return raw.rstrip("/")
-
-
-def extract_url_host(url: str) -> str:
-    """Extract lowercase hostname from `url` for `AES-256-GCM` AAD binding."""
-    parsed = urlparse((url or "").strip())
-    return (parsed.hostname or "default").strip().lower() or "default"
-
-
-def compute_secret_fingerprint(entity_id: str, plaintext_secret: str) -> str:
-    """Compute a deterministic salted Write-Only fingerprint (`sha256:<8-hex>`, `AD-21`)."""
-    digest = hmac.new(
-        f"orcia:secret-fp:{entity_id}".encode(),
-        plaintext_secret.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-    return f"sha256:{digest[:8]}"
-
-
-def pack_encrypted_secret(
-    cipher: PassthroughVaultCipher,
-    *,
-    owner_id: str,
-    plaintext: str,
-    scheme: str,
-    host: str,
-) -> str:
-    """Encrypt `plaintext` with `AES-256-GCM` and pack as `ciphertext_b64:nonce_b64`."""
-    ct_b64, nonce_b64 = cipher.encrypt(
-        owner_id,
-        plaintext,
-        connector_scheme=scheme.lower(),
-        target_host=host.lower(),
-    )
-    return f"{ct_b64}:{nonce_b64}"
-
-
-def unpack_encrypted_secret(
-    cipher: PassthroughVaultCipher,
-    *,
-    owner_id: str,
-    packed: str,
-    scheme: str,
-    host: str,
-) -> str:
-    """Verify `AES-256-GCM` tag and return plaintext for internal connector execution only."""
-    parts = packed.split(":", 1)
-    if len(parts) != 2:
-        raise ValidationDomainError(detail_override="Malformed encrypted secret envelope.")
-    return cipher.decrypt(
-        owner_id,
-        parts[0],
-        parts[1],
-        connector_scheme=scheme.lower(),
-        target_host=host.lower(),
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,83 +103,6 @@ class UserPassthroughConnectorView:
     connected: bool
     external_author_login: str | None
     secret_status: ConnectorSecretStatus
-
-
-@dataclass(frozen=True, slots=True)
-class WorkspaceDatasourceRecord:
-    """Workspace RAG datasource with `SERVICE_ACCOUNT` or `TEAM_REFERENT_USER` sync evaluation."""
-
-    id: str
-    workspace_id: str
-    alias: str
-    scheme: str
-    uri: str
-    connector_id: str | None
-    sync_identity_mode: SyncIdentityMode
-    service_account_id: str | None
-    referent_user_id: str | None
-    sync_status: DatasourceSyncStatus
-    sync_status_reason: DatasourceSyncReason | None
-    created_at_iso: str
-
-
-def evaluate_datasource_sync_health(
-    *,
-    sync_identity_mode: SyncIdentityMode,
-    referent_user_id: str | None,
-    connector_id: str | None,
-    owner_org_unit: OrgUnitNode | None,
-    iam_accounts: Iterable[IamAccountRecord],
-    active_token_pairs: set[tuple[str, str]],
-) -> tuple[DatasourceSyncStatus, DatasourceSyncReason | None]:
-    """Deterministically compute `ACTIVE` vs `PAUSED_REFERENT_RENEWAL_REQUIRED` (`CA-17.4.3`)."""
-    if sync_identity_mode != "TEAM_REFERENT_USER":
-        return ("ACTIVE", None)
-
-    ref_raw = (referent_user_id or "").strip()
-    if not ref_raw:
-        return ("PAUSED_REFERENT_RENEWAL_REQUIRED", "REFERENT_LEFT_TEAM")
-    ref_norm = ref_raw.lower()
-
-    matched_account: IamAccountRecord | None = None
-    candidate_identities: set[str] = {ref_norm}
-    for acc in iam_accounts:
-        keys = {
-            acc.id.lower(),
-            acc.principal_id.lower(),
-            (acc.email or "").lower(),
-        } - {""}
-        if ref_norm in keys:
-            matched_account = acc
-            candidate_identities |= keys
-            break
-
-    if matched_account is not None and matched_account.status == "DISABLED":
-        return ("PAUSED_REFERENT_RENEWAL_REQUIRED", "REFERENT_ACCOUNT_DISABLED")
-
-    if owner_org_unit is not None and owner_org_unit.unit_type != "ENTERPRISE":
-        team_members_norm = {m.strip().lower() for m in owner_org_unit.member_user_ids if m.strip()}
-        if owner_org_unit.lead_user_id and owner_org_unit.lead_user_id.strip():
-            team_members_norm.add(owner_org_unit.lead_user_id.strip().lower())
-        in_account_teams = matched_account is not None and (
-            owner_org_unit.id in matched_account.team_ids
-            or owner_org_unit.slug in matched_account.team_ids
-        )
-        if not (candidate_identities & team_members_norm) and not in_account_teams:
-            return ("PAUSED_REFERENT_RENEWAL_REQUIRED", "REFERENT_LEFT_TEAM")
-        if (owner_org_unit.member_user_ids or owner_org_unit.lead_user_id) and not (
-            candidate_identities & team_members_norm
-        ):
-            return ("PAUSED_REFERENT_RENEWAL_REQUIRED", "REFERENT_LEFT_TEAM")
-
-    if connector_id:
-        conn_norm = connector_id.strip().lower()
-        normalized_pairs = {(u.lower(), c.lower()) for u, c in active_token_pairs}
-        has_token = any((ident, conn_norm) in normalized_pairs for ident in candidate_identities)
-        if not has_token:
-            return ("PAUSED_REFERENT_RENEWAL_REQUIRED", "REFERENT_TOKEN_MISSING")
-
-    return ("ACTIVE", None)
 
 
 class EnterpriseConnectorsGovernanceService:
@@ -460,3 +301,47 @@ class EnterpriseConnectorsGovernanceService:
 
     def active_token_pairs(self) -> set[tuple[str, str]]:
         return set(self._user_tokens.keys())
+
+    def list_workspace_datasources(self, workspace_id: str) -> list[WorkspaceDatasourceRecord]:
+        return list(self._datasources.get(workspace_id, []))
+
+    def register_workspace_datasource(
+        self, datasource: WorkspaceDatasourceRecord
+    ) -> WorkspaceDatasourceRecord:
+        sources = self._datasources.setdefault(datasource.workspace_id, [])
+        sources.append(datasource)
+        return datasource
+
+    def delete_workspace_datasource(
+        self, workspace_id: str, datasource_id: str, *, instance: str | None = None
+    ) -> None:
+        sources = self._datasources.get(workspace_id, [])
+        for idx, src in enumerate(sources):
+            if src.id == datasource_id:
+                sources.pop(idx)
+                return
+        raise ResourceNotFoundError(instance=instance)
+
+    def request_workspace_datasource_sync(
+        self, workspace_id: str, datasource_id: str, *, instance: str | None = None
+    ) -> WorkspaceDatasourceRecord:
+        sources = self._datasources.get(workspace_id, [])
+        for idx, src in enumerate(sources):
+            if src.id == datasource_id:
+                now = _now_iso()
+                new_cg_status = src.codegraph_status
+                new_cg_indexed_at = src.codegraph_last_indexed_at_iso
+                if src.codegraph_enabled:
+                    new_cg_indexed_at = now
+                    if src.codegraph_status != "PAUSED_REFERENT_RENEWAL_REQUIRED":
+                        new_cg_status = "READY"
+                updated = replace(
+                    src,
+                    last_sync_at_iso=now,
+                    freshness_status="SYNCED",
+                    codegraph_status=new_cg_status,
+                    codegraph_last_indexed_at_iso=new_cg_indexed_at,
+                )
+                sources[idx] = updated
+                return updated
+        raise ResourceNotFoundError(instance=instance)

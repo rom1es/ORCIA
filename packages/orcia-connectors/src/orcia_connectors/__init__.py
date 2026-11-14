@@ -9,6 +9,7 @@ from __future__ import annotations
 from orcia_connectors.adapters import (
     AtlassianConfluenceConnector,
     AtlassianJiraConnector,
+    CodegraphMcpConnector,
     GitProviderConnector,
     McpClientBridgeConnector,
     SqlReadonlyConnector,
@@ -56,6 +57,7 @@ __version__: str = "0.1.0"
 __all__ = [
     "AtlassianConfluenceConnector",
     "AtlassianJiraConnector",
+    "CodegraphMcpConnector",
     "ConnectorHealthStatus",
     "GitProviderConnector",
     "JiraAccessRequestChannelAdapter",

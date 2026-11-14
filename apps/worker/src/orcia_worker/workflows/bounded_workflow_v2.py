@@ -15,6 +15,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from orcia_connectors.codegraph_tool_runner import (
+    format_codegraph_markdown_section,
+    run_codegraph_blast_radius,
+)
 from orcia_connectors.protocol import (
     SignedApprovalToken,
     WritePreviewCard,
@@ -76,6 +80,7 @@ class SubStepExecutionRecord(BaseModel):
     write_preview_card: WritePreviewCard | None = None
     human_actor_id: str | None = None
     correction_remarks_applied: str | None = None
+    codegraph_impact: dict[str, Any] | None = None
 
 
 class BoundedWorkflowRunState(BaseModel):
@@ -148,6 +153,7 @@ def _generate_sub_step_markdown(
     inputs: dict[str, Any],
     iteration: int,
     remarks: str | None,
+    codegraph_data: dict[str, Any] | None = None,
 ) -> str:
     sections = workflow.contract.required_markdown_sections or [
         f"# {workflow.title}",
@@ -167,6 +173,8 @@ def _generate_sub_step_markdown(
             body_lines.append("```mermaid\nflowchart LR\n  Entree --> Analyse --> Livrable\n```")
         body_lines.append(" Détail complémentaire validé conformément au socle documentaire." * 12)
         body_lines.append("")
+    if codegraph_data:
+        body_lines.append(format_codegraph_markdown_section(codegraph_data))
     return "\n".join(body_lines)
 
 
@@ -221,8 +229,14 @@ def run_bounded_workflow_v2(
     for idx, sub_step in enumerate(enabled_sub_steps):
         state.current_sub_step_index = idx
         idem_key = build_cyclic_idempotency_key(run_id, sub_step.id, iteration)
+        codegraph_data = run_codegraph_blast_radius(sub_step, state.inputs)
         md_content = _generate_sub_step_markdown(
-            workflow, sub_step, state.inputs, iteration, correction_remarks
+            workflow,
+            sub_step,
+            state.inputs,
+            iteration,
+            correction_remarks,
+            codegraph_data=codegraph_data,
         )
         pointer = claim_storage.store_artifact(
             run_id=run_id,
@@ -256,6 +270,7 @@ def run_bounded_workflow_v2(
             artifact_pointer=pointer,
             write_preview_card=preview_card,
             correction_remarks_applied=correction_remarks,
+            codegraph_impact=codegraph_data,
         )
         state.sub_step_records.append(rec)
         state.final_artifact_pointer = pointer
@@ -268,6 +283,16 @@ def run_bounded_workflow_v2(
                 "sha256": pointer.sha256,
             }
         )
+        if codegraph_data:
+            state.audit_trail.append(
+                {
+                    "event": "CODEGRAPH_TOOL_EXECUTED",
+                    "sub_step_id": sub_step.id,
+                    "tool": "codegraph_calculate_blast_radius",
+                    "drift_warning": codegraph_data.get("drift_warning"),
+                    "blast_radius_score": codegraph_data.get("blast_radius_score"),
+                }
+            )
 
         if not auto_approve_checkpoints and sub_step.requires_human_checkpoint:
             state.status = "WAITING_SUBSTEP_HITL"

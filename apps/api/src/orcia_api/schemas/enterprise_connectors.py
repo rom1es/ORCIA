@@ -21,6 +21,14 @@ DatasourceSyncReasonLiteral = Literal[
     "REFERENT_LEFT_TEAM", "REFERENT_ACCOUNT_DISABLED", "REFERENT_TOKEN_MISSING"
 ]
 
+SourceNatureLiteral = Literal["DOCUMENT_KB", "WORK_TRACKER", "SOURCE_CODE", "RELATIONAL_SCHEMA"]
+SourceSyncModeLiteral = Literal["WEBHOOK_PUSH", "POLLING_24H"]
+SourceFreshnessStatusLiteral = Literal["SYNCED", "STALE", "SYNC_ERROR", "PENDING_INITIAL_SYNC"]
+CodegraphAuthModeLiteral = Literal["SERVICE_ACCOUNT", "WORKSPACE_LEAD_TOKEN"]
+CodegraphStatusLiteral = Literal[
+    "DISABLED", "INDEXING", "READY", "PAUSED_REFERENT_RENEWAL_REQUIRED", "ERROR"
+]
+
 
 class ConnectorSecretStatusResponse(BaseModel):
     """Write-Only secret metadata (`AD-21` — never exposes raw secret)."""
@@ -164,7 +172,7 @@ class RevokePassthroughTokenResponse(BaseModel):
 
 
 class WorkspaceDatasourceItemResponse(BaseModel):
-    """Workspace datasource with deterministic RAG sync health (`CA-17.4.3`)."""
+    """Workspace datasource with deterministic RAG health (`CA-17.4.3`) & Codegraph."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -180,6 +188,22 @@ class WorkspaceDatasourceItemResponse(BaseModel):
     sync_status: DatasourceSyncStatusLiteral = "ACTIVE"
     sync_status_reason: DatasourceSyncReasonLiteral | None = None
     created_at_iso: str
+    # Story 18.1 Multi-Nature & Codegraph
+    source_nature: SourceNatureLiteral = "DOCUMENT_KB"
+    sync_mode: SourceSyncModeLiteral = "POLLING_24H"
+    target_scope: str | None = None
+    target_ref: str | None = None
+    last_sync_at_iso: str | None = None
+    last_probe_at_iso: str | None = None
+    fingerprint_hash: str | None = None
+    freshness_status: SourceFreshnessStatusLiteral = "PENDING_INITIAL_SYNC"
+    codegraph_enabled: bool = False
+    codegraph_auth_mode: CodegraphAuthModeLiteral = "SERVICE_ACCOUNT"
+    codegraph_owner_user_id: str | None = None
+    codegraph_status: CodegraphStatusLiteral = "DISABLED"
+    codegraph_status_reason: str | None = None
+    codegraph_last_indexed_at_iso: str | None = None
+    codegraph_head_sha: str | None = None
 
 
 class WorkspaceDatasourcesListResponse(BaseModel):
@@ -203,6 +227,14 @@ class CreateWorkspaceDatasourceRequest(BaseModel):
     sync_identity_mode: SyncIdentityModeLiteral = "SERVICE_ACCOUNT"
     service_account_id: str | None = Field(default=None, max_length=128)
     referent_user_id: str | None = Field(default=None, max_length=128)
+    # Story 18.1 Multi-Nature & Codegraph
+    source_nature: SourceNatureLiteral | None = None
+    sync_mode: SourceSyncModeLiteral = "POLLING_24H"
+    target_scope: str | None = Field(default=None, max_length=255)
+    target_ref: str | None = Field(default=None, max_length=128)
+    codegraph_enabled: bool = False
+    codegraph_auth_mode: CodegraphAuthModeLiteral = "SERVICE_ACCOUNT"
+    codegraph_owner_user_id: str | None = Field(default=None, max_length=128)
 
 
 class UpdateWorkspaceDatasourceRequest(BaseModel):
@@ -216,3 +248,31 @@ class UpdateWorkspaceDatasourceRequest(BaseModel):
     sync_identity_mode: SyncIdentityModeLiteral | None = None
     service_account_id: str | None = Field(default=None, max_length=128)
     referent_user_id: str | None = Field(default=None, max_length=128)
+    # Story 18.1 Multi-Nature & Codegraph
+    source_nature: SourceNatureLiteral | None = None
+    sync_mode: SourceSyncModeLiteral | None = None
+    target_scope: str | None = Field(default=None, max_length=255)
+    target_ref: str | None = Field(default=None, max_length=128)
+    codegraph_enabled: bool | None = None
+    codegraph_auth_mode: CodegraphAuthModeLiteral | None = None
+    codegraph_owner_user_id: str | None = Field(default=None, max_length=128)
+
+
+class WorkspaceDatasourceDeleteResponse(BaseModel):
+    """Response for `DELETE /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    deleted: bool = True
+    workspace_id: str
+    datasource_id: str
+    trace_id: str
+
+
+class TriggerWorkspaceDatasourceSyncResponse(BaseModel):
+    """Response for `POST /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    datasource: WorkspaceDatasourceItemResponse
+    trace_id: str
