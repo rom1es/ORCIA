@@ -35,6 +35,7 @@ from orcia_core.permissions.org_hierarchy import (
     validate_org_unit_hierarchy,
 )
 from orcia_core.permissions.org_user_validation import resolve_and_validate_org_unit_users
+from orcia_kernel.ids import new_uuid7
 
 
 async def list_org_units_from_postgres18(
@@ -267,9 +268,80 @@ async def delete_org_unit_on_postgres18(
             child_units_count=child_units_count,
             attached_workspaces_count=attached_ws_count,
         )
+        target_uuid = UUID(target.id)
+        fallback_parent_id: UUID | None = None
+        if target.parent_id:
+            try:
+                fallback_parent_id = UUID(target.parent_id)
+            except (ValueError, TypeError):
+                fallback_parent_id = None
+
+        if fallback_parent_id is None:
+            root_res = await conn.execute(
+                sa.text(
+                    """
+                    SELECT id FROM org_units
+                    WHERE id <> :id
+                    ORDER BY
+                        CASE
+                            WHEN unit_type = 'ENTERPRISE' THEN 0
+                            WHEN unit_type = 'BU' THEN 1
+                            ELSE 2
+                        END,
+                        created_at ASC
+                    LIMIT 1
+                    """
+                ),
+                {"id": target_uuid},
+            )
+            fallback_parent_id = root_res.scalar()
+
+        if fallback_parent_id is None:
+            ref_cnt = (
+                await conn.execute(
+                    sa.text("SELECT COUNT(*) FROM users WHERE primary_org_unit_id = :id"),
+                    {"id": target_uuid},
+                )
+            ).scalar_one()
+            if int(ref_cnt) > 0:
+                ent_id = new_uuid7()
+                await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO org_units (
+                            id, slug, name, unit_type, billing_enabled, created_at
+                        )
+                        VALUES (
+                            :id, 'global', 'Plateforme Globale ORCIA', 'ENTERPRISE', TRUE, NOW()
+                        )
+                        ON CONFLICT (slug) DO NOTHING
+                        """
+                    ),
+                    {"id": ent_id},
+                )
+                ent_row = (
+                    await conn.execute(
+                        sa.text("SELECT id FROM org_units WHERE slug = 'global' LIMIT 1")
+                    )
+                ).first()
+                if ent_row is not None and ent_row[0] is not None:
+                    fallback_parent_id = ent_row[0]
+
+        if fallback_parent_id is not None:
+            await conn.execute(
+                sa.text(
+                    """
+                    UPDATE users
+                    SET primary_org_unit_id = :fallback_id
+                    WHERE primary_org_unit_id = :target_id
+                    """
+                ),
+                {"fallback_id": fallback_parent_id, "target_id": target_uuid},
+            )
+
         await conn.execute(
             sa.text("DELETE FROM org_units WHERE id = :id"),
-            {"id": UUID(target.id)},
+            {"id": target_uuid},
         )
         nodes_by_id.pop(target.id, None)
         ws_counts.pop(target.id, None)

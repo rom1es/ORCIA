@@ -238,7 +238,42 @@ export function handleVitestIamRoute(params: {
     iamAccounts = [...iamAccounts, created];
     syncTeamMemberships(principalId, teamIds, orgUnits);
     syncSetupOrgUnits();
-    return jsonResponse(created, 201);
+    const tempPassword = kind === "HUMAN" ? "OrciaPass123" : null; // pragma: allowlist secret
+    return jsonResponse(
+      { ...created, account: created, temporary_password: tempPassword },
+      201,
+    );
+  }
+
+  const tempPwdMatch =
+    /^\/api\/v1\/settings\/iam\/accounts\/([^/]+)\/temporary-password$/.exec(path);
+  if (tempPwdMatch && method === "POST") {
+    if (isObserver()) {
+      return problemResponse(
+        403,
+        "ERR_OBSERVER_MODE_READ_ONLY",
+        "Mode observateur en lecture seule",
+        "Les mutations sont refusées en mode observateur lecture seule.",
+        path,
+      );
+    }
+    const targetId = decodeURIComponent(tempPwdMatch[1] ?? "");
+    const target = iamAccounts.find((a) => a.id === targetId);
+    if (!target) {
+      return problemResponse(
+        404,
+        "ERR_RESOURCE_NOT_FOUND",
+        "Compte introuvable",
+        "Compte introuvable.",
+        path,
+      );
+    }
+    return jsonResponse({
+      account_id: target.id,
+      temporary_password: "RegenPass123", // pragma: allowlist secret
+      must_change_password: true,
+      expires_at_iso: "2026-11-15T12:00:00Z",
+    });
   }
 
   const accMatch = /^\/api\/v1\/settings\/iam\/accounts\/([^/]+)$/.exec(path);

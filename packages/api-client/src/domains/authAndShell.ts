@@ -15,6 +15,10 @@ import type {
   UserMeResponse,
   WorkspacesListResponse,
 } from "../generated/auth_and_org";
+import type {
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+} from "../generated/iam_password_models";
 import type { HealthResponse, ShellNavigationResponse } from "../generated/shell";
 import {
   buildKnownOrgUsersQuery,
@@ -52,6 +56,9 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
     },
     logoutSession(): Promise<LogoutResponse> {
       return requestJson<LogoutResponse>("/api/v1/auth/logout", "POST");
+    },
+    changePassword(payload: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+      return requestJson<ChangePasswordResponse>("/api/v1/auth/change-password", "POST", payload);
     },
     getMe(personaKey?: string): Promise<UserMeResponse> {
       return requestJson<UserMeResponse>(`/api/v1/auth/me${buildPersonaQuery(personaKey)}`);

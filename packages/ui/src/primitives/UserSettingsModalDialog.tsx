@@ -51,6 +51,11 @@ export interface UserSettingsModalDialogProps {
     secretValue: string,
   ) => void | Promise<void>;
   readonly onRevokePassthroughToken?: (connectorId: string) => void | Promise<void>;
+  readonly mustChangePassword?: boolean;
+  readonly onChangePassword?: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<{ success: boolean; error?: string } | void>;
   readonly onChangeMcpTargetKind: (kind: UiMcpTargetKind) => void;
   readonly onChangeMcpTargetSlug: (slug: string) => void;
   readonly onChangeMcpExpiryDays: (days: 30 | 90) => void;
@@ -90,6 +95,8 @@ export function UserSettingsModalDialog({
   onTestPassthrough,
   onSavePassthroughToken,
   onRevokePassthroughToken,
+  mustChangePassword,
+  onChangePassword,
   onChangeMcpTargetKind,
   onChangeMcpTargetSlug,
   onChangeMcpExpiryDays,
@@ -180,6 +187,8 @@ export function UserSettingsModalDialog({
           onTestPassthrough={onTestPassthrough}
           onSavePassthroughToken={onSavePassthroughToken}
           onRevokePassthroughToken={onRevokePassthroughToken}
+          mustChangePassword={mustChangePassword}
+          onChangePassword={onChangePassword}
           onChangeMcpTargetKind={onChangeMcpTargetKind}
           onChangeMcpTargetSlug={onChangeMcpTargetSlug}
           onChangeMcpExpiryDays={onChangeMcpExpiryDays}

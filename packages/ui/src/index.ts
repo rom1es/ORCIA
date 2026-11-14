@@ -224,6 +224,15 @@ export {
   type UserAccountPreferencesPatch,
 } from "./primitives/UserAccountDropdownAndSettingsModal";
 export {
+  TemporaryPasswordInvitationModal,
+  buildInvitationMessage,
+  type TemporaryPasswordInvitationModalProps,
+} from "./primitives/TemporaryPasswordInvitationModal";
+export {
+  UserPasswordChangeCard,
+  type UserPasswordChangeCardProps,
+} from "./primitives/UserPasswordChangeCard";
+export {
   ContextualHelpColumnAndCenter,
   type ContextualHelpColumnAndCenterLabels,
   type ContextualHelpColumnAndCenterProps,

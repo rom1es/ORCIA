@@ -43,6 +43,11 @@ export interface UserSettingsModalTabsProps {
     secretValue: string,
   ) => void | Promise<void>;
   readonly onRevokePassthroughToken?: (connectorId: string) => void | Promise<void>;
+  readonly mustChangePassword?: boolean;
+  readonly onChangePassword?: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<{ success: boolean; error?: string } | void>;
   readonly onChangeMcpTargetKind: (kind: UiMcpTargetKind) => void;
   readonly onChangeMcpTargetSlug: (slug: string) => void;
   readonly onChangeMcpExpiryDays: (days: 30 | 90) => void;
@@ -75,6 +80,8 @@ export function UserSettingsModalTabs({
   onTestPassthrough,
   onSavePassthroughToken,
   onRevokePassthroughToken,
+  mustChangePassword,
+  onChangePassword,
   onChangeMcpTargetKind,
   onChangeMcpTargetSlug,
   onChangeMcpExpiryDays,
@@ -150,6 +157,8 @@ export function UserSettingsModalTabs({
           userRole={userRole}
           locale={locale}
           accountProfile={accountProfile}
+          mustChangePassword={mustChangePassword}
+          onChangePassword={onChangePassword}
         />
       )}
 

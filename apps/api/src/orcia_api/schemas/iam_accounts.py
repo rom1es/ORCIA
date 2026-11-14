@@ -39,6 +39,7 @@ class IamAccountResponse(BaseModel):
     roles: list[OfficialIamRoleLiteral]
     team_ids: list[str]
     status: IamAccountStatusLiteral
+    temporary_password: str | None = Field(default=None)  # pragma: allowlist secret
     created_at_iso: str
     updated_at_iso: str
 

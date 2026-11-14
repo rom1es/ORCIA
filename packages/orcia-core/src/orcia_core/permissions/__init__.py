@@ -31,6 +31,8 @@ from orcia_core.permissions.crypto import (
 from orcia_core.permissions.errors import (
     OrgUnitStorageSchemaError,
     OrgUnitUnknownUserError,
+    PasswordUnchangedError,
+    WeakPasswordPolicyError,
 )
 from orcia_core.permissions.evaluator import (
     ADMIN_MODULE_ALLOWED_ROLES,
@@ -128,6 +130,10 @@ from orcia_core.permissions.service import (
     KeyValueRevocationStore,
     RevocationStoreProtocol,
     persona_impersonation_allowed,
+)
+from orcia_core.permissions.temporary_password import (
+    generate_temporary_password,
+    validate_password_policy,
 )
 
 DOMAIN_NAME: str = "permissions"
@@ -330,9 +336,11 @@ __all__ = [
     "MatrixPermissionEvaluator", "OrgUnitKind", "OrgUnitNode", "OrgUnitStorageSchemaError",
     "OrgUnitSummary", "OrgUnitType", "OrgUnitUnknownUserError",
     "PassthroughCredentialRecord", "PassthroughVaultCipher",
-    "PermissionBrokerPolicy", "PermissionBrokerService", "PermissionBrokerTicket",
+    "PasswordUnchangedError", "PermissionBrokerPolicy",
+    "PermissionBrokerService", "PermissionBrokerTicket",
     "PermissionCheckOutcome", "PlatformRole", "RevocationStoreProtocol",
     "SessionTokenPair", "TokenClaims", "TotpManager", "UserIdentity", "WorkspaceAccessSummary",
+    "WeakPasswordPolicyError", "generate_temporary_password", "validate_password_policy",
     "WorkspaceDatasourceEntity", "WorkspaceEntity", "WorkspaceMembershipEntity",
     "WorkspaceVisibilityMode", "assert_anti_lockout_on_accounts", "assert_org_unit_deletable",
     "assert_unique_org_unit_slug", "build_default_auth_and_org_service",

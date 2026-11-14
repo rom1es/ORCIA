@@ -112,6 +112,11 @@ export interface UserAccountDropdownAndSettingsModalProps {
   readonly passthroughConnectors?: readonly UiUserPassthroughConnectorView[];
   readonly onPreferencesSync?: (patch: UserAccountPreferencesPatch) => void;
   readonly onLogout?: () => void;
+  readonly mustChangePassword?: boolean;
+  readonly onChangePassword?: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<{ success: boolean; error?: string } | void>;
   readonly onNavigateAssistantBehavior?: (redirectUri: string) => void;
   readonly onSavePassthroughToken?: (
     connectorId: string,

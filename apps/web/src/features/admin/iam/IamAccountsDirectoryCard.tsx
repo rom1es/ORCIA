@@ -14,6 +14,7 @@ export interface IamAccountsDirectoryCardProps {
   readonly onOpenCreateModal: () => void;
   readonly onOpenEditModal: (account: IamAccountResponse) => void;
   readonly onDeleteAccount: (account: IamAccountResponse) => void;
+  readonly onResetTemporaryPassword?: (account: IamAccountResponse) => void;
 }
 
 export function IamAccountsDirectoryCard({
@@ -25,6 +26,7 @@ export function IamAccountsDirectoryCard({
   onOpenCreateModal,
   onOpenEditModal,
   onDeleteAccount,
+  onResetTemporaryPassword,
 }: IamAccountsDirectoryCardProps): React.ReactElement {
   const dir = labels.directory;
 
@@ -176,6 +178,18 @@ export function IamAccountsDirectoryCard({
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  {acc.account_kind === "HUMAN" && onResetTemporaryPassword ? (
+                    <button
+                      type="button"
+                      data-testid={`iam-reset-password-account-btn-${acc.id}`}
+                      disabled={!canMutate}
+                      onClick={() => onResetTemporaryPassword(acc)}
+                      className="orcia-ds-btn orcia-ds-btn-secondary"
+                      style={{ padding: "5px 10px", fontSize: "12px" }}
+                    >
+                      {dir.editButton === "Modifier" ? "Mot de passe" : "Password"}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     data-testid={`iam-edit-account-btn-${acc.id}`}

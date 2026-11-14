@@ -381,8 +381,10 @@ export interface components {
       email: string;
       expires_in_seconds?: number;
       human_profile_archetype: string;
+      must_change_password?: boolean;
       platform_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       primary_org_unit_id: string;
+      roles?: (string)[];
       token_type?: "Bearer";
       trace_id: string;
       user_id: string;
@@ -542,6 +544,16 @@ export interface components {
       passing_vector_ok: boolean;
       sandbox_tier: "TIER_1B_STARLARK" | "TIER_2_CONTAINER";
       tool_slug: string;
+    };
+    ChangePasswordRequest: {
+      current_password: string;
+      new_password: string;
+    };
+    ChangePasswordResponse: {
+      email: string;
+      must_change_password?: boolean;
+      success?: boolean;
+      trace_id: string;
     };
     ChunkApprovalSchemaItem: {
       challenge_reason?: string | null;
@@ -1617,6 +1629,7 @@ export interface components {
       roles: ("PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER")[];
       status: "ACTIVE" | "INVITED" | "DISABLED";
       team_ids: (string)[];
+      temporary_password?: string | null;
       updated_at_iso: string;
     };
     IamAccountsListResponse: {
@@ -2996,6 +3009,15 @@ export interface components {
       title: string;
       workspace_id: string;
     };
+    TemporaryPasswordProvisionResponse: {
+      account_id: string;
+      display_name: string;
+      email: string;
+      must_change_password?: boolean;
+      principal_id: string;
+      temporary_password: string;
+      trace_id: string;
+    };
     TestBenchStepResultSchema: {
       detail_fr: string;
       status: "PASS" | "FAIL" | "WAITING_USER_PASSTHROUGH_TOKEN" | "SKIPPED";
@@ -3295,9 +3317,11 @@ export interface components {
       human_profile_archetype: string;
       id: string;
       modules: Record<string, boolean>;
+      must_change_password?: boolean;
       org_units: (components["schemas"]["OrgUnitTreeItem"])[];
       platform_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       primary_org_unit_id: string;
+      roles?: (string)[];
       totp_enabled: boolean;
       trace_id: string;
       transverse_groups: (string)[];
@@ -3470,8 +3494,10 @@ export interface components {
       password: string;
     };
     WelcomeSetupFirstAdminResponse: {
+      access_token?: string | null;
       display_name: string;
       email: string;
+      must_change_password?: boolean;
       orcia_env: string;
       platform_role: "PLATFORM_ADMIN";
       sql_lock_statement: string;
@@ -4070,6 +4096,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["AssistantWorkspaceOverviewResponse"];
+      };
+    };
+  };
+  "/api/v1/auth/change-password": {
+    post: {
+      responses: {
+        200: components["schemas"]["ChangePasswordResponse"];
       };
     };
   };
@@ -4935,6 +4968,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/iam/accounts/{account_id}/temporary-password": {
+    post: {
+      responses: {
+        200: components["schemas"]["TemporaryPasswordProvisionResponse"];
+      };
+    };
+  };
   "/api/v1/settings/iam/evaluate": {
     post: {
       responses: {
@@ -5279,6 +5319,8 @@ export type CatalogUriResolveRequest = components["schemas"]["CatalogUriResolveR
 export type CatalogUriResolveResponse = components["schemas"]["CatalogUriResolveResponse"];
 export type CertifyPackToolRequest = components["schemas"]["CertifyPackToolRequest"];
 export type CertifyPackToolResponse = components["schemas"]["CertifyPackToolResponse"];
+export type ChangePasswordRequest = components["schemas"]["ChangePasswordRequest"];
+export type ChangePasswordResponse = components["schemas"]["ChangePasswordResponse"];
 export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchemaItem"];
 export type ClaimCheckPointer = components["schemas"]["ClaimCheckPointer"];
 export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
@@ -5568,6 +5610,7 @@ export type SystemBootstrapRunItem = components["schemas"]["SystemBootstrapRunIt
 export type SystemBootstrapStateResponse = components["schemas"]["SystemBootstrapStateResponse"];
 export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrapWorkflowItem"];
 export type TaskNotificationItemResponse = components["schemas"]["TaskNotificationItemResponse"];
+export type TemporaryPasswordProvisionResponse = components["schemas"]["TemporaryPasswordProvisionResponse"];
 export type TestBenchStepResultSchema = components["schemas"]["TestBenchStepResultSchema"];
 export type ThreeSpeedStepProgressSchemaItem = components["schemas"]["ThreeSpeedStepProgressSchemaItem"];
 export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];

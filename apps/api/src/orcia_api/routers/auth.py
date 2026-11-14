@@ -2,11 +2,26 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
+import sqlalchemy as sa
 from fastapi import APIRouter, Query, Request, Response
 
-from orcia_api.dependencies import get_auth_service
+from orcia_api.dependencies import (
+    get_auth_service,
+    get_or_create_shared_db_engine,
+)
+from orcia_api.routers._auth_pg_helpers import (
+    REFRESH_COOKIE_NAME,
+    authenticate_via_postgres18,
+    execute_change_password,
+    hydrate_user_identity_from_pg,
+    set_auth_refresh_cookie,
+)
+from orcia_api.routers._auth_pg_helpers import (
+    serialize_workspace_summary as serialize_workspace_summary,
+)
 from orcia_api.schemas.auth_and_org import (
     AuthTokenResponse,
     LocalLoginRequest,
@@ -16,20 +31,20 @@ from orcia_api.schemas.auth_and_org import (
     PassthroughSecretMetadataResponse,
     PassthroughSecretStoreRequest,
     UserMeResponse,
-    WorkspaceDatasourceItem,
-    WorkspaceSummaryItem,
+)
+from orcia_api.schemas.iam_password_models import (
+    ChangePasswordRequest,
+    ChangePasswordResponse,
 )
 from orcia_api.schemas.problem_details import ProblemDetails
-from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.permissions import (
-    REFRESH_TOKEN_TTL_SECONDS,
     SessionTokenPair,
     UserIdentity,
-    WorkspaceAccessSummary,
 )
 from orcia_core.permissions.errors import InvalidCredentialsError, OrciaDomainError
 
-REFRESH_COOKIE_NAME: str = "orcia_refresh_token"
+logger = get_logger("orcia.api.auth")
 
 PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     401: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
@@ -41,6 +56,10 @@ PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
+def _pg_enabled() -> bool:
+    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+
+
 def resolve_request_user(request: Request, persona_key: str | None = None) -> UserIdentity:
     """Resolve authenticated `UserIdentity` from `Authorization: Bearer ...` or `persona_key`."""
     svc = get_auth_service(request)
@@ -49,47 +68,14 @@ def resolve_request_user(request: Request, persona_key: str | None = None) -> Us
     )
 
 
-def serialize_workspace_summary(item: WorkspaceAccessSummary) -> WorkspaceSummaryItem:
-    """Convert domain `WorkspaceAccessSummary` into Pydantic `WorkspaceSummaryItem`."""
-    ws = item.workspace
-    return WorkspaceSummaryItem(
-        id=ws.id,
-        slug=ws.slug,
-        name=ws.name,
-        owner_org_unit_id=ws.owner_org_unit_id,
-        visibility_mode=ws.visibility_mode,
-        effective_role=item.effective_role,
-        access_mode=item.access_mode,
-        access_origin=item.access_origin,
-        finops_cost_usd=ws.finops_cost_usd if item.finops_visible else None,
-        datasources=[
-            WorkspaceDatasourceItem(
-                id=ds.id,
-                workspace_id=ds.workspace_id,
-                alias=ds.alias,
-                scheme=ds.scheme,
-                uri=ds.uri,
-                role=ds.role,
-                execution_identity=ds.execution_identity,
-                freshness_ttl_days=ds.freshness_ttl_days,
-            )
-            for ds in ws.datasources
-        ],
-    )
-
-
 def _issue_auth_response(
-    response: Response, user: UserIdentity, tokens: SessionTokenPair, trace_id: str
+    response: Response,
+    user: UserIdentity,
+    tokens: SessionTokenPair,
+    trace_id: str,
+    request: Request,
 ) -> AuthTokenResponse:
-    response.set_cookie(
-        key=REFRESH_COOKIE_NAME,
-        value=tokens.refresh_token,
-        max_age=REFRESH_TOKEN_TTL_SECONDS,
-        path="/api/v1/auth",
-        secure=True,
-        httponly=True,
-        samesite="strict",
-    )
+    set_auth_refresh_cookie(response, tokens.refresh_token, request)
     return AuthTokenResponse(
         access_token=tokens.access_token,
         expires_in_seconds=tokens.expires_in_seconds,
@@ -99,6 +85,8 @@ def _issue_auth_response(
         platform_role=user.platform_role,
         human_profile_archetype=user.human_profile_archetype,
         primary_org_unit_id=user.primary_org_unit_id,
+        roles=list(user.roles),
+        must_change_password=user.must_change_password,
         trace_id=trace_id,
     )
 
@@ -115,8 +103,33 @@ async def login_local(
     """Authenticate local user, issue 15-min JWT, and set HttpOnly refresh cookie."""
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     svc = get_auth_service(request)
+
+    if _pg_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            user, tokens = await authenticate_via_postgres18(
+                engine, payload.email, payload.password, svc
+            )
+            return _issue_auth_response(response, user, tokens, trace_id, request)
+        except InvalidCredentialsError:
+            raise
+        except Exception as exc:
+            logger.warning("auth_login_local_pg_check", error_type=type(exc).__name__)
+            try:
+                engine = get_or_create_shared_db_engine(request)
+                async with engine.begin() as conn:
+                    cnt_res = await conn.execute(sa.text("SELECT COUNT(*) FROM users"))
+                    if (cnt_res.scalar() or 0) > 0:
+                        raise InvalidCredentialsError()
+            except InvalidCredentialsError:
+                raise
+            except Exception as exc:
+                logger.warning(
+                    "auth_login_local_pg_user_count_failed", error_type=type(exc).__name__
+                )
+
     user, tokens = svc.login_local(payload.email, payload.password, totp_code=payload.totp_code)
-    return _issue_auth_response(response, user, tokens, trace_id)
+    return _issue_auth_response(response, user, tokens, trace_id, request)
 
 
 @router.post(
@@ -132,7 +145,7 @@ async def login_oidc(
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     svc = get_auth_service(request)
     user, tokens = svc.login_oidc(payload.oidc_subject, email=payload.email)
-    return _issue_auth_response(response, user, tokens, trace_id)
+    return _issue_auth_response(response, user, tokens, trace_id, request)
 
 
 @router.post(
@@ -149,7 +162,13 @@ async def refresh_session(request: Request, response: Response) -> AuthTokenResp
     if not raw_refresh:
         raise InvalidCredentialsError(instance=str(request.url.path))
     user, tokens = svc.refresh_session(raw_refresh)
-    return _issue_auth_response(response, user, tokens, trace_id)
+    if _pg_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            user = await hydrate_user_identity_from_pg(engine, user)
+        except Exception as exc:
+            logger.warning("auth_refresh_pg_hydration_failed", error_type=type(exc).__name__)
+    return _issue_auth_response(response, user, tokens, trace_id, request)
 
 
 @router.post(
@@ -189,6 +208,29 @@ async def logout_session(request: Request, response: Response) -> LogoutResponse
     return LogoutResponse(revoked=True, trace_id=trace_id)
 
 
+@router.post(
+    "/change-password",
+    response_model=ChangePasswordResponse,
+    summary="Change authenticated user password, enforcing policy and clearing temporary flag",
+    responses=PROBLEM_RESPONSES,
+)
+async def change_password(
+    payload: ChangePasswordRequest, request: Request
+) -> ChangePasswordResponse:
+    """Validate current password, verify policy, update PG and memory session."""
+    trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
+    svc = get_auth_service(request)
+    engine = get_or_create_shared_db_engine(request) if _pg_enabled() else None
+    return await execute_change_password(
+        request,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+        trace_id=trace_id,
+        svc=svc,
+        engine=engine,
+    )
+
+
 @router.get(
     "/me",
     response_model=UserMeResponse,
@@ -208,6 +250,12 @@ async def get_current_user_me(
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     svc = get_auth_service(request)
     user = resolve_request_user(request, persona_key=persona_key)
+    if _pg_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            user = await hydrate_user_identity_from_pg(engine, user)
+        except Exception as exc:
+            logger.warning("auth_refresh_pg_hydration_failed", error_type=type(exc).__name__)
     accessible = svc.evaluator.resolve_accessible_workspaces(user)
     finops_total = svc.evaluator.compute_finops_rollup_usd(user)
     modules_map = svc.evaluator.evaluate_module_permissions(user, has_workspaces=bool(accessible))
@@ -222,6 +270,8 @@ async def get_current_user_me(
         primary_org_unit_id=user.primary_org_unit_id,
         totp_enabled=user.totp_enabled,
         transverse_groups=list(user.transverse_groups),
+        roles=list(user.roles),
+        must_change_password=user.must_change_password,
         org_units=[
             OrgUnitTreeItem(
                 id=u.id, slug=u.slug, name=u.name, unit_type=u.unit_type, parent_id=u.parent_id

@@ -46,6 +46,7 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
   return createClient<paths>({
     baseUrl: options.baseUrl,
     headers,
+    credentials: "include",
     fetch: options.fetchImpl ?? globalThis.fetch,
   });
 }

@@ -441,12 +441,53 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             assert "julie.nouvelle@orcia.fr" in str(db_members)
 
             # Cleanup created IAM account
-            await client.delete(
+            del_acc_res = await client.delete(
                 f"/api/v1/settings/iam/accounts/{new_acc_res.json()['id']}",
                 headers=headers,
             )
+            assert del_acc_res.status_code == 200
+
+            # Direct assertion: even if an active user has primary_org_unit_id pointing
+            # to an empty BU, deleting that BU succeeds and safely reassigns to fallback org unit
+            victim_bu_id = created_test_bu_ids[1]
+            async with engine.begin() as conn:
+                await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO users (
+                            id, email, display_name, auth_mode,
+                            human_profile_archetype, platform_role, primary_org_unit_id,
+                            is_active, created_at
+                        ) VALUES (
+                            :id, 'active.bu.member@orcia.fr', 'Active Member', 'LOCAL',
+                            'CONTRIBUTOR', 'CONTRIBUTOR', :bu_id, TRUE, NOW()
+                        )
+                        """
+                    ),
+                    {"id": new_uuid7(), "bu_id": UUID(victim_bu_id)},
+                )
+
+            del_victim_res = await client.delete(
+                f"/api/v1/org-units/{victim_bu_id}", headers=headers
+            )
+            assert del_victim_res.status_code == 200
+
+            async with engine.connect() as conn:
+                reassigned_bu = (
+                    await conn.execute(
+                        sa.text(
+                            """
+                            SELECT primary_org_unit_id FROM users
+                            WHERE email = 'active.bu.member@orcia.fr'
+                            """
+                        )
+                    )
+                ).scalar_one()
+            assert str(reassigned_bu) != victim_bu_id
 
             for test_bu_id in created_test_bu_ids:
+                if test_bu_id == victim_bu_id:
+                    continue
                 assert (
                     await client.delete(f"/api/v1/org-units/{test_bu_id}", headers=headers)
                 ).status_code == 200

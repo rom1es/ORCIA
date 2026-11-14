@@ -85,7 +85,7 @@ export function createRequestJson(options: OrciaApiClientOptions) {
     body?: unknown,
   ): Promise<T> {
     const headers: Record<string, string> = { ...baseHeaders };
-    const init: RequestInit = { method, headers };
+    const init: RequestInit = { method, headers, credentials: "include" };
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(body);

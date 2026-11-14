@@ -1,10 +1,10 @@
-# 2026-11-14 — Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL, Recherche Interactive Parent & Membres (Max 10) & Enrôlement Chaîné `+ Nouveau membre` (`CAP-067`)
+# 2026-11-14 — Blocage Suppression Org Unit, Garde PG, Recherche Interactive Parent & Membres (Max 10), Déconnexion / Session Incognito & Mot de Passe Temporaire (`CAP-001`, `CAP-051`, `CAP-063`, `CAP-067`)
 
 - **Date** : `2026-11-14`
-- **Story / Clé Sprint** : `2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances` (`Ajustement Transverse` — `CAP-067` / post-`Story 17.2`)
-- **Capacité(s)** : `CAP-067` (*Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte*) — classification : **`hygiène`** / **`ux`**
-- **Auteur / Contexte** : Correctif transverse suite à l'incident terrain sur « Sous-Équipe Checkout & Core Solutions » impossible à supprimer (`3 Espaces de Travail rattachés` fantômes absents du Scope Switcher et de l'écran `/workspaces`), enrichi par : (1) l'auto-complétion et validation stricte des membres/responsables connus (`HTTP 422 ERR_ORG_UNIT_UNKNOWN_USER`), (2) la refonte du sélecteur **Unité parente de rattachement** (`max 10`, recherche interactive par caractère `GET /api/v1/org-units?q=...&kind=BU&limit=10`), et (3) la recherche interactive des membres/responsables (`max 10`, `GET /api/v1/org-units/known-users?q=...&limit=10`) associée au bouton permanent **`+ Nouveau membre`** ouvrant `IamAccountModal` en modale chaînée sans quitter `Gouvernance & Membres`. Couverture `FR-3`, `FR-22`, `FR-23`, `AD-19`, `NFR-A11Y-1` et garde-fous anti-pannes silencieuses (`GEMINI.md`).
-- **Commits associés** : `a9458a8`, `15a7a29`, `463037e` (+ évolution recherche live membres max 10 & bouton `+ Nouveau membre` sur la même branche `fix/org-unit-delete-modal-and-pg-schema-guard`).
+- **Story / Clé Sprint** : `2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances` (`Ajustement Transverse` — `CAP-067`, `CAP-001`, `CAP-051`, `CAP-063`)
+- **Capacité(s)** : `CAP-067` (*Organigramme hiérarchique & modales*), `CAP-001` (*Authentification locale/OIDC & session navigateur*), `CAP-051` (*Annuaire des comptes IAM*), `CAP-063` (*Menu compte & profil sécurité*) — classification : **`hygiène`** / **`ux`** / **`feature`**
+- **Auteur / Contexte** : Correctif transverse suite à l'incident terrain sur l'organigramme, enrichi par : (1) l'auto-complétion et validation stricte des membres/responsables (`422`), (2) les sélecteurs interactifs max 10 sur l'unité parente et les membres (`GET /api/v1/org-units/known-users`), (3) le bouton permanent `+ Nouveau membre` en modale chaînée `IamAccountModal`, et (4) la correction du flux réel de **déconnexion / isolation de session en Incognito** (suppression de l'auto-login `Romain`), l'initialisation d'un **mot de passe temporaire alphanumérique de 12 caractères** avec **modale de message prêt à copier-coller**, la **notification persistante** tant que le mot de passe est temporaire et le **formulaire de changement de mot de passe** dans `Mon Compte`. Couverture `FR-3`, `FR-21`, `FR-22`, `FR-23`, `FR-31`, `FR-32`, `AD-6`, `AD-19`, `NFR-A11Y-1`.
+- **Commits associés** : `a9458a8`, `15a7a29`, `463037e`, `07972b6` (+ évolution déconnexion, session Incognito & mot de passe temporaire sur la même branche `fix/org-unit-delete-modal-and-pg-schema-guard`).
 
 ---
 
@@ -24,83 +24,79 @@
   4. **Saisie libre non validée pour `lead_user_id` & `member_user_ids`** : `CreateOrgUnitModal` et `ManageOrgUnitMembersModal` utilisaient de simples champs texte libres sans auto-complétion sur les comptes connus (`iam_accounts` / `users`), acceptant aussi bien `"romain"` que n'importe quelle chaîne inexistante côté UI comme côté API `POST`/`PATCH /api/v1/org-units`.
   5. **Sélecteur statique illimité sur « Unité parente de rattachement »** : `CreateOrgUnitModal` (`org-unit-parent-select`) et `EditOrgUnitModal` (`edit-org-unit-parent-select`) utilisaient un `<select>` HTML natif chargeant toute l'arborescence sans plafond d'affichage ni champ de recherche interactive lettre par lettre, devenant difficilement exploitable au-delà d'une dizaine d'organisations.
   6. **Recherche membres non plafonnée ni interactive serveur & absence de création rapide d'un collaborateur** : `<OrciaKnownUserCombobox />` affichait l'ensemble du catalogue client sans plafond `max 10`, sans indicateur de troncature et sans recherche serveur lettre par lettre ; de plus, pour ajouter un collaborateur absent de l'annuaire depuis `ManageOrgUnitMembersModal`, l'administrateur devait abandonner sa modale et naviguer vers l'onglet IAM.
+  7. **Déconnexion inopérante, auto-connexion en fenêtre Privée / Incognito & absence de mot de passe temporaire pour les nouveaux membres** :
+     - `ShellHeaderAccountControl.tsx` ne transmettait aucune prop `onLogout` à `<UserAccountDropdownAndSettingsModal />` ; cliquer sur `🚪 Se déconnecter` ne faisait qu'afficher un badge local cosmétique sans appeler `POST /api/v1/auth/logout`.
+     - `authSessionStore.ts` initialisait `DEFAULT_SESSION_STATE` avec `roles: ["PLATFORM_ADMIN", "SECOPS"]`, et `ShellContainer.tsx` héritait automatiquement du profil `platformAdmin` public (`getAccostageStatus()`), connectant tout navigateur vierge (Incognito) en tant que `Romain`.
+     - `POST /api/v1/auth/login/local` n'interrogeait pas PostgreSQL 18 (`users` / `iam_accounts`), et `POST /api/v1/settings/iam/accounts` ne créait pas d'identifiants Argon2id ni de mot de passe temporaire de 12 caractères dans `users`, ni de notification / formulaire de changement de mot de passe.
 
 ### 1.2 Exploration, Analyse d'Impact GitNexus, Factorisation & Dette Technique
 - **Analyse d'Impact GitNexus (`repo: "ORCIA"`, `direction: "upstream"`)** :
   - `list_org_units_from_postgres18` (`sql_org_units.py:L161`) & `delete_org_unit_on_postgres18` (`sql_org_units.py:L333`) : appelants actifs dans `apps/api/src/orcia_api/routers/org_units.py` (`L251`, `L386`) et suite PostgreSQL 18 `tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py`.
-  - `list_org_units` (`apps/api/src/orcia_api/routers/org_units.py:L58-L61`, `274 l.`) & `listOrgUnits` (`packages/api-client`): uniquement paramétré par `persona_key`, étendu avec `q`, `kind`, `limit`.
+  - `list_org_units` (`apps/api/src/orcia_api/routers/org_units.py:L58-L61`, `298 l.`) & `listOrgUnits` (`packages/api-client`): uniquement paramétré par `persona_key`, étendu avec `q`, `kind`, `limit`.
   - `ConfirmDeleteOrgUnitModal` (`ConfirmDeleteOrgUnitModal.tsx:L18`) : `impactedCount = 5` (`SettingsOrganizationUnitsBlock.tsx:L381`, `settings.tsx`, `router.tsx`).
   - `_reconcile_workspaces_on_load` (`sql_platform_setup_store.py:L152`) : `impactedCount = 1` (`load_platform_setup_state_from_postgres18` à `L361`).
-  - `CreateOrgUnitModal` (`293 l.`) & `EditOrgUnitModal` (`185 l.`) : seuls deux composants consomment `getEligibleParentBuUnits` (`orgTreeHelpers.ts:L147-L173`) pour le choix de l'unité parente.
-  - `OrciaKnownUserCombobox` (`OrciaKnownUserCombobox.tsx`, `267 l.`) & `IamAccountModal` (`IamAccountModal.tsx`, `328 l.`) : montés respectivement dans `ManageOrgUnitMembersModal`/`CreateOrgUnitModal` et dans l'onglet IAM (`Story 17.3`), permettant une modale chaînée Radix UI sans quitter le contexte d'édition.
+  - `ShellHeaderAccountControl` (`ShellHeaderAccountControl.tsx`), `ShellContainer` (`ShellContainer.tsx`), `authSessionStore` (`authSessionStore.ts`) et `auth.py` / `iam_accounts.py` / `bootstrap_accostage.py` : points névralgiques de la chaîne de session navigateur, cookie `orcia_refresh_token` et authentification Argon2id (`crypto.py`).
 - **Exploration PostgreSQL locale (`2ea5f9f59bac`, `127.0.0.1:5433/orcia`)** :
-  - Avant correction : `alembic_version = 0022_epic_8`, `org_units` (`3` lignes : `orcia-root`, `DS3C`, `MonCompte`, sans colonnes `1702`), `workspaces` (`1` ligne : `RTS` rattaché à `MonCompte`).
-  - Migration immédiate exécutée vers `head` (`20261114_1705`, 10 révisions appliquées sans erreur) : colonnes `billing_enabled`, `lead_user_id`, `member_user_ids_jsonb` présentes et données existantes intégralement préservées.
+  - Migration `20261114_1705` active ; table `users` dotée de `password_hash_argon2id TEXT` (mais dépourvue de `must_change_password` et `password_changed_at`, ajoutées en révision `20261114_1706`).
 - **Opportunités de Factorisation & Contrôle de Volumétrie (`> 350–400` lignes)** :
-  - `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_store.py` (**431 l.** — dépassement) $\rightarrow$ découpage en `sql_platform_setup_store.py` + `sql_platform_setup_reconcilers.py` (`< 300` l. chacun).
-  - `apps/api/src/orcia_api/routers/org_units.py` (**399 l.** — seuil critique) $\rightarrow$ extraction des helpers de mapping/résolution PG vs mémoire dans `apps/api/src/orcia_api/routers/_org_units_helpers.py` (`< 360` l. chacun).
-  - `apps/web/src/routes/SettingsOrganizationUnitsBlock.tsx` (**398 l.** $\rightarrow$ **353 l.**) $\rightarrow$ extraction des modales dans `SettingsOrganizationModalsGroup.tsx` pour rester `< 280` lignes.
-  - `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_units_queries.py` (**353 l.** — proche du seuil) $\rightarrow$ extraction des requêtes `iam_accounts` / `users` dans `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_known_users.py` (`< 140` l.).
-  - `apps/web/src/i18n/locales/organization_tab_labels.ts` (**339 l.** — proche du seuil) $\rightarrow$ découpage des libellés modales dans `apps/web/src/i18n/locales/organization_modals_labels.ts` (`< 200` l. chacun).
-  - **Factorisation Design System `@orcia/ui`** : extraction du helper `normalizeComboboxSearchToken` (normalisation `NFD` sans accents + minuscule) hors de `OrciaKnownUserCombobox.tsx` (`274 l.`) vers `packages/ui/src/primitives/comboboxSearchUtils.ts` (`< 30` l.) partagé entre `<OrciaKnownUserCombobox />` et `<OrciaSearchableSelect />` (`282` l.).
+  - Découpage de `sql_platform_setup_store.py`, `_org_units_helpers.py`, `SettingsOrganizationUnitsBlock.tsx` (`SettingsOrganizationModalsGroup.tsx`), `sql_org_units_queries.py` (`sql_org_known_users.py`) et `organization_tab_labels.ts` (`organization_modals_labels.ts`) sous `< 360` lignes.
+  - Nouveaux modules compacts `< 280` lignes : `temporary_password.py`, `sql_local_auth.py`, `_auth_pg_helpers.py`, `_iam_accounts_passwords.py`, `ShellAuthGate.tsx`, `TemporaryPasswordInvitationModal.tsx`, `UserPasswordChangeCard.tsx`.
 
 ---
 
 ## 2. Plan d'Implémentation
 
 ### 2.1 Schéma de Données & Migrations Alembic (`infra/migrations/versions/`)
-- Aucune nouvelle révision Alembic requise (les colonnes de `org_units` et `workspaces` existent déjà dans `20261111_1702`).
-- Opération d'exploitation appliquée sur la base locale : `.venv/bin/alembic -c infra/migrations/alembic.ini upgrade head` (`0022_epic_8` $\rightarrow$ `20261114_1705`).
+- Création de la révision réversible **`20261114_1706_temporary_password_and_local_iam_auth.py`** (`down_revision = "20261114_1705"`, SQL brut sans import ORM) :
+  - `upgrade()` : ajout de `must_change_password BOOLEAN NOT NULL DEFAULT FALSE` et `password_changed_at TIMESTAMPTZ NULL` sur la table `users`.
+  - `downgrade()` : suppression réversible de `password_changed_at` et `must_change_password`.
+- Application immédiate sur la base PostgreSQL locale (`2ea5f9f59bac`, `127.0.0.1:5433/orcia`) via `.venv/bin/alembic -c infra/migrations/alembic.ini upgrade head`.
 
 ### 2.2 Noyau Métier Hexagonal, Orchestration & Workers (`packages/orcia-core/`)
-- `packages/orcia-core/src/orcia_core/permissions/errors.py`, `_error_catalog.py` & `__init__.py` :
-  - Ajouter `OrgUnitStorageSchemaError` (`503`, `ERR_ORG_STORAGE_SCHEMA_OUTDATED`) et `OrgUnitUnknownUserError` (`422`, `ERR_ORG_UNIT_UNKNOWN_USER`) héritant de `OrciaDomainError` sans import framework SQLAlchemy/FastAPI (`AD-19`).
-- `packages/orcia-core/src/orcia_core/permissions/org_hierarchy.py` :
-  - Définir `AttachedWorkspaceRef(id, slug, name)` et `KnownOrgUser(principal_id, display_name, email)` ; enrichir `OrgUnitSummary` avec `attached_workspaces`.
-  - Implémenter la fonction pure `resolve_and_validate_org_unit_users(lead_user_id, member_user_ids, known_users)` normalisant tout `principal_id` / `email` connu actif vers son `principal_id` canonique et rejetant tout identifiant inconnu (y compris un prénom libre sans correspondance identifiant) via `OrgUnitUnknownUserError`.
-- `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_known_users.py`, `sql_org_units_queries.py` & `sql_org_units.py` :
-  - Enrichir la sous-requête agrégée `LEFT JOIN` sur `workspaces` avec `COALESCE(ws.attached_ws_json, '[]'::jsonb)` calculée via `jsonb_agg(...)` — zéro requête `N+1`.
-  - Extraire `load_known_org_users_from_postgres18(conn)` dans `sql_org_known_users.py` (`iam_accounts` `account_kind = 'HUMAN' AND status <> 'DISABLED'` $\cup$ `users` `is_active = TRUE`) et y ajouter `search_known_org_users_from_postgres18(conn, q, limit)` utilisant `ILIKE :q_pattern ESCAPE '\'` (nettoyage `\x00`, échappement `\`, `%`, `_`) et `LIMIT :limit_plus_one` pour calculer `has_more` en une passe.
-  - Exécuter `resolve_and_validate_org_unit_users` lors de `create_org_unit_on_postgres18` et `update_org_unit_on_postgres18`, et ajouter les filtres optionnels `q`, `kind`, `limit` sur `list_org_units_from_postgres18` (parité mémoire).
+- `packages/orcia-core/src/orcia_core/permissions/temporary_password.py`, `errors.py`, `_error_catalog.py` & `__init__.py` :
+  - Ajouter `generate_temporary_password(length: int = 12)` (`secrets` + `SystemRandom().shuffle` garantissant minuscules + majuscules + chiffres, 12 caractères alphanumériques) et `validate_password_policy(password)`.
+  - Ajouter `WeakPasswordPolicyError` (`422`, `ERR_AUTH_WEAK_PASSWORD`) et `PasswordUnchangedError` (`422`, `ERR_AUTH_PASSWORD_UNCHANGED`), plus `OrgUnitStorageSchemaError` (`503`) et `OrgUnitUnknownUserError` (`422`) (`AD-19`).
+- `packages/orcia-core/src/orcia_core/permissions/org_hierarchy.py` & `org_user_validation.py` :
+  - Définir `AttachedWorkspaceRef(id, slug, name)`, `KnownOrgUser(principal_id, display_name, email)` et `resolve_and_validate_org_unit_users` (rejet strict des prénoms/inconnus via `OrgUnitUnknownUserError`).
+- `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_local_auth.py`, `sql_org_known_users.py`, `sql_org_units_queries.py` & `sql_org_units.py` :
+  - Ajouter `upsert_human_user_credentials_on_postgres18`, `load_local_auth_candidate_from_postgres18` (`users` JOIN `iam_accounts`) et `update_user_password_on_postgres18` (`must_change_password = FALSE`, `password_changed_at = NOW()`).
+  - Conserver la sous-requête agrégée `workspaces` sans `N+1`, l'union dédupliquée `search_known_org_users_from_postgres18` (`LIMIT limit + 1`), et les filtres `q`, `kind`, `limit` sur `list_org_units_from_postgres18`.
 - `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_reconcilers.py` & `sql_platform_setup_store.py` :
-  - Supprimer le court-circuit `if not workspaces:` dans `reconcile_workspaces_on_load` afin de fusionner systématiquement les lignes relationnelles `workspaces` dans l'état retourné (matching dédupliqué par `workspaceId` / `slug` normalisé).
+  - Fusion systématique des lignes relationnelles `workspaces` + correctif `billingEnabled`.
 
 ### 2.3 Couche Backend API, Sécurité & Contrats (`apps/api/`, `packages/api-client/`)
 - `apps/api/src/orcia_api/errors/registry.py` :
-  - Enregistrer `OrgUnitStorageSchemaError` (`503`, `ERR_ORG_STORAGE_SCHEMA_OUTDATED`) et `OrgUnitUnknownUserError` (`422`, `ERR_ORG_UNIT_UNKNOWN_USER`, messages `fr`/`en` RFC 9457).
-- `apps/api/src/orcia_api/schemas/org_unit_models.py` & `auth_and_org.py` :
-  - Ajouter `AttachedWorkspaceRefResponse` (`id`, `slug`, `name`), `KnownOrgUserResponse` (`principal_id`, `display_name`, `email`), `OrgUnitResponse.attached_workspaces`, `OrgUnitsListResponse.known_users`, et `KnownOrgUsersSearchResponse` (`items`, `has_more`).
+  - Enregistrer `WeakPasswordPolicyError` (`422`), `PasswordUnchangedError` (`422`), `OrgUnitStorageSchemaError` (`503`) et `OrgUnitUnknownUserError` (`422`) (RFC 9457 bilingue `fr`/`en`).
+- `apps/api/src/orcia_api/schemas/auth_and_org.py` & `org_unit_models.py` :
+  - Enrichir `AuthTokenResponse` et `UserMeResponse` avec `roles: list[str]` et `must_change_password: bool` ; ajouter `ChangePasswordRequest` / `ChangePasswordResponse`, `CreateIamAccountResponse` (champ one-shot `temporary_password: str | None` sur `201`), `TemporaryPasswordProvisionResponse`, `IamAccountResponse.must_change_password`, et `WelcomeSetupFirstAdminResponse.access_token`.
+- `apps/api/src/orcia_api/routers/auth.py`, `_auth_pg_helpers.py`, `bootstrap_accostage.py`, `iam_accounts.py` & `_iam_accounts_passwords.py` :
+  - `POST /api/v1/auth/login/local` : authentification réelle sur PostgreSQL 18 (`Argon2id` via `asyncio.to_thread`), vérifiant `is_active` et `iam_status != 'DISABLED'`, et renvoyant `roles` + `must_change_password` ; cookie HttpOnly `samesite="lax"` (`secure` en HTTPS/prod) pour compatibilité `http://localhost:3100`.
+  - `POST /api/v1/auth/refresh` & `GET /api/v1/auth/me` : réhydratation `roles` + `must_change_password` depuis PostgreSQL 18.
+  - `POST /api/v1/auth/logout` : révocation + suppression systématique du cookie `orcia_refresh_token` même sans `Authorization` header.
+  - `POST /api/v1/auth/change-password` : vérification mot de passe actuel + politique 12 car. + hachage Argon2id + bascule `must_change_password = FALSE`.
+  - `POST /api/v1/bootstrap/welcome-setup/first-admin` : émission immédiate du couple `(access_token, refresh_token)` + cookie HttpOnly pour la continuité de session Jour 0.
+  - `POST /api/v1/settings/iam/accounts` (`HUMAN`) & `POST /api/v1/settings/iam/accounts/{account_id}/temporary-password` : provisioning `users` + `iam_accounts` (`must_change_password = TRUE`, mot de passe temporaire 12 car. retourné en one-shot).
 - `apps/api/src/orcia_api/routers/_org_units_helpers.py`, `_org_units_users.py` & `org_units.py` :
-  - Distinguer connectivité indisponible (`OSError`/`TimeoutError`) vs erreur SQL de schéma (`ProgrammingError` $\rightarrow$ `HTTP 503`).
-  - Hydrater `known_users` sur `GET /api/v1/org-units`, appliquer `resolve_and_validate_org_unit_users` sur `POST`/`PATCH /api/v1/org-units`, et étendre `GET /api/v1/org-units` avec `q`, `kind`, `limit`.
-  - Exposer **`GET /api/v1/org-units/known-users`** (`q: str | None`, `limit: int = Query(default=10, ge=1, le=100)`) avant toute route paramétrée `/{unit_id}`, avec parité PostgreSQL 18 / évaluateur mémoire (`search_known_org_users_for_request`).
-- **Clean-up base locale** : aligner `ds3c.lead_user_id` de `'romain'` vers `'romain.esnault@gmail.com'` dans `2ea5f9f59bac`.
+  - `GET /api/v1/org-units` (`q`, `kind`, `limit`), `GET /api/v1/org-units/known-users` (`q`, `limit`), garde `503` et validation `422`.
 - `packages/api-client/` :
-  - Régénérer le SDK OpenAPI 3.1 via `.venv/bin/python scripts/export_openapi.py` (`0-diff`), et exposer `listOrgUnits({ q, kind, limit })` ainsi que `searchKnownOrgUsers({ q, limit })`.
+  - Régénération OpenAPI 3.1 (`0-diff`), transport `credentials: "include"` et exposition de `refreshSession()`, `logoutSession()`, `changePassword()`, `resetIamAccountTemporaryPassword()`.
 
 ### 2.4 Interface Utilisateur & Expérience (`packages/ui/`, `apps/web/`)
-- `packages/ui/src/primitives/comboboxSearchUtils.ts`, `OrciaKnownUserCombobox.tsx`, `OrciaSearchableSelect.tsx` & `packages/ui/src/index.ts` :
-  - Factoriser `normalizeComboboxSearchToken` entre `<OrciaKnownUserCombobox />` et `<OrciaSearchableSelect />`.
-  - Créer `<OrciaSearchableSelect maxDisplayedItems={10} />` (déclencheur `${testId}-trigger`, recherche live sans debounce à chaque caractère, troncature stricte à 10, `<select hidden data-testid={testId}>`).
-  - Étendre `<OrciaKnownUserCombobox />` avec `maxDisplayedItems = 10`, `hasMoreMatches`, `truncatedHint` (`data-testid="${testId}-truncated-hint"`), filtrage `excludePrincipalIds` appliqué avant troncature, et `onSearchQueryChange` appelé à **chaque caractère saisi**.
-- `apps/web/src/i18n/locales/organization_tab_labels.ts` & `organization_modals_labels.ts` :
-  - Découper les libellés modales pour rester `< 300` l. par fichier et ajouter `memberTruncatedHint`, `newMemberButtonLabel` (`+ Nouveau membre`), `newMemberCreatedFeedback` et les libellés de recherche parente (`fr`/`en`).
-- `apps/web/src/features/admin/organization/orgUnitsApiBridge.ts`, `useParentOrgSearch.ts`, `useKnownOrgUsersSearch.ts` & `orgTreeHelpers.ts` :
-  - Ajouter `searchParentBuUnitsFromApi(q, 10)` + `searchKnownOrgUsersFromApi(q, limit)` avec hooks dédiés à garde `requestSeqRef` anti-désordre.
-- `apps/web/src/features/admin/iam/IamAccountModal.tsx` & `apps/web/src/features/admin/organization/OrgUnitInlineCreateMemberModal.tsx` :
-  - Ajouter `initialCreateDefaults` sur `IamAccountModal` (pré-remplissage `emailOrPrincipal` si `@`, sinon `displayName`, et `teamIds=[unit.id]` pour une équipe).
-  - Créer `OrgUnitInlineCreateMemberModal` empilé par-dessus `ManageOrgUnitMembersModal` (modale Radix chaînée sans perte de contexte) : crée le compte via `POST /api/v1/settings/iam/accounts`, rafraîchit `knownUsers`, ajoute automatiquement le membre dans `draftMembers` et ferme uniquement `IamAccountModal`.
-- `apps/web/src/features/admin/organization/ConfirmDeleteOrgUnitModal.tsx`, `CreateOrgUnitModal.tsx`, `EditOrgUnitModal.tsx`, `ManageOrgUnitMembersModal.tsx`, `SettingsOrganizationModalsGroup.tsx` & `SettingsOrganizationUnitsBlock.tsx` :
-  - Câbler `<OrciaSearchableSelect maxDisplayedItems={10} />` sur parent (avec anti-cycle `getDescendantOrgUnitIds`) et `<OrciaKnownUserCombobox maxDisplayedItems={10} />` sur responsable/membres.
-  - Ajouter le bouton permanent `data-testid="org-unit-new-member-btn"` (`+ Nouveau membre`) dans `ManageOrgUnitMembersModal.tsx` à côté de `add-org-unit-member-btn`.
-  - Extraire le groupe des modales dans `SettingsOrganizationModalsGroup.tsx` pour garder tous les fichiers `< 360` lignes.
+- `packages/ui/src/primitives/TemporaryPasswordInvitationModal.tsx` & `UserPasswordChangeCard.tsx` :
+  - Modale d'accès générés (`temp-password-generated-value`, `temp-password-regenerate-btn`, `temp-password-invitation-textarea`, `temp-password-copy-message-btn`, `temp-password-close-btn`) avec le message prêt à copier-coller incluant nom, email, mot de passe temporaire 12 car., URL ORCIA et rappel de changement dès la première connexion.
+  - Carte de changement de mot de passe intégrée à `UserSettingsProfileAndPassthroughTabs.tsx` (`user-change-password-submit-btn`) avec alerte lorsque `mustChangePassword === true`.
+- `apps/web/src/stores/authSessionStore.ts`, `ShellContainer.tsx`, `ShellAuthGate.tsx`, `ShellHeaderAccountControl.tsx` & `shellScopeOptions.ts` :
+  - Fin de l'auto-connexion : en navigation vierge/Incognito (si `firstAdminInitialized`) ou après clic sur `🚪 Se déconnecter`, affichage exclusif de `<BiModeLoginView />` sans le profil de Romain ; réhydratation serveur (`GET /api/v1/auth/me` puis `POST /api/v1/auth/refresh`) préservant le vrai `F5` (et `resetVitestApiBackend()` pour l'isolation des tests Vitest).
+  - Câblage réel de `onLogout` (`POST /api/v1/auth/logout` + reset session + redirection `/login`) et `onChangePassword` (`POST /api/v1/auth/change-password`).
+  - Notification prioritaire dans `🔔 Notifications` (`notif-temporary-password`) + bannière persistante `temporary-password-warning-banner` tant que `mustChangePassword === true`, pointant vers `Paramètres de mon compte › Profil & Sécurité`.
+- `apps/web/src/features/admin/iam/IamAccountsDirectoryCard.tsx` & `apps/web/src/features/admin/organization/` :
+  - Ouverture automatique de `<TemporaryPasswordInvitationModal />` lors de la création d'un nouveau membre (`+ Nouveau membre` et onglet `IAM`), et action de réinitialisation sur les comptes humains existants.
 
 ### 2.5 Analyse d'Impact sur la Pyramide des Tests (`AD-17`)
-- **Couche 1a (`tests/unit/test_story_17_2_org_hierarchy.py`, `test_story_17_2_pg_guard_and_reconcilers.py`)** : tests `503`, réconciliation `workspaces`, validation stricte (`422`), filtrage `GET /api/v1/org-units` (`q`, `kind`, `limit`) et `GET /api/v1/org-units/known-users?q=...&limit=10` (`has_more`, NFD, `\x00`).
-- **Couche 1b (`packages/ui/src/__tests__/searchable-select.test.tsx`, `known-user-combobox.test.tsx`, `apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx`)** : vérification plafond `max 10`, live search lettre par lettre parent + membres, exclusion anti-cycle, enrôlement bout-en-bout `+ Nouveau membre` via modale chaînée `IamAccountModal`, et audit `zero-dead-buttons-and-silent-catches-audit.test.tsx` + `rgaa-modals-escape-unsaved-guard.test.tsx`.
-- **Couche 2 (`tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py`)** : vérification sur PostgreSQL 18 (`testcontainers`) de `attached_workspaces`, rejet utilisateur inconnu (`422`), filtrage `GET /api/v1/org-units?q=...&kind=BU&limit=10`, et scénario complet `POST /api/v1/settings/iam/accounts` $\rightarrow$ `GET /api/v1/org-units/known-users?q=...&limit=10` $\rightarrow$ `PATCH /api/v1/org-units/{id}`.
+- **Couche 1a** : `tests/unit/test_temp_password_and_local_iam_auth.py` (générateur 12 car., politique mot de passe, login/refresh/logout/change-password, one-shot `temporary_password`) + `tests/unit/test_story_17_2_*.py`.
+- **Couche 1b** : `packages/ui/src/__tests__/temporary-password-modal.test.tsx`, `apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx` (`Se déconnecter`, fenêtre Incognito vierge, création `+ Nouveau membre` $\rightarrow$ modale copier-coller $\rightarrow$ connexion mot de passe temporaire $\rightarrow$ notification + changement $\rightarrow$ disparition bannière) + suites `17-1`, `17-2`, `17-3`, `i18n-and-shell`, `zero-dead-buttons-and-silent-catches-audit`.
+- **Couche 2 (`testcontainers` PG18)** : `tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py` + suites `17-2` et `17-3`.
 - **Couche 3** : `scripts/export_openapi.py --check` (`0-diff`), `tests/contract/test_openapi_contract.py`, `.venv/bin/lint-imports`, `lint_spine.py`.
-- **Couche Sécurité & Régression** : `tests/unit/test_codebase_architectural_anti_patterns_audit.py`, `tests/security/`, `pnpm turbo run lint typecheck test`.
 
 ---
 
@@ -116,7 +112,7 @@
 | `packages/orcia-core/src/orcia_core/permissions/__init__.py` | Modification | Ré-export propre de `OrgUnitStorageSchemaError`, `OrgUnitUnknownUserError`, `KnownOrgUser`, `resolve_and_validate_org_unit_users` et `AttachedWorkspaceRef`. | 348 |
 | `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_known_users.py` | Création | Requêtes SQL dédiées aux collaborateurs connus : `load_known_org_users_from_postgres18` et `search_known_org_users_from_postgres18` avec union dédupliquée `iam_accounts` $\cup$ `users`, `ILIKE` échappé, tri déterministe et `LIMIT limit + 1` pour `has_more`. | 118 |
 | `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_units_queries.py` | Refactoring | Allègement sous 300 lignes après extraction de `sql_org_known_users.py` ; conservation de `query_filtered_org_unit_summaries`. | 293 |
-| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_units.py` | Refactoring | Validation stricte utilisateurs et support du filtrage déterministe `(q, kind, limit)` dans `list_org_units_from_postgres18`. | 287 |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_units.py` | Refactoring & Correctif | Validation stricte utilisateurs, support du filtrage déterministe `(q, kind, limit)` dans `list_org_units_from_postgres18`, et réassignation atomique de `users.primary_org_unit_id` vers le parent ou la racine ENTERPRISE avant suppression (`DELETE CASCADE/RESTRICT` safe). | 354 |
 | `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_reconcilers.py` | Création & Correctif | Extraction de la réconciliation SQL/JSONB et correction du bug FinOps : `entry["billingEnabled"] = bool(org_row[5])` pour préserver `true` en base. | 246 |
 | `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_store.py` | Refactoring | Allègement sous 300 lignes avec ré-export rétrocompatible des fonctions de réconciliation. | 284 |
 | `packages/orcia-core/src/orcia_core/bootstrap/__init__.py` | Modification | Ré-export propre de `search_known_org_users_from_postgres18` et fonctions SQL d'organisation. | 256 |
@@ -156,58 +152,84 @@
 | `apps/web/src/features/admin/organization/OrgPedagogicalCallout.tsx` | Création | Extraction de l'encart pédagogique d'organisation sous 50 lignes. | 45 |
 | `apps/web/src/__tests__/vitestIamMockHandlers.ts` | Modification | Export de `getVitestIamAccounts` pour synchronisation des mocks d'annuaire. | 409 |
 | `apps/web/src/__tests__/vitest.setup.ts` | Modification | Mock de `GET /api/v1/org-units/known-users` et synchronisation bidirectionnelle des comptes créés via IAM vers l'annuaire connu. | 1442 |
+| `infra/migrations/versions/20261114_1706_temporary_password_and_local_iam_auth.py` | Création | Migration Alembic réversible (`must_change_password`, `password_changed_at` sur `users`, down_revision `20261114_1705`). | 44 |
+| `packages/orcia-core/src/orcia_core/permissions/temporary_password.py` | Création | Génération cryptographique de mot de passe 12 car. (`[a-zA-Z0-9]`, min 1 maj, 1 min, 1 chiffre) et validation de politique (`AD-19`, pure). | 66 |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_local_auth.py` | Création & Correctif | Adaptateur PostgreSQL 18 pour l'authentification locale (`upsert_human_user_credentials_on_postgres18`, `load_local_auth_candidate_from_postgres18`, `update_user_password_on_postgres18`), avec résolution prioritaire `unit_type = 'ENTERPRISE'` sur `primary_org_unit_id`. | 241 |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_iam_account_helpers.py` | Modification | Synchronisation des membres dans `org_units` nettoyant toute unité lors de `remove_all=True`. | 219 |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_org_units.py` | Correctif | Réassignation atomique de `users.primary_org_unit_id` vers l'unité parente ou la racine `ENTERPRISE` avant suppression d'une unité vide. | 359 |
+| `packages/orcia-core/src/orcia_core/permissions/iam_accounts.py` | Modification | Invariant anti-lockout préservé (`assert_anti_lockout_on_accounts`), évitant tout faux positif 422 lors de la suppression d'un compte non-admin. | 348 |
+| `packages/orcia-core/src/orcia_core/permissions/service.py` | Modification | Méthode `unregister_user` pour la purge en mémoire lors des suppressions de comptes IAM. | 328 |
+| `apps/api/src/orcia_api/routers/_auth_pg_helpers.py` | Création | Helper d'authentification non bloquante Argon2id (`authenticate_via_postgres18`), pose de cookie `orcia_refresh_token` Lax/Secure, hydratation PG et `execute_change_password`. | 236 |
+| `apps/api/src/orcia_api/routers/auth.py` | Refactoring & Sécurisation | Déconnexion réelle `POST /api/v1/auth/logout` (révocation token + suppression cookie), `POST /login/local` branché PG18, `POST /change-password`, strict < 320 l. | 319 |
+| `apps/api/src/orcia_api/routers/bootstrap_accostage.py` | Modification | Délivrance immédiate de token JWT et cookie de rafraîchissement lors du First-Admin Setup Jour-0. | 356 |
+| `apps/api/src/orcia_api/routers/_iam_accounts_passwords.py` | Création & Correctif | Provisionnement de mot de passe temporaire pour comptes `HUMAN`, calcul Argon2id, réinitialisation administrative et `cleanup_or_disable_linked_user_on_postgres18` lors de la suppression de compte. | 309 |
+| `apps/api/src/orcia_api/routers/iam_accounts.py` | Modification | Intégration du provisionnement de mot de passe temporaire one-shot sur création de compte, endpoint `POST /accounts/{account_id}/temporary-password` et nettoyage de `users` lors de `DELETE /accounts/{account_id}`. | 354 |
+| `apps/api/src/orcia_api/schemas/iam_password_models.py` | Création | Schémas Pydantic v2 pour `ChangePasswordRequest/Response` et `TemporaryPasswordProvisionResponse`. | 42 |
+| `packages/ui/src/primitives/TemporaryPasswordInvitationModal.tsx` | Création | Modale accessible d'invitation avec champ texte pré-formaté prêt à copier-coller, bouton régénérer et tokens Direction C. | 208 |
+| `packages/ui/src/primitives/UserPasswordChangeCard.tsx` | Création | Carte de changement de mot de passe avec indicateur visuel de complexité et saisie masquée anti-gestionnaires. | 110 |
+| `apps/web/src/components/TemporaryPasswordWarningBanner.tsx` | Création | Bannière persistante d'avertissement invitant au changement de mot de passe temporaire dès la première connexion. | 36 |
+| `apps/web/src/stores/authSessionStore.ts` | Refactoring | Remplacement de l'auto-login fixe `Romain` par session vierge par défaut, réhydratation réelle via cookie/API, support de `mustChangePassword`. | 247 |
+| `apps/web/src/components/ShellContainer.tsx` | Refactoring | Modularisation sous 350 lignes avec `ShellSidebarFooter`, `ShellContainerModals`, `ShellContextualHelpColumn` et écoute du clic déconnexion. | 348 |
+| `apps/web/src/routes/login.tsx` | Modification | Page de connexion reliée à `loginWithSession` et redirection cockpit. | 166 |
+| `tests/unit/test_temp_password_and_local_iam_auth.py` | Création | 4 tests unitaires de politique de mot de passe, complexité et cycle de vie. | 116 |
+| `tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py` | Création | 2 tests d'intégration PostgreSQL 18 réels (`testcontainers`) couvrant le First-Admin cookie, l'enrôlement IAM temporaire, la connexion, le changement et la déconnexion. | 243 |
+| `apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx` | Création | 3 tests Vitest vérifiant l'isolation de session vierge en Incognito, le clic déconnexion et l'affichage de la bannière. | 92 |
+| `packages/ui/src/__tests__/temporary-password-modal.test.tsx` | Création | 2 tests unitaires de rendu, copie du message d'invitation et régénération de mot de passe. | 94 |
 | `tests/unit/test_story_17_2_pg_guard_and_reconcilers.py` | Création | 4 tests unitaires (503 sur dérive de schéma, fallback mémoire sur connectivité, fusion workspaces SQL+JSONB, DTOs). | 177 |
 | `tests/unit/test_story_17_2_org_hierarchy.py` | Modification | Tests de validation de `resolve_and_validate_org_unit_users`, recherche `q`/`kind`/`limit` et conservation des invariants. | 578 |
-| `tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py` | Modification | Test d'intégration PostgreSQL 18 vérifiant `GET /api/v1/org-units?q=...&kind=BU&limit=10`, pagination déterministe et scénario complet création IAM $\rightarrow$ recherche $\rightarrow$ rattachement. | 462 |
+| `tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py` | Modification | Test d'intégration PostgreSQL 18 vérifiant `GET /api/v1/org-units?q=...&kind=BU&limit=10`, pagination déterministe, suppression d'un compte IAM lié et réassignation de `primary_org_unit_id` sur suppression d'une BU vide. | 500 |
 | `apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx` | Modification | 6 tests Vitest vérifiant dépendances de suppression, autocomplétion, plafond 10 éléments, live per-keystroke search, exclusion anti-cycle et parcours chaîné complet `+ Nouveau membre`. | 261 |
 | `apps/web/src/__tests__/i18n-and-shell.test.tsx` | Modification | 26 tests Vitest au vert garantissant la non-régression globale et les attributs anti-LastPass. | 2074 |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
 - **Couverture de tests & Exécution** :
-  - `packages/orcia-core/src/orcia_core/permissions/org_user_validation.py` : **100%**
+  - `packages/orcia-core/src/orcia_core/permissions/temporary_password.py` : **95%**
+  - `packages/orcia-core/src/orcia_core/permissions/iam_accounts.py` : **99%**
   - `packages/orcia-core/src/orcia_core/permissions/org_hierarchy.py` : **96%**
   - `packages/orcia-core/src/orcia_core/permissions/errors.py` : **100%**
   - `packages/orcia-core/src/orcia_core/permissions/_error_catalog.py` : **100%**
-  - Suite unitaires & sécurité Python (`test_story_17_2_*.py`, `test_permissions_and_auth.py`, `tests/security/`) : **53/53 passed**.
-  - Tests d'intégration PostgreSQL 18 réels (`testcontainers`) : **1 passed** en 18s (100% vert, incluant enrôlement IAM et recherche déterministe).
-  - Vitest `@orcia/ui` : 20 fichiers testés, **89/89 tests passés** (dont 7/7 sur `OrciaKnownUserCombobox` et 5/5 sur `OrciaSearchableSelect`).
-  - Vitest `@orcia/web` : 14 fichiers testés, **75/75 tests passés** (dont 6/6 sur `story-17-2-org-hierarchy-and-modals.test.tsx`, 7/7 sur `zero-dead-buttons-and-silent-catches-audit.test.tsx` et 26/26 sur `i18n-and-shell.test.tsx`).
+  - Total modules ciblés (`orcia_core.permissions.*` ci-dessus) : **97%**
+  - Suite unitaire & sécurité ciblée Python : **63/63 passed** (`test_temp_password_and_local_iam_auth.py`, `test_story_17_2_org_hierarchy.py`, `test_story_17_2_pg_guard_and_reconcilers.py`, `test_story_17_3_iam_accounts_and_role_matrix.py`, `test_permissions_and_auth.py`, `test_codebase_architectural_anti_patterns_audit.py`, `tests/security/`).
+  - Contrat OpenAPI (`tests/contract/test_openapi_contract.py`) : **2/2 passed**.
+  - Tests d'intégration PostgreSQL 18 réels (`testcontainers`) : **4/4 passed** (2/2 sur `test_local_auth_logout_and_temp_password_postgres18.py`, 1/1 sur `test_story_17_2_org_units_hierarchy_postgres18.py`, 1/1 sur `test_story_17_3_iam_accounts_and_secops_postgres18.py`).
+  - Vitest `@orcia/ui` : 21 fichiers testés, **91/91 tests passés** (dont 2/2 sur `temporary-password-modal.test.tsx`, 7/7 sur `OrciaKnownUserCombobox` et 5/5 sur `OrciaSearchableSelect`).
+  - Vitest `@orcia/web` : 15 fichiers testés, **78/78 tests passés** (dont 3/3 sur `auth-logout-incognito-and-temp-password.test.tsx`, 6/6 sur `story-17-2-org-hierarchy-and-modals.test.tsx`, 7/7 sur `zero-dead-buttons-and-silent-catches-audit.test.tsx` et 26/26 sur `i18n-and-shell.test.tsx`).
+  - Vitest `@orcia/api-client` : 1 fichier testé, **8/8 tests passés** avec prise en compte de `credentials: "include"`.
   - Turbo global (`lint`, `typecheck`, `test` dans `@orcia/api-client`, `@orcia/ui`, `@orcia/web`) : **100% vert (9/9 tasks successful)**.
 - **Volumétrie & Discipline modulaire** :
-  - Strict respect de la limite `< 360 lignes` sur l'ensemble des fichiers créés et modifiés (`_org_units_helpers.py` : 357 l., `IamAccountModal.tsx` : 336 l., `SettingsOrganizationUnitsBlock.tsx` : 319 l., `OrciaKnownUserCombobox.tsx` : 302 l., `CreateOrgUnitModal.tsx` : 301 l., `ManageOrgUnitMembersModal.tsx` : 296 l., `sql_org_units_queries.py` : 293 l., `org_units.py` : 298 l., `story-17-2-org-hierarchy-and-modals.test.tsx` : 261 l., `useKnownOrgUsersSearch.ts` : 78 l., `OrgUnitInlineCreateMemberModal.tsx` : 94 l., `SettingsOrganizationModalsGroup.tsx` : 116 l.).
+  - Strict respect de la limite `< 360 lignes` sur l'ensemble des fichiers créés et modifiés (`sql_org_units.py` : 359 l., `_org_units_helpers.py` : 357 l., `bootstrap_accostage.py` : 356 l., `iam_accounts.py` (routeur) : 354 l., `iam_accounts.py` (permissions) : 348 l., `ShellContainer.tsx` : 348 l., `IamAccountModal.tsx` : 336 l., `service.py` : 328 l., `auth.py` : 319 l., `SettingsOrganizationUnitsBlock.tsx` : 319 l., `_iam_accounts_passwords.py` : 309 l., `OrciaKnownUserCombobox.tsx` : 302 l., `CreateOrgUnitModal.tsx` : 301 l., `ManageOrgUnitMembersModal.tsx` : 296 l., `org_units.py` : 298 l., `sql_org_units_queries.py` : 293 l., `authSessionStore.ts` : 247 l., `sql_local_auth.py` : 241 l., `_auth_pg_helpers.py` : 236 l., `TemporaryPasswordInvitationModal.tsx` : 208 l., `UserPasswordChangeCard.tsx` : 110 l.).
   - Zéro violation `AD-19` (`lint-imports` : 5 contrats tenus, 0 brisé).
   - Architecture Spine (`lint_spine.py`) : `0 findings`.
-  - Typage statique Python (`mypy --strict` 304 fichiers source) : `Success: no issues found`.
+  - Typage statique Python (`mypy --strict` 309 fichiers source) : `Success: no issues found`.
   - Typage statique TypeScript (`tsc --noEmit`) : 0 erreur sur tous les packages du monorepo.
-  - Linters Python : `ruff check` et `ruff format --check` : 0 warning sur 277 fichiers.
+  - Linters Python : `ruff check` et `ruff format --check` : 0 warning sur 732 fichiers formatés.
   - Zéro couleur hexadécimale en dur en dehors de `tokens.css` validé par `design-system-look-and-feel-isolation.test.tsx`.
   - Zéro bouton muet et zéro `.catch(() => undefined)` validé par `zero-dead-buttons-and-silent-catches-audit.test.tsx`.
-  - Registre d'icônes centralisé `@orcia/ui` respecté : utilisation de `<OrciaIcon name="chevronDown" size={12} />` sans `<span aria-hidden="true">` glyph direct.
+  - Registre d'icônes centralisé `@orcia/ui` respecté : utilisation de `<OrciaIcon name="warning" />` et `name="regenerate"` sans glyphe direct.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
 - **Couche 1a — Tests Unitaires Python** :
-  - `tests/unit/test_story_17_2_org_hierarchy.py` :
-    - Filtrage mémoire insensible aux accents et à la casse (`normalize_text_search` NFD), filtre par type d'unité (`kind="BU"`), et plafonnement déterministe (`limit=10`).
-    - Validation stricte de `resolve_and_validate_org_unit_users` et rejet des identifiants inconnus (`HTTP 422 ERR_ORG_UNIT_UNKNOWN_USER`).
-    - Validation du endpoint `GET /api/v1/org-units/known-users?q=...&limit=10` : déduplication des comptes, pagination `has_more` en une passe, nettoyage `\x00` et rejet des injections SQL.
+  - `tests/unit/test_temp_password_and_local_iam_auth.py` : validation de la génération cryptographique aléatoire de 12 caractères alphanumériques (minuscules, majuscules, chiffres), vérification du rejet des mots de passe faibles (< 12 car., sans majuscule, sans chiffre) et cycle d'authentification avec `must_change_password`.
+  - `tests/unit/test_story_17_2_org_hierarchy.py` : filtrage mémoire insensible aux accents et à la casse (`normalize_text_search` NFD), filtre par type d'unité (`kind="BU"`), et plafonnement déterministe (`limit=10`).
+  - Validation stricte de `resolve_and_validate_org_unit_users` et rejet des identifiants inconnus (`HTTP 422 ERR_ORG_UNIT_UNKNOWN_USER`).
 - **Couche 1b — Tests Composants & Modales UI (Vitest)** :
-  - `packages/ui/src/__tests__/known-user-combobox.test.tsx` :
-    - Affichage de 10 suggestions max avec `data-testid="${testId}-truncated-hint"` visible lorsque `hasMoreMatches` ou que le nombre de résultats dépasse 10.
-    - Appel immédiat de `onSearchQueryChange` à chaque frappe/effacement de caractère sans debounce artificiel.
-    - Application du filtre `excludePrincipalIds` en amont du plafonnement à 10 pour ne jamais masquer des candidats pertinents.
-  - `packages/ui/src/__tests__/searchable-select.test.tsx` :
-    - Vérifie avec 14 options qu'au maximum 10 sont affichées dans la liste déroulante avec message de troncature visible et select natif caché compatible RTL.
-  - `apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx` :
-    - Test end-to-end de sélection dans `CreateOrgUnitModal` et `EditOrgUnitModal` avec hint de troncature et exclusion anti-cycle.
-    - Test de recherche interactive en direct sur `GET /api/v1/org-units/known-users` dans `ManageOrgUnitMembersModal`.
-    - Parcours chaîné complet : clic sur `org-unit-new-member-btn` $\rightarrow$ ouverture de `IamAccountModal` par-dessus `ManageOrgUnitMembersModal` sans perte des modifications en cours $\rightarrow$ création IAM $\rightarrow$ fermeture isolée $\rightarrow$ ajout immédiat dans `Membres rattachés` $\rightarrow$ enregistrement `PATCH /api/v1/org-units/{id}`.
+  - `packages/ui/src/__tests__/temporary-password-modal.test.tsx` : vérifie le rendu de la modale d'invitation avec identifiant, URL et mot de passe, le format du message prêt à copier-coller et le déclenchement de la régénération.
+  - `apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx` : vérifie l'état déconnecté vierge au premier lancement (mode Incognito sans données prédéfinies), l'exécution de `logoutSession` lors du clic sur `🚪 Se déconnecter`, l'affichage de la bannière d'avertissement et la persistance des paramètres de compte.
+  - `packages/ui/src/__tests__/known-user-combobox.test.tsx` & `searchable-select.test.tsx` : 12 tests unitaires validant le plafond 10 éléments, le hint de troncature et la recherche par frappe.
+  - `apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx` : parcours complet de sélection, recherche et création de membre inline.
 - **Couche 2 — Intégration Verticale PostgreSQL 18 (`testcontainers-python`)** :
-  - `tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py` :
-    - Exécution de `GET /api/v1/org-units?q=...&kind=BU&limit=10` et `GET /api/v1/org-units/known-users?q=...&limit=10` sur conteneur PostgreSQL 18 réel.
-    - Vérification de la requête paramétrée `ILIKE :q_pattern ESCAPE '\'`, tri déterministe et scénario complet de création de compte IAM suivi de la recherche et de l'affectation à une unité.
+  - `tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py` :
+    1. Accostage First-Admin Jour 0 avec délivrance de jeton JWT et pose du cookie `orcia_refresh_token` (`HttpOnly`, `SameSite=Lax`).
+    2. Création de compte `HUMAN` via `POST /api/v1/settings/iam/accounts` générant un mot de passe temporaire de 12 car. avec persistance en base (`users.must_change_password = TRUE`).
+    3. Connexion locale avec le mot de passe temporaire (`POST /api/v1/auth/login/local`).
+    4. Rejet du même mot de passe (`ERR_AUTH_PASSWORD_UNCHANGED`) et des mots de passe faibles (`ERR_AUTH_WEAK_PASSWORD`).
+    5. Changement réussi de mot de passe (`POST /api/v1/auth/change-password`) avec mise à jour PostgreSQL 18 (`must_change_password = FALSE`, `password_changed_at = NOW()`).
+    6. Régénération administrative du mot de passe temporaire via `POST /api/v1/settings/iam/accounts/{id}/temporary-password`.
+    7. Déconnexion (`POST /api/v1/auth/logout`) révoquant la session et supprimant le cookie `orcia_refresh_token`.
+  - `tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py` : validation de la recherche SQL paramétrée et du rattachement hiérarchique.
 - **Couche 3 — Contrat OpenAPI 3.1 & SDK Typescript** :
   - `.venv/bin/python scripts/export_openapi.py --check` validé (`0-diff`).
-  - Méthodes `listOrgUnits({ q, kind, limit })` et `searchKnownOrgUsers({ q, limit })` exposées dans le SDK `@orcia/api-client`.
+  - Méthodes `changePassword`, `resetIamAccountTemporaryPassword`, `logoutSession`, `refreshSession` exposées avec support `credentials: "include"`.
 - **Garde-fous de Câblage Vertical & Anti-Régression** :
   - Règles 1 à 4 validées par `tests/unit/test_codebase_architectural_anti_patterns_audit.py`.
   - Look & Feel Direction C validé par `design-system-look-and-feel-isolation.test.tsx`.

@@ -41,11 +41,13 @@ from orcia_core.permissions.errors import (
     OrgUnitNotEmptyError,
     OrgUnitStorageSchemaError,
     OrgUnitUnknownUserError,
+    PasswordUnchangedError,
     PermissionBrokerDeniedError,
     RevokedTokenError,
     ScopeAccessDeniedError,
     SecretConfigReadDeniedError,
     UnsafeConnectorEndpointUrlError,
+    WeakPasswordPolicyError,
 )
 from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_kernel.errors import (
@@ -101,6 +103,8 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     InvalidMfaCodeError,
     RevokedTokenError,
     ScopeAccessDeniedError,
+    WeakPasswordPolicyError,
+    PasswordUnchangedError,
     BlackboardAppendOnlyViolationError,
     AuditLedgerImmutableViolationError,
     UnsafeLlmEndpointUrlError,
@@ -160,6 +164,7 @@ __all__ = [
     "OrgUnitInvalidParentKindError",
     "OrgUnitNotEmptyError",
     "OrgUnitStorageSchemaError",
+    "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",
@@ -170,6 +175,7 @@ __all__ = [
     "SupportedLocale",
     "UnknownWorkflowPolicyError",
     "ValidationDomainError",
+    "WeakPasswordPolicyError",
     "get_localized_error_text",
     "resolve_domain_error_mapping",
     "resolve_locale",

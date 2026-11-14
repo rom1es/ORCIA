@@ -2526,6 +2526,11 @@
             "title": "Human Profile Archetype",
             "type": "string"
           },
+          "must_change_password": {
+            "default": false,
+            "title": "Must Change Password",
+            "type": "boolean"
+          },
           "platform_role": {
             "enum": [
               "PLATFORM_ADMIN",
@@ -2542,6 +2547,13 @@
           "primary_org_unit_id": {
             "title": "Primary Org Unit Id",
             "type": "string"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
           },
           "token_type": {
             "const": "Bearer",
@@ -3578,6 +3590,64 @@
           "diagnostics"
         ],
         "title": "CertifyPackToolResponse",
+        "type": "object"
+      },
+      "ChangePasswordRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/auth/change-password`.",
+        "properties": {
+          "current_password": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordRequest",
+        "type": "object"
+      },
+      "ChangePasswordResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/auth/change-password`.",
+        "properties": {
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "must_change_password": {
+            "default": false,
+            "title": "Must Change Password",
+            "type": "boolean"
+          },
+          "success": {
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "trace_id"
+        ],
+        "title": "ChangePasswordResponse",
         "type": "object"
       },
       "ChunkApprovalSchemaItem": {
@@ -10446,6 +10516,17 @@
             },
             "title": "Team Ids",
             "type": "array"
+          },
+          "temporary_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Password"
           },
           "updated_at_iso": {
             "title": "Updated At Iso",
@@ -19373,6 +19454,63 @@
         "title": "TaskNotificationItemResponse",
         "type": "object"
       },
+      "TemporaryPasswordProvisionResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for temporary password generation/reset on IAM accounts.",
+        "properties": {
+          "account_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Account Id",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "must_change_password": {
+            "default": true,
+            "title": "Must Change Password",
+            "type": "boolean"
+          },
+          "principal_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "temporary_password": {
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Temporary Password",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_id",
+          "principal_id",
+          "email",
+          "display_name",
+          "temporary_password",
+          "trace_id"
+        ],
+        "title": "TemporaryPasswordProvisionResponse",
+        "type": "object"
+      },
       "TestBenchStepResultSchema": {
         "additionalProperties": false,
         "description": "Single step outcome in the 4-step Hot Test Bench (`🔌`).",
@@ -21621,6 +21759,11 @@
             "title": "Modules",
             "type": "object"
           },
+          "must_change_password": {
+            "default": false,
+            "title": "Must Change Password",
+            "type": "boolean"
+          },
           "org_units": {
             "items": {
               "$ref": "#/components/schemas/OrgUnitTreeItem"
@@ -21644,6 +21787,13 @@
           "primary_org_unit_id": {
             "title": "Primary Org Unit Id",
             "type": "string"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
           },
           "totp_enabled": {
             "title": "Totp Enabled",
@@ -22834,6 +22984,17 @@
         "additionalProperties": false,
         "description": "Response for `POST /api/v1/bootstrap/welcome-setup/first-admin` (`Story 9.2`).",
         "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Token"
+          },
           "display_name": {
             "maxLength": 128,
             "minLength": 1,
@@ -22845,6 +23006,11 @@
             "minLength": 3,
             "title": "Email",
             "type": "string"
+          },
+          "must_change_password": {
+            "default": false,
+            "title": "Must Change Password",
+            "type": "boolean"
           },
           "orcia_env": {
             "maxLength": 32,
@@ -29604,6 +29770,115 @@
         "summary": "Get Assistant Workspace Overview Endpoint",
         "tags": [
           "assistant-workspace"
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "description": "Validate current password, verify policy, update PG and memory session.",
+        "operationId": "change_password_api_v1_auth_change_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangePasswordResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Change authenticated user password, enforcing policy and clearing temporary flag",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -45914,6 +46189,146 @@
           }
         },
         "summary": "Update roles, teams, display name or status with deterministic anti-lockout",
+        "tags": [
+          "iam-accounts"
+        ]
+      }
+    },
+    "/api/v1/settings/iam/accounts/{account_id}/temporary-password": {
+      "post": {
+        "operationId": "reset_iam_account_temporary_password_api_v1_settings_iam_accounts__account_id__temporary_password_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemporaryPasswordProvisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Reset temporary password on a human IAM account and return invitation",
         "tags": [
           "iam-accounts"
         ]

@@ -283,6 +283,8 @@ class WelcomeSetupFirstAdminResponse(BaseModel):
     platform_role: Literal["PLATFORM_ADMIN"]
     orcia_env: str = Field(..., min_length=1, max_length=32)
     sql_lock_statement: str = Field(..., min_length=1, max_length=128)
+    access_token: str | None = Field(default=None)
+    must_change_password: bool = Field(default=False)
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 

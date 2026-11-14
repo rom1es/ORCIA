@@ -302,7 +302,68 @@ async function vitestFetchTransport(
       first_admin_initialized: true,
       first_admin_email: email,
       first_admin_display_name: displayName,
+      access_token: "mock-first-admin-access-token",
+      token_type: "bearer",
     });
+  }
+
+  // 1b. Authentification & Sessions
+  if (path === "/api/v1/auth/login/local" && method === "POST") {
+    const email = String(body.email ?? "admin@orcia.local").toLowerCase();
+    const isMockFirstAdmin =
+      backendState.firstAdmin && backendState.firstAdmin.email.toLowerCase() === email;
+    const iamAccounts = getVitestIamAccounts();
+    const iamUser = iamAccounts.find(
+      (a) => a.principal_id.toLowerCase() === email || a.email?.toLowerCase() === email,
+    );
+    const displayName =
+      iamUser?.display_name ??
+      (isMockFirstAdmin ? backendState.firstAdmin!.displayName : "Romain Admin");
+    const roles = iamUser?.roles ?? ["PLATFORM_ADMIN"];
+    return jsonResponse({
+      access_token: "mock-access-token",
+      token_type: "bearer",
+      roles,
+      user_id: iamUser?.id ?? "usr-vitest-1",
+      email,
+      display_name: displayName,
+      must_change_password: false,
+      issued_at_iso: "2026-11-14T12:00:00Z",
+    });
+  }
+
+  if (path === "/api/v1/auth/me" && method === "GET") {
+    return jsonResponse({
+      user_id: "usr-vitest-1",
+      email: backendState.firstAdmin?.email ?? "admin@orcia.local",
+      display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
+      roles: ["PLATFORM_ADMIN"],
+      active_hat: "PLATFORM_ADMIN",
+      access_mode: "READ_WRITE",
+      must_change_password: false,
+      workspaces: [],
+    });
+  }
+
+  if (path === "/api/v1/auth/refresh" && method === "POST") {
+    return jsonResponse({
+      access_token: "mock-refreshed-token",
+      token_type: "bearer",
+      roles: ["PLATFORM_ADMIN"],
+      user_id: "usr-vitest-1",
+      email: backendState.firstAdmin?.email ?? "admin@orcia.local",
+      display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
+      must_change_password: false,
+      issued_at_iso: "2026-11-14T12:00:00Z",
+    });
+  }
+
+  if (path === "/api/v1/auth/logout" && method === "POST") {
+    return jsonResponse({ message: "Successfully logged out" });
+  }
+
+  if (path === "/api/v1/auth/change-password" && method === "POST") {
+    return jsonResponse({ message: "Password updated successfully" });
   }
 
   if (path === "/api/v1/bootstrap/platform-setup-state" && method === "PUT") {

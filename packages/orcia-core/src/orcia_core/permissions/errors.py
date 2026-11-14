@@ -161,6 +161,22 @@ class UnsafeConnectorEndpointUrlError(OrciaDomainError):
     )
 
 
+class WeakPasswordPolicyError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_AUTH_WEAK_PASSWORD",
+        422,
+        "auth-weak-password",
+    )
+
+
+class PasswordUnchangedError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_AUTH_PASSWORD_UNCHANGED",
+        422,
+        "auth-password-unchanged",
+    )
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "AuthenticationRequiredError",
@@ -180,6 +196,7 @@ __all__ = [
     "OrgUnitStorageSchemaError",
     "OrgUnitUnknownUserError",
     "PERMISSIONS_ERROR_CATALOG",
+    "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
     "PreconditionRequiredError",
     "ReadSourceDeniedError",
@@ -190,4 +207,5 @@ __all__ = [
     "SettingsVersionConflictError",
     "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
+    "WeakPasswordPolicyError",
 ]

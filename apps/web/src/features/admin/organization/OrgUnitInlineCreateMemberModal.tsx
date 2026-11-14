@@ -1,4 +1,4 @@
-import type { KnownUserOption } from "@orcia/ui";
+import { TemporaryPasswordInvitationModal, type KnownUserOption } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import { useI18n } from "../../../i18n";
@@ -6,7 +6,10 @@ import {
   IamAccountModal,
   type IamAccountModalSubmitValues,
 } from "../iam/IamAccountModal";
-import { createIamAccountViaApi } from "../iam/iamApiBridge";
+import {
+  createIamAccountViaApi,
+  resetIamAccountTemporaryPasswordViaApi,
+} from "../iam/iamApiBridge";
 
 export interface OrgUnitInlineCreateMemberModalProps {
   readonly unit: ConfiguredOrgUnit;
@@ -32,6 +35,12 @@ export function OrgUnitInlineCreateMemberModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tempPasswordModalData, setTempPasswordModalData] = useState<{
+    displayName: string;
+    email: string;
+    temporaryPassword: string;
+    accountId: string;
+  } | null>(null);
 
   const initialCreateDefaults = useMemo(() => {
     const trimmed = draftInput.trim();
@@ -65,30 +74,83 @@ export function OrgUnitInlineCreateMemberModal({
       return;
     }
     onOpenChange(false);
+    const resolvedPrincipal =
+      res.account.principal_id ??
+      (res.account as unknown as { principalId?: string }).principalId ??
+      values.emailOrPrincipal;
+    const resolvedDisplayName =
+      res.account.display_name ??
+      (res.account as unknown as { displayName?: string }).displayName ??
+      values.displayName;
+    const resolvedEmail =
+      res.account.email ??
+      (res.account as unknown as { email?: string }).email ??
+      (values.accountKind === "HUMAN" ? values.emailOrPrincipal : null);
     onMemberCreated({
-      principalId: res.account.principal_id,
-      displayName: res.account.display_name,
-      email: res.account.email ?? null,
+      principalId: resolvedPrincipal,
+      displayName: resolvedDisplayName,
+      email: resolvedEmail,
     });
+    if (res.temporaryPassword) {
+      setTempPasswordModalData({
+        displayName: resolvedDisplayName,
+        email: resolvedEmail ?? resolvedPrincipal,
+        temporaryPassword: res.temporaryPassword,
+        accountId: res.account.id,
+      });
+    }
+  };
+
+  const handleRegenerate = async (): Promise<string | void> => {
+    if (!tempPasswordModalData) return;
+    const resetRes = await resetIamAccountTemporaryPasswordViaApi(
+      tempPasswordModalData.accountId,
+      locale,
+    );
+    if (resetRes.ok) {
+      setTempPasswordModalData((prev) =>
+        prev ? { ...prev, temporaryPassword: resetRes.temporaryPassword } : null,
+      );
+      return resetRes.temporaryPassword;
+    }
   };
 
   const effectiveUnits = orgUnits.length > 0 ? orgUnits : [unit];
 
   return (
-    <IamAccountModal
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) setErrorMessage(null);
-        onOpenChange(nextOpen);
-      }}
-      canMutate={canMutate}
-      editingAccount={null}
-      orgUnits={effectiveUnits}
-      labels={iamLabels}
-      errorMessage={errorMessage}
-      isSubmitting={isSubmitting}
-      initialCreateDefaults={initialCreateDefaults}
-      onSubmit={(values) => void handleSubmit(values)}
-    />
+    <>
+      <IamAccountModal
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setErrorMessage(null);
+          onOpenChange(nextOpen);
+        }}
+        canMutate={canMutate}
+        editingAccount={null}
+        orgUnits={effectiveUnits}
+        labels={iamLabels}
+        errorMessage={errorMessage}
+        isSubmitting={isSubmitting}
+        initialCreateDefaults={initialCreateDefaults}
+        onSubmit={(values) => void handleSubmit(values)}
+      />
+
+      {tempPasswordModalData && (
+        <TemporaryPasswordInvitationModal
+          isOpen={true}
+          isFr={locale === "fr"}
+          displayName={tempPasswordModalData.displayName}
+          email={tempPasswordModalData.email}
+          temporaryPassword={tempPasswordModalData.temporaryPassword}
+          orciaUrl={
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "http://localhost:3100"
+          }
+          onClose={() => setTempPasswordModalData(null)}
+          onRegeneratePassword={handleRegenerate}
+        />
+      )}
+    </>
   );
 }

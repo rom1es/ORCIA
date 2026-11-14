@@ -186,13 +186,12 @@ async def sync_team_memberships_in_org_units(
     if ou_reg is None:
         return
     desired_set = set() if remove_all else {t.strip() for t in desired_team_ids if t.strip()}
-    rows = (
-        await conn.execute(
-            sa.text(
-                "SELECT id, slug, member_user_ids_jsonb FROM org_units WHERE unit_type = 'TEAM'"
-            )
-        )
-    ).fetchall()
+    query = (
+        "SELECT id, slug, member_user_ids_jsonb FROM org_units"
+        if remove_all
+        else "SELECT id, slug, member_user_ids_jsonb FROM org_units WHERE unit_type = 'TEAM'"
+    )
+    rows = (await conn.execute(sa.text(query))).fetchall()
     for row in rows:
         team_uuid = str(row[0])
         team_slug = str(row[1])

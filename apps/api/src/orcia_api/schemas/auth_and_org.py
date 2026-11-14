@@ -62,6 +62,8 @@ class AuthTokenResponse(BaseModel):
     platform_role: PlatformRole
     human_profile_archetype: str
     primary_org_unit_id: str
+    roles: list[str] = Field(default_factory=list)
+    must_change_password: bool = Field(default=False)
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
@@ -141,6 +143,8 @@ class UserMeResponse(BaseModel):
     platform_role: PlatformRole
     primary_org_unit_id: str
     totp_enabled: bool
+    roles: list[str] = Field(default_factory=list)
+    must_change_password: bool = Field(default=False)
     transverse_groups: list[str]
     org_units: list[OrgUnitTreeItem]
     workspaces: list[WorkspaceSummaryItem]

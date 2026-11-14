@@ -33,13 +33,14 @@ coverage_exemptions:
 capabilities:
   # ───────────── Fondations (Epic 1, 3.2x) ─────────────
   - id: CAP-001
-    title: Authentification hybride bi-mode (OIDC + locale) et hiérarchie d'équipes
+    title: Authentification hybride bi-mode (OIDC + locale), session HttpOnly, déconnexion réelle et mot de passe temporaire
     fr: [FR-21]
     origin: epic
-    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi
+    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances
     status: live
-    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py]
-    surfaces: { route: /login, api: /api/v1/auth, ui: BiModeLoginView }
+    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx]
+    verification: runtime
+    surfaces: { route: /login, api: /api/v1/auth, ui: BiModeLoginView, migration: "20261114_1706" }
   - id: CAP-002
     title: Catalogue fédéré multi-sources (db/git/nexus/confluence/jira) et surcharges 4 niveaux
     fr: [FR-20]
@@ -222,14 +223,14 @@ capabilities:
     verification: runtime
     surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py)", migration: "20261111_1703" }
   - id: CAP-051
-    title: Annuaire des comptes (anti-lockout), matrice des 6 rôles officiels, tiroir d'exceptions SecOps et secrets en saisie seule
+    title: Annuaire des comptes (anti-lockout), mot de passe temporaire 12 car., matrice des 6 rôles, exceptions SecOps et modale copier-coller
     fr: [FR-31]
     origin: epic
-    origin_ref: 17-3
+    origin_ref: 17-3 + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances
     status: live
-    tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py]
+    tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx]
     verification: runtime
-    surfaces: { route: /settings, api: iam_accounts.py, ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamNativeRoleMatrixCard + IamSecopsExceptionsDrawer" }
+    surfaces: { route: /settings, api: iam_accounts.py, ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamNativeRoleMatrixCard + IamSecopsExceptionsDrawer + TemporaryPasswordInvitationModal", migration: "20261111_1703 + 20261114_1706" }
   - id: CAP-052
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
@@ -329,14 +330,14 @@ capabilities:
     verification: runtime
     surfaces: { ui: CommandPaletteModal + TopHeaderSearchCommand }
   - id: CAP-063
-    title: Menu compte et modale de préférences utilisateur
+    title: Menu compte, modale de profil & sécurité, changement de mot de passe et alerte mot de passe temporaire
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag
+    origin_ref: 9-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances
     status: live
-    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
+    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx]
     verification: runtime
-    surfaces: { ui: ShellHeaderAccountControl + UserSettingsProfileAndPassthroughTabs, api: /api/v1/users/me/account-profile }
+    surfaces: { ui: "ShellHeaderAccountControl + UserSettingsProfileAndPassthroughTabs + UserPasswordChangeCard + TemporaryPasswordWarningBanner", api: "/api/v1/users/me/account-profile, /api/v1/auth/change-password" }
   - id: CAP-064
     title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide)
     fr: [FR-32]

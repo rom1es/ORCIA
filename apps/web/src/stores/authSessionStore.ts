@@ -1,165 +1,34 @@
-import {
-  resolveUserRoleDisplayLabel,
-  type OrciaIconName,
-  type UiLocalePreference,
-  type UiPermissionVerb,
-} from "@orcia/ui";
+import { createOrciaApiClient } from "@orcia/api-client";
 import { create } from "zustand";
+import {
+  ALL_SETTINGS_TABS,
+  formatCountNoun,
+  FULL_ADMIN_PERMISSION_VERBS,
+  READ_ONLY_PERMISSION_VERBS,
+  resolveSessionHatLabel,
+  resolveSettingsAccess,
+  SCOPED_LEAD_SETTINGS_TABS,
+  SETTINGS_TAB_ICON_NAMES,
+  type AuthSessionSnapshot,
+  type OrciaSystemRole,
+  type ResolvedSettingsAccess,
+  type SettingsTabKey,
+} from "./settingsRbacResolver";
 
-export type OrciaSystemRole =
-  | "PLATFORM_ADMIN"
-  | "SECOPS"
-  | "BU_LEAD"
-  | "TEAM_LEAD"
-  | "CONTRIBUTOR"
-  | "OBSERVER"
-  | "READ_ONLY_OBSERVER";
-
-export type SettingsTabKey =
-  | "organization"
-  | "iam"
-  | "models"
-  | "connectors"
-  | "packs";
-
-export const ALL_SETTINGS_TABS: readonly SettingsTabKey[] = [
-  "organization",
-  "iam",
-  "models",
-  "connectors",
-  "packs",
-] as const;
-
-export const SCOPED_LEAD_SETTINGS_TABS: readonly SettingsTabKey[] = [
-  "organization",
-  "iam",
-] as const;
-
-export const SETTINGS_TAB_ICON_NAMES: Readonly<Record<SettingsTabKey, OrciaIconName>> = {
-  organization: "settings.org",
-  iam: "settings.iam",
-  models: "settings.models",
-  connectors: "settings.connectors",
-  packs: "settings.packs",
+export {
+  ALL_SETTINGS_TABS,
+  formatCountNoun,
+  FULL_ADMIN_PERMISSION_VERBS,
+  READ_ONLY_PERMISSION_VERBS,
+  resolveSessionHatLabel,
+  resolveSettingsAccess,
+  SCOPED_LEAD_SETTINGS_TABS,
+  SETTINGS_TAB_ICON_NAMES,
+  type AuthSessionSnapshot,
+  type OrciaSystemRole,
+  type ResolvedSettingsAccess,
+  type SettingsTabKey,
 };
-
-export const FULL_ADMIN_PERMISSION_VERBS: readonly UiPermissionVerb[] = [
-  "create",
-  "read",
-  "update",
-  "delete",
-  "execute",
-  "grant",
-] as const;
-
-export const READ_ONLY_PERMISSION_VERBS: readonly UiPermissionVerb[] = ["read"] as const;
-
-export interface AuthSessionSnapshot {
-  readonly roles: readonly string[];
-  readonly activeHat?: string;
-  readonly readOnlyObserver?: boolean;
-}
-
-export interface ResolvedSettingsAccess {
-  readonly visibleTabs: readonly SettingsTabKey[];
-  readonly allowedVerbs: readonly UiPermissionVerb[];
-  readonly canMutate: boolean;
-  readonly isReadOnlyRestricted: boolean;
-  readonly effectiveRoleKey: string;
-}
-
-const READ_ONLY_HATS = new Set(["CONTRIBUTOR", "OBSERVER", "READ_ONLY_OBSERVER"]);
-const LEAD_HATS = new Set(["BU_LEAD", "TEAM_LEAD"]);
-const GLOBAL_ADMIN_ROLES = new Set(["PLATFORM_ADMIN", "SECOPS"]);
-
-/**
- * Pure deterministic RBAC resolver for `/settings` (`CA-17.1.3`):
- * - `PLATFORM_ADMIN` & `SECOPS` (outside observer mode): all 5 tabs + full admin verbs.
- * - `BU_LEAD` & `TEAM_LEAD`: adaptive 2 tabs (`organization`, `iam`) + scoped admin verbs.
- * - `CONTRIBUTOR` & `OBSERVER` (`READ_ONLY_OBSERVER` or `readOnlyObserver=true`):
- *   `allowedVerbs = ["read"]` only, `canMutate = false`, explicit read-only notice + `Mon Compte` CTA.
- */
-export function resolveSettingsAccess(session: AuthSessionSnapshot): ResolvedSettingsAccess {
-  const hat = session.activeHat?.trim() || session.roles[0] || "PLATFORM_ADMIN";
-  const roleSet = new Set(session.roles);
-
-  if (session.readOnlyObserver === true || READ_ONLY_HATS.has(hat)) {
-    return {
-      visibleTabs: [],
-      allowedVerbs: READ_ONLY_PERMISSION_VERBS,
-      canMutate: false,
-      isReadOnlyRestricted: true,
-      effectiveRoleKey: session.readOnlyObserver ? "OBSERVER" : hat,
-    };
-  }
-
-  if (LEAD_HATS.has(hat)) {
-    return {
-      visibleTabs: SCOPED_LEAD_SETTINGS_TABS,
-      allowedVerbs: FULL_ADMIN_PERMISSION_VERBS,
-      canMutate: true,
-      isReadOnlyRestricted: false,
-      effectiveRoleKey: hat,
-    };
-  }
-
-  const hasGlobalAdminRole =
-    GLOBAL_ADMIN_ROLES.has(hat) ||
-    roleSet.has("PLATFORM_ADMIN") ||
-    roleSet.has("SECOPS");
-
-  if (hasGlobalAdminRole) {
-    return {
-      visibleTabs: ALL_SETTINGS_TABS,
-      allowedVerbs: FULL_ADMIN_PERMISSION_VERBS,
-      canMutate: true,
-      isReadOnlyRestricted: false,
-      effectiveRoleKey: hat,
-    };
-  }
-
-  if (roleSet.has("BU_LEAD") || roleSet.has("TEAM_LEAD")) {
-    const leadRole = roleSet.has("BU_LEAD") ? "BU_LEAD" : "TEAM_LEAD";
-    return {
-      visibleTabs: SCOPED_LEAD_SETTINGS_TABS,
-      allowedVerbs: FULL_ADMIN_PERMISSION_VERBS,
-      canMutate: true,
-      isReadOnlyRestricted: false,
-      effectiveRoleKey: leadRole,
-    };
-  }
-
-  return {
-    visibleTabs: [],
-    allowedVerbs: READ_ONLY_PERMISSION_VERBS,
-    canMutate: false,
-    isReadOnlyRestricted: true,
-    effectiveRoleKey: hat,
-  };
-}
-
-export function resolveSessionHatLabel(
-  session: AuthSessionSnapshot,
-  locale: UiLocalePreference,
-): string {
-  const effectiveKey = session.readOnlyObserver
-    ? "OBSERVER"
-    : session.activeHat?.trim() || session.roles[0] || "PLATFORM_ADMIN";
-  return resolveUserRoleDisplayLabel(effectiveKey, locale);
-}
-
-/**
- * Formats a count + noun phrase without raw `(s)` suffixes (`0/1` singular in FR, `1` singular in EN).
- */
-export function formatCountNoun(
-  count: number,
-  singular: string,
-  plural: string,
-  locale: UiLocalePreference = "fr",
-): string {
-  const isPlural = locale === "en" ? count !== 1 : count > 1;
-  return `${count} ${isPlural ? plural : singular}`;
-}
 
 export type UserSettingsModalTabKey =
   | "PREFERENCES_DISPLAY"
@@ -168,6 +37,10 @@ export type UserSettingsModalTabKey =
   | "IDE_MCP_KEYS";
 
 export interface AuthSessionStoreState {
+  readonly isAuthenticated: boolean;
+  readonly isHydrating: boolean;
+  readonly mustChangePassword: boolean;
+  readonly accessToken: string | null;
   readonly roles: readonly string[];
   readonly activeHat: string;
   readonly readOnlyObserver: boolean;
@@ -177,6 +50,10 @@ export interface AuthSessionStoreState {
   readonly userSettingsModalInitialTab: UserSettingsModalTabKey | null;
   readonly setAuthSession: (
     patch: Partial<{
+      isAuthenticated: boolean;
+      isHydrating: boolean;
+      mustChangePassword: boolean;
+      accessToken: string | null;
       roles: readonly string[];
       activeHat: string;
       readOnlyObserver: boolean;
@@ -187,21 +64,61 @@ export interface AuthSessionStoreState {
   readonly setActiveHat: (hat: string) => void;
   readonly setUserSettingsModalOpen: (open: boolean) => void;
   readonly openUserSettingsModalAtTab: (tab: UserSettingsModalTabKey) => void;
+  readonly clearMustChangePassword: () => void;
+  readonly loginWithSession: (res: {
+    access_token?: string;
+    accessToken?: string;
+    email: string;
+    display_name?: string;
+    displayName?: string;
+    platform_role?: string;
+    platformRole?: string;
+    roles?: readonly string[] | string[];
+    must_change_password?: boolean;
+    mustChangePassword?: boolean;
+  }) => void;
+  readonly logoutSession: () => Promise<void>;
+  readonly hydrateSession: () => Promise<void>;
   readonly resetAuthSession: () => void;
 }
 
-const DEFAULT_SESSION_STATE = {
-  roles: ["PLATFORM_ADMIN", "SECOPS"] as readonly string[],
-  activeHat: "PLATFORM_ADMIN",
-  readOnlyObserver: false,
-  email: null as string | null,
-  displayName: null as string | null,
-  userSettingsModalOpen: false,
-  userSettingsModalInitialTab: null as UserSettingsModalTabKey | null,
-};
+const isVitest =
+  typeof process !== "undefined" &&
+  (process.env?.NODE_ENV === "test" || process.env?.VITEST === "true");
+
+export function getInitialSessionState() {
+  if (isVitest) {
+    return {
+      isAuthenticated: true,
+      isHydrating: false,
+      mustChangePassword: false,
+      accessToken: "mock-vitest-access-token",
+      roles: ["PLATFORM_ADMIN", "SECOPS"] as readonly string[],
+      activeHat: "PLATFORM_ADMIN",
+      readOnlyObserver: false,
+      email: null as string | null,
+      displayName: null as string | null,
+      userSettingsModalOpen: false,
+      userSettingsModalInitialTab: null as UserSettingsModalTabKey | null,
+    };
+  }
+  return {
+    isAuthenticated: false,
+    isHydrating: true,
+    mustChangePassword: false,
+    accessToken: null as string | null,
+    roles: [] as readonly string[],
+    activeHat: "",
+    readOnlyObserver: false,
+    email: null as string | null,
+    displayName: null as string | null,
+    userSettingsModalOpen: false,
+    userSettingsModalInitialTab: null as UserSettingsModalTabKey | null,
+  };
+}
 
 export const useAuthSessionStore = create<AuthSessionStoreState>((set) => ({
-  ...DEFAULT_SESSION_STATE,
+  ...getInitialSessionState(),
   setAuthSession: (patch) =>
     set((state) => {
       const nextRoles = patch.roles ?? state.roles;
@@ -226,9 +143,105 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set) => ({
       userSettingsModalOpen: true,
       userSettingsModalInitialTab: tab,
     }),
-  resetAuthSession: () => set({ ...DEFAULT_SESSION_STATE }),
+  clearMustChangePassword: () => set({ mustChangePassword: false }),
+  loginWithSession: (res) => {
+    const raw = res as Record<string, unknown>;
+    const rolesList =
+      Array.isArray(res.roles) && res.roles.length > 0
+        ? res.roles
+        : Array.isArray(raw.roles) && (raw.roles as string[]).length > 0
+          ? (raw.roles as string[])
+          : res.platform_role
+            ? [res.platform_role]
+            : ["CONTRIBUTOR"];
+    set({
+      isAuthenticated: true,
+      isHydrating: false,
+      accessToken: res.access_token ?? (raw.accessToken as string | undefined) ?? null,
+      roles: rolesList,
+      activeHat: rolesList[0] || "PLATFORM_ADMIN",
+      email: res.email ?? (raw.email as string | undefined) ?? null,
+      displayName: res.display_name ?? (raw.displayName as string | undefined) ?? null,
+      mustChangePassword: Boolean(res.must_change_password ?? raw.mustChangePassword),
+    });
+  },
+  logoutSession: async () => {
+    const client = createOrciaApiClient({ baseUrl: "" });
+    try {
+      await client.logoutSession();
+    } catch {
+      // Best-effort
+    }
+    set({
+      isAuthenticated: false,
+      isHydrating: false,
+      accessToken: null,
+      roles: [],
+      activeHat: "",
+      email: null,
+      displayName: null,
+      mustChangePassword: false,
+      userSettingsModalOpen: false,
+      userSettingsModalInitialTab: null,
+    });
+  },
+  hydrateSession: async () => {
+    const client = createOrciaApiClient({ baseUrl: "" });
+    try {
+      const tokenRes = await client.refreshSession();
+      if (tokenRes && tokenRes.access_token) {
+        const authedClient = createOrciaApiClient({ baseUrl: "", accessToken: tokenRes.access_token });
+        const me = await authedClient.getMe().catch(() => null);
+        const roles =
+          tokenRes.roles && tokenRes.roles.length > 0
+            ? tokenRes.roles
+            : me?.roles && me.roles.length > 0
+              ? me.roles
+              : [tokenRes.platform_role];
+        set({
+          isAuthenticated: true,
+          isHydrating: false,
+          accessToken: tokenRes.access_token,
+          roles,
+          activeHat: roles[0] || "PLATFORM_ADMIN",
+          email: tokenRes.email || me?.email || null,
+          displayName: tokenRes.display_name || me?.display_name || null,
+          mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),
+        });
+        return;
+      }
+    } catch {
+      // Refresh failed
+    }
+    set({
+      isAuthenticated: false,
+      isHydrating: false,
+      accessToken: null,
+      roles: [],
+      activeHat: "",
+      email: null,
+      displayName: null,
+      mustChangePassword: false,
+    });
+  },
+  resetAuthSession: () => set({ ...getInitialSessionState() }),
 }));
 
 export function resetAuthSessionStore(): void {
   useAuthSessionStore.getState().resetAuthSession();
+}
+
+export function simulateUnauthenticatedBrowser(): void {
+  useAuthSessionStore.setState({
+    isAuthenticated: false,
+    isHydrating: false,
+    mustChangePassword: false,
+    accessToken: null,
+    roles: [],
+    activeHat: "",
+    email: null,
+    displayName: null,
+    userSettingsModalOpen: false,
+    userSettingsModalInitialTab: null,
+  });
 }

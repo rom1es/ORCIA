@@ -1,5 +1,8 @@
 import type { IamAccountResponse, RoleMatrixEntryResponse } from "@orcia/api-client";
-import type { ControlCenterWorkspaceGovItem } from "@orcia/ui";
+import {
+  TemporaryPasswordInvitationModal,
+  type ControlCenterWorkspaceGovItem,
+} from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
 import type {
   ConfiguredOrgUnit,
@@ -17,17 +20,17 @@ import {
 } from "../features/admin/iam/IamSecopsExceptionsDrawer";
 import {
   createIamAccountViaApi,
-  createIamGrantsViaApi,
   deleteIamAccountViaApi,
-  deleteIamGrantViaApi,
   fetchIamAccountsFromApi,
   fetchIamGrantsFromApi,
   fetchIamRoleMatrixFromApi,
+  resetIamAccountTemporaryPasswordViaApi,
   updateIamAccountViaApi,
 } from "../features/admin/iam/iamApiBridge";
 import { fetchOrgUnitsFromApi } from "../features/admin/organization/orgUnitsApiBridge";
 import type { IamTabDictionarySection } from "../i18n/locales/iam_accounts_labels";
 import { useAuthSessionStore } from "../stores/authSessionStore";
+import { useSecopsGrantsHandlers } from "./useSecopsGrantsHandlers";
 
 export interface SettingsIamOrganizationSectionProps {
   readonly isFr: boolean;
@@ -80,11 +83,27 @@ export function SettingsIamOrganizationSection({
   const [roleMatrix, setRoleMatrix] = useState<readonly RoleMatrixEntryResponse[]>([]);
   const [accountsError, setAccountsError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
-  const [grantsError, setGrantsError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<IamAccountResponse | null>(null);
   const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
-  const [isSubmittingGrant, setIsSubmittingGrant] = useState(false);
+  const [tempPasswordModalData, setTempPasswordModalData] = useState<{
+    displayName: string;
+    email: string;
+    temporaryPassword: string;
+    accountId: string;
+  } | null>(null);
+
+  const {
+    grantsError,
+    isSubmittingGrant,
+    handleCreateException,
+    handleDeleteSingleGrant,
+    handleBulkDeleteGrants,
+  } = useSecopsGrantsHandlers({
+    locale,
+    rbacGrants,
+    syncRbacGrantsFromServer,
+  });
 
   const refreshAccountsAndGrants = useCallback(async () => {
     const [accRes, matRes, grantsRes] = await Promise.all([
@@ -162,10 +181,33 @@ export function SettingsIamOrganizationSection({
         return;
       }
       setModalOpen(false);
+      if (res.temporaryPassword) {
+        setTempPasswordModalData({
+          displayName: values.displayName,
+          email: values.emailOrPrincipal,
+          temporaryPassword: res.temporaryPassword,
+          accountId: res.account.id,
+        });
+      }
       const listRes = await fetchIamAccountsFromApi(locale);
       if (listRes.ok) setAccounts(listRes.accounts);
       await syncOrgUnitsAfterAccountTeamChange();
     }
+  };
+
+  const handleResetTemporaryPassword = async (account: IamAccountResponse) => {
+    setAccountsError(null);
+    const res = await resetIamAccountTemporaryPasswordViaApi(account.id, locale);
+    if (!res.ok) {
+      setAccountsError(res.errorMessage);
+      return;
+    }
+    setTempPasswordModalData({
+      displayName: account.display_name,
+      email: account.email ?? account.principal_id,
+      temporaryPassword: res.temporaryPassword,
+      accountId: account.id,
+    });
   };
 
   const handleDeleteAccount = async (account: IamAccountResponse) => {
@@ -178,68 +220,6 @@ export function SettingsIamOrganizationSection({
     const listRes = await fetchIamAccountsFromApi(locale);
     if (listRes.ok) setAccounts(listRes.accounts);
     await syncOrgUnitsAfterAccountTeamChange();
-  };
-
-  const handleCreateException = async (input: CreateSecopsExceptionInput) => {
-    setIsSubmittingGrant(true);
-    setGrantsError(null);
-    const res = await createIamGrantsViaApi(
-      {
-        subject_type: input.subjectType,
-        subject_id: input.subjectId,
-        scope_path: input.scopePath,
-        verbs: [...input.verbs],
-        effect: input.effect,
-        inheritance_block: input.effect === "INHERITANCE_BLOCK",
-        resource_kind: input.resourceKind,
-      },
-      locale,
-    );
-    setIsSubmittingGrant(false);
-    if (!res.ok) {
-      setGrantsError(res.errorMessage);
-      return;
-    }
-    const fresh = await fetchIamGrantsFromApi(locale);
-    const nextGrants = fresh.ok
-      ? fresh.grants
-      : [...rbacGrants, ...res.grants];
-    syncRbacGrantsFromServer(nextGrants, {
-      eventType: "PermissionGranted",
-      summary: `${input.subjectId} → ${input.verbs.join(", ")} (${input.scopePath})`,
-      scopePath: input.scopePath,
-    });
-  };
-
-  const handleDeleteSingleGrant = async (grantId: string) => {
-    setGrantsError(null);
-    const res = await deleteIamGrantViaApi(grantId, locale);
-    if (!res.ok) {
-      setGrantsError(res.errorMessage);
-      return;
-    }
-    const nextGrants = rbacGrants.filter((g) => g.id !== grantId);
-    syncRbacGrantsFromServer(nextGrants, {
-      eventType: "PermissionRevoked",
-      summary: `Exception ${grantId} supprimée`,
-    });
-  };
-
-  const handleBulkDeleteGrants = async (grantIds: readonly string[]) => {
-    setGrantsError(null);
-    for (const gid of grantIds) {
-      const res = await deleteIamGrantViaApi(gid, locale);
-      if (!res.ok) {
-        setGrantsError(res.errorMessage);
-        return;
-      }
-    }
-    const removedSet = new Set(grantIds);
-    const nextGrants = rbacGrants.filter((g) => !removedSet.has(g.id));
-    syncRbacGrantsFromServer(nextGrants, {
-      eventType: "PermissionRevoked",
-      summary: `${grantIds.length} exceptions supprimées`,
-    });
   };
 
   return (
@@ -265,6 +245,9 @@ export function SettingsIamOrganizationSection({
         }}
         onDeleteAccount={(acc) => {
           void handleDeleteAccount(acc);
+        }}
+        onResetTemporaryPassword={(acc) => {
+          void handleResetTemporaryPassword(acc);
         }}
       />
 
@@ -309,6 +292,34 @@ export function SettingsIamOrganizationSection({
           void handleAccountModalSubmit(values);
         }}
       />
+
+      {tempPasswordModalData && (
+        <TemporaryPasswordInvitationModal
+          isOpen={true}
+          isFr={isFr}
+          displayName={tempPasswordModalData.displayName}
+          email={tempPasswordModalData.email}
+          temporaryPassword={tempPasswordModalData.temporaryPassword}
+          orciaUrl={
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "http://localhost:3100"
+          }
+          onClose={() => setTempPasswordModalData(null)}
+          onRegeneratePassword={async () => {
+            const resetRes = await resetIamAccountTemporaryPasswordViaApi(
+              tempPasswordModalData.accountId,
+              locale,
+            );
+            if (resetRes.ok) {
+              setTempPasswordModalData((prev) =>
+                prev ? { ...prev, temporaryPassword: resetRes.temporaryPassword } : null,
+              );
+              return resetRes.temporaryPassword;
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

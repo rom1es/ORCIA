@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-14",
   "stats": {
     "activeRoutesCount": 24,
-    "uiPrimitivesCount": 101,
+    "uiPrimitivesCount": 103,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 32,
+    "alembicMigrationsCount": 33,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
     "techLeadReportsCount": 115,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 40
+    "verifiedCapabilitiesCount": 41
   },
   "activeRoutes": [
     "/",
@@ -136,11 +136,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "SprintContextWidget",
     "StatusBadge",
     "StreamlinedCockpitView",
+    "TemporaryPasswordInvitationModal",
     "ThinkingDots",
     "TopHeaderBar",
     "TopHeaderSearchCommand",
     "UpstreamChallengeRewindModal",
     "UserAccountDropdownAndSettingsModal",
+    "UserPasswordChangeCard",
     "WorkflowStudioSection",
     "WorkflowTopGovernanceBar",
     "WorkspaceAssistantPinnedCard",
@@ -181,7 +183,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261111_1702_story_17_2_org_units_billing_and_members",
     "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
     "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent",
-    "20261114_1705_story_17_5_ai_models_hub_secrets_and_health"
+    "20261114_1705_story_17_5_ai_models_hub_secrets_and_health",
+    "20261114_1706_temporary_password_and_local_iam_auth"
   ],
   "architectureDecisions": [
     {
@@ -438,10 +441,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "techLeadReports": [
     {
       "date": "2026-11-14",
-      "phaseOrStory": "Ajustement Transverse (CAP-067)",
+      "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-051, CAP-063, CAP-067)",
       "reportFile": "2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances-tech-lead-report.md",
-      "domain": "Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL (HTTP 503), Modale Dépendances Nominative, Validation Stricte (HTTP 422), Sélecteurs Interactifs Max 10 (Parente & Membres via GET /api/v1/org-units/known-users) & Modale Chaînée + Nouveau membre",
-      "summary": "Garde SQL strict (503 au lieu du fallback seeds.py), réconciliation complète des workspaces SQL, modale ConfirmDeleteOrgUnitModal nominative avec bouton désactivé, validation stricte 422 des utilisateurs inconnus, correctif FinOps billingEnabled, <OrciaSearchableSelect maxDisplayedItems={10} /> sur l'unité parente, et <OrciaKnownUserCombobox maxDisplayedItems={10} /> avec indicateur de troncature, live search par caractère et bouton permanent + Nouveau membre ouvrant IamAccountModal en modale chaînée sans fermer l'écran de gouvernance des membres."
+      "domain": "Blocage Suppression Org Unit, Garde PG (503), Modale Dépendances, Validation Stricte (422), Sélecteurs Max 10 (Parent & Membres), Modale Chaînée + Nouveau membre, Déconnexion / Incognito & Mot de Passe Temporaire (12 car.)",
+      "summary": "Garde SQL strict (503), réconciliation workspaces, modale ConfirmDeleteOrgUnitModal, validation 422 utilisateurs, correctif billingEnabled, <OrciaSearchableSelect maxDisplayedItems={10} /> & <OrciaKnownUserCombobox maxDisplayedItems={10} /> + modale chaînée + Nouveau membre, migration 20261114_1706, authentification locale PG 18 Argon2id + cookies HttpOnly + fin auto-login Incognito, modale d'accès copier-coller (12 car.), bannière/notification must_change_password & changement dans Mon Compte."
     },
     {
       "date": "2026-11-14",

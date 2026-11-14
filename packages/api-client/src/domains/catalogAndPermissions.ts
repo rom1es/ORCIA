@@ -13,6 +13,7 @@ import type {
   IamAccountCreateRequest, IamAccountDeleteResponse, IamAccountPatchRequest,
   IamAccountResponse, IamAccountsListResponse, RoleMatrixResponse,
 } from "../generated/iam_accounts";
+import type { TemporaryPasswordProvisionResponse } from "../generated/iam_password_models";
 import type {
   CreateWorkspaceDatasourceRequest, EnterpriseConnectorCreateRequest,
   EnterpriseConnectorDeleteResponse, EnterpriseConnectorItemResponse,
@@ -51,73 +52,32 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
         `/api/v1/org-units/known-users${buildKnownOrgUsersQuery(params)}`,
       );
     },
-    createOrgUnit(
-      payload: OrgUnitCreateRequest,
-      personaKey?: string,
-    ): Promise<OrgUnitResponse> {
-      return requestJson<OrgUnitResponse>(
-        `/api/v1/org-units${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
+    createOrgUnit(payload: OrgUnitCreateRequest, personaKey?: string): Promise<OrgUnitResponse> {
+      return requestJson<OrgUnitResponse>(`/api/v1/org-units${buildPersonaQuery(personaKey)}`, "POST", payload);
     },
-    updateOrgUnit(
-      orgUnitId: string,
-      payload: OrgUnitPatchRequest,
-      personaKey?: string,
-    ): Promise<OrgUnitResponse> {
-      return requestJson<OrgUnitResponse>(
-        `/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`,
-        "PATCH",
-        payload,
-      );
+    updateOrgUnit(orgUnitId: string, payload: OrgUnitPatchRequest, personaKey?: string): Promise<OrgUnitResponse> {
+      return requestJson<OrgUnitResponse>(`/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`, "PATCH", payload);
     },
-    deleteOrgUnit(
-      orgUnitId: string,
-      personaKey?: string,
-    ): Promise<OrgUnitDeleteResponse> {
-      return requestJson<OrgUnitDeleteResponse>(
-        `/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`,
-        "DELETE",
-      );
+    deleteOrgUnit(orgUnitId: string, personaKey?: string): Promise<OrgUnitDeleteResponse> {
+      return requestJson<OrgUnitDeleteResponse>(`/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`, "DELETE");
     },
     getIamRoleMatrix(): Promise<RoleMatrixResponse> {
       return requestJson<RoleMatrixResponse>("/api/v1/settings/iam/role-matrix");
     },
     listIamAccounts(personaKey?: string): Promise<IamAccountsListResponse> {
-      return requestJson<IamAccountsListResponse>(
-        `/api/v1/settings/iam/accounts${buildPersonaQuery(personaKey)}`,
-      );
+      return requestJson<IamAccountsListResponse>(`/api/v1/settings/iam/accounts${buildPersonaQuery(personaKey)}`);
     },
-    createIamAccount(
-      payload: IamAccountCreateRequest,
-      personaKey?: string,
-    ): Promise<IamAccountResponse> {
-      return requestJson<IamAccountResponse>(
-        `/api/v1/settings/iam/accounts${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
+    createIamAccount(payload: IamAccountCreateRequest, personaKey?: string): Promise<IamAccountResponse> {
+      return requestJson<IamAccountResponse>(`/api/v1/settings/iam/accounts${buildPersonaQuery(personaKey)}`, "POST", payload);
     },
-    updateIamAccount(
-      accountId: string,
-      payload: IamAccountPatchRequest,
-      personaKey?: string,
-    ): Promise<IamAccountResponse> {
-      return requestJson<IamAccountResponse>(
-        `/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}${buildPersonaQuery(personaKey)}`,
-        "PATCH",
-        payload,
-      );
+    updateIamAccount(accountId: string, payload: IamAccountPatchRequest, personaKey?: string): Promise<IamAccountResponse> {
+      return requestJson<IamAccountResponse>(`/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}${buildPersonaQuery(personaKey)}`, "PATCH", payload);
     },
-    deleteIamAccount(
-      accountId: string,
-      personaKey?: string,
-    ): Promise<IamAccountDeleteResponse> {
-      return requestJson<IamAccountDeleteResponse>(
-        `/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}${buildPersonaQuery(personaKey)}`,
-        "DELETE",
-      );
+    deleteIamAccount(accountId: string, personaKey?: string): Promise<IamAccountDeleteResponse> {
+      return requestJson<IamAccountDeleteResponse>(`/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}${buildPersonaQuery(personaKey)}`, "DELETE");
+    },
+    resetIamAccountTemporaryPassword(accountId: string, personaKey?: string): Promise<TemporaryPasswordProvisionResponse> {
+      return requestJson<TemporaryPasswordProvisionResponse>(`/api/v1/settings/iam/accounts/${encodeURIComponent(accountId)}/temporary-password${buildPersonaQuery(personaKey)}`, "POST");
     },
     listIamGrants(scopePath?: string): Promise<RolePermissionGrantResponse[]> {
       const qs = scopePath ? `?scope_path=${encodeURIComponent(scopePath)}` : "";

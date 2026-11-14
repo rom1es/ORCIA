@@ -246,6 +246,28 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "The specified identifier does not match any active known human user on the platform.",
         ),
     },
+    "ERR_AUTH_WEAK_PASSWORD": {
+        "fr": LocalizedErrorCopy(
+            "Politique de mot de passe non respectée",
+            "Le mot de passe doit comporter au moins 12 caractères et contenir au moins "
+            "une lettre minuscule, une lettre majuscule et un chiffre.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Weak password policy violation",
+            "The password must be at least 12 characters long and contain at least one "
+            "lowercase letter, one uppercase letter, and one digit.",
+        ),
+    },
+    "ERR_AUTH_PASSWORD_UNCHANGED": {
+        "fr": LocalizedErrorCopy(
+            "Nouveau mot de passe identique à l'actuel",
+            "Le nouveau mot de passe doit être différent du mot de passe actuel.",
+        ),
+        "en": LocalizedErrorCopy(
+            "New password matches current password",
+            "The new password must be different from the current password.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]
