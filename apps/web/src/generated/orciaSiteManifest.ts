@@ -14,10 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 34,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 117,
-    "capabilitiesCount": 59,
-    "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 40
+    "techLeadReportsCount": 118,
+    "capabilitiesCount": 60,
+    "liveCapabilitiesCount": 57,
+    "verifiedCapabilitiesCount": 41
   },
   "activeRoutes": [
     "/",
@@ -438,6 +438,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 18.4 (CAP-054, CAP-080, CAP-180)",
+      "reportFile": "18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites-tech-lead-report.md",
+      "domain": "Infrastructure docker-compose.yml (gitnexus-mcp Isolé :ro), Registre des Capacités (CAP-180), Résorption Volumétrique & Validation Pyramide AD-17",
+      "summary": "Déploiement souverain du sidecar gitnexus-mcp (ghcr.io/abhigyanpatwari/gitnexus:latest) sur volume dédié gitnexus_graphs: monté en lecture seule :ro et réseau interne isolé codegraph-internal sans aucun port hôte ni jeton Git, découpage de WorkspaceSourceAttachModal.tsx sous 280 lignes et providers.py sous 300 lignes, enregistrement de CAP-180 dans capabilities.yaml avec vérification site:sync && site:check (57/57 live), et suite de tests de sécurité et d'isolation Red-Team (anti-SSRF, HMAC, RBAC, confinement d'espace et zero fuite de secret)."
+    },
     {
       "date": "2026-11-14",
       "phaseOrStory": "Story 18.3 (CAP-082, CAP-180)",

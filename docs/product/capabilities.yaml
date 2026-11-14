@@ -558,6 +558,29 @@ capabilities:
     verification: runtime
     surfaces: { route: /settings/packs, api: "/api/v1/packs (packs.py)", ui: PacksRegistryPage }
 
+  # ───────────── Epic 18 : Sources d'Espace Multi-Nature, Moteur de Fraîcheur & Code Graph MCP ─────────────
+  - id: CAP-180
+    title: Refonte Multi-Nature des Sources d'Espace (/workspaces/$wsId/sources), Moteur de Fraîcheur Différentiel (SHA-256 & Sonde 24h), Contrat Normalisé codegraph-mcp & Sidecar GitNexus Isolé
+    fr: [FR-17, FR-23, FR-24, FR-34, FR-35]
+    origin: epic
+    origin_ref: epic-18 (18-1..18-4)
+    status: live
+    tests:
+      - tests/unit/test_story_18_1_workspace_sources_multi_nature_and_codegraph.py
+      - tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py
+      - tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py
+      - tests/unit/infra/test_story_18_4_docker_compose_gitnexus_isolation.py
+      - tests/security/test_epic_18_sources_and_codegraph_security.py
+      - tests/integration/api/test_story_18_1_workspace_sources_postgres18.py
+      - tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py
+      - apps/web/src/__tests__/story-18-1-workspace-sources-route-modal-and-f5.test.tsx
+    verification: runtime
+    surfaces:
+      route: "/workspaces/$wsId, /workspaces/$wsId/sources"
+      api: "workspace_datasources.py, datasource_webhooks.py, codegraph_mcp.py"
+      ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceSourceAttachModal + WorkspaceSourceAttachCodegraphFields"
+      migration: "20261114_1801, 20261114_1802"
+
   # ───────────── Planifié (non livré) ─────────────
   - id: CAP-200
     title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps

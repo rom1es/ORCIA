@@ -173,11 +173,11 @@ development_status:
   epic-17-retrospective: optional
 
   # Epic 18 — Refonte Multi-Nature des Sources d'Espace (/workspaces/$wsId/sources), Moteur de Fraîcheur (SHA-256 & Sonde 24h), Contrat codegraph-mcp & Service GitNexus
-  epic-18: in-progress
+  epic-18: done
   18-1-deport-sources-espaces-url-wsid-filtres-multi-nature-et-modale-rattachement: done
   18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus: done
   18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact: done
-  18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites: backlog
+  18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites: done
   epic-18-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
