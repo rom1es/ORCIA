@@ -35,11 +35,13 @@ import type {
   EnterpriseConnectorUpdateRequest,
   EnterpriseConnectorsListResponse,
   RevokePassthroughTokenResponse,
+  TriggerWorkspaceDatasourceSyncResponse,
   UpdateWorkspaceDatasourceRequest,
   UpsertPassthroughTokenRequest,
   UserAccountProfileResponse,
   UserPassthroughConnectorItemResponse,
   UserPassthroughTokensListResponse,
+  WorkspaceDatasourceDeleteResponse,
   WorkspaceDatasourceItemResponse,
   WorkspaceDatasourcesListResponse,
 } from "../generated/enterprise_connectors";
@@ -355,6 +357,26 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
         `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}${buildPersonaQuery(personaKey)}`,
         "PATCH",
         payload,
+      );
+    },
+    deleteWorkspaceDatasource(
+      workspaceId: string,
+      datasourceId: string,
+      personaKey?: string,
+    ): Promise<WorkspaceDatasourceDeleteResponse> {
+      return requestJson<WorkspaceDatasourceDeleteResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
+    triggerWorkspaceDatasourceSync(
+      workspaceId: string,
+      datasourceId: string,
+      personaKey?: string,
+    ): Promise<TriggerWorkspaceDatasourceSyncResponse> {
+      return requestJson<TriggerWorkspaceDatasourceSyncResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}/sync${buildPersonaQuery(personaKey)}`,
+        "POST",
       );
     },
   };

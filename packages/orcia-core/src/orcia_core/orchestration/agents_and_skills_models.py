@@ -40,8 +40,8 @@ DEFAULT_GUARDRAILS: tuple[str, ...] = (
 )
 DEFAULT_MCP_TOOL_PERMISSIONS: tuple[tuple[str, str], ...] = (
     ("search_tool", "READ_ONLY"),
-    ("confluence", "WRITE_PREVIEW"),
-    ("jira", "WRITE_PREVIEW"),
+    ("doc_tool", "WRITE_PREVIEW"),
+    ("issue_tracker", "WRITE_PREVIEW"),
     ("git", "READ_ONLY"),
 )
 

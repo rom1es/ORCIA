@@ -28,6 +28,7 @@ from orcia_core.orchestration.errors import (
 )
 from orcia_core.permissions.errors import (
     AdminLockoutPreventedError,
+    CodegraphWorkspaceLeadRequiredError,
     ConfusedDeputyBlockedError,
     DuplicateIamPrincipalError,
     GrantEscalationForbiddenError,
@@ -86,6 +87,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     SecretConfigReadDeniedError,
     InvalidIamRoleError,
     DuplicateIamPrincipalError,
+    CodegraphWorkspaceLeadRequiredError,
     UnsafeConnectorEndpointUrlError,
     OrgUnitDuplicateSlugError,
     OrgUnitHierarchyCycleError,

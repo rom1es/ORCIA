@@ -799,11 +799,18 @@ export interface components {
     };
     CreateWorkspaceDatasourceRequest: {
       alias: string;
+      codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN";
+      codegraph_enabled?: boolean;
+      codegraph_owner_user_id?: string | null;
       connector_id?: string | null;
       referent_user_id?: string | null;
       scheme: string;
       service_account_id?: string | null;
+      source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA" | null;
       sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
+      sync_mode?: "WEBHOOK_PUSH" | "POLLING_24H";
+      target_ref?: string | null;
+      target_scope?: string | null;
       uri: string;
     };
     DbDdlIndexRequest: {
@@ -3062,6 +3069,10 @@ export interface components {
       thinking_level?: "simple" | "medium" | "complex" | "auto" | null;
       visibility_scope?: "PRIVATE" | "TEAM" | null;
     };
+    TriggerWorkspaceDatasourceSyncResponse: {
+      datasource: components["schemas"]["WorkspaceDatasourceItemResponse"];
+      trace_id: string;
+    };
     TripartiteTraceEdgeSchemaItem: {
       edge_key: string;
       id: string;
@@ -3125,10 +3136,17 @@ export interface components {
     };
     UpdateWorkspaceDatasourceRequest: {
       alias?: string | null;
+      codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN" | null;
+      codegraph_enabled?: boolean | null;
+      codegraph_owner_user_id?: string | null;
       connector_id?: string | null;
       referent_user_id?: string | null;
       service_account_id?: string | null;
+      source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA" | null;
       sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER" | null;
+      sync_mode?: "WEBHOOK_PUSH" | "POLLING_24H" | null;
+      target_ref?: string | null;
+      target_scope?: string | null;
       uri?: string | null;
     };
     UpdateWorkspaceLayerSettingsRequest: {
@@ -3692,6 +3710,12 @@ export interface components {
       workspace_ontology_terms?: (components["schemas"]["OntologyTermInputItem"])[];
       workspace_override_scalars?: Record<string, string | number | boolean>;
     };
+    WorkspaceDatasourceDeleteResponse: {
+      datasource_id: string;
+      deleted?: boolean;
+      trace_id: string;
+      workspace_id: string;
+    };
     WorkspaceDatasourceItem: {
       alias: string;
       execution_identity: "passthrough" | "service_principal";
@@ -3704,15 +3728,30 @@ export interface components {
     };
     WorkspaceDatasourceItemResponse: {
       alias: string;
+      codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN";
+      codegraph_enabled?: boolean;
+      codegraph_head_sha?: string | null;
+      codegraph_last_indexed_at_iso?: string | null;
+      codegraph_owner_user_id?: string | null;
+      codegraph_status?: "DISABLED" | "INDEXING" | "READY" | "PAUSED_REFERENT_RENEWAL_REQUIRED" | "ERROR";
+      codegraph_status_reason?: string | null;
       connector_id?: string | null;
       created_at_iso: string;
+      fingerprint_hash?: string | null;
+      freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC";
       id: string;
+      last_probe_at_iso?: string | null;
+      last_sync_at_iso?: string | null;
       referent_user_id?: string | null;
       scheme: string;
       service_account_id?: string | null;
+      source_nature?: "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA";
       sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
+      sync_mode?: "WEBHOOK_PUSH" | "POLLING_24H";
       sync_status?: "ACTIVE" | "PAUSED_REFERENT_RENEWAL_REQUIRED";
       sync_status_reason?: "REFERENT_LEFT_TEAM" | "REFERENT_ACCOUNT_DISABLED" | "REFERENT_TOKEN_MISSING" | null;
+      target_ref?: string | null;
+      target_scope?: string | null;
       uri: string;
       workspace_id: string;
     };
@@ -5132,9 +5171,21 @@ export interface paths {
     };
   };
   "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["WorkspaceDatasourceDeleteResponse"];
+      };
+    };
     patch: {
       responses: {
         200: components["schemas"]["WorkspaceDatasourceItemResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync": {
+    post: {
+      responses: {
+        200: components["schemas"]["TriggerWorkspaceDatasourceSyncResponse"];
       };
     };
   };
@@ -5549,6 +5600,7 @@ export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnRespon
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type ToggleAgentGovernanceRequest = components["schemas"]["ToggleAgentGovernanceRequest"];
+export type TriggerWorkspaceDatasourceSyncResponse = components["schemas"]["TriggerWorkspaceDatasourceSyncResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type TwoPassExtractionRequest = components["schemas"]["TwoPassExtractionRequest"];
 export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtractionResponse"];
@@ -5613,6 +5665,7 @@ export type WorkflowV2RunResponse = components["schemas"]["WorkflowV2RunResponse
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkflowsV2ListResponse = components["schemas"]["WorkflowsV2ListResponse"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
+export type WorkspaceDatasourceDeleteResponse = components["schemas"]["WorkspaceDatasourceDeleteResponse"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
 export type WorkspaceDatasourceItemResponse = components["schemas"]["WorkspaceDatasourceItemResponse"];
 export type WorkspaceDatasourcesListResponse = components["schemas"]["WorkspaceDatasourcesListResponse"];

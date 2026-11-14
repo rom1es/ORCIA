@@ -45,6 +45,15 @@ interface MockBackendState {
   recordedCalls: RecordedVitestApiCall[];
 }
 
+class VitestResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = VitestResizeObserverMock as unknown as typeof ResizeObserver;
+}
+
 const backendState: MockBackendState = {
   firstAdmin: null,
   platformSetupState: null,

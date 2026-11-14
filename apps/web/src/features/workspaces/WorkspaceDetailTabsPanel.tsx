@@ -17,6 +17,7 @@ export type WorkspaceDetailTabKey = "SOURCES" | "GLOSSARY" | "MEMBERS";
 
 export interface WorkspaceDetailTabsPanelProps {
   readonly isFr: boolean;
+  readonly initialTab?: string;
   readonly activeWorkspace: ControlCenterWorkspaceGovItem;
   readonly datasources: readonly ControlCenterDatasourceItem[];
   readonly ontologyConcepts: readonly UiOntologyConceptView[];
@@ -42,6 +43,7 @@ const inputStyle: React.CSSProperties = {
 
 export function WorkspaceDetailTabsPanel({
   isFr,
+  initialTab,
   activeWorkspace,
   datasources,
   ontologyConcepts,
@@ -52,7 +54,9 @@ export function WorkspaceDetailTabsPanel({
   onPromoteOntologyConcept,
   onFeedback,
 }: WorkspaceDetailTabsPanelProps): React.ReactElement {
-  const [activeDetailTab, setActiveDetailTab] = useState<WorkspaceDetailTabKey>("SOURCES");
+  const [activeDetailTab, setActiveDetailTab] = useState<WorkspaceDetailTabKey>(
+    (initialTab as WorkspaceDetailTabKey) || "SOURCES",
+  );
   const [instructionsByWs, setInstructionsByWs] = useState<Record<string, string>>({});
   const [instructionsSavedWsId, setInstructionsSavedWsId] = useState<string | null>(null);
 

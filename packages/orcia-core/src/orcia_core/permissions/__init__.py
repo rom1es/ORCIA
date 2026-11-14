@@ -28,6 +28,12 @@ from orcia_core.permissions.crypto import (
     TokenClaims,
     TotpManager,
 )
+from orcia_core.permissions.enterprise_connectors import (
+    EnterpriseConnectorsGovernanceService,
+)
+from orcia_core.permissions.errors import (
+    CodegraphWorkspaceLeadRequiredError,
+)
 from orcia_core.permissions.evaluator import (
     ADMIN_MODULE_ALLOWED_ROLES,
     ROLLUP_SUPERVISOR_ROLES,
@@ -119,6 +125,17 @@ from orcia_core.permissions.service import (
     KeyValueRevocationStore,
     RevocationStoreProtocol,
     persona_impersonation_allowed,
+)
+from orcia_core.permissions.workspace_sources_governance import (
+    CodegraphAuthMode,
+    CodegraphStatus,
+    SourceFreshnessStatus,
+    SourceNature,
+    SourceSyncMode,
+    WorkspaceDatasourceRecord,
+    can_manage_workspace_codegraph,
+    evaluate_codegraph_governance_health,
+    infer_source_nature_from_scheme,
 )
 
 DOMAIN_NAME: str = "permissions"
@@ -333,4 +350,15 @@ __all__ = [
     "parse_permission_kb_markdown", "sort_org_unit_dicts_topologically",
     "sort_org_unit_summaries_dfs", "validate_grant_resource_kind", "validate_iam_roles",
     "validate_org_unit_hierarchy",
+    "EnterpriseConnectorsGovernanceService",
+    "CodegraphWorkspaceLeadRequiredError",
+    "CodegraphAuthMode",
+    "CodegraphStatus",
+    "SourceFreshnessStatus",
+    "SourceNature",
+    "SourceSyncMode",
+    "WorkspaceDatasourceRecord",
+    "can_manage_workspace_codegraph",
+    "evaluate_codegraph_governance_health",
+    "infer_source_nature_from_scheme",
 ]  # fmt: skip

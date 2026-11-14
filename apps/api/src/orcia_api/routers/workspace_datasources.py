@@ -1,9 +1,11 @@
-"""Story 17.4 — Workspace RAG Datasources Router (`/api/v1/workspaces/{workspace_id}/datasources`).
+"""Story 17.4 & 18.1 — Workspace RAG & Multi-Nature Datasources Router.
 
 Exposes:
-- `GET   /api/v1/workspaces/{workspace_id}/datasources` (dynamic health evaluation)
-- `POST  /api/v1/workspaces/{workspace_id}/datasources` (`SERVICE_ACCOUNT` or `TEAM_REFERENT_USER`)
-- `PATCH /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}` (renew referent)
+- `GET    /api/v1/workspaces/{workspace_id}/datasources`
+- `POST   /api/v1/workspaces/{workspace_id}/datasources`
+- `PATCH  /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`
+- `DELETE /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`
+- `POST   /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync`
 """
 
 from __future__ import annotations
@@ -13,27 +15,33 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.dependencies import (
-    get_or_create_shared_db_engine,
-)
+from orcia_api.dependencies import get_or_create_shared_db_engine
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.enterprise_connectors import (
     CreateWorkspaceDatasourceRequest,
+    TriggerWorkspaceDatasourceSyncResponse,
     UpdateWorkspaceDatasourceRequest,
+    WorkspaceDatasourceDeleteResponse,
     WorkspaceDatasourceItemResponse,
     WorkspaceDatasourcesListResponse,
 )
 from orcia_api.schemas.problem_details import ProblemDetails
 from orcia_core.bootstrap import (
     create_workspace_datasource_on_postgres18,
+    delete_workspace_datasource_on_postgres18,
     list_workspace_datasources_from_postgres18,
+    trigger_workspace_datasource_sync_on_postgres18,
     update_workspace_datasource_on_postgres18,
 )
 from orcia_core.observability.logging import get_current_trace_id, get_logger
-from orcia_core.permissions.enterprise_connectors import WorkspaceDatasourceRecord
 from orcia_core.permissions.errors import (
+    CodegraphWorkspaceLeadRequiredError,
     ObserverModeReadOnlyError,
     ResourceNotFoundError,
+)
+from orcia_core.permissions.workspace_sources_governance import (
+    WorkspaceDatasourceRecord,
+    can_manage_workspace_codegraph,
 )
 
 logger = get_logger("orcia.api.workspace_datasources")
@@ -80,6 +88,19 @@ def _enforce_mutation_access(request: Request, persona_key: str | None = None) -
     return user
 
 
+def _enforce_codegraph_access(request: Request, user: Any) -> None:
+    candidate_roles: set[str] = set()
+    if getattr(user, "platform_role", None):
+        candidate_roles.add(str(user.platform_role).upper())
+    if hat := request.headers.get("x-orcia-active-hat"):
+        candidate_roles.add(hat.strip().upper())
+    if role_hdr := request.headers.get("x-orcia-role"):
+        candidate_roles.add(role_hdr.strip().upper())
+
+    if not can_manage_workspace_codegraph(candidate_roles):
+        raise CodegraphWorkspaceLeadRequiredError(instance=str(request.url.path))
+
+
 def _serialize_datasource(rec: WorkspaceDatasourceRecord) -> WorkspaceDatasourceItemResponse:
     return WorkspaceDatasourceItemResponse(
         id=rec.id,
@@ -94,6 +115,21 @@ def _serialize_datasource(rec: WorkspaceDatasourceRecord) -> WorkspaceDatasource
         sync_status=rec.sync_status,
         sync_status_reason=rec.sync_status_reason,
         created_at_iso=rec.created_at_iso,
+        source_nature=rec.source_nature,
+        sync_mode=rec.sync_mode,
+        target_scope=rec.target_scope,
+        target_ref=rec.target_ref,
+        last_sync_at_iso=rec.last_sync_at_iso,
+        last_probe_at_iso=rec.last_probe_at_iso,
+        fingerprint_hash=rec.fingerprint_hash,
+        freshness_status=rec.freshness_status,
+        codegraph_enabled=rec.codegraph_enabled,
+        codegraph_auth_mode=rec.codegraph_auth_mode,
+        codegraph_owner_user_id=rec.codegraph_owner_user_id,
+        codegraph_status=rec.codegraph_status,
+        codegraph_status_reason=rec.codegraph_status_reason,
+        codegraph_last_indexed_at_iso=rec.codegraph_last_indexed_at_iso,
+        codegraph_head_sha=rec.codegraph_head_sha,
     )
 
 
@@ -124,7 +160,7 @@ async def list_workspace_datasources(
     "/{workspace_id}/datasources",
     response_model=WorkspaceDatasourceItemResponse,
     status_code=201,
-    summary="Attach a new datasource to a workspace with identity sync mode",
+    summary="Attach a new datasource to a workspace with multi-nature and codegraph options",
 )
 async def create_workspace_datasource(
     request: Request,
@@ -132,7 +168,10 @@ async def create_workspace_datasource(
     payload: CreateWorkspaceDatasourceRequest,
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceItemResponse:
-    _enforce_mutation_access(request, persona_key=persona)
+    user = _enforce_mutation_access(request, persona_key=persona)
+
+    if payload.codegraph_enabled:
+        _enforce_codegraph_access(request, user)
 
     if _pg_enabled():
         engine = get_or_create_shared_db_engine(request)
@@ -146,6 +185,13 @@ async def create_workspace_datasource(
             sync_identity_mode=payload.sync_identity_mode,
             service_account_id=payload.service_account_id,
             referent_user_id=payload.referent_user_id,
+            source_nature=payload.source_nature,
+            sync_mode=payload.sync_mode,
+            target_scope=payload.target_scope,
+            target_ref=payload.target_ref,
+            codegraph_enabled=payload.codegraph_enabled,
+            codegraph_auth_mode=payload.codegraph_auth_mode,
+            codegraph_owner_user_id=payload.codegraph_owner_user_id,
             instance=str(request.url.path),
         )
     else:
@@ -160,7 +206,7 @@ async def create_workspace_datasource(
 @router.patch(
     "/{workspace_id}/datasources/{datasource_id}",
     response_model=WorkspaceDatasourceItemResponse,
-    summary="Update datasource settings or renew referent user",
+    summary="Update datasource settings, sync mode or codegraph options",
 )
 async def update_workspace_datasource(
     request: Request,
@@ -169,7 +215,14 @@ async def update_workspace_datasource(
     payload: UpdateWorkspaceDatasourceRequest,
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceItemResponse:
-    _enforce_mutation_access(request, persona_key=persona)
+    user = _enforce_mutation_access(request, persona_key=persona)
+
+    if (
+        payload.codegraph_enabled is not None
+        or payload.codegraph_auth_mode is not None
+        or payload.codegraph_owner_user_id is not None
+    ):
+        _enforce_codegraph_access(request, user)
 
     if _pg_enabled():
         engine = get_or_create_shared_db_engine(request)
@@ -183,9 +236,78 @@ async def update_workspace_datasource(
             sync_identity_mode=payload.sync_identity_mode,
             service_account_id=payload.service_account_id,
             referent_user_id=payload.referent_user_id,
+            source_nature=payload.source_nature,
+            sync_mode=payload.sync_mode,
+            target_scope=payload.target_scope,
+            target_ref=payload.target_ref,
+            codegraph_enabled=payload.codegraph_enabled,
+            codegraph_auth_mode=payload.codegraph_auth_mode,
+            codegraph_owner_user_id=payload.codegraph_owner_user_id,
             instance=str(request.url.path),
         )
     else:
         raise ResourceNotFoundError(instance=str(request.url.path))
 
     return _serialize_datasource(rec)
+
+
+@router.delete(
+    "/{workspace_id}/datasources/{datasource_id}",
+    response_model=WorkspaceDatasourceDeleteResponse,
+    summary="Delete a datasource from a workspace",
+)
+async def delete_workspace_datasource(
+    request: Request,
+    workspace_id: Annotated[str, Path()],
+    datasource_id: Annotated[str, Path()],
+    persona: Annotated[str | None, Query(alias="persona")] = None,
+) -> WorkspaceDatasourceDeleteResponse:
+    _enforce_mutation_access(request, persona_key=persona)
+
+    if _pg_enabled():
+        engine = get_or_create_shared_db_engine(request)
+        await delete_workspace_datasource_on_postgres18(
+            engine,
+            workspace_id=workspace_id,
+            datasource_id=datasource_id,
+            instance=str(request.url.path),
+        )
+    else:
+        raise ResourceNotFoundError(instance=str(request.url.path))
+
+    return WorkspaceDatasourceDeleteResponse(
+        deleted=True,
+        workspace_id=workspace_id,
+        datasource_id=datasource_id,
+        trace_id=_trace(request),
+    )
+
+
+@router.post(
+    "/{workspace_id}/datasources/{datasource_id}/sync",
+    response_model=TriggerWorkspaceDatasourceSyncResponse,
+    summary="Trigger manual synchronization of a datasource",
+)
+async def trigger_workspace_datasource_sync(
+    request: Request,
+    workspace_id: Annotated[str, Path()],
+    datasource_id: Annotated[str, Path()],
+    persona: Annotated[str | None, Query(alias="persona")] = None,
+) -> TriggerWorkspaceDatasourceSyncResponse:
+    _enforce_mutation_access(request, persona_key=persona)
+
+    if _pg_enabled():
+        engine = get_or_create_shared_db_engine(request)
+        rec = await trigger_workspace_datasource_sync_on_postgres18(
+            engine,
+            workspace_id=workspace_id,
+            datasource_id=datasource_id,
+            instance=str(request.url.path),
+        )
+    else:
+        raise ResourceNotFoundError(instance=str(request.url.path))
+
+    return TriggerWorkspaceDatasourceSyncResponse(
+        datasource=_serialize_datasource(rec),
+        trace_id=_trace(request),
+    )

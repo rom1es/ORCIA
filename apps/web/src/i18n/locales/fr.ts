@@ -2,6 +2,7 @@ import type { TranslationDictionary } from "../types";
 import { ADMIN_AND_STUDIO_FR_LABELS } from "./admin_and_studio_labels";
 import { AI_MODELS_HUB_FR } from "./ai_models_hub_labels";
 import { ASSISTANT_FR_LABELS } from "./assistant_labels";
+import { EPIC18_SOURCES_LABELS_FR } from "./epic18_sources_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
@@ -14,6 +15,7 @@ export const frDictionary: TranslationDictionary = {
   ...GOVERNANCE_AND_PACKS_FR_LABELS,
   locale: "fr",
   aiModelsHub: AI_MODELS_HUB_FR,
+  epic18Sources: EPIC18_SOURCES_LABELS_FR,
   shell: {
     brandTitle: "ORCIA",
     brandSubtitle: "",

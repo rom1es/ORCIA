@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import React from "react";
@@ -259,17 +259,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
     expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("model-primary-v1");
 
-    // Tab 3: Connectors (starts empty, register connector)
+    // Tab 3: Connectors (Direction C deport banner towards /workspaces/$wsId/sources)
     fireEvent.click(screen.getByTestId("settings-tab-connectors"));
-    expect(screen.getByTestId("connectors-empty-state")).toBeDefined();
-    fireEvent.change(screen.getByTestId("connector-alias-input"), {
-      target: { value: "git-principal" },
-    });
-    fireEvent.change(screen.getByTestId("connector-uri-input"), {
-      target: { value: "git://entreprise.local/core" },
-    });
-    fireEvent.click(screen.getByTestId("save-connector-btn"));
-    expect(screen.getByTestId("connector-row-ds-1").textContent).toContain("git-principal");
+    expect(screen.getByTestId("settings-deported-sources-banner")).toBeDefined();
+    expect(screen.getByTestId("settings-goto-workspace-sources-btn")).toBeDefined();
+    fireEvent.click(screen.getByTestId("settings-goto-workspace-sources-btn"));
 
     // Dedicated left-menu entry eight-menu-item-activity navigates to /activity and displays the recorded events
     fireEvent.click(screen.getByTestId("eight-menu-item-activity"));
@@ -1925,24 +1919,21 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).toBe("RUN");
 
     // 6. Test Unified 3-Tab Detail Panel for active workspace ("Mon Labo Perso", ws-1)
-    // Tab 1: Sources & Documents de l'Espace -> connect a source inline without navigating to /settings
-    expect(screen.getByTestId("workspace-detail-sources-empty")).toBeDefined();
-    const dsSubmitBtn = screen.getByTestId(
-      "workspace-inline-ds-submit-btn",
-    ) as HTMLButtonElement;
-    expect(dsSubmitBtn.disabled).toBe(true);
+    // Tab 1: Sources & Documents de l'Espace -> connect a source via modal without navigating to /settings
+    expect(screen.getByTestId("workspace-sources-empty-state")).toBeDefined();
+    fireEvent.click(screen.getByTestId("open-attach-source-modal-btn"));
+    expect(screen.getByTestId("workspace-source-attach-modal")).toBeDefined();
 
-    fireEvent.change(screen.getByTestId("workspace-inline-ds-alias-input"), {
+    fireEvent.change(screen.getByTestId("modal-source-alias-input"), {
       target: { value: "Wiki Produit Interne" },
     });
-    fireEvent.change(screen.getByTestId("workspace-inline-ds-uri-input"), {
+    fireEvent.change(screen.getByTestId("modal-source-uri-input"), {
       target: { value: "https://confluence.orcia.fr/spaces/PROD" },
     });
-    expect(dsSubmitBtn.disabled).toBe(false);
-    fireEvent.click(dsSubmitBtn);
-    expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
-      "Wiki Produit Interne",
-    );
+    fireEvent.click(screen.getByTestId("modal-source-save-btn"));
+    await waitFor(() => {
+      expect(screen.getAllByText("Wiki Produit Interne").length).toBeGreaterThanOrEqual(1);
+    });
 
     // Tab 2: Glossaire & Règles Métiers (Ontologie) -> multi-level cascade + add term + 1-click upward promotion
     fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));

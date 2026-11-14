@@ -5268,6 +5268,32 @@
             "title": "Alias",
             "type": "string"
           },
+          "codegraph_auth_mode": {
+            "default": "SERVICE_ACCOUNT",
+            "enum": [
+              "SERVICE_ACCOUNT",
+              "WORKSPACE_LEAD_TOKEN"
+            ],
+            "title": "Codegraph Auth Mode",
+            "type": "string"
+          },
+          "codegraph_enabled": {
+            "default": false,
+            "title": "Codegraph Enabled",
+            "type": "boolean"
+          },
+          "codegraph_owner_user_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Owner User Id"
+          },
           "connector_id": {
             "anyOf": [
               {
@@ -5309,6 +5335,23 @@
             ],
             "title": "Service Account Id"
           },
+          "source_nature": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DOCUMENT_KB",
+                  "WORK_TRACKER",
+                  "SOURCE_CODE",
+                  "RELATIONAL_SCHEMA"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Nature"
+          },
           "sync_identity_mode": {
             "default": "SERVICE_ACCOUNT",
             "enum": [
@@ -5317,6 +5360,39 @@
             ],
             "title": "Sync Identity Mode",
             "type": "string"
+          },
+          "sync_mode": {
+            "default": "POLLING_24H",
+            "enum": [
+              "WEBHOOK_PUSH",
+              "POLLING_24H"
+            ],
+            "title": "Sync Mode",
+            "type": "string"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_scope": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope"
           },
           "uri": {
             "minLength": 1,
@@ -19914,6 +19990,25 @@
         "title": "ToggleAgentGovernanceRequest",
         "type": "object"
       },
+      "TriggerWorkspaceDatasourceSyncResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync`.",
+        "properties": {
+          "datasource": {
+            "$ref": "#/components/schemas/WorkspaceDatasourceItemResponse"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "datasource",
+          "trace_id"
+        ],
+        "title": "TriggerWorkspaceDatasourceSyncResponse",
+        "type": "object"
+      },
       "TripartiteTraceEdgeSchemaItem": {
         "additionalProperties": false,
         "properties": {
@@ -20336,6 +20431,44 @@
             ],
             "title": "Alias"
           },
+          "codegraph_auth_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "SERVICE_ACCOUNT",
+                  "WORKSPACE_LEAD_TOKEN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Auth Mode"
+          },
+          "codegraph_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Enabled"
+          },
+          "codegraph_owner_user_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Owner User Id"
+          },
           "connector_id": {
             "anyOf": [
               {
@@ -20371,6 +20504,23 @@
             ],
             "title": "Service Account Id"
           },
+          "source_nature": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DOCUMENT_KB",
+                  "WORK_TRACKER",
+                  "SOURCE_CODE",
+                  "RELATIONAL_SCHEMA"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Nature"
+          },
           "sync_identity_mode": {
             "anyOf": [
               {
@@ -20385,6 +20535,45 @@
               }
             ],
             "title": "Sync Identity Mode"
+          },
+          "sync_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "WEBHOOK_PUSH",
+                  "POLLING_24H"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Mode"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_scope": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope"
           },
           "uri": {
             "anyOf": [
@@ -24383,6 +24572,36 @@
         "title": "WorkspaceBootstrapInputItem",
         "type": "object"
       },
+      "WorkspaceDatasourceDeleteResponse": {
+        "additionalProperties": false,
+        "description": "Response for `DELETE /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`.",
+        "properties": {
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "deleted": {
+            "default": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "datasource_id",
+          "trace_id"
+        ],
+        "title": "WorkspaceDatasourceDeleteResponse",
+        "type": "object"
+      },
       "WorkspaceDatasourceItem": {
         "additionalProperties": false,
         "description": "Federated datasource (`N × git://`, `N × jira://`, `N × confluence://`, `db://`, `nexus://`).",
@@ -24440,11 +24659,81 @@
       },
       "WorkspaceDatasourceItemResponse": {
         "additionalProperties": false,
-        "description": "Workspace datasource with deterministic RAG sync health (`CA-17.4.3`).",
+        "description": "Workspace datasource with deterministic RAG health (`CA-17.4.3`) & Codegraph.",
         "properties": {
           "alias": {
             "title": "Alias",
             "type": "string"
+          },
+          "codegraph_auth_mode": {
+            "default": "SERVICE_ACCOUNT",
+            "enum": [
+              "SERVICE_ACCOUNT",
+              "WORKSPACE_LEAD_TOKEN"
+            ],
+            "title": "Codegraph Auth Mode",
+            "type": "string"
+          },
+          "codegraph_enabled": {
+            "default": false,
+            "title": "Codegraph Enabled",
+            "type": "boolean"
+          },
+          "codegraph_head_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Head Sha"
+          },
+          "codegraph_last_indexed_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Last Indexed At Iso"
+          },
+          "codegraph_owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Owner User Id"
+          },
+          "codegraph_status": {
+            "default": "DISABLED",
+            "enum": [
+              "DISABLED",
+              "INDEXING",
+              "READY",
+              "PAUSED_REFERENT_RENEWAL_REQUIRED",
+              "ERROR"
+            ],
+            "title": "Codegraph Status",
+            "type": "string"
+          },
+          "codegraph_status_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Status Reason"
           },
           "connector_id": {
             "anyOf": [
@@ -24461,9 +24750,53 @@
             "title": "Created At Iso",
             "type": "string"
           },
+          "fingerprint_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint Hash"
+          },
+          "freshness_status": {
+            "default": "PENDING_INITIAL_SYNC",
+            "enum": [
+              "SYNCED",
+              "STALE",
+              "SYNC_ERROR",
+              "PENDING_INITIAL_SYNC"
+            ],
+            "title": "Freshness Status",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "last_probe_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Probe At Iso"
+          },
+          "last_sync_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync At Iso"
           },
           "referent_user_id": {
             "anyOf": [
@@ -24491,6 +24824,17 @@
             ],
             "title": "Service Account Id"
           },
+          "source_nature": {
+            "default": "DOCUMENT_KB",
+            "enum": [
+              "DOCUMENT_KB",
+              "WORK_TRACKER",
+              "SOURCE_CODE",
+              "RELATIONAL_SCHEMA"
+            ],
+            "title": "Source Nature",
+            "type": "string"
+          },
           "sync_identity_mode": {
             "default": "SERVICE_ACCOUNT",
             "enum": [
@@ -24498,6 +24842,15 @@
               "TEAM_REFERENT_USER"
             ],
             "title": "Sync Identity Mode",
+            "type": "string"
+          },
+          "sync_mode": {
+            "default": "POLLING_24H",
+            "enum": [
+              "WEBHOOK_PUSH",
+              "POLLING_24H"
+            ],
+            "title": "Sync Mode",
             "type": "string"
           },
           "sync_status": {
@@ -24524,6 +24877,28 @@
               }
             ],
             "title": "Sync Status Reason"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope"
           },
           "uri": {
             "title": "Uri",
@@ -49737,13 +50112,156 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Attach a new datasource to a workspace with identity sync mode",
+        "summary": "Attach a new datasource to a workspace with multi-nature and codegraph options",
         "tags": [
           "workspace-datasources"
         ]
       }
     },
     "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}": {
+      "delete": {
+        "operationId": "delete_workspace_datasource_api_v1_workspaces__workspace_id__datasources__datasource_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "datasource_id",
+            "required": true,
+            "schema": {
+              "title": "Datasource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceDatasourceDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Delete a datasource from a workspace",
+        "tags": [
+          "workspace-datasources"
+        ]
+      },
       "patch": {
         "operationId": "update_workspace_datasource_api_v1_workspaces__workspace_id__datasources__datasource_id__patch",
         "parameters": [
@@ -49892,7 +50410,152 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Update datasource settings or renew referent user",
+        "summary": "Update datasource settings, sync mode or codegraph options",
+        "tags": [
+          "workspace-datasources"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync": {
+      "post": {
+        "operationId": "trigger_workspace_datasource_sync_api_v1_workspaces__workspace_id__datasources__datasource_id__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "datasource_id",
+            "required": true,
+            "schema": {
+              "title": "Datasource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerWorkspaceDatasourceSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Trigger manual synchronization of a datasource",
         "tags": [
           "workspace-datasources"
         ]

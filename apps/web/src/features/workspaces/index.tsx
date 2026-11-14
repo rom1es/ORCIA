@@ -19,7 +19,15 @@ import { useI18n } from "../../i18n";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 import { WorkspaceStudioCardsAndDetailView } from "./WorkspaceStudioCardsAndDetailView";
 
-export function WorkspacesFeaturePanel() {
+export interface WorkspacesFeaturePanelProps {
+  readonly initialWorkspaceId?: string;
+  readonly initialTab?: string;
+}
+
+export function WorkspacesFeaturePanel({
+  initialWorkspaceId,
+  initialTab,
+}: WorkspacesFeaturePanelProps = {}) {
   const { dictionary, locale } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
@@ -127,6 +135,8 @@ export function WorkspacesFeaturePanel() {
       {/* Nouvelle architecture UX de 🗂️ Mes Espaces : Filtres, Cartes en auto-save et Panneau 3 Onglets (Sources, Glossaire & Ontologie, Membres) */}
       <WorkspaceStudioCardsAndDetailView
         isFr={isFr}
+        initialWorkspaceId={initialWorkspaceId}
+        initialTab={initialTab}
         workspaces={displayedWorkspaces}
         datasources={datasources}
         ontologyConcepts={ontologyConcepts}
