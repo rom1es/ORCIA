@@ -306,7 +306,7 @@ async function vitestFetchTransport(
 
   if (path === "/api/v1/bootstrap/platform-setup-state" && method === "PUT") {
     backendState.platformSetupState = body;
-    if (Array.isArray(body.org_units)) {
+    if (Array.isArray(body.org_units) && (body.org_units.length > 0 || backendState.orgUnits.length === 0)) {
       backendState.orgUnits = hydrateMockOrgUnitsFromSetup(body.org_units);
       backendState.orgUnitSeq = Math.max(backendState.orgUnitSeq, backendState.orgUnits.length);
     }
@@ -351,11 +351,34 @@ async function vitestFetchTransport(
   };
 
   if (path === "/api/v1/org-units" && method === "GET") {
+    const qParam = parsedUrl.searchParams.get("q")?.trim()?.toLowerCase() ?? null;
+    const kindParam = parsedUrl.searchParams.get("kind")?.toUpperCase() ?? null;
+    const limitParamRaw = parsedUrl.searchParams.get("limit");
+    const limitParam = limitParamRaw ? parseInt(limitParamRaw, 10) : null;
+
+    let units = backendState.orgUnits.map((u) => ({
+      ...u,
+      attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
+    }));
+
+    if (kindParam) {
+      units = units.filter(
+        (u) => ((u as unknown as { level?: string }).level || u.kind) === kindParam,
+      );
+    }
+    if (qParam) {
+      units = units.filter(
+        (u) =>
+          u.name.toLowerCase().includes(qParam) ||
+          (u.slug ? u.slug.toLowerCase().includes(qParam) : false),
+      );
+    }
+    if (limitParam && limitParam > 0) {
+      units = units.slice(0, limitParam);
+    }
+
     return jsonResponse({
-      org_units: backendState.orgUnits.map((u) => ({
-        ...u,
-        attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
-      })),
+      org_units: units,
       known_users: MOCK_KNOWN_ORG_USERS,
       trace_id: "0195f000000070008000000000000999",
     });

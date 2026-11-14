@@ -490,3 +490,51 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
     assert client.delete(f"/api/v1/org-units/{sub_id}", headers=admin_headers).status_code == 200
     assert client.delete(f"/api/v1/org-units/{bu_id}", headers=admin_headers).status_code == 200
     assert client.delete(f"/api/v1/org-units/{bu_id}", headers=admin_headers).status_code == 404
+
+
+def test_list_org_units_search_query_kind_and_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    app = create_app()
+    client = TestClient(app)
+    admin_headers = {"X-Orcia-Persona": "claire", "X-Orcia-Active-Hat": "PLATFORM_ADMIN"}
+
+    # Create 12 BU units + 2 TEAM units
+    for i in range(12):
+        name = "DS3C Pôle Ingénierie" if i == 0 else f"BU Test {i + 1}"
+        client.post(
+            "/api/v1/org-units",
+            headers=admin_headers,
+            json={"name": name, "kind": "BU"},
+        )
+    client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={"name": "Équipe Alpha", "kind": "TEAM"},
+    )
+    client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={"name": "Équipe Beta", "kind": "TEAM"},
+    )
+
+    # 1. Unfiltered returns all non-enterprise units in DFS order
+    resp_all = client.get("/api/v1/org-units", headers=admin_headers)
+    assert resp_all.status_code == 200
+    all_units = resp_all.json()["org_units"]
+    assert len(all_units) >= 14
+
+    # 2. Filter by kind="BU" and limit=10
+    resp_bu_10 = client.get("/api/v1/org-units?kind=BU&limit=10", headers=admin_headers)
+    assert resp_bu_10.status_code == 200
+    bu_10_units = resp_bu_10.json()["org_units"]
+    assert len(bu_10_units) == 10
+    assert all(u["kind"] == "BU" for u in bu_10_units)
+
+    # 3. Filter by search query q="ds3" (case & accent insensitive)
+    resp_q = client.get("/api/v1/org-units?q=ds3&kind=BU&limit=10", headers=admin_headers)
+    assert resp_q.status_code == 200
+    q_units = resp_q.json()["org_units"]
+    assert len(q_units) == 1
+    assert "DS3C" in q_units[0]["name"]

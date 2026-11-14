@@ -15,7 +15,12 @@ import type {
   WorkspacesListResponse,
 } from "../generated/auth_and_org";
 import type { HealthResponse, ShellNavigationResponse } from "../generated/shell";
-import { buildPersonaQuery, type createRequestJson } from "../helpers";
+import {
+  buildOrgUnitsQuery,
+  buildPersonaQuery,
+  type createRequestJson,
+  type ListOrgUnitsParams,
+} from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
@@ -53,9 +58,9 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
         `/api/v1/workspaces${buildPersonaQuery(personaKey)}`,
       );
     },
-    listOrgUnits(personaKey?: string): Promise<OrgUnitsListResponse> {
+    listOrgUnits(params?: ListOrgUnitsParams | string): Promise<OrgUnitsListResponse> {
       return requestJson<OrgUnitsListResponse>(
-        `/api/v1/org-units${buildPersonaQuery(personaKey)}`,
+        `/api/v1/org-units${buildOrgUnitsQuery(params)}`,
       );
     },
     createOrgUnit(

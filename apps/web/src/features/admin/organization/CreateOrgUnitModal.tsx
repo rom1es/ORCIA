@@ -3,6 +3,7 @@ import {
   OrciaButton,
   OrciaDialog,
   OrciaKnownUserCombobox,
+  OrciaSearchableSelect,
   type KnownUserOption,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
@@ -10,6 +11,7 @@ import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorage
 import type { AdminAndStudioDictionarySection } from "../../../i18n/locales/admin_and_studio_labels";
 import { getEligibleParentBuUnits } from "./orgTreeHelpers";
 import { isKnownUserIdentifier } from "./orgUnitsApiBridge";
+import { useParentOrgSearch } from "./useParentOrgSearch";
 
 export interface CreateOrgUnitFormValues {
   readonly kind: "BU" | "TEAM";
@@ -48,6 +50,16 @@ export function CreateOrgUnitModal({
   const buUnits = getEligibleParentBuUnits(orgUnits);
   const firstBuId = buUnits[0]?.id ?? "scope-global";
 
+  const {
+    options: parentOptions,
+    handleSearchQueryChange: onParentSearchChange,
+    resetSearch: resetParentSearch,
+  } = useParentOrgSearch({
+    initialUnits: orgUnits,
+    rootParentOptionLabel: labels.rootParentOption,
+    parentBuOptionPrefix: labels.parentBuOptionPrefix,
+  });
+
   const [kind, setKind] = useState<"BU" | "TEAM">("BU");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -65,6 +77,7 @@ export function CreateOrgUnitModal({
       setBillingEnabled(true);
       setLeadUserId("");
       setLeadValidationError(null);
+      resetParentSearch();
     }
   }, [open]);
 
@@ -187,23 +200,19 @@ export function CreateOrgUnitModal({
           <label htmlFor="org-unit-parent-select" className="orcia-ds-label">
             {labels.parentLabel}
           </label>
-          <select
+          <OrciaSearchableSelect
             id="org-unit-parent-select"
-            data-testid="org-unit-parent-select"
-            aria-label={labels.parentLabel}
+            testId="org-unit-parent-select"
             disabled={!canMutate || isSubmitting}
             value={parentId}
-            onChange={(e) => setParentId(e.target.value)}
-            className="orcia-ds-select"
-            style={{ width: "100%" }}
-          >
-            <option value="scope-global">{labels.rootParentOption}</option>
-            {buUnits.map((bu) => (
-              <option key={bu.id} value={bu.id}>
-                {`${labels.parentBuOptionPrefix} ${bu.name}`}
-              </option>
-            ))}
-          </select>
+            onChange={setParentId}
+            options={parentOptions}
+            maxDisplayedItems={10}
+            searchPlaceholder={labels.parentSearchPlaceholder}
+            noMatchLabel={labels.parentNoMatchLabel}
+            truncatedHintTemplate={(hidden) => `+${hidden} ${labels.parentTruncatedHint}`}
+            onSearchQueryChange={onParentSearchChange}
+          />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>

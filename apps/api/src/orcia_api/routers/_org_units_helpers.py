@@ -7,6 +7,7 @@ DTO serialization, memory evaluator mutations, and strict PostgreSQL exception c
 from __future__ import annotations
 
 import os
+import unicodedata
 
 from fastapi import Request
 
@@ -42,6 +43,15 @@ from orcia_core.permissions.errors import (
 )
 
 logger = get_logger("orcia.api.org_units.helpers")
+_SCHEMA_DRIFT_EXC_NAMES = {
+    "ProgrammingError",
+    "UndefinedColumnError",
+    "UndefinedTableError",
+    "InvalidColumnReferenceError",
+    "DuplicateTableError",
+    "DataError",
+    "IntegrityError",
+}
 
 
 def resolve_trace_id(request: Request) -> str:
@@ -70,15 +80,14 @@ def serialize_org_unit_summary(summary: OrgUnitSummary) -> OrgUnitResponse:
 
 def enforce_org_unit_mutation_access(request: Request, persona_key: str | None) -> None:
     """Reject `READ_ONLY_OBSERVER` (`403`) and non-admin/supervisor callers (`403`)."""
-    access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
-    observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
-    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
-    if (
-        access_mode_hdr == "READ_ONLY_OBSERVER"
-        or observer_hdr in ("1", "true", "yes")
-        or active_hat == "OBSERVER"
-    ):
+    is_obs = (
+        request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER"
+        or request.headers.get("x-orcia-observer-mode", "").strip().lower() in {"1", "true", "yes"}
+        or request.headers.get("x-orcia-active-hat", "").strip().upper() == "OBSERVER"
+    )
+    if is_obs:
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
     if active_hat and active_hat not in (*ADMIN_MODULE_ALLOWED_ROLES, "BU_LEAD"):
         raise ScopeAccessDeniedError(instance=str(request.url.path))
 
@@ -97,18 +106,51 @@ def sync_evaluator_from_summaries(
     """Synchronize `evaluator` in-memory graph from PostgreSQL summaries."""
     nodes = tuple(
         OrgUnitNode(
-            id=item.id,
-            slug=item.slug,
-            name=item.name,
-            unit_type=item.kind,
-            parent_id=item.parent_id,
-            billing_enabled=item.billing_enabled,
-            lead_user_id=item.lead_user_id,
-            member_user_ids=item.member_user_ids,
+            id=s.id,
+            slug=s.slug,
+            name=s.name,
+            unit_type=s.kind,
+            parent_id=s.parent_id,
+            billing_enabled=s.billing_enabled,
+            lead_user_id=s.lead_user_id,
+            member_user_ids=s.member_user_ids,
         )
-        for item in summaries
+        for s in summaries
     )
     evaluator.replace_org_units(nodes)
+
+
+def normalize_text_search(text: str) -> str:
+    """NFD normalization removing diacritics and lowercasing."""
+    return (
+        "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
+        .lower()
+        .strip()
+    )
+
+
+def filter_org_unit_summaries_in_memory(
+    summaries: list[OrgUnitSummary],
+    *,
+    q: str | None = None,
+    kind: OrgUnitKind | None = None,
+    limit: int | None = None,
+) -> list[OrgUnitSummary]:
+    """Filter and sort summaries in memory with exact parity to PostgreSQL 18 search."""
+    filtered = list(summaries)
+    if kind is not None:
+        filtered = [s for s in filtered if s.kind == kind]
+    if q is not None and q.strip():
+        norm_q = normalize_text_search(q)
+        filtered = [
+            s
+            for s in filtered
+            if norm_q in normalize_text_search(s.name) or norm_q in normalize_text_search(s.slug)
+        ]
+    filtered.sort(key=lambda s: (s.kind, s.name.lower(), s.slug.lower()))
+    if limit is not None:
+        filtered = filtered[:limit]
+    return filtered
 
 
 def pg_sync_enabled() -> bool:
@@ -129,15 +171,7 @@ def is_pg_connectivity_error(exc: Exception) -> bool:
         curr_msg = str(current).lower()
 
         # Explicit SQL schema/syntax errors are NEVER connectivity errors
-        if curr_type in (
-            "ProgrammingError",
-            "UndefinedColumnError",
-            "UndefinedTableError",
-            "InvalidColumnReferenceError",
-            "DuplicateTableError",
-            "DataError",
-            "IntegrityError",
-        ):
+        if curr_type in _SCHEMA_DRIFT_EXC_NAMES:
             return False
 
         pgcode = getattr(current, "pgcode", None) or getattr(
@@ -148,16 +182,8 @@ def is_pg_connectivity_error(exc: Exception) -> bool:
 
         if isinstance(current, (OSError, TimeoutError, ConnectionError)):
             return True
-        if any(
-            token in curr_msg
-            for token in (
-                "connection refused",
-                "could not connect",
-                "connection reset",
-                "broken pipe",
-                "connect_tcp",
-            )
-        ):
+        conn_kw = ("connection refused", "could not connect", "connection reset", "broken pipe")
+        if any(token in curr_msg for token in (*conn_kw, "connect_tcp")):
             return True
 
         orig = getattr(current, "orig", None)
@@ -180,9 +206,7 @@ def classify_and_handle_pg_error(exc: Exception, operation: str) -> None:
 
     if is_pg_connectivity_error(exc):
         logger.warning(
-            "org_units_pg_connectivity_fallback",
-            operation=operation,
-            error_type=type(exc).__name__,
+            "org_units_pg_connectivity_fallback", operation=operation, error_type=type(exc).__name__
         )
         return
 
@@ -192,12 +216,11 @@ def classify_and_handle_pg_error(exc: Exception, operation: str) -> None:
         error_type=type(exc).__name__,
         error=str(exc),
     )
-    raise OrgUnitStorageSchemaError(
-        detail_override=(
-            f"Schéma PostgreSQL de l'organisation obsolète ou incompatible lors de '{operation}' "
-            f"({type(exc).__name__}). Une migration Alembic est requise."
-        )
-    ) from exc
+    detail = (
+        f"Schéma PostgreSQL de l'organisation obsolète ou incompatible lors de '{operation}' "
+        f"({type(exc).__name__}). Une migration Alembic est requise."
+    )
+    raise OrgUnitStorageSchemaError(detail_override=detail) from exc
 
 
 def create_in_evaluator(
@@ -220,10 +243,8 @@ def create_in_evaluator(
         parent_id=payload.parent_id,
         units_by_id=units_by_id,
     )
-    effective_lead = (
-        resolved_lead
-        if resolved_lead is not None
-        else ((payload.lead_user_id or "").strip() or None)
+    effective_lead = resolved_lead or (
+        (payload.lead_user_id or "").strip() if payload.lead_user_id else None
     )
     effective_members = (
         resolved_members
@@ -286,20 +307,20 @@ def update_in_evaluator(
     next_billing = (
         target.billing_enabled if payload.billing_enabled is None else payload.billing_enabled
     )
-    next_lead: str | None
-    if resolved_lead is not None:
-        next_lead = resolved_lead
-    elif "lead_user_id" in payload.model_fields_set:
-        next_lead = (payload.lead_user_id or "").strip() or None
-    else:
-        next_lead = target.lead_user_id
-
-    if resolved_members is not None:
-        next_members = resolved_members
-    elif payload.member_user_ids is not None:
-        next_members = normalize_member_user_ids(payload.member_user_ids)
-    else:
-        next_members = target.member_user_ids
+    next_lead = (
+        resolved_lead
+        if resolved_lead is not None
+        else ((payload.lead_user_id or "").strip() or None)
+        if "lead_user_id" in payload.model_fields_set
+        else target.lead_user_id
+    )
+    next_members = (
+        resolved_members
+        if resolved_members is not None
+        else normalize_member_user_ids(payload.member_user_ids)
+        if payload.member_user_ids is not None
+        else target.member_user_ids
+    )
     updated = OrgUnitNode(
         id=target.id,
         slug=target.slug,

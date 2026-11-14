@@ -22,6 +22,29 @@ export function buildPersonaQuery(personaKey?: string): string {
   return personaKey ? `?persona_key=${encodeURIComponent(personaKey)}` : "";
 }
 
+export interface ListOrgUnitsParams {
+  readonly personaKey?: string;
+  readonly q?: string;
+  readonly kind?: "BU" | "TEAM";
+  readonly limit?: number;
+}
+
+export function buildOrgUnitsQuery(params?: ListOrgUnitsParams | string): string {
+  if (!params) return "";
+  if (typeof params === "string") {
+    return buildPersonaQuery(params);
+  }
+  const searchParams = new URLSearchParams();
+  if (params.personaKey) searchParams.set("persona_key", params.personaKey);
+  if (params.q) searchParams.set("q", params.q);
+  if (params.kind) searchParams.set("kind", params.kind);
+  if (params.limit !== undefined && params.limit !== null) {
+    searchParams.set("limit", String(params.limit));
+  }
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export function createRequestJson(options: OrciaApiClientOptions) {
   const fetcher = options.fetchImpl ?? globalThis.fetch;
   const baseHeaders: Record<string, string> = {

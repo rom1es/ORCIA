@@ -35,7 +35,7 @@ def test_org_units_pg_schema_drift_raises_503_without_seeds_fallback(
     """Outdated PostgreSQL schema (ProgrammingError) must return HTTP 503 without seeds fallback."""
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
-    async def _mock_drift_error(_engine: object) -> list[object]:
+    async def _mock_drift_error(_engine: object, *args: object, **kwargs: object) -> list[object]:
         orig = Exception("column o.billing_enabled does not exist")
         orig.pgcode = "42703"
         raise sa_exc.ProgrammingError("SELECT o.billing_enabled FROM org_units", {}, orig)
@@ -63,7 +63,7 @@ def test_org_units_pg_connectivity_loss_triggers_fallback_warning(
     """Connection refusal (network down) must preserve memory evaluator fallback."""
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
-    async def _mock_conn_error(_engine: object) -> list[object]:
+    async def _mock_conn_error(_engine: object, *args: object, **kwargs: object) -> list[object]:
         raise ConnectionRefusedError("Connection to 127.0.0.1:5432 refused")
 
     monkeypatch.setattr(

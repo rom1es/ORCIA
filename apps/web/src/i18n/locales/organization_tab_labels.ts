@@ -45,6 +45,9 @@ export interface OrganizationTabDictionarySection {
     readonly slugLabel: string;
     readonly slugPlaceholder: string;
     readonly parentLabel: string;
+    readonly parentSearchPlaceholder: string;
+    readonly parentNoMatchLabel: string;
+    readonly parentTruncatedHint: string;
     readonly rootParentOption: string;
     readonly parentBuOptionPrefix: string;
     readonly billingCheckboxLabel: string;
@@ -58,6 +61,9 @@ export interface OrganizationTabDictionarySection {
     readonly description: string;
     readonly nameLabel: string;
     readonly parentLabel: string;
+    readonly parentSearchPlaceholder: string;
+    readonly parentNoMatchLabel: string;
+    readonly parentTruncatedHint: string;
     readonly rootParentOption: string;
     readonly billingCheckboxLabel: string;
     readonly cancelButton: string;
@@ -154,6 +160,9 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
     slugLabel: "Identifiant court (optionnel)",
     slugPlaceholder: "Généré automatiquement si laissé vide (ex. : direction-produit)",
     parentLabel: "Unité parente de rattachement",
+    parentSearchPlaceholder: "Rechercher une organisation parente...",
+    parentNoMatchLabel: "Aucune organisation trouvée",
+    parentTruncatedHint: "organisations non affichées. Saisissez des lettres pour affiner.",
     rootParentOption: "Racine — Direction de premier niveau (Plateforme entière)",
     parentBuOptionPrefix: "Direction / Pôle :",
     billingCheckboxLabel: "Activer l'imputation FinOps sur cette unité",
@@ -168,6 +177,9 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
       "Mettez à jour le nom, le rattachement hiérarchique ou le statut d'imputation FinOps.",
     nameLabel: "Nom de l'unité",
     parentLabel: "Unité parente de rattachement",
+    parentSearchPlaceholder: "Rechercher une organisation parente...",
+    parentNoMatchLabel: "Aucune organisation trouvée",
+    parentTruncatedHint: "organisations non affichées. Saisissez des lettres pour affiner.",
     rootParentOption: "Racine — Direction de premier niveau (Plateforme entière)",
     billingCheckboxLabel: "Activer l'imputation FinOps sur cette unité",
     cancelButton: "Annuler",
@@ -265,6 +277,9 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
     slugLabel: "Short identifier (optional)",
     slugPlaceholder: "Auto-generated if left blank (e.g. product-division)",
     parentLabel: "Parent unit",
+    parentSearchPlaceholder: "Search parent organization...",
+    parentNoMatchLabel: "No organization found",
+    parentTruncatedHint: "organizations hidden. Type letters to narrow down.",
     rootParentOption: "Root — Top-level Division (Entire platform)",
     parentBuOptionPrefix: "Division / Sub-BU:",
     billingCheckboxLabel: "Enable FinOps cost allocation on this unit",
@@ -279,6 +294,9 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
       "Update the unit name, parent hierarchy attachment, or FinOps billing status.",
     nameLabel: "Unit name",
     parentLabel: "Parent unit",
+    parentSearchPlaceholder: "Search parent organization...",
+    parentNoMatchLabel: "No organization found",
+    parentTruncatedHint: "organizations hidden. Type letters to narrow down.",
     rootParentOption: "Root — Top-level Division (Entire platform)",
     billingCheckboxLabel: "Enable FinOps cost allocation on this unit",
     cancelButton: "Cancel",

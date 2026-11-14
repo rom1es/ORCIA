@@ -6,10 +6,17 @@ import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOn
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import type { paths } from "./generated/schema";
-import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from "./helpers";
+import {
+  buildOrgUnitsQuery,
+  createRequestJson,
+  OrciaProblemError,
+  type ListOrgUnitsParams,
+  type OrciaApiClientOptions,
+} from "./helpers";
 
 export type * from "./generated/schema";
 export {
+  buildOrgUnitsQuery,
   createAgentsAndSkillsDomainClient,
   createAiModelsHubDomainClient,
   createAuthAndShellDomainClient,
@@ -17,6 +24,7 @@ export {
   createCatalogAndPermissionsDomainClient,
   createEpics1To7OperationsDomainClient,
   OrciaProblemError,
+  type ListOrgUnitsParams,
   type OrciaApiClientOptions,
 };
 

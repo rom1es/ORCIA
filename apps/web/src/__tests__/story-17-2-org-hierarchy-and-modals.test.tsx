@@ -1,8 +1,9 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearPlatformSetupStorage } from "../components/platformSetupStore";
+import { seedVitestPlatformSetupState } from "./vitest.setup";
 import * as orgUnitsApiBridge from "../features/admin/organization/orgUnitsApiBridge";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { resetAuthSessionStore, useAuthSessionStore } from "../stores/authSessionStore";
@@ -295,5 +296,54 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     const row = await screen.findByTestId("org-unit-row-org-1");
     expect(row).toBeDefined();
     expect(screen.getByTestId("org-unit-lead-badge-org-1").textContent).toContain("Claire Admin");
+  });
+
+  it("enforces max 10 displayed items, live per-character search query calling API, and anti-cycle exclusion in parent selector", async () => {
+    const manyBus = Array.from({ length: 14 }, (_, i) => ({
+      id: `bu-${i + 1}`,
+      name: i === 0 ? "DS3C Pôle Ingénierie" : `BU Division ${i + 1}`,
+      slug: i === 0 ? "ds3c-pole-ingenierie" : `bu-division-${i + 1}`,
+      level: "BU",
+      parentId: "scope-global",
+      billingEnabled: true,
+      leadUserId: "claire.admin@orcia.fr",
+      memberUserIds: [],
+      attachedWorkspacesCount: 0,
+      attachedWorkspaces: [],
+    }));
+    seedVitestPlatformSetupState({ org_units: manyBus });
+
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+    await act(async () => Promise.resolve());
+
+    // 1. Open create modal: verify trigger and max 10 options rendered
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    const trigger = screen.getByTestId("org-unit-parent-select-trigger");
+    expect(trigger).toBeDefined();
+
+    fireEvent.click(trigger);
+    const listbox = screen.getByTestId("org-unit-parent-select-listbox");
+    expect(within(listbox).getAllByRole("option")).toHaveLength(10);
+    expect(screen.getByTestId("org-unit-parent-select-truncated-hint")).toBeDefined();
+
+    // 2. Per-character search: typing 'd' -> 'ds' -> 'ds3'
+    const searchInput = screen.getByTestId("org-unit-parent-select-search-input");
+    for (const token of ["d", "ds", "ds3"]) {
+      await act(async () => {
+        fireEvent.change(searchInput, { target: { value: token } });
+      });
+    }
+
+    const ds3cOption = await screen.findByTestId("org-unit-parent-select-option-bu-1");
+    expect(ds3cOption.textContent).toContain("DS3C");
+    expect(within(listbox).getAllByRole("option")).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId("cancel-create-org-unit-btn"));
+
+    // 3. Edit modal: anti-cycle prevents selecting unit itself
+    fireEvent.click(screen.getByTestId("edit-org-unit-btn-bu-1"));
+    fireEvent.click(screen.getByTestId("edit-org-unit-parent-select-trigger"));
+    expect(screen.queryByTestId("edit-org-unit-parent-select-option-bu-1")).toBeNull();
   });
 });

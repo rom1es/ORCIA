@@ -502,6 +502,11 @@ export {
   type OrciaKnownUserComboboxProps,
 } from "./primitives/OrciaKnownUserCombobox";
 export {
+  OrciaSearchableSelect,
+  type OrciaSearchableSelectOption,
+  type OrciaSearchableSelectProps,
+} from "./primitives/OrciaSearchableSelect";
+export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,
 } from "./shell/WorkspaceTopologyPanel";

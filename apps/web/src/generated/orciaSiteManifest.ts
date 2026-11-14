@@ -9,7 +9,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-14",
   "stats": {
     "activeRoutesCount": 24,
-    "uiPrimitivesCount": 100,
+    "uiPrimitivesCount": 101,
     "installedPacksCount": 0,
     "alembicMigrationsCount": 32,
     "architectureDecisionsCount": 22,
@@ -108,6 +108,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaKnownUserCombobox",
     "OrciaProductShowcaseSiteView",
     "OrciaRadixSelect",
+    "OrciaSearchableSelect",
     "OrciaSectionCard",
     "OrciaSelect",
     "OrciaSwitch",
@@ -439,8 +440,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-14",
       "phaseOrStory": "Ajustement Transverse (CAP-067)",
       "reportFile": "2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances-tech-lead-report.md",
-      "domain": "Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL (HTTP 503), Modale Dépendances Nominative, Auto-complétion Membres Connus (OrciaKnownUserCombobox) & Rejet Strict (HTTP 422 ERR_ORG_UNIT_UNKNOWN_USER)",
-      "summary": "Garde SQL strict (503 au lieu du fallback seeds.py), réconciliation complète des workspaces SQL, modale ConfirmDeleteOrgUnitModal nominative avec bouton désactivé, composant RGAA OrciaKnownUserCombobox (iam_accounts $\\cup$ users), rejet UI + API 422 des utilisateurs inconnus, et correctif FinOps billingEnabled."
+      "domain": "Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL (HTTP 503), Modale Dépendances Nominative, Auto-complétion Membres (OrciaKnownUserCombobox), Validation Stricte (HTTP 422 ERR_ORG_UNIT_UNKNOWN_USER) & Sélecteur Interactif Unité Parente Max 10 (OrciaSearchableSelect)",
+      "summary": "Garde SQL strict (503 au lieu du fallback seeds.py), réconciliation complète des workspaces SQL, modale ConfirmDeleteOrgUnitModal nominative avec bouton désactivé, composant RGAA OrciaKnownUserCombobox (iam_accounts $\\cup$ users), rejet UI + API 422 des utilisateurs inconnus, correctif FinOps billingEnabled, et <OrciaSearchableSelect maxDisplayedItems={10} /> sur CreateOrgUnitModal/EditOrgUnitModal connecté à GET /api/v1/org-units?q=...&kind=BU&limit=10 (requête déclenchée à chaque lettre saisie)."
     },
     {
       "date": "2026-11-14",

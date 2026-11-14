@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import { normalizeComboboxSearchToken } from "./comboboxSearchUtils";
 
 export interface KnownUserOption {
   readonly principalId: string;
@@ -21,14 +22,6 @@ export interface OrciaKnownUserComboboxProps {
   readonly onSelectOption?: (user: KnownUserOption) => void;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-}
-
-function normalizeSearchToken(str: string): string {
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
 }
 
 export function OrciaKnownUserCombobox({
@@ -66,14 +59,14 @@ export function OrciaKnownUserCombobox({
   );
 
   const matchingUsers = useMemo(() => {
-    const query = normalizeSearchToken(value);
+    const query = normalizeComboboxSearchToken(value);
     if (!query) {
       return availableUsers;
     }
     return availableUsers.filter((user) => {
-      const matchName = normalizeSearchToken(user.displayName).includes(query);
-      const matchPrincipal = normalizeSearchToken(user.principalId).includes(query);
-      const matchEmail = user.email ? normalizeSearchToken(user.email).includes(query) : false;
+      const matchName = normalizeComboboxSearchToken(user.displayName).includes(query);
+      const matchPrincipal = normalizeComboboxSearchToken(user.principalId).includes(query);
+      const matchEmail = user.email ? normalizeComboboxSearchToken(user.email).includes(query) : false;
       return matchName || matchPrincipal || matchEmail;
     });
   }, [availableUsers, value]);

@@ -53,7 +53,12 @@ import type {
   PermissionTicketActionResponse,
 } from "../generated/permission_broker";
 import type { components } from "../generated/schema";
-import { buildPersonaQuery, type createRequestJson } from "../helpers";
+import {
+  buildOrgUnitsQuery,
+  buildPersonaQuery,
+  type createRequestJson,
+  type ListOrgUnitsParams,
+} from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
 type DelegateGrantRequest = components["schemas"]["DelegateGrantRequest"];
@@ -62,8 +67,8 @@ type GrantDeleteResponse = components["schemas"]["GrantDeleteResponse"];
 
 export function createCatalogAndPermissionsDomainClient(requestJson: RequestJsonFn) {
   return {
-    listOrgUnits(personaKey?: string): Promise<OrgUnitsListResponse> {
-      return requestJson<OrgUnitsListResponse>(`/api/v1/org-units${buildPersonaQuery(personaKey)}`);
+    listOrgUnits(params?: ListOrgUnitsParams | string): Promise<OrgUnitsListResponse> {
+      return requestJson<OrgUnitsListResponse>(`/api/v1/org-units${buildOrgUnitsQuery(params)}`);
     },
     createOrgUnit(
       payload: OrgUnitCreateRequest,

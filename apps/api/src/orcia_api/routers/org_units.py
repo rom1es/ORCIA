@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
@@ -10,6 +12,7 @@ from orcia_api.routers._org_units_helpers import (
     create_in_evaluator,
     delete_in_evaluator,
     enforce_org_unit_mutation_access,
+    filter_org_unit_summaries_in_memory,
     pg_sync_enabled,
     resolve_trace_id,
     serialize_org_unit_summary,
@@ -58,6 +61,9 @@ ORG_UNITS_MUTATION_RESPONSES = {
 async def list_org_units(
     request: Request,
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    q: str | None = Query(default=None, max_length=128),
+    kind: Literal["BU", "TEAM"] | None = Query(default=None),
+    limit: int | None = Query(default=None, ge=1, le=100),
 ) -> OrgUnitsListResponse:
     svc = get_auth_service(request)
     effective_persona = persona_key or request.headers.get("x-orcia-persona", "").strip() or None
@@ -67,8 +73,9 @@ async def list_org_units(
     if pg_sync_enabled():
         try:
             engine = get_or_create_shared_db_engine(request)
-            summaries = await list_org_units_from_postgres18(engine)
-            sync_evaluator_from_summaries(svc.evaluator, summaries)
+            summaries = await list_org_units_from_postgres18(engine, q=q, kind=kind, limit=limit)
+            if q is None and kind is None and limit is None:
+                sync_evaluator_from_summaries(svc.evaluator, summaries)
             async with engine.connect() as conn:
                 known_users_raw = await collect_known_org_users(request, conn)
         except OrciaDomainError:
@@ -78,11 +85,17 @@ async def list_org_units(
             classify_and_handle_pg_error(exc, operation="list_org_units")
             summaries = None
     if summaries is None:
-        summaries = list_evaluator_org_unit_summaries(
+        full_summaries = list_evaluator_org_unit_summaries(
             svc.evaluator.org_units,
             [w.owner_org_unit_id for w in svc.evaluator.workspaces],
             svc.evaluator.workspaces,
         )
+        if q is not None or kind is not None or limit is not None:
+            summaries = filter_org_unit_summaries_in_memory(
+                full_summaries, q=q, kind=kind, limit=limit
+            )
+        else:
+            summaries = full_summaries
     if not known_users_raw:
         known_users_raw = await collect_known_org_users(request, None)
     return OrgUnitsListResponse(

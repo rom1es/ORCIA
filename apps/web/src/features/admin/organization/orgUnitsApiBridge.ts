@@ -160,3 +160,35 @@ export async function deleteOrgUnitViaApi(
     return { ok: false, ...extractApiError(err, locale) };
   }
 }
+
+export async function searchParentBuUnitsFromApi(
+  query: string,
+  limit = 10,
+  locale: "fr" | "en" = "fr",
+): Promise<OrgUnitsApiListResult> {
+  try {
+    const client = buildOrgUnitsClient(locale);
+    const response = await client.listOrgUnits({
+      q: query.trim() || undefined,
+      kind: "BU",
+      limit,
+    });
+    if (!Array.isArray(response.org_units)) {
+      return { ok: true, units: [], knownUsers: [] };
+    }
+    const mappedKnownUsers: KnownUserOption[] = Array.isArray(response.known_users)
+      ? response.known_users.map((u) => ({
+          principalId: u.principal_id,
+          displayName: u.display_name,
+          email: u.email ?? null,
+        }))
+      : [];
+    return {
+      ok: true,
+      units: response.org_units.map(mapOrgUnitDtoToConfigured),
+      knownUsers: mappedKnownUsers,
+    };
+  } catch (err: unknown) {
+    return { ok: false, ...extractApiError(err, locale) };
+  }
+}

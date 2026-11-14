@@ -374,6 +374,35 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
                 await client.delete(f"/api/v1/org-units/{root_id}", headers=headers)
             ).status_code == 200
 
+            # PostgreSQL 18 live search query, kind filter and limit test
+            created_test_bu_ids: list[str] = []
+            for idx in range(12):
+                name = f"BU Auto {idx + 1}" if idx > 0 else "DS3C Pôle Cyber"
+                res = await client.post(
+                    "/api/v1/org-units",
+                    headers=headers,
+                    json={"name": name, "kind": "BU", "lead_user_id": "claire.dir@orcia.fr"},
+                )
+                assert res.status_code == 200
+                created_test_bu_ids.append(res.json()["id"])
+
+            # Verify kind=BU & limit=10
+            pg_bu_10 = await client.get("/api/v1/org-units?kind=BU&limit=10", headers=headers)
+            assert pg_bu_10.status_code == 200
+            assert len(pg_bu_10.json()["org_units"]) == 10
+            assert all(u["kind"] == "BU" for u in pg_bu_10.json()["org_units"])
+
+            # Verify q=ds3 (ILIKE search on name/slug)
+            pg_q = await client.get("/api/v1/org-units?q=ds3&kind=BU&limit=10", headers=headers)
+            assert pg_q.status_code == 200
+            assert len(pg_q.json()["org_units"]) == 1
+            assert "DS3C" in pg_q.json()["org_units"][0]["name"]
+
+            for test_bu_id in created_test_bu_ids:
+                assert (
+                    await client.delete(f"/api/v1/org-units/{test_bu_id}", headers=headers)
+                ).status_code == 200
+
             async with engine.connect() as conn:
                 remaining = (
                     await conn.execute(

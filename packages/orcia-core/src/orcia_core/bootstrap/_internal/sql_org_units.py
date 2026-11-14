@@ -18,6 +18,7 @@ from orcia_core.bootstrap._internal.sql_org_units_queries import (
     build_sorted_summaries,
     load_all_nodes_and_workspaces,
     load_known_org_users_from_postgres18,
+    query_filtered_org_unit_summaries,
     resolve_target_node,
     sync_platform_settings_org_units_if_present,
 )
@@ -36,9 +37,17 @@ from orcia_core.permissions.org_hierarchy import (
 from orcia_core.permissions.org_user_validation import resolve_and_validate_org_unit_users
 
 
-async def list_org_units_from_postgres18(engine: AsyncEngine) -> list[OrgUnitSummary]:
-    """Return all non-enterprise `OrgUnitSummary` items ordered in DFS tree order."""
+async def list_org_units_from_postgres18(
+    engine: AsyncEngine,
+    *,
+    q: str | None = None,
+    kind: OrgUnitKind | None = None,
+    limit: int | None = None,
+) -> list[OrgUnitSummary]:
+    """Return non-enterprise `OrgUnitSummary` items (filtered or ordered in DFS tree order)."""
     async with engine.connect() as conn:
+        if q is not None or kind is not None or limit is not None:
+            return await query_filtered_org_unit_summaries(conn, q=q, kind=kind, limit=limit)
         nodes_by_id, ws_counts, ws_refs = await load_all_nodes_and_workspaces(conn)
     return build_sorted_summaries(nodes_by_id, ws_counts, ws_refs)
 
