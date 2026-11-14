@@ -4,6 +4,7 @@ import { createAiModelsHubDomainClient } from "./domains/aiModelsHub";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
+import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import type { paths } from "./generated/schema";
 import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from "./helpers";
@@ -15,6 +16,7 @@ export {
   createAuthAndShellDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
+  createCodegraphMcpDomainClient,
   createEpics1To7OperationsDomainClient,
   OrciaProblemError,
   type OrciaApiClientOptions,
@@ -44,6 +46,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
   return {
     ...createAuthAndShellDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
+    ...createCodegraphMcpDomainClient(requestJson),
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),

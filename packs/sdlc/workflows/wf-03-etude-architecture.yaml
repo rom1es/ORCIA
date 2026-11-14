@@ -41,6 +41,8 @@ sub_steps:
   toolbox_mcp_permissions:
   - connector_id: mcp:atlassian-confluence
     scope: read
+  - connector_id: mcp:codegraph
+    scope: read
   skill_refs:
   - pack://sdlc/skills/qualification-besoin
   - pack://sdlc/skills/redaction-prd-wsjf
@@ -60,6 +62,8 @@ sub_steps:
   instruction_prompt_or_ref: pack://sdlc/agents/etudeArchi#concevoir
   toolbox_mcp_permissions:
   - connector_id: mcp:atlassian-confluence
+    scope: read
+  - connector_id: mcp:codegraph
     scope: read
   skill_refs:
   - pack://sdlc/skills/qualification-besoin
@@ -81,6 +85,8 @@ sub_steps:
   toolbox_mcp_permissions:
   - connector_id: mcp:atlassian-confluence
     scope: read
+  - connector_id: mcp:codegraph
+    scope: read
   skill_refs:
   - pack://sdlc/skills/qualification-besoin
   - pack://sdlc/skills/redaction-prd-wsjf
@@ -100,6 +106,8 @@ sub_steps:
   instruction_prompt_or_ref: pack://sdlc/agents/etudeArchi#controler
   toolbox_mcp_permissions:
   - connector_id: mcp:atlassian-confluence
+    scope: read
+  - connector_id: mcp:codegraph
     scope: read
   skill_refs:
   - pack://sdlc/skills/qualification-besoin

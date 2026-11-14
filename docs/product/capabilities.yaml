@@ -433,11 +433,11 @@ capabilities:
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
     origin: epic
-    origin_ref: 11-3
+    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact
     status: live
-    tests: [tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py]
+    tests: [tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: runtime
-    surfaces: { api: mcp_and_test_bench.py }
+    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py" }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
     fr: [FR-35]

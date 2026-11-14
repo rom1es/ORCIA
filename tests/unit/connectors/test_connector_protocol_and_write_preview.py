@@ -6,6 +6,7 @@ import pytest
 
 from orcia_connectors.adapters.atlassian_confluence import AtlassianConfluenceConnector
 from orcia_connectors.adapters.atlassian_jira import AtlassianJiraConnector
+from orcia_connectors.adapters.codegraph_mcp import CodegraphMcpConnector
 from orcia_connectors.adapters.git_provider import GitProviderConnector
 from orcia_connectors.adapters.mcp_client_bridge import McpClientBridgeConnector
 from orcia_connectors.adapters.sql_readonly import SqlReadonlyConnector
@@ -26,6 +27,7 @@ async def test_all_enterprise_connectors_implement_orcia_connector_protocol() ->
         GitProviderConnector(),
         SqlReadonlyConnector(),
         McpClientBridgeConnector(),
+        CodegraphMcpConnector(),
     ]
     for conn in connectors:
         assert isinstance(conn, OrciaConnectorProtocol)
@@ -101,3 +103,21 @@ async def test_confluence_git_mcp_and_sql_readonly_write_preview_enforcement() -
     assert read_res["rows"] == [{"result": 1}]
     with pytest.raises(PolicyDeniedError, match="ERR_SQL_READONLY_VIOLATION"):
         await sql.read("db://analytics/metrics", {"sql": "DROP TABLE users"})
+
+
+@pytest.mark.asyncio
+async def test_codegraph_mcp_connector_strictly_readonly() -> None:
+    """Verify CodegraphMcpConnector strictly rejects preview_write and execute_write."""
+    connector = CodegraphMcpConnector()
+    with pytest.raises(PermissionError, match="codegraph-mcp is strictly read-only"):
+        await connector.preview_write("edit_file", {"file": "main.py"})
+
+    token = SignedApprovalToken(
+        preview_id="prev-1",
+        approver_user_id="lead.dev",
+        approved_at_utc="2026-11-14T20:00:00Z",
+        payload_sha256="0" * 64,
+        broker_signature="0" * 32,
+    )
+    with pytest.raises(PermissionError, match="codegraph-mcp is strictly read-only"):
+        await connector.execute_write(token, "edit_file", {"file": "main.py"})

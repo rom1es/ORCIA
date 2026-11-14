@@ -3836,6 +3836,127 @@
         "title": "ClaimTaskResponse",
         "type": "object"
       },
+      "CodegraphActiveRepoResponse": {
+        "description": "Code repository datasource enabled for codegraph indexing in the workspace.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "codegraph_enabled": {
+            "default": true,
+            "title": "Codegraph Enabled",
+            "type": "boolean"
+          },
+          "codegraph_head_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Head Sha"
+          },
+          "codegraph_status": {
+            "default": "READY",
+            "title": "Codegraph Status",
+            "type": "string"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "source_nature": {
+            "default": "SOURCE_CODE",
+            "title": "Source Nature",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "datasource_id",
+          "alias",
+          "uri"
+        ],
+        "title": "CodegraphActiveRepoResponse",
+        "type": "object"
+      },
+      "CodegraphToolItemResponse": {
+        "description": "Specification of an available read-only MCP codegraph tool.",
+        "properties": {
+          "description": {
+            "description": "Tool summary for agent tool-calling",
+            "title": "Description",
+            "type": "string"
+          },
+          "input_schema": {
+            "additionalProperties": true,
+            "description": "JSON Schema for arguments",
+            "title": "Input Schema",
+            "type": "object"
+          },
+          "name": {
+            "description": "Normalized tool name",
+            "title": "Name",
+            "type": "string"
+          },
+          "read_only": {
+            "default": true,
+            "description": "Always true for codegraph-mcp tools",
+            "title": "Read Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "CodegraphToolItemResponse",
+        "type": "object"
+      },
+      "CodegraphToolsListResponse": {
+        "description": "Payload returned by `GET /api/v1/workspaces/{workspace_id}/codegraph/tools`.",
+        "properties": {
+          "active_repositories": {
+            "items": {
+              "$ref": "#/components/schemas/CodegraphActiveRepoResponse"
+            },
+            "title": "Active Repositories",
+            "type": "array"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/CodegraphToolItemResponse"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "provider",
+          "trace_id"
+        ],
+        "title": "CodegraphToolsListResponse",
+        "type": "object"
+      },
       "CognitiveRoutingOutcomeResponse": {
         "additionalProperties": false,
         "description": "Cognitive routing outcome response (`Story 8.2`).",
@@ -11699,6 +11820,61 @@
         "title": "InvalidatePromptCacheResponse",
         "type": "object"
       },
+      "InvokeCodegraphToolRequest": {
+        "description": "Payload sent to `POST /api/v1/workspaces/{workspace_id}/codegraph/invoke`.",
+        "properties": {
+          "arguments": {
+            "additionalProperties": true,
+            "description": "Tool arguments (repo_alias, query, etc.)",
+            "title": "Arguments",
+            "type": "object"
+          },
+          "tool_name": {
+            "description": "Normalized tool name to invoke",
+            "title": "Tool Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name"
+        ],
+        "title": "InvokeCodegraphToolRequest",
+        "type": "object"
+      },
+      "InvokeCodegraphToolResponse": {
+        "description": "Payload returned by `POST /api/v1/workspaces/{workspace_id}/codegraph/invoke`.",
+        "properties": {
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          },
+          "tool_name": {
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "tool_name",
+          "provider",
+          "trace_id"
+        ],
+        "title": "InvokeCodegraphToolResponse",
+        "type": "object"
+      },
       "InvokedSkillTraceResponseItem": {
         "additionalProperties": false,
         "description": "Trace item of a Skill mobilized during Agent execution.",
@@ -18772,6 +18948,18 @@
                 "type": "null"
               }
             ]
+          },
+          "codegraph_impact": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codegraph Impact"
           },
           "correction_remarks_applied": {
             "anyOf": [
@@ -50156,6 +50344,256 @@
         "summary": "Resolve 4-level artifact destination cascade with local:// path confinement",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/codegraph/invoke": {
+      "post": {
+        "operationId": "invoke_codegraph_tool_api_v1_workspaces__workspace_id__codegraph_invoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvokeCodegraphToolRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeCodegraphToolResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Invoke a normalized read-only Code Graph MCP tool",
+        "tags": [
+          "codegraph-mcp"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/codegraph/tools": {
+      "get": {
+        "operationId": "list_codegraph_tools_api_v1_workspaces__workspace_id__codegraph_tools_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodegraphToolsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List normalized read-only Code Graph MCP tools and active repositories",
+        "tags": [
+          "codegraph-mcp"
         ]
       }
     },

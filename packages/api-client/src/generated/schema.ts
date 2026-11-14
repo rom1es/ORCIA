@@ -578,6 +578,28 @@ export interface components {
       trace_id: string;
       viewer_presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
     };
+    CodegraphActiveRepoResponse: {
+      alias: string;
+      codegraph_enabled?: boolean;
+      codegraph_head_sha?: string | null;
+      codegraph_status?: string;
+      datasource_id: string;
+      source_nature?: string;
+      uri: string;
+    };
+    CodegraphToolItemResponse: {
+      description: string;
+      input_schema?: Record<string, unknown>;
+      name: string;
+      read_only?: boolean;
+    };
+    CodegraphToolsListResponse: {
+      active_repositories?: (components["schemas"]["CodegraphActiveRepoResponse"])[];
+      provider: string;
+      tools?: (components["schemas"]["CodegraphToolItemResponse"])[];
+      trace_id: string;
+      workspace_id: string;
+    };
     CognitiveRoutingOutcomeResponse: {
       attempts: (components["schemas"]["InferenceAttemptResponse"])[];
       effort: "default" | "fast" | "balanced" | "deep";
@@ -1809,6 +1831,17 @@ export interface components {
       reason: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       workspace_id: string;
     };
+    InvokeCodegraphToolRequest: {
+      arguments?: Record<string, unknown>;
+      tool_name: string;
+    };
+    InvokeCodegraphToolResponse: {
+      provider: string;
+      result?: Record<string, unknown>;
+      tool_name: string;
+      trace_id: string;
+      workspace_id: string;
+    };
     InvokedSkillTraceResponseItem: {
       command_handle: string;
       output_summary: string;
@@ -2909,6 +2942,7 @@ export interface components {
     };
     SubStepExecutionRecord: {
       artifact_pointer?: components["schemas"]["ClaimCheckPointer"] | null;
+      codegraph_impact?: Record<string, unknown> | null;
       correction_remarks_applied?: string | null;
       human_actor_id?: string | null;
       idempotency_key: string;
@@ -5190,6 +5224,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/codegraph/invoke": {
+    post: {
+      responses: {
+        200: components["schemas"]["InvokeCodegraphToolResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/codegraph/tools": {
+    get: {
+      responses: {
+        200: components["schemas"]["CodegraphToolsListResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/datasources": {
     get: {
       responses: {
@@ -5349,6 +5397,9 @@ export type ChunkApprovalSchemaItem = components["schemas"]["ChunkApprovalSchema
 export type ClaimCheckPointer = components["schemas"]["ClaimCheckPointer"];
 export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
 export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
+export type CodegraphActiveRepoResponse = components["schemas"]["CodegraphActiveRepoResponse"];
+export type CodegraphToolItemResponse = components["schemas"]["CodegraphToolItemResponse"];
+export type CodegraphToolsListResponse = components["schemas"]["CodegraphToolsListResponse"];
 export type CognitiveRoutingOutcomeResponse = components["schemas"]["CognitiveRoutingOutcomeResponse"];
 export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteEntryResponse"];
 export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
@@ -5491,6 +5542,8 @@ export type InstalledBusinessPackItemResponse = components["schemas"]["Installed
 export type InstalledBusinessPackListResponse = components["schemas"]["InstalledBusinessPackListResponse"];
 export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
 export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
+export type InvokeCodegraphToolRequest = components["schemas"]["InvokeCodegraphToolRequest"];
+export type InvokeCodegraphToolResponse = components["schemas"]["InvokeCodegraphToolResponse"];
 export type InvokedSkillTraceResponseItem = components["schemas"]["InvokedSkillTraceResponseItem"];
 export type JiraIssueUpdatedWebhookRequest = components["schemas"]["JiraIssueUpdatedWebhookRequest"];
 export type JiraIssueUpdatedWebhookResponse = components["schemas"]["JiraIssueUpdatedWebhookResponse"];

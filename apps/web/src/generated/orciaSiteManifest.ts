@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 34,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 116,
+    "techLeadReportsCount": 117,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 40
@@ -438,6 +438,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 18.3 (CAP-082, CAP-180)",
+      "reportFile": "18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact-tech-lead-report.md",
+      "domain": "Contrat d'Outils Normalisé codegraph-mcp Lecture Seule (5 Outils), Providers Interchangeables (GitNexus / Sourcegraph SCIP), Rayon d'Impact & Alerte de Dérive (GRAPH_MOVED_SINCE_RUN_LOCK)",
+      "summary": "Contrat normalisé à 5 outils (codegraph_locate_symbol, codegraph_get_call_hierarchy, codegraph_find_references, codegraph_calculate_blast_radius, codegraph_read_span avec max 250 lignes et anti-path traversal), providers interchangeables pilotés par CODEGRAPH_PROVIDER, connecteur CodegraphMcpConnector(OrciaConnectorProtocol) strictement en lecture seule (PermissionError sur écriture) avec confinement d'espace et vérification des sources autorisées, routeur FastAPI /api/v1/workspaces/{workspace_id}/codegraph/* (GET /tools, POST /invoke), intégration de mcp:codegraph dans le workflow de revue d'architecture wf-03-etude-architecture.yaml avec consignation de la dérive, régénération SDK OpenAPI 0-diff et couverture orcia_connectors à 90.29%."
+    },
     {
       "date": "2026-11-14",
       "phaseOrStory": "Story 18.2 (CAP-011, CAP-080, CAP-180)",

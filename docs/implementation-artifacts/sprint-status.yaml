@@ -176,7 +176,7 @@ development_status:
   epic-18: in-progress
   18-1-deport-sources-espaces-url-wsid-filtres-multi-nature-et-modale-rattachement: done
   18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus: done
-  18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact: backlog
+  18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact: done
   18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites: backlog
   epic-18-retrospective: optional
 action_items:
