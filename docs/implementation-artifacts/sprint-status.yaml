@@ -1060,3 +1060,23 @@ action_items:
     status: open
     epic: epic-18
     story_ref: "18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites"
+  - id: DEBT-CONNECTORS-WORKFLOW-MERGE
+    title: "Consolider le doublon bounded_workflow_v2.py hors de packages/orcia-connectors"
+    action: "Consolider le doublon bounded_workflow_v2.py exclusivement vers apps/worker/src/orcia_worker/workflows/bounded_workflow_v2.py et découpler les tests unitaires orcia_connectors"
+    priority: P2
+    depends_on: []
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-18
+    description: >
+      FINDING-01 architect review : duplication de bounded_workflow_v2.py dans orcia_connectors à rationaliser vers orcia_worker avec découplage strict des tests.
+  - id: SEC-WEBHOOK-ENUM-01
+    title: "Vérification HMAC / réponse 401 uniforme avant 404 sur datasource_id inconnu"
+    action: "Vérifier l'authentification/signature HMAC ou répondre uniformément 401 Unauthorized avant de lever 404 sur datasource_id inconnu dans apps/api/src/orcia_api/routers/datasource_webhooks.py"
+    priority: P3
+    depends_on: []
+    owner: "Amelia (Dev) / SecOps"
+    status: open
+    epic: epic-18
+    description: >
+      FINDING-02 architect review : durcissement anti-énumération des datasources sur l'endpoint webhook entrant.
