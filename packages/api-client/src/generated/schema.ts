@@ -1872,6 +1872,10 @@ export interface components {
       email?: string | null;
       principal_id: string;
     };
+    KnownOrgUsersSearchResponse: {
+      has_more?: boolean;
+      items?: (components["schemas"]["KnownOrgUserResponse"])[];
+    };
     LaunchProcessFromFolderRequest: {
       target_workflow_uri?: string;
       workspace_id: string;
@@ -4639,6 +4643,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/org-units/known-users": {
+    get: {
+      responses: {
+        200: components["schemas"]["KnownOrgUsersSearchResponse"];
+      };
+    };
+  };
   "/api/v1/org-units/{org_unit_id}": {
     delete: {
       responses: {
@@ -5421,6 +5432,7 @@ export type JiraJqlSearchResponse = components["schemas"]["JiraJqlSearchResponse
 export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"];
 export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
 export type KnownOrgUserResponse = components["schemas"]["KnownOrgUserResponse"];
+export type KnownOrgUsersSearchResponse = components["schemas"]["KnownOrgUsersSearchResponse"];
 export type LaunchProcessFromFolderRequest = components["schemas"]["LaunchProcessFromFolderRequest"];
 export type LaunchProcessFromFolderResponse = components["schemas"]["LaunchProcessFromFolderResponse"];
 export type LlmConnectionTestRequest = components["schemas"]["LlmConnectionTestRequest"];

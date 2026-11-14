@@ -11,6 +11,7 @@ import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorage
 import type { AdminAndStudioDictionarySection } from "../../../i18n/locales/admin_and_studio_labels";
 import { getEligibleParentBuUnits } from "./orgTreeHelpers";
 import { isKnownUserIdentifier } from "./orgUnitsApiBridge";
+import { useKnownOrgUsersSearch } from "./useKnownOrgUsersSearch";
 import { useParentOrgSearch } from "./useParentOrgSearch";
 
 export interface CreateOrgUnitFormValues {
@@ -59,6 +60,8 @@ export function CreateOrgUnitModal({
     rootParentOptionLabel: labels.rootParentOption,
     parentBuOptionPrefix: labels.parentBuOptionPrefix,
   });
+
+  const leadSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
 
   const [kind, setKind] = useState<"BU" | "TEAM">("BU");
   const [name, setName] = useState("");
@@ -110,7 +113,8 @@ export function CreateOrgUnitModal({
           e.preventDefault();
           if (!canMutate || !name.trim() || isSubmitting) return;
           const trimmedLead = leadUserId.trim();
-          if (trimmedLead && !isKnownUserIdentifier(trimmedLead, knownUsers)) {
+          const allKnownUsers = [...leadSearch.knownUsers, ...knownUsers];
+          if (trimmedLead && !isKnownUserIdentifier(trimmedLead, allKnownUsers)) {
             setLeadValidationError(
               unknownUserErrorLabel ||
                 "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
@@ -228,7 +232,11 @@ export function CreateOrgUnitModal({
               setLeadUserId(val);
               setLeadValidationError(null);
             }}
-            knownUsers={knownUsers}
+            onSearchQueryChange={leadSearch.onSearchQueryChange}
+            knownUsers={leadSearch.knownUsers}
+            maxDisplayedItems={10}
+            hasMoreMatches={leadSearch.hasMore}
+            truncatedHint={labels.parentTruncatedHint}
             placeholder={labels.leadPlaceholder}
           />
           {leadValidationError ? (

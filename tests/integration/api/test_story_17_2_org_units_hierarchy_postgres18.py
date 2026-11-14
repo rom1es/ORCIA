@@ -398,6 +398,54 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             assert len(pg_q.json()["org_units"]) == 1
             assert "DS3C" in pg_q.json()["org_units"][0]["name"]
 
+            # Scenario: POST /api/v1/settings/iam/accounts
+            # -> GET /api/v1/org-units/known-users -> PATCH /api/v1/org-units/{id}
+            new_acc_res = await client.post(
+                "/api/v1/settings/iam/accounts",
+                headers=headers,
+                json={
+                    "principal_id": "julie.nouvelle@orcia.fr",
+                    "display_name": "Julie Nouvelle",
+                    "email": "julie.nouvelle@orcia.fr",
+                    "account_kind": "HUMAN",
+                    "roles": ["CONTRIBUTOR"],
+                    "status": "ACTIVE",
+                },
+            )
+            assert new_acc_res.status_code == 200
+
+            search_known_res = await client.get(
+                "/api/v1/org-units/known-users?q=julie&limit=10",
+                headers=headers,
+            )
+            assert search_known_res.status_code == 200
+            search_items = search_known_res.json()["items"]
+            assert any(u["principal_id"] == "julie.nouvelle@orcia.fr" for u in search_items)
+
+            target_bu_id = created_test_bu_ids[0]
+            patch_res = await client.patch(
+                f"/api/v1/org-units/{target_bu_id}",
+                headers=headers,
+                json={"member_user_ids": ["julie.nouvelle@orcia.fr"]},
+            )
+            assert patch_res.status_code == 200
+            assert "julie.nouvelle@orcia.fr" in patch_res.json()["member_user_ids"]
+
+            async with engine.connect() as conn:
+                db_members = (
+                    await conn.execute(
+                        sa.text("SELECT member_user_ids_jsonb FROM org_units WHERE id = :id"),
+                        {"id": target_bu_id},
+                    )
+                ).scalar_one()
+            assert "julie.nouvelle@orcia.fr" in str(db_members)
+
+            # Cleanup created IAM account
+            await client.delete(
+                f"/api/v1/settings/iam/accounts/{new_acc_res.json()['id']}",
+                headers=headers,
+            )
+
             for test_bu_id in created_test_bu_ids:
                 assert (
                     await client.delete(f"/api/v1/org-units/{test_bu_id}", headers=headers)

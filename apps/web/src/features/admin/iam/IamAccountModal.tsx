@@ -14,6 +14,12 @@ export interface IamAccountModalSubmitValues {
   readonly teamIds: readonly string[];
 }
 
+export interface IamAccountInitialCreateDefaults {
+  readonly displayName?: string;
+  readonly emailOrPrincipal?: string;
+  readonly teamIds?: readonly string[];
+}
+
 export interface IamAccountModalProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
@@ -23,6 +29,7 @@ export interface IamAccountModalProps {
   readonly labels: IamTabDictionarySection;
   readonly errorMessage: string | null;
   readonly isSubmitting: boolean;
+  readonly initialCreateDefaults?: IamAccountInitialCreateDefaults;
   readonly onSubmit: (values: IamAccountModalSubmitValues) => void;
 }
 
@@ -35,6 +42,7 @@ export function IamAccountModal({
   labels,
   errorMessage,
   isSubmitting,
+  initialCreateDefaults,
   onSubmit,
 }: IamAccountModalProps): React.ReactElement {
   const dir = labels.directory;
@@ -60,13 +68,13 @@ export function IamAccountModal({
       setSelectedTeamIds(editingAccount.team_ids);
     } else {
       setAccountKind("HUMAN");
-      setDisplayName("");
-      setEmailOrPrincipal("");
+      setDisplayName(initialCreateDefaults?.displayName ?? "");
+      setEmailOrPrincipal(initialCreateDefaults?.emailOrPrincipal ?? "");
       setStatus("ACTIVE");
       setSelectedRoles(["CONTRIBUTOR"]);
-      setSelectedTeamIds([]);
+      setSelectedTeamIds(initialCreateDefaults?.teamIds ?? []);
     }
-  }, [open, editingAccount]);
+  }, [open, editingAccount, initialCreateDefaults]);
 
   const isEditing = editingAccount !== null;
   const submitDisabled =

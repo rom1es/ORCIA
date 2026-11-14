@@ -41,6 +41,15 @@ class KnownOrgUserResponse(BaseModel):
     email: str | None = None
 
 
+class KnownOrgUsersSearchResponse(BaseModel):
+    """Search response payload for `GET /api/v1/org-units/known-users` (`Story 17.2`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    items: list[KnownOrgUserResponse] = Field(default_factory=list)
+    has_more: bool = False
+
+
 class OrgUnitResponse(BaseModel):
     """Enriched organizational unit (`BU` / `Pôle` / `TEAM`) DTO."""
 
@@ -107,6 +116,7 @@ class OrgUnitDeleteResponse(BaseModel):
 __all__ = [
     "AttachedWorkspaceRefResponse",
     "KnownOrgUserResponse",
+    "KnownOrgUsersSearchResponse",
     "OrgUnitCreateRequest",
     "OrgUnitDeleteResponse",
     "OrgUnitPatchRequest",

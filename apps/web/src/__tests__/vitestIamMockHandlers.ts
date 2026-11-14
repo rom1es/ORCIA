@@ -55,6 +55,10 @@ export function resetVitestIamMockState(): void {
   iamGrantSeq = 0;
 }
 
+export function getVitestIamAccounts(): readonly MockIamAccountItem[] {
+  return iamAccounts;
+}
+
 function ensureDay0AdminSeeded(
   firstAdmin: { email: string; displayName: string } | null,
 ): void {
@@ -151,7 +155,7 @@ export function handleVitestIamRoute(params: {
 
   if (path === "/api/v1/settings/iam/role-matrix" && method === "GET") {
     return jsonResponse({
-      secret_visibility: "WRITE_ONLY_NEVER_READABLE",
+      secret_visibility: "WRITE_ONLY_NEVER_READABLE", // pragma: allowlist secret
       roles: [
         { role: "PLATFORM_ADMIN", natural_scope: "GLOBAL", verbs: ["create", "read", "update", "delete", "execute", "grant"], summary_key: "platform_admin" },
         { role: "SECOPS", natural_scope: "GLOBAL", verbs: ["read", "update", "grant"], summary_key: "secops" },

@@ -7,15 +7,18 @@ import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPer
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import type { paths } from "./generated/schema";
 import {
+  buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
   createRequestJson,
   OrciaProblemError,
+  type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
   type OrciaApiClientOptions,
 } from "./helpers";
 
 export type * from "./generated/schema";
 export {
+  buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
   createAgentsAndSkillsDomainClient,
   createAiModelsHubDomainClient,
@@ -24,6 +27,7 @@ export {
   createCatalogAndPermissionsDomainClient,
   createEpics1To7OperationsDomainClient,
   OrciaProblemError,
+  type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
   type OrciaApiClientOptions,
 };

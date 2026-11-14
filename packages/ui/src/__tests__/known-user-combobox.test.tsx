@@ -127,4 +127,86 @@ describe("OrciaKnownUserCombobox", () => {
       screen.queryByTestId("test-user-combobox-option-claire.bu@orcia.io"),
     ).toBeNull();
   });
+
+  it("limits displayed items to maxDisplayedItems (default 10) with truncated hint and calls onSearchQueryChange on each letter typed", () => {
+    const fifteenUsers: KnownUserOption[] = Array.from({ length: 15 }, (_, i) => ({
+      principalId: `user.${i + 1}@orcia.io`,
+      displayName: `User ${String(i + 1).padStart(2, "0")}`,
+      email: `user.${i + 1}@orcia.io`,
+    }));
+
+    const handleSearchQueryChange = vi.fn();
+
+    function ControlledTruncatedHarness() {
+      const [val, setVal] = useState("");
+      return (
+        <OrciaKnownUserCombobox
+          inputId="truncated-user-input"
+          inputTestId="truncated-combobox"
+          value={val}
+          onChange={setVal}
+          knownUsers={fifteenUsers}
+          maxDisplayedItems={10}
+          truncatedHint="5 utilisateurs non affichés. Affinez votre recherche."
+          onSearchQueryChange={handleSearchQueryChange}
+        />
+      );
+    }
+
+    render(<ControlledTruncatedHarness />);
+
+    const input = screen.getByTestId("truncated-combobox");
+    fireEvent.focus(input);
+
+    // Only 10 options rendered
+    expect(screen.getByTestId("truncated-combobox-option-user.1@orcia.io")).toBeDefined();
+    expect(screen.getByTestId("truncated-combobox-option-user.10@orcia.io")).toBeDefined();
+    expect(screen.queryByTestId("truncated-combobox-option-user.11@orcia.io")).toBeNull();
+
+    // Truncated hint visible
+    const hint = screen.getByTestId("truncated-combobox-truncated-hint");
+    expect(hint.textContent).toContain("5 utilisateurs non affichés");
+
+    // Saisie lettre par lettre déclenche onSearchQueryChange immédiatement à chaque frappe
+    fireEvent.change(input, { target: { value: "u" } });
+    expect(handleSearchQueryChange).toHaveBeenCalledWith("u");
+    fireEvent.change(input, { target: { value: "us" } });
+    expect(handleSearchQueryChange).toHaveBeenCalledWith("us");
+    fireEvent.change(input, { target: { value: "use" } });
+    expect(handleSearchQueryChange).toHaveBeenCalledWith("use");
+
+    // Effacement de la saisie
+    fireEvent.change(input, { target: { value: "" } });
+    expect(handleSearchQueryChange).toHaveBeenCalledWith("");
+  });
+
+  it("applies excludedPrincipalIds before maxDisplayedItems truncation", () => {
+    const twelveUsers: KnownUserOption[] = Array.from({ length: 12 }, (_, i) => ({
+      principalId: `worker.${i + 1}@orcia.io`,
+      displayName: `Worker ${String(i + 1).padStart(2, "0")}`,
+      email: `worker.${i + 1}@orcia.io`,
+    }));
+
+    // Exclude worker.1 -> 11 remaining, so 10 displayed and worker.12 should be in the list as 10th
+    render(
+      <OrciaKnownUserCombobox
+        inputId="exclude-trunc-input"
+        inputTestId="exclude-trunc-combobox"
+        value=""
+        onChange={() => {}}
+        knownUsers={twelveUsers}
+        excludedPrincipalIds={["worker.1@orcia.io"]}
+        maxDisplayedItems={10}
+      />,
+    );
+
+    const input = screen.getByTestId("exclude-trunc-combobox");
+    fireEvent.focus(input);
+
+    expect(screen.queryByTestId("exclude-trunc-combobox-option-worker.1@orcia.io")).toBeNull();
+    // Worker 11 should now be visible in the 10 displayed (workers 2 through 11)
+    expect(screen.getByTestId("exclude-trunc-combobox-option-worker.11@orcia.io")).toBeDefined();
+    // Truncated hint visible because 11 > 10
+    expect(screen.getByTestId("exclude-trunc-combobox-truncated-hint")).toBeDefined();
+  });
 });

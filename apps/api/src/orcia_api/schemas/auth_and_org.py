@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from orcia_api.schemas.org_unit_models import (
     AttachedWorkspaceRefResponse,
     KnownOrgUserResponse,
+    KnownOrgUsersSearchResponse,
     OrgUnitCreateRequest,
     OrgUnitDeleteResponse,
     OrgUnitPatchRequest,
@@ -286,6 +287,7 @@ __all__ = [
     "AttachedWorkspaceRefResponse",
     "AuthTokenResponse",
     "KnownOrgUserResponse",
+    "KnownOrgUsersSearchResponse",
     "LocalLoginRequest",
     "LogoutResponse",
     "McpPersonalTokenCreateRequest",

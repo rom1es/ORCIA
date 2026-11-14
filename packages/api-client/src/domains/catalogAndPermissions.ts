@@ -1,63 +1,37 @@
 import type {
-  CatalogResourceInspectionResponse,
-  CatalogResourceSourceResponse,
-  OrgUnitCreateRequest,
-  OrgUnitDeleteResponse,
-  OrgUnitPatchRequest,
-  OrgUnitResponse,
-  OrgUnitsListResponse,
+  CatalogResourceInspectionResponse, CatalogResourceSourceResponse,
+  KnownOrgUsersSearchResponse, OrgUnitCreateRequest, OrgUnitDeleteResponse,
+  OrgUnitPatchRequest, OrgUnitResponse, OrgUnitsListResponse,
 } from "../generated/auth_and_org";
 import type {
-  BmadSkillPackImportRequest,
-  BmadSkillPackImportResponse,
-  CasObjectResponse,
-  CatalogItemsListResponse,
-  CatalogPromoteRequest,
-  CatalogPromoteResponse,
-  CatalogUriResolveRequest,
-  CatalogUriResolveResponse,
-  EffectiveWorkflowResolveRequest,
-  EffectiveWorkflowResolveResponse,
+  BmadSkillPackImportRequest, BmadSkillPackImportResponse, CasObjectResponse,
+  CatalogItemsListResponse, CatalogPromoteRequest, CatalogPromoteResponse,
+  CatalogUriResolveRequest, CatalogUriResolveResponse,
+  EffectiveWorkflowResolveRequest, EffectiveWorkflowResolveResponse,
 } from "../generated/catalog";
 import type {
-  IamAccountCreateRequest,
-  IamAccountDeleteResponse,
-  IamAccountPatchRequest,
-  IamAccountResponse,
-  IamAccountsListResponse,
-  RoleMatrixResponse,
+  IamAccountCreateRequest, IamAccountDeleteResponse, IamAccountPatchRequest,
+  IamAccountResponse, IamAccountsListResponse, RoleMatrixResponse,
 } from "../generated/iam_accounts";
 import type {
-  CreateWorkspaceDatasourceRequest,
-  EnterpriseConnectorCreateRequest,
-  EnterpriseConnectorDeleteResponse,
-  EnterpriseConnectorItemResponse,
-  EnterpriseConnectorUpdateRequest,
-  EnterpriseConnectorsListResponse,
-  RevokePassthroughTokenResponse,
-  UpdateWorkspaceDatasourceRequest,
-  UpsertPassthroughTokenRequest,
-  UserAccountProfileResponse,
-  UserPassthroughConnectorItemResponse,
-  UserPassthroughTokensListResponse,
-  WorkspaceDatasourceItemResponse,
-  WorkspaceDatasourcesListResponse,
+  CreateWorkspaceDatasourceRequest, EnterpriseConnectorCreateRequest,
+  EnterpriseConnectorDeleteResponse, EnterpriseConnectorItemResponse,
+  EnterpriseConnectorUpdateRequest, EnterpriseConnectorsListResponse,
+  RevokePassthroughTokenResponse, UpdateWorkspaceDatasourceRequest,
+  UpsertPassthroughTokenRequest, UserAccountProfileResponse,
+  UserPassthroughConnectorItemResponse, UserPassthroughTokensListResponse,
+  WorkspaceDatasourceItemResponse, WorkspaceDatasourcesListResponse,
 } from "../generated/enterprise_connectors";
 import type {
-  PermissionBrokerStateResponse,
-  PermissionCheckRequest,
-  PermissionCheckResponse,
-  PermissionPolicyImportMarkdownRequest,
-  PermissionPolicyImportMarkdownResponse,
-  PermissionTicketActionRequest,
+  PermissionBrokerStateResponse, PermissionCheckRequest,
+  PermissionCheckResponse, PermissionPolicyImportMarkdownRequest,
+  PermissionPolicyImportMarkdownResponse, PermissionTicketActionRequest,
   PermissionTicketActionResponse,
 } from "../generated/permission_broker";
 import type { components } from "../generated/schema";
 import {
-  buildOrgUnitsQuery,
-  buildPersonaQuery,
-  type createRequestJson,
-  type ListOrgUnitsParams,
+  buildKnownOrgUsersQuery, buildOrgUnitsQuery, buildPersonaQuery,
+  type createRequestJson, type ListKnownOrgUsersParams, type ListOrgUnitsParams,
 } from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
@@ -69,6 +43,13 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
   return {
     listOrgUnits(params?: ListOrgUnitsParams | string): Promise<OrgUnitsListResponse> {
       return requestJson<OrgUnitsListResponse>(`/api/v1/org-units${buildOrgUnitsQuery(params)}`);
+    },
+    searchKnownOrgUsers(
+      params?: ListKnownOrgUsersParams | string,
+    ): Promise<KnownOrgUsersSearchResponse> {
+      return requestJson<KnownOrgUsersSearchResponse>(
+        `/api/v1/org-units/known-users${buildKnownOrgUsersQuery(params)}`,
+      );
     },
     createOrgUnit(
       payload: OrgUnitCreateRequest,

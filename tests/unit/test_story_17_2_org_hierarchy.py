@@ -538,3 +538,41 @@ def test_list_org_units_search_query_kind_and_limit(
     q_units = resp_q.json()["org_units"]
     assert len(q_units) == 1
     assert "DS3C" in q_units[0]["name"]
+
+
+def test_search_known_org_users_route_with_nfd_null_byte_and_pagination(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    app = create_app()
+    client = TestClient(app)
+    admin_headers = {"X-Orcia-Persona": "claire", "X-Orcia-Active-Hat": "PLATFORM_ADMIN"}
+
+    # 1. Unfiltered search with limit=2 -> has_more is True if > 2 users exist
+    resp = client.get("/api/v1/org-units/known-users?limit=2", headers=admin_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "items" in body
+    assert len(body["items"]) <= 2
+    assert "has_more" in body
+
+    # 2. Search with NFD accent insensitivity (e.g. "claire" or accent stripped)
+    resp_search = client.get(
+        "/api/v1/org-units/known-users?q=claire&limit=10",
+        headers=admin_headers,
+    )
+    assert resp_search.status_code == 200
+    search_body = resp_search.json()
+    assert any(
+        "claire" in u["principal_id"].lower() or "claire" in u["display_name"].lower()
+        for u in search_body["items"]
+    )
+
+    # 3. Null byte \x00 cleaning
+    resp_null_byte = client.get(
+        "/api/v1/org-units/known-users?q=claire%00&limit=10",
+        headers=admin_headers,
+    )
+    assert resp_null_byte.status_code == 200
+    null_body = resp_null_byte.json()
+    assert len(null_body["items"]) == len(search_body["items"])

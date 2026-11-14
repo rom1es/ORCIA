@@ -1,5 +1,6 @@
 import type {
   AuthTokenResponse,
+  KnownOrgUsersSearchResponse,
   LocalLoginRequest,
   LogoutResponse,
   OidcLoginRequest,
@@ -16,9 +17,11 @@ import type {
 } from "../generated/auth_and_org";
 import type { HealthResponse, ShellNavigationResponse } from "../generated/shell";
 import {
+  buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
   buildPersonaQuery,
   type createRequestJson,
+  type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
 } from "../helpers";
 
@@ -61,6 +64,13 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
     listOrgUnits(params?: ListOrgUnitsParams | string): Promise<OrgUnitsListResponse> {
       return requestJson<OrgUnitsListResponse>(
         `/api/v1/org-units${buildOrgUnitsQuery(params)}`,
+      );
+    },
+    searchKnownOrgUsers(
+      params?: ListKnownOrgUsersParams | string,
+    ): Promise<KnownOrgUsersSearchResponse> {
+      return requestJson<KnownOrgUsersSearchResponse>(
+        `/api/v1/org-units/known-users${buildKnownOrgUsersQuery(params)}`,
       );
     },
     createOrgUnit(

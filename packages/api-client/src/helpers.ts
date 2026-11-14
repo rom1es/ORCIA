@@ -45,6 +45,27 @@ export function buildOrgUnitsQuery(params?: ListOrgUnitsParams | string): string
   return qs ? `?${qs}` : "";
 }
 
+export interface ListKnownOrgUsersParams {
+  readonly personaKey?: string;
+  readonly q?: string;
+  readonly limit?: number;
+}
+
+export function buildKnownOrgUsersQuery(params?: ListKnownOrgUsersParams | string): string {
+  if (!params) return "";
+  if (typeof params === "string") {
+    return buildPersonaQuery(params);
+  }
+  const searchParams = new URLSearchParams();
+  if (params.personaKey) searchParams.set("persona_key", params.personaKey);
+  if (params.q) searchParams.set("q", params.q);
+  if (params.limit !== undefined && params.limit !== null) {
+    searchParams.set("limit", String(params.limit));
+  }
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export function createRequestJson(options: OrciaApiClientOptions) {
   const fetcher = options.fetchImpl ?? globalThis.fetch;
   const baseHeaders: Record<string, string> = {

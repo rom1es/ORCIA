@@ -21,11 +21,13 @@ from orcia_api.routers._org_units_helpers import (
 )
 from orcia_api.routers._org_units_users import (
     collect_known_org_users,
+    search_known_org_users_for_request,
     serialize_known_users,
     validate_and_normalize_org_unit_users_in_request,
 )
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.auth_and_org import (
+    KnownOrgUsersSearchResponse,
     OrgUnitCreateRequest,
     OrgUnitDeleteResponse,
     OrgUnitPatchRequest,
@@ -102,6 +104,28 @@ async def list_org_units(
         org_units=[serialize_org_unit_summary(s) for s in summaries],
         known_users=serialize_known_users(known_users_raw),
         trace_id=resolve_trace_id(request),
+    )
+
+
+@router.get(
+    "/org-units/known-users",
+    response_model=KnownOrgUsersSearchResponse,
+    summary="Search active known platform users with incremental query and pagination limit",
+    responses=PROBLEM_RESPONSES,
+)
+async def search_known_org_users(
+    request: Request,
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    q: str | None = Query(default=None, max_length=128),
+    limit: int = Query(default=10, ge=1, le=100),
+) -> KnownOrgUsersSearchResponse:
+    effective_persona = persona_key or request.headers.get("x-orcia-persona", "").strip() or None
+    resolve_request_user(request, persona_key=effective_persona)
+    svc = get_auth_service(request)
+    users, has_more = await search_known_org_users_for_request(request, svc, q=q, limit=limit)
+    return KnownOrgUsersSearchResponse(
+        items=serialize_known_users(users),
+        has_more=has_more,
     )
 
 

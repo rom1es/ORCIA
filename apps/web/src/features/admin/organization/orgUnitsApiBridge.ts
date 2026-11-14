@@ -192,3 +192,45 @@ export async function searchParentBuUnitsFromApi(
     return { ok: false, ...extractApiError(err, locale) };
   }
 }
+
+export type KnownOrgUsersSearchResult =
+  | {
+      readonly ok: true;
+      readonly items: readonly KnownUserOption[];
+      readonly hasMore: boolean;
+    }
+  | {
+      readonly ok: false;
+      readonly items: readonly KnownUserOption[];
+      readonly hasMore: boolean;
+      readonly errorMessage: string;
+      readonly errorCode?: string;
+    };
+
+export async function searchKnownOrgUsersFromApi(
+  query: string,
+  limit = 10,
+  locale: "fr" | "en" = "fr",
+): Promise<KnownOrgUsersSearchResult> {
+  try {
+    const client = buildOrgUnitsClient(locale);
+    const response = await client.searchKnownOrgUsers({
+      q: query.trim() || undefined,
+      limit,
+    });
+    const items: KnownUserOption[] = Array.isArray(response.items)
+      ? response.items.map((u) => ({
+          principalId: u.principal_id,
+          displayName: u.display_name,
+          email: u.email ?? null,
+        }))
+      : [];
+    return {
+      ok: true,
+      items,
+      hasMore: Boolean(response.has_more),
+    };
+  } catch (err: unknown) {
+    return { ok: false, items: [], hasMore: false, ...extractApiError(err, locale) };
+  }
+}

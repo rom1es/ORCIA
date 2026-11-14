@@ -9,16 +9,6 @@ import {
 import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
-import { ConfirmDeleteOrgUnitModal } from "../features/admin/organization/ConfirmDeleteOrgUnitModal";
-import {
-  CreateOrgUnitModal,
-  type CreateOrgUnitFormValues,
-} from "../features/admin/organization/CreateOrgUnitModal";
-import {
-  EditOrgUnitModal,
-  type EditOrgUnitFormValues,
-} from "../features/admin/organization/EditOrgUnitModal";
-import { ManageOrgUnitMembersModal } from "../features/admin/organization/ManageOrgUnitMembersModal";
 import { OrgPedagogicalCallout } from "../features/admin/organization/OrgPedagogicalCallout";
 import { buildIndentedOrgTree, type OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
 import {
@@ -27,6 +17,11 @@ import {
   fetchOrgUnitsFromApi,
   patchOrgUnitViaApi,
 } from "../features/admin/organization/orgUnitsApiBridge";
+import {
+  SettingsOrganizationModalsGroup,
+  type CreateOrgUnitFormValues,
+  type EditOrgUnitFormValues,
+} from "../features/admin/organization/SettingsOrganizationModalsGroup";
 import { useI18n } from "../i18n";
 import { SettingsOrganizationUnitRow } from "./SettingsOrganizationUnitRow";
 
@@ -297,54 +292,25 @@ export function SettingsOrganizationUnitsBlock({
         </div>
       )}
 
-      <CreateOrgUnitModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        canMutate={canMutate}
-        orgUnits={orgUnits}
-        knownUsers={knownUsers}
-        unknownUserErrorLabel={labels.unknownUserError}
-        labels={labels.createModal}
-        errorMessage={modalError}
-        isSubmitting={isSubmitting}
-        onSubmit={(values) => void handleCreateSubmit(values)}
-      />
-
-      <EditOrgUnitModal
-        unit={editingUnit}
-        open={editingUnit !== null}
-        onOpenChange={(open) => !open && setEditingUnit(null)}
-        canMutate={canMutate}
-        orgUnits={orgUnits}
-        labels={labels.editModal}
-        parentPrefixLabel={labels.createModal.parentBuOptionPrefix}
-        errorMessage={modalError}
-        isSubmitting={isSubmitting}
-        onSave={(orgUnitId, values) => void handleEditSave(orgUnitId, values)}
-      />
-
-      <ManageOrgUnitMembersModal
-        unit={managingMembersUnit}
-        open={managingMembersUnit !== null}
-        onOpenChange={(open) => !open && setManagingMembersUnit(null)}
-        canMutate={canMutate}
-        labels={labels.membersModal}
-        knownUsers={knownUsers}
-        unknownUserErrorLabel={labels.unknownUserError}
-        errorMessage={modalError}
-        isSubmitting={isSubmitting}
-        onSave={(orgUnitId, values) => void handleMembersSave(orgUnitId, values)}
-      />
-
-      <ConfirmDeleteOrgUnitModal
-        rowItem={deletingRowItem}
-        open={deletingRowItem !== null}
-        onOpenChange={(open) => !open && setDeletingRowItem(null)}
+      <SettingsOrganizationModalsGroup
         isFr={isFr}
         canMutate={canMutate}
-        labels={labels.deleteModal}
-        errorMessage={modalError}
+        orgUnits={orgUnits}
+        knownUsers={knownUsers}
+        labels={labels}
+        modalError={modalError}
         isSubmitting={isSubmitting}
+        createModalOpen={createModalOpen}
+        onOpenChangeCreate={setCreateModalOpen}
+        onCreateSubmit={(values) => void handleCreateSubmit(values)}
+        editingUnit={editingUnit}
+        onOpenChangeEdit={(open) => !open && setEditingUnit(null)}
+        onEditSave={(orgUnitId, values) => void handleEditSave(orgUnitId, values)}
+        managingMembersUnit={managingMembersUnit}
+        onOpenChangeMembers={(open) => !open && setManagingMembersUnit(null)}
+        onMembersSave={(orgUnitId, values) => void handleMembersSave(orgUnitId, values)}
+        deletingRowItem={deletingRowItem}
+        onOpenChangeDelete={(open) => !open && setDeletingRowItem(null)}
         onOpenWorkspaces={() => navigateToRoute("/workspaces")}
         onConfirmDelete={(orgUnitId) => void handleConfirmDelete(orgUnitId)}
       />

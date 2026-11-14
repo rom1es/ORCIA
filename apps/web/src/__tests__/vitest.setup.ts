@@ -59,6 +59,7 @@ const backendState: MockBackendState = {
 
 import { resetAuthSessionStore } from "../stores/authSessionStore";
 import {
+  getVitestIamAccounts,
   handleVitestIamRoute,
   resetVitestIamMockState,
 } from "./vitestIamMockHandlers";
@@ -343,12 +344,53 @@ async function vitestFetchTransport(
 
   const isMockUserKnown = (val: string) => {
     const needle = val.trim().toLowerCase();
-    return MOCK_KNOWN_ORG_USERS.some(
+    return getAllMockKnownOrgUsers().some(
       (u) =>
         u.principal_id.toLowerCase() === needle ||
         (u.email && u.email.toLowerCase() === needle),
     );
   };
+
+  const getAllMockKnownOrgUsers = () => {
+    const iamAccounts = getVitestIamAccounts()
+      .filter((a) => a.account_kind === "HUMAN" && a.status !== "DISABLED")
+      .map((a) => ({
+        principal_id: a.principal_id,
+        display_name: a.display_name,
+        email: a.email,
+      }));
+    const byKey = new Map<string, { principal_id: string; display_name: string; email: string | null }>();
+    for (const u of [...MOCK_KNOWN_ORG_USERS, ...iamAccounts]) {
+      const k = u.principal_id.toLowerCase().trim();
+      if (!byKey.has(k)) {
+        byKey.set(k, u);
+      }
+    }
+    return Array.from(byKey.values()).sort((a, b) =>
+      a.display_name.localeCompare(b.display_name),
+    );
+  };
+
+  if (path === "/api/v1/org-units/known-users" && method === "GET") {
+    const qParam = parsedUrl.searchParams.get("q")?.trim()?.toLowerCase() ?? null;
+    const limitParamRaw = parsedUrl.searchParams.get("limit");
+    const limit = limitParamRaw ? parseInt(limitParamRaw, 10) : 10;
+
+    let users = getAllMockKnownOrgUsers();
+    if (qParam) {
+      users = users.filter(
+        (u) =>
+          u.display_name.toLowerCase().includes(qParam) ||
+          u.principal_id.toLowerCase().includes(qParam) ||
+          (u.email && u.email.toLowerCase().includes(qParam)),
+      );
+    }
+    const hasMore = users.length > limit;
+    return jsonResponse({
+      items: users.slice(0, limit),
+      has_more: hasMore,
+    });
+  }
 
   if (path === "/api/v1/org-units" && method === "GET") {
     const qParam = parsedUrl.searchParams.get("q")?.trim()?.toLowerCase() ?? null;
@@ -379,7 +421,7 @@ async function vitestFetchTransport(
 
     return jsonResponse({
       org_units: units,
-      known_users: MOCK_KNOWN_ORG_USERS,
+      known_users: getAllMockKnownOrgUsers(),
       trace_id: "0195f000000070008000000000000999",
     });
   }

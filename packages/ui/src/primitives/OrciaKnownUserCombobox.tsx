@@ -14,6 +14,10 @@ export interface OrciaKnownUserComboboxProps {
   readonly onChange: (value: string) => void;
   readonly knownUsers: readonly KnownUserOption[];
   readonly excludedPrincipalIds?: readonly string[];
+  readonly maxDisplayedItems?: number;
+  readonly hasMoreMatches?: boolean;
+  readonly truncatedHint?: string;
+  readonly onSearchQueryChange?: (query: string) => void;
   readonly placeholder?: string;
   readonly disabled?: boolean;
   readonly noResultsLabel?: string;
@@ -31,6 +35,10 @@ export function OrciaKnownUserCombobox({
   onChange,
   knownUsers,
   excludedPrincipalIds = [],
+  maxDisplayedItems = 10,
+  hasMoreMatches = false,
+  truncatedHint,
+  onSearchQueryChange,
   placeholder,
   disabled = false,
   noResultsLabel = "Aucun utilisateur trouvé",
@@ -66,10 +74,19 @@ export function OrciaKnownUserCombobox({
     return availableUsers.filter((user) => {
       const matchName = normalizeComboboxSearchToken(user.displayName).includes(query);
       const matchPrincipal = normalizeComboboxSearchToken(user.principalId).includes(query);
-      const matchEmail = user.email ? normalizeComboboxSearchToken(user.email).includes(query) : false;
+      const matchEmail = user.email
+        ? normalizeComboboxSearchToken(user.email).includes(query)
+        : false;
       return matchName || matchPrincipal || matchEmail;
     });
   }, [availableUsers, value]);
+
+  const displayedUsers = useMemo(
+    () => matchingUsers.slice(0, maxDisplayedItems),
+    [matchingUsers, maxDisplayedItems],
+  );
+
+  const isTruncated = matchingUsers.length > maxDisplayedItems || Boolean(hasMoreMatches);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -98,9 +115,9 @@ export function OrciaKnownUserCombobox({
       e.preventDefault();
       if (!isOpen) {
         setIsOpen(true);
-        setHighlightedIndex(matchingUsers.length > 0 ? 0 : -1);
-      } else if (matchingUsers.length > 0) {
-        setHighlightedIndex((prev) => (prev + 1) % matchingUsers.length);
+        setHighlightedIndex(displayedUsers.length > 0 ? 0 : -1);
+      } else if (displayedUsers.length > 0) {
+        setHighlightedIndex((prev) => (prev + 1) % displayedUsers.length);
       }
       return;
     }
@@ -109,17 +126,17 @@ export function OrciaKnownUserCombobox({
       e.preventDefault();
       if (!isOpen) {
         setIsOpen(true);
-        setHighlightedIndex(matchingUsers.length > 0 ? matchingUsers.length - 1 : -1);
-      } else if (matchingUsers.length > 0) {
-        setHighlightedIndex((prev) => (prev <= 0 ? matchingUsers.length - 1 : prev - 1));
+        setHighlightedIndex(displayedUsers.length > 0 ? displayedUsers.length - 1 : -1);
+      } else if (displayedUsers.length > 0) {
+        setHighlightedIndex((prev) => (prev <= 0 ? displayedUsers.length - 1 : prev - 1));
       }
       return;
     }
 
     if (e.key === "Enter") {
-      if (isOpen && highlightedIndex >= 0 && matchingUsers[highlightedIndex]) {
+      if (isOpen && highlightedIndex >= 0 && displayedUsers[highlightedIndex]) {
         e.preventDefault();
-        handleSelect(matchingUsers[highlightedIndex]);
+        handleSelect(displayedUsers[highlightedIndex]);
       }
       return;
     }
@@ -132,8 +149,8 @@ export function OrciaKnownUserCombobox({
   };
 
   const activeDescendantId =
-    isOpen && highlightedIndex >= 0 && matchingUsers[highlightedIndex]
-      ? `${effectiveId}-option-${matchingUsers[highlightedIndex].principalId}`
+    isOpen && highlightedIndex >= 0 && displayedUsers[highlightedIndex]
+      ? `${effectiveId}-option-${displayedUsers[highlightedIndex].principalId}`
       : undefined;
 
   return (
@@ -163,7 +180,9 @@ export function OrciaKnownUserCombobox({
         className={className}
         style={{ width: "100%" }}
         onChange={(e) => {
-          onChange(e.target.value);
+          const nextVal = e.target.value;
+          onChange(nextVal);
+          onSearchQueryChange?.(nextVal);
           if (!isOpen) setIsOpen(true);
           setHighlightedIndex(0);
         }}
@@ -199,7 +218,7 @@ export function OrciaKnownUserCombobox({
             padding: "4px 0",
           }}
         >
-          {matchingUsers.length === 0 ? (
+          {displayedUsers.length === 0 ? (
             <div
               data-testid={`${inputTestId}-no-match`}
               style={{
@@ -211,7 +230,7 @@ export function OrciaKnownUserCombobox({
               {noResultsLabel}
             </div>
           ) : (
-            matchingUsers.map((user, idx) => {
+            displayedUsers.map((user, idx) => {
               const isSelected = user.principalId.toLowerCase() === value.toLowerCase().trim();
               const isHighlighted = idx === highlightedIndex;
               return (
@@ -259,6 +278,22 @@ export function OrciaKnownUserCombobox({
                 </div>
               );
             })
+          )}
+
+          {isTruncated && (
+            <div
+              data-testid={`${inputTestId}-truncated-hint`}
+              style={{
+                padding: "6px 12px",
+                fontSize: "11px",
+                color: "var(--color-muted-foreground)",
+                borderTop: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface-secondary)",
+                textAlign: "center",
+              }}
+            >
+              {truncatedHint || "Résultats tronqués — affinez votre recherche"}
+            </div>
           )}
         </div>
       )}
