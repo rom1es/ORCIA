@@ -32,17 +32,18 @@ class SecretInputPayload(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    action: SecretActionLiteral = "keep"
+    action: SecretActionLiteral = "keep"  # pragma: allowlist secret
     plaintext_value: str | None = Field(default=None, max_length=4096)
 
 
 class SecretStatusResponse(BaseModel):
-    """Read-only secret status metadata (`configured` + salted `sha256:<8-hex>`, `Story 8.3`)."""
+    """Read-only secret status metadata (`Story 8.3`, `Story 17.5`, `AD-21.3`)."""
 
     model_config = ConfigDict(extra="forbid")
 
     configured: bool
     fingerprint: str | None = None
+    masked_hint: str | None = None
     updated_at: str
     updated_by: str
 

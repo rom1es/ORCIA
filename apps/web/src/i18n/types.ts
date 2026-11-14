@@ -34,6 +34,7 @@ export interface InboxAndClaimsCopy {
 }
 
 import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
+import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
 import type { AssistantDictionarySection } from "./locales/assistant_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
@@ -46,6 +47,7 @@ export interface TranslationDictionary
     AssistantDictionarySection,
     GovernanceAndPacksDictionarySection {
   locale: SupportedWebLocale;
+  aiModelsHub: AiModelsHubDictionary;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
     defaultSectionTitle: string;

@@ -1,5 +1,6 @@
 import type { TranslationDictionary } from "../types";
 import { ADMIN_AND_STUDIO_EN_LABELS } from "./admin_and_studio_labels";
+import { AI_MODELS_HUB_EN } from "./ai_models_hub_labels";
 import { ASSISTANT_EN_LABELS } from "./assistant_labels";
 import { GOVERNANCE_AND_PACKS_EN_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_EN_LABELS } from "./inbox_and_cockpit_labels";
@@ -12,6 +13,7 @@ export const enDictionary: TranslationDictionary = {
   ...ASSISTANT_EN_LABELS,
   ...GOVERNANCE_AND_PACKS_EN_LABELS,
   locale: "en",
+  aiModelsHub: AI_MODELS_HUB_EN,
   shell: {
     brandTitle: "ORCIA",
     brandSubtitle: "",

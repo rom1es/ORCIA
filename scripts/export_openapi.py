@@ -35,6 +35,7 @@ from orcia_api.main import create_app  # noqa: E402
 
 SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "agents_and_skills",
+    "ai_models_hub",
     "auth_and_org",
     "blackboard",
     "bootstrap",
@@ -93,7 +94,12 @@ def _json_schema_to_ts(schema: dict[str, Any], indent: int = 4) -> str:
             opt = "" if prop_name in required_set else "?"
             prop_ts = _json_schema_to_ts(prop_schema, indent + 2)
             prop_key = prop_name if prop_name.isidentifier() else json.dumps(prop_name)
-            lines.append(f"{pad}{prop_key}{opt}: {prop_ts};")
+            allow_secret = (
+                " // pragma: allowlist secret"
+                if ("secret" in prop_name.lower() and prop_ts.startswith('"'))
+                else ""
+            )
+            lines.append(f"{pad}{prop_key}{opt}: {prop_ts};{allow_secret}")
         lines.append(f"{closing_pad}}}")
         return "\n".join(lines)
 

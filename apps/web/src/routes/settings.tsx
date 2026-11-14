@@ -24,7 +24,11 @@ import { SettingsSecondaryTabsSection } from "./SettingsSecondaryTabsSection";
 
 export type SettingsSectionTab = SettingsTabKey;
 
-export function SettingsHubView() {
+export interface SettingsHubViewProps {
+  readonly initialTab?: SettingsSectionTab;
+}
+
+export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
   const { dictionary, locale } = useI18n();
   const { openHelpSection } = useShellNavigation();
   const copy = dictionary.settingsHub;
@@ -56,7 +60,24 @@ export function SettingsHubView() {
     removePack,
   } = usePlatformSetup();
 
-  const [activeTab, setActiveTab] = useState<SettingsSectionTab>("organization");
+  const [activeTab, setActiveTab] = useState<SettingsSectionTab>(() => {
+    if (initialTab) return initialTab;
+    try {
+      const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      const tabParam = sp.get("tab") as SettingsSectionTab | null;
+      if (
+        tabParam &&
+        ["organization", "iam", "models", "packs", "connectors", "datasources", "retention"].includes(
+          tabParam,
+        )
+      ) {
+        return tabParam;
+      }
+    } catch {
+      // ignore
+    }
+    return "organization";
+  });
   const effectiveTab: SettingsSectionTab | null =
     access.visibleTabs.length === 0
       ? null
@@ -201,6 +222,7 @@ export function SettingsHubView() {
                 llmTiers={llmTiers}
                 openHelpSection={openHelpSection}
                 upsertLlmTier={upsertLlmTier}
+                allowedVerbs={access.allowedVerbs}
               />
             ) : effectiveTab === "packs" ? (
               <SettingsPacksSection

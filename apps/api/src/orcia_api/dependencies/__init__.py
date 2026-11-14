@@ -18,6 +18,7 @@ from orcia_api.dependencies.core_and_lifespan import (
     initialize_app_services,
 )
 from orcia_api.dependencies.orchestration_and_settings import (
+    get_ai_models_hub_service,
     get_cognitive_router_service,
     get_connector_hub_service,
     get_control_center_service,
@@ -54,6 +55,7 @@ __all__ = [
     "app_lifespan",
     "get_accostage_service",
     "get_agents_and_skills_service",
+    "get_ai_models_hub_service",
     "get_assistant_citation_and_v5_guard_service",
     "get_assistant_folders_and_sharing_service",
     "get_assistant_governance_service",

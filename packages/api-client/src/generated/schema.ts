@@ -117,6 +117,89 @@ export interface components {
       skills?: (components["schemas"]["SkillItemResponse"])[];
       trace_id: string;
     };
+    AiModelCreateRequest: {
+      auth_mode?: "api_key" | "env_var" | "none_local";
+      display_name?: string;
+      effort?: "default" | "fast" | "balanced" | "deep";
+      endpoint_uri: string;
+      env_var_name?: string | null;
+      fallback_model_name?: string | null;
+      fallback_order?: number;
+      inference_tier?: "simple" | "medium" | "complex" | "auto";
+      max_cost_usd?: number;
+      max_tokens_budget?: number;
+      model_family: string;
+      model_name: string;
+      protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages";
+      provider_slug: string;
+      scope_id?: string;
+      scope_level?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      secret_input?: components["schemas"]["SecretInputPayload"] | null;
+    };
+    AiModelDeleteImpactResponse: {
+      dependent_workflow_ids: (string)[];
+      dependent_workflows_count: number;
+      inference_tier: "simple" | "medium" | "complex" | "auto";
+      is_last_active_for_tier: boolean;
+      mapping_id: string;
+      model_name: string;
+      pinned_active_runs_count: number;
+      pinned_run_ids: (string)[];
+      remaining_active_for_tier: number;
+    };
+    AiModelDeleteResponse: {
+      mapping_id: string;
+      status: "DELETED" | "DRAINING";
+    };
+    AiModelMappingItemResponse: {
+      auth_mode: "api_key" | "env_var" | "none_local";
+      created_at: string;
+      display_name: string;
+      draining: boolean;
+      effort: "default" | "fast" | "balanced" | "deep";
+      endpoint_uri: string;
+      env_var_name?: string | null;
+      fallback_model_name?: string | null;
+      fallback_order: number;
+      health_status: "OPERATIONAL" | "DEGRADED" | "ERROR" | "UNTESTED";
+      id: string;
+      inference_tier: "simple" | "medium" | "complex" | "auto";
+      is_active: boolean;
+      last_latency_ms?: number | null;
+      last_tested_at?: string | null;
+      max_cost_usd: number;
+      max_tokens_budget: number;
+      model_family: string;
+      model_name: string;
+      protocol_mode: "openai_compatible" | "gemini_native" | "anthropic_messages";
+      provider_slug: string;
+      scope_id: string;
+      scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      secret_status: components["schemas"]["SecretStatusResponse"];
+      updated_at: string;
+    };
+    AiModelMappingsListResponse: {
+      active_tiers_coverage: Record<string, boolean>;
+      items: (components["schemas"]["AiModelMappingItemResponse"])[];
+      total_count: number;
+    };
+    AiModelPatchRequest: {
+      auth_mode?: "api_key" | "env_var" | "none_local" | null;
+      display_name?: string | null;
+      endpoint_uri?: string | null;
+      env_var_name?: string | null;
+      fallback_model_name?: string | null;
+      is_active?: boolean | null;
+      protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages" | null;
+      secret_input?: components["schemas"]["SecretInputPayload"] | null;
+    };
+    AiModelTestResponse: {
+      health_status: "OPERATIONAL" | "DEGRADED" | "ERROR" | "UNTESTED";
+      latency_ms: number;
+      mapping_id: string;
+      message: string;
+      tested_at: string;
+    };
     ArbitrationOptionSchemaItem: {
       cons?: (string)[];
       finops_impact: string;
@@ -1821,21 +1904,6 @@ export interface components {
       model_name: string;
       provider_slug: string;
     };
-    LlmTierMappingResponse: {
-      draining: boolean;
-      effort: "default" | "fast" | "balanced" | "deep";
-      fallback_order: number;
-      id: string;
-      inference_tier: "simple" | "medium" | "complex";
-      is_active: boolean;
-      max_cost_usd: number;
-      max_tokens_budget: number;
-      model_family: string;
-      model_name: string;
-      provider_slug: string;
-      scope_id: string;
-      scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
-    };
     LocalLoginRequest: {
       email: string;
       password: string;
@@ -2459,11 +2527,11 @@ export interface components {
       natural_scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       resource_permissions: Record<string, ("create" | "read" | "update" | "delete" | "execute" | "grant")[]>;
       role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER";
-      secret_visibility: "WRITE_ONLY_NEVER_READABLE";
+      secret_visibility: "WRITE_ONLY_NEVER_READABLE"; // pragma: allowlist secret
     };
     RoleMatrixResponse: {
       roles: (components["schemas"]["RoleMatrixEntryResponse"])[];
-      secret_visibility_policy: "WRITE_ONLY_NEVER_READABLE";
+      secret_visibility_policy: "WRITE_ONLY_NEVER_READABLE"; // pragma: allowlist secret
       trace_id: string;
     };
     RolePermissionGrantResponse: {
@@ -2562,6 +2630,7 @@ export interface components {
     SecretStatusResponse: {
       configured: boolean;
       fingerprint?: string | null;
+      masked_hint?: string | null;
       updated_at: string;
       updated_by: string;
     };
@@ -4713,14 +4782,38 @@ export interface paths {
   "/api/v1/settings/ai-models/mappings": {
     get: {
       responses: {
-        200: (components["schemas"]["LlmTierMappingResponse"])[];
+        200: components["schemas"]["AiModelMappingsListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: unknown;
       };
     };
   };
   "/api/v1/settings/ai-models/mappings/{mapping_id}": {
     delete: {
       responses: {
-        200: Record<string, string>;
+        200: components["schemas"]["AiModelDeleteResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["AiModelMappingItemResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/mappings/{mapping_id}/delete-impact": {
+    get: {
+      responses: {
+        200: components["schemas"]["AiModelDeleteImpactResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/mappings/{mapping_id}/test": {
+    post: {
+      responses: {
+        200: components["schemas"]["AiModelTestResponse"];
       };
     };
   };
@@ -5116,6 +5209,13 @@ export type AgentItemResponse = components["schemas"]["AgentItemResponse"];
 export type AgenticGateEvaluateRequest = components["schemas"]["AgenticGateEvaluateRequest"];
 export type AgenticGateEvaluateResponse = components["schemas"]["AgenticGateEvaluateResponse"];
 export type AgentsAndSkillsListResponse = components["schemas"]["AgentsAndSkillsListResponse"];
+export type AiModelCreateRequest = components["schemas"]["AiModelCreateRequest"];
+export type AiModelDeleteImpactResponse = components["schemas"]["AiModelDeleteImpactResponse"];
+export type AiModelDeleteResponse = components["schemas"]["AiModelDeleteResponse"];
+export type AiModelMappingItemResponse = components["schemas"]["AiModelMappingItemResponse"];
+export type AiModelMappingsListResponse = components["schemas"]["AiModelMappingsListResponse"];
+export type AiModelPatchRequest = components["schemas"]["AiModelPatchRequest"];
+export type AiModelTestResponse = components["schemas"]["AiModelTestResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactCardActionRequest = components["schemas"]["ArtifactCardActionRequest"];
 export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActionResponse"];
@@ -5312,7 +5412,6 @@ export type LaunchProcessFromFolderResponse = components["schemas"]["LaunchProce
 export type LlmConnectionTestRequest = components["schemas"]["LlmConnectionTestRequest"];
 export type LlmConnectionTestResponse = components["schemas"]["LlmConnectionTestResponse"];
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
-export type LlmTierMappingResponse = components["schemas"]["LlmTierMappingResponse"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
 export type McpPersonalTokenCreateRequest = components["schemas"]["McpPersonalTokenCreateRequest"];

@@ -10,6 +10,7 @@ from orcia_api.middleware.trace_and_error import (
     register_exception_handlers,
 )
 from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
+from orcia_api.routers.ai_models_hub import router as ai_models_hub_router
 from orcia_api.routers.assistant import router as assistant_router
 from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
 from orcia_api.routers.auth import PROBLEM_RESPONSES
@@ -92,6 +93,7 @@ def create_app() -> FastAPI:
     application.include_router(control_center_router)
     application.include_router(iam_accounts_router)
     application.include_router(enterprise_connectors_router)
+    application.include_router(ai_models_hub_router)
     application.include_router(settings_and_studio_router)
     application.include_router(studio_and_wizards_router)
     application.include_router(jira_and_mcp_router)

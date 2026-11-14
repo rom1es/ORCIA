@@ -169,6 +169,7 @@ development_status:
   17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation: done
   17-3-annuaire-comptes-matrice-roles-delegues-secops-et-suppression-secrets-exposes: done
   17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag: done
+  17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage: done
   epic-17-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1009,3 +1010,36 @@ action_items:
     description: >
       AssistantFoldersAndSharingService stocke les dossiers dans un dict en mémoire. Les tables existent (migration 0025) mais
       owner_user_id référence users(id) : tant que l'identité API est une persona en mémoire (AUTH-01), l'insertion viole la clé étrangère.
+  - id: OBS-17.5-1
+    title: "Retrait définitif de l'accordéon de compatibilité SettingsAiModelsQuickForm après bascule du wizard Jour 0 sur /api/v1/settings/ai-models/mappings"
+    action: "Migrer les tests d'accostage résiduels vers POST /api/v1/settings/ai-models/mappings + OrciaDialog, puis supprimer SettingsAiModelsQuickForm.tsx"
+    priority: P2
+    depends_on: []
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-17
+    story_ref: "17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage"
+    description: >
+      Constat OBS-17.5-1 lors de la revue d'architecture de Story 17.5 : SettingsAiModelsQuickForm.tsx (374 l.) est replié par défaut
+      dans <details> pour compatibilité avec gemini-argon-settings-and-assistant.test.tsx ; à retirer dès que le parcours d'amorçage utilise uniquement la nouvelle API REST.
+  - id: OBS-17.5-2
+    title: "Sous-découpage de AiModelsMasterTable.tsx (< 300 l.) via extraction de AiModelsCoverageSummary.tsx"
+    action: "Extraire le bandeau de couverture des 4 tiers cognitifs dans apps/web/src/features/admin/ai-models/AiModelsCoverageSummary.tsx"
+    priority: P3
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-17
+    story_ref: "17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage"
+    description: >
+      Constat OBS-17.5-2 lors de la revue d'architecture de Story 17.5 : AiModelsMasterTable.tsx atteint 374 lignes (sous le plafond dur 400 l.) et bénéficiera d'un découpage sous 300 lignes.
+  - id: SITE-SYNC-PACKS-01
+    title: "Aligner sync_site_catalog.py et test_site_catalog_sync.py sur les packs déclaratifs packs/<domaine>/ (post-Epic 15)"
+    action: "Mettre à jour le décompte installedPacksCount dans infra/scripts/sync_site_catalog.py pour scanner packs/ au lieu de packages/orcia-pack-*"
+    priority: P2
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-15
+    description: >
+      Constaté lors de l'exécution globale de tests/unit/test_site_catalog_sync.py : assertion installedPacksCount >= 2 en échec depuis la migration Epic 15 vers packs/orcia-docs et packs/sdlc.

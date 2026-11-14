@@ -9,6 +9,7 @@ export interface OrciaRouteSearch {
   fixture?: "test";
   q?: string;
   auth?: "unauthenticated";
+  tab?: string;
 }
 
 export function validateOrciaRouteSearch(
@@ -23,6 +24,9 @@ export function validateOrciaRouteSearch(
   }
   if (search.auth === "unauthenticated") {
     result.auth = "unauthenticated";
+  }
+  if (typeof search.tab === "string" && search.tab.trim().length > 0) {
+    result.tab = search.tab.trim();
   }
   return result;
 }

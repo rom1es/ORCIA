@@ -6,18 +6,18 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-11",
+  "lastSyncedDate": "2026-11-14",
   "stats": {
-    "activeRoutesCount": 23,
+    "activeRoutesCount": 24,
     "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 31,
+    "alembicMigrationsCount": 32,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 113,
+    "techLeadReportsCount": 114,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 38
+    "verifiedCapabilitiesCount": 40
   },
   "activeRoutes": [
     "/",
@@ -38,6 +38,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/processes/studio/$workflowId",
     "/processes/vsm/$vsmId",
     "/settings",
+    "/settings/ai-models",
     "/settings/packs",
     "/showcase",
     "/spaces",
@@ -177,7 +178,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261108_0910_declarative_packs_and_workflows_v2",
     "20261111_1702_story_17_2_org_units_billing_and_members",
     "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
-    "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent"
+    "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent",
+    "20261114_1705_story_17_5_ai_models_hub_secrets_and_health"
   ],
   "architectureDecisions": [
     {
@@ -432,6 +434,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Story 17.5 (CAP-052, CAP-053)",
+      "reportFile": "17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage-tech-lead-report.md",
+      "domain": "Hub Modèles IA Pleine Largeur, Supervision Santé & Latence, Modale Dédiée avec Saisie Secrète AES-256-GCM (masked_hint), Garde-Fou Anti-SSRF (422), Analyse d'Impact Dépendances Workflows & Drainage sans Perte (Story 17.5, AD-21)",
+      "summary": "Migration Alembic 20261114_1705 (15 colonnes workspace_llm_tier_mappings réversibles), domaine pur ai_models_governance.py + secret_hint.py (compute_secret_masked_hint), adaptateurs PostgreSQL 18 sql_ai_model_queries.py et sql_ai_model_mutations.py sous 360 lignes, routeur FastAPI /api/v1/settings/ai-models/* (7 routes) + SDK OpenAPI 3.1 0-diff, table maîtresse AiModelsMasterTable.tsx pleine largeur, modale AiModelConfigModal.tsx, dialogue d'impact/drainage AiModelDeleteDialog.tsx, routes /settings/ai-models & ?tab=models, et 40 tests Vitest / 9 tests unitaires (91% cov) / testcontainers PG18 validés."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 17.4 (CAP-003, CAP-054, CAP-063, CAP-080)",
