@@ -1,6 +1,9 @@
 """Value Objects, Frozen Records & Builders for User-Centered Agents & Skills (`🤖 Mes Agents`).
 
 Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
+Models the 6 Governance Blocks of an ORCIA LLM Agent (A. Identity/Persona, B. Cognitive Engine,
+C. System Instructions & Modes, D. Knowledge Scope RAG/Ontology, E. MCP Toolbox & Skills,
+F. Guardrails & Output Contract) and its 6 Conversational Readiness Conditions.
 """
 
 from __future__ import annotations
@@ -16,6 +19,31 @@ from orcia_kernel.ids import new_uuid7_str
 AgentThinkingLevel = Literal["simple", "medium", "complex", "auto"]
 AgentSkillVisibilityScope = Literal["PRIVATE", "TEAM", "PACK"]
 AgentKindType = Literal["LOCAL", "REMOTE_MCP_A2A"]
+AgentPostureType = Literal["PRODUCER", "EVALUATOR_GATE"]
+AgentHumanPartnerRole = Literal["PO_PM", "ARCHITECT", "TECH_LEAD", "SECURITY_QA", "ALL"]
+AgentLlmModelTier = Literal["team_default", "fast", "deep", "discovery"]
+AgentInvocationMode = Literal["generer", "corrections", "section"]
+AgentDialogueMechanism = Literal["questionnaire_prealable", "pause_par_bloc", "direct"]
+AgentOutputContractFormat = Literal[
+    "markdown_structure", "confluence_draft", "jira_draft", "gate_risk_json"
+]
+McpToolPermissionMode = Literal["NONE", "READ_ONLY", "WRITE_PREVIEW"]
+
+DEFAULT_INVOCATION_MODES: tuple[str, ...] = ("generer", "corrections", "section")
+DEFAULT_ALLOWED_RAG_SOURCES: tuple[str, ...] = ("all_workspace_sources",)
+DEFAULT_ONTOLOGY_VIEWS: tuple[str, ...] = ("glossary", "apis_adr", "prd_regles_metier")
+DEFAULT_GUARDRAILS: tuple[str, ...] = (
+    "citations_obligatoires",
+    "aucun_fait_invente",
+    "isolation_prompt_injection",
+    "filtrage_dcp_pii",
+)
+DEFAULT_MCP_TOOL_PERMISSIONS: tuple[tuple[str, str], ...] = (
+    ("search_tool", "READ_ONLY"),
+    ("confluence", "WRITE_PREVIEW"),
+    ("jira", "WRITE_PREVIEW"),
+    ("git", "READ_ONLY"),
+)
 
 _SLUG_CLEAN_RE = re.compile(r"[^a-z0-9]+")
 
@@ -54,7 +82,7 @@ class ManagedSkillRecord:
 
 @dataclass(frozen=True, slots=True)
 class ManagedAgentRecord:
-    """User-created or Pack-provided Agent (`🤖 Agent`) with 1-click attached Skills."""
+    """Governed ORCIA LLM Agent (`🤖 Agent`) structured around 6 configuration blocks."""
 
     agent_id: str
     slug: str
@@ -73,6 +101,27 @@ class ManagedAgentRecord:
     mcp_exposed: bool = False
     agent_kind: AgentKindType = "LOCAL"
     remote_endpoint_url: str | None = None
+    # Block A: Identity, Posture & Human Partner
+    posture: AgentPostureType = "PRODUCER"
+    human_partner_role: AgentHumanPartnerRole = "PO_PM"
+    # Block B: Cognitive Engine (Model, Effort, Inference & Budget)
+    llm_model_tier: AgentLlmModelTier = "team_default"
+    temperature: float = 0.2
+    max_tokens: int = 4096
+    # Block C: System Instructions & Interaction Modes
+    prompt_ref: str | None = None
+    invocation_modes: tuple[str, ...] = DEFAULT_INVOCATION_MODES
+    dialogue_mechanism: AgentDialogueMechanism = "questionnaire_prealable"
+    # Block D: Knowledge Scope (RAG & Ontology)
+    allowed_rag_sources: tuple[str, ...] = DEFAULT_ALLOWED_RAG_SOURCES
+    ontology_views: tuple[str, ...] = DEFAULT_ONTOLOGY_VIEWS
+    # Block E: MCP Toolbox Permissions
+    mcp_tool_permissions: tuple[tuple[str, str], ...] = DEFAULT_MCP_TOOL_PERMISSIONS
+    # Block F: Guardrails, Output Contract & Test Bench Validation
+    guardrails: tuple[str, ...] = DEFAULT_GUARDRAILS
+    output_contract_format: AgentOutputContractFormat = "markdown_structure"
+    write_preview_required: bool = True
+    test_bench_validated: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,6 +242,21 @@ def rebuild_agent_with_skills(
             "mcp_exposed": agent.mcp_exposed,
             "agent_kind": agent.agent_kind,
             "remote_endpoint_url": agent.remote_endpoint_url,
+            "posture": agent.posture,
+            "human_partner_role": agent.human_partner_role,
+            "llm_model_tier": agent.llm_model_tier,
+            "temperature": agent.temperature,
+            "max_tokens": agent.max_tokens,
+            "prompt_ref": agent.prompt_ref,
+            "invocation_modes": list(agent.invocation_modes),
+            "dialogue_mechanism": agent.dialogue_mechanism,
+            "allowed_rag_sources": list(agent.allowed_rag_sources),
+            "ontology_views": list(agent.ontology_views),
+            "mcp_tool_permissions": dict(agent.mcp_tool_permissions),
+            "guardrails": list(agent.guardrails),
+            "output_contract_format": agent.output_contract_format,
+            "write_preview_required": agent.write_preview_required,
+            "test_bench_validated": agent.test_bench_validated,
         }
     )
     return replace(agent, skill_ids=next_skills, sha256=digest)
@@ -215,8 +279,25 @@ def build_managed_agent_record(
     mcp_exposed: bool | None,
     agent_kind: AgentKindType | None,
     remote_endpoint_url: str | None,
+    posture: AgentPostureType | None = None,
+    human_partner_role: AgentHumanPartnerRole | None = None,
+    llm_model_tier: AgentLlmModelTier | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    prompt_ref: str | None = None,
+    invocation_modes: tuple[str, ...] | None = None,
+    dialogue_mechanism: AgentDialogueMechanism | None = None,
+    allowed_rag_sources: tuple[str, ...] | None = None,
+    ontology_views: tuple[str, ...] | None = None,
+    mcp_tool_permissions: tuple[tuple[str, str], ...] | None = None,
+    guardrails: tuple[str, ...] | None = None,
+    output_contract_format: AgentOutputContractFormat | None = None,
+    write_preview_required: bool | None = None,
+    test_bench_validated: bool | None = None,
 ) -> ManagedAgentRecord:
     """Construct a `ManagedAgentRecord` with deterministic SHA-256 digest."""
+    resolved_posture: AgentPostureType = posture or (existing.posture if existing else "PRODUCER")
+    default_temp = 0.0 if resolved_posture == "EVALUATOR_GATE" else 0.2
     base = ManagedAgentRecord(
         agent_id=resolved_id,
         slug=slug,
@@ -242,6 +323,44 @@ def build_managed_agent_record(
         remote_endpoint_url=remote_endpoint_url
         if remote_endpoint_url is not None
         else (existing.remote_endpoint_url if existing else None),
+        posture=resolved_posture,
+        human_partner_role=human_partner_role
+        or (existing.human_partner_role if existing else "PO_PM"),
+        llm_model_tier=llm_model_tier or (existing.llm_model_tier if existing else "team_default"),
+        temperature=temperature
+        if temperature is not None
+        else (existing.temperature if existing else default_temp),
+        max_tokens=max_tokens
+        if max_tokens is not None
+        else (existing.max_tokens if existing else 4096),
+        prompt_ref=prompt_ref
+        if prompt_ref is not None
+        else (existing.prompt_ref if existing else None),
+        invocation_modes=invocation_modes
+        if invocation_modes is not None
+        else (existing.invocation_modes if existing else DEFAULT_INVOCATION_MODES),
+        dialogue_mechanism=dialogue_mechanism
+        or (existing.dialogue_mechanism if existing else "questionnaire_prealable"),
+        allowed_rag_sources=allowed_rag_sources
+        if allowed_rag_sources is not None
+        else (existing.allowed_rag_sources if existing else DEFAULT_ALLOWED_RAG_SOURCES),
+        ontology_views=ontology_views
+        if ontology_views is not None
+        else (existing.ontology_views if existing else DEFAULT_ONTOLOGY_VIEWS),
+        mcp_tool_permissions=mcp_tool_permissions
+        if mcp_tool_permissions is not None
+        else (existing.mcp_tool_permissions if existing else DEFAULT_MCP_TOOL_PERMISSIONS),
+        guardrails=guardrails
+        if guardrails is not None
+        else (existing.guardrails if existing else DEFAULT_GUARDRAILS),
+        output_contract_format=output_contract_format
+        or (existing.output_contract_format if existing else "markdown_structure"),
+        write_preview_required=write_preview_required
+        if write_preview_required is not None
+        else (existing.write_preview_required if existing else True),
+        test_bench_validated=test_bench_validated
+        if test_bench_validated is not None
+        else (existing.test_bench_validated if existing else False),
     )
     return rebuild_agent_with_skills(base, valid_skills)
 
@@ -299,13 +418,28 @@ def format_agent_execution_outcome(
         if traces
         else "aucune compétence rattachée"
     )
+    posture_lbl = (
+        "Évaluateur / Contradicteur (Gate)"
+        if agent.posture == "EVALUATOR_GATE"
+        else "Producteur / Assistant métier"
+    )
     lines = [
         f"🤖 Réponse de {agent.name} ({agent.handle}) — Mission : {agent.role_mission}",
+        (
+            f"• Posture : {posture_lbl} | Binôme humain : {agent.human_partner_role} "
+            f"| Contrat : {agent.output_contract_format}"
+        ),
+        (
+            f"• Moteur cognitif : {agent.llm_model_tier} "
+            f"(effort={agent.thinking_level}, temp={agent.temperature}, "
+            f"max_tokens={agent.max_tokens})"
+        ),
         f"• Demande traitée : « {clean_prompt} »",
         f"• Compétences mobilisées ({len(traces)}) : {skills_names}",
         (
             f"• Synthèse : Selon mes instructions (« {agent.instructions} »), "
-            f"voici la proposition structurée pour « {clean_prompt} ». ({llm_text})"
+            f"voici la proposition structurée avec citations [S1] pour « {clean_prompt} ». "
+            f"({llm_text})"
         ),
     ]
     return AgentExecutionOutcome(

@@ -10,6 +10,7 @@ from orcia_api.routers.auth import (
     resolve_request_user,
     serialize_workspace_summary,
 )
+from orcia_api.routers.org_units import router as org_units_router
 from orcia_api.schemas.auth_and_org import (
     CatalogResourceInspectionResponse,
     CatalogResourceSourceResponse,
@@ -20,6 +21,7 @@ from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.permissions.errors import ResourceNotFoundError
 
 router = APIRouter(prefix="/api/v1", tags=["workspaces-and-catalog"])
+router.include_router(org_units_router)
 
 
 @router.get(

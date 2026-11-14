@@ -152,6 +152,86 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "attached to a Workspace with CONFIDENTIAL_RESTRICTED visibility (AD-21).",
         ),
     },
+    "ERR_ORG_UNIT_INVALID_PARENT_KIND": {
+        "fr": LocalizedErrorCopy(
+            "Rattachement hiérarchique invalide",
+            "Une Direction ou un Pôle (BU) ne peut pas être rattaché sous une Équipe (TEAM).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid organizational parent kind",
+            "A Division or Sub-Division (BU) cannot be attached under a Team (TEAM).",
+        ),
+    },
+    "ERR_ORG_UNIT_HIERARCHY_CYCLE": {
+        "fr": LocalizedErrorCopy(
+            "Cycle détecté dans l'organigramme",
+            "Une unité organisationnelle ne peut pas être rattachée à elle-même ni à l'une de "
+            "ses sous-unités descendantes.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Organizational hierarchy cycle detected",
+            "An organizational unit cannot be attached to itself or to any of its descendant "
+            "sub-units.",
+        ),
+    },
+    "ERR_ORG_UNIT_DUPLICATE_SLUG": {
+        "fr": LocalizedErrorCopy(
+            "Identifiant court d'unité déjà utilisé",
+            "Une unité organisationnelle utilise déjà cet identifiant court (slug).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Duplicate organizational unit slug",
+            "Another organizational unit already uses this short identifier (slug).",
+        ),
+    },
+    "ERR_ORG_UNIT_NOT_EMPTY": {
+        "fr": LocalizedErrorCopy(
+            "Unité organisationnelle non vide",
+            "Impossible de supprimer cette unité tant que des sous-unités ou des espaces de "
+            "travail y sont rattachés. Déplacez ou supprimez d'abord ces éléments.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Organizational unit is not empty",
+            "Cannot delete this unit while child units or workspaces are still attached to it. "
+            "Move or delete those items first.",
+        ),
+    },
+    "ERR_IAM_INVALID_ROLE": {
+        "fr": LocalizedErrorCopy(
+            "Rôle d'habilitation invalide",
+            "Le rôle demandé n'appartient pas aux 6 rôles officiels (PLATFORM_ADMIN, SECOPS, "
+            "BU_LEAD, TEAM_LEAD, CONTRIBUTOR, OBSERVER).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid IAM role",
+            "The requested role is not among the 6 official roles (PLATFORM_ADMIN, SECOPS, "
+            "BU_LEAD, TEAM_LEAD, CONTRIBUTOR, OBSERVER).",
+        ),
+    },
+    "ERR_IAM_DUPLICATE_PRINCIPAL": {
+        "fr": LocalizedErrorCopy(
+            "Identifiant de compte déjà enregistré",
+            "Un compte humain ou un compte de service utilise déjà cet identifiant principal.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Duplicate account principal identifier",
+            "A human account or service principal already uses this principal identifier.",
+        ),
+    },
+    "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL": {
+        "fr": LocalizedErrorCopy(
+            "URL de connecteur d'entreprise non sécurisée (protection anti-SSRF)",
+            "L'URL de base du connecteur doit utiliser HTTP/HTTPS et ne peut pas cibler une "
+            "adresse de métadonnées Cloud ou link-local (169.254.0.0/16, fe80::/10, "
+            "metadata.google.internal, 100.100.100.200).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Unsafe enterprise connector endpoint URL (SSRF protection)",
+            "The connector base URL must use HTTP/HTTPS and must not target cloud metadata or "
+            "link-local addresses (169.254.0.0/16, fe80::/10, metadata.google.internal, "
+            "100.100.100.200).",
+        ),
+    },
 }
 
 register_domain_error_catalog(PERMISSIONS_ERROR_CATALOG)
@@ -216,15 +296,56 @@ class C3WorkspaceRequiredError(OrciaDomainError):
     http_status, type_slug = 403, "c3-workspace-required"
 
 
+class OrgUnitInvalidParentKindError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_INVALID_PARENT_KIND"
+    http_status, type_slug = 422, "org-unit-invalid-parent-kind"
+
+
+class OrgUnitHierarchyCycleError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_HIERARCHY_CYCLE"
+    http_status, type_slug = 422, "org-unit-hierarchy-cycle"
+
+
+class OrgUnitDuplicateSlugError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_DUPLICATE_SLUG"
+    http_status, type_slug = 409, "org-unit-duplicate-slug"
+
+
+class OrgUnitNotEmptyError(OrciaDomainError):
+    error_code = "ERR_ORG_UNIT_NOT_EMPTY"
+    http_status, type_slug = 409, "org-unit-not-empty"
+
+
+class InvalidIamRoleError(OrciaDomainError):
+    error_code = "ERR_IAM_INVALID_ROLE"
+    http_status, type_slug = 422, "iam-invalid-role"
+
+
+class DuplicateIamPrincipalError(OrciaDomainError):
+    error_code = "ERR_IAM_DUPLICATE_PRINCIPAL"
+    http_status, type_slug = 409, "iam-duplicate-principal"
+
+
+class UnsafeConnectorEndpointUrlError(OrciaDomainError):
+    error_code = "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL"
+    http_status, type_slug = 422, "unsafe-connector-endpoint-url"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "C3WorkspaceRequiredError",
     "ConfusedDeputyBlockedError",
+    "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
     "InvalidCredentialsError",
+    "InvalidIamRoleError",
     "InvalidMfaCodeError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "OrgUnitDuplicateSlugError",
+    "OrgUnitHierarchyCycleError",
+    "OrgUnitInvalidParentKindError",
+    "OrgUnitNotEmptyError",
     "PermissionBrokerDeniedError",
     "PreconditionRequiredError",
     "ReadSourceDeniedError",
@@ -233,5 +354,6 @@ __all__ = [
     "ScopeAccessDeniedError",
     "SecretConfigReadDeniedError",
     "SettingsVersionConflictError",
+    "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
 ]

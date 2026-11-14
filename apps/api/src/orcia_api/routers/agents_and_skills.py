@@ -67,7 +67,14 @@ def _serialize_skill(s: ManagedSkillRecord) -> SkillItemResponse:
 
 
 def _serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
-    return AgentItemResponse(**{**asdict(a), "skill_ids": list(a.skill_ids)})
+    raw = asdict(a)
+    raw["skill_ids"] = list(a.skill_ids)
+    raw["invocation_modes"] = list(a.invocation_modes)
+    raw["allowed_rag_sources"] = list(a.allowed_rag_sources)
+    raw["ontology_views"] = list(a.ontology_views)
+    raw["mcp_tool_permissions"] = dict(a.mcp_tool_permissions)
+    raw["guardrails"] = list(a.guardrails)
+    return AgentItemResponse(**raw)
 
 
 async def _run_pg_persistence(
@@ -240,6 +247,11 @@ async def update_agent_governance_endpoint(
         mcp_exposed=payload.mcp_exposed if payload.mcp_exposed is not None else cur.mcp_exposed,
         agent_kind=cur.agent_kind,
         remote_endpoint_url=cur.remote_endpoint_url,
+        test_bench_validated=(
+            payload.test_bench_validated
+            if payload.test_bench_validated is not None
+            else cur.test_bench_validated
+        ),
         instance=str(request.url.path),
     )
     await _run_pg_persistence(request, lambda eng: persist_agent_to_postgres18(eng, updated))
@@ -303,6 +315,7 @@ async def execute_agent_endpoint(
         speed_mode="SPEED_1_FAST",
         system_instructions_override=(
             f"Tu es l'agent ORCIA « {agent.name} » ({agent.handle}). "
+            f"Posture : {agent.posture} | Binôme : {agent.human_partner_role}. "
             f"Rôle et mission : {agent.role_mission}. "
             f"Instructions : {agent.instructions}. "
             "Respond in the exact same language as the user's message "
@@ -314,6 +327,10 @@ async def execute_agent_endpoint(
         prompt=payload.prompt,
         instance=str(request.url.path),
         llm_response_override=live_llm.response_text if live_llm is not None else None,
+    )
+    validated_agent = svc.get_agent(agent_id, instance=str(request.url.path))
+    await _run_pg_persistence(
+        request, lambda eng: persist_agent_to_postgres18(eng, validated_agent)
     )
     return ExecuteAgentResponse(
         agent_id=outcome.agent_id,

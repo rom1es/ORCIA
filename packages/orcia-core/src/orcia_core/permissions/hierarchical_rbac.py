@@ -1,20 +1,20 @@
-"""Hierarchical 6-Verb RBAC/ABAC Engine, Bounded Delegation & Anti-Lockout (`Story 8.1`, `AD-21`).
+"""Hierarchical 6-Verb RBAC/ABAC Engine, Delegation & Anti-Lockout (`Story 8.1`, `Story 17.3`).
 
 Implements:
 - 6 atomic verbs: `create`, `read`, `update`, `delete`, `execute`, `grant`
+- Native 6-role matrix (`PLATFORM_ADMIN`, `SECOPS`, `BU_LEAD`, `TEAM_LEAD`, `CONTRIBUTOR`,
+  `OBSERVER`)
 - Hierarchical evaluation along `org -> bu -> team -> workspace -> pack -> resource`
-- `ACTION_ITEM-8.1`: Explicit `DENY` priority and `inheritance_block`
+- `ACTION_ITEM-8.1` & `17.3`: Explicit `DENY` priority, `INHERITANCE_BLOCK`, and `resource_kind`
 - `ACTION_ITEM-8.2`: Contextual ABAC conditions on `execute` (`env`, `max_tokens_per_run`)
 - `ACTION_ITEM-8.3`: `hidden_when_unauthorized` (`HTTP 404`) vs passive discovery (`locked: true`)
-- Bounded delegation (`grant` confinement: delegated verbs <= held verbs)
-- Anti-lockout invariants (`ERR_ADMIN_LOCKOUT_PREVENTED`) & step-boundary revocation (`AD-21`)
+- Bounded delegation (`grant` confinement) & Anti-lockout invariants (`ERR_ADMIN_LOCKOUT_PREVENTED`)
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
-from typing import Any, Literal
+from dataclasses import replace
+from typing import Any
 
 from orcia_core.permissions.errors import (
     AdminLockoutPreventedError,
@@ -23,81 +23,30 @@ from orcia_core.permissions.errors import (
     ResourceNotFoundError,
     ScopeAccessDeniedError,
     SecretConfigReadDeniedError,
-    ValidationDomainError,
 )
+from orcia_core.permissions.iam_accounts import validate_grant_resource_kind
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.permissions.role_matrix import (
+    ALL_PERMISSION_VERBS,
+    DEFAULT_ROLE_PERMISSION_MATRIX,
+    GrantResourceKind,
+    OfficialIamRole,
+    PermissionEffect,
+    PermissionVerb,
+    ResourceDiscoveryOutcome,
+    RoleMatrixDescriptor,
+    RolePermissionGrant,
+    SubjectType,
+    iter_scope_prefixes,
+    list_native_role_matrix,
+    normalize_scope_path,
+)
 from orcia_kernel.events import AccessRequested, DomainEvent, PermissionGranted, PermissionRevoked
 from orcia_kernel.ids import new_uuid7_str
 
-PermissionVerb = Literal["create", "read", "update", "delete", "execute", "grant"]
-PermissionEffect = Literal["ALLOW", "DENY"]
-SubjectType = Literal["USER", "ROLE", "SERVICE_PRINCIPAL"]
-
-ALL_PERMISSION_VERBS: tuple[PermissionVerb, ...] = (
-    "create",
-    "read",
-    "update",
-    "delete",
-    "execute",
-    "grant",
-)
-
-
-def _now_iso() -> str:
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
-
-
-def normalize_scope_path(scope_path: str) -> str:
-    cleaned = scope_path.strip().strip("/")
-    if not cleaned:
-        raise ValidationDomainError(detail_override="scope_path must not be empty.")
-    return cleaned
-
-
-def iter_scope_prefixes(scope_path: str) -> list[str]:
-    """Return hierarchical prefixes from root to full `scope_path`."""
-    cleaned = normalize_scope_path(scope_path)
-    segments = [seg for seg in cleaned.split("/") if seg]
-    prefixes: list[str] = []
-    for idx in range(2, len(segments) + 1, 2):
-        prefixes.append("/".join(segments[:idx]))
-    if not prefixes or prefixes[-1] != cleaned:
-        prefixes.append(cleaned)
-    return prefixes
-
-
-@dataclass(frozen=True, slots=True)
-class RolePermissionGrant:
-    """Hierarchical 6-verb permission grant (`role_permission_grants`, `Story 8.1`, `AD-21`)."""
-
-    id: str
-    subject_type: SubjectType
-    subject_id: str
-    scope_path: str
-    verb: PermissionVerb
-    effect: PermissionEffect = "ALLOW"
-    inheritance_block: bool = False
-    conditions: dict[str, Any] = field(default_factory=dict)
-    hidden_when_unauthorized: bool = False
-    granted_by_user_id: str | None = None
-    created_at_iso: str = field(default_factory=_now_iso)
-
-
-@dataclass(frozen=True, slots=True)
-class ResourceDiscoveryOutcome:
-    """Result of evaluating a resource under the 6-verb RBAC/ABAC matrix (`AD-21`)."""
-
-    scope_path: str
-    title: str
-    allowed_verbs: tuple[PermissionVerb, ...]
-    locked: bool
-    reason: str | None = None
-    can_request_access: bool = False
-    secret_config_visible: bool = False
-
 
 class HierarchicalRbacService:
-    """Domain service for the 6-verb hierarchical RBAC/ABAC model (`Story 8.1`, `AD-21`)."""
+    """Domain service for the 6-verb hierarchical RBAC/ABAC model (`Story 8.1`, `Story 17.3`)."""
 
     def __init__(
         self,
@@ -135,6 +84,9 @@ class HierarchicalRbacService:
             if g.scope_path == norm or norm.startswith(f"{g.scope_path}/")
         ]
 
+    def replace_grants(self, grants: tuple[RolePermissionGrant, ...]) -> None:
+        self._grants = {g.id: g for g in grants}
+
     def set_scope_hidden_when_unauthorized(self, scope_path: str, hidden: bool = True) -> None:
         norm = normalize_scope_path(scope_path)
         if hidden:
@@ -145,10 +97,13 @@ class HierarchicalRbacService:
     def _matches_conditions(
         self, grant: RolePermissionGrant, context: dict[str, Any] | None
     ) -> bool:
-        """Evaluate ABAC conditions on `execute` (`ACTION_ITEM-8.2`)."""
+        """Evaluate ABAC conditions on `execute` and granular `resource_kind` (`Story 17.3`)."""
+        ctx = context or {}
+        requested_kind = str(ctx.get("resource_kind") or "ALL").strip().upper()
+        if grant.resource_kind != "ALL" and requested_kind != grant.resource_kind:
+            return False
         if not grant.conditions:
             return True
-        ctx = context or {}
         allowed_envs = grant.conditions.get("allowed_environments")
         if allowed_envs is not None and ctx.get("env") not in allowed_envs:
             return False
@@ -158,6 +113,15 @@ class HierarchicalRbacService:
         max_tokens = grant.conditions.get("max_tokens_per_run")
         requested_tokens = ctx.get("requested_tokens", 0)
         return not (max_tokens is not None and int(requested_tokens) > int(max_tokens))
+
+    def _grant_applies_to_resource_kind(
+        self, grant: RolePermissionGrant, context: dict[str, Any] | None
+    ) -> bool:
+        if grant.resource_kind == "ALL":
+            return True
+        ctx = context or {}
+        requested_kind = str(ctx.get("resource_kind") or "ALL").strip().upper()
+        return requested_kind == grant.resource_kind
 
     def resolve_effective_verbs(
         self,
@@ -171,8 +135,7 @@ class HierarchicalRbacService:
         """Compute effective allowed verbs along `scope_path` with `DENY` & `inheritance_block`."""
         if subject_id in self._revoked_subjects:
             return set()
-        if "PLATFORM_ADMIN" in roles and subject_type == "USER":
-            # Check if an explicit DENY exists on this scope even for roles
+        if ("PLATFORM_ADMIN" in roles or "SECOPS" in roles) and subject_type == "USER":
             prefixes = iter_scope_prefixes(scope_path)
             denied_admin: set[PermissionVerb] = set()
             for pfx in prefixes:
@@ -180,6 +143,7 @@ class HierarchicalRbacService:
                     if (
                         g.scope_path == pfx
                         and g.effect == "DENY"
+                        and self._grant_applies_to_resource_kind(g, context)
                         and (
                             (g.subject_type == subject_type and g.subject_id == subject_id)
                             or (g.subject_type == "ROLE" and g.subject_id in roles)
@@ -202,11 +166,18 @@ class HierarchicalRbacService:
                     or (g.subject_type == "ROLE" and g.subject_id in roles)
                 )
             ]
-            if any(g.inheritance_block for g in matching):
+            if any(
+                (g.inheritance_block or g.effect == "INHERITANCE_BLOCK")
+                and self._grant_applies_to_resource_kind(g, context)
+                for g in matching
+            ):
                 allowed.clear()
             for g in matching:
+                if g.effect == "INHERITANCE_BLOCK":
+                    continue
                 if g.effect == "DENY":
-                    denied.add(g.verb)
+                    if self._grant_applies_to_resource_kind(g, context):
+                        denied.add(g.verb)
                 elif self._matches_conditions(g, context):
                     allowed.add(g.verb)
 
@@ -225,7 +196,7 @@ class HierarchicalRbacService:
         require_execute: bool = False,
         instance: str | None = None,
     ) -> ResourceDiscoveryOutcome:
-        """Evaluate access on a resource (`execute` vs `read` secret isolation & passive lock)."""
+        """Evaluate access on a resource (`execute` vs `read` isolation & passive lock)."""
         norm_path = normalize_scope_path(scope_path)
         verbs = self.resolve_effective_verbs(
             subject_id=subject_id,
@@ -283,6 +254,7 @@ class HierarchicalRbacService:
         verbs: tuple[PermissionVerb, ...],
         effect: PermissionEffect = "ALLOW",
         inheritance_block: bool = False,
+        resource_kind: GrantResourceKind = "ALL",
         conditions: dict[str, Any] | None = None,
         hidden_when_unauthorized: bool = False,
         workspace_id: str | None = None,
@@ -292,10 +264,16 @@ class HierarchicalRbacService:
         if delegator.platform_role == "OBSERVER":
             raise ObserverModeReadOnlyError(instance=instance)
         norm_path = normalize_scope_path(scope_path)
+        valid_res_kind = validate_grant_resource_kind(resource_kind, instance=instance)
+        delegator_roles = (
+            (delegator.platform_role, "SECOPS")
+            if delegator.human_profile_archetype == "SECOPS"
+            else (delegator.platform_role,)
+        )
         held = self.resolve_effective_verbs(
             subject_id=delegator.id,
             subject_type="USER",
-            roles=(delegator.platform_role,),
+            roles=delegator_roles,
             scope_path=norm_path,
         )
         if "grant" not in held:
@@ -307,6 +285,8 @@ class HierarchicalRbacService:
         if hidden_when_unauthorized:
             self._hidden_scopes.add(norm_path)
 
+        effective_block = inheritance_block or (effect == "INHERITANCE_BLOCK")
+        outbox_effect = "ALLOW" if effect == "INHERITANCE_BLOCK" else effect
         created: list[RolePermissionGrant] = []
         for verb in verbs:
             grant = RolePermissionGrant(
@@ -316,7 +296,8 @@ class HierarchicalRbacService:
                 scope_path=norm_path,
                 verb=verb,
                 effect=effect,
-                inheritance_block=inheritance_block,
+                inheritance_block=effective_block,
+                resource_kind=valid_res_kind,
                 conditions=dict(conditions or {}),
                 hidden_when_unauthorized=hidden_when_unauthorized,
                 granted_by_user_id=delegator.id,
@@ -332,7 +313,7 @@ class HierarchicalRbacService:
                     scope_path=norm_path,
                     verb=verb,
                     granted_by_user_id=delegator.id,
-                    effect=effect,
+                    effect=outbox_effect,
                 )
             )
         return created
@@ -375,7 +356,6 @@ class HierarchicalRbacService:
         return grant
 
     def revoke_subject_immediately(self, actor: UserIdentity, subject_id: str) -> None:
-        """Revoke a Service Principal or user so the next `@DBOS.step` boundary blocks (`AD-21`)."""
         if actor.platform_role == "OBSERVER":
             raise ObserverModeReadOnlyError()
         if subject_id in self._active_admin_ids and len(self._active_admin_ids) <= 1:
@@ -385,7 +365,6 @@ class HierarchicalRbacService:
     def remove_platform_admin(
         self, actor: UserIdentity, target_admin_user_id: str, *, instance: str | None = None
     ) -> None:
-        """Remove a `PLATFORM_ADMIN`, blocking removal of the last active admin (`AD-21`)."""
         if actor.platform_role != "PLATFORM_ADMIN":
             raise ScopeAccessDeniedError(instance=instance)
         remaining = self._active_admin_ids - {target_admin_user_id}
@@ -396,7 +375,6 @@ class HierarchicalRbacService:
     def disable_auth_method(
         self, actor: UserIdentity, auth_method: str, *, instance: str | None = None
     ) -> None:
-        """Disable an authentication method, preventing disabling the last active one (`AD-21`)."""
         if actor.platform_role != "PLATFORM_ADMIN":
             raise ScopeAccessDeniedError(instance=instance)
         norm = auth_method.strip().upper()
@@ -415,7 +393,6 @@ class HierarchicalRbacService:
         context: dict[str, Any] | None = None,
         instance: str | None = None,
     ) -> None:
-        """Check at each `@DBOS.step` boundary that `execute` is still held (`AD-21`)."""
         verbs = self.resolve_effective_verbs(
             subject_id=subject_id,
             subject_type=subject_type,
@@ -441,7 +418,6 @@ class HierarchicalRbacService:
         justification: str = "",
         workspace_id: str | None = None,
     ) -> AccessRequested:
-        """Emit an `AccessRequested` Outbox event from a passive-discovery lock (`Story 8.1`)."""
         norm_path = normalize_scope_path(scope_path)
         event = AccessRequested.create(
             request_id=new_uuid7_str(),
@@ -457,13 +433,18 @@ class HierarchicalRbacService:
 
 __all__ = [
     "ALL_PERMISSION_VERBS",
+    "DEFAULT_ROLE_PERMISSION_MATRIX",
+    "GrantResourceKind",
     "HierarchicalRbacService",
+    "OfficialIamRole",
     "PermissionEffect",
     "PermissionVerb",
     "ResourceDiscoveryOutcome",
+    "RoleMatrixDescriptor",
     "RolePermissionGrant",
     "SubjectType",
     "iter_scope_prefixes",
+    "list_native_role_matrix",
     "normalize_scope_path",
     "replace",
 ]

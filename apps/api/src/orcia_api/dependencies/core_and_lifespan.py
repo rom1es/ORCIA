@@ -42,6 +42,7 @@ from orcia_core.orchestration import (
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
+    IamAccountsGovernanceService,
     PermissionBrokerService,
     PlatformSettingsService,
     RolePermissionGrant,
@@ -192,6 +193,9 @@ def initialize_app_services(app: FastAPI) -> None:
                 ),
             )
         )
+
+    if getattr(app.state, "iam_accounts_service", None) is None:
+        app.state.iam_accounts_service = IamAccountsGovernanceService()
 
     if getattr(app.state, "platform_settings_service", None) is None:
         settings_svc = PlatformSettingsService()

@@ -24,5 +24,5 @@ export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsert
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
-export type WhatIfSimulationRequest = components["schemas"]["WhatIfSimulationRequest"];
+export type WhatIfSimulationRequest = components["schemas"]["orcia_api__schemas__ontology_and_rag__WhatIfSimulationRequest"];
 export type WhatIfSimulationResponse = components["schemas"]["WhatIfSimulationResponse"];

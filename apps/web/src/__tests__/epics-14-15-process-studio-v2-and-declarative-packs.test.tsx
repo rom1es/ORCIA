@@ -65,9 +65,21 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
 
     expect(screen.getByTestId("processes-hub-v2-page")).toBeDefined();
+    expect(screen.getByTestId("processes-active-dossiers-card")).toBeDefined();
     expect(screen.getByTestId("processes-hub-vsm-hero-card")).toBeDefined();
     expect(screen.getByTestId("bounded-workflow-card-wf-01-qualification-prd")).toBeDefined();
     expect(screen.getByTestId("bounded-workflow-card-wf-08-dev-external-gate")).toBeDefined();
+
+    // Verify legacy forms / pack builders are NOT stacked below Mes Processus
+    expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
+    expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
+    expect(screen.getByTestId("processes-hub-v2-page").textContent).not.toContain("DBOS Transact");
+
+    // Launch/review a dossier directly inside /processes without opening Studio
+    fireEvent.click(screen.getByTestId("execute-workflow-btn-wf-01-qualification-prd"));
+    expect(screen.getByTestId("interactive-run-hitl-drawer")).toBeDefined();
+    fireEvent.click(screen.getByTestId("close-interactive-run-drawer-btn"));
+    expect(screen.queryByTestId("interactive-run-hitl-drawer")).toBeNull();
 
     // Filter by External Delegated Gate
     fireEvent.click(screen.getByTestId("workflows-hub-filter-external_delegated"));

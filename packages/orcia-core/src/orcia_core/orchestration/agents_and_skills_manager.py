@@ -13,13 +13,20 @@ from typing import Literal
 
 from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.orchestration.agents_and_skills_models import (
+    AgentDialogueMechanism,
     AgentExecutionOutcome,
+    AgentHumanPartnerRole,
+    AgentInvocationMode,
     AgentKindType,
+    AgentLlmModelTier,
+    AgentOutputContractFormat,
+    AgentPostureType,
     AgentSkillVisibilityScope,
     AgentThinkingLevel,
     InvokedSkillTraceItem,
     ManagedAgentRecord,
     ManagedSkillRecord,
+    McpToolPermissionMode,
     SkillExecutionOutcome,
     build_managed_agent_record,
     build_managed_skill_record,
@@ -186,6 +193,21 @@ class AgentsAndSkillsManagementService:
         mcp_exposed: bool | None = None,
         agent_kind: AgentKindType | None = None,
         remote_endpoint_url: str | None = None,
+        posture: AgentPostureType | None = None,
+        human_partner_role: AgentHumanPartnerRole | None = None,
+        llm_model_tier: AgentLlmModelTier | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        prompt_ref: str | None = None,
+        invocation_modes: tuple[str, ...] | list[str] | None = None,
+        dialogue_mechanism: AgentDialogueMechanism | None = None,
+        allowed_rag_sources: tuple[str, ...] | list[str] | None = None,
+        ontology_views: tuple[str, ...] | list[str] | None = None,
+        mcp_tool_permissions: dict[str, str] | tuple[tuple[str, str], ...] | None = None,
+        guardrails: tuple[str, ...] | list[str] | None = None,
+        output_contract_format: AgentOutputContractFormat | None = None,
+        write_preview_required: bool | None = None,
+        test_bench_validated: bool | None = None,
         instance: str | None = None,
     ) -> ManagedAgentRecord:
         clean_name = _require_non_empty(name, "Le nom de l'agent est obligatoire.", instance)
@@ -200,6 +222,15 @@ class AgentsAndSkillsManagementService:
         valid_skills = tuple(
             dict.fromkeys(sid.strip() for sid in skill_ids if sid.strip() in self._skills)
         )
+        norm_perms: tuple[tuple[str, str], ...] | None = None
+        if mcp_tool_permissions is not None:
+            items = (
+                mcp_tool_permissions.items()
+                if isinstance(mcp_tool_permissions, dict)
+                else mcp_tool_permissions
+            )
+            norm_perms = tuple((str(k).strip(), str(v).strip()) for k, v in items if str(k).strip())
+
         record = build_managed_agent_record(
             resolved_id=resolved_id,
             slug=slug,
@@ -216,6 +247,29 @@ class AgentsAndSkillsManagementService:
             mcp_exposed=mcp_exposed,
             agent_kind=agent_kind,
             remote_endpoint_url=remote_endpoint_url,
+            posture=posture,
+            human_partner_role=human_partner_role,
+            llm_model_tier=llm_model_tier,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            prompt_ref=prompt_ref.strip() if prompt_ref and prompt_ref.strip() else None,
+            invocation_modes=tuple(str(m).strip() for m in invocation_modes if str(m).strip())
+            if invocation_modes is not None
+            else None,
+            dialogue_mechanism=dialogue_mechanism,
+            allowed_rag_sources=tuple(str(s).strip() for s in allowed_rag_sources if str(s).strip())
+            if allowed_rag_sources is not None
+            else None,
+            ontology_views=tuple(str(v).strip() for v in ontology_views if str(v).strip())
+            if ontology_views is not None
+            else None,
+            mcp_tool_permissions=norm_perms,
+            guardrails=tuple(str(g).strip() for g in guardrails if str(g).strip())
+            if guardrails is not None
+            else None,
+            output_contract_format=output_contract_format,
+            write_preview_required=write_preview_required,
+            test_bench_validated=test_bench_validated,
         )
         self._agents[resolved_id] = record
         return record
@@ -259,6 +313,21 @@ class AgentsAndSkillsManagementService:
             mcp_exposed=False,
             agent_kind=source.agent_kind,
             remote_endpoint_url=source.remote_endpoint_url,
+            posture=source.posture,
+            human_partner_role=source.human_partner_role,
+            llm_model_tier=source.llm_model_tier,
+            temperature=source.temperature,
+            max_tokens=source.max_tokens,
+            prompt_ref=source.prompt_ref,
+            invocation_modes=source.invocation_modes,
+            dialogue_mechanism=source.dialogue_mechanism,
+            allowed_rag_sources=source.allowed_rag_sources,
+            ontology_views=source.ontology_views,
+            mcp_tool_permissions=source.mcp_tool_permissions,
+            guardrails=source.guardrails,
+            output_contract_format=source.output_contract_format,
+            write_preview_required=source.write_preview_required,
+            test_bench_validated=source.test_bench_validated,
             instance=instance,
         )
 
@@ -330,7 +399,7 @@ class AgentsAndSkillsManagementService:
                 LlmPromptRequest(
                     system_prompt=(
                         f"Agent: {agent.name} ({agent.handle}) | Rôle: {agent.role_mission} | "
-                        f"Instructions: {agent.instructions}"
+                        f"Posture: {agent.posture} | Instructions: {agent.instructions}"
                     ),
                     user_prompt=f"Demande: {clean_prompt}\nCompétences: {skills_block}",
                     model_family="anthropic",
@@ -340,18 +409,29 @@ class AgentsAndSkillsManagementService:
                 ),
             )
         )
-        return format_agent_execution_outcome(agent, clean_prompt, traces, llm_text)
+        validated_agent = rebuild_agent_with_skills(
+            replace(agent, test_bench_validated=True), agent.skill_ids
+        )
+        self._agents[agent_id] = validated_agent
+        return format_agent_execution_outcome(validated_agent, clean_prompt, traces, llm_text)
 
 
 __all__ = [
+    "AgentDialogueMechanism",
     "AgentExecutionOutcome",
+    "AgentHumanPartnerRole",
+    "AgentInvocationMode",
     "AgentKindType",
+    "AgentLlmModelTier",
+    "AgentOutputContractFormat",
+    "AgentPostureType",
     "AgentSkillVisibilityScope",
     "AgentThinkingLevel",
     "AgentsAndSkillsManagementService",
     "InvokedSkillTraceItem",
     "ManagedAgentRecord",
     "ManagedSkillRecord",
+    "McpToolPermissionMode",
     "SkillExecutionOutcome",
     "compute_payload_sha256",
     "normalize_identifier_slug",

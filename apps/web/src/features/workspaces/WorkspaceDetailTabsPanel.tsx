@@ -1,6 +1,4 @@
 import {
-  ContextualInfoTriggerButton,
-  DisabledButtonAlertIndicator,
   OrciaIcon,
   type ControlCenterDatasourceItem,
   type ControlCenterWorkspaceGovItem,
@@ -13,6 +11,7 @@ import type {
   PlatformSetupContextValue,
 } from "../../components/platformSetupStore";
 import { WorkspaceGlossaryAndOntologyTab } from "./WorkspaceGlossaryAndOntologyTab";
+import { WorkspaceSourcesRagTab } from "./WorkspaceSourcesRagTab";
 
 export type WorkspaceDetailTabKey = "SOURCES" | "GLOSSARY" | "MEMBERS";
 
@@ -54,19 +53,8 @@ export function WorkspaceDetailTabsPanel({
   onFeedback,
 }: WorkspaceDetailTabsPanelProps): React.ReactElement {
   const [activeDetailTab, setActiveDetailTab] = useState<WorkspaceDetailTabKey>("SOURCES");
-  const [dsAlias, setDsAlias] = useState("");
-  const [dsScheme, setDsScheme] = useState<"git" | "confluence" | "jira" | "db">("git");
-  const [dsUri, setDsUri] = useState("");
-  const [dsIdentity, setDsIdentity] = useState<"passthrough" | "service_account">("passthrough");
   const [instructionsByWs, setInstructionsByWs] = useState<Record<string, string>>({});
   const [instructionsSavedWsId, setInstructionsSavedWsId] = useState<string | null>(null);
-
-  const isDsSubmitDisabled = !dsAlias.trim() || !dsUri.trim();
-  const dsSubmitDisabledReason = isFr
-    ? "Renseignez le nom et l'adresse (URL/URI) de la source documentaire pour la connecter."
-    : "Enter the source name and URL/URI to connect it.";
-
-  const attachedSources = datasources.filter((d) => d.workspaceName === activeWorkspace.name);
 
   return (
     <section
@@ -131,172 +119,14 @@ export function WorkspaceDetailTabsPanel({
       </div>
 
       {activeDetailTab === "SOURCES" && (
-        <div
-          data-testid="workspace-detail-sources-content"
-          style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <strong style={{ fontSize: "14px" }}>
-              {isFr ? `Connecter une source documentaire à « ${activeWorkspace.name} »` : `Connect a document source to "${activeWorkspace.name}"`}
-            </strong>
-            <ContextualInfoTriggerButton
-              sectionId="workspace-sources"
-              label={isFr ? "Comprendre comment rattacher des sources documentaires" : "Understand how to attach document sources"}
-              onOpenHelpSection={openHelpSection}
-            />
-          </div>
-
-          <form
-            data-testid="workspace-inline-add-datasource-form"
-            autoComplete="off"
-            data-lpignore="true"
-            data-form-type="other"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!dsAlias.trim() || !dsUri.trim()) return;
-              onRegisterDatasource({
-                workspaceName: activeWorkspace.name,
-                alias: dsAlias.trim(),
-                scheme: dsScheme,
-                uri: dsUri.trim(),
-                executionIdentity: dsIdentity,
-                freshnessTtlDays: 30,
-              });
-              setDsAlias("");
-              setDsUri("");
-              onFeedback(
-                isFr
-                  ? `✅ Source « ${dsAlias.trim()} » rattachée à l'espace « ${activeWorkspace.name} ».`
-                  : `✅ Source "${dsAlias.trim()}" attached to workspace "${activeWorkspace.name}".`,
-              );
-            }}
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              alignItems: "center",
-              padding: "10px 12px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-bg-elevated)",
-            }}
-          >
-            <input
-              type="text"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid="workspace-inline-ds-alias-input"
-              value={dsAlias}
-              onChange={(e) => setDsAlias(e.target.value)}
-              placeholder={isFr ? "Nom de la source (ex: Wiki Produit)..." : "Source name..."}
-              style={{ ...inputStyle, minWidth: "170px" }}
-            />
-            <select
-              data-testid="workspace-inline-ds-scheme-select"
-              value={dsScheme}
-              onChange={(e) => setDsScheme(e.target.value as "git" | "confluence" | "jira" | "db")}
-              style={inputStyle}
-            >
-              <option value="git">{isFr ? "Dépôt Git" : "Git Repository"}</option>
-              <option value="confluence">{isFr ? "Espace Confluence" : "Confluence Space"}</option>
-              <option value="jira">{isFr ? "Projet Jira" : "Jira Project"}</option>
-              <option value="db">{isFr ? "Base documentaire" : "Document Database"}</option>
-            </select>
-            <input
-              type="text"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid="workspace-inline-ds-uri-input"
-              value={dsUri}
-              onChange={(e) => setDsUri(e.target.value)}
-              placeholder={isFr ? "Adresse URL / URI (ex: https://confluence.entreprise.fr/...)..." : "Source URL / URI..."}
-              style={{ ...inputStyle, flex: 1, minWidth: "220px" }}
-            />
-            <select
-              data-testid="workspace-inline-ds-identity-select"
-              value={dsIdentity}
-              onChange={(e) => setDsIdentity(e.target.value as "passthrough" | "service_account")}
-              style={inputStyle}
-            >
-              <option value="passthrough">{isFr ? "Compte personnel de chaque membre" : "Member personal account"}</option>
-              <option value="service_account">{isFr ? "Compte partagé d'équipe" : "Shared team account"}</option>
-            </select>
-            <button
-              type="submit"
-              data-testid="workspace-inline-ds-submit-btn"
-              disabled={isDsSubmitDisabled}
-              title={isDsSubmitDisabled ? dsSubmitDisabledReason : undefined}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "7px 14px",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                backgroundColor: "var(--color-primary-cobalt)",
-                color: "var(--color-primary-foreground)",
-                fontWeight: 600,
-                opacity: isDsSubmitDisabled ? 0.6 : 1,
-                cursor: isDsSubmitDisabled ? "not-allowed" : "pointer",
-              }}
-            >
-              <span>{isFr ? "+ Connecter la source" : "+ Connect source"}</span>
-              <DisabledButtonAlertIndicator
-                disabled={isDsSubmitDisabled}
-                reason={dsSubmitDisabledReason}
-                testIdSuffix="workspace-inline-ds-submit-btn"
-              />
-            </button>
-          </form>
-
-          {attachedSources.length === 0 ? (
-            <p data-testid="workspace-detail-sources-empty" style={{ margin: 0, fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-              {isFr ? "Aucune source documentaire n'est encore rattachée à cet Espace." : "No document source is attached to this Workspace yet."}
-            </p>
-          ) : (
-            <div style={{ display: "grid", gap: "8px" }}>
-              {attachedSources.map((ds) => (
-                <div
-                  key={ds.id}
-                  data-testid={`workspace-detail-source-row-${ds.id}`}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--color-border)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                  }}
-                >
-                  <div>
-                    <strong>{ds.alias}</strong>{" "}
-                    <a
-                      href={ds.uri}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--color-action-primary)" }}
-                    >
-                      {ds.uri}
-                    </a>
-                  </div>
-                  <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                    {ds.executionIdentity === "passthrough"
-                      ? isFr ? "Compte personnel" : "Personal account"
-                      : isFr ? "Compte partagé d'équipe" : "Shared team account"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <WorkspaceSourcesRagTab
+          isFr={isFr}
+          activeWorkspace={activeWorkspace}
+          fallbackDatasources={datasources}
+          openHelpSection={openHelpSection}
+          onRegisterDatasource={onRegisterDatasource}
+          onFeedback={onFeedback}
+        />
       )}
 
       {activeDetailTab === "GLOSSARY" && (

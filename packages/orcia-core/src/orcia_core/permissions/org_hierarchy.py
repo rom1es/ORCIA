@@ -1,0 +1,305 @@
+"""Pure domain invariants and DFS tree helpers for multi-level `OrgUnit` hierarchy (Story 17.2).
+
+Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
+Supports arbitrary multi-level hierarchies (`BU` -> `Sous-BU / Pôle` -> `TEAM`) while enforcing:
+- `BU` cannot have a `TEAM` parent (`OrgUnitInvalidParentKindError` -> `HTTP 422`).
+- Zero cycle in `parent_id` chains (`OrgUnitHierarchyCycleError` -> `HTTP 422`).
+- Duplicate slug rejection (`OrgUnitDuplicateSlugError` -> `HTTP 409`).
+- Non-empty deletion rejection (`OrgUnitNotEmptyError` -> `HTTP 409`).
+"""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from typing import Literal
+
+from orcia_core.permissions.errors import (
+    OrgUnitDuplicateSlugError,
+    OrgUnitHierarchyCycleError,
+    OrgUnitInvalidParentKindError,
+    OrgUnitNotEmptyError,
+    ResourceNotFoundError,
+    ValidationDomainError,
+)
+from orcia_core.permissions.models import OrgUnitNode
+from orcia_kernel.ids import new_uuid7_str
+
+OrgUnitKind = Literal["BU", "TEAM"]
+
+_SLUG_CLEAN_RE = re.compile(r"[^a-z0-9-]+")
+
+
+@dataclass(frozen=True, slots=True)
+class OrgUnitSummary:
+    """Read/write projection of an organizational unit node (`BU` or `TEAM`)."""
+
+    id: str
+    slug: str
+    name: str
+    kind: OrgUnitKind
+    parent_id: str | None = None
+    billing_enabled: bool = True
+    lead_user_id: str | None = None
+    member_user_ids: tuple[str, ...] = ()
+    attached_workspaces_count: int = 0
+
+
+def normalize_org_unit_slug(raw_slug: str | None, fallback_name: str) -> str:
+    """Normalize an optional user slug or derive a clean kebab-case slug from `fallback_name`."""
+    candidate = (raw_slug or "").strip().lower() or fallback_name.strip().lower()
+    cleaned = _SLUG_CLEAN_RE.sub("-", candidate).strip("-")
+    if not cleaned:
+        raise ValidationDomainError(
+            detail_override="Le nom ou l'identifiant court de l'unité ne peut pas être vide."
+        )
+    return cleaned[:120]
+
+
+def normalize_member_user_ids(raw_members: Sequence[str] | None) -> tuple[str, ...]:
+    """Deduplicate and trim member user identifiers while preserving insertion order."""
+    if not raw_members:
+        return ()
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for item in raw_members:
+        cleaned = str(item).strip()
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            ordered.append(cleaned)
+    return tuple(ordered)
+
+
+def normalize_exposed_parent_id(
+    raw_parent_id: str | None,
+    units_by_id: Mapping[str, OrgUnitNode],
+) -> str | None:
+    """Map technical `ENTERPRISE` root sentinels (`orcia-root` / `orcia-enterprise`) to `None`."""
+    if not raw_parent_id or raw_parent_id == "scope-global":
+        return None
+    parent = units_by_id.get(raw_parent_id)
+    if parent is not None and parent.unit_type == "ENTERPRISE":
+        return None
+    return raw_parent_id
+
+
+def map_node_to_kind(node: OrgUnitNode) -> OrgUnitKind:
+    """Normalize internal `OrgUnitType` (`BU`/`TRIBE` vs `TEAM`/`SUB_TEAM`) to `BU | TEAM`."""
+    return "BU" if node.unit_type in ("BU", "TRIBE") else "TEAM"
+
+
+def validate_org_unit_hierarchy(
+    *,
+    unit_id: str | None,
+    kind: OrgUnitKind,
+    parent_id: str | None,
+    units_by_id: Mapping[str, OrgUnitNode],
+) -> str | None:
+    """Validate parent existence, `BU`-under-`TEAM` prohibition, and cycle absence."""
+    cleaned_parent = (parent_id or "").strip() or None
+    if cleaned_parent is None or cleaned_parent == "scope-global":
+        return None
+
+    if unit_id is not None and cleaned_parent == unit_id:
+        raise OrgUnitHierarchyCycleError()
+
+    parent = units_by_id.get(cleaned_parent)
+    if parent is None:
+        parent = next(
+            (
+                u
+                for u in units_by_id.values()
+                if u.slug == cleaned_parent and u.unit_type != "ENTERPRISE"
+            ),
+            None,
+        )
+    if parent is None or parent.unit_type == "ENTERPRISE":
+        raise ResourceNotFoundError(
+            detail_override=f"Unité parente introuvable : '{cleaned_parent}'."
+        )
+
+    if kind == "BU" and parent.unit_type in ("TEAM", "SUB_TEAM"):
+        raise OrgUnitInvalidParentKindError()
+
+    if unit_id is not None:
+        visited: set[str] = {unit_id}
+        cursor: OrgUnitNode | None = parent
+        while cursor is not None:
+            if cursor.id in visited:
+                raise OrgUnitHierarchyCycleError()
+            visited.add(cursor.id)
+            next_pid = cursor.parent_id
+            cursor = units_by_id.get(next_pid) if next_pid else None
+
+    return parent.id
+
+
+def assert_unique_org_unit_slug(
+    slug: str,
+    units_by_id: Mapping[str, OrgUnitNode],
+    *,
+    exclude_unit_id: str | None = None,
+) -> None:
+    """Reject duplicate slugs across active organizational units (`HTTP 409`)."""
+    for node in units_by_id.values():
+        if node.unit_type == "ENTERPRISE":
+            continue
+        if exclude_unit_id is not None and node.id == exclude_unit_id:
+            continue
+        if node.slug == slug:
+            raise OrgUnitDuplicateSlugError(
+                detail_override=(
+                    f"L'identifiant court '{slug}' est déjà utilisé par « {node.name} »."
+                )
+            )
+
+
+def assert_org_unit_deletable(
+    *,
+    target_name: str,
+    child_units_count: int,
+    attached_workspaces_count: int,
+) -> None:
+    """Enforce `CA-17.2.3`: reject deletion with `HTTP 409 ERR_ORG_UNIT_NOT_EMPTY` if non-empty."""
+    if child_units_count <= 0 and attached_workspaces_count <= 0:
+        return
+    parts: list[str] = []
+    if child_units_count > 0:
+        unit_lbl = "sous-unités enfants" if child_units_count > 1 else "sous-unité enfant"
+        parts.append(f"{child_units_count} {unit_lbl}")
+    if attached_workspaces_count > 0:
+        ws_lbl = (
+            "espaces de travail rattachés"
+            if attached_workspaces_count > 1
+            else "espace de travail rattaché"
+        )
+        parts.append(f"{attached_workspaces_count} {ws_lbl}")
+    joined = " et ".join(parts)
+    raise OrgUnitNotEmptyError(
+        detail_override=(
+            f"Suppression refusée pour « {target_name} » : {joined}. "
+            "Déplacez ou supprimez d'abord ces éléments avant de supprimer l'unité."
+        )
+    )
+
+
+def sort_org_unit_summaries_dfs(items: Sequence[OrgUnitSummary]) -> list[OrgUnitSummary]:
+    """Order `OrgUnitSummary` items in hierarchical DFS order (`BU` first, then `TEAM`)."""
+    by_id = {item.id: item for item in items}
+    children_by_parent: dict[str | None, list[OrgUnitSummary]] = {}
+    for item in items:
+        effective_parent = item.parent_id if item.parent_id in by_id else None
+        children_by_parent.setdefault(effective_parent, []).append(item)
+
+    for siblings in children_by_parent.values():
+        siblings.sort(key=lambda u: (0 if u.kind == "BU" else 1, u.name.lower(), u.slug))
+
+    ordered: list[OrgUnitSummary] = []
+    visited: set[str] = set()
+
+    def _visit(parent_key: str | None) -> None:
+        for child in children_by_parent.get(parent_key, ()):
+            if child.id in visited:
+                continue
+            visited.add(child.id)
+            ordered.append(child)
+            _visit(child.id)
+
+    _visit(None)
+    for item in items:
+        if item.id not in visited:
+            ordered.append(item)
+    return ordered
+
+
+def sort_org_unit_dicts_topologically(
+    raw_units: Sequence[Mapping[str, object]],
+) -> list[dict[str, object]]:
+    """Sort setup `org_units` dicts topologically so every parent precedes its children."""
+    items = [dict(u) for u in raw_units]
+    by_ref: dict[str, int] = {}
+    for idx, item in enumerate(items):
+        uid = str(item.get("id") or "").strip()
+        uslug = str(item.get("slug") or "").strip()
+        if uid:
+            by_ref[uid] = idx
+        if uslug and uslug not in by_ref:
+            by_ref[uslug] = idx
+
+    emitted: set[int] = set()
+    visiting: set[int] = set()
+    ordered: list[dict[str, object]] = []
+
+    def _emit(idx: int) -> None:
+        if idx in emitted or idx in visiting:
+            return
+        visiting.add(idx)
+        parent_ref = str(items[idx].get("parentId") or items[idx].get("parent_id") or "").strip()
+        if parent_ref and parent_ref != "scope-global" and parent_ref in by_ref:
+            parent_idx = by_ref[parent_ref]
+            if parent_idx != idx:
+                _emit(parent_idx)
+        visiting.discard(idx)
+        emitted.add(idx)
+        ordered.append(items[idx])
+
+    # Visit BUs first so root/sub-BUs precede teams deterministically
+    sorted_indices = sorted(
+        range(len(items)),
+        key=lambda i: (
+            0
+            if str(items[i].get("level") or items[i].get("unit_type") or "BU").upper() == "BU"
+            else 1,
+            i,
+        ),
+    )
+    for idx in sorted_indices:
+        _emit(idx)
+    return ordered
+
+
+def generate_new_org_unit_id() -> str:
+    """Return a fresh canonical `UUIDv7` string for a newly created `OrgUnit`."""
+    return new_uuid7_str()
+
+
+def build_org_unit_summary(
+    node: OrgUnitNode,
+    units_by_id: Mapping[str, OrgUnitNode],
+    *,
+    attached_workspaces_count: int = 0,
+) -> OrgUnitSummary:
+    """Convert an `OrgUnitNode` into a normalized `OrgUnitSummary`."""
+    return OrgUnitSummary(
+        id=node.id,
+        slug=node.slug,
+        name=node.name,
+        kind=map_node_to_kind(node),
+        parent_id=normalize_exposed_parent_id(node.parent_id, units_by_id),
+        billing_enabled=node.billing_enabled,
+        lead_user_id=node.lead_user_id,
+        member_user_ids=node.member_user_ids,
+        attached_workspaces_count=attached_workspaces_count,
+    )
+
+
+def list_evaluator_org_unit_summaries(
+    org_units: Sequence[OrgUnitNode],
+    workspace_owner_ids: Sequence[str],
+) -> list[OrgUnitSummary]:
+    """List non-enterprise `OrgUnitSummary` items in DFS order with workspace counts."""
+    units_by_id = {u.id: u for u in org_units}
+    ws_counts: dict[str, int] = {}
+    for owner_id in workspace_owner_ids:
+        ws_counts[owner_id] = ws_counts.get(owner_id, 0) + 1
+    summaries = [
+        build_org_unit_summary(
+            node,
+            units_by_id,
+            attached_workspaces_count=ws_counts.get(node.id, 0),
+        )
+        for node in org_units
+        if node.unit_type != "ENTERPRISE"
+    ]
+    return sort_org_unit_summaries_dfs(summaries)

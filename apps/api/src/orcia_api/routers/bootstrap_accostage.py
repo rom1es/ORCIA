@@ -15,6 +15,10 @@ from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
 from orcia_core import bootstrap as bm
+from orcia_core.bootstrap import (
+    load_platform_setup_state_from_postgres18,
+    save_platform_setup_state_to_postgres18,
+)
 from orcia_core.bootstrap.errors import OrciaDomainError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_kernel.ids import new_uuid7_str
@@ -253,9 +257,7 @@ async def get_platform_setup_state(request: Request) -> bs.PlatformSetupStateRes
     if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
         try:
             engine = get_or_create_shared_db_engine(request)
-            snap = await bm.load_platform_setup_state_from_postgres18(
-                engine, orcia_env=svc.orcia_env
-            )
+            snap = await load_platform_setup_state_from_postgres18(engine, orcia_env=svc.orcia_env)
             db_admin = await bm.get_first_platform_admin_from_postgres18(
                 engine, orcia_env=svc.orcia_env
             )
@@ -311,7 +313,7 @@ async def put_platform_setup_state(
     if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
         try:
             engine = get_or_create_shared_db_engine(request)
-            saved = await bm.save_platform_setup_state_to_postgres18(
+            saved = await save_platform_setup_state_to_postgres18(
                 engine, candidate, orcia_env=svc.orcia_env
             )
         except Exception as exc:

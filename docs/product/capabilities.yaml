@@ -53,10 +53,11 @@ capabilities:
     title: Exécution passthrough / service principal et Permission Broker (lien Jira pré-rempli)
     fr: [FR-22]
     origin: epic
-    origin_ref: 1-4-exécution-passthrough-service-principal-permission-broker-ia
+    origin_ref: 1-4-exécution-passthrough-service-principal-permission-broker-ia + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag
     status: live
-    tests: [tests/unit/test_permission_broker.py]
-    surfaces: { api: "/api/v1/permissions/broker (permission_broker.py)" }
+    tests: [tests/unit/test_permission_broker.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
+    verification: runtime
+    surfaces: { api: "/api/v1/permissions/broker (permission_broker.py) + enterprise_connectors.py", ui: UserSettingsProfileAndPassthroughTabs }
   - id: CAP-004
     title: Workflows système d'amorçage Jour 0 et onboarding d'équipe
     fr: [FR-28]
@@ -212,22 +213,23 @@ capabilities:
 
   # ───────────── Settings & gouvernance (Epic 8 + ad-hoc) ─────────────
   - id: CAP-050
-    title: Modèle d'habilitations RBAC/ABAC à 6 verbes (hidden_when_unauthorized, ABAC staging/budget)
+    title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 6 rôles et exceptions SecOps
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-1
+    origin_ref: 8-1, 17-3
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py]
     verification: runtime
-    surfaces: { route: /settings, api: "/api/v1/settings/iam" }
+    surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py)", migration: "20261111_1703" }
   - id: CAP-051
-    title: Écran Habilitations IAM (correction après dialogue UX)
+    title: Annuaire des comptes (anti-lockout), matrice des 6 rôles officiels, tiroir d'exceptions SecOps et secrets en saisie seule
     fr: [FR-31]
-    origin: adhoc
-    origin_ref: 2026-11-05-dialogue-sally-winston-correction-ecran-habilitations-iam
+    origin: epic
+    origin_ref: 17-3
     status: live
-    tests: [packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
-    surfaces: { route: /settings, ui: SettingsIamOrganizationSection }
+    tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py]
+    verification: runtime
+    surfaces: { route: /settings, api: iam_accounts.py, ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamNativeRoleMatrixCard + IamSecopsExceptionsDrawer" }
   - id: CAP-052
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
@@ -247,10 +249,11 @@ capabilities:
     title: Hub connecteurs et gestion des secrets
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-4
+    origin_ref: 8-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/security/test_api_security_baseline.py]
-    surfaces: { route: /settings }
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/security/test_api_security_baseline.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
+    verification: runtime
+    surfaces: { route: /settings, api: enterprise_connectors.py, ui: EnterpriseConnectorsSettingsSection, migration: "20261111_1704" }
   - id: CAP-055
     title: Studio workflows et registre des packs
     fr: [FR-31]
@@ -258,7 +261,7 @@ capabilities:
     origin_ref: 8-5
     status: live
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx]
-    surfaces: { route: /settings, ui: SettingsPacksSection }
+    surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
@@ -275,27 +278,27 @@ capabilities:
     origin_ref: 8-6
     status: live
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
-    surfaces: { route: /wizards }
+    surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
-    title: Coquille Settings avec permission guards
+    title: Coquille Settings à 5 onglets adaptatifs avec permission guards dynamiques
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3
+    origin_ref: 8-3, 17-1
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx]
     verification: runtime
-    surfaces: { route: "/settings, /configuration", api: settings_and_studio.py }
+    surfaces: { route: "/settings, /configuration", api: settings_and_studio.py, ui: "SettingsHubView (organization, iam, models, connectors, packs) + authSessionStore" }
 
-  # ───────────── Shell, navigation, aide (Epic 9, 12 + ad-hoc) ─────────────
+  # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
-    title: Shell 4 zones Direction C (8 entrées) et cockpit épuré
+    title: Shell 4 zones Direction C (8 entrées, icônes SVG filaires 16px, barre de repli & Mon Compte) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1
+    origin_ref: 9-1, 12-1, 17-1
     status: live
-    tests: [apps/web/e2e/shell.spec.ts]
+    tests: [apps/web/e2e/shell.spec.ts, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx]
     verification: runtime
-    surfaces: { ui: AppShell + CollapsibleAppRail, api: /api/v1/navigation }
+    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: /api/v1/navigation }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
@@ -318,10 +321,11 @@ capabilities:
     title: Menu compte et modale de préférences utilisateur
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-4
+    origin_ref: 9-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag
     status: live
-    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
     verification: runtime
+    surfaces: { ui: ShellHeaderAccountControl + UserSettingsProfileAndPassthroughTabs, api: /api/v1/users/me/account-profile }
   - id: CAP-064
     title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide)
     fr: [FR-32]
@@ -400,11 +404,11 @@ capabilities:
     title: Mes Espaces 5 sous-onglets, cascade de localisation d'artefacts, waivers
     fr: [FR-34]
     origin: epic
-    origin_ref: 11-1
+    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
     verification: runtime
-    surfaces: { route: /spaces, api: workspace_governance.py, migration: "0026" }
+    surfaces: { route: /spaces, api: "workspace_governance.py + workspace_datasources.py", ui: WorkspaceSourcesRagTab, migration: "0026 + 20261111_1704" }
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
     fr: [FR-34]
@@ -444,14 +448,14 @@ capabilities:
     verification: runtime
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: AgentsAndSkillsManagerView }
   - id: CAP-091
-    title: Refonte complète écran Agents, Skills et MCP
+    title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]
     origin: adhoc
-    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp
+    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes
     status: live
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + WorkspaceAssistantPinnedCard + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal" }
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
   - id: CAP-100
@@ -473,14 +477,14 @@ capabilities:
     tests: [packages/ui/src/__tests__/inbox-and-cockpit-primitives.test.tsx]
     surfaces: { route: /inbox }
   - id: CAP-067
-    title: Rattachement d'équipe, facturation, espaces privés et sélecteur de contexte
-    fr: [FR-3, FR-21, FR-34]
-    origin: adhoc
-    origin_ref: 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte
+    title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
+    fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
+    origin: epic
+    origin_ref: 17-2 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    surfaces: { route: /spaces, api: org_and_workspaces.py }
+    surfaces: { route: "/spaces, /settings", api: "org_and_workspaces.py, org_units.py", ui: "SettingsOrganizationUnitsBlock + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal", migration: 20261111_1702_story_17_2_org_units_billing_and_members.py }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]

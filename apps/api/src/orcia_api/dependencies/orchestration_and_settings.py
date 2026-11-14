@@ -16,6 +16,7 @@ from orcia_core.orchestration import (
 )
 from orcia_core.permissions import (
     HierarchicalRbacService,
+    IamAccountsGovernanceService,
     PlatformSettingsService,
 )
 from orcia_core.rag import ConnectorHubAndIngestionService
@@ -75,6 +76,18 @@ def get_hierarchical_rbac_service(request: Request) -> HierarchicalRbacService:
     if svc is None:
         initialize_app_services(request.app)
         svc = request.app.state.hierarchical_rbac_service
+    assert svc is not None
+    return svc
+
+
+def get_iam_accounts_service(request: Request) -> IamAccountsGovernanceService:
+    """FastAPI `Depends` provider returning `IamAccountsGovernanceService` (`Story 17.3`)."""
+    svc: IamAccountsGovernanceService | None = getattr(
+        request.app.state, "iam_accounts_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.iam_accounts_service
     assert svc is not None
     return svc
 

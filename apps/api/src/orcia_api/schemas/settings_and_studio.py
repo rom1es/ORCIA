@@ -10,7 +10,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 PermissionVerbLiteral = Literal["create", "read", "update", "delete", "execute", "grant"]
-PermissionEffectLiteral = Literal["ALLOW", "DENY"]
+PermissionEffectLiteral = Literal["ALLOW", "DENY", "INHERITANCE_BLOCK"]
+GrantResourceKindLiteral = Literal["ALL", "WORKFLOW", "AGENT", "DATASOURCE", "CONNECTOR"]
 SubjectTypeLiteral = Literal["USER", "ROLE", "SERVICE_PRINCIPAL"]
 InferenceTierLiteral = Literal["simple", "medium", "complex", "auto"]
 ResolvedInferenceTierLiteral = Literal["simple", "medium", "complex"]
@@ -47,7 +48,7 @@ class SecretStatusResponse(BaseModel):
 
 
 class RolePermissionGrantResponse(BaseModel):
-    """6-verb RBAC/ABAC grant representation (`Story 8.1`)."""
+    """6-verb RBAC/ABAC grant representation (`Story 8.1`, `Story 17.3`)."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -58,10 +59,20 @@ class RolePermissionGrantResponse(BaseModel):
     verb: PermissionVerbLiteral
     effect: PermissionEffectLiteral
     inheritance_block: bool
+    resource_kind: GrantResourceKindLiteral = "ALL"
     conditions: dict[str, Any]
     hidden_when_unauthorized: bool
     granted_by_user_id: str | None = None
     created_at_iso: str
+
+
+class GrantDeleteResponse(BaseModel):
+    """Envelope returned by `DELETE /api/v1/settings/iam/grants/{grant_id}` (`Story 17.3`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    deleted_id: str
+    trace_id: str
 
 
 def _default_delegate_verbs() -> list[PermissionVerbLiteral]:
@@ -69,17 +80,18 @@ def _default_delegate_verbs() -> list[PermissionVerbLiteral]:
 
 
 class DelegateGrantRequest(BaseModel):
-    """Request to delegate a subset of held permissions (`grant` confinement, `Story 8.1`)."""
+    """Request to delegate held permissions (`grant` confinement, `Story 8.1` / `17.3`)."""
 
     model_config = ConfigDict(extra="forbid")
 
     actor_persona: str = "marc"
     subject_type: SubjectTypeLiteral = "USER"
     subject_id: str = Field(default="0195f000-0000-7000-8000-000000000204", min_length=1)
-    scope_path: str = Field(default="org/orcia/bu/claims/team/alpha", min_length=3)
+    scope_path: str = Field(default="org/orcia/bu/claims/team/alpha", min_length=2)
     verbs: list[PermissionVerbLiteral] = Field(default_factory=_default_delegate_verbs)
     effect: PermissionEffectLiteral = "ALLOW"
     inheritance_block: bool = False
+    resource_kind: GrantResourceKindLiteral = "ALL"
     conditions: dict[str, Any] = Field(default_factory=dict)
     hidden_when_unauthorized: bool = False
     workspace_id: str | None = None

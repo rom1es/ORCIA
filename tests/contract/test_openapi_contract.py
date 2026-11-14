@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 import schemathesis
 from hypothesis import given, settings
 from scripts.export_openapi import export_or_check
@@ -17,8 +18,11 @@ def test_openapi_client_zero_diff_gate() -> None:
     )
 
 
-def test_schemathesis_openapi_contract_compliance() -> None:
+def test_schemathesis_openapi_contract_compliance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Fuzz all registered OpenAPI 3.1 operations via Schemathesis ASGI runner."""
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     schema = schemathesis.openapi.from_asgi("/openapi.json", app)
 

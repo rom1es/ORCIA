@@ -37,13 +37,16 @@ CatalogPermission = Literal["DISCOVER", "EXECUTE", "READ_SOURCE", "EDIT", "ADMIN
 
 @dataclass(frozen=True, slots=True)
 class OrgUnitNode:
-    """Node in the hierarchical organizational tree (`org_units`, AD-6, AD-14)."""
+    """Node in the hierarchical organizational tree (`org_units`, AD-6, AD-14, Story 17.2)."""
 
     id: str
     slug: str
     name: str
     unit_type: OrgUnitType
     parent_id: str | None = None
+    billing_enabled: bool = True
+    lead_user_id: str | None = None
+    member_user_ids: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)

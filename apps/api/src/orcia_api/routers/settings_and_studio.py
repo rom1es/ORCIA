@@ -1,33 +1,42 @@
-"""FastAPI router for Epic 8: Settings Hub (`/api/v1/settings/*`), RBAC 6-Verbs, LLM Tiers,
-Connectors/Ingestion, Studio Governance & Durable DBOS Wizards (`Stories 8.1..8.6`, `AD-21`).
+"""FastAPI router for Epic 8 & Story 17.3: Settings Hub (`/api/v1/settings/*`), RBAC 6-Verbs
+SecOps Grants (`GET/POST/DELETE /settings/iam/grants`), LLM Tiers & Connectors (`AD-21`).
+
+Studio Dry-Run & Durable Wizards were extracted to `studio_and_wizards.py` (`< 400`-line hygiene).
 """
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 
 from orcia_api.dependencies import (
     get_auth_service,
     get_cognitive_router_service,
     get_connector_hub_service,
-    get_durable_wizard_service,
     get_hierarchical_rbac_service,
+    get_or_create_shared_db_engine,
     get_platform_settings_service,
-    get_studio_and_pack_service,
 )
-from orcia_api.schemas.problem_details import ProblemDetails
+from orcia_api.routers._settings_helpers import (
+    SETTINGS_PROBLEM_RESPONSES,
+    enforce_not_observer_mode,
+    is_pg_bootstrap_enabled,
+    serialize_grant,
+    to_llm_mapping_response,
+    to_routing_outcome_response,
+    to_setting_response,
+)
+from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.settings_and_studio import (
     CognitiveRoutingOutcomeResponse,
     ConnectorTestConnectionResponse,
     DelegateGrantRequest,
-    DemoWorkspaceProvisionResponse,
     DocumentIngestionRequest,
     DocumentIngestionResponse,
     EvaluateResourceAccessRequest,
     ExecuteTierRoutingRequest,
-    InferenceAttemptResponse,
+    GrantDeleteResponse,
     LlmTierMappingResponse,
     OutboxReplayRequest,
     OutboxReplayResponse,
@@ -36,66 +45,34 @@ from orcia_api.schemas.settings_and_studio import (
     RagReciprocityResponse,
     ResourceDiscoveryResponse,
     RolePermissionGrantResponse,
-    SecretStatusResponse,
-    StudioDryRunRequest,
-    StudioDryRunResponse,
-    WizardAdvanceStepRequest,
-    WizardSessionRequest,
-    WizardSessionResponse,
 )
-from orcia_core.bootstrap import DurableOnboardingWizardService
+from orcia_core.bootstrap import (
+    create_iam_grants_on_postgres18,
+    delete_iam_grant_on_postgres18,
+    list_iam_grants_from_postgres18,
+)
+from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
     CognitiveModelRouterService,
     PinRemovalMode,
     ResolvedInferenceTier,
-    WorkflowStudioAndPackService,
 )
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
-    PlatformSettingRecord,
     PlatformSettingsService,
     SecretInputSpec,
 )
+from orcia_core.permissions.errors import OrciaDomainError
 from orcia_core.rag import ConnectorHubAndIngestionService
 
-SETTINGS_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
-    400: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    401: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    403: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    404: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    409: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    412: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    422: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    428: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-}
+logger = get_logger("orcia.api.settings")
 
 router = APIRouter(
     prefix="/api/v1",
     tags=["settings-and-studio"],
     responses=SETTINGS_PROBLEM_RESPONSES,
 )
-
-
-def _to_setting_response(rec: PlatformSettingRecord) -> PlatformSettingResponse:
-    return PlatformSettingResponse(
-        id=rec.id,
-        scope_level=rec.scope_level,
-        scope_id=rec.scope_id,
-        category=rec.category,
-        key=rec.key,
-        value_jsonb=rec.value_jsonb,
-        secret_status=SecretStatusResponse(
-            configured=rec.secret_status.configured,
-            fingerprint=rec.secret_status.fingerprint,
-            updated_at=rec.secret_status.updated_at,
-            updated_by=rec.secret_status.updated_by,
-        ),
-        version=rec.version,
-        etag=rec.etag,
-        updated_at=rec.updated_at,
-        updated_by=rec.updated_by,
-    )
 
 
 @router.post("/settings/iam/evaluate", response_model=ResourceDiscoveryResponse)
@@ -127,15 +104,37 @@ def evaluate_rbac_resource(
     )
 
 
+@router.get("/settings/iam/grants", response_model=list[RolePermissionGrantResponse])
+async def list_rbac_grants(
+    request: Request,
+    rbac: Annotated[HierarchicalRbacService, Depends(get_hierarchical_rbac_service)],
+    scope_path: Annotated[str | None, Query(max_length=512)] = None,
+) -> list[RolePermissionGrantResponse]:
+    """List SecOps RBAC/ABAC exceptions and isolation rules (`Story 17.3`)."""
+    if is_pg_bootstrap_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            pg_grants = await list_iam_grants_from_postgres18(engine)
+            if pg_grants:
+                rbac.replace_grants(tuple(pg_grants))
+                items = rbac.list_grants(scope_path=scope_path)
+                return [serialize_grant(g) for g in items]
+        except OrciaDomainError:
+            raise
+        except Exception as exc:
+            logger.warning("iam_grants_list_pg_fallback", error_type=type(exc).__name__)
+    return [serialize_grant(g) for g in rbac.list_grants(scope_path=scope_path)]
+
+
 @router.post("/settings/iam/grants", response_model=list[RolePermissionGrantResponse])
-def delegate_rbac_grants(
+async def delegate_rbac_grants(
     payload: DelegateGrantRequest,
     request: Request,
-    auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     rbac: Annotated[HierarchicalRbacService, Depends(get_hierarchical_rbac_service)],
 ) -> list[RolePermissionGrantResponse]:
-    """Delegate a subset of held permissions (`grant` confinement, `Story 8.1`)."""
-    delegator = auth.resolve_user(persona_key=payload.actor_persona)
+    """Delegate a subset of held permissions or isolate scope (`Story 8.1`, `Story 17.3`)."""
+    enforce_not_observer_mode(request)
+    delegator = resolve_request_user(request, persona_key=payload.actor_persona)
     grants = rbac.delegate_grant(
         delegator,
         subject_type=payload.subject_type,
@@ -144,27 +143,52 @@ def delegate_rbac_grants(
         verbs=tuple(payload.verbs),
         effect=payload.effect,
         inheritance_block=payload.inheritance_block,
+        resource_kind=payload.resource_kind,
         conditions=payload.conditions,
         hidden_when_unauthorized=payload.hidden_when_unauthorized,
         workspace_id=payload.workspace_id,
         instance=str(request.url.path),
     )
-    return [
-        RolePermissionGrantResponse(
-            id=g.id,
-            subject_type=g.subject_type,
-            subject_id=g.subject_id,
-            scope_path=g.scope_path,
-            verb=g.verb,
-            effect=g.effect,
-            inheritance_block=g.inheritance_block,
-            conditions=g.conditions,
-            hidden_when_unauthorized=g.hidden_when_unauthorized,
-            granted_by_user_id=g.granted_by_user_id,
-            created_at_iso=g.created_at_iso,
-        )
-        for g in grants
-    ]
+    if is_pg_bootstrap_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            grants = await create_iam_grants_on_postgres18(engine, grants)
+        except OrciaDomainError:
+            raise
+        except Exception as exc:
+            logger.warning("iam_grants_create_pg_fallback", error_type=type(exc).__name__)
+    return [serialize_grant(g) for g in grants]
+
+
+@router.delete("/settings/iam/grants/{grant_id}", response_model=GrantDeleteResponse)
+async def revoke_rbac_grant_endpoint(
+    grant_id: Annotated[str, Path(min_length=1, max_length=128)],
+    request: Request,
+    rbac: Annotated[HierarchicalRbacService, Depends(get_hierarchical_rbac_service)],
+    actor_persona: Annotated[str, Query(min_length=1, max_length=64)] = "karim",
+) -> GrantDeleteResponse:
+    """Revoke an IAM exception / isolation rule (`Story 17.3`)."""
+    enforce_not_observer_mode(request)
+    actor = resolve_request_user(request, persona_key=actor_persona)
+    deleted_id: str | None = None
+    if is_pg_bootstrap_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            deleted_id = await delete_iam_grant_on_postgres18(
+                engine, grant_id, instance=str(request.url.path)
+            )
+            if any(g.id == grant_id for g in rbac.list_grants()):
+                rbac.revoke_grant(actor, grant_id, instance=str(request.url.path))
+        except OrciaDomainError:
+            raise
+        except Exception as exc:
+            logger.warning("iam_grants_delete_pg_fallback", error_type=type(exc).__name__)
+            deleted_id = None
+    if deleted_id is None:
+        revoked = rbac.revoke_grant(actor, grant_id, instance=str(request.url.path))
+        deleted_id = revoked.id
+    trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+    return GrantDeleteResponse(deleted_id=deleted_id, trace_id=trace_id)
 
 
 @router.get("/settings/entries", response_model=list[PlatformSettingResponse])
@@ -172,7 +196,7 @@ def list_platform_settings(
     settings_svc: Annotated[PlatformSettingsService, Depends(get_platform_settings_service)],
 ) -> list[PlatformSettingResponse]:
     """List versioned platform settings with `ETag` and `SecretStatus` (`Story 8.3`)."""
-    return [_to_setting_response(s) for s in settings_svc.list_settings()]
+    return [to_setting_response(s) for s in settings_svc.list_settings()]
 
 
 @router.patch("/settings/entries", response_model=PlatformSettingResponse)
@@ -206,7 +230,7 @@ def patch_platform_setting(
         instance=str(request.url.path),
     )
     response.headers["ETag"] = updated.etag
-    return _to_setting_response(updated)
+    return to_setting_response(updated)
 
 
 @router.post("/admin/outbox/replays", response_model=OutboxReplayResponse)
@@ -240,24 +264,7 @@ def list_llm_tier_mappings(
     router_svc: Annotated[CognitiveModelRouterService, Depends(get_cognitive_router_service)],
 ) -> list[LlmTierMappingResponse]:
     """List workspace cognitive tier mappings (`Story 8.2`)."""
-    return [
-        LlmTierMappingResponse(
-            id=m.id,
-            scope_level=m.scope_level,
-            scope_id=m.scope_id,
-            inference_tier=m.inference_tier,
-            effort=m.effort,
-            provider_slug=m.provider_slug,
-            model_family=m.model_family,
-            model_name=m.model_name,
-            max_tokens_budget=m.max_tokens_budget,
-            max_cost_usd=m.max_cost_usd,
-            fallback_order=m.fallback_order,
-            is_active=m.is_active,
-            draining=m.draining,
-        )
-        for m in router_svc.list_mappings()
-    ]
+    return [to_llm_mapping_response(m) for m in router_svc.list_mappings()]
 
 
 @router.post("/settings/ai-models/route", response_model=CognitiveRoutingOutcomeResponse)
@@ -283,39 +290,12 @@ async def execute_cognitive_tier_route(
         evaluator_model_family=payload.evaluator_model_family,
         deterministic_gate_fn=_gate_fn,
     )
-    return CognitiveRoutingOutcomeResponse(
-        run_id=outcome.run_id,
-        step_execution_id=outcome.step_execution_id,
-        requested_tier=outcome.requested_tier,
-        final_resolved_tier=outcome.final_resolved_tier,
-        effort=outcome.effort,
-        response_content=outcome.response_content,
-        model_family=outcome.model_family,
-        model_name=outcome.model_name,
-        attempts=[
-            InferenceAttemptResponse(
-                id=a.id,
-                attempt_index=a.attempt_index,
-                requested_tier=a.requested_tier,
-                resolved_tier=a.resolved_tier,
-                effort=a.effort,
-                model_family=a.model_family,
-                model_name=a.model_name,
-                deterministic_gate_passed=a.deterministic_gate_passed,
-                failure_reason=a.failure_reason,
-                cost_usd=a.cost_usd,
-                idempotency_key=a.idempotency_key,
-            )
-            for a in outcome.attempts
-        ],
-        total_cost_usd=outcome.total_cost_usd,
-        paused_budget_exceeded=outcome.paused_budget_exceeded,
-    )
+    return to_routing_outcome_response(outcome)
 
 
 @router.delete("/settings/ai-models/mappings/{mapping_id}")
 def delete_or_drain_llm_mapping(
-    mapping_id: str,
+    mapping_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
     router_svc: Annotated[CognitiveModelRouterService, Depends(get_cognitive_router_service)],
     mode: Annotated[PinRemovalMode, Query()] = "reject",
@@ -333,7 +313,7 @@ def delete_or_drain_llm_mapping(
     response_model=ConnectorTestConnectionResponse,
 )
 def test_connector_connection_endpoint(
-    connector_id: str,
+    connector_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
     auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[ConnectorHubAndIngestionService, Depends(get_connector_hub_service)],
@@ -395,7 +375,7 @@ def ingest_document_endpoint(
     response_model=RagReciprocityResponse,
 )
 def verify_rag_reciprocity_endpoint(
-    document_id: str,
+    document_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
     hub_svc: Annotated[ConnectorHubAndIngestionService, Depends(get_connector_hub_service)],
 ) -> RagReciprocityResponse:
@@ -409,123 +389,4 @@ def verify_rag_reciprocity_endpoint(
         response_markdown=res.response_markdown,
         cited_uri=res.cited_uri,
         cited_chunk_id=res.cited_chunk_id,
-    )
-
-
-@router.post("/studio/revisions/{revision_id}/dry-run", response_model=StudioDryRunResponse)
-def studio_what_if_dry_run_endpoint(
-    revision_id: str,
-    payload: StudioDryRunRequest,
-    request: Request,
-    studio_svc: Annotated[WorkflowStudioAndPackService, Depends(get_studio_and_pack_service)],
-) -> StudioDryRunResponse:
-    """Execute isolated Studio *What-If* dry-run (`▷ Tester`, `Story 8.5`)."""
-    res = studio_svc.run_what_if_dry_run(
-        revision_id,
-        input_values=payload.input_values,
-        preview_markdown_output=payload.preview_markdown_output,
-        instance=str(request.url.path),
-    )
-    return StudioDryRunResponse(
-        revision_id=res.revision_id,
-        workflow_uri=res.workflow_uri,
-        version=res.version,
-        executed_steps=list(res.executed_steps),
-        skipped_layers=list(res.skipped_layers),
-        deterministic_structure_gate_passed=res.deterministic_structure_gate_passed,
-        missing_markdown_sections=list(res.missing_markdown_sections),
-        external_writes_count=res.external_writes_count,
-    )
-
-
-@router.post("/wizards/sessions", response_model=WizardSessionResponse)
-def start_or_resume_wizard_endpoint(
-    payload: WizardSessionRequest,
-    request: Request,
-    auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
-    wizard_svc: Annotated[DurableOnboardingWizardService, Depends(get_durable_wizard_service)],
-) -> WizardSessionResponse:
-    """Start or resume a 5-step durable DBOS onboarding wizard (`Story 8.6`)."""
-    actor = auth.resolve_user(persona_key=payload.actor_persona)
-    rec = wizard_svc.start_or_resume_wizard(
-        actor,
-        wizard_type=payload.wizard_type,
-        scope_id=payload.scope_id,
-        instance=str(request.url.path),
-    )
-    return WizardSessionResponse(
-        id=rec.id,
-        wizard_type=rec.wizard_type,
-        user_id=rec.user_id,
-        scope_id=rec.scope_id,
-        current_step_index=rec.current_step_index,
-        total_steps=rec.total_steps,
-        dbos_workflow_id=rec.dbos_workflow_id,
-        status=rec.status,
-        completed_steps=list(rec.completed_steps),
-        rag_reciprocity_verified=rec.rag_reciprocity_verified,
-        state_jsonb=rec.state_jsonb,
-    )
-
-
-@router.post("/wizards/sessions/{session_id}/steps", response_model=WizardSessionResponse)
-def save_wizard_step_endpoint(
-    session_id: str,
-    payload: WizardAdvanceStepRequest,
-    request: Request,
-    auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
-    wizard_svc: Annotated[DurableOnboardingWizardService, Depends(get_durable_wizard_service)],
-) -> WizardSessionResponse:
-    """Save step state (`SecretRef` only) and advance step in durable DBOS wizard (`Story 8.6`)."""
-    actor = auth.resolve_user(persona_key=payload.actor_persona)
-    sec_in = (
-        SecretInputSpec(
-            action=payload.secret_input.action,
-            plaintext_value=payload.secret_input.plaintext_value,
-        )
-        if payload.secret_input is not None
-        else None
-    )
-    rec = wizard_svc.save_step_and_advance(
-        actor,
-        session_id,
-        step_index=payload.step_index,
-        step_payload=payload.step_payload,
-        secret_input=sec_in,
-        instance=str(request.url.path),
-    )
-    return WizardSessionResponse(
-        id=rec.id,
-        wizard_type=rec.wizard_type,
-        user_id=rec.user_id,
-        scope_id=rec.scope_id,
-        current_step_index=rec.current_step_index,
-        total_steps=rec.total_steps,
-        dbos_workflow_id=rec.dbos_workflow_id,
-        status=rec.status,
-        completed_steps=list(rec.completed_steps),
-        rag_reciprocity_verified=rec.rag_reciprocity_verified,
-        state_jsonb=rec.state_jsonb,
-    )
-
-
-@router.post("/wizards/demo-workspace", response_model=DemoWorkspaceProvisionResponse)
-def provision_demo_workspace_endpoint(
-    request: Request,
-    auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
-    wizard_svc: Annotated[DurableOnboardingWizardService, Depends(get_durable_wizard_service)],
-    actor_persona: Annotated[Literal["karim", "claire", "marc", "nadia"], Query()] = "marc",
-) -> DemoWorkspaceProvisionResponse:
-    """Provision the Zero Empty-State Demo Workspace (`0` plaintext secrets, `Story 8.6`)."""
-    actor = auth.resolve_user(persona_key=actor_persona)
-    res = wizard_svc.provision_zero_empty_state_demo(actor, instance=str(request.url.path))
-    return DemoWorkspaceProvisionResponse(
-        workspace_id=res.workspace_id,
-        workspace_slug=res.workspace_slug,
-        workspace_name=res.workspace_name,
-        ontology_concepts_seeded=res.ontology_concepts_seeded,
-        kb_documents_indexed=res.kb_documents_indexed,
-        published_workflow_uri=res.published_workflow_uri,
-        rag_reciprocity_verified=res.rag_reciprocity_verified,
-        plaintext_secrets_count=res.plaintext_secrets_count,
     )

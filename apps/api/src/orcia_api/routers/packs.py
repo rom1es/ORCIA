@@ -8,10 +8,12 @@ Exposes:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Query, Request, Response
 
+from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas.process_studio_v2 import (
     ConnectorRequirementHealthItemResponse,
     DeclarativePacksListResponse,
@@ -41,7 +43,7 @@ def load_declarative_pack_bundles(request: Request) -> dict[str, LoadedPackBundl
     return bundles
 
 
-@router.get("", response_model=DeclarativePacksListResponse)
+@router.get("", response_model=DeclarativePacksListResponse, responses=PROBLEM_RESPONSES)
 async def list_declarative_packs(request: Request) -> DeclarativePacksListResponse:
     """Return all declarative packs from `packs/<domain>/` with real-time connector healthchecks."""
     bundles = load_declarative_pack_bundles(request)
@@ -97,7 +99,20 @@ async def list_declarative_packs(request: Request) -> DeclarativePacksListRespon
     return DeclarativePacksListResponse(packs=summaries)
 
 
-@router.post("/export/{workspace_id}")
+@router.post(
+    "/export/{workspace_id}",
+    responses={
+        **PROBLEM_RESPONSES,
+        200: {
+            "content": {
+                "application/zip": {
+                    "schema": {"type": "string", "format": "binary"},
+                }
+            },
+            "description": "Downloadable declarative pack .zip archive",
+        },
+    },
+)
 async def export_workspace_as_declarative_pack_zip(
     workspace_id: str,
     request: Request,
@@ -107,7 +122,8 @@ async def export_workspace_as_declarative_pack_zip(
     bundles = load_declarative_pack_bundles(request)
     bundle = bundles.get(pack_id) or next(iter(bundles.values()))
     zip_bytes = PackExporter.export_bundle_to_zip_bytes(bundle, workspace_id=workspace_id)
-    filename = f"{bundle.manifest.slug}-{workspace_id}.zip"
+    safe_ws = re.sub(r"[^A-Za-z0-9_.-]+", "-", workspace_id).strip("-") or "workspace"
+    filename = f"{bundle.manifest.slug}-{safe_ws[:64]}.zip"
     return Response(
         content=zip_bytes,
         media_type="application/zip",

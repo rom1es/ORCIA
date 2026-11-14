@@ -85,8 +85,27 @@ export interface PlatformSetupContextValue {
     readonly deleted: boolean;
     readonly blockedReason: string | null;
   };
+  readonly syncOrgUnitsFromServer: (
+    units: readonly ConfiguredOrgUnit[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopeId?: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => void;
   readonly addRbacGrant: (input: Omit<ConfiguredRbacGrant, "id">) => void;
   readonly removeRbacGrant: (grantId: string) => void;
+  readonly syncRbacGrantsFromServer: (
+    grants: readonly ConfiguredRbacGrant[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
   readonly createWorkspace: (input: {
     name: string;
@@ -209,10 +228,40 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     Promise.all([
       client.getAccostageStatus(),
       client.getPlatformSetupState().catch(() => null),
+      client.listOrgUnits().catch(() => null),
+      client.listIamGrants().catch(() => null),
     ])
-      .then(([status, remoteState]) => {
+      .then(([status, remoteState, remoteOrgUnitsResp, remoteIamGrantsResp]) => {
         if (cancelled) return;
-        if (status.first_admin_initialized === false) {
+        const mappedApiOrgUnits: ConfiguredOrgUnit[] = (
+          remoteOrgUnitsResp?.org_units ?? []
+        ).map((dto) => ({
+          id: dto.id,
+          name: dto.name,
+          slug: dto.slug,
+          level: dto.kind,
+          parentId: dto.parent_id ?? "scope-global",
+          billingEnabled: dto.billing_enabled ?? true,
+          leadUserId: dto.lead_user_id ?? null,
+          memberUserIds: dto.member_user_ids ?? [],
+          attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
+        }));
+        const mappedApiGrants: ConfiguredRbacGrant[] = Array.isArray(remoteIamGrantsResp)
+          ? remoteIamGrantsResp.map((g) => ({
+              id: g.id,
+              subjectType: g.subject_type,
+              subjectId: g.subject_id,
+              scopePath: g.scope_path,
+              verb: g.verb,
+              effect: g.effect,
+              resourceKind: g.resource_kind ?? "ALL",
+            }))
+          : [];
+        if (
+          status.first_admin_initialized === false &&
+          mappedApiOrgUnits.length === 0 &&
+          mappedApiGrants.length === 0
+        ) {
           if (hasMutatedSinceMountRef.current || readCachedPlatformAdmin() !== null) {
             return;
           }
@@ -243,18 +292,24 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           writeCachedPlatformAdmin(synced);
           setPlatformAdmin(synced);
         }
-        if (remoteState) {
-          const rOrgUnits = remoteState.org_units ?? [];
-          const rRbacGrants = remoteState.rbac_grants ?? [];
-          const rLlmTiers = remoteState.llm_tiers ?? [];
-          const rWorkspaces = remoteState.workspaces ?? [];
-          const rDatasources = remoteState.datasources ?? [];
-          const rPacks = remoteState.packs ?? [];
-          const rWorkflows = remoteState.workflows ?? [];
-          const rRuns = remoteState.runs ?? [];
-          const rCatalogItems = remoteState.catalog_items ?? [];
-          const rOntologyConcepts = remoteState.ontology_concepts ?? [];
-          const rAuditEvents = remoteState.audit_events ?? [];
+        if (remoteState || mappedApiOrgUnits.length > 0 || mappedApiGrants.length > 0) {
+          const rOrgUnits =
+            mappedApiOrgUnits.length > 0
+              ? mappedApiOrgUnits
+              : ((remoteState?.org_units ?? []) as unknown as ConfiguredOrgUnit[]);
+          const rRbacGrants =
+            mappedApiGrants.length > 0
+              ? mappedApiGrants
+              : ((remoteState?.rbac_grants ?? []) as unknown as ConfiguredRbacGrant[]);
+          const rLlmTiers = remoteState?.llm_tiers ?? [];
+          const rWorkspaces = remoteState?.workspaces ?? [];
+          const rDatasources = remoteState?.datasources ?? [];
+          const rPacks = remoteState?.packs ?? [];
+          const rWorkflows = remoteState?.workflows ?? [];
+          const rRuns = remoteState?.runs ?? [];
+          const rCatalogItems = remoteState?.catalog_items ?? [];
+          const rOntologyConcepts = remoteState?.ontology_concepts ?? [];
+          const rAuditEvents = remoteState?.audit_events ?? [];
           const hasRemoteEntities =
             rOrgUnits.length > 0 ||
             rRbacGrants.length > 0 ||
@@ -268,7 +323,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
             rOntologyConcepts.length > 0;
           if (hasRemoteEntities) {
             const hydrated: CachedPlatformSetupState = {
-              orgUnits: rOrgUnits as unknown as ConfiguredOrgUnit[],
+              orgUnits: rOrgUnits,
               rbacGrants: rRbacGrants as unknown as ConfiguredRbacGrant[],
               llmTiers: rLlmTiers.map((raw) => ({
                 tier: (raw.tier ?? raw.tierKey ?? "medium") as UiInferenceTier,
@@ -305,6 +360,27 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
             setCatalogItems(hydrated.catalogItems);
             setOntologyConcepts(hydrated.ontologyConcepts);
             setAuditEvents(hydrated.auditEvents);
+            if (!hasMutatedSinceMountRef.current && status.first_admin_initialized && status.first_admin_email) {
+              const remoteTeamIds = hydrated.orgUnits
+                .filter((u) => u.level === "TEAM")
+                .map((u) => u.id);
+              const existingLocal = readCachedPlatformAdmin();
+              const validLocalTeams = (existingLocal?.memberTeamIds ?? []).filter((id) =>
+                remoteTeamIds.includes(id),
+              );
+              const effectiveTeamIds =
+                validLocalTeams.length > 0 ? validLocalTeams : remoteTeamIds;
+              if (effectiveTeamIds.length > 0) {
+                const updatedAdmin: ConfiguredPlatformAdmin = {
+                  displayName: status.first_admin_display_name ?? status.first_admin_email,
+                  email: status.first_admin_email,
+                  role: "PLATFORM_ADMIN",
+                  memberTeamIds: effectiveTeamIds,
+                };
+                writeCachedPlatformAdmin(updatedAdmin);
+                setPlatformAdmin(updatedAdmin);
+              }
+            }
           }
         }
       })
@@ -464,6 +540,10 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       slug: input.slug,
       level: input.level,
       parentId: input.parentId,
+      billingEnabled: input.billingEnabled ?? true,
+      leadUserId: input.leadUserId ?? null,
+      memberUserIds: input.memberUserIds ?? [],
+      attachedWorkspacesCount: input.attachedWorkspacesCount ?? 0,
     };
     const nextOrgUnits = [...orgUnits, newUnit];
     const shouldAttachAdmin =
@@ -494,6 +574,31 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
   };
 
+  const syncOrgUnitsFromServer = (
+    units: readonly ConfiguredOrgUnit[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopeId?: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => {
+    setOrgUnits(units);
+    if (auditMeta) {
+      const nextAudit = appendAudit(auditMeta.eventType, auditMeta.summary, {
+        scopeId: auditMeta.scopeId,
+        scopePath: auditMeta.scopePath,
+        scopeLabel: auditMeta.scopeLabel,
+      });
+      setAuditEvents(nextAudit);
+      persistSnapshot(buildSnapshot({ orgUnits: units, auditEvents: nextAudit }));
+    } else {
+      hasMutatedSinceMountRef.current = true;
+      writeCachedPlatformSetupState(buildSnapshot({ orgUnits: units }));
+    }
+  };
+
   const removeOrgUnit = (
     orgUnitId: string,
   ): { readonly deleted: boolean; readonly blockedReason: string | null } => {
@@ -503,16 +608,24 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     }
     const childUnits = orgUnits.filter((u) => u.parentId === target.id);
     if (childUnits.length > 0) {
+      const childLabel =
+        childUnits.length > 1
+          ? `${childUnits.length} Équipes sont rattachées`
+          : "1 Équipe est rattachée";
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${childUnits.length} sous-unité(s) / Équipe(s) sont rattachées à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
+        blockedReason: `Suppression refusée : ${childLabel} à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
       };
     }
     const attachedWorkspaces = workspaces.filter((w) => w.ownerOrgUnitId === target.id);
     if (attachedWorkspaces.length > 0) {
+      const wsLabel =
+        attachedWorkspaces.length > 1
+          ? `${attachedWorkspaces.length} Espaces de Travail sont rattachés`
+          : "1 Espace de Travail est rattaché";
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${attachedWorkspaces.length} Espace(s) de Travail sont rattachés à « ${target.name} » (${attachedWorkspaces.map((w) => w.name).join(", ")}). Supprimez ou réattribuez d'abord ces espaces.`,
+        blockedReason: `Suppression refusée : ${wsLabel} à « ${target.name} » (${attachedWorkspaces.map((w) => w.name).join(", ")}). Supprimez ou réattribuez d'abord ces espaces.`,
       };
     }
     const dependentGrants = rbacGrants.filter(
@@ -523,9 +636,13 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         g.scopePath.startsWith(`${target.slug}/`),
     );
     if (dependentGrants.length > 0) {
+      const grantLabel =
+        dependentGrants.length > 1
+          ? `${dependentGrants.length} règles d'habilitation ciblent`
+          : "1 règle d'habilitation cible";
       return {
         deleted: false,
-        blockedReason: `Suppression refusée : ${dependentGrants.length} règle(s) d'habilitation ciblent « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
+        blockedReason: `Suppression refusée : ${grantLabel} « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
       };
     }
     const nextOrgUnits = orgUnits.filter((u) => u.id !== orgUnitId);
@@ -586,6 +703,29 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     setRbacGrants(nextRbacGrants);
     setAuditEvents(nextAudit);
     persistSnapshot(buildSnapshot({ rbacGrants: nextRbacGrants, auditEvents: nextAudit }));
+  };
+
+  const syncRbacGrantsFromServer = (
+    grants: readonly ConfiguredRbacGrant[],
+    auditMeta?: {
+      readonly eventType: string;
+      readonly summary: string;
+      readonly scopePath?: string;
+      readonly scopeLabel?: string;
+    },
+  ) => {
+    setRbacGrants(grants);
+    if (auditMeta) {
+      const nextAudit = appendAudit(auditMeta.eventType, auditMeta.summary, {
+        scopePath: auditMeta.scopePath,
+        scopeLabel: auditMeta.scopeLabel,
+      });
+      setAuditEvents(nextAudit);
+      persistSnapshot(buildSnapshot({ rbacGrants: grants, auditEvents: nextAudit }));
+    } else {
+      hasMutatedSinceMountRef.current = true;
+      writeCachedPlatformSetupState(buildSnapshot({ rbacGrants: grants }));
+    }
   };
 
   const upsertLlmTier = (input: ConfiguredLlmTierMapping) => {
@@ -782,8 +922,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         resourceType: "workflow",
         sourceFormat: "ORCIA",
         version: input.version,
-        sha256Short: "e3b0c44298fc",
-        casKey: "cas/e3b0c44298fc",
+        sha256Short: "e3b0c44298fc", // pragma: allowlist secret
+        casKey: "cas/e3b0c44298fc", // pragma: allowlist secret
         visibilityScope: "PUBLISHED_ORG",
         grantedPermissions: ["DISCOVER", "EXECUTE"],
         sourceMasked: false,
@@ -1055,8 +1195,10 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         toggleAdminTeamMembership,
         addOrgUnit,
         removeOrgUnit,
+        syncOrgUnitsFromServer,
         addRbacGrant,
         removeRbacGrant,
+        syncRbacGrantsFromServer,
         upsertLlmTier,
         createWorkspace,
         updateWorkspacePhase,

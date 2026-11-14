@@ -11,20 +11,60 @@ export interface StudioCopilotSidebarProps {
   isFr: boolean;
 }
 
-const AVAILABLE_MCP_TOOLS = [
-  "mcp:atlassian-jira (read)",
-  "mcp:atlassian-jira (write_preview)",
-  "mcp:atlassian-confluence (read)",
-  "mcp:atlassian-confluence (write_preview)",
-  "mcp:git-provider (read)",
+const AVAILABLE_MCP_TOOLS: ReadonlyArray<{ id: string; labelFr: string; labelEn: string }> = [
+  {
+    id: "mcp:atlassian-jira (read)",
+    labelFr: "Jira — Lecture des demandes & tickets",
+    labelEn: "Jira — Read requests & issues",
+  },
+  {
+    id: "mcp:atlassian-jira (write_preview)",
+    labelFr: "Jira — Création de ticket (sous validation)",
+    labelEn: "Jira — Create issue (with approval)",
+  },
+  {
+    id: "mcp:atlassian-confluence (read)",
+    labelFr: "Confluence — Lecture du socle documentaire",
+    labelEn: "Confluence — Read knowledge base",
+  },
+  {
+    id: "mcp:atlassian-confluence (write_preview)",
+    labelFr: "Confluence — Publication de page (sous validation)",
+    labelEn: "Confluence — Publish page (with approval)",
+  },
+  {
+    id: "mcp:git-provider (read)",
+    labelFr: "Git — Consultation du dépôt & Pull Requests",
+    labelEn: "Git — Read repository & Pull Requests",
+  },
 ];
 
-const AVAILABLE_SKILLS = [
-  "pack://sdlc/skills/qualification-besoin",
-  "pack://sdlc/skills/redaction-prd-wsjf",
-  "pack://sdlc/skills/diagrammes-mermaid",
-  "pack://sdlc/skills/decoupe-us-invest",
-  "pack://orcia-docs/skills/redaction-aide-bilingue",
+const AVAILABLE_SKILLS: ReadonlyArray<{ uri: string; labelFr: string; labelEn: string }> = [
+  {
+    uri: "pack://sdlc/skills/qualification-besoin",
+    labelFr: "Qualification structurée du besoin",
+    labelEn: "Structured Need Qualification",
+  },
+  {
+    uri: "pack://sdlc/skills/redaction-prd-wsjf",
+    labelFr: "Rédaction du PRD & priorisation WSJF",
+    labelEn: "PRD Authoring & WSJF Prioritization",
+  },
+  {
+    uri: "pack://sdlc/skills/diagrammes-mermaid",
+    labelFr: "Schémas d'architecture & flux",
+    labelEn: "Architecture & Flow Diagrams",
+  },
+  {
+    uri: "pack://sdlc/skills/decoupe-us-invest",
+    labelFr: "Découpage en User Stories (INVEST & Gherkin)",
+    labelEn: "INVEST & Gherkin User Story Splitting",
+  },
+  {
+    uri: "pack://orcia-docs/skills/redaction-aide-bilingue",
+    labelFr: "Rédaction de guides utilisateurs FR/EN",
+    labelEn: "Bilingual User Guide Authoring",
+  },
 ];
 
 const AVAILABLE_GATES: ReadonlyArray<{
@@ -34,22 +74,22 @@ const AVAILABLE_GATES: ReadonlyArray<{
 }> = [
   {
     id: "det-prd-fields",
-    name: "Contrat Markdown PRD & WSJF",
+    name: "Vérification des rubriques du PRD & WSJF",
     runner: "markdown_contract_runner",
   },
   {
     id: "det-de-14-points",
-    name: "Contrôle Dossier d'Étude 14 points",
+    name: "Contrôle des 14 points du Dossier d'Étude",
     runner: "markdown_contract_runner",
   },
   {
     id: "det-invest-dor",
-    name: "Validation INVEST & Gherkin DoR",
+    name: "Conformité INVEST & critères d'acceptation",
     runner: "json_schema_runner",
   },
   {
     id: "det-validate-help-article",
-    name: "Validation Aide Bilingue FR/EN",
+    name: "Vérification de complétude documentaire FR/EN",
     runner: "catalog_invariant_runner",
   },
 ];
@@ -65,8 +105,8 @@ export function StudioCopilotSidebar({
     {
       sender: "copilot",
       text: isFr
-        ? "Bonjour ! Je suis le Copilot de Conception Process Studio. Cliquez sur [+] pour rattacher un connecteur MCP (orcia-connectors), un Skill Markdown ou une Gate déterministe au workflow."
-        : "Hello! I am the Process Studio Design Copilot. Click [+] to attach an MCP connector, Markdown Skill, or deterministic Gate.",
+        ? "Utilisez le catalogue ci-dessous pour ajouter un outil, un savoir-faire métier ou un contrôle de qualité à ce processus."
+        : "Use the catalog below to add a tool, a business skill, or a quality check to this process.",
     },
   ]);
 
@@ -79,8 +119,8 @@ export function StudioCopilotSidebar({
       {
         sender: "copilot",
         text: isFr
-          ? `Suggestion appliquée pour « ${trimmed} » : privilégiez un runner déterministe en amont (auto-heal 3x) avant l'agent contradicteur.`
-          : `Suggestion prepared for "${trimmed}": run a deterministic gate (3x self-heal) before the adversarial agent.`,
+          ? `Recommandation pour « ${trimmed} » : ajoutez d'abord une vérification automatique de complétude avant la relecture finale.`
+          : `Recommendation for "${trimmed}": add an automated completeness check before the final review.`,
       },
     ]);
     setPrompt("");
@@ -98,23 +138,23 @@ export function StudioCopilotSidebar({
     >
       <div>
         <h3 style={{ margin: 0, fontSize: "15px" }}>
-          {isFr ? "🤖 Copilot de Conception & Catalogue [+]" : "🤖 Design Copilot & [+] Catalog"}
+          {isFr ? "Catalogue de briques & Assistant" : "Process Building Blocks & Assistant"}
         </h3>
         <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--color-text-secondary)" }}>
           {isFr
-            ? "Ajoutez en 1 clic les briques déclaratives des Packs et connecteurs MCP."
-            : "Attach declarative Pack assets and MCP connectors in 1 click."}
+            ? "Ajoutez en 1 clic les outils, savoir-faire et contrôles qualité nécessaires."
+            : "Add tools, business skills, and quality checks in 1 click."}
         </p>
       </div>
 
-      {/* Chat Log */}
+      {/* Assistant Log */}
       <div
         data-testid="studio-copilot-messages"
         className="rounded border p-2.5 text-xs"
         style={{
           backgroundColor: "var(--color-bg-elevated)",
           borderColor: "var(--color-border-subtle)",
-          maxHeight: "150px",
+          maxHeight: "130px",
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
@@ -131,7 +171,7 @@ export function StudioCopilotSidebar({
                   : "var(--color-text-primary)",
             }}
           >
-            <strong>{msg.sender === "copilot" ? "Copilot :" : "Vous :"}</strong> {msg.text}
+            <strong>{msg.sender === "copilot" ? "Conseil :" : "Vous :"}</strong> {msg.text}
           </div>
         ))}
       </div>
@@ -140,12 +180,17 @@ export function StudioCopilotSidebar({
         <input
           type="text"
           data-testid="studio-copilot-input"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={
             isFr
-              ? "Ex: Ajouter un contrôle WSJF..."
-              : "E.g., Add WSJF check..."
+              ? "Ex : Ajouter un contrôle de priorisation..."
+              : "E.g., Add prioritization check..."
           }
           className="orcia-ds-input"
           style={{ flex: 1 }}
@@ -156,93 +201,86 @@ export function StudioCopilotSidebar({
           onClick={handleSendPrompt}
           className="orcia-ds-btn-primary"
         >
-          {isFr ? "Envoyer" : "Send"}
+          {isFr ? "Demander" : "Ask"}
         </button>
       </div>
 
-      {/* Clickable [+] MCP Toolboxes */}
+      {/* Outils connectés */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <strong style={{ fontSize: "12px" }}>
-          {isFr ? "Toolboxes MCP (orcia-connectors) :" : "MCP Toolboxes (orcia-connectors):"}
+          {isFr ? "Outils connectés :" : "Connected Tools:"}
         </strong>
         {AVAILABLE_MCP_TOOLS.map((tool) => (
           <div
-            key={tool}
-            className="flex items-center justify-between gap-2 rounded border px-2 py-1 text-xs"
+            key={tool.id}
+            className="flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-xs"
             style={{
               backgroundColor: "var(--color-bg-elevated)",
               borderColor: "var(--color-border-subtle)",
             }}
           >
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px" }}>{tool}</span>
+            <span style={{ fontSize: "12px" }}>{isFr ? tool.labelFr : tool.labelEn}</span>
             <button
               type="button"
-              data-testid={`copilot-add-mcp-${tool.replace(/[^a-z0-9]/gi, "-")}`}
-              onClick={() => onAttachMcpTool(tool)}
+              data-testid={`copilot-add-mcp-${tool.id.replace(/[^a-z0-9]/gi, "-")}`}
+              onClick={() => onAttachMcpTool(tool.id)}
               className="orcia-ds-btn-secondary"
             >
-              [+]
+              +
             </button>
           </div>
         ))}
       </div>
 
-      {/* Clickable [+] Declarative Skills */}
+      {/* Savoir-faire métier */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <strong style={{ fontSize: "12px" }}>
-          {isFr ? "Skills Markdown (packs/<domaine>/skills/) :" : "Markdown Skills:"}
+          {isFr ? "Savoir-faire métier :" : "Business Skills:"}
         </strong>
         {AVAILABLE_SKILLS.map((skill) => (
           <div
-            key={skill}
-            className="flex items-center justify-between gap-2 rounded border px-2 py-1 text-xs"
+            key={skill.uri}
+            className="flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-xs"
             style={{
               backgroundColor: "var(--color-bg-elevated)",
               borderColor: "var(--color-border-subtle)",
             }}
           >
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px" }}>
-              {skill.replace("pack://", "")}
-            </span>
+            <span style={{ fontSize: "12px" }}>{isFr ? skill.labelFr : skill.labelEn}</span>
             <button
               type="button"
-              data-testid={`copilot-add-skill-${skill.split("/").pop()}`}
-              onClick={() => onAttachSkill(skill)}
+              data-testid={`copilot-add-skill-${skill.uri.split("/").pop() ?? "skill"}`}
+              onClick={() => onAttachSkill(skill.uri)}
               className="orcia-ds-btn-secondary"
             >
-              [+]
+              +
             </button>
           </div>
         ))}
       </div>
 
-      {/* Clickable [+] Generic Deterministic Gates */}
+      {/* Contrôles automatiques de qualité */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <strong style={{ fontSize: "12px" }}>
-          {isFr ? "Runners Déterministes de Gates :" : "Deterministic Gate Runners:"}
+          {isFr ? "Contrôles automatiques de qualité :" : "Automated Quality Checks:"}
         </strong>
         {AVAILABLE_GATES.map((gate) => (
           <div
             key={gate.id}
-            className="flex items-center justify-between gap-2 rounded border px-2 py-1 text-xs"
+            className="flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-xs"
             style={{
               backgroundColor: "var(--color-bg-elevated)",
               borderColor: "var(--color-border-subtle)",
             }}
           >
-            <div>
-              <div style={{ fontWeight: 600 }}>{gate.name}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "10.5px", color: "var(--color-text-secondary)" }}>
-                {gate.runner}
-              </div>
-            </div>
+            <span style={{ fontSize: "12px", fontWeight: 500 }}>{gate.name}</span>
             <button
               type="button"
               data-testid={`copilot-add-gate-${gate.id}`}
               onClick={() => onAttachDeterministicGate(gate)}
               className="orcia-ds-btn-secondary"
             >
-              [+]
+              +
             </button>
           </div>
         ))}

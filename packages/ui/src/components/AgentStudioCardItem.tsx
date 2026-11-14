@@ -1,4 +1,11 @@
 import React, { useState } from "react";
+import {
+  HUMAN_PARTNER_ROLE_LABELS_FR,
+  OUTPUT_CONTRACT_FORMAT_LABELS_FR,
+  type UiAgentHumanPartnerRole,
+  type UiAgentOutputContractFormat,
+  type UiAgentPosture,
+} from "./AgentGovernanceTypesAndDefaults";
 import type {
   AgentsAndSkillsManagerLabels,
   UiAgentSkillVisibilityScope,
@@ -50,6 +57,15 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   const visibilityScope: UiAgentSkillVisibilityScope = agent.visibilityScope ?? "TEAM";
   const isPack = visibilityScope === "PACK";
   const isEnabled = agent.enabledOnWorkspace !== false;
+  const posture: UiAgentPosture = agent.posture ?? "PRODUCER";
+  const partnerRole: UiAgentHumanPartnerRole = agent.humanPartnerRole ?? "PO_PM";
+  const outputFormat: UiAgentOutputContractFormat =
+    agent.outputContractFormat ?? "markdown_structure";
+  const writePreviewRequired = agent.writePreviewRequired !== false;
+  const testBenchValidated = Boolean(
+    agent.testBenchValidated || agent.lastExecutionOutput || isPack,
+  );
+
   const visibilityBadgeContent =
     visibilityScope === "PRIVATE" ? (
       <>
@@ -91,7 +107,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
       data-testid={`agent-card-${agent.agentId}`}
       className="space-y-2.5 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3.5 text-xs"
     >
-      {/* Row 1: Identity & Governance Badges */}
+      {/* Row 1: Identity, Posture, Partner & Governance Badges */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <strong className="text-sm text-[var(--orcia-text-primary)]">{agent.name}</strong>
@@ -117,6 +133,20 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             )}
           </button>
 
+          <span
+            data-testid={`agent-posture-badge-${agent.agentId}`}
+            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-semibold"
+          >
+            {posture === "EVALUATOR_GATE" ? "🛡️ Contradicteur / Gate" : "🛠️ Producteur métier"}
+          </span>
+
+          <span
+            data-testid={`agent-partner-badge-${agent.agentId}`}
+            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px]"
+          >
+            👤 Binôme : {HUMAN_PARTNER_ROLE_LABELS_FR[partnerRole].split(" (")[0]}
+          </span>
+
           {isPack ? (
             <span
               data-testid={`agent-visibility-badge-${agent.agentId}`}
@@ -135,6 +165,13 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               {visibilityBadgeContent}
             </button>
           )}
+
+          <span
+            data-testid={`agent-test-bench-badge-${agent.agentId}`}
+            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium"
+          >
+            {testBenchValidated ? "🧪 Validé au Banc de Test" : "📝 À tester"}
+          </span>
 
           {!isEnabled && (
             <span
@@ -177,7 +214,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               onUpdateAgentThinkingLevel?.(agent.agentId, nextLvl);
               triggerAutosavedFeedback();
             }}
-            className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px]"
+            className="orcia-ds-select text-[11px]"
           >
             {(["simple", "medium", "complex", "auto"] as const).map((lvl) => (
               <option key={lvl} value={lvl}>
@@ -188,9 +225,33 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
         </label>
       </div>
 
-      {/* Row 2: Mission & Attached Skills Pills */}
+      {/* Row 2: Mission, 6-Block Governance Passport & Attached Skills Pills */}
       <div className="space-y-1.5">
         <p className="text-[var(--orcia-text-secondary)]">{agent.roleMission}</p>
+
+        {/* Compact 6-Block Governance Passport */}
+        <div
+          data-testid={`agent-governance-passport-${agent.agentId}`}
+          className="flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--orcia-text-secondary)]"
+        >
+          <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+            🧠 Modèle : {agent.llmModelTier ?? "team_default"} · Temp {agent.temperature ?? 0.2} ·{" "}
+            {agent.maxTokens ?? 4096} tok
+          </span>
+          <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+            📚 RAG ({(agent.allowedRagSources ?? ["all_workspace_sources"]).length}) &amp; Ontologie (
+            {(agent.ontologyViews ?? ["glossary"]).length})
+          </span>
+          <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+            📄 Sortie : {OUTPUT_CONTRACT_FORMAT_LABELS_FR[outputFormat].split(" (")[0]}
+          </span>
+          {writePreviewRequired && (
+            <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+              🛡️ Write-Preview obligatoire
+            </span>
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-medium text-[var(--orcia-text-secondary)]">
             {labels.attachedSkillsLabel} :
@@ -205,7 +266,8 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 key={sk.skillId}
                 className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px]"
               >
-                <OrciaIcon name="tools" /> {sk.name} (<code className="font-mono text-[10px]">{sk.commandHandle}</code>)
+                <OrciaIcon name="tools" /> {sk.name} (
+                <code className="font-mono text-[10px]">{sk.commandHandle}</code>)
               </span>
             ))
           )}
@@ -214,7 +276,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             onClick={() => onOpenDetailModal?.(agent)}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium"
           >
-            + Rattacher / Gérer
+            + Rattacher / Gérer (6 blocs)
           </button>
         </div>
       </div>
@@ -227,7 +289,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               type="button"
               data-testid={`use-agent-in-assistant-btn-${agent.agentId}`}
               onClick={() => onUseAgentInAssistant(agent)}
-              className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
+              className="orcia-ds-btn orcia-ds-btn-primary text-[11px]"
             >
               <OrciaIcon name="assistant" /> Utiliser dans Mon Assistant
             </button>
@@ -236,9 +298,9 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             type="button"
             data-testid={`open-agent-detail-modal-btn-${agent.agentId}`}
             onClick={() => onOpenDetailModal?.(agent)}
-            className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-semibold"
+            className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
           >
-            <OrciaIcon name="configuration" /> Configurer &amp; Tester
+            <OrciaIcon name="configuration" /> Configurer &amp; Tester (6 blocs)
           </button>
         </div>
 
@@ -249,7 +311,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 type="button"
                 data-testid={`duplicate-agent-btn-${agent.agentId}`}
                 onClick={() => onDuplicateAgent?.(agent)}
-                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-medium"
+                className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
               >
                 <OrciaIcon name="copy" /> Dupliquer &amp; Personnaliser
               </button>
@@ -257,7 +319,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 type="button"
                 data-testid={`toggle-agent-enabled-btn-${agent.agentId}`}
                 onClick={() => onToggleAgentEnabled?.(agent.agentId, !isEnabled)}
-                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-medium"
+                className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
               >
                 {isEnabled ? "⏸️ Désactiver sur l'espace" : "▶️ Activer sur l'espace"}
               </button>
@@ -268,7 +330,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 type="button"
                 data-testid={`duplicate-agent-btn-${agent.agentId}`}
                 onClick={() => onDuplicateAgent?.(agent)}
-                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1 text-[11px] font-medium"
+                className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
               >
                 <OrciaIcon name="copy" /> Dupliquer
               </button>
@@ -276,7 +338,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
                 type="button"
                 data-testid={`delete-agent-btn-${agent.agentId}`}
                 onClick={() => onDeleteAgent(agent.agentId)}
-                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1 text-[11px]"
+                className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
               >
                 {labels.deleteAgentButtonLabel}
               </button>

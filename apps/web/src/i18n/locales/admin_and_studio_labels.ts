@@ -1,17 +1,30 @@
+import {
+  IAM_TAB_EN_LABELS,
+  IAM_TAB_FR_LABELS,
+  type IamTabDictionarySection,
+} from "./iam_accounts_labels";
+import {
+  ORGANIZATION_TAB_EN_LABELS,
+  ORGANIZATION_TAB_FR_LABELS,
+  type OrganizationTabDictionarySection,
+} from "./organization_tab_labels";
+
 export interface AdminAndStudioDictionarySection {
   readonly settingsHub: {
     readonly hubTitle: string;
     readonly hubSubtitle: string;
     readonly tabs: {
+      readonly organization: string;
       readonly iam: string;
+      readonly models: string;
       readonly connectors: string;
-      readonly aiModels: string;
       readonly packs: string;
-      readonly workflows: string;
-      readonly audit: string;
     };
     readonly lockedSectionNotice: string;
     readonly requestAccessLabel: string;
+    readonly readOnlyRestrictedTitle: string;
+    readonly readOnlyRestrictedBody: string;
+    readonly openMyAccountCta: string;
     readonly secretFieldLabels: {
       readonly configuredBadge: string;
       readonly unconfiguredBadge: string;
@@ -59,6 +72,8 @@ export interface AdminAndStudioDictionarySection {
       readonly demoWorkspaceButton: string;
       readonly citationLabel: string;
     };
+    readonly organizationTab: OrganizationTabDictionarySection;
+    readonly iamTab: IamTabDictionarySection;
   };
 }
 
@@ -66,18 +81,21 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
   settingsHub: {
     hubTitle: "Configuration de la Plateforme & Organisation",
     hubSubtitle:
-      "Gérez la structure de votre organisation, les droits d'accès, les sources connectées, les modèles IA et les modèles de processus.",
+      "Gérez l'organigramme de vos directions et équipes, les comptes et habilitations, les modèles IA, les connecteurs externes et les packs métiers.",
     tabs: {
-      iam: "Organisation & Habilitations",
-      connectors: "Sources & Connecteurs",
-      aiModels: "Modèles IA",
+      organization: "Organisation",
+      iam: "Comptes & Habilitations",
+      models: "Modèles IA",
+      connectors: "Connecteurs & SSO",
       packs: "Packs Métiers",
-      workflows: "Atelier de Processus",
-      audit: "Journal d'Activité",
     },
     lockedSectionNotice:
       "Cette section est affichée en lecture seule — un droit d'administration est nécessaire pour la modifier.",
     requestAccessLabel: "Demander l'accès à un administrateur",
+    readOnlyRestrictedTitle: "Accès en lecture seule sur la configuration de la plateforme",
+    readOnlyRestrictedBody:
+      "Votre rôle actuel ne permet pas de modifier les paramètres globaux ou organisationnels. Pour gérer vos préférences personnelles (apparence, langue, rôle par défaut, clés d'accès personnelles), ouvrez Mon Compte.",
+    openMyAccountCta: "Ouvrir Mon Compte",
     secretFieldLabels: {
       configuredBadge: "Configuré",
       unconfiguredBadge: "Non configuré",
@@ -125,6 +143,8 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
       demoWorkspaceButton: "Créer un espace d'exemple prêt à l'emploi",
       citationLabel: "Source documentaire vérifiée",
     },
+    organizationTab: ORGANIZATION_TAB_FR_LABELS,
+    iamTab: IAM_TAB_FR_LABELS,
   },
 };
 
@@ -132,18 +152,21 @@ export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
   settingsHub: {
     hubTitle: "Platform Configuration & Organization",
     hubSubtitle:
-      "Manage your organization structure, access permissions, connected sources, AI models, and process templates.",
+      "Manage your organization units and teams, user accounts and permissions, AI models, external connectors, and business packs.",
     tabs: {
-      iam: "Organization & Permissions",
-      connectors: "Sources & Connectors",
-      aiModels: "AI Models",
+      organization: "Organization",
+      iam: "Accounts & Permissions",
+      models: "AI Models",
+      connectors: "Connectors & SSO",
       packs: "Business Packs",
-      workflows: "Process Studio",
-      audit: "Activity Log",
     },
     lockedSectionNotice:
       "This section is displayed in read-only mode — administrator permissions are required to edit it.",
     requestAccessLabel: "Request access from an administrator",
+    readOnlyRestrictedTitle: "Read-only access on platform configuration",
+    readOnlyRestrictedBody:
+      "Your current role does not allow modifying global or organizational settings. To manage your personal preferences (theme, language, default role, personal access keys), open My Account.",
+    openMyAccountCta: "Open My Account",
     secretFieldLabels: {
       configuredBadge: "Configured",
       unconfiguredBadge: "Not configured",
@@ -191,5 +214,7 @@ export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
       demoWorkspaceButton: "Create a ready-to-use sample workspace",
       citationLabel: "Verified document source",
     },
+    organizationTab: ORGANIZATION_TAB_EN_LABELS,
+    iamTab: IAM_TAB_EN_LABELS,
   },
 };

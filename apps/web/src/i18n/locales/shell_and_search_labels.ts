@@ -9,6 +9,10 @@ import type {
 
 export interface ShellAndSearchDictionarySection {
   readonly fourZoneShell: FourZoneDirectionCShellLabels;
+  readonly sidebarFooter: {
+    readonly myAccountLabel: string;
+    readonly documentationLabel: string;
+  };
   readonly streamlinedCockpit: StreamlinedCockpitLabels;
   readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
   readonly topHeaderSearch: TopHeaderSearchCommandLabels;
@@ -20,18 +24,18 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
   fourZoneShell: {
     workspacePrefix: "Espace",
     searchTriggerPlaceholder: "Rechercher dans cet Espace ou partout (⌘K)...",
-    contextualHelpButtonLabel: "? Aide",
-    notificationsButtonLabel: "🔔 Notifications",
+    contextualHelpButtonLabel: "Aide",
+    notificationsButtonLabel: "Notifications",
     notificationsDrawerTitle: "Centre de Notifications",
     notificationsEmptyText: "Aucune notification non lue.",
     notificationsVsActivityHint:
-      "🔔 Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le 📜 Journal d'Activité.",
-    notificationsOpenActivityCta: "📜 Ouvrir le Journal d'Activité →",
+      "Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le Journal d'Activité.",
+    notificationsOpenActivityCta: "Ouvrir le Journal d'Activité →",
     sidebarAriaLabel: "Navigation principale",
-    railCollapseLabel: "Replier le menu ([)",
-    railExpandLabel: "Déplier le menu ([)",
+    railCollapseLabel: "Replier le menu",
+    railExpandLabel: "Déplier le menu",
     packSelectorLabel: "Domaine métier actif",
-    helpColumnTitle: "❓ Aide Contextuelle",
+    helpColumnTitle: "Aide Contextuelle",
     helpColumnExpectedTitle: "À propos de cet écran",
     helpColumnExpectedBody:
       "Retrouvez ici les explications détaillées et les conseils liés à votre écran actuel.",
@@ -46,6 +50,10 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
       help: "Aide",
     },
     activityMenuLabel: "Journal d'Activité",
+  },
+  sidebarFooter: {
+    myAccountLabel: "Mon Compte",
+    documentationLabel: "Documentation",
   },
   streamlinedCockpit: {
     zeroDecisionsBanner: "✅ Aucune décision en attente",
@@ -163,18 +171,18 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
   fourZoneShell: {
     workspacePrefix: "Space",
     searchTriggerPlaceholder: "Search in this Space or everywhere (⌘K)...",
-    contextualHelpButtonLabel: "? Help",
-    notificationsButtonLabel: "🔔 Notifications",
+    contextualHelpButtonLabel: "Help",
+    notificationsButtonLabel: "Notifications",
     notificationsDrawerTitle: "Notification Center",
     notificationsEmptyText: "No unread notifications.",
     notificationsVsActivityHint:
-      "🔔 The Notification Center groups your pending actions and setup prerequisites. To browse the complete audit history of your scope, open the 📜 Activity Log.",
-    notificationsOpenActivityCta: "📜 Open Activity Log →",
+      "The Notification Center groups your pending actions and setup prerequisites. To browse the complete audit history of your scope, open the Activity Log.",
+    notificationsOpenActivityCta: "Open Activity Log →",
     sidebarAriaLabel: "Main navigation",
-    railCollapseLabel: "Collapse menu ([)",
-    railExpandLabel: "Expand menu ([)",
+    railCollapseLabel: "Collapse menu",
+    railExpandLabel: "Expand menu",
     packSelectorLabel: "Active business domain",
-    helpColumnTitle: "❓ Contextual Help",
+    helpColumnTitle: "Contextual Help",
     helpColumnExpectedTitle: "About this screen",
     helpColumnExpectedBody:
       "Find detailed explanations and practical tips related to your current screen here.",
@@ -189,6 +197,10 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       help: "Help",
     },
     activityMenuLabel: "Activity Log",
+  },
+  sidebarFooter: {
+    myAccountLabel: "My Account",
+    documentationLabel: "Documentation",
   },
   streamlinedCockpit: {
     zeroDecisionsBanner: "✅ No pending decisions",

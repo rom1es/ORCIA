@@ -6,18 +6,18 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-08",
+  "lastSyncedDate": "2026-11-11",
   "stats": {
     "activeRoutesCount": 23,
-    "uiPrimitivesCount": 91,
+    "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 28,
+    "alembicMigrationsCount": 31,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 106,
+    "techLeadReportsCount": 113,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 35
+    "verifiedCapabilitiesCount": 38
   },
   "activeRoutes": [
     "/",
@@ -45,6 +45,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/workspaces"
   ],
   "uiPrimitives": [
+    "AGENT_STUDIO_BLOCKS",
     "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
@@ -73,6 +74,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "CommandPaletteModal",
     "ContextualHelpColumnAndCenter",
     "ContextualInfoTriggerButton",
+    "DIALOGUE_MECHANISM_LABELS_FR",
     "DisabledButtonAlertIndicator",
     "DnaStarlarkCompilerAndGlossaryLifecycleView",
     "DurableWizardRunnerView",
@@ -82,15 +84,19 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FourZoneDirectionCShell",
     "GlobalSidebar",
     "GuidanceDrawer",
+    "HUMAN_PARTNER_ROLE_LABELS_FR",
     "HelpArticleGeneratorAndValidatorView",
     "HumanLedAnchorCard",
     "InferenceTierBadge",
+    "LLM_MODEL_TIER_LABELS_FR",
     "LayersInspectorPopover",
     "MobileCompanionView",
     "ORCIA_EIGHT_MENU_ICON_NAMES",
     "ORCIA_ICONS",
+    "ORCIA_ICON_SVG_PATHS",
     "ORCIA_MODULE_ICON_NAMES",
     "ORCIA_SCOPE_LEVEL_ICON_NAMES",
+    "OUTPUT_CONTRACT_FORMAT_LABELS_FR",
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
@@ -112,6 +118,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "PresenceClaimPill",
     "ProductLifecycleCard",
     "ProgressiveDay0AccostageBanner",
+    "ROLE_DISPLAY_LABELS_EN",
+    "ROLE_DISPLAY_LABELS_FR",
     "RemoteServiceTestBenchAndMcpExposureView",
     "RgaaDialogFooterActions",
     "RgaaModalDialog",
@@ -166,7 +174,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0025_story_10_4_assistant_folders_and_threads",
     "0026_story_11_1_waivers_and_external_rebase",
     "0027_story_11_2_dna_chain_and_glossary_lifecycle",
-    "20261108_0910_declarative_packs_and_workflows_v2"
+    "20261108_0910_declarative_packs_and_workflows_v2",
+    "20261111_1702_story_17_2_org_units_billing_and_members",
+    "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
+    "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent"
   ],
   "architectureDecisions": [
     {
@@ -421,6 +432,55 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.4 (CAP-003, CAP-054, CAP-063, CAP-080)",
+      "reportFile": "17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag-tech-lead-report.md",
+      "domain": "Registre Socle Connecteurs & SSO (/api/v1/settings/connectors, Anti-SSRF 422, SecretStatus Write-Only sans pollution d'Espace), Enrichissement de 👤 Mon Compte (Passthrough AES-256-GCM 1 fois par Connecteur + Équipes FinOps) & Synchronisation RAG dans Mes Espaces › Sources avec Repli sur Membre Référent (PAUSED_REFERENT_RENEWAL_REQUIRED)",
+      "summary": "Migration Alembic 20261111_1704 (enterprise_connectors, user_connector_passthrough_tokens, extension workspace_datasources), domaine pur enterprise_connectors.py, adaptateurs PG18 sql_enterprise_connectors.py + sql_workspace_datasources.py, routeurs enterprise_connectors.py + workspace_datasources.py + SDK OpenAPI 0-diff, refonte de Connecteurs & SSO, UserSettingsModalTabs + ShellHeaderAccountControl, et WorkspaceSourcesRagTab (bannière *Cold-Start* 1-clic & renouvellement de référent)."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.3 (CAP-050, CAP-051)",
+      "reportFile": "17-3-annuaire-comptes-matrice-roles-delegues-secops-et-suppression-secrets-exposes-tech-lead-report.md",
+      "domain": "Annuaire des Comptes dès le Jour 0 (PLATFORM_ADMIN + SECOPS, Humains & SERVICE_PRINCIPAL, Anti-Lockout 422), Matrice des 6 Rôles Délégués (BU_LEAD), Éradication de « Lire / Voir les secrets » (AD-21) & Tiroir d'Isolation SECOPS",
+      "summary": "Migration Alembic 20261111_1703 (iam_accounts + role_permission_grants.resource_kind & INHERITANCE_BLOCK), domaine pur iam_accounts.py + role_matrix.py, adaptateur PG18 sql_iam_accounts.py, routeur iam_accounts.py (/api/v1/settings/iam/accounts, /role-matrix, /grants), modale IamAccountModal à sélecteurs fermés, matrice native des 6 rôles et tiroir d'exceptions réservé SECOPS."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.2 (CAP-051, CAP-067)",
+      "reportFile": "17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation-tech-lead-report.md",
+      "domain": "Organigramme Hiérarchique Indenté Multi-Niveaux (BU → Sous-BU / Pôle → Équipe), CRUD /api/v1/org-units PostgreSQL 18, 4 Modales RGAA d'Édition / Membres / Facturation & Suppression Sécurisée (HTTP 409 ERR_ORG_UNIT_NOT_EMPTY)",
+      "summary": "Migration Alembic 20261111_1702 (billing_enabled, lead_user_id, member_user_ids_jsonb), domaine org_hierarchy.py + adaptateur SQL sans N+1 sql_org_units.py, synchronisation topologique multi-niveaux sql_platform_setup_relational_sync.py, routes FastAPI GET/POST/PATCH/DELETE /api/v1/org-units + SDK @orcia/api-client (0-diff), encart pédagogique BU / Équipe / Espace, arbre indenté Direction C, purge des contrôles personnels et 4 modales RGAA (CreateOrgUnitModal, EditOrgUnitModal, ManageOrgUnitMembersModal, ConfirmDeleteOrgUnitModal .orcia-ds-btn-danger)."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.1 (CAP-058, CAP-060, CAP-100)",
+      "reportFile": "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration-tech-lead-report.md",
+      "domain": "Coquille UI Direction C : Reset CSS <button>, Registre d'Icônes <svg> Filaires Monochromes 16px, Barre de Repli Propre (<kbd>[</kbd>), Entrée Sidebar Mon Compte & 5 Onglets Adaptatifs /settings Gouvernés par Rôle",
+      "summary": "Ajout du reset @layer base { button } et des états .orcia-ds-btn-danger (--color-stale-crimson) dans tokens.css ; rendu <svg> filaire 24x24 stroke=\"currentColor\" (strokeWidth=1.75) dans <OrciaIcon /> sur les 106 clés (iconSvgPaths.ts) ; découpage modulaire de FourZoneDirectionCShell.tsx, UserAccountDropdownAndSettingsModal.tsx et ShellContainer.tsx ; création de authSessionStore.ts (resolveSettingsAccess) gouvernant les 5 onglets /settings (organization, iam, models, connectors, packs — suppression des doublons workflows & glossary) et l'accès direct Mon Compte en pied de Sidebar."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Refonte Studio de Gouvernance des Agents LLM en 6 Blocs (CAP-091, CAP-090)",
+      "reportFile": "2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes-tech-lead-report.md",
+      "domain": "Refonte de la Création, Configuration et Gouvernance des Agents LLM en 6 Blocs (🤖 Mes Agents : Blocs A Identité/Posture/Binôme, B Moteur Cognitif/Température/Budget, C Instructions/prompt_ref/Modes/Dialogue, D Cloisonnement RAG & Ontologie, E Toolbox MCP READ_ONLY/WRITE_PREVIEW & /Skills, F Garde-fous & Contrat de Sortie + Checklist 6/6 Conditions d'Invocation 💬 Mon Assistant + Correction Opacité Modales tokens.css)",
+      "summary": "Résolution du fond transparent des modales (*Text Bleed*) dans tokens.css et suppression du double en-tête sur /agents ; création de AgentGovernanceTypesAndDefaults.ts, AgentSixBlocksFormSections.tsx et AgentSixBlocksKnowledgeToolsGuardrailsSections.tsx ; enrichissement bout-en-bout (ManagedAgentRecord, sql_agents_and_skills.py JSONB PG18, schemas/agents_and_skills.py, OpenAPI 3.1 0-diff, AgentStudioCardItem.tsx Passeport 6 Blocs, AgentDetailAndSandboxModal.tsx certification Banc de Test test_bench_validated=true) et validation Playwright E2E 08-agents-skills-persistence.spec.ts."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Ajustement Transverse / Sélecteur d'Entête & Synchronisation SQL org_units/workspaces (CAP-067, CAP-061)",
+      "reportFile": "2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units-tech-lead-report.md",
+      "domain": "Distinction Visuelle Explicite 👥 Équipe vs 📦 Espace dans le Sélecteur d'Entête (TopHeaderBar) & Synchronisation Bidirectionnelle PostgreSQL 18 org_units / workspaces",
+      "summary": "Création de shellScopeOptions.ts (👥 Équipe · <nom>, 📦 Espace · <nom>, 🔒 Espace · <nom>, 🏢 Direction (BU) · <nom>) et FirstBootAdminSetupModal.tsx (réduisant ShellContainer.tsx de 871 à 385 lignes) ; création de sql_platform_setup_relational_sync.py assurant la synchronisation hiérarchique (parent_id, owner_org_unit_id), la purge des entités supprimées et la réconciliation symétrique org_units + workspaces ; et isolation du fuzzing Schemathesis (ORCIA_DISABLE_PG_BOOTSTRAP_SYNC=\"1\")."
+    },
+    {
+      "date": "2026-11-08",
+      "phaseOrStory": "Refonte UX Mes Processus & Studio Métier (CAP-140, CAP-150)",
+      "reportFile": "2026-11-08-refonte-ux-mes-processus-et-studio-metier-tech-lead-report.md",
+      "domain": "Suppression de l'empilement « Sapin de Noël » sur /processes, Séparation de l'Exécution de Dossiers vs Studio de Conception & Éradication du Jargon Technique (DBOS, S3 Claim-Check, SHA-256, WAITING_SUBSTEP_HITL)",
+      "summary": "Suppression du montage doublon <ModuleWorkspaceView moduleKey=\"gates\" /> sous /processes, hiérarchisation de ProcessesHubPage autour des 3 usages réels (1. Dossiers en cours & lancement/validation sur place, 2. Processus métiers par étape, 3. Vue d'ensemble de la Chaîne de Valeur), et refonte en langage 100 % métier de InteractiveRunDrawer, WorkflowFiveBlocksCanvas et StudioCopilotSidebar."
+    },
     {
       "date": "2026-11-08",
       "phaseOrStory": "Epics 14 & 15 — ORCIA Process Studio v2 & Packs 100 % Déclaratifs (TASK-01..08)",

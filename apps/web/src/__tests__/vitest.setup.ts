@@ -12,12 +12,25 @@ export interface RecordedVitestApiCall {
   readonly body: unknown;
 }
 
+interface MockOrganizationalUnit {
+  id: string;
+  slug: string;
+  name: string;
+  kind: "BU" | "TEAM";
+  parent_id: string | null;
+  billing_enabled: boolean;
+  lead_user_id: string | null;
+  member_user_ids: string[];
+}
+
 interface MockBackendState {
   firstAdmin: {
     email: string;
     displayName: string;
   } | null;
   platformSetupState: Record<string, unknown> | null;
+  orgUnits: MockOrganizationalUnit[];
+  orgUnitSeq: number;
   agents: Array<Record<string, unknown>>;
   skills: Array<Record<string, unknown>>;
   assistantFolders: Array<Record<string, unknown>>;
@@ -35,6 +48,8 @@ interface MockBackendState {
 const backendState: MockBackendState = {
   firstAdmin: null,
   platformSetupState: null,
+  orgUnits: [],
+  orgUnitSeq: 0,
   agents: [],
   skills: [],
   assistantFolders: [],
@@ -42,14 +57,143 @@ const backendState: MockBackendState = {
   recordedCalls: [],
 };
 
+import { resetAuthSessionStore } from "../stores/authSessionStore";
+import {
+  handleVitestIamRoute,
+  resetVitestIamMockState,
+} from "./vitestIamMockHandlers";
+import {
+  handleVitestConnectorsRoute,
+  resetVitestConnectorsMockState,
+} from "./vitestConnectorsMockHandlers";
+
+function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit[] {
+  if (!Array.isArray(rawUnits)) return [];
+  return rawUnits.map((raw, index) => {
+    const item = raw as Record<string, unknown>;
+    const id = String(item.id ?? `org-${index + 1}`);
+    const name = String(item.name ?? id);
+    const slug = String(
+      item.slug ?? name.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, ""),
+    );
+    const rawLevel = String(item.level ?? item.kind ?? "BU").toUpperCase();
+    const kind: "BU" | "TEAM" = rawLevel === "TEAM" ? "TEAM" : "BU";
+    const rawParent = item.parentId ?? item.parent_id ?? null;
+    const parent_id =
+      typeof rawParent === "string" && rawParent.trim() && rawParent !== "scope-global"
+        ? rawParent.trim()
+        : null;
+    const billing_enabled =
+      item.billingEnabled !== undefined
+        ? Boolean(item.billingEnabled)
+        : item.billing_enabled !== undefined
+          ? Boolean(item.billing_enabled)
+          : true;
+    const rawLead = item.leadUserId ?? item.lead_user_id ?? null;
+    const lead_user_id =
+      typeof rawLead === "string" && rawLead.trim() ? rawLead.trim() : null;
+    const rawMembers = item.memberUserIds ?? item.member_user_ids ?? [];
+    const member_user_ids = Array.isArray(rawMembers)
+      ? rawMembers.map((m) => String(m).trim()).filter(Boolean)
+      : [];
+    return {
+      id,
+      slug,
+      name,
+      kind,
+      parent_id,
+      billing_enabled,
+      lead_user_id,
+      member_user_ids,
+    };
+  });
+}
+
+function syncSetupOrgUnitsFromMock(): void {
+  const mapped = backendState.orgUnits.map((u) => ({
+    id: u.id,
+    name: u.name,
+    slug: u.slug,
+    level: u.kind,
+    parentId: u.parent_id ?? "scope-global",
+    billingEnabled: u.billing_enabled,
+    leadUserId: u.lead_user_id,
+    memberUserIds: u.member_user_ids,
+  }));
+  if (backendState.platformSetupState) {
+    backendState.platformSetupState = {
+      ...backendState.platformSetupState,
+      org_units: mapped,
+    };
+  } else if (mapped.length > 0) {
+    backendState.platformSetupState = {
+      org_units: mapped,
+      rbac_grants: [],
+      llm_tiers: [],
+      workspaces: [],
+      datasources: [],
+      packs: [],
+      workflows: [],
+      runs: [],
+      catalog_items: [],
+      ontology_concepts: [],
+      audit_events: [],
+    };
+  }
+}
+
+function countAttachedWorkspacesForUnit(unitId: string): {
+  readonly count: number;
+  readonly names: readonly string[];
+} {
+  const rawWs = backendState.platformSetupState?.workspaces;
+  if (!Array.isArray(rawWs)) return { count: 0, names: [] };
+  const matched = rawWs
+    .map((w) => w as Record<string, unknown>)
+    .filter((w) => String(w.ownerOrgUnitId ?? "") === unitId);
+  return {
+    count: matched.length,
+    names: matched.map((w) => String(w.name ?? w.workspaceId ?? "")).filter(Boolean),
+  };
+}
+
+function problemResponse(
+  status: number,
+  errorCode: string,
+  title: string,
+  detail: string,
+  instance: string,
+): Response {
+  return new Response(
+    JSON.stringify({
+      type: `https://orcia.io/problems/${errorCode.toLowerCase().replace(/_/g, "-")}`,
+      title,
+      status,
+      detail,
+      instance,
+      trace_id: "0195f000000070008000000000000999",
+      error_code: errorCode,
+    }),
+    {
+      status,
+      headers: { "Content-Type": "application/problem+json" },
+    },
+  );
+}
+
 export function resetVitestApiBackend(): void {
   backendState.firstAdmin = null;
   backendState.platformSetupState = null;
+  backendState.orgUnits = [];
+  backendState.orgUnitSeq = 0;
   backendState.agents = [];
   backendState.skills = [];
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
   backendState.recordedCalls = [];
+  resetVitestIamMockState();
+  resetVitestConnectorsMockState();
+  resetAuthSessionStore();
 }
 
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
@@ -59,6 +203,8 @@ export function seedVitestPlatformSetupState(
 ): void {
   backendState.firstAdmin = firstAdmin;
   backendState.platformSetupState = state;
+  backendState.orgUnits = hydrateMockOrgUnitsFromSetup(state.org_units);
+  backendState.orgUnitSeq = backendState.orgUnits.length;
 }
 
 export function getRecordedVitestApiCalls(): readonly RecordedVitestApiCall[] {
@@ -123,6 +269,7 @@ async function vitestFetchTransport(
   const path = parsedUrl.pathname;
   const method = (init?.method ?? "GET").toUpperCase();
   const body = parseJsonBody(init);
+  const reqHeaders = new Headers(init?.headers);
 
   backendState.recordedCalls.push({ method, path, body });
 
@@ -159,6 +306,10 @@ async function vitestFetchTransport(
 
   if (path === "/api/v1/bootstrap/platform-setup-state" && method === "PUT") {
     backendState.platformSetupState = body;
+    if (Array.isArray(body.org_units)) {
+      backendState.orgUnits = hydrateMockOrgUnitsFromSetup(body.org_units);
+      backendState.orgUnitSeq = Math.max(backendState.orgUnitSeq, backendState.orgUnits.length);
+    }
     return jsonResponse(body);
   }
 
@@ -178,6 +329,283 @@ async function vitestFetchTransport(
         audit_events: [],
       },
     );
+  }
+
+  // 1b. Hierarchical Organization Units CRUD (/api/v1/org-units — Story 17.2)
+  if (path === "/api/v1/org-units" && method === "GET") {
+    return jsonResponse({
+      org_units: backendState.orgUnits.map((u) => ({
+        ...u,
+        attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
+      })),
+      trace_id: "0195f000000070008000000000000999",
+    });
+  }
+
+  if (
+    (path === "/api/v1/org-units" && method === "POST") ||
+    (/^\/api\/v1\/org-units\/([^/]+)$/.test(path) && (method === "PATCH" || method === "DELETE"))
+  ) {
+    const accessMode = (reqHeaders.get("x-orcia-access-mode") ?? "").toUpperCase();
+    const activeHat = (reqHeaders.get("x-orcia-active-hat") ?? "PLATFORM_ADMIN").toUpperCase();
+    if (accessMode === "READ_ONLY_OBSERVER" || activeHat === "OBSERVER") {
+      return problemResponse(
+        403,
+        "ERR_OBSERVER_MODE_READ_ONLY",
+        "Mode observateur en lecture seule",
+        "Les mutations sont refusées en mode observateur lecture seule.",
+        path,
+      );
+    }
+    if (!["PLATFORM_ADMIN", "SECOPS", "BU_LEAD", "TEAM_LEAD"].includes(activeHat)) {
+      return problemResponse(
+        403,
+        "ERR_SCOPE_ACCESS_DENIED",
+        "Accès au périmètre refusé",
+        "Votre rôle ne permet pas de modifier l'organigramme.",
+        path,
+      );
+    }
+
+    if (path === "/api/v1/org-units" && method === "POST") {
+      const name = String(body.name ?? "").trim();
+      const kind: "BU" | "TEAM" = String(body.kind ?? "BU").toUpperCase() === "TEAM" ? "TEAM" : "BU";
+      const rawSlug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
+      const slug = (rawSlug || name.toLowerCase())
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-|-$/g, "");
+      if (backendState.orgUnits.some((u) => u.slug === slug)) {
+        return problemResponse(
+          409,
+          "ERR_ORG_UNIT_DUPLICATE_SLUG",
+          "Identifiant court d'unité déjà utilisé",
+          `L'identifiant court '${slug}' est déjà utilisé.`,
+          path,
+        );
+      }
+      const rawParent =
+        typeof body.parent_id === "string" &&
+        body.parent_id.trim() &&
+        body.parent_id.trim() !== "scope-global"
+          ? body.parent_id.trim()
+          : null;
+      if (rawParent) {
+        const parentUnit = backendState.orgUnits.find((u) => u.id === rawParent);
+        if (!parentUnit) {
+          return problemResponse(
+            404,
+            "ERR_RESOURCE_NOT_FOUND",
+            "Ressource introuvable",
+            `Unité parente introuvable : '${rawParent}'.`,
+            path,
+          );
+        }
+        if (kind === "BU" && parentUnit.kind === "TEAM") {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_INVALID_PARENT_KIND",
+            "Rattachement hiérarchique invalide",
+            "Une Direction ou un Pôle (BU) ne peut pas être rattaché sous une Équipe.",
+            path,
+          );
+        }
+      }
+      backendState.orgUnitSeq += 1;
+      const id = `org-${backendState.orgUnitSeq}`;
+      const created: MockOrganizationalUnit = {
+        id,
+        slug,
+        name,
+        kind,
+        parent_id: rawParent,
+        billing_enabled: body.billing_enabled !== undefined ? Boolean(body.billing_enabled) : true,
+        lead_user_id:
+          typeof body.lead_user_id === "string" && body.lead_user_id.trim()
+            ? body.lead_user_id.trim()
+            : null,
+        member_user_ids: Array.isArray(body.member_user_ids)
+          ? body.member_user_ids.map((m) => String(m).trim()).filter(Boolean)
+          : [],
+      };
+      backendState.orgUnits = [...backendState.orgUnits, created];
+      syncSetupOrgUnitsFromMock();
+      return jsonResponse({
+        ...created,
+        attached_workspaces_count: 0,
+      });
+    }
+
+    const orgIdMatch = /^\/api\/v1\/org-units\/([^/]+)$/.exec(path);
+    const targetId = decodeURIComponent(orgIdMatch?.[1] ?? "");
+    const target = backendState.orgUnits.find((u) => u.id === targetId);
+    if (!target) {
+      return problemResponse(
+        404,
+        "ERR_RESOURCE_NOT_FOUND",
+        "Ressource introuvable",
+        `Unité introuvable : '${targetId}'.`,
+        path,
+      );
+    }
+
+    if (method === "PATCH") {
+      const nextName =
+        typeof body.name === "string" && body.name.trim() ? body.name.trim() : target.name;
+      let nextParentId = target.parent_id;
+      if ("parent_id" in body) {
+        const candidate =
+          typeof body.parent_id === "string" &&
+          body.parent_id.trim() &&
+          body.parent_id.trim() !== "scope-global"
+            ? body.parent_id.trim()
+            : null;
+        if (candidate === target.id) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_HIERARCHY_CYCLE",
+            "Cycle hiérarchique détecté",
+            "Une unité ne peut pas être rattachée à elle-même ou à l'une de ses sous-unités.",
+            path,
+          );
+        }
+        if (candidate) {
+          const parentUnit = backendState.orgUnits.find((u) => u.id === candidate);
+          if (!parentUnit) {
+            return problemResponse(
+              404,
+              "ERR_RESOURCE_NOT_FOUND",
+              "Ressource introuvable",
+              `Unité parente introuvable : '${candidate}'.`,
+              path,
+            );
+          }
+          if (target.kind === "BU" && parentUnit.kind === "TEAM") {
+            return problemResponse(
+              422,
+              "ERR_ORG_UNIT_INVALID_PARENT_KIND",
+              "Rattachement hiérarchique invalide",
+              "Une Direction ou un Pôle (BU) ne peut pas être rattaché sous une Équipe.",
+              path,
+            );
+          }
+          let cursor: MockOrganizationalUnit | undefined = parentUnit;
+          const seen = new Set<string>([target.id]);
+          while (cursor) {
+            if (seen.has(cursor.id)) {
+              return problemResponse(
+                422,
+                "ERR_ORG_UNIT_HIERARCHY_CYCLE",
+                "Cycle hiérarchique détecté",
+                "Une unité ne peut pas être rattachée à elle-même ou à l'une de ses sous-unités.",
+                path,
+              );
+            }
+            seen.add(cursor.id);
+            cursor = cursor.parent_id
+              ? backendState.orgUnits.find((u) => u.id === cursor?.parent_id)
+              : undefined;
+          }
+        }
+        nextParentId = candidate;
+      }
+      const updated: MockOrganizationalUnit = {
+        ...target,
+        name: nextName,
+        parent_id: nextParentId,
+        billing_enabled:
+          body.billing_enabled !== undefined
+            ? Boolean(body.billing_enabled)
+            : target.billing_enabled,
+        lead_user_id:
+          "lead_user_id" in body
+            ? typeof body.lead_user_id === "string" && body.lead_user_id.trim()
+              ? body.lead_user_id.trim()
+              : null
+            : target.lead_user_id,
+        member_user_ids: Array.isArray(body.member_user_ids)
+          ? body.member_user_ids.map((m) => String(m).trim()).filter(Boolean)
+          : target.member_user_ids,
+      };
+      backendState.orgUnits = backendState.orgUnits.map((u) =>
+        u.id === target.id ? updated : u,
+      );
+      syncSetupOrgUnitsFromMock();
+      return jsonResponse({
+        ...updated,
+        attached_workspaces_count: countAttachedWorkspacesForUnit(updated.id).count,
+      });
+    }
+
+    if (method === "DELETE") {
+      const children = backendState.orgUnits.filter((u) => u.parent_id === target.id);
+      const wsInfo = countAttachedWorkspacesForUnit(target.id);
+      if (children.length > 0 || wsInfo.count > 0) {
+        const parts: string[] = [];
+        if (children.length > 0) {
+          parts.push(
+            children.length > 1
+              ? `${children.length} sous-unités sont rattachées`
+              : "1 sous-unité est rattachée",
+          );
+        }
+        if (wsInfo.count > 0) {
+          parts.push(
+            wsInfo.count > 1
+              ? `${wsInfo.count} Espaces de Travail sont rattachés`
+              : "1 Espace de Travail est rattaché",
+          );
+        }
+        const detail = `Suppression refusée : ${parts.join(" et ")} à « ${target.name} ». Supprimez ou déplacez d'abord ces éléments.`;
+        return problemResponse(
+          409,
+          "ERR_ORG_UNIT_NOT_EMPTY",
+          "Unité organisationnelle non vide",
+          detail,
+          path,
+        );
+      }
+      backendState.orgUnits = backendState.orgUnits.filter((u) => u.id !== target.id);
+      syncSetupOrgUnitsFromMock();
+      return jsonResponse({
+        deleted_id: target.id,
+        deleted: true,
+        trace_id: "0195f000000070008000000000000999",
+      });
+    }
+  }
+
+  // 1c. Story 17.3 IAM Accounts Directory, Native 6-Role Matrix & SecOps Exceptions
+  const iamResp = handleVitestIamRoute({
+    method,
+    path,
+    parsedUrl,
+    body,
+    reqHeaders,
+    firstAdmin: backendState.firstAdmin,
+    orgUnits: backendState.orgUnits,
+    syncSetupOrgUnits: syncSetupOrgUnitsFromMock,
+    jsonResponse,
+    problemResponse,
+  });
+  if (iamResp !== null) {
+    return iamResp;
+  }
+
+  // 1d. Story 17.4 Enterprise Connectors, User Passthrough Tokens & Workspace Datasources
+  const connResp = handleVitestConnectorsRoute({
+    method,
+    path,
+    parsedUrl,
+    body,
+    reqHeaders,
+    firstAdmin: backendState.firstAdmin,
+    orgUnits: backendState.orgUnits,
+    jsonResponse,
+    problemResponse: (status, title, detail, errorCode) =>
+      problemResponse(status, errorCode, title, detail, path),
+  });
+  if (connResp !== null) {
+    return connResp;
   }
 
   // 2. Mon Assistant SSE Stream & Turn Actions
