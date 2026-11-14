@@ -3,81 +3,36 @@ import { OrciaIcon } from "../components/icons";
 import {
   resolveRgaaModalGuardLabels,
   useUnsavedChangesDialogGuard,
-  type RgaaModalGuardLabels,
 } from "../components/RgaaModalDialog";
 import { UserAccountDropdownMenu } from "./UserAccountDropdownMenu";
+import {
+  type UiLocalePreference,
+  type UiMcpTargetKind,
+  type UiPersonalMcpTokenItem,
+  type UiThemePreference,
+  type UiUserAccountOrgUnitView,
+  type UiUserAccountProfileView,
+  type UiUserPassthroughConnectorView,
+  type UiUserSettingsTabKey,
+  type UserAccountDropdownAndSettingsLabels,
+  type UserAccountDropdownAndSettingsModalProps,
+  type UserAccountPreferencesPatch,
+} from "./UserAccountDropdownTypes";
 import { UserSettingsModalDialog } from "./UserSettingsModalDialog";
 
-export type UiThemePreference = "light" | "dark" | "system";
-export type UiLocalePreference = "fr" | "en";
-export type UiUserSettingsTabKey =
-  | "PREFERENCES_DISPLAY"
-  | "PROFILE_SECURITY"
-  | "PASSTHROUGH_SOURCES"
-  | "IDE_MCP_KEYS";
-
-export type UiMcpTargetKind = "SPACE" | "AGENT";
-
-export interface UiPersonalMcpTokenItem {
-  readonly tokenId: string;
-  readonly label: string;
-  readonly tokenPrefix: string;
-  readonly tokenSha256: string;
-  readonly expiresInDays: 30 | 90;
-  readonly rpmLimit: number;
-  readonly targetKind: UiMcpTargetKind;
-  readonly targetSlug: string;
-  readonly mcpEndpointUri: string;
-  readonly ideJsonSnippet: string;
-  readonly revoked: boolean;
-}
-
-export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabels {
-  readonly triggerAriaLabel: string;
-  readonly dropdownWidthNote: string;
-  readonly hatSelectorLabel: string;
-  readonly themeQuickToggleLabel: string;
-  readonly localeQuickToggleLabel: string;
-  readonly openAccountSettingsLabel: string;
-  readonly openPassthroughSourcesLabel: string;
-  readonly logoutButtonLabel: string;
-  readonly modalTitle: string;
-  readonly tab1PreferencesTitle: string;
-  readonly tab2SecurityTitle: string;
-  readonly tab3PassthroughTitle: string;
-  readonly tab4McpKeysTitle: string;
-  readonly customizeAssistantRedirectCta: string;
-  readonly testPassthroughTokenCta: string;
-  readonly generateMcpTokenCta: string;
-  readonly revokeMcpTokenCta: string;
-  readonly targetWholeSpaceLabel: string;
-  readonly targetSingleAgentLabel: string;
-  readonly ideJsonReadyTitle: string;
-}
-
-export interface UserAccountPreferencesPatch {
-  readonly theme?: UiThemePreference;
-  readonly locale?: UiLocalePreference;
-  readonly defaultHat?: string;
-  readonly autoOpenContextualHelp?: boolean;
-  readonly notificationsEnabled?: boolean;
-}
-
-export interface UserAccountDropdownAndSettingsModalProps {
-  readonly userDisplayName: string;
-  readonly userEmail: string;
-  readonly userRole: string;
-  readonly initialTheme?: UiThemePreference;
-  readonly initialLocale?: UiLocalePreference;
-  readonly initialHat?: string;
-  readonly initialMcpTokens?: readonly UiPersonalMcpTokenItem[];
-  readonly modalOpen?: boolean;
-  readonly onModalOpenChange?: (open: boolean) => void;
-  readonly labels: UserAccountDropdownAndSettingsLabels;
-  readonly onPreferencesSync?: (patch: UserAccountPreferencesPatch) => void;
-  readonly onLogout?: () => void;
-  readonly onNavigateAssistantBehavior?: (redirectUri: string) => void;
-}
+export type {
+  UiLocalePreference,
+  UiMcpTargetKind,
+  UiPersonalMcpTokenItem,
+  UiThemePreference,
+  UiUserAccountOrgUnitView,
+  UiUserAccountProfileView,
+  UiUserPassthroughConnectorView,
+  UiUserSettingsTabKey,
+  UserAccountDropdownAndSettingsLabels,
+  UserAccountDropdownAndSettingsModalProps,
+  UserAccountPreferencesPatch,
+};
 
 export const ROLE_DISPLAY_LABELS_FR: Record<string, string> = {
   PLATFORM_ADMIN: "Administrateur de la plateforme",
@@ -123,18 +78,32 @@ export function UserAccountDropdownAndSettingsModal({
   initialLocale = "fr",
   initialHat,
   initialMcpTokens = [],
+  initialTab,
+  activeTab: controlledActiveTab,
+  onActiveTabChange,
   modalOpen: controlledModalOpen,
   onModalOpenChange,
   labels,
+  accountProfile,
+  passthroughConnectors,
   onPreferencesSync,
   onLogout,
   onNavigateAssistantBehavior,
+  onSavePassthroughToken,
+  onRevokePassthroughToken,
 }: UserAccountDropdownAndSettingsModalProps): React.ReactElement {
   const defaultRoleKey =
     initialHat ?? (userRole in ROLE_DISPLAY_LABELS_FR ? userRole : "ANALYST_PM_PO");
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [internalModalOpen, setInternalModalOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<UiUserSettingsTabKey>("PREFERENCES_DISPLAY");
+  const [internalActiveTab, setInternalActiveTab] = useState<UiUserSettingsTabKey>(
+    initialTab ?? "PREFERENCES_DISPLAY",
+  );
+  const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
+  const setActiveTab = (tab: UiUserSettingsTabKey): void => {
+    setInternalActiveTab(tab);
+    onActiveTabChange?.(tab);
+  };
   const [theme, setTheme] = useState<UiThemePreference>(initialTheme);
   const [locale, setLocale] = useState<UiLocalePreference>(initialLocale);
   const [hat, setHat] = useState<string>(defaultRoleKey);
@@ -162,6 +131,12 @@ export function UserAccountDropdownAndSettingsModal({
       setHat(initialHat);
     }
   }, [initialHat]);
+
+  useEffect(() => {
+    if (initialTab) {
+      setInternalActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     setLocale(initialLocale);
@@ -339,6 +314,8 @@ export function UserAccountDropdownAndSettingsModal({
           labels={labels}
           guardLabels={guardLabels}
           showUnsavedAlert={showUnsavedAlert}
+          accountProfile={accountProfile}
+          passthroughConnectors={passthroughConnectors}
           onRequestClose={requestClose}
           onCancelDiscard={cancelDiscard}
           onConfirmDiscard={confirmDiscard}
@@ -364,6 +341,8 @@ export function UserAccountDropdownAndSettingsModal({
           onPreferencesSync={onPreferencesSync}
           onNavigateAssistantBehavior={onNavigateAssistantBehavior}
           onTestPassthrough={() => setPassthroughTested(true)}
+          onSavePassthroughToken={onSavePassthroughToken}
+          onRevokePassthroughToken={onRevokePassthroughToken}
           onChangeMcpTargetKind={(kind) => {
             setMcpTargetKind(kind);
             setIsDirty(true);

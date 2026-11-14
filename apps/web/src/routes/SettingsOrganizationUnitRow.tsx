@@ -92,7 +92,7 @@ export function SettingsOrganizationUnitRow({
         {depth > 0 ? (
           <span
             data-testid={`org-unit-tree-connector-${unit.id}`}
-            aria-hidden="true"
+            role="presentation"
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: "13px",

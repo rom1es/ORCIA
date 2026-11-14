@@ -603,6 +603,11 @@ export interface components {
       required_scopes: (string)[];
       used_for: string;
     };
+    ConnectorSecretStatusResponse: {
+      configured: boolean;
+      fingerprint?: string | null;
+      updated_at_iso?: string | null;
+    };
     ConnectorTestConnectionResponse: {
       connector_id: string;
       diagnostic_message: string;
@@ -708,6 +713,15 @@ export interface components {
       title: string;
       working_attachments_uris?: (string)[];
       workspace_id: string;
+    };
+    CreateWorkspaceDatasourceRequest: {
+      alias: string;
+      connector_id?: string | null;
+      referent_user_id?: string | null;
+      scheme: string;
+      service_account_id?: string | null;
+      sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
+      uri: string;
     };
     DbDdlIndexRequest: {
       datasource_alias: string;
@@ -930,6 +944,42 @@ export interface components {
       trace_id: string;
     };
     EffortLevel: "default" | "low" | "medium" | "high";
+    EnterpriseConnectorCreateRequest: {
+      admin_secret_value?: string | null;
+      auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
+      base_url: string;
+      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+      enabled?: boolean;
+      name: string;
+    };
+    EnterpriseConnectorDeleteResponse: {
+      connector_id: string;
+      deleted?: boolean;
+      trace_id: string;
+    };
+    EnterpriseConnectorItemResponse: {
+      admin_secret_status: components["schemas"]["ConnectorSecretStatusResponse"];
+      auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
+      base_url: string;
+      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+      created_at_iso: string;
+      enabled: boolean;
+      id: string;
+      name: string;
+      updated_at_iso: string;
+    };
+    EnterpriseConnectorUpdateRequest: {
+      admin_secret_value?: string | null;
+      auth_mode?: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET" | null;
+      base_url?: string | null;
+      clear_admin_secret?: boolean;
+      enabled?: boolean | null;
+      name?: string | null;
+    };
+    EnterpriseConnectorsListResponse: {
+      items: (components["schemas"]["EnterpriseConnectorItemResponse"])[];
+      trace_id: string;
+    };
     EvaluateResourceAccessRequest: {
       context?: Record<string, unknown>;
       require_execute?: boolean;
@@ -2399,6 +2449,11 @@ export interface components {
       target_sub_step_id?: string | null;
       when_condition: string;
     };
+    RevokePassthroughTokenResponse: {
+      connector_id: string;
+      revoked?: boolean;
+      trace_id: string;
+    };
     RoleMatrixEntryResponse: {
       native_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
       natural_scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
@@ -2999,6 +3054,14 @@ export interface components {
       response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE";
       workspace_id: string;
     };
+    UpdateWorkspaceDatasourceRequest: {
+      alias?: string | null;
+      connector_id?: string | null;
+      referent_user_id?: string | null;
+      service_account_id?: string | null;
+      sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER" | null;
+      uri?: string | null;
+    };
     UpdateWorkspaceLayerSettingsRequest: {
       arbitration_policy?: "PAUSE_AND_ESCALATE" | "AUTO_RESOLVE_WITH_TRACE";
       default_checked_sources?: (string)[];
@@ -3040,6 +3103,10 @@ export interface components {
       version?: string;
       visibility_scope?: "PRIVATE" | "TEAM" | "PACK" | null;
       write_preview_required?: boolean | null;
+    };
+    UpsertPassthroughTokenRequest: {
+      external_author_login?: string | null;
+      secret_value: string;
     };
     UpsertSkillRequest: {
       enabled_in_workspace?: boolean | null;
@@ -3109,6 +3176,23 @@ export interface components {
       preview: components["schemas"]["UpstreamChallengePreviewSchemaItem"];
       trace_id: string;
     };
+    UserAccountOrgUnitItemResponse: {
+      billing_enabled: boolean;
+      id: string;
+      is_lead?: boolean;
+      name: string;
+      slug: string;
+      unit_type: string;
+    };
+    UserAccountProfileResponse: {
+      billing_org_units: (components["schemas"]["UserAccountOrgUnitItemResponse"])[];
+      display_name: string;
+      email: string;
+      principal_id: string;
+      roles: (string)[];
+      teams: (components["schemas"]["UserAccountOrgUnitItemResponse"])[];
+      trace_id: string;
+    };
     UserLayerPreferencesSchemaItem: {
       default_hat: string;
       favorite_format: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP";
@@ -3145,6 +3229,20 @@ export interface components {
       user_email: string;
       user_id?: string | null;
       workspace_ids: (string)[];
+    };
+    UserPassthroughConnectorItemResponse: {
+      auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
+      base_url: string;
+      connected: boolean;
+      connector_id: string;
+      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+      connector_name: string;
+      external_author_login?: string | null;
+      secret_status: components["schemas"]["ConnectorSecretStatusResponse"];
+    };
+    UserPassthroughTokensListResponse: {
+      items: (components["schemas"]["UserPassthroughConnectorItemResponse"])[];
+      trace_id: string;
     };
     UserPreferencesResponse: {
       assistant_behavior_redirect_uri: string;
@@ -3534,6 +3632,24 @@ export interface components {
       scheme: string;
       uri: string;
       workspace_id: string;
+    };
+    WorkspaceDatasourceItemResponse: {
+      alias: string;
+      connector_id?: string | null;
+      created_at_iso: string;
+      id: string;
+      referent_user_id?: string | null;
+      scheme: string;
+      service_account_id?: string | null;
+      sync_identity_mode?: "SERVICE_ACCOUNT" | "TEAM_REFERENT_USER";
+      sync_status?: "ACTIVE" | "PAUSED_REFERENT_RENEWAL_REQUIRED";
+      sync_status_reason?: "REFERENT_LEFT_TEAM" | "REFERENT_ACCOUNT_DISABLED" | "REFERENT_TOKEN_MISSING" | null;
+      uri: string;
+      workspace_id: string;
+    };
+    WorkspaceDatasourcesListResponse: {
+      items: (components["schemas"]["WorkspaceDatasourceItemResponse"])[];
+      trace_id: string;
     };
     WorkspaceFiveTabsStateResponse: {
       active_waivers: (components["schemas"]["ExceptionWaiverResponse"])[];
@@ -4615,6 +4731,18 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/connectors": {
+    get: {
+      responses: {
+        200: components["schemas"]["EnterpriseConnectorsListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
   "/api/v1/settings/connectors/documents/{document_id}/verify-reciprocity": {
     post: {
       responses: {
@@ -4633,6 +4761,18 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/connectors/{connector_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["EnterpriseConnectorDeleteResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["EnterpriseConnectorItemResponse"];
       };
     };
   };
@@ -4733,6 +4873,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/users/me/account-profile": {
+    get: {
+      responses: {
+        200: components["schemas"]["UserAccountProfileResponse"];
+      };
+    };
+  };
   "/api/v1/users/me/mcp-tokens": {
     get: {
       responses: {
@@ -4749,6 +4896,25 @@ export interface paths {
     delete: {
       responses: {
         200: components["schemas"]["McpPersonalTokenMetadataItem"];
+      };
+    };
+  };
+  "/api/v1/users/me/passthrough-tokens": {
+    get: {
+      responses: {
+        200: components["schemas"]["UserPassthroughTokensListResponse"];
+      };
+    };
+  };
+  "/api/v1/users/me/passthrough-tokens/{connector_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["RevokePassthroughTokenResponse"];
+      };
+    };
+    put: {
+      responses: {
+        200: components["schemas"]["UserPassthroughConnectorItemResponse"];
       };
     };
   };
@@ -4857,6 +5023,25 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["ResolvedArtifactDestinationResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/datasources": {
+    get: {
+      responses: {
+        200: components["schemas"]["WorkspaceDatasourcesListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/datasources/{datasource_id}": {
+    patch: {
+      responses: {
+        200: components["schemas"]["WorkspaceDatasourceItemResponse"];
       };
     };
   };
@@ -4988,6 +5173,7 @@ export type ConfigureFolderSharingResponse = components["schemas"]["ConfigureFol
 export type ConfigureWorkspaceTabsRequest = components["schemas"]["ConfigureWorkspaceTabsRequest"];
 export type ConnectorHealthStatus = components["schemas"]["ConnectorHealthStatus"];
 export type ConnectorRequirementHealthItemResponse = components["schemas"]["ConnectorRequirementHealthItemResponse"];
+export type ConnectorSecretStatusResponse = components["schemas"]["ConnectorSecretStatusResponse"];
 export type ConnectorTestConnectionResponse = components["schemas"]["ConnectorTestConnectionResponse"];
 export type ContextualHelpPublishRequest = components["schemas"]["ContextualHelpPublishRequest"];
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
@@ -5000,6 +5186,7 @@ export type CreateAssistantThreadRequest = components["schemas"]["CreateAssistan
 export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPackRequest"];
 export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];
 export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
+export type CreateWorkspaceDatasourceRequest = components["schemas"]["CreateWorkspaceDatasourceRequest"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DeclarativePackSummaryResponse = components["schemas"]["DeclarativePackSummaryResponse"];
@@ -5025,6 +5212,11 @@ export type DuplicateAgentRequest = components["schemas"]["DuplicateAgentRequest
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EffortLevel = components["schemas"]["EffortLevel"];
+export type EnterpriseConnectorCreateRequest = components["schemas"]["EnterpriseConnectorCreateRequest"];
+export type EnterpriseConnectorDeleteResponse = components["schemas"]["EnterpriseConnectorDeleteResponse"];
+export type EnterpriseConnectorItemResponse = components["schemas"]["EnterpriseConnectorItemResponse"];
+export type EnterpriseConnectorUpdateRequest = components["schemas"]["EnterpriseConnectorUpdateRequest"];
+export type EnterpriseConnectorsListResponse = components["schemas"]["EnterpriseConnectorsListResponse"];
 export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResourceAccessRequest"];
 export type EvaluateStarlarkMechanismRequest = components["schemas"]["EvaluateStarlarkMechanismRequest"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
@@ -5196,6 +5388,7 @@ export type ResolvedArtifactDestinationResponse = components["schemas"]["Resolve
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type ReturnLoopSpec = components["schemas"]["ReturnLoopSpec"];
+export type RevokePassthroughTokenResponse = components["schemas"]["RevokePassthroughTokenResponse"];
 export type RoleMatrixEntryResponse = components["schemas"]["RoleMatrixEntryResponse"];
 export type RoleMatrixResponse = components["schemas"]["RoleMatrixResponse"];
 export type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
@@ -5264,9 +5457,11 @@ export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchH
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
+export type UpdateWorkspaceDatasourceRequest = components["schemas"]["UpdateWorkspaceDatasourceRequest"];
 export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
 export type UpdateWorkspaceLifecycleRequest = components["schemas"]["UpdateWorkspaceLifecycleRequest"];
 export type UpsertAgentRequest = components["schemas"]["UpsertAgentRequest"];
+export type UpsertPassthroughTokenRequest = components["schemas"]["UpsertPassthroughTokenRequest"];
 export type UpsertSkillRequest = components["schemas"]["UpsertSkillRequest"];
 export type UpstreamChallengePreviewRequest = components["schemas"]["UpstreamChallengePreviewRequest"];
 export type UpstreamChallengePreviewResponse = components["schemas"]["UpstreamChallengePreviewResponse"];
@@ -5274,9 +5469,13 @@ export type UpstreamChallengePreviewSchemaItem = components["schemas"]["Upstream
 export type UpstreamChallengeSchemaItem = components["schemas"]["UpstreamChallengeSchemaItem"];
 export type UpstreamChallengeSubmitRequest = components["schemas"]["UpstreamChallengeSubmitRequest"];
 export type UpstreamChallengeSubmitResponse = components["schemas"]["UpstreamChallengeSubmitResponse"];
+export type UserAccountOrgUnitItemResponse = components["schemas"]["UserAccountOrgUnitItemResponse"];
+export type UserAccountProfileResponse = components["schemas"]["UserAccountProfileResponse"];
 export type UserLayerPreferencesSchemaItem = components["schemas"]["UserLayerPreferencesSchemaItem"];
 export type UserMeResponse = components["schemas"]["UserMeResponse"];
 export type UserOnboardingStateItem = components["schemas"]["UserOnboardingStateItem"];
+export type UserPassthroughConnectorItemResponse = components["schemas"]["UserPassthroughConnectorItemResponse"];
+export type UserPassthroughTokensListResponse = components["schemas"]["UserPassthroughTokensListResponse"];
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
 export type UserPreferencesUpdateRequest = components["schemas"]["UserPreferencesUpdateRequest"];
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
@@ -5316,6 +5515,8 @@ export type WorkflowValidationFindingSchemaItem = components["schemas"]["Workflo
 export type WorkflowsV2ListResponse = components["schemas"]["WorkflowsV2ListResponse"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
+export type WorkspaceDatasourceItemResponse = components["schemas"]["WorkspaceDatasourceItemResponse"];
+export type WorkspaceDatasourcesListResponse = components["schemas"]["WorkspaceDatasourcesListResponse"];
 export type WorkspaceFiveTabsStateResponse = components["schemas"]["WorkspaceFiveTabsStateResponse"];
 export type WorkspaceGovernanceItemResponse = components["schemas"]["WorkspaceGovernanceItemResponse"];
 export type WorkspaceLayerSettingsSchemaItem = components["schemas"]["WorkspaceLayerSettingsSchemaItem"];

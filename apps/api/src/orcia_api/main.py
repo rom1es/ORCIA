@@ -22,6 +22,9 @@ from orcia_api.routers.control_center import router as control_center_router
 from orcia_api.routers.dna_and_glossary import (
     router as dna_and_glossary_router,
 )
+from orcia_api.routers.enterprise_connectors import (
+    router as enterprise_connectors_router,
+)
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
@@ -44,6 +47,9 @@ from orcia_api.routers.settings_and_studio import router as settings_and_studio_
 from orcia_api.routers.shell import router as shell_router
 from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
 from orcia_api.routers.workflows import router as workflows_v2_router
+from orcia_api.routers.workspace_datasources import (
+    router as workspace_datasources_router,
+)
 from orcia_api.routers.workspace_governance import (
     router as workspace_governance_router,
 )
@@ -85,6 +91,7 @@ def create_app() -> FastAPI:
     application.include_router(inbox_and_leases_router)
     application.include_router(control_center_router)
     application.include_router(iam_accounts_router)
+    application.include_router(enterprise_connectors_router)
     application.include_router(settings_and_studio_router)
     application.include_router(studio_and_wizards_router)
     application.include_router(jira_and_mcp_router)
@@ -97,6 +104,7 @@ def create_app() -> FastAPI:
     application.include_router(portal_and_help_router)
     application.include_router(assistant_workspace_router)
     application.include_router(workspace_governance_router)
+    application.include_router(workspace_datasources_router)
     application.include_router(dna_and_glossary_router)
     application.include_router(mcp_and_test_bench_router)
     application.include_router(pack_builder_router)

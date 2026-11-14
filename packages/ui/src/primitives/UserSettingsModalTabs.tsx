@@ -1,17 +1,25 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
 import type {
+  UiLocalePreference,
   UiMcpTargetKind,
   UiPersonalMcpTokenItem,
+  UiUserAccountProfileView,
+  UiUserPassthroughConnectorView,
   UiUserSettingsTabKey,
   UserAccountDropdownAndSettingsLabels,
   UserAccountPreferencesPatch,
-} from "./UserAccountDropdownAndSettingsModal";
+} from "./UserAccountDropdownTypes";
+import {
+  UserSettingsPassthroughTab,
+  UserSettingsProfileTab,
+} from "./UserSettingsProfileAndPassthroughTabs";
 
 export interface UserSettingsModalTabsProps {
   readonly activeTab: UiUserSettingsTabKey;
   readonly userEmail: string;
   readonly userRole: string;
+  readonly locale?: UiLocalePreference;
   readonly autoOpenHelp: boolean;
   readonly notificationsEnabled: boolean;
   readonly passthroughTested: boolean;
@@ -22,11 +30,19 @@ export interface UserSettingsModalTabsProps {
   readonly mcpTokens: readonly UiPersonalMcpTokenItem[];
   readonly lastIssuedPlaintext: string | null;
   readonly labels: UserAccountDropdownAndSettingsLabels;
+  readonly accountProfile?: UiUserAccountProfileView;
+  readonly passthroughConnectors?: readonly UiUserPassthroughConnectorView[];
   readonly onChangeAutoOpenHelp: (next: boolean) => void;
   readonly onChangeNotificationsEnabled: (next: boolean) => void;
   readonly onPreferencesSync?: (patch: UserAccountPreferencesPatch) => void;
   readonly onNavigateAssistantBehavior?: (redirectUri: string) => void;
   readonly onTestPassthrough: () => void;
+  readonly onSavePassthroughToken?: (
+    connectorId: string,
+    externalLogin: string,
+    secretValue: string,
+  ) => void | Promise<void>;
+  readonly onRevokePassthroughToken?: (connectorId: string) => void | Promise<void>;
   readonly onChangeMcpTargetKind: (kind: UiMcpTargetKind) => void;
   readonly onChangeMcpTargetSlug: (slug: string) => void;
   readonly onChangeMcpExpiryDays: (days: 30 | 90) => void;
@@ -39,6 +55,7 @@ export function UserSettingsModalTabs({
   activeTab,
   userEmail,
   userRole,
+  locale = "fr",
   autoOpenHelp,
   notificationsEnabled,
   passthroughTested,
@@ -49,11 +66,15 @@ export function UserSettingsModalTabs({
   mcpTokens,
   lastIssuedPlaintext,
   labels,
+  accountProfile,
+  passthroughConnectors,
   onChangeAutoOpenHelp,
   onChangeNotificationsEnabled,
   onPreferencesSync,
   onNavigateAssistantBehavior,
   onTestPassthrough,
+  onSavePassthroughToken,
+  onRevokePassthroughToken,
   onChangeMcpTargetKind,
   onChangeMcpTargetSlug,
   onChangeMcpExpiryDays,
@@ -124,44 +145,24 @@ export function UserSettingsModalTabs({
       )}
 
       {activeTab === "PROFILE_SECURITY" && (
-        <div
-          data-testid="user-settings-panel-PROFILE_SECURITY"
-          className="space-y-2"
-        >
-          <div className="font-semibold">
-            Authentification locale &amp; double facteur TOTP
-          </div>
-          <p className="text-text-secondary">
-            Identité : {userEmail} ({userRole})
-          </p>
-        </div>
+        <UserSettingsProfileTab
+          userEmail={userEmail}
+          userRole={userRole}
+          locale={locale}
+          accountProfile={accountProfile}
+        />
       )}
 
       {activeTab === "PASSTHROUGH_SOURCES" && (
-        <div
-          data-testid="user-settings-panel-PASSTHROUGH_SOURCES"
-          className="space-y-2"
-        >
-          <div className="font-semibold">
-            Jetons personnels Passthrough (Git / Jira / Confluence / Notion)
-          </div>
-          <button
-            type="button"
-            data-testid="passthrough-test-token-btn"
-            onClick={onTestPassthrough}
-            className="px-2.5 py-1 rounded bg-brand-primary text-surface-elevated font-medium"
-          >
-            {labels.testPassthroughTokenCta}
-          </button>
-          {passthroughTested && (
-            <span
-              data-testid="passthrough-test-ok-badge"
-              className="ml-2 text-status-success font-mono"
-            >
-              <OrciaIcon name="checkFilled" /> Connectivité vérifiée
-            </span>
-          )}
-        </div>
+        <UserSettingsPassthroughTab
+          locale={locale}
+          passthroughTested={passthroughTested}
+          labels={labels}
+          passthroughConnectors={passthroughConnectors}
+          onTestPassthrough={onTestPassthrough}
+          onSavePassthroughToken={onSavePassthroughToken}
+          onRevokePassthroughToken={onRevokePassthroughToken}
+        />
       )}
 
       {activeTab === "IDE_MCP_KEYS" && (

@@ -218,6 +218,20 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "A human account or service principal already uses this principal identifier.",
         ),
     },
+    "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL": {
+        "fr": LocalizedErrorCopy(
+            "URL de connecteur d'entreprise non sécurisée (protection anti-SSRF)",
+            "L'URL de base du connecteur doit utiliser HTTP/HTTPS et ne peut pas cibler une "
+            "adresse de métadonnées Cloud ou link-local (169.254.0.0/16, fe80::/10, "
+            "metadata.google.internal, 100.100.100.200).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Unsafe enterprise connector endpoint URL (SSRF protection)",
+            "The connector base URL must use HTTP/HTTPS and must not target cloud metadata or "
+            "link-local addresses (169.254.0.0/16, fe80::/10, metadata.google.internal, "
+            "100.100.100.200).",
+        ),
+    },
 }
 
 register_domain_error_catalog(PERMISSIONS_ERROR_CATALOG)
@@ -312,6 +326,11 @@ class DuplicateIamPrincipalError(OrciaDomainError):
     http_status, type_slug = 409, "iam-duplicate-principal"
 
 
+class UnsafeConnectorEndpointUrlError(OrciaDomainError):
+    error_code = "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL"
+    http_status, type_slug = 422, "unsafe-connector-endpoint-url"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "C3WorkspaceRequiredError",
@@ -335,5 +354,6 @@ __all__ = [
     "ScopeAccessDeniedError",
     "SecretConfigReadDeniedError",
     "SettingsVersionConflictError",
+    "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
 ]

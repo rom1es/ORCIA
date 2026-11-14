@@ -7,6 +7,18 @@ from typing import cast
 
 from orcia_core.bootstrap import workflow_bootstrap_seeds as wbs
 from orcia_core.bootstrap._internal.litellm_adapter import LiteLLMAdapter
+from orcia_core.bootstrap._internal.sql_enterprise_connectors import (
+    UserAccountOrgUnitSummary,
+    UserAccountProfileRecord,
+    create_enterprise_connector_on_postgres18,
+    delete_enterprise_connector_on_postgres18,
+    get_user_account_profile_from_postgres18,
+    list_enterprise_connectors_from_postgres18,
+    list_user_passthrough_tokens_from_postgres18,
+    revoke_user_passthrough_token_on_postgres18,
+    update_enterprise_connector_on_postgres18,
+    upsert_user_passthrough_token_on_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_first_user_guard import (
     create_first_platform_admin_on_postgres18,
     get_first_platform_admin_from_postgres18,
@@ -33,6 +45,11 @@ from orcia_core.bootstrap._internal.sql_platform_setup_store import (
     load_platform_setup_state_from_postgres18,
     persist_progressive_llm_endpoint_to_postgres18,
     save_platform_setup_state_to_postgres18,
+)
+from orcia_core.bootstrap._internal.sql_workspace_datasources import (
+    create_workspace_datasource_on_postgres18,
+    list_workspace_datasources_from_postgres18,
+    update_workspace_datasource_on_postgres18,
 )
 from orcia_core.bootstrap.durable_wizards import (
     WIZARD_STEPS_BY_TYPE,
@@ -192,6 +209,8 @@ __all__ = [
     "SystemBootstrapWorkflowSpec",
     "UpsertSpec",
     "UriSchemePluginDescriptor",
+    "UserAccountOrgUnitSummary",
+    "UserAccountProfileRecord",
     "UserOnboardingState",
     "WizardSessionRecord",
     "WizardSessionStatus",
@@ -201,20 +220,31 @@ __all__ = [
     "build_default_system_bootstrap_service",
     "build_litellm_gateway_plugin",
     "build_postgres_upsert_sql",
+    "create_enterprise_connector_on_postgres18",
     "create_first_platform_admin_on_postgres18",
     "create_iam_account_on_postgres18",
     "create_iam_grants_on_postgres18",
     "create_org_unit_on_postgres18",
+    "create_workspace_datasource_on_postgres18",
+    "delete_enterprise_connector_on_postgres18",
     "delete_iam_account_on_postgres18",
     "delete_iam_grant_on_postgres18",
     "delete_org_unit_on_postgres18",
     "get_first_platform_admin_from_postgres18",
+    "get_user_account_profile_from_postgres18",
+    "list_enterprise_connectors_from_postgres18",
     "list_iam_grants_from_postgres18",
     "list_org_units_from_postgres18",
+    "list_user_passthrough_tokens_from_postgres18",
+    "list_workspace_datasources_from_postgres18",
     "load_platform_setup_state_from_postgres18",
     "persist_progressive_llm_endpoint_to_postgres18",
+    "revoke_user_passthrough_token_on_postgres18",
     "save_platform_setup_state_to_postgres18",
     "sync_and_list_iam_accounts_from_postgres18",
+    "update_enterprise_connector_on_postgres18",
     "update_iam_account_on_postgres18",
     "update_org_unit_on_postgres18",
+    "update_workspace_datasource_on_postgres18",
+    "upsert_user_passthrough_token_on_postgres18",
 ]

@@ -161,6 +161,12 @@ export function formatCountNoun(
   return `${count} ${isPlural ? plural : singular}`;
 }
 
+export type UserSettingsModalTabKey =
+  | "PREFERENCES_DISPLAY"
+  | "PROFILE_SECURITY"
+  | "PASSTHROUGH_SOURCES"
+  | "IDE_MCP_KEYS";
+
 export interface AuthSessionStoreState {
   readonly roles: readonly string[];
   readonly activeHat: string;
@@ -168,6 +174,7 @@ export interface AuthSessionStoreState {
   readonly email: string | null;
   readonly displayName: string | null;
   readonly userSettingsModalOpen: boolean;
+  readonly userSettingsModalInitialTab: UserSettingsModalTabKey | null;
   readonly setAuthSession: (
     patch: Partial<{
       roles: readonly string[];
@@ -179,6 +186,7 @@ export interface AuthSessionStoreState {
   ) => void;
   readonly setActiveHat: (hat: string) => void;
   readonly setUserSettingsModalOpen: (open: boolean) => void;
+  readonly openUserSettingsModalAtTab: (tab: UserSettingsModalTabKey) => void;
   readonly resetAuthSession: () => void;
 }
 
@@ -189,6 +197,7 @@ const DEFAULT_SESSION_STATE = {
   email: null as string | null,
   displayName: null as string | null,
   userSettingsModalOpen: false,
+  userSettingsModalInitialTab: null as UserSettingsModalTabKey | null,
 };
 
 export const useAuthSessionStore = create<AuthSessionStoreState>((set) => ({
@@ -207,7 +216,16 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set) => ({
       };
     }),
   setActiveHat: (hat) => set({ activeHat: hat }),
-  setUserSettingsModalOpen: (open) => set({ userSettingsModalOpen: open }),
+  setUserSettingsModalOpen: (open) =>
+    set((state) => ({
+      userSettingsModalOpen: open,
+      userSettingsModalInitialTab: open ? state.userSettingsModalInitialTab : null,
+    })),
+  openUserSettingsModalAtTab: (tab) =>
+    set({
+      userSettingsModalOpen: true,
+      userSettingsModalInitialTab: tab,
+    }),
   resetAuthSession: () => set({ ...DEFAULT_SESSION_STATE }),
 }));
 

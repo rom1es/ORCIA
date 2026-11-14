@@ -11,13 +11,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 23,
     "uiPrimitivesCount": 99,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 30,
+    "alembicMigrationsCount": 31,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 112,
+    "techLeadReportsCount": 113,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
-    "verifiedCapabilitiesCount": 36
+    "verifiedCapabilitiesCount": 38
   },
   "activeRoutes": [
     "/",
@@ -176,7 +176,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0027_story_11_2_dna_chain_and_glossary_lifecycle",
     "20261108_0910_declarative_packs_and_workflows_v2",
     "20261111_1702_story_17_2_org_units_billing_and_members",
-    "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind"
+    "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
+    "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent"
   ],
   "architectureDecisions": [
     {
@@ -431,6 +432,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 17.4 (CAP-003, CAP-054, CAP-063, CAP-080)",
+      "reportFile": "17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag-tech-lead-report.md",
+      "domain": "Registre Socle Connecteurs & SSO (/api/v1/settings/connectors, Anti-SSRF 422, SecretStatus Write-Only sans pollution d'Espace), Enrichissement de 👤 Mon Compte (Passthrough AES-256-GCM 1 fois par Connecteur + Équipes FinOps) & Synchronisation RAG dans Mes Espaces › Sources avec Repli sur Membre Référent (PAUSED_REFERENT_RENEWAL_REQUIRED)",
+      "summary": "Migration Alembic 20261111_1704 (enterprise_connectors, user_connector_passthrough_tokens, extension workspace_datasources), domaine pur enterprise_connectors.py, adaptateurs PG18 sql_enterprise_connectors.py + sql_workspace_datasources.py, routeurs enterprise_connectors.py + workspace_datasources.py + SDK OpenAPI 0-diff, refonte de Connecteurs & SSO, UserSettingsModalTabs + ShellHeaderAccountControl, et WorkspaceSourcesRagTab (bannière *Cold-Start* 1-clic & renouvellement de référent)."
+    },
     {
       "date": "2026-11-11",
       "phaseOrStory": "Story 17.3 (CAP-050, CAP-051)",

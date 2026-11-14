@@ -62,6 +62,10 @@ import {
   handleVitestIamRoute,
   resetVitestIamMockState,
 } from "./vitestIamMockHandlers";
+import {
+  handleVitestConnectorsRoute,
+  resetVitestConnectorsMockState,
+} from "./vitestConnectorsMockHandlers";
 
 function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit[] {
   if (!Array.isArray(rawUnits)) return [];
@@ -188,6 +192,7 @@ export function resetVitestApiBackend(): void {
   backendState.orchestrationRuns = [];
   backendState.recordedCalls = [];
   resetVitestIamMockState();
+  resetVitestConnectorsMockState();
   resetAuthSessionStore();
 }
 
@@ -584,6 +589,23 @@ async function vitestFetchTransport(
   });
   if (iamResp !== null) {
     return iamResp;
+  }
+
+  // 1d. Story 17.4 Enterprise Connectors, User Passthrough Tokens & Workspace Datasources
+  const connResp = handleVitestConnectorsRoute({
+    method,
+    path,
+    parsedUrl,
+    body,
+    reqHeaders,
+    firstAdmin: backendState.firstAdmin,
+    orgUnits: backendState.orgUnits,
+    jsonResponse,
+    problemResponse: (status, title, detail, errorCode) =>
+      problemResponse(status, errorCode, title, detail, path),
+  });
+  if (connResp !== null) {
+    return connResp;
   }
 
   // 2. Mon Assistant SSE Stream & Turn Actions

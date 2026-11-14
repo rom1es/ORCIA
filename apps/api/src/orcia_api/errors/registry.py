@@ -39,6 +39,7 @@ from orcia_core.permissions.errors import (
     RevokedTokenError,
     ScopeAccessDeniedError,
     SecretConfigReadDeniedError,
+    UnsafeConnectorEndpointUrlError,
 )
 from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_kernel.errors import (
@@ -81,6 +82,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     SecretConfigReadDeniedError,
     InvalidIamRoleError,
     DuplicateIamPrincipalError,
+    UnsafeConnectorEndpointUrlError,
     OrgUnitDuplicateSlugError,
     OrgUnitHierarchyCycleError,
     OrgUnitInvalidParentKindError,

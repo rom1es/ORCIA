@@ -2,7 +2,6 @@ import {
   ContextualHelpColumnAndCenter,
   FourZoneDirectionCShell,
   OrciaIcon,
-  UserAccountDropdownAndSettingsModal,
   computeDefaultHelpColumnOpen,
   type EightFixedMenuKey,
   type UiHumanProfileBadge,
@@ -19,6 +18,7 @@ import { FirstBootAdminSetupModal } from "./FirstBootAdminSetupModal";
 import { useOrciaNavigation } from "./navigationAdapter";
 import { PlatformSetupProvider, usePlatformSetup } from "./platformSetupStore";
 import { ShellFederatedSearchModal } from "./ShellFederatedSearchModal";
+import { ShellHeaderAccountControl } from "./ShellHeaderAccountControl";
 import {
   DEFAULT_HUMAN_PROFILE,
   DEFAULT_SHELL_MODULES,
@@ -290,23 +290,15 @@ function InnerShellContainer({
           </>
         )}
         headerUserControl={
-          <UserAccountDropdownAndSettingsModal
+          <ShellHeaderAccountControl
             userDisplayName={effectiveProfile.displayName}
             userEmail={sessionEmail ?? platformAdmin?.email ?? ""}
             userRole={roles[0] ?? "PLATFORM_ADMIN"}
-            initialHat={activeHat}
-            initialLocale={locale}
-            modalOpen={userSettingsModalOpen}
-            onModalOpenChange={setUserSettingsModalOpen}
+            activeHat={activeHat}
+            locale={locale}
             labels={dictionary.userAccountAndSettings}
-            onPreferencesSync={(patch) => {
-              if (patch.locale && patch.locale !== locale) {
-                setLocale(patch.locale);
-              }
-              if (patch.defaultHat) {
-                setActiveHat(patch.defaultHat);
-              }
-            }}
+            onLocaleChange={(nextLocale) => setLocale(nextLocale)}
+            onActiveHatChange={(nextHat) => setActiveHat(nextHat)}
             onNavigateAssistantBehavior={(uri) => dispatchNavigation(uri)}
           />
         }

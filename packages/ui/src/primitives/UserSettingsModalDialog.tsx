@@ -8,10 +8,12 @@ import type {
   UiLocalePreference,
   UiMcpTargetKind,
   UiPersonalMcpTokenItem,
+  UiUserAccountProfileView,
+  UiUserPassthroughConnectorView,
   UiUserSettingsTabKey,
   UserAccountDropdownAndSettingsLabels,
   UserAccountPreferencesPatch,
-} from "./UserAccountDropdownAndSettingsModal";
+} from "./UserAccountDropdownTypes";
 import { UserSettingsModalTabs } from "./UserSettingsModalTabs";
 
 export interface UserSettingsModalDialogProps {
@@ -32,6 +34,8 @@ export interface UserSettingsModalDialogProps {
   readonly labels: UserAccountDropdownAndSettingsLabels;
   readonly guardLabels: RgaaModalDialogLabels;
   readonly showUnsavedAlert: boolean;
+  readonly accountProfile?: UiUserAccountProfileView;
+  readonly passthroughConnectors?: readonly UiUserPassthroughConnectorView[];
   readonly onRequestClose: () => void;
   readonly onCancelDiscard: () => void;
   readonly onConfirmDiscard: () => void;
@@ -41,6 +45,12 @@ export interface UserSettingsModalDialogProps {
   readonly onPreferencesSync?: (patch: UserAccountPreferencesPatch) => void;
   readonly onNavigateAssistantBehavior?: (redirectUri: string) => void;
   readonly onTestPassthrough: () => void;
+  readonly onSavePassthroughToken?: (
+    connectorId: string,
+    externalLogin: string,
+    secretValue: string,
+  ) => void | Promise<void>;
+  readonly onRevokePassthroughToken?: (connectorId: string) => void | Promise<void>;
   readonly onChangeMcpTargetKind: (kind: UiMcpTargetKind) => void;
   readonly onChangeMcpTargetSlug: (slug: string) => void;
   readonly onChangeMcpExpiryDays: (days: 30 | 90) => void;
@@ -67,6 +77,8 @@ export function UserSettingsModalDialog({
   labels,
   guardLabels,
   showUnsavedAlert,
+  accountProfile,
+  passthroughConnectors,
   onRequestClose,
   onCancelDiscard,
   onConfirmDiscard,
@@ -76,6 +88,8 @@ export function UserSettingsModalDialog({
   onPreferencesSync,
   onNavigateAssistantBehavior,
   onTestPassthrough,
+  onSavePassthroughToken,
+  onRevokePassthroughToken,
   onChangeMcpTargetKind,
   onChangeMcpTargetSlug,
   onChangeMcpExpiryDays,
@@ -148,6 +162,7 @@ export function UserSettingsModalDialog({
           userRole={userRole}
           autoOpenHelp={autoOpenHelp}
           notificationsEnabled={notificationsEnabled}
+          locale={locale}
           passthroughTested={passthroughTested}
           mcpTargetKind={mcpTargetKind}
           mcpTargetSlug={mcpTargetSlug}
@@ -156,11 +171,15 @@ export function UserSettingsModalDialog({
           mcpTokens={mcpTokens}
           lastIssuedPlaintext={lastIssuedPlaintext}
           labels={labels}
+          accountProfile={accountProfile}
+          passthroughConnectors={passthroughConnectors}
           onChangeAutoOpenHelp={onChangeAutoOpenHelp}
           onChangeNotificationsEnabled={onChangeNotificationsEnabled}
           onPreferencesSync={onPreferencesSync}
           onNavigateAssistantBehavior={onNavigateAssistantBehavior}
           onTestPassthrough={onTestPassthrough}
+          onSavePassthroughToken={onSavePassthroughToken}
+          onRevokePassthroughToken={onRevokePassthroughToken}
           onChangeMcpTargetKind={onChangeMcpTargetKind}
           onChangeMcpTargetSlug={onChangeMcpTargetSlug}
           onChangeMcpExpiryDays={onChangeMcpExpiryDays}

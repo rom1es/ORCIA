@@ -28,6 +28,22 @@ import type {
   RoleMatrixResponse,
 } from "../generated/iam_accounts";
 import type {
+  CreateWorkspaceDatasourceRequest,
+  EnterpriseConnectorCreateRequest,
+  EnterpriseConnectorDeleteResponse,
+  EnterpriseConnectorItemResponse,
+  EnterpriseConnectorUpdateRequest,
+  EnterpriseConnectorsListResponse,
+  RevokePassthroughTokenResponse,
+  UpdateWorkspaceDatasourceRequest,
+  UpsertPassthroughTokenRequest,
+  UserAccountProfileResponse,
+  UserPassthroughConnectorItemResponse,
+  UserPassthroughTokensListResponse,
+  WorkspaceDatasourceItemResponse,
+  WorkspaceDatasourcesListResponse,
+} from "../generated/enterprise_connectors";
+import type {
   PermissionBrokerStateResponse,
   PermissionCheckRequest,
   PermissionCheckResponse,
@@ -242,6 +258,102 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
       return requestJson<PermissionTicketActionResponse>(
         `/api/v1/permissions/broker/tickets/${encodeURIComponent(ticketId)}/action${buildPersonaQuery(personaKey)}`,
         "POST",
+        payload,
+      );
+    },
+    listEnterpriseConnectors(personaKey?: string): Promise<EnterpriseConnectorsListResponse> {
+      return requestJson<EnterpriseConnectorsListResponse>(
+        `/api/v1/settings/connectors${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    createEnterpriseConnector(
+      payload: EnterpriseConnectorCreateRequest,
+      personaKey?: string,
+    ): Promise<EnterpriseConnectorItemResponse> {
+      return requestJson<EnterpriseConnectorItemResponse>(
+        `/api/v1/settings/connectors${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    updateEnterpriseConnector(
+      connectorId: string,
+      payload: EnterpriseConnectorUpdateRequest,
+      personaKey?: string,
+    ): Promise<EnterpriseConnectorItemResponse> {
+      return requestJson<EnterpriseConnectorItemResponse>(
+        `/api/v1/settings/connectors/${encodeURIComponent(connectorId)}${buildPersonaQuery(personaKey)}`,
+        "PATCH",
+        payload,
+      );
+    },
+    deleteEnterpriseConnector(
+      connectorId: string,
+      personaKey?: string,
+    ): Promise<EnterpriseConnectorDeleteResponse> {
+      return requestJson<EnterpriseConnectorDeleteResponse>(
+        `/api/v1/settings/connectors/${encodeURIComponent(connectorId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
+    getUserAccountProfile(personaKey?: string): Promise<UserAccountProfileResponse> {
+      return requestJson<UserAccountProfileResponse>(
+        `/api/v1/users/me/account-profile${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    listUserPassthroughTokens(personaKey?: string): Promise<UserPassthroughTokensListResponse> {
+      return requestJson<UserPassthroughTokensListResponse>(
+        `/api/v1/users/me/passthrough-tokens${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    upsertUserPassthroughToken(
+      connectorId: string,
+      payload: UpsertPassthroughTokenRequest,
+      personaKey?: string,
+    ): Promise<UserPassthroughConnectorItemResponse> {
+      return requestJson<UserPassthroughConnectorItemResponse>(
+        `/api/v1/users/me/passthrough-tokens/${encodeURIComponent(connectorId)}${buildPersonaQuery(personaKey)}`,
+        "PUT",
+        payload,
+      );
+    },
+    revokeUserPassthroughToken(
+      connectorId: string,
+      personaKey?: string,
+    ): Promise<RevokePassthroughTokenResponse> {
+      return requestJson<RevokePassthroughTokenResponse>(
+        `/api/v1/users/me/passthrough-tokens/${encodeURIComponent(connectorId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
+      );
+    },
+    listWorkspaceDatasources(
+      workspaceId: string,
+      personaKey?: string,
+    ): Promise<WorkspaceDatasourcesListResponse> {
+      return requestJson<WorkspaceDatasourcesListResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    createWorkspaceDatasource(
+      workspaceId: string,
+      payload: CreateWorkspaceDatasourceRequest,
+      personaKey?: string,
+    ): Promise<WorkspaceDatasourceItemResponse> {
+      return requestJson<WorkspaceDatasourceItemResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    updateWorkspaceDatasource(
+      workspaceId: string,
+      datasourceId: string,
+      payload: UpdateWorkspaceDatasourceRequest,
+      personaKey?: string,
+    ): Promise<WorkspaceDatasourceItemResponse> {
+      return requestJson<WorkspaceDatasourceItemResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}${buildPersonaQuery(personaKey)}`,
+        "PATCH",
         payload,
       );
     },
