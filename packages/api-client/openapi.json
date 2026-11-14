@@ -792,6 +792,625 @@
         "title": "AgentsAndSkillsListResponse",
         "type": "object"
       },
+      "AiModelCreateRequest": {
+        "additionalProperties": false,
+        "description": "Write-only command to connect a new AI model.",
+        "properties": {
+          "auth_mode": {
+            "default": "api_key",
+            "enum": [
+              "api_key",
+              "env_var",
+              "none_local"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "display_name": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "effort": {
+            "default": "default",
+            "enum": [
+              "default",
+              "fast",
+              "balanced",
+              "deep"
+            ],
+            "title": "Effort",
+            "type": "string"
+          },
+          "endpoint_uri": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "env_var_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Env Var Name"
+          },
+          "fallback_model_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Model Name"
+          },
+          "fallback_order": {
+            "default": 1,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Fallback Order",
+            "type": "integer"
+          },
+          "inference_tier": {
+            "default": "medium",
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Inference Tier",
+            "type": "string"
+          },
+          "max_cost_usd": {
+            "default": 10.0,
+            "minimum": 0.0,
+            "title": "Max Cost Usd",
+            "type": "number"
+          },
+          "max_tokens_budget": {
+            "default": 8192,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Tokens Budget",
+            "type": "integer"
+          },
+          "model_family": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "protocol_mode": {
+            "default": "openai_compatible",
+            "enum": [
+              "openai_compatible",
+              "gemini_native",
+              "anthropic_messages"
+            ],
+            "title": "Protocol Mode",
+            "type": "string"
+          },
+          "provider_slug": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Provider Slug",
+            "type": "string"
+          },
+          "scope_id": {
+            "default": "0195f000-0000-7000-8000-000000000301",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "default": "WORKSPACE",
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "secret_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretInputPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "provider_slug",
+          "model_family",
+          "model_name",
+          "endpoint_uri"
+        ],
+        "title": "AiModelCreateRequest",
+        "type": "object"
+      },
+      "AiModelDeleteImpactResponse": {
+        "additionalProperties": false,
+        "description": "Pre-deletion impact analysis report on published workflows and DBOS runs.",
+        "properties": {
+          "dependent_workflow_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dependent Workflow Ids",
+            "type": "array"
+          },
+          "dependent_workflows_count": {
+            "title": "Dependent Workflows Count",
+            "type": "integer"
+          },
+          "inference_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Inference Tier",
+            "type": "string"
+          },
+          "is_last_active_for_tier": {
+            "title": "Is Last Active For Tier",
+            "type": "boolean"
+          },
+          "mapping_id": {
+            "title": "Mapping Id",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "pinned_active_runs_count": {
+            "title": "Pinned Active Runs Count",
+            "type": "integer"
+          },
+          "pinned_run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pinned Run Ids",
+            "type": "array"
+          },
+          "remaining_active_for_tier": {
+            "title": "Remaining Active For Tier",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mapping_id",
+          "inference_tier",
+          "model_name",
+          "remaining_active_for_tier",
+          "dependent_workflows_count",
+          "dependent_workflow_ids",
+          "pinned_active_runs_count",
+          "pinned_run_ids",
+          "is_last_active_for_tier"
+        ],
+        "title": "AiModelDeleteImpactResponse",
+        "type": "object"
+      },
+      "AiModelDeleteResponse": {
+        "additionalProperties": false,
+        "description": "Result of delete or drain operation.",
+        "properties": {
+          "mapping_id": {
+            "title": "Mapping Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DELETED",
+              "DRAINING"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mapping_id",
+          "status"
+        ],
+        "title": "AiModelDeleteResponse",
+        "type": "object"
+      },
+      "AiModelMappingItemResponse": {
+        "additionalProperties": false,
+        "description": "Full public representation of an AI model mapping with health and masked secret.",
+        "properties": {
+          "auth_mode": {
+            "enum": [
+              "api_key",
+              "env_var",
+              "none_local"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "draining": {
+            "title": "Draining",
+            "type": "boolean"
+          },
+          "effort": {
+            "enum": [
+              "default",
+              "fast",
+              "balanced",
+              "deep"
+            ],
+            "title": "Effort",
+            "type": "string"
+          },
+          "endpoint_uri": {
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "env_var_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Env Var Name"
+          },
+          "fallback_model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Model Name"
+          },
+          "fallback_order": {
+            "title": "Fallback Order",
+            "type": "integer"
+          },
+          "health_status": {
+            "enum": [
+              "OPERATIONAL",
+              "DEGRADED",
+              "ERROR",
+              "UNTESTED"
+            ],
+            "title": "Health Status",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inference_tier": {
+            "enum": [
+              "simple",
+              "medium",
+              "complex",
+              "auto"
+            ],
+            "title": "Inference Tier",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "last_latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Latency Ms"
+          },
+          "last_tested_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tested At"
+          },
+          "max_cost_usd": {
+            "title": "Max Cost Usd",
+            "type": "number"
+          },
+          "max_tokens_budget": {
+            "title": "Max Tokens Budget",
+            "type": "integer"
+          },
+          "model_family": {
+            "title": "Model Family",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "protocol_mode": {
+            "enum": [
+              "openai_compatible",
+              "gemini_native",
+              "anthropic_messages"
+            ],
+            "title": "Protocol Mode",
+            "type": "string"
+          },
+          "provider_slug": {
+            "title": "Provider Slug",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_level": {
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Level",
+            "type": "string"
+          },
+          "secret_status": {
+            "$ref": "#/components/schemas/SecretStatusResponse"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "scope_level",
+          "scope_id",
+          "display_name",
+          "inference_tier",
+          "effort",
+          "provider_slug",
+          "model_family",
+          "model_name",
+          "endpoint_uri",
+          "auth_mode",
+          "protocol_mode",
+          "fallback_order",
+          "max_tokens_budget",
+          "max_cost_usd",
+          "is_active",
+          "draining",
+          "health_status",
+          "created_at",
+          "updated_at",
+          "secret_status"
+        ],
+        "title": "AiModelMappingItemResponse",
+        "type": "object"
+      },
+      "AiModelMappingsListResponse": {
+        "additionalProperties": false,
+        "description": "List response with tier coverage summary.",
+        "properties": {
+          "active_tiers_coverage": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Active Tiers Coverage",
+            "type": "object"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AiModelMappingItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total_count",
+          "active_tiers_coverage"
+        ],
+        "title": "AiModelMappingsListResponse",
+        "type": "object"
+      },
+      "AiModelPatchRequest": {
+        "additionalProperties": false,
+        "description": "Partial update command for model configuration and key rotation.",
+        "properties": {
+          "auth_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "api_key",
+                  "env_var",
+                  "none_local"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Mode"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "endpoint_uri": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Uri"
+          },
+          "env_var_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Env Var Name"
+          },
+          "fallback_model_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Model Name"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "protocol_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "openai_compatible",
+                  "gemini_native",
+                  "anthropic_messages"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Mode"
+          },
+          "secret_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretInputPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "AiModelPatchRequest",
+        "type": "object"
+      },
+      "AiModelTestResponse": {
+        "additionalProperties": false,
+        "description": "Outcome of an on-demand connectivity test.",
+        "properties": {
+          "health_status": {
+            "enum": [
+              "OPERATIONAL",
+              "DEGRADED",
+              "ERROR",
+              "UNTESTED"
+            ],
+            "title": "Health Status",
+            "type": "string"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "mapping_id": {
+            "title": "Mapping Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "tested_at": {
+            "title": "Tested At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mapping_id",
+          "health_status",
+          "latency_ms",
+          "tested_at",
+          "message"
+        ],
+        "title": "AiModelTestResponse",
+        "type": "object"
+      },
       "ArbitrationOptionSchemaItem": {
         "additionalProperties": false,
         "description": "Comparative option inside an `Arbitration Tie-Break Matrix` (`UX-DR6`).",
@@ -11600,98 +12219,6 @@
         "title": "LlmModelEndpointItem",
         "type": "object"
       },
-      "LlmTierMappingResponse": {
-        "additionalProperties": false,
-        "description": "Workspace cognitive tier mapping response (`Story 8.2`).",
-        "properties": {
-          "draining": {
-            "title": "Draining",
-            "type": "boolean"
-          },
-          "effort": {
-            "enum": [
-              "default",
-              "fast",
-              "balanced",
-              "deep"
-            ],
-            "title": "Effort",
-            "type": "string"
-          },
-          "fallback_order": {
-            "title": "Fallback Order",
-            "type": "integer"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "inference_tier": {
-            "enum": [
-              "simple",
-              "medium",
-              "complex"
-            ],
-            "title": "Inference Tier",
-            "type": "string"
-          },
-          "is_active": {
-            "title": "Is Active",
-            "type": "boolean"
-          },
-          "max_cost_usd": {
-            "title": "Max Cost Usd",
-            "type": "number"
-          },
-          "max_tokens_budget": {
-            "title": "Max Tokens Budget",
-            "type": "integer"
-          },
-          "model_family": {
-            "title": "Model Family",
-            "type": "string"
-          },
-          "model_name": {
-            "title": "Model Name",
-            "type": "string"
-          },
-          "provider_slug": {
-            "title": "Provider Slug",
-            "type": "string"
-          },
-          "scope_id": {
-            "title": "Scope Id",
-            "type": "string"
-          },
-          "scope_level": {
-            "enum": [
-              "GLOBAL",
-              "BU",
-              "TEAM",
-              "WORKSPACE"
-            ],
-            "title": "Scope Level",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "scope_level",
-          "scope_id",
-          "inference_tier",
-          "effort",
-          "provider_slug",
-          "model_family",
-          "model_name",
-          "max_tokens_budget",
-          "max_cost_usd",
-          "fallback_order",
-          "is_active",
-          "draining"
-        ],
-        "title": "LlmTierMappingResponse",
-        "type": "object"
-      },
       "LocalLoginRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/auth/login/local` (Argon2id + optional TOTP MFA).",
@@ -16447,7 +16974,7 @@
       },
       "SecretStatusResponse": {
         "additionalProperties": false,
-        "description": "Read-only secret status metadata (`configured` + salted `sha256:<8-hex>`, `Story 8.3`).",
+        "description": "Read-only secret status metadata (`Story 8.3`, `Story 17.5`, `AD-21.3`).",
         "properties": {
           "configured": {
             "title": "Configured",
@@ -16463,6 +16990,17 @@
               }
             ],
             "title": "Fingerprint"
+          },
+          "masked_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masked Hint"
           },
           "updated_at": {
             "title": "Updated At",
@@ -42352,33 +42890,96 @@
     },
     "/api/v1/settings/ai-models/mappings": {
       "get": {
-        "description": "List workspace cognitive tier mappings (`Story 8.2`).",
-        "operationId": "list_llm_tier_mappings_api_v1_settings_ai_models_mappings_get",
+        "description": "List configured AI model mappings with 4-tier coverage report.",
+        "operationId": "list_ai_model_mappings_api_v1_settings_ai_models_mappings_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope_level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "GLOBAL",
+                    "BU",
+                    "TEAM",
+                    "WORKSPACE"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Level"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inference_tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "simple",
+                    "medium",
+                    "complex",
+                    "auto"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inference Tier"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Active"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LlmTierMappingResponse"
-                  },
-                  "title": "Response List Llm Tier Mappings Api V1 Settings Ai Models Mappings Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/AiModelMappingsListResponse"
                 }
               }
             },
             "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Bad Request"
           },
           "401": {
             "content": {
@@ -42458,16 +43059,141 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "List Llm Tier Mappings",
+        "summary": "List Ai Model Mappings",
         "tags": [
-          "settings-and-studio"
+          "settings-ai-models"
+        ]
+      },
+      "post": {
+        "description": "Connect a new AI model mapping with AES-256-GCM encrypted API key.",
+        "operationId": "create_ai_model_mapping_api_v1_settings_ai_models_mappings_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiModelCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelMappingItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Create Ai Model Mapping",
+        "tags": [
+          "settings-ai-models"
         ]
       }
     },
     "/api/v1/settings/ai-models/mappings/{mapping_id}": {
       "delete": {
-        "description": "Delete or drain an LLM tier mapping (`409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS`).",
-        "operationId": "delete_or_drain_llm_mapping_api_v1_settings_ai_models_mappings__mapping_id__delete",
+        "description": "Delete or drain a mapping enforcing dependency & active run guards.",
+        "operationId": "delete_ai_model_mapping_api_v1_settings_ai_models_mappings__mapping_id__delete",
         "parameters": [
           {
             "in": "path",
@@ -42511,26 +43237,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Delete Or Drain Llm Mapping Api V1 Settings Ai Models Mappings  Mapping Id  Delete",
-                  "type": "object"
+                  "$ref": "#/components/schemas/AiModelDeleteResponse"
                 }
               }
             },
             "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Bad Request"
           },
           "401": {
             "content": {
@@ -42610,15 +43321,375 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Delete Or Drain Llm Mapping",
+        "summary": "Delete Ai Model Mapping",
         "tags": [
-          "settings-and-studio"
+          "settings-ai-models"
+        ]
+      },
+      "patch": {
+        "description": "Update model settings or rotate/clear its API key.",
+        "operationId": "update_ai_model_mapping_api_v1_settings_ai_models_mappings__mapping_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Mapping Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiModelPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelMappingItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Update Ai Model Mapping",
+        "tags": [
+          "settings-ai-models"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/mappings/{mapping_id}/delete-impact": {
+      "get": {
+        "description": "Analyze workflow and active run dependencies before deleting a model.",
+        "operationId": "get_ai_model_delete_impact_api_v1_settings_ai_models_mappings__mapping_id__delete_impact_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Mapping Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelDeleteImpactResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Ai Model Delete Impact",
+        "tags": [
+          "settings-ai-models"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/mappings/{mapping_id}/test": {
+      "post": {
+        "description": "Execute on-demand non-blocking connectivity test against model endpoint.",
+        "operationId": "test_ai_model_connection_api_v1_settings_ai_models_mappings__mapping_id__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Mapping Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelTestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Test Ai Model Connection",
+        "tags": [
+          "settings-ai-models"
         ]
       }
     },
     "/api/v1/settings/ai-models/route": {
       "post": {
-        "description": "Execute cognitive tier routing and `auto` escalation (`Story 8.2`).",
+        "description": "Execute cognitive tier routing and auto escalation (`Story 8.2`, `AD-21.4`).",
         "operationId": "execute_cognitive_tier_route_api_v1_settings_ai_models_route_post",
         "requestBody": {
           "content": {
@@ -42640,17 +43711,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Bad Request"
           },
           "401": {
             "content": {
@@ -42732,7 +43792,7 @@
         },
         "summary": "Execute Cognitive Tier Route",
         "tags": [
-          "settings-and-studio"
+          "settings-ai-models"
         ]
       }
     },

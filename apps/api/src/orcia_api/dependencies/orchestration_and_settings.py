@@ -7,6 +7,7 @@ from fastapi import Request
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import DurableOnboardingWizardService
 from orcia_core.orchestration import (
+    AiModelsHubService,
     CognitiveModelRouterService,
     ControlCenterOverviewService,
     ResourceLeaseService,
@@ -149,4 +150,15 @@ def get_durable_wizard_service(request: Request) -> DurableOnboardingWizardServi
         initialize_app_services(request.app)
         svc = request.app.state.durable_wizard_service
     assert svc is not None
+    return svc
+
+
+def get_ai_models_hub_service(request: Request) -> AiModelsHubService:
+    """FastAPI `Depends` provider returning `AiModelsHubService` (`Story 17.5`)."""
+    svc: AiModelsHubService | None = getattr(request.app.state, "ai_models_hub_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        auth = request.app.state.auth_service
+        svc = AiModelsHubService(vault_cipher=auth.vault_cipher)
+        request.app.state.ai_models_hub_service = svc
     return svc

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
@@ -11,7 +10,6 @@ from typing import Any
 import httpx
 from fastapi import Request
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
 from orcia_api.routers.assistant_background_turns import (
     ACTIVE_WORKSPACE_TURNS,
     ActiveBackgroundTurnState,
@@ -37,9 +35,17 @@ from orcia_api.routers.assistant_llm_providers import (
     invoke_provider_chat_async,
     is_anthropic_provider,
     is_safe_llm_endpoint_url,
-    logger,
     normalize_chat_completions_url,
     stream_provider_chat_sse_async,
+)
+from orcia_api.routers.assistant_llm_resolver import (
+    extract_tier_endpoint_from_dict as _extract_tier_endpoint_from_dict,
+)
+from orcia_api.routers.assistant_llm_resolver import (
+    resolve_configured_llm_endpoint,
+)
+from orcia_api.routers.assistant_llm_resolver import (
+    select_endpoint_from_tiers as _select_endpoint_from_tiers,
 )
 
 
@@ -53,80 +59,6 @@ class LiveLlmTurnOutcome:
     thinking_text: str | None = None
     invoked_tool_names: tuple[str, ...] = ()
     assembled_system_prompt: str = ""
-
-
-def _extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEndpoint | None:
-    model_name = str(item.get("primaryModel") or item.get("model") or "").strip()
-    endpoint_uri = str(item.get("endpointUrl") or item.get("endpoint_uri") or "").strip()
-    if not model_name or not is_safe_llm_endpoint_url(endpoint_uri):
-        return None
-    provider = str(item.get("modelFamily") or item.get("provider") or "OpenAI").strip()
-    auth_mode = str(item.get("authMode") or "api_key").strip()
-    tier_key = str(item.get("tier") or item.get("tierKey") or "medium").strip().lower()
-    raw_key = item.get("apiKey")
-    api_key = str(raw_key).strip() if isinstance(raw_key, str) and raw_key.strip() else None
-    return ResolvedLiveLlmEndpoint(
-        provider=provider,
-        model_name=model_name,
-        endpoint_uri=endpoint_uri.rstrip("/"),
-        auth_mode=auth_mode,
-        tier=tier_key or "medium",
-        api_key=api_key,
-    )
-
-
-def _select_endpoint_from_tiers(
-    llm_tiers: list[Any],
-    requested_tier: str | None = None,
-) -> ResolvedLiveLlmEndpoint | None:
-    target = (requested_tier or "").strip().lower()
-    valid_endpoints = [
-        resolved
-        for item in llm_tiers
-        if isinstance(item, dict)
-        and (resolved := _extract_tier_endpoint_from_dict(item)) is not None
-    ]
-    if not valid_endpoints:
-        return None
-    if target and target != "auto":
-        for ep in valid_endpoints:
-            if ep.tier == target:
-                return ep
-    return valid_endpoints[0]
-
-
-async def resolve_configured_llm_endpoint(
-    request: Request,
-    *,
-    requested_tier: str | None = None,
-) -> ResolvedLiveLlmEndpoint | None:
-    """Resolve the active configured LLM endpoint asynchronously without blocking ASGI loop."""
-    if os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes"):
-        return None
-
-    snap = getattr(request.app.state, "platform_setup_snapshot", None)
-    if snap is not None and getattr(snap, "llm_tiers", None):
-        chosen = _select_endpoint_from_tiers(list(snap.llm_tiers), requested_tier)
-        if chosen is not None:
-            return chosen
-
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        t0 = time.perf_counter()
-        try:
-            import orcia_core.bootstrap as bm
-
-            engine = get_or_create_shared_db_engine(request)
-            db_snap = await bm.load_platform_setup_state_from_postgres18(engine, orcia_env="local")
-            if db_snap is not None:
-                request.app.state.platform_setup_snapshot = db_snap
-                return _select_endpoint_from_tiers(list(db_snap.llm_tiers), requested_tier)
-        except Exception as exc:
-            logger.warning(
-                "llm_endpoint_pg_resolution_failed",
-                elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                error_type=type(exc).__name__,
-            )
-    return None
 
 
 def _get_or_create_async_http_client(request: Request) -> httpx.AsyncClient:

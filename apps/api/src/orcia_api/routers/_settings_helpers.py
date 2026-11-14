@@ -76,6 +76,7 @@ def to_setting_response(rec: PlatformSettingRecord) -> PlatformSettingResponse:
         secret_status=SecretStatusResponse(
             configured=rec.secret_status.configured,
             fingerprint=rec.secret_status.fingerprint,
+            masked_hint=rec.secret_status.masked_hint,
             updated_at=rec.secret_status.updated_at,
             updated_by=rec.secret_status.updated_by,
         ),

@@ -70,6 +70,15 @@ const settingsPacksRoute = createRoute({
   },
 });
 
+const settingsAiModelsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings/ai-models",
+  validateSearch: validateOrciaRouteSearch,
+  component: function SettingsAiModelsRouteComponent() {
+    return <SettingsHubView initialTab="models" />;
+  },
+});
+
 const agentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/agents",
@@ -118,6 +127,7 @@ export const routeTree = rootRoute.addChildren([
   bootstrapRoute,
   settingsRoute,
   settingsPacksRoute,
+  settingsAiModelsRoute,
   showcaseRoute,
   wizardsRoute,
   assistantRoute,

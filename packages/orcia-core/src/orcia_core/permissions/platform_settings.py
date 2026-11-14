@@ -12,8 +12,7 @@ Implements:
 from __future__ import annotations
 
 import hashlib
-import json
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Any, Literal
 
@@ -26,13 +25,22 @@ from orcia_core.permissions.errors import (
     ValidationDomainError,
 )
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.permissions.secret_hint import (
+    DefaultMemorySecretProvider,
+    OutboxReplayOutcome,
+    SecretAction,
+    SecretInputSpec,
+    SecretStatusView,
+    compute_etag,
+    compute_secret_masked_hint,
+    compute_value_sha256,
+)
 from orcia_kernel.events import DomainEvent, SettingsChanged
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.secret_ports import SecretProviderPort, SecretRef
 
 SettingScopeLevel = Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
 SettingCategory = Literal["iam", "connectors", "ai-models", "packs", "workflows", "audit"]
-SecretAction = Literal["keep", "set", "clear"]
 
 REGISTERED_IDEMPOTENT_OUTBOX_CONSUMERS: frozenset[str] = frozenset(
     {
@@ -55,53 +63,6 @@ def compute_salted_secret_fingerprint(resource_id: str, plaintext: str) -> str:
     return f"sha256:{digest}"
 
 
-def _compute_value_sha256(value_jsonb: dict[str, Any], secret_fingerprint: str | None) -> str:
-    canonical = json.dumps(
-        {"value": value_jsonb, "secret_fp": secret_fingerprint or ""},
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
-
-
-def _compute_etag(setting_id: str, version: int, value_sha256: str) -> str:
-    raw = f"{setting_id}:v{version}:{value_sha256}".encode()
-    return f'W/"{version}-{hashlib.sha256(raw).hexdigest()[:12]}"'
-
-
-@dataclass(frozen=True, slots=True)
-class SecretInputSpec:
-    """Write-only secret mutation command (`keep | set | clear`, `Story 8.3`, `AD-21`)."""
-
-    action: SecretAction = "keep"
-    plaintext_value: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.action == "set":
-            val = (self.plaintext_value or "").strip()
-            if not val:
-                raise ValidationDomainError(
-                    detail_override="SecretInput with action='set' requires a non-empty value."
-                )
-            if set(val) <= {"•", "*"}:
-                raise ValidationDomainError(
-                    detail_override="Masked placeholder strings cannot be saved as secrets."
-                )
-
-    def __repr__(self) -> str:
-        return f"SecretInputSpec(action={self.action!r}, value='[REDACTED]')"
-
-
-@dataclass(frozen=True, slots=True)
-class SecretStatusView:
-    """Read-only secret metadata returned by the API (`Story 8.3`, `AD-21`)."""
-
-    configured: bool
-    fingerprint: str | None = None
-    updated_at: str = field(default_factory=_now_iso)
-    updated_by: str = "system"
-
-
 @dataclass(frozen=True, slots=True)
 class PlatformSettingRecord:
     """Versioned row in `platform_settings` (`Story 8.3`, `AD-21`)."""
@@ -118,43 +79,6 @@ class PlatformSettingRecord:
     etag: str
     updated_at: str
     updated_by: str
-
-
-@dataclass(frozen=True, slots=True)
-class OutboxReplayOutcome:
-    """Bounded Outbox replay outcome (`POST /api/v1/admin/outbox/replays`, `Story 8.3`)."""
-
-    consumer_name: str
-    dry_run: bool
-    scanned_count: int
-    replayed_count: int
-    event_ids: tuple[str, ...]
-
-
-class DefaultMemorySecretProvider(SecretProviderPort):
-    """In-memory `SecretProviderPort` adapter storing secrets isolated from domain tables."""
-
-    def __init__(self) -> None:
-        self._secrets: dict[str, str] = {}
-
-    def resolve_secret(self, ref: SecretRef) -> str:
-        if ref.uri not in self._secrets:
-            raise ResourceNotFoundError(detail_override=f"SecretRef not found: {ref.uri}")
-        return self._secrets[ref.uri]
-
-    def store_secret(
-        self, ref: SecretRef, plaintext_value: str, *, actor_id: str = "system"
-    ) -> SecretRef:
-        _ = actor_id
-        self._secrets[ref.uri] = plaintext_value
-        return ref
-
-    def delete_secret(self, ref: SecretRef) -> None:
-        self._secrets.pop(ref.uri, None)
-
-    def rotate_workspace_dek(self, workspace_id: str, *, actor_id: str) -> Any:
-        _ = (workspace_id, actor_id)
-        return None
 
 
 class PlatformSettingsService:
@@ -236,12 +160,17 @@ class PlatformSettingsService:
                 sec_ref, secret_input.plaintext_value, actor_id=actor_id
             )
             fp = compute_salted_secret_fingerprint(setting_id, secret_input.plaintext_value)
+            hint = compute_secret_masked_hint(secret_input.plaintext_value)
             sec_status = SecretStatusView(
-                configured=True, fingerprint=fp, updated_at=now, updated_by=actor_id
+                configured=True,
+                fingerprint=fp,
+                masked_hint=hint,
+                updated_at=now,
+                updated_by=actor_id,
             )
 
-        val_sha = _compute_value_sha256(value_jsonb, sec_status.fingerprint)
-        etag = _compute_etag(setting_id, 1, val_sha)
+        val_sha = compute_value_sha256(value_jsonb, sec_status.fingerprint)
+        etag = compute_etag(setting_id, 1, val_sha)
         rec = PlatformSettingRecord(
             id=setting_id,
             scope_level=scope_level,
@@ -286,7 +215,7 @@ class PlatformSettingsService:
             raise SettingsVersionConflictError(instance=instance)
 
         now = _now_iso()
-        before_sha = _compute_value_sha256(current.value_jsonb, current.secret_status.fingerprint)
+        before_sha = compute_value_sha256(current.value_jsonb, current.secret_status.fingerprint)
         sec_ref = current.secret_ref
         sec_status = current.secret_status
         sec_action: SecretAction = secret_input.action if secret_input is not None else "keep"
@@ -304,18 +233,27 @@ class PlatformSettingsService:
                     sec_ref, secret_input.plaintext_value, actor_id=user.id
                 )
                 fp = compute_salted_secret_fingerprint(current.id, secret_input.plaintext_value)
+                hint = compute_secret_masked_hint(secret_input.plaintext_value)
                 sec_status = SecretStatusView(
-                    configured=True, fingerprint=fp, updated_at=now, updated_by=user.id
+                    configured=True,
+                    fingerprint=fp,
+                    masked_hint=hint,
+                    updated_at=now,
+                    updated_by=user.id,
                 )
             elif secret_input.action == "clear":
                 sec_ref = None
                 sec_status = SecretStatusView(
-                    configured=False, fingerprint=None, updated_at=now, updated_by=user.id
+                    configured=False,
+                    fingerprint=None,
+                    masked_hint=None,
+                    updated_at=now,
+                    updated_by=user.id,
                 )
 
         next_version = current.version + 1
-        after_sha = _compute_value_sha256(value_jsonb, sec_status.fingerprint)
-        next_etag = _compute_etag(current.id, next_version, after_sha)
+        after_sha = compute_value_sha256(value_jsonb, sec_status.fingerprint)
+        next_etag = compute_etag(current.id, next_version, after_sha)
 
         changed_keys = sorted(
             {
@@ -414,4 +352,5 @@ __all__ = [
     "SettingCategory",
     "SettingScopeLevel",
     "compute_salted_secret_fingerprint",
+    "compute_secret_masked_hint",
 ]

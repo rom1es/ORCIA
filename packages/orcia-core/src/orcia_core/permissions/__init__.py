@@ -104,6 +104,7 @@ from orcia_core.permissions.platform_settings import (
     SettingCategory,
     SettingScopeLevel,
     compute_salted_secret_fingerprint,
+    compute_secret_masked_hint,
 )
 from orcia_core.permissions.role_matrix import GrantResourceKind, OfficialIamRole
 from orcia_core.permissions.seeds import (
@@ -326,6 +327,7 @@ __all__ = [
     "assert_unique_org_unit_slug", "build_default_auth_and_org_service",
     "build_default_permission_broker_service", "build_org_unit_summary",
     "build_prefilled_jira_request_url", "compute_salted_secret_fingerprint",
+    "compute_secret_masked_hint",
     "extract_connector_scheme", "generate_new_org_unit_id", "list_evaluator_org_unit_summaries",
     "list_native_role_matrix", "normalize_member_user_ids", "normalize_org_unit_slug",
     "parse_permission_kb_markdown", "sort_org_unit_dicts_topologically",

@@ -728,7 +728,7 @@ def render_standalone_html(manifest: dict[str, Any]) -> str:
         '      <div class="bento-grid">',
         '        <div class="card">',
         "          <h3>Packs Métiers Installés</h3>",
-        f"          {packs_html}",
+        *([f"          {packs_html}"] if packs_html.strip() else []),
         "          <h3>Décisions d'Architecture</h3>",
         f"          {decisions_html}",
         "        </div>",
@@ -781,7 +781,7 @@ def render_standalone_html(manifest: dict[str, Any]) -> str:
         "</html>",
         "",
     ]
-    return "\n".join(lines)
+    return "\n".join(line.rstrip() for line in lines)
 
 
 def main(argv: list[str] | None = None) -> int:

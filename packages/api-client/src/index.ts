@@ -1,5 +1,6 @@
 import createClient from "openapi-fetch";
 import { createAgentsAndSkillsDomainClient } from "./domains/agentsAndSkills";
+import { createAiModelsHubDomainClient } from "./domains/aiModelsHub";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
@@ -10,6 +11,7 @@ import { createRequestJson, OrciaProblemError, type OrciaApiClientOptions } from
 export type * from "./generated/schema";
 export {
   createAgentsAndSkillsDomainClient,
+  createAiModelsHubDomainClient,
   createAuthAndShellDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
@@ -38,11 +40,14 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
 
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const requestJson = createRequestJson(options);
+  const aiModelsHubClient = createAiModelsHubDomainClient(requestJson);
   return {
     ...createAuthAndShellDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
+    ...aiModelsHubClient,
+    aiModelsHub: aiModelsHubClient,
   };
 }

@@ -33,6 +33,21 @@ from orcia_core.orchestration.agents_and_skills_manager import (
     ManagedSkillRecord,
     SkillExecutionOutcome,
 )
+from orcia_core.orchestration.ai_models_errors import (
+    LastTierModelInUseError,
+    UnsafeLlmEndpointUrlError,
+)
+from orcia_core.orchestration.ai_models_governance import (
+    AiModelDeleteImpact,
+    AiModelMappingRecord,
+    AiModelsHubService,
+    HealthStatus,
+    LlmAuthMode,
+    LlmProtocolMode,
+    pack_encrypted_api_key,
+    unpack_encrypted_api_key,
+    validate_safe_llm_endpoint_url,
+)
 from orcia_core.orchestration.assistant_agent import (
     ASSISTANT_WORKFLOW_URI,
     AssistantAgentService,
@@ -327,6 +342,17 @@ __all__ = [
     "WorkflowTriggerEntity",
     "WorkflowTriggerStatus",
     "WorkflowTriggerType",
+    "AiModelDeleteImpact",
+    "AiModelMappingRecord",
+    "AiModelsHubService",
+    "HealthStatus",
+    "LastTierModelInUseError",
+    "LlmAuthMode",
+    "LlmProtocolMode",
+    "UnsafeLlmEndpointUrlError",
+    "pack_encrypted_api_key",
+    "unpack_encrypted_api_key",
+    "validate_safe_llm_endpoint_url",
     "WorkflowValidationFinding",
     "WorkflowValidationReport",
     "WorkspaceGovernanceItem",

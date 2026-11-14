@@ -14,6 +14,10 @@ from orcia_core.blackboard.errors import BlackboardAppendOnlyViolationError
 from orcia_core.bootstrap.errors import ModelOrthogonalityViolationError
 from orcia_core.catalog.errors import ReadSourceDeniedError
 from orcia_core.ontology.errors import OntologyConflictError
+from orcia_core.orchestration.ai_models_errors import (
+    LastTierModelInUseError,
+    UnsafeLlmEndpointUrlError,
+)
 from orcia_core.orchestration.errors import (
     CriticalWorkflowRequiresHumanGateError,
     HumanAnchorRequiredError,
@@ -95,6 +99,8 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     ScopeAccessDeniedError,
     BlackboardAppendOnlyViolationError,
     AuditLedgerImmutableViolationError,
+    UnsafeLlmEndpointUrlError,
+    LastTierModelInUseError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {

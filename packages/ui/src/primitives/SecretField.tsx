@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export type UiSecretAction = "keep" | "set" | "clear";
+export type UiSecretAction = "keep" | "set" | "clear"; // pragma: allowlist secret
 
 export interface UiSecretInputValue {
   readonly action: UiSecretAction;
@@ -10,6 +10,7 @@ export interface UiSecretInputValue {
 export interface UiSecretStatus {
   readonly configured: boolean;
   readonly fingerprint: string | null;
+  readonly maskedHint?: string | null;
   readonly updatedAt: string;
   readonly updatedBy: string;
 }
@@ -96,6 +97,21 @@ export function SecretField({
           >
             {status.configured ? labels.configuredBadge : labels.unconfiguredBadge}
           </span>
+          {status.configured && status.maskedHint ? (
+            <code
+              data-testid="secret-field-masked-hint"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.75rem",
+                color: "var(--color-text-primary)",
+                backgroundColor: "var(--color-surface-canvas)",
+                padding: "0.125rem 0.375rem",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              {status.maskedHint}
+            </code>
+          ) : null}
           {status.configured && status.fingerprint ? (
             <code
               data-testid="secret-field-fingerprint"

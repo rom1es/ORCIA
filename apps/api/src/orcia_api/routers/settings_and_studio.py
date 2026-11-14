@@ -12,7 +12,6 @@ from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 
 from orcia_api.dependencies import (
     get_auth_service,
-    get_cognitive_router_service,
     get_connector_hub_service,
     get_hierarchical_rbac_service,
     get_or_create_shared_db_engine,
@@ -23,21 +22,16 @@ from orcia_api.routers._settings_helpers import (
     enforce_not_observer_mode,
     is_pg_bootstrap_enabled,
     serialize_grant,
-    to_llm_mapping_response,
-    to_routing_outcome_response,
     to_setting_response,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.settings_and_studio import (
-    CognitiveRoutingOutcomeResponse,
     ConnectorTestConnectionResponse,
     DelegateGrantRequest,
     DocumentIngestionRequest,
     DocumentIngestionResponse,
     EvaluateResourceAccessRequest,
-    ExecuteTierRoutingRequest,
     GrantDeleteResponse,
-    LlmTierMappingResponse,
     OutboxReplayRequest,
     OutboxReplayResponse,
     PatchPlatformSettingRequest,
@@ -52,11 +46,6 @@ from orcia_core.bootstrap import (
     list_iam_grants_from_postgres18,
 )
 from orcia_core.observability.logging import get_current_trace_id, get_logger
-from orcia_core.orchestration import (
-    CognitiveModelRouterService,
-    PinRemovalMode,
-    ResolvedInferenceTier,
-)
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
@@ -257,55 +246,6 @@ def replay_outbox_events(
         replayed_count=outcome.replayed_count,
         event_ids=list(outcome.event_ids),
     )
-
-
-@router.get("/settings/ai-models/mappings", response_model=list[LlmTierMappingResponse])
-def list_llm_tier_mappings(
-    router_svc: Annotated[CognitiveModelRouterService, Depends(get_cognitive_router_service)],
-) -> list[LlmTierMappingResponse]:
-    """List workspace cognitive tier mappings (`Story 8.2`)."""
-    return [to_llm_mapping_response(m) for m in router_svc.list_mappings()]
-
-
-@router.post("/settings/ai-models/route", response_model=CognitiveRoutingOutcomeResponse)
-async def execute_cognitive_tier_route(
-    payload: ExecuteTierRoutingRequest,
-    router_svc: Annotated[CognitiveModelRouterService, Depends(get_cognitive_router_service)],
-) -> CognitiveRoutingOutcomeResponse:
-    """Execute cognitive tier routing and `auto` escalation (`Story 8.2`)."""
-
-    def _gate_fn(_content: str, tier: ResolvedInferenceTier) -> tuple[bool, str]:
-        if payload.fail_simple_tier_gate and tier == "simple":
-            return False, "Simple tier deterministic schema gate failed"
-        return True, ""
-
-    outcome = await router_svc.execute_with_tier_routing(
-        run_id=payload.run_id,
-        step_execution_id=payload.step_execution_id,
-        scope_id=payload.scope_id,
-        system_prompt=payload.system_prompt,
-        user_prompt=payload.user_prompt,
-        inference_tier=payload.inference_tier,
-        effort=payload.effort,
-        evaluator_model_family=payload.evaluator_model_family,
-        deterministic_gate_fn=_gate_fn,
-    )
-    return to_routing_outcome_response(outcome)
-
-
-@router.delete("/settings/ai-models/mappings/{mapping_id}")
-def delete_or_drain_llm_mapping(
-    mapping_id: Annotated[str, Path(min_length=1, max_length=128)],
-    request: Request,
-    router_svc: Annotated[CognitiveModelRouterService, Depends(get_cognitive_router_service)],
-    mode: Annotated[PinRemovalMode, Query()] = "reject",
-    actor_role: Annotated[str, Query()] = "PLATFORM_ADMIN",
-) -> dict[str, str]:
-    """Delete or drain an LLM tier mapping (`409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS`)."""
-    res = router_svc.delete_or_drain_mapping(
-        mapping_id, mode=mode, actor_role=actor_role, instance=str(request.url.path)
-    )
-    return {"status": "DRAINING" if res is not None and res.draining else "DELETED"}
 
 
 @router.post(
