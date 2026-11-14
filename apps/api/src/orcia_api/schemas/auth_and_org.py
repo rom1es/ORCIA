@@ -6,6 +6,17 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from orcia_api.schemas.org_unit_models import (
+    AttachedWorkspaceRefResponse,
+    KnownOrgUserResponse,
+    KnownOrgUsersSearchResponse,
+    OrgUnitCreateRequest,
+    OrgUnitDeleteResponse,
+    OrgUnitPatchRequest,
+    OrgUnitResponse,
+    OrgUnitsListResponse,
+    OrgUnitTreeItem,
+)
 from orcia_core.permissions.models import (
     AccessMode,
     AuthMode,
@@ -13,7 +24,6 @@ from orcia_core.permissions.models import (
     CatalogVisibilityScope,
     DatasourceScheme,
     ExecutionIdentityMode,
-    OrgUnitType,
     PlatformRole,
     WorkspaceVisibilityMode,
 )
@@ -52,6 +62,8 @@ class AuthTokenResponse(BaseModel):
     platform_role: PlatformRole
     human_profile_archetype: str
     primary_org_unit_id: str
+    roles: list[str] = Field(default_factory=list)
+    must_change_password: bool = Field(default=False)
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
@@ -62,18 +74,6 @@ class LogoutResponse(BaseModel):
 
     revoked: bool = True
     trace_id: str = Field(..., min_length=32, max_length=32)
-
-
-class OrgUnitTreeItem(BaseModel):
-    """Organizational Unit node in the hierarchical team tree (`org_units`)."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    id: str
-    slug: str
-    name: str
-    unit_type: OrgUnitType
-    parent_id: str | None = None
 
 
 class WorkspaceDatasourceItem(BaseModel):
@@ -143,6 +143,8 @@ class UserMeResponse(BaseModel):
     platform_role: PlatformRole
     primary_org_unit_id: str
     totp_enabled: bool
+    roles: list[str] = Field(default_factory=list)
+    must_change_password: bool = Field(default=False)
     transverse_groups: list[str]
     org_units: list[OrgUnitTreeItem]
     workspaces: list[WorkspaceSummaryItem]
@@ -285,62 +287,26 @@ class McpPersonalTokenListResponse(BaseModel):
     trace_id: str | None = None
 
 
-class OrgUnitResponse(BaseModel):
-    """Story 17.2 — Enriched organizational unit (`BU` / `Pôle` / `TEAM`) DTO."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    id: str
-    slug: str
-    name: str
-    kind: Literal["BU", "TEAM"]
-    parent_id: str | None = None
-    billing_enabled: bool = True
-    lead_user_id: str | None = None
-    member_user_ids: list[str] = Field(default_factory=list)
-    attached_workspaces_count: int = Field(default=0, ge=0)
-
-
-class OrgUnitsListResponse(BaseModel):
-    """Story 17.2 — Hierarchical DFS list of organizational units (`GET /api/v1/org-units`)."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    org_units: list[OrgUnitResponse]
-    trace_id: str = Field(..., min_length=32, max_length=32)
-
-
-class OrgUnitCreateRequest(BaseModel):
-    """Story 17.2 — Request payload for `POST /api/v1/org-units`."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    name: str = Field(..., min_length=1, max_length=255)
-    kind: Literal["BU", "TEAM"]
-    slug: str | None = Field(default=None, max_length=128)
-    parent_id: str | None = Field(default=None, max_length=128)
-    billing_enabled: bool = True
-    lead_user_id: str | None = Field(default=None, max_length=128)
-    member_user_ids: list[str] = Field(default_factory=list, max_length=200)
-
-
-class OrgUnitPatchRequest(BaseModel):
-    """Story 17.2 — Request payload for `PATCH /api/v1/org-units/{org_unit_id}`."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    name: str | None = Field(default=None, min_length=1, max_length=255)
-    parent_id: str | None = Field(default=None, max_length=128)
-    billing_enabled: bool | None = None
-    lead_user_id: str | None = Field(default=None, max_length=128)
-    member_user_ids: list[str] | None = Field(default=None, max_length=200)
-
-
-class OrgUnitDeleteResponse(BaseModel):
-    """Story 17.2 — Deletion confirmation payload for `DELETE /api/v1/org-units/{org_unit_id}`."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    deleted_id: str
-    deleted: bool = True
-    trace_id: str = Field(..., min_length=32, max_length=32)
+__all__ = [
+    "AttachedWorkspaceRefResponse",
+    "AuthTokenResponse",
+    "KnownOrgUserResponse",
+    "KnownOrgUsersSearchResponse",
+    "LocalLoginRequest",
+    "LogoutResponse",
+    "McpPersonalTokenCreateRequest",
+    "McpPersonalTokenIssuedResponse",
+    "McpPersonalTokenListResponse",
+    "McpPersonalTokenMetadataItem",
+    "OidcLoginRequest",
+    "OrgUnitCreateRequest",
+    "OrgUnitDeleteResponse",
+    "OrgUnitPatchRequest",
+    "OrgUnitResponse",
+    "OrgUnitsListResponse",
+    "OrgUnitTreeItem",
+    "UserPreferencesResponse",
+    "UserPreferencesUpdateRequest",
+    "WorkspaceDatasourceItem",
+    "WorkspaceSummaryItem",
+]

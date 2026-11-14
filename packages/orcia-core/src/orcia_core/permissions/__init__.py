@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import cast
-
+from orcia_core.permissions._default_service import build_default_auth_and_org_service
 from orcia_core.permissions.broker import (
     BrokerConnectorScheme,
     BrokerStepState,
@@ -33,6 +32,10 @@ from orcia_core.permissions.enterprise_connectors import (
 )
 from orcia_core.permissions.errors import (
     CodegraphWorkspaceLeadRequiredError,
+    OrgUnitStorageSchemaError,
+    OrgUnitUnknownUserError,
+    PasswordUnchangedError,
+    WeakPasswordPolicyError,
     WebhookSignatureInvalidError,
 )
 from orcia_core.permissions.evaluator import (
@@ -86,6 +89,7 @@ from orcia_core.permissions.models import (
     WorkspaceVisibilityMode,
 )
 from orcia_core.permissions.org_hierarchy import (
+    AttachedWorkspaceRef,
     OrgUnitKind,
     OrgUnitSummary,
     assert_org_unit_deletable,
@@ -98,6 +102,10 @@ from orcia_core.permissions.org_hierarchy import (
     sort_org_unit_dicts_topologically,
     sort_org_unit_summaries_dfs,
     validate_org_unit_hierarchy,
+)
+from orcia_core.permissions.org_user_validation import (
+    KnownOrgUser,
+    resolve_and_validate_org_unit_users,
 )
 from orcia_core.permissions.platform_settings import (
     REGISTERED_IDEMPOTENT_OUTBOX_CONSUMERS,
@@ -114,11 +122,6 @@ from orcia_core.permissions.platform_settings import (
     compute_secret_masked_hint,
 )
 from orcia_core.permissions.role_matrix import GrantResourceKind, OfficialIamRole
-from orcia_core.permissions.seeds import (
-    DEFAULT_ORG_UNIT_SEEDS,
-    DEFAULT_WORKSPACE_DATASOURCE_SEEDS,
-    DEFAULT_WORKSPACE_SEEDS,
-)
 from orcia_core.permissions.service import (
     DEFAULT_TOTP_SECRET_KARIM,
     AuthAndOrganizationService,
@@ -126,6 +129,10 @@ from orcia_core.permissions.service import (
     KeyValueRevocationStore,
     RevocationStoreProtocol,
     persona_impersonation_allowed,
+)
+from orcia_core.permissions.temporary_password import (
+    generate_temporary_password,
+    validate_password_policy,
 )
 from orcia_core.permissions.workspace_sources_governance import (
     CodegraphAuthMode,
@@ -141,185 +148,6 @@ from orcia_core.permissions.workspace_sources_governance import (
 
 DOMAIN_NAME: str = "permissions"
 
-
-def build_default_auth_and_org_service(
-    revocation_store: RevocationStoreProtocol | None = None,
-    *,
-    allow_persona_impersonation: bool = True,
-) -> AuthAndOrganizationService:
-    """Build the reference topology (`Karim`, `Claire`, `Marc`, `Nadia`, `Partenaire`).
-
-    Persona selection defaults to allowed for local tooling and tests; the API Composition Root
-    passes `persona_impersonation_allowed(ORCIA_ENV)` so it is refused outside local / test.
-    """
-    hasher = Argon2idPasswordHasher(time_cost=1, memory_cost=8192, parallelism=1)
-    org_units = tuple(
-        OrgUnitNode(
-            id=s.id,
-            slug=s.slug,
-            name=s.name,
-            unit_type=cast(OrgUnitType, s.unit_type),
-            parent_id=s.parent_id,
-        )
-        for s in DEFAULT_ORG_UNIT_SEEDS
-    )
-    datasources_by_ws: dict[str, list[WorkspaceDatasourceEntity]] = {}
-    for ds in DEFAULT_WORKSPACE_DATASOURCE_SEEDS:
-        datasources_by_ws.setdefault(ds.workspace_id, []).append(
-            WorkspaceDatasourceEntity(
-                id=ds.id,
-                workspace_id=ds.workspace_id,
-                alias=ds.alias,
-                scheme=ds.scheme,
-                uri=ds.uri,
-                role=ds.role,
-                execution_identity=cast(ExecutionIdentityMode, ds.execution_identity),
-                freshness_ttl_days=ds.freshness_ttl_days,
-            )
-        )
-    workspaces = tuple(
-        WorkspaceEntity(
-            id=w.id,
-            slug=w.slug,
-            name=w.name,
-            owner_org_unit_id=w.owner_org_unit_id,
-            visibility_mode=cast(WorkspaceVisibilityMode, w.visibility_mode),
-            finops_cost_usd=w.finops_cost_usd,
-            datasources=tuple(datasources_by_ws.get(w.id, ())),
-        )
-        for w in DEFAULT_WORKSPACE_SEEDS
-    )
-    memberships = (
-        WorkspaceMembershipEntity(
-            id="0192c4e0-0000-7000-8000-000000000401",
-            workspace_id="0192c4e0-0000-7000-8000-000000000201",
-            invited_org_unit_id="0192c4e0-0000-7000-8000-000000000105",
-            role="CONTRIBUTOR",
-            access_mode="CONTRIBUTOR_ACTION_REQUIRED",
-        ),
-    )
-    catalog_acls = (
-        CatalogAclEntry(
-            id="0192c4e0-0000-7000-8000-000000000501",
-            resource_id="res-blackbox-security-agent",
-            resource_uri="git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0",
-            title="Agent d'Audit SecOps Boîte Noire (Équipe Parente)",
-            visibility_scope="SHARED_TEAM",
-            owner_org_unit_id="0192c4e0-0000-7000-8000-000000000103",
-            can_discover=True,
-            can_execute=True,
-            can_read_source=False,
-            can_edit=False,
-            can_admin=False,
-            system_prompt_secret=(  # pragma: allowlist secret
-                "SYSTEM_SECRET: Audit OWASP & PCI-DSS strict ruleset v2.1"
-            ),
-        ),
-        CatalogAclEntry(
-            id="0192c4e0-0000-7000-8000-000000000502",
-            resource_id="res-open-checkout-skill",
-            resource_uri="git://gitlab.entreprise.io/payments/checkout-web/skills/payment-flow@v1.0.0",
-            title="Skill Validation Checkout (Source Ouverte Équipe)",
-            visibility_scope="SHARED_WORKSPACE",
-            owner_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
-            owner_workspace_id="0192c4e0-0000-7000-8000-000000000201",
-            can_discover=True,
-            can_execute=True,
-            can_read_source=True,
-            can_edit=True,
-            can_admin=True,
-            system_prompt_secret=(  # pragma: allowlist secret
-                "OPEN_SKILL_SOURCE: Checkout validation workflow steps"
-            ),
-        ),
-    )
-    users = (
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000601",
-            email="karim.admin@orcia.io",
-            display_name="Karim (Ingénieur Plateforme)",
-            auth_mode="HYBRID",
-            oidc_subject="oidc|karim-admin",
-            password_hash_argon2id=hasher.hash_password("OrciaAdmin!2026"),
-            totp_secret=DEFAULT_TOTP_SECRET_KARIM,
-            totp_enabled=True,
-            human_profile_archetype="SECOPS",
-            platform_role="PLATFORM_ADMIN",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
-            transverse_groups=("guild-secops",),
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000602",
-            email="claire.bu@orcia.io",
-            display_name="Claire (Directrice BU / Équipe Parente)",
-            auth_mode="HYBRID",
-            oidc_subject="oidc|claire-bu",
-            password_hash_argon2id=hasher.hash_password("OrciaDirector!2026"),
-            totp_enabled=False,
-            human_profile_archetype="EXECUTIVE",
-            platform_role="BU_DIRECTOR",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000102",
-            transverse_groups=("architecture-board",),
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000603",
-            email="marc.lead@orcia.io",
-            display_name="Marc (Chef d'Équipe / Tech Lead)",
-            auth_mode="HYBRID",
-            oidc_subject="oidc|marc-lead",
-            password_hash_argon2id=hasher.hash_password("OrciaLead!2026"),
-            totp_enabled=False,
-            human_profile_archetype="TECH_LEAD",
-            platform_role="TEAM_LEAD",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
-            transverse_groups=("architecture-board",),
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000604",
-            email="nadia.dev@orcia.io",
-            display_name="Nadia (Développeuse Senior)",
-            auth_mode="LOCAL",
-            password_hash_argon2id=hasher.hash_password("OrciaDev!2026"),
-            totp_enabled=False,
-            human_profile_archetype="DEVELOPER",
-            platform_role="CONTRIBUTOR",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000605",
-            email="partenaire.ext@partner.io",
-            display_name="Partenaire Externe (Invité Workspace 1)",
-            auth_mode="OIDC",
-            oidc_subject="oidc|partner-ext",
-            totp_enabled=False,
-            human_profile_archetype="DEVELOPER",
-            platform_role="CONTRIBUTOR",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000105",
-        ),
-    )
-    persona_map = {
-        "karim": "0192c4e0-0000-7000-8000-000000000601",
-        "claire": "0192c4e0-0000-7000-8000-000000000602",
-        "marc": "0192c4e0-0000-7000-8000-000000000603",
-        "nadia": "0192c4e0-0000-7000-8000-000000000604",
-        "partenaire": "0192c4e0-0000-7000-8000-000000000605",
-    }
-    evaluator = MatrixPermissionEvaluator(
-        org_units=org_units,
-        workspaces=workspaces,
-        memberships=memberships,
-        catalog_acls=catalog_acls,
-    )
-    return AuthAndOrganizationService(
-        evaluator=evaluator,
-        users=users,
-        persona_map=persona_map,
-        hasher=hasher,
-        revocation_store=revocation_store,
-        allow_persona_impersonation=allow_persona_impersonation,
-    )
-
-
 __all__ = [
     "ACCESS_TOKEN_TTL_SECONDS", "ADMIN_MODULE_ALLOWED_ROLES", "ALL_PERMISSION_VERBS",
     "DEFAULT_DAY0_ADMIN_ROLES", "DEFAULT_ROLE_PERMISSION_MATRIX", "DEFAULT_TOTP_SECRET_KARIM",
@@ -331,15 +159,19 @@ __all__ = [
     "RoleMatrixDescriptor", "RolePermissionGrant", "SecretAction", "SecretInputSpec",
     "SecretStatusView", "SettingCategory", "SettingScopeLevel", "SubjectType",
     "VALID_GRANT_RESOURCE_KINDS", "VALID_IAM_ROLES", "AccessMode", "Argon2idPasswordHasher",
-    "AuthAndOrganizationService", "persona_impersonation_allowed", "AuthMode",
-    "BrokerConnectorScheme", "BrokerStepState", "BrokerTicketAction", "BrokerTicketStatus",
-    "CatalogAclEntry", "CatalogPermission", "CatalogVisibilityScope", "DatasourceScheme",
-    "EffectiveResourcePermissions", "ExecutionIdentityMode", "InMemoryRevocationStore",
-    "JwtSessionManager", "KeyValueRevocationStore", "MatrixPermissionEvaluator", "OrgUnitKind",
-    "OrgUnitNode", "OrgUnitSummary", "OrgUnitType", "PassthroughCredentialRecord",
-    "PassthroughVaultCipher", "PermissionBrokerPolicy", "PermissionBrokerService",
-    "PermissionBrokerTicket", "PermissionCheckOutcome", "PlatformRole", "RevocationStoreProtocol",
+    "AttachedWorkspaceRef", "AuthAndOrganizationService", "persona_impersonation_allowed",
+    "AuthMode", "BrokerConnectorScheme", "BrokerStepState", "BrokerTicketAction",
+    "BrokerTicketStatus", "CatalogAclEntry", "CatalogPermission", "CatalogVisibilityScope",
+    "DatasourceScheme", "EffectiveResourcePermissions", "ExecutionIdentityMode",
+    "InMemoryRevocationStore", "JwtSessionManager", "KeyValueRevocationStore",
+    "MatrixPermissionEvaluator", "OrgUnitKind", "OrgUnitNode", "OrgUnitStorageSchemaError",
+    "OrgUnitSummary", "OrgUnitType", "OrgUnitUnknownUserError",
+    "PassthroughCredentialRecord", "PassthroughVaultCipher",
+    "PasswordUnchangedError", "PermissionBrokerPolicy",
+    "PermissionBrokerService", "PermissionBrokerTicket",
+    "PermissionCheckOutcome", "PlatformRole", "RevocationStoreProtocol",
     "SessionTokenPair", "TokenClaims", "TotpManager", "UserIdentity", "WorkspaceAccessSummary",
+    "WeakPasswordPolicyError", "generate_temporary_password", "validate_password_policy",
     "WorkspaceDatasourceEntity", "WorkspaceEntity", "WorkspaceMembershipEntity",
     "WorkspaceVisibilityMode", "assert_anti_lockout_on_accounts", "assert_org_unit_deletable",
     "assert_unique_org_unit_slug", "build_default_auth_and_org_service",
@@ -348,7 +180,8 @@ __all__ = [
     "compute_secret_masked_hint",
     "extract_connector_scheme", "generate_new_org_unit_id", "list_evaluator_org_unit_summaries",
     "list_native_role_matrix", "normalize_member_user_ids", "normalize_org_unit_slug",
-    "parse_permission_kb_markdown", "sort_org_unit_dicts_topologically",
+    "parse_permission_kb_markdown", "resolve_and_validate_org_unit_users",
+    "KnownOrgUser", "sort_org_unit_dicts_topologically",
     "sort_org_unit_summaries_dfs", "validate_grant_resource_kind", "validate_iam_roles",
     "validate_org_unit_hierarchy",
     "EnterpriseConnectorsGovernanceService",

@@ -12,6 +12,7 @@ export interface ConfirmDeleteOrgUnitModalProps {
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"]["deleteModal"];
   readonly errorMessage: string | null;
   readonly isSubmitting: boolean;
+  readonly onOpenWorkspaces: () => void;
   readonly onConfirmDelete: (orgUnitId: string) => void;
 }
 
@@ -24,6 +25,7 @@ export function ConfirmDeleteOrgUnitModal({
   labels,
   errorMessage,
   isSubmitting,
+  onOpenWorkspaces,
   onConfirmDelete,
 }: ConfirmDeleteOrgUnitModalProps): React.ReactElement {
   const unit = rowItem?.unit ?? null;
@@ -61,13 +63,76 @@ export function ConfirmDeleteOrgUnitModal({
         ) : null}
 
         {isNonEmpty ? (
-          <OrciaAlertBanner tone="crimson" testId="org-unit-delete-blocked-banner">
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <strong>{labels.blockedNonEmptyTitle}</strong>
-              <span>{nonEmptyMessage}</span>
-              <span>{labels.blockedNonEmptyHint}</span>
+          <>
+            <div
+              data-testid="org-unit-delete-dependencies-list"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                padding: "10px 12px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface-secondary)",
+                fontSize: "12.5px",
+              }}
+            >
+              <strong style={{ color: "var(--color-foreground)" }}>
+                {labels.deleteDependenciesHeading}
+              </strong>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "18px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
+              >
+                {rowItem?.childUnits.map((child) => (
+                  <li key={`sub-${child.id}`} style={{ color: "var(--color-foreground)" }}>
+                    <span>{labels.deleteDependencySubUnitPrefix} : </span>
+                    <strong>{child.name}</strong>
+                    <span style={{ color: "var(--color-muted-foreground)", marginLeft: "4px" }}>
+                      ({child.slug})
+                    </span>
+                  </li>
+                ))}
+                {rowItem?.attachedWorkspaces.map((ws) => (
+                  <li key={`ws-${ws.id}`} style={{ color: "var(--color-foreground)" }}>
+                    <span>{labels.deleteDependencyWorkspacePrefix} : </span>
+                    <strong>{ws.name}</strong>
+                    <span style={{ color: "var(--color-muted-foreground)", marginLeft: "4px" }}>
+                      ({ws.slug})
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </OrciaAlertBanner>
+
+            <OrciaAlertBanner tone="crimson" testId="org-unit-delete-blocked-banner">
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <strong>{labels.blockedNonEmptyTitle}</strong>
+                <span>{nonEmptyMessage}</span>
+                <span>{labels.blockedNonEmptyHint}</span>
+                {attachedWorkspacesCount > 0 || (rowItem?.attachedWorkspaces.length ?? 0) > 0 ? (
+                  <div style={{ marginTop: "6px" }}>
+                    <OrciaButton
+                      variant="secondary"
+                      testId="org-unit-delete-open-workspaces-btn"
+                      onClick={() => {
+                        onOpenChange(false);
+                        onOpenWorkspaces();
+                      }}
+                    >
+                      <OrciaIcon name="spaces" size={14} />
+                      <span>{labels.deleteOpenWorkspacesAction}</span>
+                    </OrciaButton>
+                  </div>
+                ) : null}
+              </div>
+            </OrciaAlertBanner>
+          </>
         ) : null}
 
         {errorMessage ? (
@@ -89,7 +154,7 @@ export function ConfirmDeleteOrgUnitModal({
             testId={
               unit ? `confirm-delete-org-unit-btn-${unit.id}` : "confirm-delete-org-unit-btn"
             }
-            disabled={!canMutate || isSubmitting}
+            disabled={!canMutate || isSubmitting || isNonEmpty}
             onClick={() => {
               if (unit) {
                 onConfirmDelete(unit.id);

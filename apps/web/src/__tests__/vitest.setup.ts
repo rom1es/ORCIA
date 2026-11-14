@@ -68,6 +68,7 @@ const backendState: MockBackendState = {
 
 import { resetAuthSessionStore } from "../stores/authSessionStore";
 import {
+  getVitestIamAccounts,
   handleVitestIamRoute,
   resetVitestIamMockState,
 } from "./vitestIamMockHandlers";
@@ -310,12 +311,73 @@ async function vitestFetchTransport(
       first_admin_initialized: true,
       first_admin_email: email,
       first_admin_display_name: displayName,
+      access_token: "mock-first-admin-access-token",
+      token_type: "bearer",
     });
+  }
+
+  // 1b. Authentification & Sessions
+  if (path === "/api/v1/auth/login/local" && method === "POST") {
+    const email = String(body.email ?? "admin@orcia.local").toLowerCase();
+    const isMockFirstAdmin =
+      backendState.firstAdmin && backendState.firstAdmin.email.toLowerCase() === email;
+    const iamAccounts = getVitestIamAccounts();
+    const iamUser = iamAccounts.find(
+      (a) => a.principal_id.toLowerCase() === email || a.email?.toLowerCase() === email,
+    );
+    const displayName =
+      iamUser?.display_name ??
+      (isMockFirstAdmin ? backendState.firstAdmin!.displayName : "Romain Admin");
+    const roles = iamUser?.roles ?? ["PLATFORM_ADMIN"];
+    return jsonResponse({
+      access_token: "mock-access-token",
+      token_type: "bearer",
+      roles,
+      user_id: iamUser?.id ?? "usr-vitest-1",
+      email,
+      display_name: displayName,
+      must_change_password: false,
+      issued_at_iso: "2026-11-14T12:00:00Z",
+    });
+  }
+
+  if (path === "/api/v1/auth/me" && method === "GET") {
+    return jsonResponse({
+      user_id: "usr-vitest-1",
+      email: backendState.firstAdmin?.email ?? "admin@orcia.local",
+      display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
+      roles: ["PLATFORM_ADMIN"],
+      active_hat: "PLATFORM_ADMIN",
+      access_mode: "READ_WRITE",
+      must_change_password: false,
+      workspaces: [],
+    });
+  }
+
+  if (path === "/api/v1/auth/refresh" && method === "POST") {
+    return jsonResponse({
+      access_token: "mock-refreshed-token",
+      token_type: "bearer",
+      roles: ["PLATFORM_ADMIN"],
+      user_id: "usr-vitest-1",
+      email: backendState.firstAdmin?.email ?? "admin@orcia.local",
+      display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
+      must_change_password: false,
+      issued_at_iso: "2026-11-14T12:00:00Z",
+    });
+  }
+
+  if (path === "/api/v1/auth/logout" && method === "POST") {
+    return jsonResponse({ message: "Successfully logged out" });
+  }
+
+  if (path === "/api/v1/auth/change-password" && method === "POST") {
+    return jsonResponse({ message: "Password updated successfully" });
   }
 
   if (path === "/api/v1/bootstrap/platform-setup-state" && method === "PUT") {
     backendState.platformSetupState = body;
-    if (Array.isArray(body.org_units)) {
+    if (Array.isArray(body.org_units) && (body.org_units.length > 0 || backendState.orgUnits.length === 0)) {
       backendState.orgUnits = hydrateMockOrgUnitsFromSetup(body.org_units);
       backendState.orgUnitSeq = Math.max(backendState.orgUnitSeq, backendState.orgUnits.length);
     }
@@ -341,12 +403,95 @@ async function vitestFetchTransport(
   }
 
   // 1b. Hierarchical Organization Units CRUD (/api/v1/org-units — Story 17.2)
-  if (path === "/api/v1/org-units" && method === "GET") {
+  const MOCK_KNOWN_ORG_USERS = [
+    { principal_id: "claire.admin@orcia.fr", display_name: "Claire Admin", email: "claire.admin@orcia.fr" },
+    { principal_id: "vp.produit@orcia.fr", display_name: "VP Produit", email: "vp.produit@orcia.fr" },
+    { principal_id: "marc.lead@orcia.fr", display_name: "Marc Lead", email: "marc.lead@orcia.fr" },
+    { principal_id: "alice@orcia.fr", display_name: "Alice Développeuse", email: "alice@orcia.fr" },
+    { principal_id: "bob@orcia.fr", display_name: "Bob Ingénieur", email: "bob@orcia.fr" },
+    { principal_id: "romain@orcia.fr", display_name: "Romain Esnault", email: "romain@orcia.fr" },
+  ];
+
+  const isMockUserKnown = (val: string) => {
+    const needle = val.trim().toLowerCase();
+    return getAllMockKnownOrgUsers().some(
+      (u) =>
+        u.principal_id.toLowerCase() === needle ||
+        (u.email && u.email.toLowerCase() === needle),
+    );
+  };
+
+  const getAllMockKnownOrgUsers = () => {
+    const iamAccounts = getVitestIamAccounts()
+      .filter((a) => a.account_kind === "HUMAN" && a.status !== "DISABLED")
+      .map((a) => ({
+        principal_id: a.principal_id,
+        display_name: a.display_name,
+        email: a.email,
+      }));
+    const byKey = new Map<string, { principal_id: string; display_name: string; email: string | null }>();
+    for (const u of [...MOCK_KNOWN_ORG_USERS, ...iamAccounts]) {
+      const k = u.principal_id.toLowerCase().trim();
+      if (!byKey.has(k)) {
+        byKey.set(k, u);
+      }
+    }
+    return Array.from(byKey.values()).sort((a, b) =>
+      a.display_name.localeCompare(b.display_name),
+    );
+  };
+
+  if (path === "/api/v1/org-units/known-users" && method === "GET") {
+    const qParam = parsedUrl.searchParams.get("q")?.trim()?.toLowerCase() ?? null;
+    const limitParamRaw = parsedUrl.searchParams.get("limit");
+    const limit = limitParamRaw ? parseInt(limitParamRaw, 10) : 10;
+
+    let users = getAllMockKnownOrgUsers();
+    if (qParam) {
+      users = users.filter(
+        (u) =>
+          u.display_name.toLowerCase().includes(qParam) ||
+          u.principal_id.toLowerCase().includes(qParam) ||
+          (u.email && u.email.toLowerCase().includes(qParam)),
+      );
+    }
+    const hasMore = users.length > limit;
     return jsonResponse({
-      org_units: backendState.orgUnits.map((u) => ({
-        ...u,
-        attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
-      })),
+      items: users.slice(0, limit),
+      has_more: hasMore,
+    });
+  }
+
+  if (path === "/api/v1/org-units" && method === "GET") {
+    const qParam = parsedUrl.searchParams.get("q")?.trim()?.toLowerCase() ?? null;
+    const kindParam = parsedUrl.searchParams.get("kind")?.toUpperCase() ?? null;
+    const limitParamRaw = parsedUrl.searchParams.get("limit");
+    const limitParam = limitParamRaw ? parseInt(limitParamRaw, 10) : null;
+
+    let units = backendState.orgUnits.map((u) => ({
+      ...u,
+      attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
+    }));
+
+    if (kindParam) {
+      units = units.filter(
+        (u) => ((u as unknown as { level?: string }).level || u.kind) === kindParam,
+      );
+    }
+    if (qParam) {
+      units = units.filter(
+        (u) =>
+          u.name.toLowerCase().includes(qParam) ||
+          (u.slug ? u.slug.toLowerCase().includes(qParam) : false),
+      );
+    }
+    if (limitParam && limitParam > 0) {
+      units = units.slice(0, limitParam);
+    }
+
+    return jsonResponse({
+      org_units: units,
+      known_users: getAllMockKnownOrgUsers(),
       trace_id: "0195f000000070008000000000000999",
     });
   }
@@ -419,6 +564,34 @@ async function vitestFetchTransport(
           );
         }
       }
+      const rawLead =
+        typeof body.lead_user_id === "string" && body.lead_user_id.trim()
+          ? body.lead_user_id.trim()
+          : null;
+      if (rawLead && !isMockUserKnown(rawLead)) {
+        return problemResponse(
+          422,
+          "ERR_ORG_UNIT_UNKNOWN_USER",
+          "Utilisateur inconnu",
+          `L'utilisateur '${rawLead}' n'est pas un compte connu et actif de la plateforme.`,
+          path,
+        );
+      }
+      const rawMembers = Array.isArray(body.member_user_ids)
+        ? body.member_user_ids.map((m) => String(m).trim()).filter(Boolean)
+        : [];
+      for (const m of rawMembers) {
+        if (!isMockUserKnown(m)) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_UNKNOWN_USER",
+            "Utilisateur inconnu",
+            `L'utilisateur '${m}' n'est pas un compte connu et actif de la plateforme.`,
+            path,
+          );
+        }
+      }
+
       backendState.orgUnitSeq += 1;
       const id = `org-${backendState.orgUnitSeq}`;
       const created: MockOrganizationalUnit = {
@@ -428,13 +601,8 @@ async function vitestFetchTransport(
         kind,
         parent_id: rawParent,
         billing_enabled: body.billing_enabled !== undefined ? Boolean(body.billing_enabled) : true,
-        lead_user_id:
-          typeof body.lead_user_id === "string" && body.lead_user_id.trim()
-            ? body.lead_user_id.trim()
-            : null,
-        member_user_ids: Array.isArray(body.member_user_ids)
-          ? body.member_user_ids.map((m) => String(m).trim()).filter(Boolean)
-          : [],
+        lead_user_id: rawLead,
+        member_user_ids: rawMembers,
       };
       backendState.orgUnits = [...backendState.orgUnits, created];
       syncSetupOrgUnitsFromMock();
@@ -517,6 +685,41 @@ async function vitestFetchTransport(
         }
         nextParentId = candidate;
       }
+      let nextLeadUserId = target.lead_user_id;
+      if ("lead_user_id" in body) {
+        const rawLead =
+          typeof body.lead_user_id === "string" && body.lead_user_id.trim()
+            ? body.lead_user_id.trim()
+            : null;
+        if (rawLead && !isMockUserKnown(rawLead)) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_UNKNOWN_USER",
+            "Utilisateur inconnu",
+            `L'utilisateur '${rawLead}' n'est pas un compte connu et actif de la plateforme.`,
+            path,
+          );
+        }
+        nextLeadUserId = rawLead;
+      }
+
+      let nextMemberUserIds = target.member_user_ids;
+      if ("member_user_ids" in body && Array.isArray(body.member_user_ids)) {
+        const rawMembers = body.member_user_ids.map((m) => String(m).trim()).filter(Boolean);
+        for (const m of rawMembers) {
+          if (!isMockUserKnown(m)) {
+            return problemResponse(
+              422,
+              "ERR_ORG_UNIT_UNKNOWN_USER",
+              "Utilisateur inconnu",
+              `L'utilisateur '${m}' n'est pas un compte connu et actif de la plateforme.`,
+              path,
+            );
+          }
+        }
+        nextMemberUserIds = rawMembers;
+      }
+
       const updated: MockOrganizationalUnit = {
         ...target,
         name: nextName,
@@ -525,15 +728,8 @@ async function vitestFetchTransport(
           body.billing_enabled !== undefined
             ? Boolean(body.billing_enabled)
             : target.billing_enabled,
-        lead_user_id:
-          "lead_user_id" in body
-            ? typeof body.lead_user_id === "string" && body.lead_user_id.trim()
-              ? body.lead_user_id.trim()
-              : null
-            : target.lead_user_id,
-        member_user_ids: Array.isArray(body.member_user_ids)
-          ? body.member_user_ids.map((m) => String(m).trim()).filter(Boolean)
-          : target.member_user_ids,
+        lead_user_id: nextLeadUserId,
+        member_user_ids: nextMemberUserIds,
       };
       backendState.orgUnits = backendState.orgUnits.map((u) =>
         u.id === target.id ? updated : u,

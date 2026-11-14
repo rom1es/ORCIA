@@ -2,7 +2,9 @@ import { createOrciaApiClient, OrciaProblemError } from "@orcia/api-client";
 import { BiModeLoginView, type Rfc9457LoginError } from "@orcia/ui";
 import { createRoute } from "@tanstack/react-router";
 import React, { useEffect, useMemo, useState } from "react";
+import { useOrciaNavigation } from "../components/navigationAdapter";
 import { useI18n } from "../i18n";
+import { useAuthSessionStore } from "../stores/authSessionStore";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 
@@ -19,6 +21,8 @@ function resolveApiBaseUrl(): string {
 
 function LoginRouteComponent() {
   const { dictionary, locale } = useI18n();
+  const { navigateTo } = useOrciaNavigation();
+  const loginWithSession = useAuthSessionStore((s) => s.loginWithSession);
   const [loginError, setLoginError] = useState<Rfc9457LoginError | null>(null);
   const [authenticatedEmail, setAuthenticatedEmail] = useState<string | null>(() => {
     try {
@@ -44,6 +48,12 @@ function LoginRouteComponent() {
       .then((me) => {
         if (!active || !me?.email) return;
         setAuthenticatedEmail(me.email);
+        loginWithSession({
+          email: me.email,
+          displayName: me.display_name,
+          roles: me.roles,
+          mustChangePassword: me.must_change_password,
+        });
         try {
           globalThis.localStorage?.setItem(SESSION_STORAGE_KEY, me.email);
         } catch {
@@ -56,7 +66,7 @@ function LoginRouteComponent() {
     return () => {
       active = false;
     };
-  }, [apiClient]);
+  }, [apiClient, loginWithSession]);
 
   return (
     <div
@@ -73,11 +83,18 @@ function LoginRouteComponent() {
             .then((res) => {
               setLoginError(null);
               setAuthenticatedEmail(res.email);
+              loginWithSession({
+                email: res.email,
+                displayName: res.display_name,
+                roles: res.roles,
+                mustChangePassword: false,
+              });
               try {
                 globalThis.localStorage?.setItem(SESSION_STORAGE_KEY, res.email);
               } catch {
                 // Ignore storage quota errors
               }
+              navigateTo("/");
             })
             .catch((err: unknown) => {
               if (err instanceof OrciaProblemError) {
@@ -113,11 +130,18 @@ function LoginRouteComponent() {
             })
             .then((res) => {
               setAuthenticatedEmail(res.email);
+              loginWithSession({
+                email: res.email,
+                displayName: res.display_name,
+                roles: res.roles,
+                mustChangePassword: res.must_change_password,
+              });
               try {
                 globalThis.localStorage?.setItem(SESSION_STORAGE_KEY, res.email);
               } catch {
                 // Ignore storage quota errors
               }
+              navigateTo("/");
             })
             .catch((err: unknown) => {
               if (err instanceof OrciaProblemError) {

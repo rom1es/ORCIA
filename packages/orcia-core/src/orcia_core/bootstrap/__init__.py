@@ -34,6 +34,16 @@ from orcia_core.bootstrap._internal.sql_iam_grants import (
     delete_iam_grant_on_postgres18,
     list_iam_grants_from_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_local_auth import (
+    LocalAuthCandidate,
+    load_local_auth_candidate_from_postgres18,
+    update_user_password_on_postgres18,
+    upsert_human_user_credentials_on_postgres18,
+)
+from orcia_core.bootstrap._internal.sql_org_known_users import (
+    load_known_org_users_from_postgres18,
+    search_known_org_users_from_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_org_units import (
     create_org_unit_on_postgres18,
     delete_org_unit_on_postgres18,
@@ -242,15 +252,21 @@ __all__ = [
     "list_org_units_from_postgres18",
     "list_user_passthrough_tokens_from_postgres18",
     "list_workspace_datasources_from_postgres18",
+    "load_known_org_users_from_postgres18",
+    "load_local_auth_candidate_from_postgres18",
     "load_platform_setup_state_from_postgres18",
     "persist_progressive_llm_endpoint_to_postgres18",
     "revoke_user_passthrough_token_on_postgres18",
     "save_platform_setup_state_to_postgres18",
+    "search_known_org_users_from_postgres18",
     "sync_and_list_iam_accounts_from_postgres18",
     "trigger_workspace_datasource_sync_on_postgres18",
     "update_enterprise_connector_on_postgres18",
     "update_iam_account_on_postgres18",
     "update_org_unit_on_postgres18",
+    "update_user_password_on_postgres18",
     "update_workspace_datasource_on_postgres18",
+    "upsert_human_user_credentials_on_postgres18",
     "upsert_user_passthrough_token_on_postgres18",
+    "LocalAuthCandidate",
 ]

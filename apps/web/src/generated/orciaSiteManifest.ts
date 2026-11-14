@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-14",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 99,
+    "uiPrimitivesCount": 103,
     "installedPacksCount": 0,
-    "alembicMigrationsCount": 34,
+    "alembicMigrationsCount": 35,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 118,
+    "techLeadReportsCount": 119,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 57,
-    "verifiedCapabilitiesCount": 41
+    "verifiedCapabilitiesCount": 42
   },
   "activeRoutes": [
     "/",
@@ -107,8 +107,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaDropdownMenu",
     "OrciaIcon",
     "OrciaInput",
+    "OrciaKnownUserCombobox",
     "OrciaProductShowcaseSiteView",
     "OrciaRadixSelect",
+    "OrciaSearchableSelect",
     "OrciaSectionCard",
     "OrciaSelect",
     "OrciaSwitch",
@@ -136,11 +138,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "SprintContextWidget",
     "StatusBadge",
     "StreamlinedCockpitView",
+    "TemporaryPasswordInvitationModal",
     "ThinkingDots",
     "TopHeaderBar",
     "TopHeaderSearchCommand",
     "UpstreamChallengeRewindModal",
     "UserAccountDropdownAndSettingsModal",
+    "UserPasswordChangeCard",
     "WorkflowStudioSection",
     "WorkflowTopGovernanceBar",
     "WorkspaceAssistantPinnedCard",
@@ -182,6 +186,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
     "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent",
     "20261114_1705_story_17_5_ai_models_hub_secrets_and_health",
+    "20261114_1706_temporary_password_and_local_iam_auth",
     "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
     "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events"
   ],
@@ -438,6 +443,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-051, CAP-063, CAP-067)",
+      "reportFile": "2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances-tech-lead-report.md",
+      "domain": "Blocage Suppression Org Unit, Garde PG (503), Modale Dépendances, Validation Stricte (422), Sélecteurs Max 10 (Parent & Membres), Modale Chaînée + Nouveau membre, Déconnexion / Incognito & Mot de Passe Temporaire (12 car.)",
+      "summary": "Garde SQL strict (503), réconciliation workspaces, modale ConfirmDeleteOrgUnitModal, validation 422 utilisateurs, correctif billingEnabled, <OrciaSearchableSelect maxDisplayedItems={10} /> & <OrciaKnownUserCombobox maxDisplayedItems={10} /> + modale chaînée + Nouveau membre, migration 20261114_1706, authentification locale PG 18 Argon2id + cookies HttpOnly + fin auto-login Incognito, modale d'accès copier-coller (12 car.), bannière/notification must_change_password & changement dans Mon Compte."
+    },
     {
       "date": "2026-11-14",
       "phaseOrStory": "Story 18.4 (CAP-054, CAP-080, CAP-180)",

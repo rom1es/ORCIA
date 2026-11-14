@@ -1,8 +1,13 @@
-import { OrciaAlertBanner, OrciaButton, OrciaDialog } from "@orcia/ui";
+import {
+  OrciaAlertBanner,
+  OrciaButton,
+  OrciaDialog,
+  OrciaSearchableSelect,
+} from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { AdminAndStudioDictionarySection } from "../../../i18n/locales/admin_and_studio_labels";
-import { getEligibleParentBuUnits } from "./orgTreeHelpers";
+import { useParentOrgSearch } from "./useParentOrgSearch";
 
 export interface EditOrgUnitFormValues {
   readonly name: string;
@@ -35,6 +40,17 @@ export function EditOrgUnitModal({
   isSubmitting,
   onSave,
 }: EditOrgUnitModalProps): React.ReactElement {
+  const {
+    options: parentOptions,
+    handleSearchQueryChange: onParentSearchChange,
+    resetSearch: resetParentSearch,
+  } = useParentOrgSearch({
+    initialUnits: orgUnits,
+    editingUnitId: unit?.id,
+    rootParentOptionLabel: labels.rootParentOption,
+    parentBuOptionPrefix: parentPrefixLabel,
+  });
+
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("scope-global");
   const [billingEnabled, setBillingEnabled] = useState(true);
@@ -44,12 +60,9 @@ export function EditOrgUnitModal({
       setName(unit.name);
       setParentId(unit.parentId || "scope-global");
       setBillingEnabled(unit.billingEnabled !== false);
+      resetParentSearch();
     }
   }, [unit, open]);
-
-  const eligibleParentBus = unit
-    ? getEligibleParentBuUnits(orgUnits, unit.id)
-    : [];
 
   return (
     <OrciaDialog
@@ -109,22 +122,19 @@ export function EditOrgUnitModal({
           <label htmlFor="edit-org-unit-parent-select" className="orcia-ds-label">
             {labels.parentLabel}
           </label>
-          <select
+          <OrciaSearchableSelect
             id="edit-org-unit-parent-select"
-            data-testid="edit-org-unit-parent-select"
+            testId="edit-org-unit-parent-select"
             disabled={!canMutate || isSubmitting}
             value={parentId}
-            onChange={(e) => setParentId(e.target.value)}
-            className="orcia-ds-select"
-            style={{ width: "100%" }}
-          >
-            <option value="scope-global">{labels.rootParentOption}</option>
-            {eligibleParentBus.map((bu) => (
-              <option key={bu.id} value={bu.id}>
-                {`${parentPrefixLabel} ${bu.name}`}
-              </option>
-            ))}
-          </select>
+            onChange={setParentId}
+            options={parentOptions}
+            maxDisplayedItems={10}
+            searchPlaceholder={labels.parentSearchPlaceholder}
+            noMatchLabel={labels.parentNoMatchLabel}
+            truncatedHintTemplate={(hidden) => `+${hidden} ${labels.parentTruncatedHint}`}
+            onSearchQueryChange={onParentSearchChange}
+          />
         </div>
 
         <label

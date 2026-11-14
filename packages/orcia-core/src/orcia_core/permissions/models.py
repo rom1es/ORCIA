@@ -105,6 +105,8 @@ class UserIdentity:
     totp_enabled: bool = False
     transverse_groups: tuple[str, ...] = field(default_factory=tuple)
     is_active: bool = True
+    must_change_password: bool = False
+    roles: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)

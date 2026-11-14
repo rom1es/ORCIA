@@ -88,6 +88,8 @@ export function UserAccountDropdownAndSettingsModal({
   passthroughConnectors,
   onPreferencesSync,
   onLogout,
+  mustChangePassword,
+  onChangePassword,
   onNavigateAssistantBehavior,
   onSavePassthroughToken,
   onRevokePassthroughToken,
@@ -200,34 +202,13 @@ export function UserAccountDropdownAndSettingsModal({
 
   const handleIssueMcpToken = (): void => {
     const resolvedSlug = mcpTargetSlug.trim() || "default";
-    const endpointUri =
-      mcpTargetKind === "SPACE"
-        ? `/api/v1/mcp/spaces/${resolvedSlug}`
-        : `/api/v1/mcp/agents/${resolvedSlug}`;
-    const snippet = JSON.stringify(
-      {
-        mcpServers: {
-          [`orcia-${mcpTargetKind.toLowerCase()}-${resolvedSlug}`]: {
-            url: `https://orcia.internal${endpointUri}`,
-            headers: { Authorization: "Bearer ${ORCIA_MCP_PAT}" },
-          },
-        },
-      },
-      null,
-      2,
-    );
+    const endpointUri = mcpTargetKind === "SPACE" ? `/api/v1/mcp/spaces/${resolvedSlug}` : `/api/v1/mcp/agents/${resolvedSlug}`;
+    const snippet = JSON.stringify({ mcpServers: { [`orcia-${mcpTargetKind.toLowerCase()}-${resolvedSlug}`]: { url: `https://orcia.internal${endpointUri}`, headers: { Authorization: "Bearer ${ORCIA_MCP_PAT}" } } } }, null, 2);
     const newItem: UiPersonalMcpTokenItem = {
-      tokenId: `mcp-tok-${mcpTokens.length + 1}`,
-      label: `IDE MCP (${mcpTargetKind} · ${resolvedSlug})`,
-      tokenPrefix: "pat_mcp_9a8b7c...",
-      tokenSha256: "sha256_at_rest_verified_digest",
-      expiresInDays: mcpExpiryDays,
-      rpmLimit: mcpRpmLimit,
-      targetKind: mcpTargetKind,
-      targetSlug: resolvedSlug,
-      mcpEndpointUri: endpointUri,
-      ideJsonSnippet: snippet,
-      revoked: false,
+      tokenId: `mcp-tok-${mcpTokens.length + 1}`, label: `IDE MCP (${mcpTargetKind} · ${resolvedSlug})`,
+      tokenPrefix: "pat_mcp_9a8b7c...", tokenSha256: "sha256_at_rest_verified_digest",
+      expiresInDays: mcpExpiryDays, rpmLimit: mcpRpmLimit, targetKind: mcpTargetKind,
+      targetSlug: resolvedSlug, mcpEndpointUri: endpointUri, ideJsonSnippet: snippet, revoked: false,
     };
     setMcpTokens((prev) => [newItem, ...prev]);
     setLastIssuedPlaintext("pat_mcp_9a8b7c6d5e4f3a2b1c0d");
@@ -339,6 +320,8 @@ export function UserAccountDropdownAndSettingsModal({
             setIsDirty(true);
           }}
           onPreferencesSync={onPreferencesSync}
+          mustChangePassword={mustChangePassword}
+          onChangePassword={onChangePassword}
           onNavigateAssistantBehavior={onNavigateAssistantBehavior}
           onTestPassthrough={() => setPassthroughTested(true)}
           onSavePassthroughToken={onSavePassthroughToken}

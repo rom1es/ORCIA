@@ -271,7 +271,10 @@ async def list_workspace_datasources_from_postgres18(
     workspace_id: str,
 ) -> list[WorkspaceDatasourceRecord]:
     """List datasources of a workspace with dynamically evaluated sync & codegraph health."""
-    wid_uuid = UUID(workspace_id)
+    try:
+        wid_uuid = UUID(workspace_id.strip())
+    except (ValueError, AttributeError):
+        return []
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
         await ensure_iam_accounts_schema(conn)
@@ -307,8 +310,11 @@ async def get_workspace_datasource_from_postgres18(
     instance: str | None = None,
 ) -> WorkspaceDatasourceRecord:
     """Fetch single workspace datasource by id with evaluated health."""
-    wid_uuid = UUID(workspace_id)
-    ds_uuid = UUID(datasource_id)
+    try:
+        wid_uuid = UUID(workspace_id.strip())
+        ds_uuid = UUID(datasource_id.strip())
+    except (ValueError, AttributeError):
+        raise ResourceNotFoundError(instance=instance) from None
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
         await ensure_iam_accounts_schema(conn)

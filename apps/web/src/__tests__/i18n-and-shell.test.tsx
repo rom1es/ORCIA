@@ -618,10 +618,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // Attempt to delete parent BU while child Espace is attached -> blocked by orphan protection
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-1"));
-    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-1"));
-    const feedback = await screen.findByTestId("org-unit-delete-feedback");
-    expect(feedback.textContent).toContain("Suppression refusée");
+    expect((screen.getByTestId("confirm-delete-org-unit-btn-org-1") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("org-unit-delete-blocked-banner").textContent).toContain("Suppression impossible");
     expect(screen.getByTestId("org-unit-row-org-1")).toBeDefined();
+    fireEvent.click(screen.getByTestId("cancel-delete-org-unit-btn-org-1"));
 
     // 3 & 4. Habilitations (Story 17.3 SecOps Drawer): closed Beneficiary select (TEAM_LEAD) vs Target Scope (aqwzsx), individual grant verb, and French display
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
@@ -1815,11 +1815,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       await Promise.resolve();
     });
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
-    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-2"));
-    expect((await screen.findByTestId("org-unit-delete-feedback")).textContent).toContain(
-      "2 Espaces de Travail sont rattachés à « Équipe Core IA »",
+    expect((screen.getByTestId("confirm-delete-org-unit-btn-org-2") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("org-unit-delete-blocked-banner").textContent).toContain(
+      "2 Espaces de Travail rattachés",
     );
     expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
+    fireEvent.click(screen.getByTestId("cancel-delete-org-unit-btn-org-2"));
   });
 
   it("delivers the redesigned Workspaces studio view with quick filters, 1-click private-to-team sharing, inline datasource connection, integrated multi-level Glossary & Business Rules with 1-click promotion, F5 reload survival, and Option A (no visible 📖 Vocabulaire in sidebar)", async () => {

@@ -48,7 +48,19 @@ export type IamAccountsListApiResult =
   | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
 
 export type IamAccountMutationApiResult =
-  | { readonly ok: true; readonly account: IamAccountResponse }
+  | {
+      readonly ok: true;
+      readonly account: IamAccountResponse;
+      readonly temporaryPassword?: string | null;
+    }
+  | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
+
+export type IamAccountTemporaryPasswordResetApiResult =
+  | {
+      readonly ok: true;
+      readonly temporaryPassword: string;
+      readonly expiresAtIso?: string;
+    }
   | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
 
 export type IamAccountDeleteApiResult =
@@ -159,8 +171,34 @@ export async function createIamAccountViaApi(
 ): Promise<IamAccountMutationApiResult> {
   try {
     const client = buildIamClient(locale);
-    const account = await client.createIamAccount(payload);
-    return { ok: true, account };
+    const rawResp = (await client.createIamAccount(payload)) as unknown as Record<string, unknown>;
+    const account = (rawResp.account ?? rawResp) as IamAccountResponse;
+    const temporaryPassword =
+      (rawResp.temporary_password as string | undefined) ??
+      (account as unknown as { temporary_password?: string }).temporary_password ??
+      null;
+    return {
+      ok: true,
+      account,
+      temporaryPassword,
+    };
+  } catch (err: unknown) {
+    return { ok: false, ...extractIamApiError(err, locale) };
+  }
+}
+
+export async function resetIamAccountTemporaryPasswordViaApi(
+  accountId: string,
+  locale: "fr" | "en",
+): Promise<IamAccountTemporaryPasswordResetApiResult> {
+  try {
+    const client = buildIamClient(locale);
+    const resp = await client.resetIamAccountTemporaryPassword(accountId);
+    return {
+      ok: true,
+      temporaryPassword: resp.temporary_password,
+      expiresAtIso: (resp as unknown as { expires_at_iso?: string }).expires_at_iso,
+    };
   } catch (err: unknown) {
     return { ok: false, ...extractIamApiError(err, locale) };
   }

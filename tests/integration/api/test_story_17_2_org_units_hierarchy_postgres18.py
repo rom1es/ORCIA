@@ -25,6 +25,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.postgres import PostgresContainer
 
+from orcia_core.bootstrap._internal.sql_iam_account_helpers import ensure_iam_accounts_schema
 from orcia_kernel.ids import new_uuid7
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -91,10 +92,97 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
     engine = create_async_engine(database_url)
     try:
         async with engine.begin() as conn:
+            await ensure_iam_accounts_schema(conn)
             await conn.execute(sa.text("DELETE FROM workspaces"))
             await conn.execute(sa.text("DELETE FROM org_units WHERE unit_type <> 'ENTERPRISE'"))
+            await conn.execute(sa.text("DELETE FROM iam_accounts"))
+
+            # Seed active human accounts and one disabled account
+            accounts_data = [
+                (
+                    new_uuid7(),
+                    "claire.dir@orcia.fr",
+                    "Claire Directrice",
+                    "claire.dir@orcia.fr",
+                    "ACTIVE",
+                ),
+                (
+                    new_uuid7(),
+                    "claire.lead@orcia.fr",
+                    "Claire Lead",
+                    "claire.lead@orcia.fr",
+                    "ACTIVE",
+                ),
+                (
+                    new_uuid7(),
+                    "marc.lead@orcia.fr",
+                    "Marc Lead",
+                    "marc.lead@orcia.fr",
+                    "ACTIVE",
+                ),
+                (new_uuid7(), "alice@orcia.fr", "Alice Dev", "alice@orcia.fr", "ACTIVE"),
+                (new_uuid7(), "bob@orcia.fr", "Bob Dev", "bob@orcia.fr", "ACTIVE"),
+                (new_uuid7(), "chloe@orcia.fr", "Chloé Dev", "chloe@orcia.fr", "ACTIVE"),
+                (
+                    new_uuid7(),
+                    "disabled.user@orcia.fr",
+                    "Compte Désactivé",
+                    "disabled.user@orcia.fr",
+                    "DISABLED",
+                ),
+            ]
+            for acc_id, principal_id, display_name, email, status in accounts_data:
+                await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO iam_accounts (
+                            id, principal_id, display_name, email,
+                            account_kind, auth_source, status
+                        ) VALUES (
+                            :id, :principal_id, :display_name, :email,
+                            'HUMAN', 'LOCAL_BOOTSTRAP', :status
+                        )
+                        """
+                    ),
+                    {
+                        "id": acc_id,
+                        "principal_id": principal_id,
+                        "display_name": display_name,
+                        "email": email,
+                        "status": status,
+                    },
+                )
 
         async with app_client_factory() as client:
+            # Verify GET /api/v1/org-units exposes known_users (excluding DISABLED)
+            init_get = await client.get("/api/v1/org-units", headers=headers)
+            assert init_get.status_code == 200
+            known_principals = [u["principal_id"] for u in init_get.json()["known_users"]]
+            assert "claire.dir@orcia.fr" in known_principals
+            assert "disabled.user@orcia.fr" not in known_principals
+
+            # Unknown lead identifier -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+            unknown_lead_resp = await client.post(
+                "/api/v1/org-units",
+                headers=headers,
+                json={"name": "BU Inconnue", "kind": "BU", "lead_user_id": "inconnu@orcia.fr"},
+            )
+            assert unknown_lead_resp.status_code == 422
+            assert unknown_lead_resp.json()["error_code"] == "ERR_ORG_UNIT_UNKNOWN_USER"
+
+            # Disabled lead identifier -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+            disabled_lead_resp = await client.post(
+                "/api/v1/org-units",
+                headers=headers,
+                json={
+                    "name": "BU Désactivée",
+                    "kind": "BU",
+                    "lead_user_id": "disabled.user@orcia.fr",
+                },
+            )
+            assert disabled_lead_resp.status_code == 422
+            assert disabled_lead_resp.json()["error_code"] == "ERR_ORG_UNIT_UNKNOWN_USER"
+
             # 1. Create Root BU -> Sub-BU (Pôle) -> Team
             r_root = await client.post(
                 "/api/v1/org-units",
@@ -208,6 +296,15 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             assert obs_patch.status_code == 403
             assert obs_patch.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
 
+            # 5b. PATCH with unknown lead -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+            unknown_patch = await client.patch(
+                f"/api/v1/org-units/{team_slug}",
+                headers=headers,
+                json={"lead_user_id": "inconnu@orcia.fr"},
+            )
+            assert unknown_patch.status_code == 422
+            assert unknown_patch.json()["error_code"] == "ERR_ORG_UNIT_UNKNOWN_USER"
+
             # 6. PATCH rename + lead + members update by slug persisted to PostgreSQL 18
             updated = await client.patch(
                 f"/api/v1/org-units/{team_slug}",
@@ -250,6 +347,12 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             listed_with_ws = await client.get("/api/v1/org-units", headers=headers)
             team_entry = next(u for u in listed_with_ws.json()["org_units"] if u["id"] == team_id)
             assert team_entry["attached_workspaces_count"] == 1
+            assert len(team_entry["attached_workspaces"]) == 1
+            assert team_entry["attached_workspaces"][0] == {
+                "id": str(ws_uuid),
+                "slug": "ws-story-17-2",
+                "name": "Espace Story 17.2",
+            }
 
             del_team_blocked = await client.delete(f"/api/v1/org-units/{team_id}", headers=headers)
             assert del_team_blocked.status_code == 409
@@ -270,6 +373,124 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             assert (
                 await client.delete(f"/api/v1/org-units/{root_id}", headers=headers)
             ).status_code == 200
+
+            # PostgreSQL 18 live search query, kind filter and limit test
+            created_test_bu_ids: list[str] = []
+            for idx in range(12):
+                name = f"BU Auto {idx + 1}" if idx > 0 else "DS3C Pôle Cyber"
+                res = await client.post(
+                    "/api/v1/org-units",
+                    headers=headers,
+                    json={"name": name, "kind": "BU", "lead_user_id": "claire.dir@orcia.fr"},
+                )
+                assert res.status_code == 200
+                created_test_bu_ids.append(res.json()["id"])
+
+            # Verify kind=BU & limit=10
+            pg_bu_10 = await client.get("/api/v1/org-units?kind=BU&limit=10", headers=headers)
+            assert pg_bu_10.status_code == 200
+            assert len(pg_bu_10.json()["org_units"]) == 10
+            assert all(u["kind"] == "BU" for u in pg_bu_10.json()["org_units"])
+
+            # Verify q=ds3 (ILIKE search on name/slug)
+            pg_q = await client.get("/api/v1/org-units?q=ds3&kind=BU&limit=10", headers=headers)
+            assert pg_q.status_code == 200
+            assert len(pg_q.json()["org_units"]) == 1
+            assert "DS3C" in pg_q.json()["org_units"][0]["name"]
+
+            # Scenario: POST /api/v1/settings/iam/accounts
+            # -> GET /api/v1/org-units/known-users -> PATCH /api/v1/org-units/{id}
+            new_acc_res = await client.post(
+                "/api/v1/settings/iam/accounts",
+                headers=headers,
+                json={
+                    "principal_id": "julie.nouvelle@orcia.fr",
+                    "display_name": "Julie Nouvelle",
+                    "email": "julie.nouvelle@orcia.fr",
+                    "account_kind": "HUMAN",
+                    "roles": ["CONTRIBUTOR"],
+                    "status": "ACTIVE",
+                },
+            )
+            assert new_acc_res.status_code == 200
+
+            search_known_res = await client.get(
+                "/api/v1/org-units/known-users?q=julie&limit=10",
+                headers=headers,
+            )
+            assert search_known_res.status_code == 200
+            search_items = search_known_res.json()["items"]
+            assert any(u["principal_id"] == "julie.nouvelle@orcia.fr" for u in search_items)
+
+            target_bu_id = created_test_bu_ids[0]
+            patch_res = await client.patch(
+                f"/api/v1/org-units/{target_bu_id}",
+                headers=headers,
+                json={"member_user_ids": ["julie.nouvelle@orcia.fr"]},
+            )
+            assert patch_res.status_code == 200
+            assert "julie.nouvelle@orcia.fr" in patch_res.json()["member_user_ids"]
+
+            async with engine.connect() as conn:
+                db_members = (
+                    await conn.execute(
+                        sa.text("SELECT member_user_ids_jsonb FROM org_units WHERE id = :id"),
+                        {"id": target_bu_id},
+                    )
+                ).scalar_one()
+            assert "julie.nouvelle@orcia.fr" in str(db_members)
+
+            # Cleanup created IAM account
+            del_acc_res = await client.delete(
+                f"/api/v1/settings/iam/accounts/{new_acc_res.json()['id']}",
+                headers=headers,
+            )
+            assert del_acc_res.status_code == 200
+
+            # Direct assertion: even if an active user has primary_org_unit_id pointing
+            # to an empty BU, deleting that BU succeeds and safely reassigns to fallback org unit
+            victim_bu_id = created_test_bu_ids[1]
+            async with engine.begin() as conn:
+                await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO users (
+                            id, email, display_name, auth_mode,
+                            human_profile_archetype, platform_role, primary_org_unit_id,
+                            is_active, created_at
+                        ) VALUES (
+                            :id, 'active.bu.member@orcia.fr', 'Active Member', 'LOCAL',
+                            'CONTRIBUTOR', 'CONTRIBUTOR', :bu_id, TRUE, NOW()
+                        )
+                        """
+                    ),
+                    {"id": new_uuid7(), "bu_id": UUID(victim_bu_id)},
+                )
+
+            del_victim_res = await client.delete(
+                f"/api/v1/org-units/{victim_bu_id}", headers=headers
+            )
+            assert del_victim_res.status_code == 200
+
+            async with engine.connect() as conn:
+                reassigned_bu = (
+                    await conn.execute(
+                        sa.text(
+                            """
+                            SELECT primary_org_unit_id FROM users
+                            WHERE email = 'active.bu.member@orcia.fr'
+                            """
+                        )
+                    )
+                ).scalar_one()
+            assert str(reassigned_bu) != victim_bu_id
+
+            for test_bu_id in created_test_bu_ids:
+                if test_bu_id == victim_bu_id:
+                    continue
+                assert (
+                    await client.delete(f"/api/v1/org-units/{test_bu_id}", headers=headers)
+                ).status_code == 200
 
             async with engine.connect() as conn:
                 remaining = (

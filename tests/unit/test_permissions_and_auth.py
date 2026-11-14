@@ -272,8 +272,9 @@ def test_matrix_permission_evaluator_rollup_isolation_and_5_permissions() -> Non
         ev.enforce_module_access(nadia, "admin")
 
 
-def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
+def test_fastapi_auth_workspaces_and_catalog_endpoints(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify /api/v1/auth/*, /api/v1/workspaces/*, and /api/v1/catalog/resources/* HTTP routes."""
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     client = TestClient(app, base_url="https://testserver", raise_server_exceptions=False)
 
@@ -283,7 +284,7 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
         "/api/v1/auth/login/local",
         json={
             "email": "karim.admin@orcia.io",
-            "password": "OrciaAdmin!2026",
+            "password": "OrciaAdmin!2026",  # pragma: allowlist secret
             "totp_code": totp_code,
         },
     )
@@ -294,7 +295,10 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
     # Missing or invalid MFA code -> 401 ERR_AUTH_MFA_INVALID
     mfa_err = client.post(
         "/api/v1/auth/login/local",
-        json={"email": "karim.admin@orcia.io", "password": "OrciaAdmin!2026"},
+        json={
+            "email": "karim.admin@orcia.io",
+            "password": "OrciaAdmin!2026",  # pragma: allowlist secret
+        },
     )
     assert mfa_err.status_code == 401
     assert mfa_err.json()["error_code"] == "ERR_AUTH_MFA_INVALID"
@@ -308,7 +312,7 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
         "/api/v1/auth/login/local",
         json={
             "email": "karim.admin@orcia.io",
-            "password": "OrciaAdmin!2026",
+            "password": "OrciaAdmin!2026",  # pragma: allowlist secret
             "totp_code": wrong_code,
         },
     )
@@ -318,7 +322,10 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
     # Wrong password or unknown user -> 401 ERR_AUTH_INVALID_CREDENTIALS
     bad_pw = client.post(
         "/api/v1/auth/login/local",
-        json={"email": "marc.lead@orcia.io", "password": "WrongPassword"},
+        json={
+            "email": "marc.lead@orcia.io",
+            "password": "WrongPassword",  # pragma: allowlist secret
+        },
     )
     assert bad_pw.status_code == 401
     assert bad_pw.json()["error_code"] == "ERR_AUTH_INVALID_CREDENTIALS"
@@ -381,7 +388,7 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
         json={
             "connector_scheme": "git",
             "target_host": "gitlab.entreprise.io",
-            "plaintext_secret": "glpat-secret-token-123",
+            "plaintext_secret": "glpat-secret-token-123",  # pragma: allowlist secret
         },
     )
     assert pt_res.status_code == 200
@@ -393,7 +400,7 @@ def test_fastapi_auth_workspaces_and_catalog_endpoints() -> None:
         json={
             "connector_scheme": "git",
             "target_host": "gitlab.entreprise.io",
-            "plaintext_secret": "glpat-secret-token-123",
+            "plaintext_secret": "glpat-secret-token-123",  # pragma: allowlist secret
         },
     )
     assert pt_observer_403.status_code == 403

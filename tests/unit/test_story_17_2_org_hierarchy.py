@@ -12,6 +12,7 @@ from orcia_core.permissions.errors import (
     OrgUnitHierarchyCycleError,
     OrgUnitInvalidParentKindError,
     OrgUnitNotEmptyError,
+    OrgUnitUnknownUserError,
     ResourceNotFoundError,
     ValidationDomainError,
 )
@@ -29,6 +30,10 @@ from orcia_core.permissions.org_hierarchy import (
     sort_org_unit_dicts_topologically,
     sort_org_unit_summaries_dfs,
     validate_org_unit_hierarchy,
+)
+from orcia_core.permissions.org_user_validation import (
+    KnownOrgUser,
+    resolve_and_validate_org_unit_users,
 )
 
 
@@ -55,6 +60,69 @@ def test_normalize_slug_and_members_and_uuid7() -> None:
     )
     generated = generate_new_org_unit_id()
     assert len(generated) == 36 and generated[14] == "7"
+
+
+def test_resolve_and_validate_org_unit_users() -> None:
+    known = [
+        KnownOrgUser(
+            principal_id="claire.bu@orcia.io",
+            display_name="Claire Delorme",
+            email="claire.bu@orcia.io",
+        ),
+        KnownOrgUser(
+            principal_id="user-karim-001",
+            display_name="Karim Benali",
+            email="karim.supervisor@orcia.io",
+        ),
+        KnownOrgUser(
+            principal_id="romain.esnault@gmail.com",
+            display_name="Romain Esnault",
+            email="romain.esnault@gmail.com",
+        ),
+    ]
+
+    # Valid lead & members matching principal_id or email case-insensitively
+    lead, members = resolve_and_validate_org_unit_users(
+        lead_user_id="  CLAIRE.BU@ORCIA.IO ",
+        member_user_ids=[
+            "karim.supervisor@orcia.io",
+            "USER-KARIM-001",
+            "romain.esnault@gmail.com",
+        ],
+        known_users=known,
+    )
+    assert lead == "claire.bu@orcia.io"
+    # Canonical principal_id resolved, deduplicated, order preserved:
+    assert members == ("user-karim-001", "romain.esnault@gmail.com")
+
+    # None / empty lead
+    lead_none, members_none = resolve_and_validate_org_unit_users(
+        lead_user_id=None,
+        member_user_ids=[],
+        known_users=known,
+    )
+    assert lead_none is None
+    assert members_none == ()
+
+    # Plain first name "romain" does NOT match display_name alone -> raises OrgUnitUnknownUserError
+    with pytest.raises(OrgUnitUnknownUserError) as exc_lead:
+        resolve_and_validate_org_unit_users(
+            lead_user_id="romain",
+            member_user_ids=[],
+            known_users=known,
+        )
+    assert exc_lead.value.error_code == "ERR_ORG_UNIT_UNKNOWN_USER"
+    assert exc_lead.value.http_status == 422
+
+    # Unknown member -> raises OrgUnitUnknownUserError
+    with pytest.raises(OrgUnitUnknownUserError) as exc_member:
+        resolve_and_validate_org_unit_users(
+            lead_user_id=None,
+            member_user_ids=["claire.bu@orcia.io", "inconnu@orcia.fr"],
+            known_users=known,
+        )
+    assert exc_member.value.error_code == "ERR_ORG_UNIT_UNKNOWN_USER"
+    assert exc_member.value.http_status == 422
 
 
 def test_validate_org_unit_hierarchy_multi_level_and_errors() -> None:
@@ -207,6 +275,24 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
     )
     assert empty_create.status_code == 422
 
+    # Unknown lead identifier -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+    unknown_lead = client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={"name": "BU Inconnue", "kind": "BU", "lead_user_id": "inconnu@orcia.fr"},
+    )
+    assert unknown_lead.status_code == 422
+    assert unknown_lead.json()["error_code"] == "ERR_ORG_UNIT_UNKNOWN_USER"
+
+    # Plain first name alone not matching principal_id/email -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+    plain_name_lead = client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={"name": "BU Inconnue", "kind": "BU", "lead_user_id": "romain"},
+    )
+    assert plain_name_lead.status_code == 422
+    assert plain_name_lead.json()["error_code"] == "ERR_ORG_UNIT_UNKNOWN_USER"
+
     # Create root BU -> Sub-BU -> TEAM
     r_bu = client.post(
         "/api/v1/org-units",
@@ -215,13 +301,14 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
             "name": "Direction Produit",
             "kind": "BU",
             "billing_enabled": True,
-            "lead_user_id": "vp@orcia.fr",
+            "lead_user_id": "claire.bu@orcia.io",
         },
     )
     assert r_bu.status_code == 200, r_bu.text
     bu_id = r_bu.json()["id"]
     assert r_bu.json()["slug"] == "direction-produit"
     assert r_bu.json()["parent_id"] is None
+    assert r_bu.json()["lead_user_id"] == "claire.bu@orcia.io"
 
     r_sub = client.post(
         "/api/v1/org-units",
@@ -238,6 +325,20 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
     assert r_sub.json()["parent_id"] == bu_id
     assert r_sub.json()["billing_enabled"] is False
 
+    # Unknown member in TEAM -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+    unknown_member = client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={
+            "name": "Équipe Invalide",
+            "kind": "TEAM",
+            "parent_id": sub_id,
+            "member_user_ids": ["nadia.dev@orcia.io", "fantome@orcia.fr"],
+        },
+    )
+    assert unknown_member.status_code == 422
+    assert unknown_member.json()["error_code"] == "ERR_ORG_UNIT_UNKNOWN_USER"
+
     r_team = client.post(
         "/api/v1/org-units",
         headers=admin_headers,
@@ -245,17 +346,20 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
             "name": "Équipe Core Agents",
             "kind": "TEAM",
             "parent_id": sub_id,
-            "member_user_ids": ["alice@orcia.fr", "bob@orcia.fr"],
+            "member_user_ids": ["marc.lead@orcia.io", "nadia.dev@orcia.io"],
         },
     )
     assert r_team.status_code == 200, r_team.text
     team_id = r_team.json()["id"]
-    assert r_team.json()["member_user_ids"] == ["alice@orcia.fr", "bob@orcia.fr"]
+    assert r_team.json()["member_user_ids"] == ["marc.lead@orcia.io", "nadia.dev@orcia.io"]
 
-    # GET DFS list in evaluator mode
+    # GET DFS list in evaluator mode & verify known_users
     listed = client.get("/api/v1/org-units", headers=admin_headers)
     assert listed.status_code == 200
     assert [u["id"] for u in listed.json()["org_units"]] == [bu_id, sub_id, team_id]
+    known_pids = [u["principal_id"] for u in listed.json()["known_users"]]
+    assert "claire.bu@orcia.io" in known_pids
+    assert "marc.lead@orcia.io" in known_pids
 
     # Duplicate slug -> 409 ERR_ORG_UNIT_DUPLICATE_SLUG
     dup = client.post(
@@ -302,6 +406,16 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
         == 422
     )
 
+    # PATCH unknown lead / member -> 422 ERR_ORG_UNIT_UNKNOWN_USER
+    assert (
+        client.patch(
+            f"/api/v1/org-units/{team_id}",
+            headers=admin_headers,
+            json={"lead_user_id": "inconnu@orcia.fr"},
+        ).status_code
+        == 422
+    )
+
     # PATCH valid rename, reparenting, billing toggle, lead & members update
     patched = client.patch(
         f"/api/v1/org-units/{team_id}",
@@ -310,15 +424,15 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
             "name": "Équipe Core Agents & RAG",
             "parent_id": sub_id,
             "billing_enabled": False,
-            "lead_user_id": "lead.rag@orcia.fr",
-            "member_user_ids": ["alice@orcia.fr"],
+            "lead_user_id": "marc.lead@orcia.io",
+            "member_user_ids": ["nadia.dev@orcia.io"],
         },
     )
     assert patched.status_code == 200
     assert patched.json()["name"] == "Équipe Core Agents & RAG"
     assert patched.json()["billing_enabled"] is False
-    assert patched.json()["lead_user_id"] == "lead.rag@orcia.fr"
-    assert patched.json()["member_user_ids"] == ["alice@orcia.fr"]
+    assert patched.json()["lead_user_id"] == "marc.lead@orcia.io"
+    assert patched.json()["member_user_ids"] == ["nadia.dev@orcia.io"]
 
     # RBAC & Observer mode guards -> 403
     obs_hdr = client.post(
@@ -376,3 +490,89 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
     assert client.delete(f"/api/v1/org-units/{sub_id}", headers=admin_headers).status_code == 200
     assert client.delete(f"/api/v1/org-units/{bu_id}", headers=admin_headers).status_code == 200
     assert client.delete(f"/api/v1/org-units/{bu_id}", headers=admin_headers).status_code == 404
+
+
+def test_list_org_units_search_query_kind_and_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    app = create_app()
+    client = TestClient(app)
+    admin_headers = {"X-Orcia-Persona": "claire", "X-Orcia-Active-Hat": "PLATFORM_ADMIN"}
+
+    # Create 12 BU units + 2 TEAM units
+    for i in range(12):
+        name = "DS3C Pôle Ingénierie" if i == 0 else f"BU Test {i + 1}"
+        client.post(
+            "/api/v1/org-units",
+            headers=admin_headers,
+            json={"name": name, "kind": "BU"},
+        )
+    client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={"name": "Équipe Alpha", "kind": "TEAM"},
+    )
+    client.post(
+        "/api/v1/org-units",
+        headers=admin_headers,
+        json={"name": "Équipe Beta", "kind": "TEAM"},
+    )
+
+    # 1. Unfiltered returns all non-enterprise units in DFS order
+    resp_all = client.get("/api/v1/org-units", headers=admin_headers)
+    assert resp_all.status_code == 200
+    all_units = resp_all.json()["org_units"]
+    assert len(all_units) >= 14
+
+    # 2. Filter by kind="BU" and limit=10
+    resp_bu_10 = client.get("/api/v1/org-units?kind=BU&limit=10", headers=admin_headers)
+    assert resp_bu_10.status_code == 200
+    bu_10_units = resp_bu_10.json()["org_units"]
+    assert len(bu_10_units) == 10
+    assert all(u["kind"] == "BU" for u in bu_10_units)
+
+    # 3. Filter by search query q="ds3" (case & accent insensitive)
+    resp_q = client.get("/api/v1/org-units?q=ds3&kind=BU&limit=10", headers=admin_headers)
+    assert resp_q.status_code == 200
+    q_units = resp_q.json()["org_units"]
+    assert len(q_units) == 1
+    assert "DS3C" in q_units[0]["name"]
+
+
+def test_search_known_org_users_route_with_nfd_null_byte_and_pagination(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    app = create_app()
+    client = TestClient(app)
+    admin_headers = {"X-Orcia-Persona": "claire", "X-Orcia-Active-Hat": "PLATFORM_ADMIN"}
+
+    # 1. Unfiltered search with limit=2 -> has_more is True if > 2 users exist
+    resp = client.get("/api/v1/org-units/known-users?limit=2", headers=admin_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "items" in body
+    assert len(body["items"]) <= 2
+    assert "has_more" in body
+
+    # 2. Search with NFD accent insensitivity (e.g. "claire" or accent stripped)
+    resp_search = client.get(
+        "/api/v1/org-units/known-users?q=claire&limit=10",
+        headers=admin_headers,
+    )
+    assert resp_search.status_code == 200
+    search_body = resp_search.json()
+    assert any(
+        "claire" in u["principal_id"].lower() or "claire" in u["display_name"].lower()
+        for u in search_body["items"]
+    )
+
+    # 3. Null byte \x00 cleaning
+    resp_null_byte = client.get(
+        "/api/v1/org-units/known-users?q=claire%00&limit=10",
+        headers=admin_headers,
+    )
+    assert resp_null_byte.status_code == 200
+    null_body = resp_null_byte.json()
+    assert len(null_body["items"]) == len(search_body["items"])

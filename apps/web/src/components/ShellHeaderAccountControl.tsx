@@ -21,6 +21,11 @@ export interface ShellHeaderAccountControlProps {
   readonly onLocaleChange?: (locale: UiLocalePreference) => void;
   readonly onActiveHatChange?: (hat: string) => void;
   readonly onNavigateAssistantBehavior?: (uri: string) => void;
+  readonly onLogout?: () => void;
+  readonly onChangePassword?: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<{ success: boolean; error?: string } | void>;
 }
 
 export function ShellHeaderAccountControl({
@@ -33,10 +38,15 @@ export function ShellHeaderAccountControl({
   onLocaleChange,
   onActiveHatChange,
   onNavigateAssistantBehavior,
+  onLogout,
+  onChangePassword,
 }: ShellHeaderAccountControlProps): React.ReactElement {
   const userSettingsModalOpen = useAuthSessionStore((s) => s.userSettingsModalOpen);
   const userSettingsModalInitialTab = useAuthSessionStore((s) => s.userSettingsModalInitialTab);
   const setUserSettingsModalOpen = useAuthSessionStore((s) => s.setUserSettingsModalOpen);
+  const mustChangePassword = useAuthSessionStore((s) => s.mustChangePassword);
+  const clearMustChangePassword = useAuthSessionStore((s) => s.clearMustChangePassword);
+  const logoutSession = useAuthSessionStore((s) => s.logoutSession);
 
   const [accountProfile, setAccountProfile] = useState<UiUserAccountProfileView | undefined>(undefined);
   const [passthroughConnectors, setPassthroughConnectors] = useState<
@@ -122,6 +132,34 @@ export function ShellHeaderAccountControl({
     await loadData();
   };
 
+  const handleLogout = async () => {
+    await logoutSession();
+    if (onLogout) {
+      onLogout();
+    } else if (typeof window !== "undefined") {
+      window.location.assign("/login");
+    }
+  };
+
+  const handleChangePassword = async (currentPassword: string, newPassword: string) => {
+    if (onChangePassword) {
+      return onChangePassword(currentPassword, newPassword);
+    }
+    try {
+      await client.changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      clearMustChangePassword();
+      return { success: true };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Erreur de modification du mot de passe",
+      };
+    }
+  };
+
   return (
     <UserAccountDropdownAndSettingsModal
       userDisplayName={userDisplayName}
@@ -135,6 +173,9 @@ export function ShellHeaderAccountControl({
       labels={labels}
       accountProfile={accountProfile}
       passthroughConnectors={passthroughConnectors}
+      mustChangePassword={mustChangePassword}
+      onChangePassword={handleChangePassword}
+      onLogout={handleLogout}
       onSavePassthroughToken={handleSavePassthrough}
       onRevokePassthroughToken={handleRevokePassthrough}
       onPreferencesSync={(patch) => {

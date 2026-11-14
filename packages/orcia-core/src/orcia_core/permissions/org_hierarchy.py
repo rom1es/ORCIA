@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from orcia_core.permissions.errors import (
     OrgUnitDuplicateSlugError,
@@ -32,6 +32,15 @@ _SLUG_CLEAN_RE = re.compile(r"[^a-z0-9-]+")
 
 
 @dataclass(frozen=True, slots=True)
+class AttachedWorkspaceRef:
+    """Read projection of a solution workspace attached to an organizational unit."""
+
+    id: str
+    slug: str
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
 class OrgUnitSummary:
     """Read/write projection of an organizational unit node (`BU` or `TEAM`)."""
 
@@ -44,6 +53,7 @@ class OrgUnitSummary:
     lead_user_id: str | None = None
     member_user_ids: tuple[str, ...] = ()
     attached_workspaces_count: int = 0
+    attached_workspaces: tuple[AttachedWorkspaceRef, ...] = ()
 
 
 def normalize_org_unit_slug(raw_slug: str | None, fallback_name: str) -> str:
@@ -269,6 +279,7 @@ def build_org_unit_summary(
     units_by_id: Mapping[str, OrgUnitNode],
     *,
     attached_workspaces_count: int = 0,
+    attached_workspaces: Sequence[AttachedWorkspaceRef] = (),
 ) -> OrgUnitSummary:
     """Convert an `OrgUnitNode` into a normalized `OrgUnitSummary`."""
     return OrgUnitSummary(
@@ -281,23 +292,58 @@ def build_org_unit_summary(
         lead_user_id=node.lead_user_id,
         member_user_ids=node.member_user_ids,
         attached_workspaces_count=attached_workspaces_count,
+        attached_workspaces=tuple(attached_workspaces),
     )
 
 
 def list_evaluator_org_unit_summaries(
     org_units: Sequence[OrgUnitNode],
     workspace_owner_ids: Sequence[str],
+    workspaces: Sequence[Any] | None = None,
 ) -> list[OrgUnitSummary]:
-    """List non-enterprise `OrgUnitSummary` items in DFS order with workspace counts."""
+    """List non-enterprise `OrgUnitSummary` items in DFS order with workspace counts and refs."""
     units_by_id = {u.id: u for u in org_units}
     ws_counts: dict[str, int] = {}
-    for owner_id in workspace_owner_ids:
-        ws_counts[owner_id] = ws_counts.get(owner_id, 0) + 1
+    ws_refs_by_owner: dict[str, list[AttachedWorkspaceRef]] = {}
+
+    if workspaces is not None:
+        for ws in workspaces:
+            owner_id = str(
+                getattr(ws, "owner_org_unit_id", None)
+                or (ws.get("owner_org_unit_id") if isinstance(ws, dict) else None)
+                or (ws.get("ownerOrgUnitId") if isinstance(ws, dict) else None)
+                or ""
+            ).strip()
+            if not owner_id:
+                continue
+            ws_id = str(
+                getattr(ws, "id", None) or (ws.get("id") if isinstance(ws, dict) else "") or ""
+            )
+            ws_slug = str(
+                getattr(ws, "slug", None) or (ws.get("slug") if isinstance(ws, dict) else "") or ""
+            )
+            ws_name = str(
+                getattr(ws, "name", None) or (ws.get("name") if isinstance(ws, dict) else "") or ""
+            )
+            ws_counts[owner_id] = ws_counts.get(owner_id, 0) + 1
+            ws_refs_by_owner.setdefault(owner_id, []).append(
+                AttachedWorkspaceRef(id=ws_id, slug=ws_slug, name=ws_name)
+            )
+    else:
+        for owner_id in workspace_owner_ids:
+            clean_owner = str(owner_id).strip()
+            if clean_owner:
+                ws_counts[clean_owner] = ws_counts.get(clean_owner, 0) + 1
+
+    for refs in ws_refs_by_owner.values():
+        refs.sort(key=lambda r: (r.name.lower(), r.slug.lower()))
+
     summaries = [
         build_org_unit_summary(
             node,
             units_by_id,
             attached_workspaces_count=ws_counts.get(node.id, 0),
+            attached_workspaces=ws_refs_by_owner.get(node.id, ()),
         )
         for node in org_units
         if node.unit_type != "ENTERPRISE"

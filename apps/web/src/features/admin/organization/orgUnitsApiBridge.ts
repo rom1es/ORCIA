@@ -5,11 +5,16 @@ import {
   type OrgUnitPatchRequest,
   type OrgUnitResponse,
 } from "@orcia/api-client";
+import type { KnownUserOption } from "@orcia/ui";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 
 export type OrgUnitsApiListResult =
-  | { readonly ok: true; readonly units: readonly ConfiguredOrgUnit[] }
+  | {
+      readonly ok: true;
+      readonly units: readonly ConfiguredOrgUnit[];
+      readonly knownUsers: readonly KnownUserOption[];
+    }
   | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
 
 export type OrgUnitApiMutationResult =
@@ -31,6 +36,9 @@ export function mapOrgUnitDtoToConfigured(dto: OrgUnitResponse): ConfiguredOrgUn
     leadUserId: dto.lead_user_id ?? null,
     memberUserIds: dto.member_user_ids ?? [],
     attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
+    attachedWorkspaces: dto.attached_workspaces
+      ? dto.attached_workspaces.map((w) => ({ id: w.id, slug: w.slug, name: w.name }))
+      : [],
   };
 }
 
@@ -72,6 +80,19 @@ function extractApiError(
   };
 }
 
+export function isKnownUserIdentifier(
+  identifier: string,
+  knownUsers: readonly KnownUserOption[],
+): boolean {
+  const trimmed = identifier.trim().toLowerCase();
+  if (!trimmed) return true;
+  return knownUsers.some(
+    (u) =>
+      u.principalId.trim().toLowerCase() === trimmed ||
+      (u.email ? u.email.trim().toLowerCase() === trimmed : false),
+  );
+}
+
 export async function fetchOrgUnitsFromApi(
   locale: "fr" | "en",
 ): Promise<OrgUnitsApiListResult> {
@@ -79,16 +100,26 @@ export async function fetchOrgUnitsFromApi(
     const client = buildOrgUnitsClient(locale);
     const response = await client.listOrgUnits();
     if (!Array.isArray(response.org_units)) {
-      return { ok: true, units: [] };
+      return { ok: true, units: [], knownUsers: [] };
     }
+    const mappedKnownUsers: KnownUserOption[] = Array.isArray(response.known_users)
+      ? response.known_users.map((u) => ({
+          principalId: u.principal_id,
+          displayName: u.display_name,
+          email: u.email ?? null,
+        }))
+      : [];
     return {
       ok: true,
       units: response.org_units.map(mapOrgUnitDtoToConfigured),
+      knownUsers: mappedKnownUsers,
     };
   } catch (err: unknown) {
     return { ok: false, ...extractApiError(err, locale) };
   }
 }
+
+export const fetchOrgUnitsWithKnownUsersFromApi = fetchOrgUnitsFromApi;
 
 export async function createOrgUnitViaApi(
   payload: OrgUnitCreateRequest,
@@ -127,5 +158,79 @@ export async function deleteOrgUnitViaApi(
     return { ok: true, deletedId: dto.deleted_id };
   } catch (err: unknown) {
     return { ok: false, ...extractApiError(err, locale) };
+  }
+}
+
+export async function searchParentBuUnitsFromApi(
+  query: string,
+  limit = 10,
+  locale: "fr" | "en" = "fr",
+): Promise<OrgUnitsApiListResult> {
+  try {
+    const client = buildOrgUnitsClient(locale);
+    const response = await client.listOrgUnits({
+      q: query.trim() || undefined,
+      kind: "BU",
+      limit,
+    });
+    if (!Array.isArray(response.org_units)) {
+      return { ok: true, units: [], knownUsers: [] };
+    }
+    const mappedKnownUsers: KnownUserOption[] = Array.isArray(response.known_users)
+      ? response.known_users.map((u) => ({
+          principalId: u.principal_id,
+          displayName: u.display_name,
+          email: u.email ?? null,
+        }))
+      : [];
+    return {
+      ok: true,
+      units: response.org_units.map(mapOrgUnitDtoToConfigured),
+      knownUsers: mappedKnownUsers,
+    };
+  } catch (err: unknown) {
+    return { ok: false, ...extractApiError(err, locale) };
+  }
+}
+
+export type KnownOrgUsersSearchResult =
+  | {
+      readonly ok: true;
+      readonly items: readonly KnownUserOption[];
+      readonly hasMore: boolean;
+    }
+  | {
+      readonly ok: false;
+      readonly items: readonly KnownUserOption[];
+      readonly hasMore: boolean;
+      readonly errorMessage: string;
+      readonly errorCode?: string;
+    };
+
+export async function searchKnownOrgUsersFromApi(
+  query: string,
+  limit = 10,
+  locale: "fr" | "en" = "fr",
+): Promise<KnownOrgUsersSearchResult> {
+  try {
+    const client = buildOrgUnitsClient(locale);
+    const response = await client.searchKnownOrgUsers({
+      q: query.trim() || undefined,
+      limit,
+    });
+    const items: KnownUserOption[] = Array.isArray(response.items)
+      ? response.items.map((u) => ({
+          principalId: u.principal_id,
+          displayName: u.display_name,
+          email: u.email ?? null,
+        }))
+      : [];
+    return {
+      ok: true,
+      items,
+      hasMore: Boolean(response.has_more),
+    };
+  } catch (err: unknown) {
+    return { ok: false, items: [], hasMore: false, ...extractApiError(err, locale) };
   }
 }

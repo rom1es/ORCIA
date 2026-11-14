@@ -143,14 +143,41 @@ export function buildShellNotificationItems(params: {
   readonly llmTiers: readonly ConfiguredLlmTierMapping[];
   readonly runs: readonly ControlCenterRunItem[];
   readonly lastClaimEvent: WorkspaceSseClaimEvent | null;
+  readonly mustChangePassword?: boolean;
 }): readonly UiNotificationCenterItem[] {
-  const { isFr, platformAdmin, orgUnits, workspaces, llmTiers, runs, lastClaimEvent } = params;
+  const {
+    isFr,
+    platformAdmin,
+    orgUnits,
+    workspaces,
+    llmTiers,
+    runs,
+    lastClaimEvent,
+    mustChangePassword,
+  } = params;
   const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
   const memberTeamIds = platformAdmin?.memberTeamIds ?? [];
   const hasBillingTeam =
     memberTeamIds.length > 0 || teamUnits.length > 0 || workspaces.length > 0;
 
   return [
+    ...(mustChangePassword
+      ? [
+          {
+            id: "notif-temporary-password",
+            kind: "SETUP_PREREQUISITE" as const,
+            badgeLabel: isFr ? "Sécurité requise" : "Security required",
+            title: isFr
+              ? "Mot de passe temporaire actif — changement requis"
+              : "Temporary password active — change required",
+            description: isFr
+              ? "Votre compte utilise un mot de passe temporaire. Pour sécuriser vos accès, définissez un mot de passe personnel dès maintenant."
+              : "Your account is using a temporary password. To secure your access, set a personal password now.",
+            targetRoute: "#change-password",
+            ctaLabel: isFr ? "Changer mon mot de passe →" : "Change my password →",
+          },
+        ]
+      : []),
     ...(llmTiers.length === 0
       ? [
           {

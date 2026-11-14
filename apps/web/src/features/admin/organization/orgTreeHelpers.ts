@@ -10,6 +10,8 @@ export interface OrgTreeRowItem {
   readonly childrenCount: number;
   readonly attachedTeamsCount: number;
   readonly attachedWorkspacesCount: number;
+  readonly childUnits: readonly { readonly id: string; readonly slug: string; readonly name: string }[];
+  readonly attachedWorkspaces: readonly { readonly id: string; readonly slug: string; readonly name: string }[];
 }
 
 export function buildIndentedOrgTree(
@@ -63,11 +65,27 @@ export function buildIndentedOrgTree(
           ? byId.get(unit.parentId)
           : undefined;
       const directChildren = childrenByParent.get(unit.id) ?? [];
+      const childUnits = directChildren.map((c) => ({ id: c.id, slug: c.slug, name: c.name }));
       const attachedTeamsCount = directChildren.filter((c) => c.level === "TEAM").length;
       const localWsCount = wsCountByOwner.get(unit.id) ?? 0;
+      const fallbackWorkspaces = workspaces
+        .filter((w) => w.ownerOrgUnitId === unit.id)
+        .map((w) => {
+          const wsAny = w as unknown as Record<string, unknown>;
+          return {
+            id: w.workspaceId,
+            slug: String(wsAny.slug || w.workspaceId),
+            name: w.name,
+          };
+        });
+      const rowAttachedWs =
+        unit.attachedWorkspaces && unit.attachedWorkspaces.length > 0
+          ? unit.attachedWorkspaces
+          : fallbackWorkspaces;
       const attachedWorkspacesCount = Math.max(
         unit.attachedWorkspacesCount ?? 0,
         localWsCount,
+        rowAttachedWs.length,
       );
       rows.push({
         unit,
@@ -77,6 +95,8 @@ export function buildIndentedOrgTree(
         childrenCount: directChildren.length,
         attachedTeamsCount,
         attachedWorkspacesCount,
+        childUnits,
+        attachedWorkspaces: rowAttachedWs,
       });
       visit(unit.id, depth + 1);
     }
@@ -87,7 +107,22 @@ export function buildIndentedOrgTree(
   for (const unit of orgUnits) {
     if (!visited.has(unit.id)) {
       const directChildren = childrenByParent.get(unit.id) ?? [];
+      const childUnits = directChildren.map((c) => ({ id: c.id, slug: c.slug, name: c.name }));
       const localWsCount = wsCountByOwner.get(unit.id) ?? 0;
+      const fallbackWorkspaces = workspaces
+        .filter((w) => w.ownerOrgUnitId === unit.id)
+        .map((w) => {
+          const wsAny = w as unknown as Record<string, unknown>;
+          return {
+            id: w.workspaceId,
+            slug: String(wsAny.slug || w.workspaceId),
+            name: w.name,
+          };
+        });
+      const rowAttachedWs =
+        unit.attachedWorkspaces && unit.attachedWorkspaces.length > 0
+          ? unit.attachedWorkspaces
+          : fallbackWorkspaces;
       rows.push({
         unit,
         depth: 0,
@@ -95,7 +130,13 @@ export function buildIndentedOrgTree(
         parentNode: undefined,
         childrenCount: directChildren.length,
         attachedTeamsCount: directChildren.filter((c) => c.level === "TEAM").length,
-        attachedWorkspacesCount: Math.max(unit.attachedWorkspacesCount ?? 0, localWsCount),
+        attachedWorkspacesCount: Math.max(
+          unit.attachedWorkspacesCount ?? 0,
+          localWsCount,
+          rowAttachedWs.length,
+        ),
+        childUnits,
+        attachedWorkspaces: rowAttachedWs,
       });
     }
   }

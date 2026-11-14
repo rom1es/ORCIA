@@ -38,6 +38,7 @@ describe("createOrciaApiClient", () => {
     expect(res.status).toBe("ok");
     expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/api/v1/health", {
       method: "GET",
+      credentials: "include",
       headers: {
         Accept: "application/json, application/problem+json",
         "Accept-Language": "fr",
@@ -72,6 +73,7 @@ describe("createOrciaApiClient", () => {
       "http://localhost:8000/api/v1/navigation/shell?scope_id=scope-global",
       {
         method: "GET",
+        credentials: "include",
         headers: {
           Accept: "application/json, application/problem+json",
           "Accept-Language": "fr",
@@ -106,6 +108,7 @@ describe("createOrciaApiClient", () => {
     expect(res.active_scope_id).toBe("scope-ws-orcia");
     expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/api/v1/navigation/shell", {
       method: "GET",
+      credentials: "include",
       headers: {
         Accept: "application/json, application/problem+json",
         "Accept-Language": "en",
@@ -157,7 +160,7 @@ describe("createOrciaApiClient", () => {
       fetchImpl: mockFetch as unknown as typeof fetch,
     });
 
-    await client.loginLocal({ email: "marc.lead@orcia.io", password: "secret" });
+    await client.loginLocal({ email: "marc.lead@orcia.io", password: "secret" }); // pragma: allowlist secret
     await client.loginOidc({ oidc_subject: "oidc|marc-lead" });
     await client.refreshSession();
     await client.logoutSession();
@@ -170,7 +173,7 @@ describe("createOrciaApiClient", () => {
       {
         connector_scheme: "git",
         target_host: "gitlab.entreprise.io",
-        plaintext_secret: "pat-123",
+        plaintext_secret: "pat-123", // pragma: allowlist secret
       },
       "marc",
     );
@@ -185,7 +188,7 @@ describe("createOrciaApiClient", () => {
       "marc",
     );
     await client.getCasObject(
-      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", // pragma: allowlist secret
       "marc",
     );
     await client.resolveEffectiveWorkflow(
@@ -281,7 +284,7 @@ describe("createOrciaApiClient", () => {
           {
             connector_scheme: "git",
             target_host: "gitlab.entreprise.io",
-            plaintext_secret: "glpat-secret-token",
+            plaintext_secret: "glpat-secret-token", // pragma: allowlist secret
           },
         ],
       },

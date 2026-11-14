@@ -135,6 +135,9 @@ def assert_anti_lockout_on_accounts(
     instance: str | None = None,
 ) -> None:
     """Reject any mutation or deletion leaving `0` `ACTIVE` `PLATFORM_ADMIN` (`AD-21`)."""
+    initial_active_admins = [
+        acc for acc in existing_accounts if acc.status == "ACTIVE" and "PLATFORM_ADMIN" in acc.roles
+    ]
     projected: list[IamAccountRecord] = []
     for acc in existing_accounts:
         if deleted_account_id is not None and acc.id == deleted_account_id:
@@ -147,7 +150,7 @@ def assert_anti_lockout_on_accounts(
     active_admins = [
         acc for acc in projected if acc.status == "ACTIVE" and "PLATFORM_ADMIN" in acc.roles
     ]
-    if len(active_admins) < 1:
+    if len(initial_active_admins) >= 1 and len(active_admins) < 1:
         raise AdminLockoutPreventedError(instance=instance)
 
 
@@ -156,6 +159,10 @@ class IamAccountsGovernanceService:
 
     def __init__(self, initial_accounts: Sequence[IamAccountRecord] = ()) -> None:
         self._accounts: dict[str, IamAccountRecord] = {a.id: a for a in initial_accounts}
+
+    def get_account(self, account_id: str) -> IamAccountRecord | None:
+        """Return IAM account by ID or None if absent."""
+        return self._accounts.get(account_id)
 
     def list_accounts(self) -> list[IamAccountRecord]:
         return sorted(

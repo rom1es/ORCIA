@@ -10,6 +10,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -52,6 +53,11 @@ async def get_datasource_webhook_context_from_postgres18(
     datasource_id: str,
 ) -> DatasourceWebhookContext | None:
     """Fetch webhook verification context for a workspace datasource."""
+    try:
+        ds_uuid = UUID(datasource_id.strip())
+    except (ValueError, AttributeError):
+        return None
+
     stmt = sa.text(
         """
         SELECT
@@ -77,7 +83,7 @@ async def get_datasource_webhook_context_from_postgres18(
         """
     )
     async with engine.connect() as conn:
-        res = await conn.execute(stmt, {"datasource_id": datasource_id})
+        res = await conn.execute(stmt, {"datasource_id": str(ds_uuid)})
         row = res.fetchone()
         if row is None:
             return None

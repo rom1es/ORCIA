@@ -154,6 +154,24 @@ class AuthAndOrganizationService:
             raise ResourceNotFoundError()
         return user
 
+    def register_user(self, user: UserIdentity) -> None:
+        """Register or update an in-memory user identity."""
+        self._users_by_id[user.id] = user
+        self._users_by_email[user.email.lower()] = user
+        if user.oidc_subject:
+            self._users_by_oidc[user.oidc_subject] = user
+
+    def unregister_user(self, user_id_or_email: str) -> None:
+        """Unregister user from in-memory index."""
+        target = self._users_by_id.pop(user_id_or_email, None)
+        if target is None:
+            target = self._users_by_email.pop(user_id_or_email.lower(), None)
+        if target is not None:
+            self._users_by_id.pop(target.id, None)
+            self._users_by_email.pop(target.email.lower(), None)
+            if target.oidc_subject:
+                self._users_by_oidc.pop(target.oidc_subject, None)
+
     def resolve_user(
         self,
         *,

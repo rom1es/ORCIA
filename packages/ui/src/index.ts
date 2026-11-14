@@ -224,6 +224,15 @@ export {
   type UserAccountPreferencesPatch,
 } from "./primitives/UserAccountDropdownAndSettingsModal";
 export {
+  TemporaryPasswordInvitationModal,
+  buildInvitationMessage,
+  type TemporaryPasswordInvitationModalProps,
+} from "./primitives/TemporaryPasswordInvitationModal";
+export {
+  UserPasswordChangeCard,
+  type UserPasswordChangeCardProps,
+} from "./primitives/UserPasswordChangeCard";
+export {
   ContextualHelpColumnAndCenter,
   type ContextualHelpColumnAndCenterLabels,
   type ContextualHelpColumnAndCenterProps,
@@ -496,6 +505,16 @@ export {
   WorkflowStudioSection,
   type WorkflowStudioSectionProps,
 } from "./shell/WorkflowStudioSection";
+export {
+  OrciaKnownUserCombobox,
+  type KnownUserOption,
+  type OrciaKnownUserComboboxProps,
+} from "./primitives/OrciaKnownUserCombobox";
+export {
+  OrciaSearchableSelect,
+  type OrciaSearchableSelectOption,
+  type OrciaSearchableSelectProps,
+} from "./primitives/OrciaSearchableSelect";
 export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,

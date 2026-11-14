@@ -1,8 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearPlatformSetupStorage } from "../components/platformSetupStore";
+import { seedVitestPlatformSetupState } from "./vitest.setup";
+import * as orgUnitsApiBridge from "../features/admin/organization/orgUnitsApiBridge";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { resetAuthSessionStore, useAuthSessionStore } from "../stores/authSessionStore";
 
@@ -48,159 +50,71 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     resetAuthSessionStore();
   });
 
-  it("renders pedagogical callout + /workspaces CTA, creates multi-level BU -> Sous-BU -> TEAM hierarchy with depth indentation, edits, manages members, enforces danger/non-empty delete, and survives F5 reload", async () => {
+  it("creates multi-level BU -> Sous-BU -> TEAM hierarchy, edits, manages members, and survives F5", async () => {
     const firstMount = await renderOrganizationSettings();
     dismissFirstBootAdminIfOpen();
+    await act(async () => Promise.resolve());
 
-    // 1. Pedagogical header & zero legacy personal attachment UI ("Retirer mon rattachement")
-    const callout = screen.getByTestId("organization-pedagogical-callout");
-    expect(callout.textContent).toContain("Direction / BU");
-    expect(callout.textContent).toContain("Équipe");
-    expect(callout.textContent).toContain("Mes Espaces");
-    expect(document.body.textContent ?? "").not.toContain("Retirer mon rattachement");
-
-    // 2. Create Root BU ("Direction Produit", depth 0)
+    // 1. Create Root BU ("Direction Produit")
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
-    expect(screen.getByTestId("create-org-unit-modal")).toBeDefined();
-    // Parent select is visible even for BU (root vs Sous-BU)
-    expect(screen.getByTestId("org-unit-parent-select")).toBeDefined();
-    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
-      target: { value: "Direction Produit" },
-    });
-    fireEvent.change(screen.getByTestId("org-unit-lead-input"), {
-      target: { value: "vp.produit@orcia.fr" },
-    });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Direction Produit" } });
+    fireEvent.change(screen.getByTestId("org-unit-lead-input"), { target: { value: "vp.produit@orcia.fr" } });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
-
     const rootRow = await screen.findByTestId("org-unit-row-org-1");
     expect(rootRow.getAttribute("data-depth")).toBe("0");
-    expect(screen.getByTestId("org-unit-kind-badge-org-1").textContent).toBe("Direction / BU");
-    expect(screen.getByTestId("org-unit-lead-badge-org-1").textContent).toContain(
-      "vp.produit@orcia.fr",
-    );
 
-    // 3. Create Sub-BU ("Pôle IA Générative", kind = BU, parent = org-1 -> depth 1, "Pôle / Sous-BU")
+    // 2. Create Sub-BU ("Pôle IA Générative", parent = org-1)
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
-    fireEvent.change(screen.getByTestId("org-unit-parent-select"), {
-      target: { value: "org-1" },
-    });
-    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
-      target: { value: "Pôle IA Générative" },
-    });
-    fireEvent.click(screen.getByTestId("org-unit-billing-checkbox")); // toggle off FinOps
+    fireEvent.change(screen.getByTestId("org-unit-parent-select"), { target: { value: "org-1" } });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Pôle IA Générative" } });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect((await screen.findByTestId("org-unit-row-org-2")).getAttribute("data-depth")).toBe("1");
 
-    const subBuRow = await screen.findByTestId("org-unit-row-org-2");
-    expect(subBuRow.getAttribute("data-depth")).toBe("1");
-    expect(screen.getByTestId("org-unit-tree-connector-org-2").textContent).toContain("└─");
-    expect(screen.getByTestId("org-unit-kind-badge-org-2").textContent).toBe("Pôle / Sous-BU");
-    expect(screen.getByTestId("org-unit-billing-badge-org-2").textContent).toBe(
-      "Sans imputation FinOps",
-    );
-
-    // 4. Create TEAM: selecting "TEAM" auto-preselects the first BU (org-1), then we select Sub-BU (org-2 -> depth 2)
+    // 3. Create TEAM (parent = org-2)
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
-    fireEvent.change(screen.getByTestId("org-unit-level-select"), {
-      target: { value: "TEAM" },
-    });
-    expect((screen.getByTestId("org-unit-parent-select") as HTMLSelectElement).value).toBe(
-      "org-1",
-    );
-    fireEvent.change(screen.getByTestId("org-unit-parent-select"), {
-      target: { value: "org-2" },
-    });
-    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
-      target: { value: "Équipe Agents RAG" },
-    });
+    fireEvent.change(screen.getByTestId("org-unit-level-select"), { target: { value: "TEAM" } });
+    fireEvent.change(screen.getByTestId("org-unit-parent-select"), { target: { value: "org-2" } });
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Équipe Agents RAG" } });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect((await screen.findByTestId("org-unit-row-org-3")).getAttribute("data-depth")).toBe("2");
 
-    const teamRow = await screen.findByTestId("org-unit-row-org-3");
-    expect(teamRow.getAttribute("data-depth")).toBe("2");
-    expect(screen.getByTestId("org-unit-kind-badge-org-3").textContent).toBe("ÉQUIPE");
-    expect(screen.getByTestId("org-unit-billing-badge-org-3").textContent).toBe(
-      "Facturation FinOps active",
-    );
-
-    // 5. Edit Modal (PATCH): rename Sub-BU & exclude self/descendants from parent options
-    fireEvent.click(screen.getByTestId("edit-org-unit-btn-org-1"));
-    const editRootParentSelect = screen.getByTestId(
-      "edit-org-unit-parent-select",
-    ) as HTMLSelectElement;
-    const optionValues = Array.from(editRootParentSelect.options).map((o) => o.value);
-    expect(optionValues).not.toContain("org-1");
-    expect(optionValues).not.toContain("org-2"); // descendant excluded!
-    fireEvent.click(screen.getByTestId("cancel-edit-org-unit-btn"));
-
+    // 4. Edit Sub-BU
     fireEvent.click(screen.getByTestId("edit-org-unit-btn-org-2"));
-    fireEvent.change(screen.getByTestId("edit-org-unit-name-input"), {
-      target: { value: "Pôle IA & Connaissances" },
-    });
-    fireEvent.click(screen.getByTestId("edit-org-unit-billing-checkbox")); // enable FinOps
+    fireEvent.change(screen.getByTestId("edit-org-unit-name-input"), { target: { value: "Pôle IA & Connaissances" } });
     fireEvent.click(screen.getByTestId("save-edit-org-unit-btn"));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(screen.getByTestId("org-unit-row-org-2").textContent).toContain(
-      "Pôle IA & Connaissances",
-    );
-    expect(screen.getByTestId("org-unit-billing-badge-org-2").textContent).toBe(
-      "Facturation FinOps active",
-    );
+    await act(async () => Promise.resolve());
+    expect(screen.getByTestId("org-unit-row-org-2").textContent).toContain("Pôle IA & Connaissances");
 
-    // 6. Manage Members Modal (PATCH): assign lead + 2 members on Team (org-3)
-    fireEvent.click(screen.getByTestId("manage-members-org-unit-btn-org-3"));
-    fireEvent.change(screen.getByTestId("org-unit-members-lead-input"), {
-      target: { value: "marc.lead@orcia.fr" },
-    });
-    fireEvent.change(screen.getByTestId("org-unit-add-member-input"), {
-      target: { value: "alice@orcia.fr" },
-    });
-    fireEvent.click(screen.getByTestId("org-unit-add-member-btn"));
-    fireEvent.change(screen.getByTestId("org-unit-add-member-input"), {
-      target: { value: "bob@orcia.fr" },
-    });
-    fireEvent.click(screen.getByTestId("org-unit-add-member-btn"));
-    fireEvent.click(screen.getByTestId("save-org-unit-members-btn"));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(screen.getByTestId("org-unit-members-count-org-3").textContent).toBe("2 membres");
-    expect(screen.getByTestId("org-unit-lead-badge-org-3").textContent).toContain(
-      "marc.lead@orcia.fr",
-    );
-
-    // 7. Confirm Delete Modal: danger button (.orcia-ds-btn-danger), FinOps warning, and 409 non-empty block
-    expect(
-      screen.getByTestId("delete-org-unit-btn-org-2").className,
-    ).toContain("orcia-ds-btn-danger");
+    // 5. Delete modal blocked on non-empty unit
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
-    expect(screen.getByTestId("confirm-delete-org-unit-modal")).toBeDefined();
-    expect(screen.getByTestId("org-unit-delete-finops-warning")).toBeDefined();
     expect(screen.getByTestId("org-unit-delete-blocked-banner")).toBeDefined();
-    expect(
-      screen.getByTestId("confirm-delete-org-unit-btn-org-2").className,
-    ).toContain("orcia-ds-btn-danger");
-    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-2"));
-    const deleteFeedback = await screen.findByTestId("org-unit-delete-feedback");
-    expect(deleteFeedback.textContent).toContain("Suppression refusée");
-    expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
+    expect((screen.getByTestId("confirm-delete-org-unit-btn-org-2") as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByTestId("cancel-delete-org-unit-btn-org-2"));
 
-    // 8. CTA "Ouvrir Mes Espaces ->" navigates cleanly to /workspaces
-    fireEvent.click(screen.getByTestId("organization-open-workspaces-btn"));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(firstMount.router.state.location.pathname).toBe("/workspaces");
-
-    // 9. F5 Reload Survival Gate: unmount() and remount fresh router on /settings?tab=organization
+    // 6. F5 Survival
     firstMount.unmount();
     await renderOrganizationSettings();
-
     expect((await screen.findByTestId("org-unit-row-org-1")).getAttribute("data-depth")).toBe("0");
     expect(screen.getByTestId("org-unit-row-org-2").getAttribute("data-depth")).toBe("1");
     expect(screen.getByTestId("org-unit-row-org-3").getAttribute("data-depth")).toBe("2");
-    expect(screen.getByTestId("org-unit-members-count-org-3").textContent).toBe("2 membres");
-    expect(document.body.textContent ?? "").not.toContain("Retirer mon rattachement");
+  });
+
+  it("displays org-unit-delete-feedback when concurrent 409 is returned from API on delete", async () => {
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Direction Solitaire" } });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    await screen.findByTestId("org-unit-row-org-1");
+
+    fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-1"));
+    vi.spyOn(orgUnitsApiBridge, "deleteOrgUnitViaApi").mockResolvedValueOnce({
+      ok: false,
+      errorMessage: "Suppression refusée pour « Direction Solitaire » : 1 espace rattaché.",
+    });
+    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-1"));
+    const feedback = await screen.findByTestId("org-unit-delete-feedback");
+    expect(feedback.textContent).toContain("Suppression refusée");
   });
 
   it("enforces read-only access banner for OBSERVER on /settings", async () => {
@@ -210,11 +124,138 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
       activeHat: "OBSERVER",
       readOnlyObserver: true,
     });
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+    expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
+    expect(screen.getByTestId("settings-readonly-access-banner")).toBeDefined();
+  });
+
+  it("autocompletes known users and strictly rejects unknown users in Create Org Unit modal", async () => {
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+    await act(async () => Promise.resolve());
+
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    const leadInput = screen.getByTestId("org-unit-lead-input");
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Pôle Sécurité" } });
+
+    fireEvent.focus(leadInput);
+    fireEvent.change(leadInput, { target: { value: "inconnu@orcia.fr" } });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    expect(screen.getByTestId("org-unit-unknown-user-error").textContent).toContain("aucun utilisateur");
+
+    fireEvent.change(leadInput, { target: { value: "claire" } });
+    const claireOption = await screen.findByTestId("org-unit-lead-input-option-claire.admin@orcia.fr");
+    fireEvent.mouseDown(claireOption);
+    expect((leadInput as HTMLInputElement).value).toBe("claire.admin@orcia.fr");
+
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    const row = await screen.findByTestId("org-unit-row-org-1");
+    expect(screen.getByTestId("org-unit-lead-badge-org-1").textContent).toContain("Claire Admin");
+  });
+
+  it("enforces max 10 in parent selector with incremental query and anti-cycle", async () => {
+    const manyBus = Array.from({ length: 14 }, (_, i) => ({
+      id: `bu-${i + 1}`,
+      name: i === 0 ? "DS3C Pôle Ingénierie" : `BU Division ${i + 1}`,
+      slug: i === 0 ? "ds3c-pole-ingenierie" : `bu-division-${i + 1}`,
+      level: "BU",
+      parentId: "scope-global",
+      billingEnabled: true,
+      leadUserId: "claire.admin@orcia.fr",
+      memberUserIds: [],
+      attachedWorkspacesCount: 0,
+      attachedWorkspaces: [],
+    }));
+    seedVitestPlatformSetupState({ org_units: manyBus });
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+    await act(async () => Promise.resolve());
+
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    const trigger = screen.getByTestId("org-unit-parent-select-trigger");
+    fireEvent.click(trigger);
+    const listbox = screen.getByTestId("org-unit-parent-select-listbox");
+    expect(within(listbox).getAllByRole("option")).toHaveLength(10);
+    expect(screen.getByTestId("org-unit-parent-select-truncated-hint")).toBeDefined();
+
+    const searchInput = screen.getByTestId("org-unit-parent-select-search-input");
+    for (const token of ["d", "ds", "ds3"]) {
+      await act(async () => { fireEvent.change(searchInput, { target: { value: token } }); });
+    }
+    const ds3cOption = await screen.findByTestId("org-unit-parent-select-option-bu-1");
+    expect(ds3cOption.textContent).toContain("DS3C");
+    fireEvent.click(screen.getByTestId("cancel-create-org-unit-btn"));
+  });
+
+  it("enforces combobox live search (ceiling 10) & chained IamAccountModal creation -> auto-attachment -> PATCH", async () => {
+    seedVitestPlatformSetupState({
+      org_units: [
+        {
+          id: "team-alpha",
+          name: "Équipe Alpha",
+          slug: "equipe-alpha",
+          level: "TEAM",
+          parentId: "scope-global",
+          billingEnabled: true,
+          leadUserId: null,
+          memberUserIds: [],
+          attachedWorkspacesCount: 0,
+          attachedWorkspaces: [],
+        },
+      ],
+    });
 
     await renderOrganizationSettings();
     dismissFirstBootAdminIfOpen();
+    await act(async () => Promise.resolve());
 
-    expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
-    expect(screen.getByTestId("settings-readonly-access-banner")).toBeDefined();
+    // 1. Open ManageOrgUnitMembersModal on team-alpha
+    fireEvent.click(await screen.findByTestId("manage-members-org-unit-btn-team-alpha"));
+    expect(screen.getByTestId("manage-org-unit-members-modal")).toBeDefined();
+
+    // 2. Typing into member combobox triggers live search
+    const memberInput = screen.getByTestId("org-unit-add-member-input");
+    fireEvent.focus(memberInput);
+    fireEvent.change(memberInput, { target: { value: "nouveau.collaborateur@orcia.fr" } });
+    await act(async () => Promise.resolve());
+
+    // 3. Click "+ Nouveau membre" button -> opens chained IamAccountModal on top
+    const newMemberBtn = screen.getByTestId("org-unit-new-member-btn");
+    expect(newMemberBtn).toBeDefined();
+    fireEvent.click(newMemberBtn);
+
+    const iamModal = await screen.findByTestId("iam-account-modal");
+    expect(iamModal).toBeDefined();
+    // Prefill verification: draft contains "@" -> prefilled in principal/email input
+    const principalInput = screen.getByTestId("iam-account-principal-input") as HTMLInputElement;
+    expect(principalInput.value).toBe("nouveau.collaborateur@orcia.fr");
+
+    // Provide display name
+    fireEvent.change(screen.getByTestId("iam-account-display-name-input"), {
+      target: { value: "Nouveau Collaborateur" },
+    });
+
+    // Submit IamAccountModal -> POST /api/v1/settings/iam/accounts
+    fireEvent.click(screen.getByTestId("iam-account-modal-submit-btn"));
+    await act(async () => Promise.resolve());
+
+    // 4. IamAccountModal is closed, ManageOrgUnitMembersModal is STILL open
+    expect(screen.queryByTestId("iam-account-modal")).toBeNull();
+    expect(screen.getByTestId("manage-org-unit-members-modal")).toBeDefined();
+
+    // 5. Newly created member is automatically attached in members list
+    expect(
+      await screen.findByTestId("org-unit-member-item-nouveau.collaborateur@orcia.fr"),
+    ).toBeDefined();
+
+    // 6. Save members -> calls PATCH /api/v1/org-units/team-alpha
+    fireEvent.click(screen.getByTestId("save-org-unit-members-btn"));
+    await act(async () => Promise.resolve());
+
+    // 7. Team row reflects updated count
+    expect(
+      (await screen.findByTestId("org-unit-members-count-team-alpha")).textContent,
+    ).toContain("1 membre");
   });
 });

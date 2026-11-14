@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
 from orcia_api.dependencies import (
     get_accostage_service,
     get_auth_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.routers._auth_pg_helpers import set_auth_refresh_cookie
 from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_connection_test
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
@@ -21,6 +22,7 @@ from orcia_core.bootstrap import (
 )
 from orcia_core.bootstrap.errors import OrciaDomainError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.permissions import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
 logger = get_logger("orcia.api.bootstrap")
@@ -91,9 +93,11 @@ async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
 async def create_welcome_setup_first_admin(
     payload: bs.WelcomeSetupFirstAdminRequest,
     request: Request,
+    response: Response,
 ) -> bs.WelcomeSetupFirstAdminResponse:
     svc = get_accostage_service(request)
-    password_hash = get_auth_service(request).hasher.hash_password(payload.password)
+    auth_svc = get_auth_service(request)
+    password_hash = auth_svc.hasher.hash_password(payload.password)
 
     rec: bm.FirstPlatformAdminRecord | None = None
     if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
@@ -127,6 +131,30 @@ async def create_welcome_setup_first_admin(
             orcia_env_override=payload.orcia_env,
             instance=str(request.url.path),
         )
+
+    admin_user = UserIdentity(
+        id=rec.user_id,
+        email=rec.email,
+        display_name=rec.display_name,
+        auth_mode="LOCAL",
+        human_profile_archetype="CONTRIBUTOR",
+        platform_role="PLATFORM_ADMIN",
+        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
+        password_hash_argon2id=password_hash,
+        roles=("PLATFORM_ADMIN", "SECOPS"),
+        must_change_password=False,
+    )
+    auth_svc.register_user(admin_user)
+    tokens = auth_svc.jwt_manager.issue_token_pair(
+        user_id=admin_user.id,
+        email=admin_user.email,
+        role="PLATFORM_ADMIN",
+        org_unit_id=admin_user.primary_org_unit_id,
+        archetype=admin_user.human_profile_archetype,
+        auth_mode="LOCAL",
+    )
+    set_auth_refresh_cookie(response, tokens.refresh_token, request)
+
     return bs.WelcomeSetupFirstAdminResponse(
         user_id=rec.user_id,
         email=rec.email,
@@ -134,6 +162,8 @@ async def create_welcome_setup_first_admin(
         platform_role=rec.platform_role,
         orcia_env=rec.orcia_env,
         sql_lock_statement=rec.sql_lock_statement,
+        access_token=tokens.access_token,
+        must_change_password=False,
         trace_id=_trace(request),
     )
 

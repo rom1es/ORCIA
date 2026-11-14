@@ -1,5 +1,6 @@
 import type {
   AuthTokenResponse,
+  KnownOrgUsersSearchResponse,
   LocalLoginRequest,
   LogoutResponse,
   OidcLoginRequest,
@@ -14,8 +15,19 @@ import type {
   UserMeResponse,
   WorkspacesListResponse,
 } from "../generated/auth_and_org";
+import type {
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+} from "../generated/iam_password_models";
 import type { HealthResponse, ShellNavigationResponse } from "../generated/shell";
-import { buildPersonaQuery, type createRequestJson } from "../helpers";
+import {
+  buildKnownOrgUsersQuery,
+  buildOrgUnitsQuery,
+  buildPersonaQuery,
+  type createRequestJson,
+  type ListKnownOrgUsersParams,
+  type ListOrgUnitsParams,
+} from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
@@ -45,6 +57,9 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
     logoutSession(): Promise<LogoutResponse> {
       return requestJson<LogoutResponse>("/api/v1/auth/logout", "POST");
     },
+    changePassword(payload: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+      return requestJson<ChangePasswordResponse>("/api/v1/auth/change-password", "POST", payload);
+    },
     getMe(personaKey?: string): Promise<UserMeResponse> {
       return requestJson<UserMeResponse>(`/api/v1/auth/me${buildPersonaQuery(personaKey)}`);
     },
@@ -53,9 +68,16 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
         `/api/v1/workspaces${buildPersonaQuery(personaKey)}`,
       );
     },
-    listOrgUnits(personaKey?: string): Promise<OrgUnitsListResponse> {
+    listOrgUnits(params?: ListOrgUnitsParams | string): Promise<OrgUnitsListResponse> {
       return requestJson<OrgUnitsListResponse>(
-        `/api/v1/org-units${buildPersonaQuery(personaKey)}`,
+        `/api/v1/org-units${buildOrgUnitsQuery(params)}`,
+      );
+    },
+    searchKnownOrgUsers(
+      params?: ListKnownOrgUsersParams | string,
+    ): Promise<KnownOrgUsersSearchResponse> {
+      return requestJson<KnownOrgUsersSearchResponse>(
+        `/api/v1/org-units/known-users${buildKnownOrgUsersQuery(params)}`,
       );
     },
     createOrgUnit(

@@ -68,8 +68,11 @@ async def create_workspace_datasource_on_postgres18(
         source_nature if source_nature is not None else infer_source_nature_from_scheme(scheme)
     )
 
-    wid_uuid = UUID(workspace_id)
-    cid_uuid = UUID(connector_id) if connector_id else None
+    try:
+        wid_uuid = UUID(workspace_id.strip())
+        cid_uuid = UUID(connector_id.strip()) if connector_id else None
+    except (ValueError, AttributeError):
+        raise ResourceNotFoundError(instance=instance) from None
     ds_id = new_uuid7_str()
 
     async with engine.begin() as conn:
@@ -154,8 +157,11 @@ async def update_workspace_datasource_on_postgres18(
     instance: str | None = None,
 ) -> WorkspaceDatasourceRecord:
     """Update workspace datasource and re-evaluate health."""
-    wid_uuid = UUID(workspace_id)
-    ds_uuid = UUID(datasource_id)
+    try:
+        wid_uuid = UUID(workspace_id.strip())
+        ds_uuid = UUID(datasource_id.strip())
+    except (ValueError, AttributeError):
+        raise ResourceNotFoundError(instance=instance) from None
 
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
@@ -247,8 +253,11 @@ async def delete_workspace_datasource_on_postgres18(
     instance: str | None = None,
 ) -> None:
     """Delete workspace datasource, raising ResourceNotFoundError if missing."""
-    wid_uuid = UUID(workspace_id)
-    ds_uuid = UUID(datasource_id)
+    try:
+        wid_uuid = UUID(workspace_id.strip())
+        ds_uuid = UUID(datasource_id.strip())
+    except (ValueError, AttributeError):
+        raise ResourceNotFoundError(instance=instance) from None
 
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
@@ -276,8 +285,11 @@ async def trigger_workspace_datasource_sync_on_postgres18(
     instance: str | None = None,
 ) -> WorkspaceDatasourceRecord:
     """Trigger manual sync: update last_sync_at, freshness_status and codegraph status."""
-    wid_uuid = UUID(workspace_id)
-    ds_uuid = UUID(datasource_id)
+    try:
+        wid_uuid = UUID(workspace_id.strip())
+        ds_uuid = UUID(datasource_id.strip())
+    except (ValueError, AttributeError):
+        raise ResourceNotFoundError(instance=instance) from None
 
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
