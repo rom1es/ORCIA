@@ -58,6 +58,9 @@ export interface Epic18SourcesLabels {
     createSuccess: string;
     updateSuccess: string;
     deleteSuccess: string;
+    reconcileBtn: string;
+    reconciling: string;
+    reconcileSuccess: string;
   };
   modal: {
     createTitle: string;
@@ -152,6 +155,9 @@ export const EPIC18_SOURCES_LABELS_FR: Epic18SourcesLabels = {
     createSuccess: "Source rattachée avec succès",
     updateSuccess: "Source mise à jour avec succès",
     deleteSuccess: "Source supprimée avec succès",
+    reconcileBtn: "Vérifier fraîcheur",
+    reconciling: "Vérification en cours...",
+    reconcileSuccess: "Fraîcheur des sources réconciliée avec succès.",
   },
   modal: {
     createTitle: "Rattacher une Source à l'Espace",
@@ -249,6 +255,9 @@ export const EPIC18_SOURCES_LABELS_EN: Epic18SourcesLabels = {
     createSuccess: "Source attached successfully",
     updateSuccess: "Source updated successfully",
     deleteSuccess: "Source removed successfully",
+    reconcileBtn: "Check freshness",
+    reconciling: "Checking freshness...",
+    reconcileSuccess: "Source freshness reconciled successfully.",
   },
   modal: {
     createTitle: "Attach a Source to Workspace",

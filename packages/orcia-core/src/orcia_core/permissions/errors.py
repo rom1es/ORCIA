@@ -164,6 +164,18 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "following roles: TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN, SECOPS.",
         ),
     },
+    "ERR_WEBHOOK_SIGNATURE_INVALID": {
+        "fr": LocalizedErrorCopy(
+            "Signature webhook invalide ou manquante",
+            "L'en-tête de signature HMAC-SHA256 du webhook entrant est invalide, absente ou "
+            "ne correspond pas au secret configuré.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid or missing webhook signature",
+            "The incoming webhook HMAC-SHA256 signature header is missing, invalid, or "
+            "does not match the configured secret.",
+        ),
+    },
     "ERR_ORG_UNIT_INVALID_PARENT_KIND": {
         "fr": LocalizedErrorCopy(
             "Rattachement hiérarchique invalide",
@@ -348,6 +360,11 @@ class CodegraphWorkspaceLeadRequiredError(OrciaDomainError):
     http_status, type_slug = 403, "codegraph-workspace-lead-required"
 
 
+class WebhookSignatureInvalidError(OrciaDomainError):
+    error_code = "ERR_WEBHOOK_SIGNATURE_INVALID"
+    http_status, type_slug = 401, "webhook-signature-invalid"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "C3WorkspaceRequiredError",
@@ -374,4 +391,5 @@ __all__ = [
     "SettingsVersionConflictError",
     "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
+    "WebhookSignatureInvalidError",
 ]

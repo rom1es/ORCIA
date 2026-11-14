@@ -5408,6 +5408,46 @@
         "title": "CreateWorkspaceDatasourceRequest",
         "type": "object"
       },
+      "DatasourceWebhookIngressResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/webhooks/datasources/{datasource_id}`.",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "delivery_key": {
+            "title": "Delivery Key",
+            "type": "string"
+          },
+          "outbox_published": {
+            "title": "Outbox Published",
+            "type": "boolean"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accepted",
+          "outcome",
+          "delivery_key",
+          "datasource_id",
+          "outbox_published",
+          "trace_id"
+        ],
+        "title": "DatasourceWebhookIngressResponse",
+        "type": "object"
+      },
       "DbDdlIndexRequest": {
         "additionalProperties": false,
         "properties": {
@@ -15575,6 +15615,100 @@
           "locked_against_agent_overwrite"
         ],
         "title": "RebasedSectionChunkSchema",
+        "type": "object"
+      },
+      "ReconcileWorkspaceStalenessItem": {
+        "additionalProperties": false,
+        "description": "Evaluation summary for a single datasource during 24h staleness reconciliation.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "datasource_id": {
+            "title": "Datasource Id",
+            "type": "string"
+          },
+          "delta_sync_needed": {
+            "title": "Delta Sync Needed",
+            "type": "boolean"
+          },
+          "elapsed_hours": {
+            "title": "Elapsed Hours",
+            "type": "number"
+          },
+          "freshness_status": {
+            "title": "Freshness Status",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "probed_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probed Fingerprint"
+          }
+        },
+        "required": [
+          "datasource_id",
+          "alias",
+          "freshness_status",
+          "outcome",
+          "elapsed_hours",
+          "delta_sync_needed"
+        ],
+        "title": "ReconcileWorkspaceStalenessItem",
+        "type": "object"
+      },
+      "ReconcileWorkspaceStalenessResponse": {
+        "additionalProperties": false,
+        "description": "Response for `POST /api/v1/workspaces/{workspace_id}/datasources/reconcile-staleness`.",
+        "properties": {
+          "evaluated_count": {
+            "title": "Evaluated Count",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ReconcileWorkspaceStalenessItem"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "stale_count": {
+            "title": "Stale Count",
+            "type": "integer"
+          },
+          "synced_count": {
+            "title": "Synced Count",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "evaluated_count",
+          "stale_count",
+          "synced_count",
+          "results",
+          "trace_id"
+        ],
+        "title": "ReconcileWorkspaceStalenessResponse",
         "type": "object"
       },
       "RecordAssistantTurnFeedbackRequest": {
@@ -48386,6 +48520,177 @@
         ]
       }
     },
+    "/api/v1/webhooks/datasources/{datasource_id}": {
+      "post": {
+        "description": "Ingest a provider webhook with HMAC-SHA256 verification and SHA-256 short-circuit.",
+        "operationId": "ingest_datasource_webhook_api_v1_webhooks_datasources__datasource_id__post",
+        "parameters": [
+          {
+            "description": "Target datasource ID",
+            "in": "path",
+            "name": "datasource_id",
+            "required": true,
+            "schema": {
+              "description": "Target datasource ID",
+              "title": "Datasource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-orcia-webhook-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Orcia-Webhook-Signature"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-hub-signature-256",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Hub-Signature-256"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-webhook-delivery-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Webhook-Delivery-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasourceWebhookIngressResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Ingest Datasource Webhook",
+        "tags": [
+          "datasource-webhooks"
+        ]
+      }
+    },
     "/api/v1/webhooks/jira/issue-updated": {
       "post": {
         "description": "Process `jira:issue_updated` (`Done`) and publish Replay event to `domain_events_outbox`.",
@@ -50115,6 +50420,129 @@
         "summary": "Attach a new datasource to a workspace with multi-nature and codegraph options",
         "tags": [
           "workspace-datasources"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/datasources/reconcile-staleness": {
+      "post": {
+        "description": "Evaluate 24h freshness on workspace datasources and trigger delta sync if stale.",
+        "operationId": "reconcile_workspace_staleness_api_v1_workspaces__workspace_id__datasources_reconcile_staleness_post",
+        "parameters": [
+          {
+            "description": "Target workspace ID",
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "description": "Target workspace ID",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconcileWorkspaceStalenessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Reconcile Workspace Staleness",
+        "tags": [
+          "datasource-webhooks"
         ]
       }
     },

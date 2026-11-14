@@ -813,6 +813,14 @@ export interface components {
       target_scope?: string | null;
       uri: string;
     };
+    DatasourceWebhookIngressResponse: {
+      accepted: boolean;
+      datasource_id: string;
+      delivery_key: string;
+      outbox_published: boolean;
+      outcome: string;
+      trace_id: string;
+    };
     DbDdlIndexRequest: {
       datasource_alias: string;
       datasource_id: string;
@@ -2408,6 +2416,23 @@ export interface components {
       locked_against_agent_overwrite: boolean;
       section_title: string;
       status: "APPROVED" | "HUMAN_AMENDED_EXTERNAL";
+    };
+    ReconcileWorkspaceStalenessItem: {
+      alias: string;
+      datasource_id: string;
+      delta_sync_needed: boolean;
+      elapsed_hours: number;
+      freshness_status: string;
+      outcome: string;
+      probed_fingerprint?: string | null;
+    };
+    ReconcileWorkspaceStalenessResponse: {
+      evaluated_count: number;
+      results: (components["schemas"]["ReconcileWorkspaceStalenessItem"])[];
+      stale_count: number;
+      synced_count: number;
+      trace_id: string;
+      workspace_id: string;
     };
     RecordAssistantTurnFeedbackRequest: {
       assembled_system_prompt?: string;
@@ -5076,6 +5101,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/webhooks/datasources/{datasource_id}": {
+    post: {
+      responses: {
+        200: components["schemas"]["DatasourceWebhookIngressResponse"];
+      };
+    };
+  };
   "/api/v1/webhooks/jira/issue-updated": {
     post: {
       responses: {
@@ -5167,6 +5199,13 @@ export interface paths {
     post: {
       responses: {
         200: unknown;
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/datasources/reconcile-staleness": {
+    post: {
+      responses: {
+        200: components["schemas"]["ReconcileWorkspaceStalenessResponse"];
       };
     };
   };
@@ -5338,6 +5377,7 @@ export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPac
 export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];
 export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
 export type CreateWorkspaceDatasourceRequest = components["schemas"]["CreateWorkspaceDatasourceRequest"];
+export type DatasourceWebhookIngressResponse = components["schemas"]["DatasourceWebhookIngressResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DeclarativePackSummaryResponse = components["schemas"]["DeclarativePackSummaryResponse"];
@@ -5525,6 +5565,8 @@ export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandi
 export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
 export type RebaseExternalArtifactEditsRequest = components["schemas"]["RebaseExternalArtifactEditsRequest"];
 export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChunkSchema"];
+export type ReconcileWorkspaceStalenessItem = components["schemas"]["ReconcileWorkspaceStalenessItem"];
+export type ReconcileWorkspaceStalenessResponse = components["schemas"]["ReconcileWorkspaceStalenessResponse"];
 export type RecordAssistantTurnFeedbackRequest = components["schemas"]["RecordAssistantTurnFeedbackRequest"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];

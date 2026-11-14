@@ -33,6 +33,7 @@ from orcia_core.permissions.enterprise_connectors import (
 )
 from orcia_core.permissions.errors import (
     CodegraphWorkspaceLeadRequiredError,
+    WebhookSignatureInvalidError,
 )
 from orcia_core.permissions.evaluator import (
     ADMIN_MODULE_ALLOWED_ROLES,
@@ -352,6 +353,7 @@ __all__ = [
     "validate_org_unit_hierarchy",
     "EnterpriseConnectorsGovernanceService",
     "CodegraphWorkspaceLeadRequiredError",
+    "WebhookSignatureInvalidError",
     "CodegraphAuthMode",
     "CodegraphStatus",
     "SourceFreshnessStatus",

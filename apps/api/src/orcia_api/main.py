@@ -20,6 +20,9 @@ from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
 from orcia_api.routers.challenge_and_replay import router as challenge_and_replay_router
 from orcia_api.routers.control_center import router as control_center_router
+from orcia_api.routers.datasource_webhooks import (
+    router as datasource_webhooks_router,
+)
 from orcia_api.routers.dna_and_glossary import (
     router as dna_and_glossary_router,
 )
@@ -107,6 +110,7 @@ def create_app() -> FastAPI:
     application.include_router(assistant_workspace_router)
     application.include_router(workspace_governance_router)
     application.include_router(workspace_datasources_router)
+    application.include_router(datasource_webhooks_router)
     application.include_router(dna_and_glossary_router)
     application.include_router(mcp_and_test_bench_router)
     application.include_router(pack_builder_router)

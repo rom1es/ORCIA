@@ -50,6 +50,12 @@ from orcia_core.rag.models import (
     TripartiteRelationType,
     TripartiteTraceEdgeEntity,
 )
+from orcia_core.rag.source_freshness_reconciler import (
+    FreshnessEvaluationResult,
+    RemoteFingerprintProbePort,
+    evaluate_24h_freshness_probe,
+    reconcile_incoming_fingerprint,
+)
 from orcia_core.rag.tripartite_and_freshness import (
     HybridRagService,
     TripartiteGraphAndFreshnessService,
@@ -105,6 +111,7 @@ __all__ = [
     "EMBEDDING_DIM",
     "FederatedSearchCandidate",
     "FederatedSearchHit",
+    "FreshnessEvaluationResult",
     "HybridRagHit",
     "HybridRagService",
     "HybridRagVectorStoreAdapter",
@@ -114,6 +121,7 @@ __all__ = [
     "KbStaleAlertEntity",
     "PiiArbitrationDecision",
     "RagReciprocityVerificationResult",
+    "RemoteFingerprintProbePort",
     "SEVEN_SEARCH_FAMILIES",
     "SearchFamilyKey",
     "SearchScopeMode",
@@ -132,6 +140,8 @@ __all__ = [
     "compute_deterministic_halfvec_1024",
     "cosine_similarity",
     "detect_pii_categories",
+    "evaluate_24h_freshness_probe",
     "extract_jira_issue_keys",
+    "reconcile_incoming_fingerprint",
     "scrub_pii_reversibly",
 ]

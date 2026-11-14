@@ -5,7 +5,8 @@ Queries and context resolution with zero circular dependencies and zero forbidde
 
 from __future__ import annotations
 
-from typing import Any, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, cast
 from uuid import UUID
 
 import sqlalchemy as sa

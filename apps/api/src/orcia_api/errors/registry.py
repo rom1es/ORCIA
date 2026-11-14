@@ -45,6 +45,7 @@ from orcia_core.permissions.errors import (
     ScopeAccessDeniedError,
     SecretConfigReadDeniedError,
     UnsafeConnectorEndpointUrlError,
+    WebhookSignatureInvalidError,
 )
 from orcia_core.rag.errors import DdlOnlyTransactionalDataError
 from orcia_kernel.errors import (
@@ -103,6 +104,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     AuditLedgerImmutableViolationError,
     UnsafeLlmEndpointUrlError,
     LastTierModelInUseError,
+    WebhookSignatureInvalidError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {
@@ -167,6 +169,7 @@ __all__ = [
     "SupportedLocale",
     "UnknownWorkflowPolicyError",
     "ValidationDomainError",
+    "WebhookSignatureInvalidError",
     "get_localized_error_text",
     "resolve_domain_error_mapping",
     "resolve_locale",

@@ -232,6 +232,21 @@ export function WorkspaceSourcesRagTab({
     }
   };
 
+  const handleReconcileStaleness = async () => {
+    if (!wsId) return;
+    try {
+      const res = await client.reconcileWorkspaceStaleness(wsId);
+      showFeedback(
+        isFr
+          ? `✅ Fraîcheur réconciliée (${res.evaluated_count} évaluées, ${res.stale_count} désynchronisées).`
+          : `✅ Freshness reconciled (${res.evaluated_count} evaluated, ${res.stale_count} stale).`,
+      );
+      await loadData();
+    } catch (err: unknown) {
+      showFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur réconciliation"}`);
+    }
+  };
+
   return (
     <div data-testid="workspace-detail-sources-content" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
       <div
@@ -317,6 +332,7 @@ export function WorkspaceSourcesRagTab({
         onDeleteDatasource={handleDeleteDatasource}
         onToggleGitNexus={handleToggleGitNexus}
         onRenewReferent={(dsId, curRef) => { setRenewingDsId(dsId); setNewReferentInput(curRef || ""); }}
+        onReconcileStaleness={handleReconcileStaleness}
       />
 
       <WorkspaceSourceAttachModal

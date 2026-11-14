@@ -28,6 +28,9 @@ import type {
   RoleMatrixResponse,
 } from "../generated/iam_accounts";
 import type {
+  ReconcileWorkspaceStalenessResponse,
+} from "../generated/datasource_webhooks";
+import type {
   CreateWorkspaceDatasourceRequest,
   EnterpriseConnectorCreateRequest,
   EnterpriseConnectorDeleteResponse,
@@ -376,6 +379,15 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
     ): Promise<TriggerWorkspaceDatasourceSyncResponse> {
       return requestJson<TriggerWorkspaceDatasourceSyncResponse>(
         `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/${encodeURIComponent(datasourceId)}/sync${buildPersonaQuery(personaKey)}`,
+        "POST",
+      );
+    },
+    reconcileWorkspaceStaleness(
+      workspaceId: string,
+      personaKey?: string,
+    ): Promise<ReconcileWorkspaceStalenessResponse> {
+      return requestJson<ReconcileWorkspaceStalenessResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/reconcile-staleness${buildPersonaQuery(personaKey)}`,
         "POST",
       );
     },

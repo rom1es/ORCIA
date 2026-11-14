@@ -32,6 +32,7 @@ export interface WorkspaceSourcesMasterTableProps {
     enabled: boolean,
   ) => Promise<void>;
   readonly onRenewReferent?: (datasourceId: string, currentReferent?: string) => void;
+  readonly onReconcileStaleness?: () => Promise<void>;
 }
 
 const tdStyle: React.CSSProperties = { padding: "8px" };
@@ -47,11 +48,13 @@ export function WorkspaceSourcesMasterTable({
   onDeleteDatasource,
   onToggleGitNexus,
   onRenewReferent,
+  onReconcileStaleness,
 }: WorkspaceSourcesMasterTableProps): React.ReactElement {
   const { dictionary } = useI18n();
   const copy = dictionary.epic18Sources;
   const [natureFilter, setNatureFilter] = useState<SourcesNatureFilter>("ALL");
   const [syncingDsId, setSyncingDsId] = useState<string | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
 
   const connectorMap = new Map(connectors.map((c) => [c.id, c.name]));
   const filtered = datasources.filter(
@@ -119,15 +122,35 @@ export function WorkspaceSourcesMasterTable({
           })}
         </div>
 
-        <button
-          type="button"
-          data-testid="open-attach-source-modal-btn"
-          disabled={isReadOnlyObserver}
-          onClick={onOpenAttachModal}
-          className="orcia-ds-btn orcia-ds-btn-primary"
-        >
-          {copy.actions.attachSourceBtn}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {onReconcileStaleness ? (
+            <button
+              type="button"
+              data-testid="workspace-sources-reconcile-btn"
+              disabled={isReadOnlyObserver || isReconciling}
+              onClick={async () => {
+                setIsReconciling(true);
+                try {
+                  await onReconcileStaleness();
+                } finally {
+                  setIsReconciling(false);
+                }
+              }}
+              className="orcia-ds-btn orcia-ds-btn-secondary"
+            >
+              {isReconciling ? copy.actions.reconciling : copy.actions.reconcileBtn}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            data-testid="open-attach-source-modal-btn"
+            disabled={isReadOnlyObserver}
+            onClick={onOpenAttachModal}
+            className="orcia-ds-btn orcia-ds-btn-primary"
+          >
+            {copy.actions.attachSourceBtn}
+          </button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
