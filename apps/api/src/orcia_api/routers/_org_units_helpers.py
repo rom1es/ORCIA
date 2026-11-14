@@ -203,6 +203,9 @@ def classify_and_handle_pg_error(exc: Exception, operation: str) -> None:
 def create_in_evaluator(
     evaluator: MatrixPermissionEvaluator,
     payload: OrgUnitCreateRequest,
+    *,
+    resolved_lead: str | None = None,
+    resolved_members: tuple[str, ...] | None = None,
 ) -> OrgUnitSummary:
     """Create unit in memory evaluator when PostgreSQL sync is disabled or disconnected."""
     cleaned_name = payload.name.strip()
@@ -217,6 +220,16 @@ def create_in_evaluator(
         parent_id=payload.parent_id,
         units_by_id=units_by_id,
     )
+    effective_lead = (
+        resolved_lead
+        if resolved_lead is not None
+        else ((payload.lead_user_id or "").strip() or None)
+    )
+    effective_members = (
+        resolved_members
+        if resolved_members is not None
+        else normalize_member_user_ids(payload.member_user_ids)
+    )
     node = OrgUnitNode(
         id=generate_new_org_unit_id(),
         slug=normalized_slug,
@@ -224,8 +237,8 @@ def create_in_evaluator(
         unit_type=payload.kind,
         parent_id=resolved_parent,
         billing_enabled=payload.billing_enabled,
-        lead_user_id=(payload.lead_user_id or "").strip() or None,
-        member_user_ids=normalize_member_user_ids(payload.member_user_ids),
+        lead_user_id=effective_lead,
+        member_user_ids=effective_members,
     )
     evaluator.upsert_org_unit(node)
     units_by_id[node.id] = node
@@ -236,6 +249,9 @@ def update_in_evaluator(
     evaluator: MatrixPermissionEvaluator,
     org_unit_id: str,
     payload: OrgUnitPatchRequest,
+    *,
+    resolved_lead: str | None = None,
+    resolved_members: tuple[str, ...] | None = None,
 ) -> OrgUnitSummary:
     """Update unit in memory evaluator when PostgreSQL sync is disabled or disconnected."""
     units_by_id = {u.id: u for u in evaluator.org_units}
@@ -270,16 +286,20 @@ def update_in_evaluator(
     next_billing = (
         target.billing_enabled if payload.billing_enabled is None else payload.billing_enabled
     )
-    next_lead = (
-        ((payload.lead_user_id or "").strip() or None)
-        if "lead_user_id" in payload.model_fields_set
-        else target.lead_user_id
-    )
-    next_members = (
-        normalize_member_user_ids(payload.member_user_ids)
-        if payload.member_user_ids is not None
-        else target.member_user_ids
-    )
+    next_lead: str | None
+    if resolved_lead is not None:
+        next_lead = resolved_lead
+    elif "lead_user_id" in payload.model_fields_set:
+        next_lead = (payload.lead_user_id or "").strip() or None
+    else:
+        next_lead = target.lead_user_id
+
+    if resolved_members is not None:
+        next_members = resolved_members
+    elif payload.member_user_ids is not None:
+        next_members = normalize_member_user_ids(payload.member_user_ids)
+    else:
+        next_members = target.member_user_ids
     updated = OrgUnitNode(
         id=target.id,
         slug=target.slug,

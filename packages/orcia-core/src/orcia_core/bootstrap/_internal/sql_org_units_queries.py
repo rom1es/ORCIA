@@ -13,6 +13,7 @@ from typing import cast
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from orcia_core.bootstrap._internal.sql_iam_account_helpers import ensure_iam_accounts_schema
 from orcia_core.permissions.errors import ResourceNotFoundError
 from orcia_core.permissions.models import OrgUnitNode, OrgUnitType
 from orcia_core.permissions.org_hierarchy import (
@@ -22,6 +23,7 @@ from orcia_core.permissions.org_hierarchy import (
     normalize_member_user_ids,
     sort_org_unit_summaries_dfs,
 )
+from orcia_core.permissions.org_user_validation import KnownOrgUser
 
 
 def parse_member_ids_jsonb(raw: object) -> tuple[str, ...]:
@@ -197,9 +199,71 @@ async def sync_platform_settings_org_units_if_present(
     )
 
 
+async def load_known_org_users_from_postgres18(
+    conn: AsyncConnection,
+) -> list[KnownOrgUser]:
+    """Load active known human accounts from `iam_accounts` and `users` (single query, zero N+1)."""
+    await ensure_iam_accounts_schema(conn)
+    rows = (
+        await conn.execute(
+            sa.text(
+                """
+                SELECT principal_id, display_name, email
+                FROM iam_accounts
+                WHERE account_kind = 'HUMAN' AND status <> 'DISABLED'
+                UNION ALL
+                SELECT email AS principal_id, display_name, email
+                FROM users
+                WHERE is_active = TRUE
+                """
+            )
+        )
+    ).fetchall()
+
+    users_by_key: dict[str, KnownOrgUser] = {}
+    for row in rows:
+        principal_id = str(row[0] or "").strip()
+        if not principal_id:
+            continue
+        display_name = str(row[1] or "").strip() or principal_id
+        email = str(row[2] or "").strip() if row[2] else None
+        canon_key = principal_id.lower()
+        alt_key = email.lower() if email else None
+
+        existing = users_by_key.get(canon_key) or (users_by_key.get(alt_key) if alt_key else None)
+        if existing is not None:
+            merged_email = existing.email or email
+            merged_display = (
+                existing.display_name
+                if existing.display_name != existing.principal_id
+                else display_name
+            )
+            merged = KnownOrgUser(
+                principal_id=existing.principal_id,
+                display_name=merged_display,
+                email=merged_email,
+            )
+            users_by_key[existing.principal_id.lower()] = merged
+            if merged_email:
+                users_by_key[merged_email.lower()] = merged
+        else:
+            created = KnownOrgUser(
+                principal_id=principal_id,
+                display_name=display_name,
+                email=email,
+            )
+            users_by_key[canon_key] = created
+            if alt_key:
+                users_by_key[alt_key] = created
+
+    unique_users = {id(u): u for u in users_by_key.values()}.values()
+    return sorted(unique_users, key=lambda u: (u.display_name.lower(), u.principal_id.lower()))
+
+
 __all__ = [
     "build_sorted_summaries",
     "load_all_nodes_and_workspaces",
+    "load_known_org_users_from_postgres18",
     "parse_attached_workspaces_jsonb",
     "parse_member_ids_jsonb",
     "resolve_target_node",

@@ -93,6 +93,9 @@ export interface OrganizationTabDictionarySection {
     readonly cancelButton: string;
     readonly confirmDeleteButton: string;
   };
+  readonly unknownUserError: string;
+  readonly noMatchingKnownUser: string;
+  readonly selectKnownUserHint: string;
 }
 
 export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
@@ -108,6 +111,11 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
   pedagogyWorkspaceSummary:
     "Espace : dossier métier ou produit rattaché à une équipe, créé et administré dans Mes Espaces.",
   openWorkspacesCta: "Ouvrir Mes Espaces →",
+  unknownUserError:
+    "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
+  noMatchingKnownUser: "Aucun utilisateur correspondant trouvé.",
+  selectKnownUserHint:
+    "Recherchez par nom, identifiant ou adresse e-mail pour sélectionner un compte actif.",
   badges: {
     rootBu: "Direction / BU",
     subBu: "Pôle / Sous-BU",
@@ -214,6 +222,11 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
   pedagogyWorkspaceSummary:
     "Workspace: business or product space attached to a team, created and managed in My Spaces.",
   openWorkspacesCta: "Open My Spaces →",
+  unknownUserError:
+    "The entered identifier does not match any active known user on the platform.",
+  noMatchingKnownUser: "No matching user found.",
+  selectKnownUserHint:
+    "Search by name, principal ID, or email address to select an active account.",
   badges: {
     rootBu: "Division / BU",
     subBu: "Sub-Division / Sub-BU",

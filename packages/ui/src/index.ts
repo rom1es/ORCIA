@@ -497,6 +497,11 @@ export {
   type WorkflowStudioSectionProps,
 } from "./shell/WorkflowStudioSection";
 export {
+  OrciaKnownUserCombobox,
+  type KnownUserOption,
+  type OrciaKnownUserComboboxProps,
+} from "./primitives/OrciaKnownUserCombobox";
+export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,
 } from "./shell/WorkspaceTopologyPanel";

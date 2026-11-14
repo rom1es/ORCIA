@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from orcia_core.bootstrap._internal.sql_org_units_queries import (
     build_sorted_summaries,
     load_all_nodes_and_workspaces,
+    load_known_org_users_from_postgres18,
     resolve_target_node,
     sync_platform_settings_org_units_if_present,
 )
@@ -29,10 +30,10 @@ from orcia_core.permissions.org_hierarchy import (
     assert_unique_org_unit_slug,
     build_org_unit_summary,
     generate_new_org_unit_id,
-    normalize_member_user_ids,
     normalize_org_unit_slug,
     validate_org_unit_hierarchy,
 )
+from orcia_core.permissions.org_user_validation import resolve_and_validate_org_unit_users
 
 
 async def list_org_units_from_postgres18(engine: AsyncEngine) -> list[OrgUnitSummary]:
@@ -58,8 +59,6 @@ async def create_org_unit_on_postgres18(
     if not cleaned_name:
         raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
     normalized_slug = normalize_org_unit_slug(slug, cleaned_name)
-    normalized_lead = (lead_user_id or "").strip() or None
-    normalized_members = normalize_member_user_ids(member_user_ids)
 
     async with engine.begin() as conn:
         nodes_by_id, ws_counts, ws_refs = await load_all_nodes_and_workspaces(conn)
@@ -69,6 +68,12 @@ async def create_org_unit_on_postgres18(
             kind=kind,
             parent_id=parent_id,
             units_by_id=nodes_by_id,
+        )
+        known_users = await load_known_org_users_from_postgres18(conn)
+        resolved_lead, resolved_members = resolve_and_validate_org_unit_users(
+            lead_user_id=lead_user_id,
+            member_user_ids=member_user_ids or (),
+            known_users=known_users,
         )
         new_id = generate_new_org_unit_id()
         await conn.execute(
@@ -91,8 +96,8 @@ async def create_org_unit_on_postgres18(
                 "unit_type": kind,
                 "parent_id": UUID(resolved_parent_id) if resolved_parent_id else None,
                 "billing_enabled": billing_enabled,
-                "lead_user_id": normalized_lead,
-                "member_user_ids_jsonb": json.dumps(list(normalized_members)),
+                "lead_user_id": resolved_lead,
+                "member_user_ids_jsonb": json.dumps(list(resolved_members)),
             },
         )
         new_node = OrgUnitNode(
@@ -102,8 +107,8 @@ async def create_org_unit_on_postgres18(
             unit_type=kind,
             parent_id=resolved_parent_id,
             billing_enabled=billing_enabled,
-            lead_user_id=normalized_lead,
-            member_user_ids=normalized_members,
+            lead_user_id=resolved_lead,
+            member_user_ids=resolved_members,
         )
         nodes_by_id[new_id] = new_node
         ws_counts[new_id] = 0
@@ -162,14 +167,33 @@ async def update_org_unit_on_postgres18(
             )
 
         next_billing = target.billing_enabled if billing_enabled is None else billing_enabled
-        next_lead = (
-            ((lead_user_id or "").strip() or None) if lead_user_id_provided else target.lead_user_id
+
+        should_validate_users = (lead_user_id_provided and bool((lead_user_id or "").strip())) or (
+            member_user_ids is not None
         )
-        next_members = (
-            normalize_member_user_ids(member_user_ids)
-            if member_user_ids is not None
-            else target.member_user_ids
-        )
+
+        if should_validate_users:
+            known_users = await load_known_org_users_from_postgres18(conn)
+            candidate_lead = lead_user_id if lead_user_id_provided else target.lead_user_id
+            candidate_members = (
+                member_user_ids if member_user_ids is not None else target.member_user_ids
+            )
+            resolved_lead, resolved_members = resolve_and_validate_org_unit_users(
+                lead_user_id=candidate_lead,
+                member_user_ids=candidate_members,
+                known_users=known_users,
+            )
+            next_lead = resolved_lead if lead_user_id_provided else target.lead_user_id
+            next_members = (
+                resolved_members if member_user_ids is not None else target.member_user_ids
+            )
+        else:
+            next_lead = (
+                ((lead_user_id or "").strip() or None)
+                if lead_user_id_provided
+                else target.lead_user_id
+            )
+            next_members = target.member_user_ids
 
         await conn.execute(
             sa.text(

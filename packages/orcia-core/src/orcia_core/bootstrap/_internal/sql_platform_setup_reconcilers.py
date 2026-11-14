@@ -56,8 +56,8 @@ async def reconcile_org_units_on_load(
             "level": level,
             "parentId": parent_db_str or "scope-global",
         }
-        if len(org_row) > 5 and org_row[5] is False:
-            entry["billingEnabled"] = False
+        if len(org_row) > 5 and org_row[5] is not None:
+            entry["billingEnabled"] = bool(org_row[5])
         if len(org_row) > 6 and org_row[6]:
             entry["leadUserId"] = str(org_row[6])
         if len(org_row) > 7 and org_row[7]:

@@ -30,6 +30,7 @@ from orcia_core.permissions.crypto import (
 )
 from orcia_core.permissions.errors import (
     OrgUnitStorageSchemaError,
+    OrgUnitUnknownUserError,
 )
 from orcia_core.permissions.evaluator import (
     ADMIN_MODULE_ALLOWED_ROLES,
@@ -95,6 +96,10 @@ from orcia_core.permissions.org_hierarchy import (
     sort_org_unit_dicts_topologically,
     sort_org_unit_summaries_dfs,
     validate_org_unit_hierarchy,
+)
+from orcia_core.permissions.org_user_validation import (
+    KnownOrgUser,
+    resolve_and_validate_org_unit_users,
 )
 from orcia_core.permissions.platform_settings import (
     REGISTERED_IDEMPOTENT_OUTBOX_CONSUMERS,
@@ -323,7 +328,8 @@ __all__ = [
     "DatasourceScheme", "EffectiveResourcePermissions", "ExecutionIdentityMode",
     "InMemoryRevocationStore", "JwtSessionManager", "KeyValueRevocationStore",
     "MatrixPermissionEvaluator", "OrgUnitKind", "OrgUnitNode", "OrgUnitStorageSchemaError",
-    "OrgUnitSummary", "OrgUnitType", "PassthroughCredentialRecord", "PassthroughVaultCipher",
+    "OrgUnitSummary", "OrgUnitType", "OrgUnitUnknownUserError",
+    "PassthroughCredentialRecord", "PassthroughVaultCipher",
     "PermissionBrokerPolicy", "PermissionBrokerService", "PermissionBrokerTicket",
     "PermissionCheckOutcome", "PlatformRole", "RevocationStoreProtocol",
     "SessionTokenPair", "TokenClaims", "TotpManager", "UserIdentity", "WorkspaceAccessSummary",
@@ -335,7 +341,8 @@ __all__ = [
     "compute_secret_masked_hint",
     "extract_connector_scheme", "generate_new_org_unit_id", "list_evaluator_org_unit_summaries",
     "list_native_role_matrix", "normalize_member_user_ids", "normalize_org_unit_slug",
-    "parse_permission_kb_markdown", "sort_org_unit_dicts_topologically",
+    "parse_permission_kb_markdown", "resolve_and_validate_org_unit_users",
+    "KnownOrgUser", "sort_org_unit_dicts_topologically",
     "sort_org_unit_summaries_dfs", "validate_grant_resource_kind", "validate_iam_roles",
     "validate_org_unit_hierarchy",
 ]  # fmt: skip

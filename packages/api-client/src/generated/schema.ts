@@ -1867,6 +1867,11 @@ export interface components {
       source_uri: string;
       workspace_id: string;
     };
+    KnownOrgUserResponse: {
+      display_name: string;
+      email?: string | null;
+      principal_id: string;
+    };
     LaunchProcessFromFolderRequest: {
       target_workflow_uri?: string;
       workspace_id: string;
@@ -2141,6 +2146,7 @@ export interface components {
       unit_type: "ENTERPRISE" | "BU" | "TRIBE" | "TEAM" | "SUB_TEAM";
     };
     OrgUnitsListResponse: {
+      known_users?: (components["schemas"]["KnownOrgUserResponse"])[];
       org_units: (components["schemas"]["OrgUnitResponse"])[];
       trace_id: string;
     };
@@ -5414,6 +5420,7 @@ export type JiraJqlSearchRequest = components["schemas"]["JiraJqlSearchRequest"]
 export type JiraJqlSearchResponse = components["schemas"]["JiraJqlSearchResponse"];
 export type KbDocumentSchemaItem = components["schemas"]["KbDocumentSchemaItem"];
 export type KbStaleAlertSchemaItem = components["schemas"]["KbStaleAlertSchemaItem"];
+export type KnownOrgUserResponse = components["schemas"]["KnownOrgUserResponse"];
 export type LaunchProcessFromFolderRequest = components["schemas"]["LaunchProcessFromFolderRequest"];
 export type LaunchProcessFromFolderResponse = components["schemas"]["LaunchProcessFromFolderResponse"];
 export type LlmConnectionTestRequest = components["schemas"]["LlmConnectionTestRequest"];

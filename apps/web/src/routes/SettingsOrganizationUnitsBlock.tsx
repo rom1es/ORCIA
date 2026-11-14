@@ -4,6 +4,7 @@ import {
   OrciaButton,
   OrciaIcon,
   type ControlCenterWorkspaceGovItem,
+  type KnownUserOption,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
@@ -67,6 +68,7 @@ export function SettingsOrganizationUnitsBlock({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [orgDeleteFeedback, setOrgDeleteFeedback] = useState<string | null>(null);
+  const [knownUsers, setKnownUsers] = useState<readonly KnownUserOption[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +77,9 @@ export function SettingsOrganizationUnitsBlock({
       if (res.ok) {
         if (res.units.length > 0) {
           syncOrgUnitsFromServer(res.units);
+        }
+        if (res.knownUsers) {
+          setKnownUsers(res.knownUsers);
         }
       } else {
         setOrgDeleteFeedback(res.errorMessage);
@@ -279,6 +284,7 @@ export function SettingsOrganizationUnitsBlock({
               isFr={isFr}
               canMutate={canMutate}
               labels={labels}
+              knownUsers={knownUsers}
               onEdit={(unit) => { setModalError(null); setEditingUnit(unit); }}
               onManageMembers={(unit) => { setModalError(null); setManagingMembersUnit(unit); }}
               onRequestDelete={(item) => {
@@ -296,6 +302,8 @@ export function SettingsOrganizationUnitsBlock({
         onOpenChange={setCreateModalOpen}
         canMutate={canMutate}
         orgUnits={orgUnits}
+        knownUsers={knownUsers}
+        unknownUserErrorLabel={labels.unknownUserError}
         labels={labels.createModal}
         errorMessage={modalError}
         isSubmitting={isSubmitting}
@@ -321,6 +329,8 @@ export function SettingsOrganizationUnitsBlock({
         onOpenChange={(open) => !open && setManagingMembersUnit(null)}
         canMutate={canMutate}
         labels={labels.membersModal}
+        knownUsers={knownUsers}
+        unknownUserErrorLabel={labels.unknownUserError}
         errorMessage={modalError}
         isSubmitting={isSubmitting}
         onSave={(orgUnitId, values) => void handleMembersSave(orgUnitId, values)}

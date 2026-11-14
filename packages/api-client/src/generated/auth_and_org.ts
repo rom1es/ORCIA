@@ -9,6 +9,7 @@ export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorksp
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type CatalogResourceInspectionResponse = components["schemas"]["CatalogResourceInspectionResponse"];
 export type CatalogResourceSourceResponse = components["schemas"]["CatalogResourceSourceResponse"];
+export type KnownOrgUserResponse = components["schemas"]["KnownOrgUserResponse"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
 export type McpPersonalTokenCreateRequest = components["schemas"]["McpPersonalTokenCreateRequest"];

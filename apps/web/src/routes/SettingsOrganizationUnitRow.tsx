@@ -1,4 +1,4 @@
-import { OrciaButton, OrciaIcon, StatusBadge } from "@orcia/ui";
+import { OrciaButton, OrciaIcon, StatusBadge, type KnownUserOption } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
 import type { OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
@@ -9,6 +9,7 @@ export interface SettingsOrganizationUnitRowProps {
   readonly rowItem: OrgTreeRowItem;
   readonly isFr: boolean;
   readonly canMutate: boolean;
+  readonly knownUsers?: readonly KnownUserOption[];
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"];
   readonly onEdit: (unit: ConfiguredOrgUnit) => void;
   readonly onManageMembers: (unit: ConfiguredOrgUnit) => void;
@@ -19,6 +20,7 @@ export function SettingsOrganizationUnitRow({
   rowItem,
   isFr,
   canMutate,
+  knownUsers = [],
   labels,
   onEdit,
   onManageMembers,
@@ -139,11 +141,24 @@ export function SettingsOrganizationUnitRow({
 
       <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
         {unit.leadUserId ? (
-          <StatusBadge
-            testId={`org-unit-lead-badge-${unit.id}`}
-            label={`${labels.badges.leadPrefix} ${unit.leadUserId}`}
-            tone="cobalt"
-          />
+          (() => {
+            const leadUser = knownUsers.find(
+              (u) =>
+                u.principalId.toLowerCase() === unit.leadUserId?.toLowerCase() ||
+                (u.email && u.email.toLowerCase() === unit.leadUserId?.toLowerCase()),
+            );
+            const leadLabelText =
+              leadUser && leadUser.displayName && leadUser.displayName !== unit.leadUserId
+                ? `${labels.badges.leadPrefix} ${leadUser.displayName} (${unit.leadUserId})`
+                : `${labels.badges.leadPrefix} ${unit.leadUserId}`;
+            return (
+              <StatusBadge
+                testId={`org-unit-lead-badge-${unit.id}`}
+                label={leadLabelText}
+                tone="cobalt"
+              />
+            );
+          })()
         ) : null}
 
         <StatusBadge

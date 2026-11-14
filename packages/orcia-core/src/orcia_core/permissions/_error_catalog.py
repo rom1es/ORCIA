@@ -235,6 +235,17 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "An Alembic migration is required.",
         ),
     },
+    "ERR_ORG_UNIT_UNKNOWN_USER": {
+        "fr": LocalizedErrorCopy(
+            "Utilisateur inconnu ou inactif",
+            "L'identifiant spécifié ne correspond à aucun utilisateur humain actif "
+            "et connu de la plateforme.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Unknown or inactive user",
+            "The specified identifier does not match any active known human user on the platform.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]

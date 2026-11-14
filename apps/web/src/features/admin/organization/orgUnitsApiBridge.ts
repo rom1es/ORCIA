@@ -5,11 +5,16 @@ import {
   type OrgUnitPatchRequest,
   type OrgUnitResponse,
 } from "@orcia/api-client";
+import type { KnownUserOption } from "@orcia/ui";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 
 export type OrgUnitsApiListResult =
-  | { readonly ok: true; readonly units: readonly ConfiguredOrgUnit[] }
+  | {
+      readonly ok: true;
+      readonly units: readonly ConfiguredOrgUnit[];
+      readonly knownUsers: readonly KnownUserOption[];
+    }
   | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
 
 export type OrgUnitApiMutationResult =
@@ -75,6 +80,19 @@ function extractApiError(
   };
 }
 
+export function isKnownUserIdentifier(
+  identifier: string,
+  knownUsers: readonly KnownUserOption[],
+): boolean {
+  const trimmed = identifier.trim().toLowerCase();
+  if (!trimmed) return true;
+  return knownUsers.some(
+    (u) =>
+      u.principalId.trim().toLowerCase() === trimmed ||
+      (u.email ? u.email.trim().toLowerCase() === trimmed : false),
+  );
+}
+
 export async function fetchOrgUnitsFromApi(
   locale: "fr" | "en",
 ): Promise<OrgUnitsApiListResult> {
@@ -82,16 +100,26 @@ export async function fetchOrgUnitsFromApi(
     const client = buildOrgUnitsClient(locale);
     const response = await client.listOrgUnits();
     if (!Array.isArray(response.org_units)) {
-      return { ok: true, units: [] };
+      return { ok: true, units: [], knownUsers: [] };
     }
+    const mappedKnownUsers: KnownUserOption[] = Array.isArray(response.known_users)
+      ? response.known_users.map((u) => ({
+          principalId: u.principal_id,
+          displayName: u.display_name,
+          email: u.email ?? null,
+        }))
+      : [];
     return {
       ok: true,
       units: response.org_units.map(mapOrgUnitDtoToConfigured),
+      knownUsers: mappedKnownUsers,
     };
   } catch (err: unknown) {
     return { ok: false, ...extractApiError(err, locale) };
   }
 }
+
+export const fetchOrgUnitsWithKnownUsersFromApi = fetchOrgUnitsFromApi;
 
 export async function createOrgUnitViaApi(
   payload: OrgUnitCreateRequest,

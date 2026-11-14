@@ -16,6 +16,11 @@ from orcia_api.routers._org_units_helpers import (
     sync_evaluator_from_summaries,
     update_in_evaluator,
 )
+from orcia_api.routers._org_units_users import (
+    collect_known_org_users,
+    serialize_known_users,
+    validate_and_normalize_org_unit_users_in_request,
+)
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.auth_and_org import (
     OrgUnitCreateRequest,
@@ -33,6 +38,7 @@ from orcia_core.bootstrap import (
 from orcia_core.observability.logging import get_logger
 from orcia_core.permissions import OrgUnitNode, OrgUnitSummary, list_evaluator_org_unit_summaries
 from orcia_core.permissions.errors import OrciaDomainError
+from orcia_core.permissions.org_user_validation import KnownOrgUser
 
 logger = get_logger("orcia.api.org_units")
 router = APIRouter()
@@ -57,11 +63,14 @@ async def list_org_units(
     effective_persona = persona_key or request.headers.get("x-orcia-persona", "").strip() or None
     resolve_request_user(request, persona_key=effective_persona)
     summaries: list[OrgUnitSummary] | None = None
+    known_users_raw: list[KnownOrgUser] = []
     if pg_sync_enabled():
         try:
             engine = get_or_create_shared_db_engine(request)
             summaries = await list_org_units_from_postgres18(engine)
             sync_evaluator_from_summaries(svc.evaluator, summaries)
+            async with engine.connect() as conn:
+                known_users_raw = await collect_known_org_users(request, conn)
         except OrciaDomainError:
             raise
         except Exception as exc:
@@ -74,8 +83,11 @@ async def list_org_units(
             [w.owner_org_unit_id for w in svc.evaluator.workspaces],
             svc.evaluator.workspaces,
         )
+    if not known_users_raw:
+        known_users_raw = await collect_known_org_users(request, None)
     return OrgUnitsListResponse(
         org_units=[serialize_org_unit_summary(s) for s in summaries],
+        known_users=serialize_known_users(known_users_raw),
         trace_id=resolve_trace_id(request),
     )
 
@@ -126,7 +138,15 @@ async def create_org_unit(
             classify_and_handle_pg_error(exc, operation="create_org_unit")
             created = None
     if created is None:
-        created = create_in_evaluator(svc.evaluator, payload)
+        resolved_lead, resolved_members = await validate_and_normalize_org_unit_users_in_request(
+            request, payload.lead_user_id, payload.member_user_ids, conn=None
+        )
+        created = create_in_evaluator(
+            svc.evaluator,
+            payload,
+            resolved_lead=resolved_lead,
+            resolved_members=resolved_members,
+        )
     return serialize_org_unit_summary(created)
 
 
@@ -178,7 +198,29 @@ async def patch_org_unit(
             classify_and_handle_pg_error(exc, operation="patch_org_unit")
             updated = None
     if updated is None:
-        updated = update_in_evaluator(svc.evaluator, org_unit_id, payload)
+        should_validate_users = (
+            "lead_user_id" in payload.model_fields_set
+            and bool((payload.lead_user_id or "").strip())
+        ) or (payload.member_user_ids is not None)
+        if should_validate_users:
+            (
+                resolved_lead,
+                resolved_members,
+            ) = await validate_and_normalize_org_unit_users_in_request(
+                request,
+                payload.lead_user_id if "lead_user_id" in payload.model_fields_set else None,
+                payload.member_user_ids,
+                conn=None,
+            )
+        else:
+            resolved_lead, resolved_members = None, None
+        updated = update_in_evaluator(
+            svc.evaluator,
+            org_unit_id,
+            payload,
+            resolved_lead=resolved_lead,
+            resolved_members=resolved_members,
+        )
     return serialize_org_unit_summary(updated)
 
 

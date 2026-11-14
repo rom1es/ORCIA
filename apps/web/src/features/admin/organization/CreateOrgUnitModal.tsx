@@ -1,8 +1,15 @@
-import { OrciaAlertBanner, OrciaButton, OrciaDialog } from "@orcia/ui";
+import {
+  OrciaAlertBanner,
+  OrciaButton,
+  OrciaDialog,
+  OrciaKnownUserCombobox,
+  type KnownUserOption,
+} from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { AdminAndStudioDictionarySection } from "../../../i18n/locales/admin_and_studio_labels";
 import { getEligibleParentBuUnits } from "./orgTreeHelpers";
+import { isKnownUserIdentifier } from "./orgUnitsApiBridge";
 
 export interface CreateOrgUnitFormValues {
   readonly kind: "BU" | "TEAM";
@@ -18,7 +25,9 @@ export interface CreateOrgUnitModalProps {
   readonly onOpenChange: (open: boolean) => void;
   readonly canMutate: boolean;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
+  readonly knownUsers?: readonly KnownUserOption[];
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"]["createModal"];
+  readonly unknownUserErrorLabel?: string;
   readonly errorMessage: string | null;
   readonly isSubmitting: boolean;
   readonly onSubmit: (values: CreateOrgUnitFormValues) => void;
@@ -29,7 +38,9 @@ export function CreateOrgUnitModal({
   onOpenChange,
   canMutate,
   orgUnits,
+  knownUsers = [],
   labels,
+  unknownUserErrorLabel,
   errorMessage,
   isSubmitting,
   onSubmit,
@@ -43,6 +54,7 @@ export function CreateOrgUnitModal({
   const [parentId, setParentId] = useState("scope-global");
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [leadUserId, setLeadUserId] = useState("");
+  const [leadValidationError, setLeadValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -52,6 +64,7 @@ export function CreateOrgUnitModal({
       setParentId("scope-global");
       setBillingEnabled(true);
       setLeadUserId("");
+      setLeadValidationError(null);
     }
   }, [open]);
 
@@ -83,13 +96,21 @@ export function CreateOrgUnitModal({
         onSubmit={(e) => {
           e.preventDefault();
           if (!canMutate || !name.trim() || isSubmitting) return;
+          const trimmedLead = leadUserId.trim();
+          if (trimmedLead && !isKnownUserIdentifier(trimmedLead, knownUsers)) {
+            setLeadValidationError(
+              unknownUserErrorLabel ||
+                "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
+            );
+            return;
+          }
           onSubmit({
             kind,
             name: name.trim(),
             slug: slug.trim(),
             parentId,
             billingEnabled,
-            leadUserId: leadUserId.trim(),
+            leadUserId: trimmedLead,
           });
         }}
         style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}
@@ -189,22 +210,30 @@ export function CreateOrgUnitModal({
           <label htmlFor="org-unit-lead-input" className="orcia-ds-label">
             {labels.leadLabel}
           </label>
-          <input
-            id="org-unit-lead-input"
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="org-unit-lead-input"
+          <OrciaKnownUserCombobox
+            inputId="org-unit-lead-input"
+            inputTestId="org-unit-lead-input"
             disabled={!canMutate || isSubmitting}
             value={leadUserId}
-            onChange={(e) => setLeadUserId(e.target.value)}
+            onChange={(val) => {
+              setLeadUserId(val);
+              setLeadValidationError(null);
+            }}
+            knownUsers={knownUsers}
             placeholder={labels.leadPlaceholder}
-            className="orcia-ds-input"
-            style={{ width: "100%" }}
           />
+          {leadValidationError ? (
+            <div
+              data-testid="org-unit-unknown-user-error"
+              style={{
+                fontSize: "12px",
+                color: "var(--color-status-error)",
+                marginTop: "2px",
+              }}
+            >
+              {leadValidationError}
+            </div>
+          ) : null}
         </div>
 
         <label

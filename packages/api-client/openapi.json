@@ -2476,7 +2476,7 @@
       },
       "AttachedWorkspaceRefResponse": {
         "additionalProperties": false,
-        "description": "Story 17.2 — Reference to an attached solution workspace.",
+        "description": "Reference to an attached solution workspace.",
         "properties": {
           "id": {
             "title": "Id",
@@ -11993,6 +11993,37 @@
         "title": "KbStaleAlertSchemaItem",
         "type": "object"
       },
+      "KnownOrgUserResponse": {
+        "additionalProperties": false,
+        "description": "Active known platform user (human) suitable for org unit lead / member assignment.",
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "principal_id",
+          "display_name"
+        ],
+        "title": "KnownOrgUserResponse",
+        "type": "object"
+      },
       "LaunchProcessFromFolderRequest": {
         "additionalProperties": false,
         "description": "Request for `POST /api/v1/assistant/folders/{folder_id}/launch-process` (`Story 10.4`).",
@@ -13439,7 +13470,7 @@
       },
       "OrgUnitCreateRequest": {
         "additionalProperties": false,
-        "description": "Story 17.2 — Request payload for `POST /api/v1/org-units`.",
+        "description": "Request payload for `POST /api/v1/org-units`.",
         "properties": {
           "billing_enabled": {
             "default": true,
@@ -13514,7 +13545,7 @@
       },
       "OrgUnitDeleteResponse": {
         "additionalProperties": false,
-        "description": "Story 17.2 — Deletion confirmation payload for `DELETE /api/v1/org-units/{org_unit_id}`.",
+        "description": "Deletion confirmation payload for `DELETE /api/v1/org-units/{org_unit_id}`.",
         "properties": {
           "deleted": {
             "default": true,
@@ -13541,7 +13572,7 @@
       },
       "OrgUnitPatchRequest": {
         "additionalProperties": false,
-        "description": "Story 17.2 — Request payload for `PATCH /api/v1/org-units/{org_unit_id}`.",
+        "description": "Request payload for `PATCH /api/v1/org-units/{org_unit_id}`.",
         "properties": {
           "billing_enabled": {
             "anyOf": [
@@ -13612,7 +13643,7 @@
       },
       "OrgUnitResponse": {
         "additionalProperties": false,
-        "description": "Story 17.2 — Enriched organizational unit (`BU` / `Pôle` / `TEAM`) DTO.",
+        "description": "Enriched organizational unit (`BU` / `Pôle` / `TEAM`) DTO.",
         "properties": {
           "attached_workspaces": {
             "items": {
@@ -13789,8 +13820,15 @@
       },
       "OrgUnitsListResponse": {
         "additionalProperties": false,
-        "description": "Story 17.2 — Hierarchical DFS list of organizational units (`GET /api/v1/org-units`).",
+        "description": "Hierarchical DFS list of org units with known platform users (`GET /api/v1/org-units`).",
         "properties": {
+          "known_users": {
+            "items": {
+              "$ref": "#/components/schemas/KnownOrgUserResponse"
+            },
+            "title": "Known Users",
+            "type": "array"
+          },
           "org_units": {
             "items": {
               "$ref": "#/components/schemas/OrgUnitResponse"

@@ -133,6 +133,14 @@ class OrgUnitStorageSchemaError(OrciaDomainError):
     )
 
 
+class OrgUnitUnknownUserError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_UNKNOWN_USER",
+        422,
+        "org-unit-unknown-user",
+    )
+
+
 class InvalidIamRoleError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_IAM_INVALID_ROLE", 422, "iam-invalid-role"
 
@@ -170,6 +178,7 @@ __all__ = [
     "OrgUnitInvalidParentKindError",
     "OrgUnitNotEmptyError",
     "OrgUnitStorageSchemaError",
+    "OrgUnitUnknownUserError",
     "PERMISSIONS_ERROR_CATALOG",
     "PermissionBrokerDeniedError",
     "PreconditionRequiredError",

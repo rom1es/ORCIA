@@ -52,6 +52,9 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
   it("renders pedagogical callout + /workspaces CTA, creates multi-level BU -> Sous-BU -> TEAM hierarchy with depth indentation, edits, manages members, enforces danger/non-empty delete, and survives F5 reload", async () => {
     const firstMount = await renderOrganizationSettings();
     dismissFirstBootAdminIfOpen();
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     // 1. Pedagogical header & zero legacy personal attachment UI ("Retirer mon rattachement")
     const callout = screen.getByTestId("organization-pedagogical-callout");
@@ -250,5 +253,47 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
 
     expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
     expect(screen.getByTestId("settings-readonly-access-banner")).toBeDefined();
+  });
+
+  it("autocompletes known users and strictly rejects unknown users in Create and Manage Members modals", async () => {
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // 1. Open create modal
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    const leadInput = screen.getByTestId("org-unit-lead-input");
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Pôle Sécurité" },
+    });
+
+    // 2. Typing unknown user shows no matches and submit is blocked by UI error
+    fireEvent.focus(leadInput);
+    fireEvent.change(leadInput, { target: { value: "inconnu@orcia.fr" } });
+    expect(screen.getByTestId("org-unit-lead-input-no-match")).toBeDefined();
+
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    const unknownErrorBanner = screen.getByTestId("org-unit-unknown-user-error");
+    expect(unknownErrorBanner.textContent).toContain("aucun utilisateur");
+
+    // 3. Autocompletion: typing partial 'claire' shows suggestion
+    fireEvent.change(leadInput, { target: { value: "claire" } });
+    const suggestions = screen.getByTestId("org-unit-lead-input-suggestions");
+    expect(suggestions).toBeDefined();
+    const claireOption = screen.getByTestId("org-unit-lead-input-option-claire.admin@orcia.fr");
+    expect(claireOption.textContent).toContain("Claire Admin");
+
+    // Click suggestion selects principalId and closes menu
+    fireEvent.mouseDown(claireOption);
+    expect((leadInput as HTMLInputElement).value).toBe("claire.admin@orcia.fr");
+    expect(screen.queryByTestId("org-unit-unknown-user-error")).toBeNull();
+
+    // 4. Submit successfully creates unit with resolved known user
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+    const row = await screen.findByTestId("org-unit-row-org-1");
+    expect(row).toBeDefined();
+    expect(screen.getByTestId("org-unit-lead-badge-org-1").textContent).toContain("Claire Admin");
   });
 });

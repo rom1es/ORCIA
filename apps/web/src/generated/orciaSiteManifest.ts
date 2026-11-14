@@ -9,7 +9,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-14",
   "stats": {
     "activeRoutesCount": 24,
-    "uiPrimitivesCount": 99,
+    "uiPrimitivesCount": 100,
     "installedPacksCount": 0,
     "alembicMigrationsCount": 32,
     "architectureDecisionsCount": 22,
@@ -105,6 +105,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaDropdownMenu",
     "OrciaIcon",
     "OrciaInput",
+    "OrciaKnownUserCombobox",
     "OrciaProductShowcaseSiteView",
     "OrciaRadixSelect",
     "OrciaSectionCard",
@@ -438,8 +439,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-14",
       "phaseOrStory": "Ajustement Transverse (CAP-067)",
       "reportFile": "2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances-tech-lead-report.md",
-      "domain": "Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL (HTTP 503 ERR_ORG_STORAGE_SCHEMA_OUTDATED), Réconciliation Relationnelle Workspaces & Modale de Dépendances Nominative (CAP-067)",
-      "summary": "Garde de schéma SQL strict (HTTP 503 sur ProgrammingError / UndefinedColumnError, élimination du repli silencieux vers seeds.py), suppression du court-circuit conditionnel dans reconcile_workspaces_on_load pour fusionner les espaces relationnels SQL, DTOs enrichis de attached_workspaces (id, slug, name), modale ConfirmDeleteOrgUnitModal avec liste nominative org-unit-delete-dependencies-list, bouton Gérer les espaces rattachés et bouton confirm désactivé quand non-vide, et découpage sous 360 lignes de 4 modules clés."
+      "domain": "Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL (HTTP 503), Modale Dépendances Nominative, Auto-complétion Membres Connus (OrciaKnownUserCombobox) & Rejet Strict (HTTP 422 ERR_ORG_UNIT_UNKNOWN_USER)",
+      "summary": "Garde SQL strict (503 au lieu du fallback seeds.py), réconciliation complète des workspaces SQL, modale ConfirmDeleteOrgUnitModal nominative avec bouton désactivé, composant RGAA OrciaKnownUserCombobox (iam_accounts $\\cup$ users), rejet UI + API 422 des utilisateurs inconnus, et correctif FinOps billingEnabled."
     },
     {
       "date": "2026-11-14",

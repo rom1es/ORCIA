@@ -172,7 +172,9 @@ def render_domain_shards(openapi_spec: dict[str, Any]) -> dict[str, str]:
         mod = importlib.import_module(f"orcia_api.schemas.{domain_mod}")
         model_entries: list[tuple[str, str]] = []
         for name, obj in inspect.getmembers(mod, inspect.isclass):
-            if not (issubclass(obj, BaseModel) and obj.__module__ == mod.__name__):
+            if not issubclass(obj, BaseModel):
+                continue
+            if obj.__module__ != mod.__name__ and name not in getattr(mod, "__all__", ()):
                 continue
             disambiguated = f"orcia_api__schemas__{domain_mod}__{name}"
             if name in schemas:
