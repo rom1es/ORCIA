@@ -28,6 +28,9 @@ from orcia_core.permissions.crypto import (
     TokenClaims,
     TotpManager,
 )
+from orcia_core.permissions.errors import (
+    OrgUnitStorageSchemaError,
+)
 from orcia_core.permissions.evaluator import (
     ADMIN_MODULE_ALLOWED_ROLES,
     ROLLUP_SUPERVISOR_ROLES,
@@ -79,6 +82,7 @@ from orcia_core.permissions.models import (
     WorkspaceVisibilityMode,
 )
 from orcia_core.permissions.org_hierarchy import (
+    AttachedWorkspaceRef,
     OrgUnitKind,
     OrgUnitSummary,
     assert_org_unit_deletable,
@@ -313,14 +317,15 @@ __all__ = [
     "RoleMatrixDescriptor", "RolePermissionGrant", "SecretAction", "SecretInputSpec",
     "SecretStatusView", "SettingCategory", "SettingScopeLevel", "SubjectType",
     "VALID_GRANT_RESOURCE_KINDS", "VALID_IAM_ROLES", "AccessMode", "Argon2idPasswordHasher",
-    "AuthAndOrganizationService", "persona_impersonation_allowed", "AuthMode",
-    "BrokerConnectorScheme", "BrokerStepState", "BrokerTicketAction", "BrokerTicketStatus",
-    "CatalogAclEntry", "CatalogPermission", "CatalogVisibilityScope", "DatasourceScheme",
-    "EffectiveResourcePermissions", "ExecutionIdentityMode", "InMemoryRevocationStore",
-    "JwtSessionManager", "KeyValueRevocationStore", "MatrixPermissionEvaluator", "OrgUnitKind",
-    "OrgUnitNode", "OrgUnitSummary", "OrgUnitType", "PassthroughCredentialRecord",
-    "PassthroughVaultCipher", "PermissionBrokerPolicy", "PermissionBrokerService",
-    "PermissionBrokerTicket", "PermissionCheckOutcome", "PlatformRole", "RevocationStoreProtocol",
+    "AttachedWorkspaceRef", "AuthAndOrganizationService", "persona_impersonation_allowed",
+    "AuthMode", "BrokerConnectorScheme", "BrokerStepState", "BrokerTicketAction",
+    "BrokerTicketStatus", "CatalogAclEntry", "CatalogPermission", "CatalogVisibilityScope",
+    "DatasourceScheme", "EffectiveResourcePermissions", "ExecutionIdentityMode",
+    "InMemoryRevocationStore", "JwtSessionManager", "KeyValueRevocationStore",
+    "MatrixPermissionEvaluator", "OrgUnitKind", "OrgUnitNode", "OrgUnitStorageSchemaError",
+    "OrgUnitSummary", "OrgUnitType", "PassthroughCredentialRecord", "PassthroughVaultCipher",
+    "PermissionBrokerPolicy", "PermissionBrokerService", "PermissionBrokerTicket",
+    "PermissionCheckOutcome", "PlatformRole", "RevocationStoreProtocol",
     "SessionTokenPair", "TokenClaims", "TotpManager", "UserIdentity", "WorkspaceAccessSummary",
     "WorkspaceDatasourceEntity", "WorkspaceEntity", "WorkspaceMembershipEntity",
     "WorkspaceVisibilityMode", "assert_anti_lockout_on_accounts", "assert_org_unit_deletable",

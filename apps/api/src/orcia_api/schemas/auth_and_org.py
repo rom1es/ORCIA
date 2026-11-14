@@ -285,6 +285,16 @@ class McpPersonalTokenListResponse(BaseModel):
     trace_id: str | None = None
 
 
+class AttachedWorkspaceRefResponse(BaseModel):
+    """Story 17.2 — Reference to an attached solution workspace."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: str
+    slug: str
+    name: str
+
+
 class OrgUnitResponse(BaseModel):
     """Story 17.2 — Enriched organizational unit (`BU` / `Pôle` / `TEAM`) DTO."""
 
@@ -299,6 +309,7 @@ class OrgUnitResponse(BaseModel):
     lead_user_id: str | None = None
     member_user_ids: list[str] = Field(default_factory=list)
     attached_workspaces_count: int = Field(default=0, ge=0)
+    attached_workspaces: list[AttachedWorkspaceRefResponse] = Field(default_factory=list)
 
 
 class OrgUnitsListResponse(BaseModel):

@@ -5,6 +5,7 @@
 
 import type { components } from "./schema";
 
+export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type CatalogResourceInspectionResponse = components["schemas"]["CatalogResourceInspectionResponse"];
 export type CatalogResourceSourceResponse = components["schemas"]["CatalogResourceSourceResponse"];

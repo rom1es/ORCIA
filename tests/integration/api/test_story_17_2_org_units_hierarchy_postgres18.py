@@ -250,6 +250,12 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             listed_with_ws = await client.get("/api/v1/org-units", headers=headers)
             team_entry = next(u for u in listed_with_ws.json()["org_units"] if u["id"] == team_id)
             assert team_entry["attached_workspaces_count"] == 1
+            assert len(team_entry["attached_workspaces"]) == 1
+            assert team_entry["attached_workspaces"][0] == {
+                "id": str(ws_uuid),
+                "slug": "ws-story-17-2",
+                "name": "Espace Story 17.2",
+            }
 
             del_team_blocked = await client.delete(f"/api/v1/org-units/{team_id}", headers=headers)
             assert del_team_blocked.status_code == 409

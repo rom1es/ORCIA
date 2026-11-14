@@ -370,6 +370,11 @@ export interface components {
       threads: (components["schemas"]["AssistantThreadSchemaItem"])[];
       workspace_id: string;
     };
+    AttachedWorkspaceRefResponse: {
+      id: string;
+      name: string;
+      slug: string;
+    };
     AuthTokenResponse: {
       access_token: string;
       display_name: string;
@@ -2110,6 +2115,7 @@ export interface components {
       parent_id?: string | null;
     };
     OrgUnitResponse: {
+      attached_workspaces?: (components["schemas"]["AttachedWorkspaceRefResponse"])[];
       attached_workspaces_count?: number;
       billing_enabled?: boolean;
       id: string;
@@ -5235,6 +5241,7 @@ export type AssistantStudioNodeSchemaItem = components["schemas"]["AssistantStud
 export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
+export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
 export type BackgroundAuditRunRequest = components["schemas"]["BackgroundAuditRunRequest"];

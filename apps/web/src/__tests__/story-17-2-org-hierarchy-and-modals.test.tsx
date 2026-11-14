@@ -1,8 +1,9 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearPlatformSetupStorage } from "../components/platformSetupStore";
+import * as orgUnitsApiBridge from "../features/admin/organization/orgUnitsApiBridge";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { resetAuthSessionStore, useAuthSessionStore } from "../stores/authSessionStore";
 
@@ -169,21 +170,22 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
       "marc.lead@orcia.fr",
     );
 
-    // 7. Confirm Delete Modal: danger button (.orcia-ds-btn-danger), FinOps warning, and 409 non-empty block
+    // 7. Confirm Delete Modal: danger button (.orcia-ds-btn-danger), dependencies list, FinOps warning, and disabled confirm button
     expect(
       screen.getByTestId("delete-org-unit-btn-org-2").className,
     ).toContain("orcia-ds-btn-danger");
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
     expect(screen.getByTestId("confirm-delete-org-unit-modal")).toBeDefined();
     expect(screen.getByTestId("org-unit-delete-finops-warning")).toBeDefined();
+    expect(screen.getByTestId("org-unit-delete-dependencies-list")).toBeDefined();
+    expect(screen.getByTestId("org-unit-delete-dependencies-list").textContent).toContain(
+      "Équipe Agents RAG",
+    );
     expect(screen.getByTestId("org-unit-delete-blocked-banner")).toBeDefined();
-    expect(
-      screen.getByTestId("confirm-delete-org-unit-btn-org-2").className,
-    ).toContain("orcia-ds-btn-danger");
-    fireEvent.click(screen.getByTestId("confirm-delete-org-unit-btn-org-2"));
-    const deleteFeedback = await screen.findByTestId("org-unit-delete-feedback");
-    expect(deleteFeedback.textContent).toContain("Suppression refusée");
-    expect(screen.getByTestId("org-unit-row-org-2")).toBeDefined();
+    const confirmBtn = screen.getByTestId("confirm-delete-org-unit-btn-org-2") as HTMLButtonElement;
+    expect(confirmBtn.className).toContain("orcia-ds-btn-danger");
+    expect(confirmBtn.disabled).toBe(true);
+    fireEvent.click(screen.getByTestId("cancel-delete-org-unit-btn-org-2"));
 
     // 8. CTA "Ouvrir Mes Espaces ->" navigates cleanly to /workspaces
     fireEvent.click(screen.getByTestId("organization-open-workspaces-btn"));
@@ -201,6 +203,38 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     expect(screen.getByTestId("org-unit-row-org-3").getAttribute("data-depth")).toBe("2");
     expect(screen.getByTestId("org-unit-members-count-org-3").textContent).toBe("2 membres");
     expect(document.body.textContent ?? "").not.toContain("Retirer mon rattachement");
+  });
+
+  it("displays org-unit-delete-feedback when concurrent 409 is returned from API on delete", async () => {
+    await renderOrganizationSettings();
+    dismissFirstBootAdminIfOpen();
+
+    // Create an isolated leaf unit
+    fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
+    fireEvent.change(screen.getByTestId("org-unit-name-input"), {
+      target: { value: "Direction Solitaire" },
+    });
+    fireEvent.click(screen.getByTestId("create-org-unit-btn"));
+
+    const row = await screen.findByTestId("org-unit-row-org-1");
+    expect(row).toBeDefined();
+
+    // Open delete modal
+    fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-1"));
+    expect(screen.getByTestId("confirm-delete-org-unit-modal")).toBeDefined();
+    const confirmBtn = screen.getByTestId("confirm-delete-org-unit-btn-org-1") as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(false);
+
+    // Mock concurrent 409 failure from backend
+    const deleteSpy = vi.spyOn(orgUnitsApiBridge, "deleteOrgUnitViaApi").mockResolvedValueOnce({
+      ok: false,
+      errorMessage: "Suppression refusée pour « Direction Solitaire » : 1 espace rattaché.",
+    });
+
+    fireEvent.click(confirmBtn);
+    const deleteFeedback = await screen.findByTestId("org-unit-delete-feedback");
+    expect(deleteFeedback.textContent).toContain("Suppression refusée pour « Direction Solitaire »");
+    expect(deleteSpy).toHaveBeenCalledWith("org-1", "fr");
   });
 
   it("enforces read-only access banner for OBSERVER on /settings", async () => {

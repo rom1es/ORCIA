@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 32,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 114,
+    "techLeadReportsCount": 115,
     "capabilitiesCount": 59,
     "liveCapabilitiesCount": 56,
     "verifiedCapabilitiesCount": 40
@@ -434,6 +434,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-14",
+      "phaseOrStory": "Ajustement Transverse (CAP-067)",
+      "reportFile": "2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances-tech-lead-report.md",
+      "domain": "Blocage Suppression Unité d'Organisation, Garde Schéma PostgreSQL (HTTP 503 ERR_ORG_STORAGE_SCHEMA_OUTDATED), Réconciliation Relationnelle Workspaces & Modale de Dépendances Nominative (CAP-067)",
+      "summary": "Garde de schéma SQL strict (HTTP 503 sur ProgrammingError / UndefinedColumnError, élimination du repli silencieux vers seeds.py), suppression du court-circuit conditionnel dans reconcile_workspaces_on_load pour fusionner les espaces relationnels SQL, DTOs enrichis de attached_workspaces (id, slug, name), modale ConfirmDeleteOrgUnitModal avec liste nominative org-unit-delete-dependencies-list, bouton Gérer les espaces rattachés et bouton confirm désactivé quand non-vide, et découpage sous 360 lignes de 4 modules clés."
+    },
     {
       "date": "2026-11-14",
       "phaseOrStory": "Story 17.5 (CAP-052, CAP-053)",

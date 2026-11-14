@@ -31,6 +31,9 @@ export function mapOrgUnitDtoToConfigured(dto: OrgUnitResponse): ConfiguredOrgUn
     leadUserId: dto.lead_user_id ?? null,
     memberUserIds: dto.member_user_ids ?? [],
     attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
+    attachedWorkspaces: dto.attached_workspaces
+      ? dto.attached_workspaces.map((w) => ({ id: w.id, slug: w.slug, name: w.name }))
+      : [],
   };
 }
 

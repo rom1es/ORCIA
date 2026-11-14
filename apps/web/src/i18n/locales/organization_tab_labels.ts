@@ -86,6 +86,10 @@ export interface OrganizationTabDictionarySection {
     readonly finopsWarningText: string;
     readonly blockedNonEmptyTitle: string;
     readonly blockedNonEmptyHint: string;
+    readonly deleteDependenciesHeading: string;
+    readonly deleteDependencySubUnitPrefix: string;
+    readonly deleteDependencyWorkspacePrefix: string;
+    readonly deleteOpenWorkspacesAction: string;
     readonly cancelButton: string;
     readonly confirmDeleteButton: string;
   };
@@ -187,7 +191,11 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
       "Attention FinOps : l'imputation FinOps est active sur cette unité. Vérifiez qu'aucun budget ou suivi de coûts en cours ne dépend de ce centre d'imputation avant de confirmer.",
     blockedNonEmptyTitle: "Suppression impossible : unité non vide",
     blockedNonEmptyHint:
-      "Déplacez ou supprimez d'abord les sous-unités et espaces rattachés ci-dessus avant de supprimer cette unité.",
+      "Déplacez ou supprimez les éléments listés ci-dessus avant de confirmer la suppression.",
+    deleteDependenciesHeading: "Éléments rattachés à déplacer ou supprimer :",
+    deleteDependencySubUnitPrefix: "Sous-unité",
+    deleteDependencyWorkspacePrefix: "Espace",
+    deleteOpenWorkspacesAction: "Gérer les espaces rattachés",
     cancelButton: "Annuler",
     confirmDeleteButton: "Confirmer la suppression",
   },
@@ -289,7 +297,11 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
       "FinOps Warning: FinOps billing is enabled on this unit. Ensure no active budget or cost tracking depends on this billing center before confirming.",
     blockedNonEmptyTitle: "Deletion blocked: unit is not empty",
     blockedNonEmptyHint:
-      "Move or delete the attached child units and workspaces listed above before deleting this unit.",
+      "Move or delete the items listed above before confirming deletion.",
+    deleteDependenciesHeading: "Attached items to move or delete:",
+    deleteDependencySubUnitPrefix: "Sub-unit",
+    deleteDependencyWorkspacePrefix: "Workspace",
+    deleteOpenWorkspacesAction: "Manage attached workspaces",
     cancelButton: "Cancel",
     confirmDeleteButton: "Confirm delete",
   },

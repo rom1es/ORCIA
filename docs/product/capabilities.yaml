@@ -491,11 +491,11 @@ capabilities:
     title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
     origin: epic
-    origin_ref: 17-2 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units
+    origin_ref: 17-2 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    surfaces: { route: "/spaces, /settings", api: "org_and_workspaces.py, org_units.py", ui: "SettingsOrganizationUnitsBlock + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal", migration: 20261111_1702_story_17_2_org_units_billing_and_members.py }
+    surfaces: { route: "/spaces, /settings", api: "org_and_workspaces.py, org_units.py", ui: "SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal", migration: 20261111_1702_story_17_2_org_units_billing_and_members.py }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]

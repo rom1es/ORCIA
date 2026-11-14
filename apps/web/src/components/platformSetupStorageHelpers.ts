@@ -75,6 +75,12 @@ export function writeStorageItem(key: string, value: string | null): void {
   }
 }
 
+export interface AttachedWorkspaceRef {
+  readonly id: string;
+  readonly slug: string;
+  readonly name: string;
+}
+
 export interface ConfiguredOrgUnit {
   readonly id: string;
   readonly name: string;
@@ -85,6 +91,7 @@ export interface ConfiguredOrgUnit {
   readonly leadUserId?: string | null;
   readonly memberUserIds?: readonly string[];
   readonly attachedWorkspacesCount?: number;
+  readonly attachedWorkspaces?: readonly AttachedWorkspaceRef[];
 }
 
 export interface ConfiguredRbacGrant {

@@ -2474,6 +2474,31 @@
         "title": "AssistantWorkspaceOverviewResponse",
         "type": "object"
       },
+      "AttachedWorkspaceRefResponse": {
+        "additionalProperties": false,
+        "description": "Story 17.2 — Reference to an attached solution workspace.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name"
+        ],
+        "title": "AttachedWorkspaceRefResponse",
+        "type": "object"
+      },
       "AuthTokenResponse": {
         "additionalProperties": false,
         "description": "Response payload for authentication and session refresh endpoints (AD-6).",
@@ -13589,6 +13614,13 @@
         "additionalProperties": false,
         "description": "Story 17.2 — Enriched organizational unit (`BU` / `Pôle` / `TEAM`) DTO.",
         "properties": {
+          "attached_workspaces": {
+            "items": {
+              "$ref": "#/components/schemas/AttachedWorkspaceRefResponse"
+            },
+            "title": "Attached Workspaces",
+            "type": "array"
+          },
           "attached_workspaces_count": {
             "default": 0,
             "minimum": 0.0,

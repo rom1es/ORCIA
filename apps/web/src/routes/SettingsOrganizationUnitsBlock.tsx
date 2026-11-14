@@ -18,6 +18,7 @@ import {
   type EditOrgUnitFormValues,
 } from "../features/admin/organization/EditOrgUnitModal";
 import { ManageOrgUnitMembersModal } from "../features/admin/organization/ManageOrgUnitMembersModal";
+import { OrgPedagogicalCallout } from "../features/admin/organization/OrgPedagogicalCallout";
 import { buildIndentedOrgTree, type OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
 import {
   createOrgUnitViaApi,
@@ -90,8 +91,7 @@ export function SettingsOrganizationUnitsBlock({
     setIsSubmitting(true);
     setModalError(null);
     setOrgDeleteFeedback(null);
-    const parentPayload =
-      values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
+    const parentPayload = values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
     const res = await createOrgUnitViaApi(
       {
         name: values.name,
@@ -109,10 +109,7 @@ export function SettingsOrganizationUnitsBlock({
       setModalError(res.errorMessage);
       return;
     }
-    const nextUnits = [
-      ...orgUnits.filter((u) => u.id !== res.unit.id),
-      res.unit,
-    ];
+    const nextUnits = [...orgUnits.filter((u) => u.id !== res.unit.id), res.unit];
     const levelLabel = values.kind === "BU" ? "Direction (BU)" : "Équipe";
     syncOrgUnitsFromServer(nextUnits, {
       eventType: "OrgUnitCreated",
@@ -127,15 +124,10 @@ export function SettingsOrganizationUnitsBlock({
   const handleEditSave = async (orgUnitId: string, values: EditOrgUnitFormValues) => {
     setIsSubmitting(true);
     setModalError(null);
-    const parentPayload =
-      values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
+    const parentPayload = values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
     const res = await patchOrgUnitViaApi(
       orgUnitId,
-      {
-        name: values.name,
-        parent_id: parentPayload,
-        billing_enabled: values.billingEnabled,
-      },
+      { name: values.name, parent_id: parentPayload, billing_enabled: values.billingEnabled },
       locale,
     );
     setIsSubmitting(false);
@@ -163,10 +155,7 @@ export function SettingsOrganizationUnitsBlock({
     setModalError(null);
     const res = await patchOrgUnitViaApi(
       orgUnitId,
-      {
-        lead_user_id: values.leadUserId,
-        member_user_ids: [...values.memberUserIds],
-      },
+      { lead_user_id: values.leadUserId, member_user_ids: [...values.memberUserIds] },
       locale,
     );
     setIsSubmitting(false);
@@ -253,35 +242,10 @@ export function SettingsOrganizationUnitsBlock({
         </OrciaButton>
       </div>
 
-      <div
-        data-testid="organization-pedagogical-callout"
-        style={{
-          padding: "10px 12px",
-          borderRadius: "var(--radius-sm)",
-          border: "1px solid var(--color-border)",
-          backgroundColor: "var(--color-surface-secondary)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12.5px" }}>
-          <strong style={{ color: "var(--color-foreground)" }}>{labels.pedagogyTitle}</strong>
-          <span style={{ color: "var(--color-muted-foreground)" }}>
-            {`${labels.pedagogyBuSummary} · ${labels.pedagogyTeamSummary} · ${labels.pedagogyWorkspaceSummary}`}
-          </span>
-        </div>
-        <OrciaButton
-          variant="secondary"
-          testId="organization-open-workspaces-btn"
-          onClick={() => navigateToRoute("/workspaces")}
-        >
-          <OrciaIcon name="spaces" size={14} />
-          <span>{labels.openWorkspacesCta}</span>
-        </OrciaButton>
-      </div>
+      <OrgPedagogicalCallout
+        labels={labels}
+        onOpenWorkspaces={() => navigateToRoute("/workspaces")}
+      />
 
       {orgDeleteFeedback ? (
         <OrciaAlertBanner tone="amber" role="alert" testId="org-unit-delete-feedback">
@@ -315,14 +279,8 @@ export function SettingsOrganizationUnitsBlock({
               isFr={isFr}
               canMutate={canMutate}
               labels={labels}
-              onEdit={(unit) => {
-                setModalError(null);
-                setEditingUnit(unit);
-              }}
-              onManageMembers={(unit) => {
-                setModalError(null);
-                setManagingMembersUnit(unit);
-              }}
+              onEdit={(unit) => { setModalError(null); setEditingUnit(unit); }}
+              onManageMembers={(unit) => { setModalError(null); setManagingMembersUnit(unit); }}
               onRequestDelete={(item) => {
                 setModalError(null);
                 setOrgDeleteFeedback(null);
@@ -341,57 +299,44 @@ export function SettingsOrganizationUnitsBlock({
         labels={labels.createModal}
         errorMessage={modalError}
         isSubmitting={isSubmitting}
-        onSubmit={(values) => {
-          void handleCreateSubmit(values);
-        }}
+        onSubmit={(values) => void handleCreateSubmit(values)}
       />
 
       <EditOrgUnitModal
         unit={editingUnit}
         open={editingUnit !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingUnit(null);
-        }}
+        onOpenChange={(open) => !open && setEditingUnit(null)}
         canMutate={canMutate}
         orgUnits={orgUnits}
         labels={labels.editModal}
         parentPrefixLabel={labels.createModal.parentBuOptionPrefix}
         errorMessage={modalError}
         isSubmitting={isSubmitting}
-        onSave={(orgUnitId, values) => {
-          void handleEditSave(orgUnitId, values);
-        }}
+        onSave={(orgUnitId, values) => void handleEditSave(orgUnitId, values)}
       />
 
       <ManageOrgUnitMembersModal
         unit={managingMembersUnit}
         open={managingMembersUnit !== null}
-        onOpenChange={(open) => {
-          if (!open) setManagingMembersUnit(null);
-        }}
+        onOpenChange={(open) => !open && setManagingMembersUnit(null)}
         canMutate={canMutate}
         labels={labels.membersModal}
         errorMessage={modalError}
         isSubmitting={isSubmitting}
-        onSave={(orgUnitId, values) => {
-          void handleMembersSave(orgUnitId, values);
-        }}
+        onSave={(orgUnitId, values) => void handleMembersSave(orgUnitId, values)}
       />
 
       <ConfirmDeleteOrgUnitModal
         rowItem={deletingRowItem}
         open={deletingRowItem !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeletingRowItem(null);
-        }}
+        onOpenChange={(open) => !open && setDeletingRowItem(null)}
         isFr={isFr}
         canMutate={canMutate}
         labels={labels.deleteModal}
         errorMessage={modalError}
         isSubmitting={isSubmitting}
-        onConfirmDelete={(orgUnitId) => {
-          void handleConfirmDelete(orgUnitId);
-        }}
+        onOpenWorkspaces={() => navigateToRoute("/workspaces")}
+        onConfirmDelete={(orgUnitId) => void handleConfirmDelete(orgUnitId)}
       />
     </section>
   );
