@@ -5,15 +5,15 @@ User Preferences / Personal MCP Tokens & Hybrid Contextual Help (`AD-8`, `AD-14`
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_contextual_help_service,
-    get_embedding_port,
     get_two_speed_search_service,
     get_user_preferences_and_mcp_token_service,
+    require_rag_available,
 )
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.auth_and_org import (
@@ -37,11 +37,7 @@ from orcia_api.schemas.ontology_and_rag import (
 from orcia_core.catalog.contextual_help import HelpArticleCatalogItem
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.permissions.user_preferences_and_mcp_tokens import ScopedMcpPersonalTokenRecord
-from orcia_core.rag.errors import (
-    EmbeddingGenerationFailedError,
-    NoActiveEmbeddingModelError,
-    RagReindexInProgressError,
-)
+from orcia_core.ports.embedding import EmbeddingPort
 
 router = APIRouter(prefix="/api/v1", tags=["portal-and-help"])
 
@@ -100,6 +96,7 @@ def _serialize_help_article(art: HelpArticleCatalogItem) -> HelpArticleSchemaIte
 )
 async def execute_two_speed_federated_search(
     request: Request,
+    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
     q: str = Query(default="", max_length=256),
     scope: Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES", "GLOBAL", "CONTEXTUAL"] = Query(
         default="WORKSPACE"
@@ -123,17 +120,9 @@ async def execute_two_speed_federated_search(
 
     query_embedding: tuple[float, ...] | None = None
     if include_speed2 and q.strip() and (force_semantic or len(q.strip().split()) >= 3):
-        try:
-            embedding_port = await get_embedding_port(request)
-            vectors = await embedding_port.embed([q])
-            if vectors:
-                query_embedding = tuple(vectors[0])
-        except (
-            NoActiveEmbeddingModelError,
-            RagReindexInProgressError,
-            EmbeddingGenerationFailedError,
-        ):
-            query_embedding = None
+        vectors = await _embedding_port.embed([q])
+        if vectors:
+            query_embedding = tuple(vectors[0])
 
     report = svc.execute_search(
         query=q,

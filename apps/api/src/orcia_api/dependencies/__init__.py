@@ -42,6 +42,7 @@ from orcia_api.dependencies.portal_and_assistant import (
     get_embedding_port,
     get_two_speed_search_service,
     get_user_preferences_and_mcp_token_service,
+    require_rag_available,
 )
 from orcia_api.dependencies.workspace_and_packs import (
     get_agents_and_skills_service,
@@ -89,4 +90,5 @@ __all__ = [
     "get_user_preferences_and_mcp_token_service",
     "get_workspace_governance_and_rebaser_service",
     "initialize_app_services",
+    "require_rag_available",
 ]

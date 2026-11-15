@@ -6,7 +6,10 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from orcia_api.dependencies import get_embedding_port, get_ontology_and_rag_services
+from orcia_api.dependencies import (
+    get_ontology_and_rag_services,
+    require_rag_available,
+)
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import (
     get_trace_id,
@@ -204,7 +207,7 @@ async def promote_ontology_proposal(
 async def search_hybrid_rag(
     request: Request,
     body: s.HybridRagSearchRequest,
-    embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
+    embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
     fixture: bool = Query(default=False),
 ) -> s.HybridRagSearchResponse:
     gov, rag, _ = get_ontology_and_rag_services(
@@ -274,7 +277,7 @@ async def search_hybrid_rag(
 async def index_db_ddl_schema(
     request: Request,
     body: s.DbDdlIndexRequest,
-    embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
+    embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
     fixture: bool = Query(default=False),
     persona_key: str | None = Query(default=None),
 ) -> s.KbDocumentSchemaItem:

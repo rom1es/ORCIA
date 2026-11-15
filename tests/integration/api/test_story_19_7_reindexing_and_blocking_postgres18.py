@@ -26,7 +26,11 @@ from uuid import UUID
 
 import pytest
 import sqlalchemy as sa
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
+
+from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+from orcia_api.main import create_app
 
 try:
     from testcontainers.community.postgres import PostgresContainer
@@ -36,11 +40,15 @@ except ImportError:
 from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.orchestration.ai_models_crypto import pack_encrypted_api_key
+from orcia_core.permissions import PassthroughVaultCipher
+from orcia_core.rag import SqlHybridRagRepository
 from orcia_core.rag._internal.sql_reindex import (
     create_or_replace_reindex_job_pg18,
 )
 from orcia_core.rag.errors import RagReindexInProgressError
 from orcia_core.rag.reindex import check_rag_operational_on_conn, execute_rag_reindex_job
+from orcia_worker.rag_reindexer import execute_rag_reindex_worker_job_async
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DB_NAME = "orcia_story_19_7"
@@ -468,3 +476,301 @@ async def test_reindex_empty_corpus_immediately_completed_postgres18(
     )
     assert completed_job.status == "COMPLETED"
     assert completed_job.progress_percentage == 100
+
+
+@pytest.mark.asyncio
+async def test_get_search_endpoint_blocked_without_model_and_during_reindex_postgres18(
+    database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify GET /api/v1/search returns 422 without active model and 503 during reindexing."""
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    engine = create_async_engine(database_url)
+
+    app = create_app()
+    initialize_app_services(app)
+
+    async with engine.begin() as conn:
+        await conn.execute(sa.text("DELETE FROM rag_reindexing_jobs;"))
+        await conn.execute(sa.text("DELETE FROM workspace_llm_tier_mappings;"))
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 1. Without active model -> 422 ERR_NO_ACTIVE_EMBEDDING_MODEL
+        res_no_model = await client.get("/api/v1/search?q=contrat+responsabilite+civile")
+        assert res_no_model.status_code == 422
+        assert res_no_model.json()["error_code"] == "ERR_NO_ACTIVE_EMBEDDING_MODEL"
+
+        # 2. Configure active global embedding model and active reindexing job (35%)
+        model_id = new_uuid7_str()
+        job_id = new_uuid7_str()
+        async with engine.begin() as conn:
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO workspace_llm_tier_mappings (
+                        id, scope_level, scope_id, inference_tier, effort, provider_slug,
+                        model_family, model_name, endpoint_uri, auth_mode, protocol_mode,
+                        fallback_order, is_active, draining, usage, created_at, updated_at
+                    ) VALUES (
+                        :mid, 'GLOBAL', :mid, 'simple', 'balanced', 'openai',
+                        'OpenAI', 'text-embedding-3-small', 'https://api.openai.com/v1',
+                        'none_local', 'openai_compatible', 1, TRUE, FALSE, 'embedding', NOW(), NOW()
+                    );
+                    """
+                ),
+                {"mid": UUID(model_id)},
+            )
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO rag_reindexing_jobs (
+                        id, target_model_id, target_model_name, status,
+                        total_chunks, processed_chunks, progress_percentage,
+                        created_at, started_at, updated_at, created_by
+                    ) VALUES (
+                        :jid, :mid, 'text-embedding-3-small', 'IN_PROGRESS',
+                        100, 35, 35, NOW(), NOW(), NOW(), 'admin'
+                    );
+                    """
+                ),
+                {"jid": UUID(job_id), "mid": UUID(model_id)},
+            )
+
+        # Search during active job -> 503 ERR_RAG_REINDEX_IN_PROGRESS (zero lexical fallback)
+        res_in_progress = await client.get("/api/v1/search?q=contrat+responsabilite+civile")
+        assert res_in_progress.status_code == 503
+        problem = res_in_progress.json()
+        assert problem["error_code"] == "ERR_RAG_REINDEX_IN_PROGRESS"
+        assert problem["progress_percentage"] == 35
+
+
+@pytest.mark.asyncio
+async def test_sql_repository_search_hybrid_rrf_model_isolation_postgres18(
+    database_url: str,
+) -> None:
+    """Verify search_hybrid_rrf filters candidate chunks on active embedding_model_id."""
+    engine = create_async_engine(database_url)
+    repo = SqlHybridRagRepository(lambda: engine.connect())
+
+    ws_id = new_uuid7_str()
+    ou_id = new_uuid7_str()
+    ds_id = new_uuid7_str()
+    doc_id = new_uuid7_str()
+    model_a_id = new_uuid7_str()
+    model_b_id = new_uuid7_str()
+
+    vec_a = [0.1] * 1024
+    vec_b = [0.9] * 1024
+
+    async with engine.begin() as conn:
+        await conn.execute(sa.text("DELETE FROM kb_chunks;"))
+        await conn.execute(sa.text("DELETE FROM kb_documents;"))
+        await conn.execute(sa.text("DELETE FROM workspace_datasources;"))
+        await conn.execute(sa.text("DELETE FROM workspace_llm_tier_mappings;"))
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO workspace_llm_tier_mappings (
+                    id, scope_level, scope_id, inference_tier, effort, provider_slug,
+                    model_family, model_name, endpoint_uri, auth_mode, protocol_mode,
+                    fallback_order, is_active, draining, usage, created_at, updated_at
+                ) VALUES (
+                    :mid_a, 'GLOBAL', :mid_a, 'simple', 'balanced', 'openai',
+                    'OpenAI', 'text-embedding-3-small', 'https://api.openai.com/v1',
+                    'none_local', 'openai_compatible', 1, TRUE, FALSE, 'embedding', NOW(), NOW()
+                ), (
+                    :mid_b, 'GLOBAL', :mid_b, 'simple', 'balanced', 'mistral',
+                    'Mistral', 'mistral-embed', 'https://api.mistral.ai/v1',
+                    'none_local', 'openai_compatible', 2, FALSE, FALSE, 'embedding', NOW(), NOW()
+                );
+                """
+            ),
+            {"mid_a": UUID(model_a_id), "mid_b": UUID(model_b_id)},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO org_units (id, slug, name, unit_type) "
+                "VALUES (:id, 'ou-iso-test', 'OU Iso Test', 'TEAM') "
+                "ON CONFLICT DO NOTHING;"
+            ),
+            {"id": UUID(ou_id)},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO workspaces (id, slug, name, owner_org_unit_id, visibility_mode) "
+                "VALUES (:wid, 'ws-iso-test', 'Workspace Iso Test', :ou_id, 'STANDARD') "
+                "ON CONFLICT (id) DO NOTHING;"
+            ),
+            {"wid": UUID(ws_id), "ou_id": UUID(ou_id)},
+        )
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO workspace_datasources (
+                    id, workspace_id, alias, scheme, uri, role, source_nature, freshness_status
+                ) VALUES (
+                    :ds_id, :wid, 'confluence_iso', 'confluence', 'confluence://SPACE/iso',
+                    'CONTRIBUTOR', 'DOCUMENT_KB', 'SYNCED'
+                );
+                """
+            ),
+            {"ds_id": UUID(ds_id), "wid": UUID(ws_id)},
+        )
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO kb_documents (
+                    id, doc_key, workspace_id, datasource_id,
+                    source_uri, source_scheme, indexing_regime, title, revision_tag, content_sha256
+                ) VALUES (
+                    :doc_id, 'doc-iso-1', :wid, :ds_id,
+                    'confluence://SPACE/iso', 'confluence', 'DOC_PARENT_CHILD',
+                    'Doc Isolation', 'v1', 'sha-iso-1'
+                );
+                """
+            ),
+            {"doc_id": UUID(doc_id), "wid": UUID(ws_id), "ds_id": UUID(ds_id)},
+        )
+        # Chunk 1: Model A
+        chunk_1_id = new_uuid7_str()
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO kb_chunks (
+                    id, chunk_key, document_id, workspace_id, datasource_alias,
+                    chunk_role, contextual_header, content_text, token_count,
+                    embedding, embedding_model_id, created_at
+                ) VALUES (
+                    :cid, 'chk-model-a', :doc_id, :wid, 'confluence_iso',
+                    'CHILD', 'Header A', 'Contenu indexe avec modele A', 10,
+                    CAST(:vec AS halfvec(1024)), :model_id, NOW()
+                );
+                """
+            ),
+            {
+                "cid": UUID(chunk_1_id),
+                "doc_id": UUID(doc_id),
+                "wid": UUID(ws_id),
+                "vec": f"[{','.join(f'{x:.6f}' for x in vec_a)}]",
+                "model_id": UUID(model_a_id),
+            },
+        )
+        # Chunk 2: Model B
+        chunk_2_id = new_uuid7_str()
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO kb_chunks (
+                    id, chunk_key, document_id, workspace_id, datasource_alias,
+                    chunk_role, contextual_header, content_text, token_count,
+                    embedding, embedding_model_id, created_at
+                ) VALUES (
+                    :cid, 'chk-model-b', :doc_id, :wid, 'confluence_iso',
+                    'CHILD', 'Header B', 'Contenu indexe avec modele B', 10,
+                    CAST(:vec AS halfvec(1024)), :model_id, NOW()
+                );
+                """
+            ),
+            {
+                "cid": UUID(chunk_2_id),
+                "doc_id": UUID(doc_id),
+                "wid": UUID(ws_id),
+                "vec": f"[{','.join(f'{x:.6f}' for x in vec_b)}]",
+                "model_id": UUID(model_b_id),
+            },
+        )
+
+    # Query with active_model_id = Model A -> only Chunk 1 returned
+    hits_a = await repo.search_hybrid_rrf(
+        workspace_id=ws_id,
+        query_text="Contenu indexe",
+        query_embedding=tuple(vec_a),
+        embedding_model_id=model_a_id,
+        limit=5,
+    )
+    keys_a = [h.chunk_key for h in hits_a]
+    assert "chk-model-a" in keys_a
+    assert "chk-model-b" not in keys_a
+
+    # Query with active_model_id = Model B -> only Chunk 2 returned
+    hits_b = await repo.search_hybrid_rrf(
+        workspace_id=ws_id,
+        query_text="Contenu indexe",
+        query_embedding=tuple(vec_b),
+        embedding_model_id=model_b_id,
+        limit=5,
+    )
+    keys_b = [h.chunk_key for h in hits_b]
+    assert "chk-model-b" in keys_b
+    assert "chk-model-a" not in keys_b
+
+
+@pytest.mark.asyncio
+async def test_worker_decrypts_api_key_end_to_end_postgres18(
+    database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify worker decrypts api_key stored with ORCIA_PASSTHROUGH_MASTER_KEY in Postgres."""
+    vault_key = "orcia-story-19-7-vault-key-integration-pg18"
+    monkeypatch.setenv("ORCIA_PASSTHROUGH_MASTER_KEY", vault_key)
+    cipher = PassthroughVaultCipher(master_key=vault_key)
+
+    engine = create_async_engine(database_url)
+    model_id = new_uuid7_str()
+    job_id = new_uuid7_str()
+
+    enc_key = pack_encrypted_api_key(
+        cipher,
+        mapping_id=model_id,
+        plaintext_key="sk-real-decrypted-integration-key",
+        target_host="api.openai.com",
+    )
+
+    fake_adapter = FakeDeterministicEmbeddingAdapter()
+
+    async with engine.begin() as conn:
+        await conn.execute(sa.text("DELETE FROM rag_reindexing_jobs;"))
+        await conn.execute(sa.text("DELETE FROM workspace_llm_tier_mappings;"))
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO workspace_llm_tier_mappings (
+                    id, scope_level, scope_id, inference_tier, effort, provider_slug,
+                    model_family, model_name, endpoint_uri, auth_mode, protocol_mode,
+                    encrypted_api_key, fallback_order, is_active, draining, usage,
+                    created_at, updated_at
+                ) VALUES (
+                    :mid, 'GLOBAL', :mid, 'simple', 'balanced', 'openai',
+                    'OpenAI', 'text-embedding-3-small', 'https://api.openai.com/v1',
+                    'api_key', 'openai_compatible', :enc_key, 1, TRUE, FALSE, 'embedding',
+                    NOW(), NOW()
+                );
+                """
+            ),
+            {"mid": UUID(model_id), "enc_key": enc_key},
+        )
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO rag_reindexing_jobs (
+                    id, target_model_id, target_model_name, status,
+                    total_chunks, processed_chunks, progress_percentage,
+                    created_at, started_at, completed_at, updated_at, created_by
+                ) VALUES (
+                    :jid, :mid, 'text-embedding-3-small', 'PENDING',
+                    0, 0, 0, NOW(), NOW(), NOW(), NOW(), 'admin'
+                );
+                """
+            ),
+            {"jid": UUID(job_id), "mid": UUID(model_id)},
+        )
+
+    # Execute worker job with database_url and embedding_port override
+    res = await execute_rag_reindex_worker_job_async(
+        job_id=job_id,
+        target_model_id=model_id,
+        trace_id="00000000000000000000000000000777",
+        embedding_port=fake_adapter,
+        database_url=database_url,
+    )
+    assert res.status == "COMPLETED"

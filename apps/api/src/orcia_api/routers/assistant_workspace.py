@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from orcia_api.dependencies import (
     get_assistant_folders_and_sharing_service,
     get_assistant_three_speed_router_service,
-    get_embedding_port,
+    require_rag_available,
 )
 from orcia_api.routers.assistant_llm_bridge import (
     get_active_turn_for_workspace,
@@ -125,7 +125,7 @@ async def execute_three_speed_turn_endpoint(
     request: Request,
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
-    _embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
+    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
@@ -303,7 +303,7 @@ async def stream_three_speed_turn_endpoint(
     request: Request,
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
-    _embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
+    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
 ) -> StreamingResponse:
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)

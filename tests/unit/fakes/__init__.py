@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from tests.unit.fakes.in_memory_reindex import (
+    InMemoryReindexManager,
+    default_in_memory_reindex_manager,
+)
 from tests.unit.fakes.in_memory_stores import (
     DeterministicClockFake,
     InMemoryCasObjectStore,
@@ -16,6 +20,8 @@ __all__ = [
     "InMemoryCasObjectStore",
     "InMemoryObjectStorageFake",
     "InMemoryOutboxRelay",
+    "InMemoryReindexManager",
     "InMemoryRevocationStore",
     "InMemorySandboxFake",
+    "default_in_memory_reindex_manager",
 ]

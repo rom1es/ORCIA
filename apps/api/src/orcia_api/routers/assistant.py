@@ -12,7 +12,7 @@ from fastapi.responses import StreamingResponse
 from orcia_api.dependencies import (
     get_assistant_service,
     get_auth_service,
-    get_embedding_port,
+    require_rag_available,
 )
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.assistant import (
@@ -126,7 +126,7 @@ def _serialize_turn(turn: AssistantTurnResult) -> AssistantChatResponse:
 async def assistant_chat_turn(
     payload: AssistantChatRequest,
     request: Request,
-    _embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
+    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> AssistantChatResponse:
     """Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`)."""
@@ -155,7 +155,7 @@ async def assistant_chat_turn(
 async def assistant_chat_stream(
     payload: AssistantChatRequest,
     request: Request,
-    _embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
+    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> StreamingResponse:
     """Stream SSE events (`node_trace`, `token`, `workflow_proposal`, `done`) (`NFR-PERF-1`)."""

@@ -27,6 +27,18 @@ from orcia_core.orchestration.ai_models_errors import (
     ModelConnectionUpstreamError,
 )
 from orcia_core.orchestration.ai_models_records import LlmProtocolMode
+from orcia_core.orchestration.ai_models_urls import (
+    build_legacy_local_chat_url as _build_legacy_local_chat_url,
+)
+from orcia_core.orchestration.ai_models_urls import (
+    is_anthropic_provider as _is_anthropic,
+)
+from orcia_core.orchestration.ai_models_urls import (
+    is_gemini_native_provider as _is_gemini_native,
+)
+from orcia_core.orchestration.ai_models_urls import (
+    normalize_chat_completions_url,
+)
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag.adapters.embedding_httpx import (
     HttpxGeminiNativeEmbeddingAdapter,
@@ -60,60 +72,18 @@ def _clean_error_snippet(text: str, secret_key: str | None) -> str:
     return snippet
 
 
-def _is_anthropic(endpoint_uri: str, provider_slug: str | None = None) -> bool:
-    u = endpoint_uri.strip().lower().rstrip("/")
-    p = (provider_slug or "").strip().lower()
-    return (
-        u.endswith("/messages")
-        or "anthropic.com" in u
-        or ("anthropic" in p and not u.endswith("/chat/completions"))
-    )
-
-
-def _is_gemini_native(endpoint_uri: str, provider_slug: str | None = None) -> bool:
-    u = endpoint_uri.strip().lower().rstrip("/")
-    p = (provider_slug or "").strip().lower()
-    if "googleapis.com" in u:
-        return "/v1beta/openai" not in u
-    return "gemini" in p and "native" in p
-
-
 def _normalize_chat_url(
     endpoint_uri: str,
     protocol_mode: LlmProtocolMode,
     model_name: str,
     provider_slug: str | None = None,
 ) -> str:
-    base = endpoint_uri.strip().rstrip("/")
-    if protocol_mode == "anthropic_messages" or _is_anthropic(base, provider_slug):
-        if base.endswith("/messages"):
-            return base
-        return f"{base}/messages" if base.endswith("/v1") else f"{base}/v1/messages"
-
-    if protocol_mode == "gemini_native" or _is_gemini_native(base, provider_slug):
-        model_part = model_name if model_name.startswith("models/") else f"models/{model_name}"
-        if ":generateContent" in base:
-            return base
-        if "/v1beta" in base:
-            return f"{base}/{model_part}:generateContent"
-        return f"{base}/v1beta/{model_part}:generateContent"
-
-    if base.endswith(("/chat/completions", "/api/chat", "/messages")):
-        return base
-    if base.endswith(("/v1beta/openai", "/openai", "/v1")):
-        return f"{base}/chat/completions"
-    if base.endswith("/api"):
-        return f"{base[:-4].rstrip('/')}/v1/chat/completions"
-    return f"{base}/v1/chat/completions"
-
-
-def _build_legacy_local_chat_url(endpoint_uri: str) -> str:
-    clean = endpoint_uri.strip().rstrip("/")
-    for suffix in ("/v1/chat/completions", "/chat/completions", "/v1", "/api/chat", "/api"):
-        if clean.endswith(suffix):
-            clean = clean[: -len(suffix)].rstrip("/")
-            break
-    return f"{clean}/api/chat"
+    return normalize_chat_completions_url(
+        endpoint_uri,
+        provider_slug=provider_slug or "",
+        protocol_mode=protocol_mode,
+        model_name=model_name,
+    )
 
 
 async def _test_chat_connection(

@@ -5,6 +5,8 @@ Story 19.7 (`AD-24.7`, `D9`, `D12`).
 
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi import Request
 
 from orcia_api.routers._ai_models_helpers import assert_ai_models_write_allowed
@@ -26,7 +28,6 @@ from orcia_core.rag.errors import NoActiveEmbeddingModelError
 from orcia_core.rag.models import RagReindexJobRecord
 from orcia_core.rag.reindex import (
     create_or_replace_reindex_job_pg18,
-    default_in_memory_reindex_manager,
     get_latest_reindex_job_pg18,
 )
 
@@ -59,63 +60,73 @@ async def trigger_global_reindexing_job(
 ) -> RagReindexJobRecord:
     """Create a persistent reindex job and dispatch background actor."""
     trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+    test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
+    if test_reindex_mgr is not None:
+        mem_job = test_reindex_mgr.create_or_replace_job(
+            target_model_id=mapping.id,
+            target_model_name=mapping.model_name,
+            total_chunks=0,
+            actor_id=actor_id,
+        )
+        return cast(RagReindexJobRecord, mem_job)
+
+    from orcia_api.dependencies.core_and_lifespan import get_or_create_shared_db_engine
+
     engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None:
-        async with engine.begin() as conn:
-            job = await create_or_replace_reindex_job_pg18(
-                conn,
-                target_model_id=mapping.id,
-                target_model_name=mapping.model_name,
-                actor_id=actor_id,
-                trace_id=trace_id,
-            )
-        if job.status != "COMPLETED":
-            try:
-                import dramatiq
+    if engine is None:
+        engine = get_or_create_shared_db_engine(request)
+    async with engine.begin() as conn:
+        job = await create_or_replace_reindex_job_pg18(
+            conn,
+            target_model_id=mapping.id,
+            target_model_name=mapping.model_name,
+            actor_id=actor_id,
+            trace_id=trace_id,
+        )
+    if job.status != "COMPLETED":
+        try:
+            import dramatiq
 
-                broker = dramatiq.get_broker()
-                actor = broker.get_actor("rag_reindexer")
-                if actor is not None:
-                    actor.send(job.id, mapping.id, trace_id)
-                else:
-                    broker.enqueue(
-                        dramatiq.Message(
-                            queue_name="default",
-                            actor_name="rag_reindexer",
-                            args=(job.id, mapping.id, trace_id),
-                            kwargs={},
-                            options={},
-                        )
+            broker = dramatiq.get_broker()
+            actor = broker.get_actor("rag_reindexer")
+            if actor is not None:
+                actor.send(job.id, mapping.id, trace_id)
+            else:
+                broker.enqueue(
+                    dramatiq.Message(
+                        queue_name="default",
+                        actor_name="rag_reindexer",
+                        args=(job.id, mapping.id, trace_id),
+                        kwargs={},
+                        options={},
                     )
-            except Exception as exc:  # pragma: no cover
-                logger.warning(
-                    "ai_models_hub.dramatiq_dispatch_failed",
-                    job_id=job.id,
-                    error=str(exc),
                 )
-        return job
-
-    mem_job = default_in_memory_reindex_manager.create_or_replace_job(
-        target_model_id=mapping.id,
-        target_model_name=mapping.model_name,
-        total_chunks=0,
-        actor_id=actor_id,
-    )
-    return mem_job
+        except Exception as exc:  # pragma: no cover
+            logger.warning(
+                "ai_models_hub.dramatiq_dispatch_failed",
+                job_id=job.id,
+                error=str(exc),
+            )
+    return job
 
 
 async def fetch_reindex_status_response(request: Request) -> RagReindexStatusResponse:
     """Fetch status of latest vector corpus reindexing job."""
-    engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None:
-        async with engine.begin() as conn:
-            # Ensure schema if needed
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
-            job = await get_latest_reindex_job_pg18(conn)
-            return _row_to_status_response(job)
+    test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
+    if test_reindex_mgr is not None:
+        mem_job = test_reindex_mgr.get_latest_job()
+        return _row_to_status_response(mem_job)
 
-    mem_job = default_in_memory_reindex_manager.get_latest_job()
-    return _row_to_status_response(mem_job)
+    from orcia_api.dependencies.core_and_lifespan import get_or_create_shared_db_engine
+
+    engine = getattr(request.app.state, "db_engine", None)
+    if engine is None:
+        engine = get_or_create_shared_db_engine(request)
+    async with engine.begin() as conn:
+        # Ensure schema if needed
+        await ensure_ai_model_mappings_schema_on_postgres18(conn)
+        job = await get_latest_reindex_job_pg18(conn)
+        return _row_to_status_response(job)
 
 
 async def trigger_manual_reindex_embeddings(
@@ -128,9 +139,16 @@ async def trigger_manual_reindex_embeddings(
     assert_ai_models_write_allowed(request, actor_persona)
     actor_id = actor_persona or "system"
 
-    engine = getattr(request.app.state, "db_engine", None)
+    test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
     active_mapping: AiModelMappingRecord | None = None
-    if engine is not None:
+    if test_reindex_mgr is not None:
+        active_mapping = hub_svc.get_active_embedding_mapping()
+    else:
+        from orcia_api.dependencies.core_and_lifespan import get_or_create_shared_db_engine
+
+        engine = getattr(request.app.state, "db_engine", None) or get_or_create_shared_db_engine(
+            request
+        )
         async with engine.begin() as conn:
             await ensure_ai_model_mappings_schema_on_postgres18(conn)
             resolved = await get_active_global_embedding_model_pg18(
@@ -138,8 +156,6 @@ async def trigger_manual_reindex_embeddings(
             )
             if resolved is not None:
                 active_mapping, _ = resolved
-    else:
-        active_mapping = hub_svc.get_active_embedding_mapping()
 
     if active_mapping is None:
         raise NoActiveEmbeddingModelError(

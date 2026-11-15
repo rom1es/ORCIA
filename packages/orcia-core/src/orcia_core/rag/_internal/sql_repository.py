@@ -38,6 +38,7 @@ class SqlHybridRagRepository:
         workspace_id: str,
         query_text: str,
         query_embedding: tuple[float, ...],
+        embedding_model_id: str | None = None,
         rrf_k: int = 60,
         limit: int = 5,
     ) -> tuple[HybridRagHit, ...]:
@@ -63,7 +64,16 @@ class SqlHybridRagRepository:
                                     d.is_stale,
                                     ROW_NUMBER() OVER (
                                         ORDER BY (
-                                            c.embedding <=> CAST(:vec_literal AS halfvec(1024))
+                                            CASE
+                                                WHEN CAST(:active_model_id AS text) IS NOT NULL
+                                                     AND (
+                                                         c.embedding_model_id IS NULL
+                                                         OR c.embedding_model_id
+                                                         != CAST(:active_model_id AS uuid)
+                                                     )
+                                                THEN NULL
+                                                ELSE c.embedding
+                                            END <=> CAST(:vec_literal AS halfvec(1024))
                                         ) ASC NULLS LAST,
                                         c.chunk_key ASC
                                     ) AS vector_rank,
@@ -80,6 +90,11 @@ class SqlHybridRagRepository:
                                 LEFT JOIN kb_chunks p ON p.id = c.parent_chunk_id
                                 WHERE c.workspace_id = CAST(:workspace_id AS uuid)
                                   AND c.chunk_role != 'PARENT'
+                                  AND (
+                                      CAST(:active_model_id AS text) IS NULL
+                                      OR c.embedding_model_id IS NULL
+                                      OR c.embedding_model_id = CAST(:active_model_id AS uuid)
+                                  )
                             )
                             SELECT
                                 chunk_key,
@@ -109,6 +124,7 @@ class SqlHybridRagRepository:
                             "workspace_id": workspace_id,
                             "query_text": query_text,
                             "vec_literal": vec_literal,
+                            "active_model_id": embedding_model_id,
                             "rrf_k": rrf_k,
                             "limit": limit,
                         },

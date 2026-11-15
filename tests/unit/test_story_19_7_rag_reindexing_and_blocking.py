@@ -16,6 +16,10 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
+from tests.unit.fakes.in_memory_reindex import (
+    InMemoryReindexManager,
+    default_in_memory_reindex_manager,
+)
 
 from orcia_api.main import create_app
 from orcia_core.kernel.events import (
@@ -24,10 +28,6 @@ from orcia_core.kernel.events import (
     EmbeddingReindexStarted,
 )
 from orcia_core.orchestration import AiModelsHubService
-from orcia_core.rag.reindex import (
-    InMemoryReindexManager,
-    default_in_memory_reindex_manager,
-)
 
 
 @pytest.fixture(autouse=True)
@@ -117,6 +117,7 @@ def test_domain_events_outbox_constructors() -> None:
 def test_fastapi_reindex_status_and_trigger_endpoints() -> None:
     """Verify GET /reindex-status and POST /reindex-embeddings on FastAPI router."""
     app = create_app()
+    app.state.reindex_manager = default_in_memory_reindex_manager
     client = TestClient(app)
 
     # Initially IDLE
@@ -164,6 +165,7 @@ def test_fastapi_reindex_status_and_trigger_endpoints() -> None:
 def test_fastapi_search_and_assistant_blocked_with_503_during_reindex() -> None:
     """Verify RAG search and Assistant are blocked with 503 RFC 9457 during reindexing."""
     app = create_app()
+    app.state.reindex_manager = default_in_memory_reindex_manager
     # Configure an active fake embedding adapter in app.state
     fake_adapter = FakeDeterministicEmbeddingAdapter()
     app.state.embedding_port = fake_adapter
@@ -209,6 +211,7 @@ def test_fastapi_search_and_assistant_blocked_with_503_during_reindex() -> None:
 def test_empty_corpus_reindex_immediately_completed_without_blocking() -> None:
     """When corpus has 0 document chunks (Day-0 reset), reindexing passes directly to COMPLETED."""
     app = create_app()
+    app.state.reindex_manager = default_in_memory_reindex_manager
     app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
     client = TestClient(app)
 

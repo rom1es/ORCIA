@@ -6,6 +6,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from tests.unit.fakes import default_in_memory_reindex_manager
 
 from orcia_api.errors.registry import resolve_domain_error_mapping
 from orcia_api.routers.ai_models_hub import router as ai_models_router
@@ -121,6 +122,7 @@ async def test_fastapi_ai_models_hub_usage_endpoints() -> None:
     app.include_router(ai_models_router)
     app.state.ai_models_hub_service = hub_svc
     app.state.auth_service = auth_svc
+    app.state.reindex_manager = default_in_memory_reindex_manager
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
