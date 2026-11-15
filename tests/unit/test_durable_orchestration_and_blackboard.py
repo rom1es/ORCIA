@@ -15,7 +15,9 @@ from orcia_core.orchestration.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
 )
+from orcia_core.orchestration.step_executors import register_default_step_executors
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_worker.dbos_workflow_runner import execute_step_runner_job
 
 
@@ -45,6 +47,7 @@ def _observer_user() -> UserIdentity:
 
 def test_jit_step_hydrator_zero_future_leakage_and_draft_vs_snapshot_separation() -> None:
     """Verify JitStepHydrator (AD-13) and draft vs committed snapshot separation (AD-2)."""
+    register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
     svc = build_default_orchestration_setup_service()
     lead = _lead_user()
     root_run = svc.runs[0]
@@ -95,6 +98,7 @@ def test_jit_step_hydrator_zero_future_leakage_and_draft_vs_snapshot_separation(
 
 def test_bounded_feedback_retries_and_isolated_sub_workflow_execution() -> None:
     """Verify bounded retries (max_agent_retries), SUB_WORKFLOW isolation, and shared budget."""
+    register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
     svc = build_default_orchestration_setup_service()
     lead = _lead_user()
     root_run = svc.runs[0]
@@ -155,8 +159,12 @@ def test_bounded_feedback_retries_and_isolated_sub_workflow_execution() -> None:
     assert "Plafond budgétaire root_run_id" in str(budget_exc.value)
 
 
-def test_background_fast_path_audit_worker_idempotency_and_rest_routes() -> None:
+def test_background_fast_path_audit_worker_idempotency_and_rest_routes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify BACKGROUND_FAST_PATH markers, idempotent Dramatiq step_runner, and REST routes."""
+    register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
     svc = build_default_orchestration_setup_service()
     observer = _observer_user()
     root_run = svc.runs[0]

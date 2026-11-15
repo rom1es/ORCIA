@@ -97,8 +97,11 @@ def test_story_3_5_migration_0016_real_postgres_container(
         shutil.rmtree(sock_dir, ignore_errors=True)
 
 
-def test_story_3_5_upstream_challenge_what_if_and_outbox_notification() -> None:
+def test_story_3_5_upstream_challenge_what_if_and_outbox_notification(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify Upstream Challenge What-If preview, PM translation, v1.1 revision & Outbox event."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
     app = create_app()
     client = TestClient(app)
 
@@ -165,8 +168,11 @@ def test_story_3_5_upstream_challenge_what_if_and_outbox_notification() -> None:
     assert chal["outbox_event_id"]
 
 
-def test_story_3_5_targeted_replay_step_n_and_intra_sub_workflow() -> None:
+def test_story_3_5_targeted_replay_step_n_and_intra_sub_workflow(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify Replay from Step N and Intra-Sub-Workflow Step k reuse 1..N-1 snapshots (0 tokens)."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
     app = create_app()
     client = TestClient(app)
 

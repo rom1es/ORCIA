@@ -186,6 +186,7 @@ def test_agents_and_skills_fastapi_router_contract(
 ) -> None:
     """Verify all `/api/v1/agents-and-skills/*` HTTP endpoints and Observer Mode guard."""
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
     app = create_app()
     client = TestClient(app)
 

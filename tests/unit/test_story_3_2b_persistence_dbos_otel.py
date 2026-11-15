@@ -35,6 +35,7 @@ from orcia_core.orchestration._internal.dbos_engine import (
 )
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration.errors import ResourceNotFoundError
+from orcia_core.orchestration.step_executors import register_default_step_executors
 from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.errors import ModelOrthogonalityViolationError
@@ -200,6 +201,7 @@ def test_opentelemetry_trace_context_and_sqlalchemy_instrumenter() -> None:
 @pytest.mark.asyncio
 async def test_sql_repositories_and_dbos_engine_unit_paths() -> None:
     """Exercise unit error branches and row-mapping helpers on SqlOrchestrationRepository & Rag."""
+    register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
     vec_str = SqlHybridRagRepository.format_halfvec_literal((0.5, -0.25), dim=4)
     assert vec_str == "[0.500000,-0.250000,0.000000,0.000000]"
 

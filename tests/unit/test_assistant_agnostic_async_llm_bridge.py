@@ -27,6 +27,7 @@ from typing import Any
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 import orcia_core.bootstrap as bm
 from orcia_api.main import app
@@ -242,6 +243,7 @@ def test_pillar_6_true_async_sse_streaming_preserves_multiline_markdown_indentat
         )
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_sse_mock_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
@@ -364,6 +366,7 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
         )
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
@@ -508,6 +511,7 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
     sse_payload = "\n\n".join(sse_lines) + "\n\n"
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(
             transport=httpx.MockTransport(
                 lambda _: httpx.Response(

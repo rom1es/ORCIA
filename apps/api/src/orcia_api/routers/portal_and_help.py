@@ -11,6 +11,7 @@ from fastapi import APIRouter, Query, Request
 
 from orcia_api.dependencies import (
     get_contextual_help_service,
+    get_embedding_port,
     get_two_speed_search_service,
     get_user_preferences_and_mcp_token_service,
 )
@@ -36,6 +37,11 @@ from orcia_api.schemas.ontology_and_rag import (
 from orcia_core.catalog.contextual_help import HelpArticleCatalogItem
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.permissions.user_preferences_and_mcp_tokens import ScopedMcpPersonalTokenRecord
+from orcia_core.rag.errors import (
+    EmbeddingGenerationFailedError,
+    NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["portal-and-help"])
 
@@ -114,6 +120,21 @@ async def execute_two_speed_federated_search(
     else:
         normalized_scope = scope
     effective_ws = (workspace_id or "").strip() or "ws-claims-alpha"
+
+    query_embedding: tuple[float, ...] | None = None
+    if include_speed2 and q.strip() and (force_semantic or len(q.strip().split()) >= 3):
+        try:
+            embedding_port = await get_embedding_port(request)
+            vectors = await embedding_port.embed([q])
+            if vectors:
+                query_embedding = tuple(vectors[0])
+        except (
+            NoActiveEmbeddingModelError,
+            RagReindexInProgressError,
+            EmbeddingGenerationFailedError,
+        ):
+            query_embedding = None
+
     report = svc.execute_search(
         query=q,
         scope=normalized_scope,
@@ -122,6 +143,7 @@ async def execute_two_speed_federated_search(
         user_role=user.platform_role,
         include_speed2=include_speed2,
         force_semantic=force_semantic,
+        query_embedding=query_embedding,
     )
     return TwoSpeedSearchResponse(
         query=report.query,
