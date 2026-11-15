@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -90,5 +90,50 @@ describe("TemporaryPasswordInvitationModal & UserPasswordChangeCard (@orcia/ui)"
       "OldPassword123", // pragma: allowlist secret
       "NewSecurePassword2026", // pragma: allowlist secret
     );
+
+    // On success: inputs and submit button are hidden from DOM, success banner displayed
+    await waitFor(() => {
+      expect(screen.queryByTestId("user-current-password-input")).toBeNull();
+      expect(screen.queryByTestId("user-new-password-input")).toBeNull();
+      expect(screen.queryByTestId("user-confirm-password-input")).toBeNull();
+      expect(screen.queryByTestId("user-change-password-submit-btn")).toBeNull();
+      expect(screen.queryByTestId("user-must-change-password-alert")).toBeNull();
+      const feedback = screen.getByTestId("user-change-password-feedback");
+      expect(feedback.textContent).toContain("Mot de passe mis à jour avec succès.");
+    });
+  });
+
+  it("keeps form inputs visible and renders error feedback when onChangePassword returns failure", async () => {
+    const handleChangePassword = vi.fn().mockResolvedValue({
+      success: false,
+      error: "Le mot de passe actuel saisi est incorrect. Vérifiez votre saisie puis réessayez.",
+    });
+
+    render(
+      <UserPasswordChangeCard
+        mustChangePassword={true}
+        onChangePassword={handleChangePassword}
+      />,
+    );
+
+    const currentInput = screen.getByTestId("user-current-password-input");
+    const newInput = screen.getByTestId("user-new-password-input");
+    const confirmInput = screen.getByTestId("user-confirm-password-input");
+
+    fireEvent.change(currentInput, { target: { value: "WrongCurrentPassword123" } }); // pragma: allowlist secret
+    fireEvent.change(newInput, { target: { value: "NewValidPassword2026" } }); // pragma: allowlist secret
+    fireEvent.change(confirmInput, { target: { value: "NewValidPassword2026" } }); // pragma: allowlist secret
+
+    fireEvent.click(screen.getByTestId("user-change-password-submit-btn"));
+
+    await waitFor(() => {
+      const feedback = screen.getByTestId("user-change-password-feedback");
+      expect(feedback.textContent).toContain("Le mot de passe actuel saisi est incorrect");
+      // Inputs remain rendered in DOM
+      expect(screen.getByTestId("user-current-password-input")).toBeDefined();
+      expect(screen.getByTestId("user-new-password-input")).toBeDefined();
+      expect(screen.getByTestId("user-confirm-password-input")).toBeDefined();
+      expect(screen.getByTestId("user-change-password-submit-btn")).toBeDefined();
+    });
   });
 });

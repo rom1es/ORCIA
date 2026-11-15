@@ -193,6 +193,16 @@ class PasswordUnchangedError(OrciaDomainError):
     )
 
 
+class InvalidCurrentPasswordError(OrciaDomainError):
+    error_code = "ERR_AUTH_CURRENT_PASSWORD_INVALID"
+    http_status, type_slug = 422, "auth-current-password-invalid"
+
+
+class LocalPasswordChangeForbiddenForSsoError(OrciaDomainError):
+    error_code = "ERR_AUTH_SSO_PASSWORD_MANAGED_EXTERNALLY"
+    http_status, type_slug = 422, "auth-sso-password-managed-externally"
+
+
 class CodegraphWorkspaceLeadRequiredError(OrciaDomainError):
     error_code = "ERR_CODEGRAPH_WORKSPACE_LEAD_REQUIRED"
     http_status, type_slug = 403, "codegraph-workspace-lead-required"
@@ -237,10 +247,12 @@ __all__ = [
     "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
     "InvalidCredentialsError",
+    "InvalidCurrentPasswordError",
     "InvalidIamRoleError",
     "InvalidMfaCodeError",
     "InvalidOrExpiredLoginChallengeError",
     "LocalAuthDisabledByPolicyError",
+    "LocalPasswordChangeForbiddenForSsoError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
     "OrgUnitBuMembersForbiddenError",

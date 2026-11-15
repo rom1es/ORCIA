@@ -518,6 +518,18 @@ async function vitestFetchTransport(
   }
 
   if (path === "/api/v1/auth/change-password" && method === "POST") {
+    if (body?.current_password === "WrongCurrentPassword123" || body?.current_password === "wrong") { // pragma: allowlist secret
+      return jsonResponse(
+        {
+          type: "https://orcia.fr/errors/auth-current-password-invalid",
+          title: "Mot de passe actuel incorrect",
+          status: 422,
+          detail: "Le mot de passe actuel saisi est incorrect. Vérifiez votre saisie puis réessayez.",
+          error_code: "ERR_AUTH_CURRENT_PASSWORD_INVALID",
+        },
+        422,
+      );
+    }
     return jsonResponse({ message: "Password updated successfully" });
   }
 

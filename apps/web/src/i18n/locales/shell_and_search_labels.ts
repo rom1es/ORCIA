@@ -151,6 +151,27 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     targetWholeSpaceLabel: "Tout l'Espace de travail",
     targetSingleAgentLabel: "Un agent spécifique uniquement",
     ideJsonReadyTitle: "Configuration prête à copier dans votre éditeur",
+    passwordSecurity: {
+      title: "Sécurité & Mot de Passe",
+      renewalRequiredBadge: "Renouvellement Requis",
+      temporaryPasswordWarning:
+        "Vous utilisez un mot de passe temporaire à renouveler obligatoirement.",
+      currentPasswordLabel: "Mot de passe actuel", // pragma: allowlist secret
+      newPasswordLabel: "Nouveau mot de passe (min. 12 car., Maj/Min/Chiffre)", // pragma: allowlist secret
+      confirmPasswordLabel: "Confirmer le nouveau mot de passe", // pragma: allowlist secret
+      submitButtonLabel: "Changer mon mot de passe",
+      submittingButtonLabel: "Mise à jour...",
+      updatedSuccessMessage: "Mot de passe mis à jour avec succès.",
+      missingCurrentPasswordError:
+        "Veuillez renseigner votre mot de passe actuel.", // pragma: allowlist secret
+      weakPasswordError:
+        "Le mot de passe doit comporter au moins 12 caractères (min. 1 min, 1 maj, 1 chiffre).",
+      unchangedPasswordError:
+        "Le nouveau mot de passe doit être différent de l'actuel.", // pragma: allowlist secret
+      mismatchPasswordError: "Les deux mots de passe ne correspondent pas.", // pragma: allowlist secret
+      actionNotConfiguredError: "Action non configurée.",
+      genericError: "Erreur lors de la modification du mot de passe.",
+    },
   },
   contextualHelpHybrid: {
     columnHeaderTitle: "❓ Aide Contextuelle",
@@ -298,6 +319,26 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     targetWholeSpaceLabel: "Entire Workspace",
     targetSingleAgentLabel: "A single specific agent",
     ideJsonReadyTitle: "Configuration ready to copy into your editor",
+    passwordSecurity: {
+      title: "Security & Password",
+      renewalRequiredBadge: "Renewal Required",
+      temporaryPasswordWarning:
+        "You are using a temporary password that must be renewed.",
+      currentPasswordLabel: "Current password", // pragma: allowlist secret
+      newPasswordLabel: "New password (min. 12 chars, upper/lower/digit)", // pragma: allowlist secret
+      confirmPasswordLabel: "Confirm new password", // pragma: allowlist secret
+      submitButtonLabel: "Change password",
+      submittingButtonLabel: "Updating...",
+      updatedSuccessMessage: "Password updated successfully.",
+      missingCurrentPasswordError: "Please enter your current password.", // pragma: allowlist secret
+      weakPasswordError:
+        "Password requires 12+ chars with upper, lower, and digit.",
+      unchangedPasswordError:
+        "New password must differ from current password.", // pragma: allowlist secret
+      mismatchPasswordError: "Passwords do not match.", // pragma: allowlist secret
+      actionNotConfiguredError: "Action not configured.",
+      genericError: "Failed to change password.",
+    },
   },
   contextualHelpHybrid: {
     columnHeaderTitle: "❓ Contextual Help",

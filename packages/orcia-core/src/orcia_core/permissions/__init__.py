@@ -56,8 +56,10 @@ from orcia_core.permissions.enterprise_connectors import (
 )
 from orcia_core.permissions.errors import (
     CodegraphWorkspaceLeadRequiredError,
+    InvalidCurrentPasswordError,
     InvalidOrExpiredLoginChallengeError,
     LocalAuthDisabledByPolicyError,
+    LocalPasswordChangeForbiddenForSsoError,
     OrgUnitBuMembersForbiddenError,
     OrgUnitStorageSchemaError,
     OrgUnitUnknownUserError,
@@ -224,8 +226,10 @@ __all__ = [
     "DEFAULT_LOGIN_CHALLENGE_MAX_ATTEMPTS",
     "EMAIL_OTP_TTL_SECONDS",
     "InMemoryPlatformAuthPolicyStore",
+    "InvalidCurrentPasswordError",
     "InvalidOrExpiredLoginChallengeError",
     "LocalAuthDisabledByPolicyError",
+    "LocalPasswordChangeForbiddenForSsoError",
     "LoginChallengeKind",
     "LoginSecondFactorChallengeRecord",
     "PlatformAuthMode",

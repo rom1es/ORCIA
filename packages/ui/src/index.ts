@@ -239,6 +239,7 @@ export {
   type UserAccountDropdownAndSettingsLabels,
   type UserAccountDropdownAndSettingsModalProps,
   type UserAccountPreferencesPatch,
+  type UserPasswordSecurityLabels,
 } from "./primitives/UserAccountDropdownAndSettingsModal";
 export {
   TemporaryPasswordInvitationModal,

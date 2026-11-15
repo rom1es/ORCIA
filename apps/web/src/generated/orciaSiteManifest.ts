@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 37,
     "architectureDecisionsCount": 23,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 127,
+    "techLeadReportsCount": 128,
     "capabilitiesCount": 61,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -479,6 +479,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse Auth & UX Mon Compte (CAP-001, CAP-063)",
+      "reportFile": "2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification-tech-lead-report.md",
+      "domain": "Correction Erreur Mot de Passe Actuel (ERR_AUTH_CURRENT_PASSWORD_INVALID, 422), Rejet SSO OIDC (422), Réhydratation Hash PG 18 & Masquage Complet du Formulaire Post-Succès (CAP-001, CAP-063)",
+      "summary": "Découpage de _error_catalog.py (237 l.) vers _auth_error_catalog.py (154 l.) et _auth_pg_helpers.py (317 l.) vers _auth_password_helpers.py (129 l.) ; propagation du hash Argon2id PG 18 dans hydrate_user_identity_from_pg ; levée stricte de InvalidCurrentPasswordError (HTTP 422 sans mention OIDC/email) et LocalPasswordChangeForbiddenForSsoError (HTTP 422) ; repli cookie refresh si miss RAM ; utilisation de <OrciaAlertBanner /> et masquage complet du formulaire et du badge dans UserPasswordChangeCard.tsx dès succès ; 11 tests unitaires Python dédiés, tests Vitest et intégration PostgreSQL 18."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Évolution Transverse IAM & Org (CAP-050, CAP-051)",

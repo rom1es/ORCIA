@@ -17,6 +17,7 @@ import {
   type UserAccountDropdownAndSettingsLabels,
   type UserAccountDropdownAndSettingsModalProps,
   type UserAccountPreferencesPatch,
+  type UserPasswordSecurityLabels,
 } from "./UserAccountDropdownTypes";
 import { UserSettingsModalDialog } from "./UserSettingsModalDialog";
 
@@ -32,6 +33,7 @@ export type {
   UserAccountDropdownAndSettingsLabels,
   UserAccountDropdownAndSettingsModalProps,
   UserAccountPreferencesPatch,
+  UserPasswordSecurityLabels,
 };
 
 export const ROLE_DISPLAY_LABELS_FR: Record<string, string> = {

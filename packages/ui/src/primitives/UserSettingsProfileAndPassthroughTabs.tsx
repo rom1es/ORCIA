@@ -10,6 +10,7 @@ import type {
   UiUserAccountProfileView,
   UiUserPassthroughConnectorView,
   UserAccountDropdownAndSettingsLabels,
+  UserPasswordSecurityLabels,
 } from "./UserAccountDropdownTypes";
 
 export { UserSettingsPassthroughTab, type UserSettingsPassthroughTabProps };
@@ -43,6 +44,8 @@ export function UserSettingsProfileTab({
   accountProfile,
   mustChangePassword = false,
   onChangePassword,
+  labels,
+  passwordSecurity,
 }: {
   readonly userEmail: string;
   readonly userRole: string;
@@ -53,6 +56,8 @@ export function UserSettingsProfileTab({
     currentPassword: string,
     newPassword: string,
   ) => Promise<{ success: boolean; error?: string } | void>;
+  readonly labels?: UserAccountDropdownAndSettingsLabels;
+  readonly passwordSecurity?: UserPasswordSecurityLabels;
 }): React.ReactElement {
   const isFr = locale !== "en";
   const displayEmail = accountProfile?.email || userEmail;
@@ -88,6 +93,7 @@ export function UserSettingsProfileTab({
         mustChangePassword={mustChangePassword}
         locale={locale}
         onChangePassword={onChangePassword}
+        labels={passwordSecurity ?? labels?.passwordSecurity}
       />
 
       <div
