@@ -608,6 +608,8 @@ capabilities:
       - tests/unit/test_migration_story_19_5_usage.py
       - tests/unit/test_story_19_6_rag_blocking_and_embedding_model.py
       - tests/unit/test_story_19_7_rag_reindexing_and_blocking.py
+      - tests/unit/test_rag_reindexer_vault_cipher_and_http_closure.py
+      - tests/unit/test_assistant_and_rag_routes_require_rag_guard_audit.py
       - tests/integration/api/test_story_19_3_ai_models_connection_test_postgres18.py
       - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
       - tests/integration/api/test_story_19_6_alembic_and_rag_blocking_postgres18.py
@@ -623,7 +625,7 @@ capabilities:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
       api: "ai_models_hub.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
       ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
-      migration: "20261115_2105, 20261115_2206, 20261115_2307"
+      migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
 
   # ───────────── Planifié (non livré) ─────────────
