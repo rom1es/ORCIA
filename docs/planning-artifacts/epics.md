@@ -174,8 +174,8 @@ Les Directeurs de BU, Responsables Produit et Auditeurs (`Claire UJ-8`, `Sophie 
 **FRs covered:** `FR-25`, `FR-26`, `FR-27` (`AD-12`, `Principe M.3`)
 
 ### Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Auto-Remédiation, Génération Automatique d'Aide & Gouvernance Post-Hoc
-Les Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) configurent et signent des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), déclenchent de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11`)**, par **Événement Outbox de publication de Pack/Processus (exécutant automatiquement `generate-and-attach-help` sous contrat d'autonomie `AD-18`)**, ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et supervisent ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
-**FRs covered:** `FR-5`, `FR-13`, `FR-14`, `FR-19`, `FR-22`, `FR-24`, `FR-26`, `FR-27`, `FR-29`, `FR-30` (`AD-18`, `Principe D.4`)
+Les Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) disposent du socle d'observabilité 12-factor unifié sur `stdout` (Story 7.0a), du puits de logs paramétrable et des traces OTel via `LogSinkQueryPort` (Story 7.0b, `AD-23`) et de la conformité de déploiement en conteneur non-root sur plateforme OpenShift (Story 7.0c), configurent et signent des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), déclenchent de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11`)**, par **Événement Outbox de publication de Pack/Processus (exécutant automatiquement `generate-and-attach-help` sous contrat d'autonomie `AD-18`)**, ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : détection d'anomalies côté ORCIA via `LogSinkQueryPort`, boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et supervisent ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+**FRs covered:** `FR-5`, `FR-13`, `FR-14`, `FR-19`, `FR-22`, `FR-24`, `FR-26`, `FR-27`, `FR-29`, `FR-30` (`AD-18`, `AD-23`, `Principe D.4`)
 
 ### Epic 8: Hub de Paramétrage Post-Jour 0 (`/settings/*`), Gouvernance d'Entreprise à 6 Verbes (`RBAC/ABAC`), Routage Cognitif Abstrait (`simple|medium|complex|auto` & Effort), Studio Visuel Avancé (`Couches`, `Contrat`, `Pré-prompt`) & Wizards d'Initialisation Durables
 Les Administrateurs Plateforme (`Karim UJ-9`), Ingénieurs SecOps (`Sophie UJ-6`), Directeurs de BU (`Claire UJ-8`) et Chefs d'Équipe / Tech Leads (`Marc UJ-5`, `Yanis UJ-3`) administrent ORCIA après le Jour 0 sans redéploiement via le **Hub de Paramétrage (`/settings/{iam,connectors,ai-models,packs,workflows,audit}`)** protégé par concurrence optimiste (`ETag`/`If-Match` `412`) et contrat de secret en écriture seule (`SecretInput`/`SecretStatus`), appliquent un modèle d'habilitations hiérarchique **RBAC/ABAC à 6 verbes (`create, read, update, delete, execute, grant`)**, abstraient les modèles LLM en **Tiers Cognitifs (`simple €, medium €€, complex €€€, auto ⚡`)** et **niveaux d'Effort** avec escalade déterministe rejouable sous DBOS, enrichissent le **Studio Visuel de Workflows** (5 onglets de cycle de vie, immutabilité des versions publiées, `Pré-prompt IA`, `Contrat du workflow`, `Déclencheurs`, `▷ Tester`, inspecteur **`COUCHES · N`** et moindre privilège connecteur par étape), et embarquent toute nouvelle équipe grâce à **3 Wizards d'Initialisation Durables DBOS (`/wizards/*`)**.
@@ -872,7 +872,81 @@ So that nous suivions le coût consolidé réel sans jamais additionner des chou
 
 ## Epic 7: Agents & Workflows Autonomes sous Contrat, Déclencheurs Événementiels (Webhooks, Puits de Logs, Cron), Auto-Remédiation, Génération Automatique d'Aide & Gouvernance Post-Hoc
 
-Permettre aux Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) de configurer et signer des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), de déclencher de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11`)**, par **Événement Outbox de publication de Pack/Processus (exécutant automatiquement `generate-and-attach-help` sous contrat d'autonomie `AD-18`)**, ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox Palier 2, test staging prod-like, déploiement et vérification post-action dans les logs avec Rollback automatique)**, et de superviser ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+Permettre aux Directeurs de BU, Chefs d'Équipe (`TEAM_LEAD`), Ingénieurs SRE/Plateforme et Auditeurs SecOps (`Claire UJ-8/UJ-11`, `Marc UJ-5`, `Karim UJ-9/UJ-12`, `Sophie UJ-6`) de disposer préalablement du **socle d'observabilité 12-factor unifié sur `stdout` (Story 7.0a)**, du **puits de logs paramétrable et des traces OTel via `LogSinkQueryPort` (Story 7.0b, AD-23)** et de la **conformité de déploiement en conteneur non-root sur plateforme OpenShift (Story 7.0c)**, puis de configurer et signer des **Contrats d'Autonomie** sur les workflows éligibles (`LOW_NON_CRITICAL`, `STANDARD`), de déclencher de manière idempotente des **Workflow Runs autonomes** par action manuelle *Fire-and-Forget*, par **Webhooks signés** (Jira, Git, Confluence), par **Tâches Planifiées (`CRON`, `UJ-11`)**, par **Événement Outbox de publication de Pack/Processus (exécutant automatiquement `generate-and-attach-help` sous contrat d'autonomie `AD-18`)**, ou par **Alertes de Puits de Logs (`LOG_SINK_ALERT`, `UJ-12` : détection d'anomalies côté ORCIA via `LogSinkQueryPort`, boucle fermée d'auto-remédiation AIOps avec diagnostic $\ge 0.90$, reproduction/correction TDD en Sandbox Palier 2, test staging prod-like, déploiement et vérification post-action `POST_ACTION_VERIFICATION` avec Rollback automatique)**, et de superviser ces runs via le badge `AutonomousExecutionBadge` (`UX-DR17`), l'échantillonnage d'audit *post-hoc* (`POST_HOC_AUDIT_SAMPLE`) et les sorties de secours (`🛑 Kill-Switch` et `⏪ Invalider & Rollback`).
+
+### Story 7.0a: Socle de Journalisation Unifié 12-Factor (JSON stdout), Masquage des Secrets & Niveau de Log Dynamique
+
+As a Ingénieur Plateforme / SRE ou Tech Lead (`Karim UJ-9`, `Yanis UJ-3`),
+I want unifier 100 % de l'émission des logs applicatifs et serveurs (FastAPI, Uvicorn, Dramatiq, DBOS, SQLAlchemy, triggers et scripts d'administration) sur `stdout` au format JSON 1 ligne via `ProcessorFormatter` de structlog, rendre le niveau de log paramétrable par la variable d'environnement `LOG_LEVEL`, masquer systématiquement les secrets et jetons avant émission (`NFR-SEC-4`), et assainir la gestion des logs locaux (`.orcia-run/*.log`),
+So that l'ensemble des processus ORCIA respecte la méthodologie 12-Factor, supprime toute stacktrace multi-lignes brute sur `stderr`, élimine tout risque de saturation disque locale et prépare l'ingestion native par les collecteurs de conteneurs sans fuite de secrets (`NFR-SEC-4`, `NFR-OBS-1`, `AD-12`, `AD-23`, Décisions D1, D2).
+
+**Acceptance Criteria:**
+
+**Given** `configure_logging(service: str, log_level: str | None = None)` centralisé dans `packages/orcia-core/src/orcia_core/observability/logging.py`
+**When** un log est émis par l'API, le worker, Dramatiq, DBOS, SQLAlchemy ou Uvicorn
+**Then** l'événement est formaté via `structlog.stdlib.ProcessorFormatter` sur `stdout` sous la règle stricte **1 ligne = 1 événement JSON sérialisé**
+**And** les exceptions et stacktraces sont sérialisées dans le champ JSON unique `exception` sans aucune ligne brute multi-lignes sur `stderr`
+**And** les champs JSON respectent le schéma normalisé aligné ECS (`timestamp` ISO-8601 UTC, `level`, `logger`, `message`, `service`, `env`, `version`, `trace_id`, `span_id`, `workspace_id`, `run_id`, `step_id`, `ctx`)
+**And** la variable d'environnement `LOG_LEVEL` (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` ; défaut `INFO`) est prise en compte dynamiquement par tous les processus
+**And** les sondes d'infrastructure HTTP régulières (`/api/v1/health`, `/ready`) sont filtrées des journaux d'accès pour éviter la saturation inutile.
+
+**Given** la présence de secrets, mots de passe temporaires, tokens JWT ou jetons PAT dans les structures de données
+**When** un log est émis
+**Then** le processeur de masquage structlog remplace systématiquement les valeurs sensibles par un masque anonymisé, vérifié en CI par le test du secret témoin (`NFR-SEC-4`).
+
+**Given** l'environnement de développement local (`scripts/manage.py`)
+**When** les processus locaux sont démarrés
+**Then** les fichiers de logs `.orcia-run/*.log` appliquent une rotation automatique bornée (`RotatingFileHandler` max 50 Mo) ou sont redirigés vers `stdout`
+**And** la dépendance non utilisée `pino` dans `apps/web/package.json` est nettoyée ou planifiée pour retrait
+**And** `lint-imports` passe à `0` violation et les tests unitaires couvrent $\ge 90\%$ du socle de logging (`AD-17`, `AD-23`).
+
+### Story 7.0b: Puits de Logs Paramétrable (`LogSinkQueryPort`), Adaptateur Elasticsearch / OpenSearch Prioritaire, Traces OTel OTLP & Profils Compose
+
+As a Architecte Système ou Ingénieur SRE (`Winston`, `Karim UJ-12`),
+I want abstraire l'accès en lecture au puits de logs derrière le port `LogSinkQueryPort`, implémenter l'adaptateur prioritaire de production `ElasticsearchLogSinkAdapter` (compatible Elasticsearch et OpenSearch sans API propriétaire) ainsi que l'adaptateur dev local `LokiLogSinkAdapter` (LogQL), exporter les traces distribuées OpenTelemetry via le protocole standard OTLP vers `OTEL_EXPORTER_OTLP_ENDPOINT`, et fournir les profils Docker Compose dev (`logs-loki`, `logs-elastic`),
+So that le code applicatif demeure totalement découplé du puits de logs, que la bascule d'infrastructure soit garantie par les 4 invariants de réversibilité, et que les Stories 7.2 (`LOG_SINK_ALERT`) et 7.3 (`POST_ACTION_VERIFICATION`) disposent de leur socle d'interrogation sans dépendre d'un moteur d'alerte externe propriétaire (`FR-23`, `FR-24`, `FR-29`, `NFR-OBS-1`, `AD-12`, `AD-18`, `AD-23`, Décisions D3, D4, D6, D7, D9, D10).
+
+**Acceptance Criteria:**
+
+**Given** le port abstrait `LogSinkQueryPort` (`query_logs`, `count_errors`, `healthcheck`) dans le domaine hexagonal de `orcia-core`
+**When** les adaptateurs `ElasticsearchLogSinkAdapter` (OpenSearch-py / elasticsearch-py) et `LokiLogSinkAdapter` (LogQL) sont instanciés
+**Then** les deux adaptateurs passent avec succès le kit de test de contrat commun `LogSinkContractTestKit` sous `testcontainers` (Elasticsearch/OpenSearch et Loki) sans aucune divergence sémantique
+**And** l'adaptateur effectif est sélectionné au Composition Root (`lifespan` API / `on_startup` worker) via la variable d'environnement `LOG_SINK_BACKEND=elasticsearch|loki|none`.
+
+**Given** l'instrumentation OpenTelemetry des processus Python (`opentelemetry-sdk`, `opentelemetry-exporter-otlp`, instrumentations `fastapi`, `sqlalchemy`, `httpx`)
+**When** des requêtes et étapes de workflow sont exécutées
+**Then** les spans et traces sont exportés via le protocole standard OTLP vers `OTEL_EXPORTER_OTLP_ENDPOINT` (ou désactivés sans erreur si `OTEL_TRACES_EXPORTER=none`)
+**And** le `trace_id` et le `span_id` courants sont injectés de manière déterministe dans le contexte structlog de chaque log JSON émis
+**And** aucun exportateur OTel Logs n'est instancié dans le code Python (conformité stricte à l'émission 12-factor JSON stdout).
+
+**Given** les 4 invariants de réversibilité (`AD-23`)
+**When** l'architecture est auditée
+**Then** (1) les logs sont émis uniquement sur stdout JSON, (2) les traces utilisent OTLP standard, (3) l'empreinte `error_fingerprint_sha256`, la déduplication et le masquage sont 100 % dans le code ORCIA (zéro logique d'alerte dans le collecteur), et (4) la lecture du puits passe exclusivement par `LogSinkQueryPort`
+**And** le fichier `infra/docker/docker-compose.yml` intègre les profils optionnels `--profile logs-loki` (Loki + Grafana) et `--profile logs-elastic` (OpenSearch/Elasticsearch + Grafana)
+**And** `lint-imports` passe à `0` violation et les tests unitaires et d'intégration couvrent $\ge 90\%$ (`AD-17`, `AD-23`).
+
+### Story 7.0c: Conformité & Préparation au Déploiement OpenShift (SCC Restricted, UID Arbitraire, FS Read-Only & Contrat ClusterLogForwarder)
+
+As a Ingénieur Plateforme / DevOps ou SecOps (`Karim UJ-9`, `Sophie UJ-6`),
+I want configurer et documenter la conformité de l'image de conteneur d'ORCIA pour son déploiement sur la plateforme cible OpenShift (exécution sous SCC `restricted` avec UID arbitraire non root, système de fichiers racine en lecture seule `readOnlyRootFilesystem: true`, sondes liveness/readiness, ConfigMap/Secret Helm/Kustomize) et formaliser le contrat d'intégration avec le `ClusterLogForwarder` d'OpenShift Logging vers l'Elasticsearch / OpenSearch mutualisé,
+So that les conteneurs ORCIA soient déployables en production d'entreprise avec le plus haut niveau de durcissement sans exiger de privilèges élevés ni de stockage persistant pour les logs techniques (`FR-28`, `NFR-SEC-1`, `NFR-OBS-1`, `AD-12`, `AD-19`, `AD-23`, Décision D8).
+
+**Acceptance Criteria:**
+
+**Given** les manifestes de déploiement conteneurisé (Dockerfile multi-rôles, chart Helm ou Kustomize)
+**When** les conteneurs ORCIA (`api`, `worker-orchestration`, `worker-indexing`, `trigger-dispatcher`, `sandbox-runner`) sont exécutés sous OpenShift SCC `restricted`
+**Then** les conteneurs s'exécutent avec succès sous un UID Linux arbitraire non root (`securityContext.runAsNonRoot: true`)
+**And** le système de fichiers racine est monté en lecture seule (`readOnlyRootFilesystem: true`), les seuls répertoires temporaires autorisés étant des volumes mémoire `tmpfs` montés sur `/tmp` (`sizeLimit: 64Mi`)
+**And** aucun log ni fichier d'état n'est écrit sur le système de fichiers du pod.
+
+**Given** les sondes de santé de conteneurs
+**When** OpenShift interroge `livenessProbe` (`/api/v1/health`) et `readinessProbe` (`/api/v1/health` ou endpoint dédié)
+**Then** les sondes répondent en `< 100 ms` sans déclencher de requêtes SQL lourdes ni générer d'entrées d'accès bruyantes dans les logs.
+
+**Given** le composant OpenShift Logging (`ClusterLogForwarder`) déployé sur le cluster cible
+**When** les logs émis sur `stdout` par les pods ORCIA sont collectés
+**Then** le document de contrat d'intégration plateforme consigne : (1) l'activation de `structuredTypeKey` pour le parsing natif du JSON émis par ORCIA, (2) la création du compte de service / clé d'API restreint en lecture seule à l'index Elasticsearch du namespace ORCIA pour `LogSinkQueryPort`, (3) la politique `NetworkPolicy` d'egress autorisant les flux sortants vers Elasticsearch et le collecteur OTel/Tempo d'entreprise, et (4) le masquage préalable obligatoire des secrets dans le pod avant émission (`NFR-SEC-4`)
+**And** les tests de validation de conteneur rootless passent avec succès (`AD-17`, `AD-23`).
 
 ### Story 7.1: Contrat d'Autonomie Signé, Identité Service-Principal Scopée & Régime d'Exécution `AUTONOMOUS_CONTRACT`
 
@@ -897,23 +971,24 @@ So that les processus répétitifs, analytiques (`UJ-11`) ou documentaires (`gen
 **When** un *Run* `AUTONOMOUS_CONTRACT` exécute une étape ou une *Action Staged* autorisée par le contrat
 **Then** l'action passe par le `ConnectorInvoker` (coupe-circuit par connecteur, `idempotency_key`, relances passagères seulement), l'identité `service_principal` est évaluée selon le verbe **`execute`** (avec respect du moindre privilège par étape `Lire` vs `Écrire` déclaré dans le Studio) et n'utilise que des `SecretRef` résolues par `SecretProviderPort` (`NFR-SEC-4`, `AD-21`).
 
-### Story 7.2: Déclencheurs Événementiels Idempotents (`WEBHOOK`, `LOG-SINK-ALERT`, `CRON`, `OUTBOX_EVENT`, `MANUAL_AUTONOMOUS`), Déduplication & Protection Anti-Boucle (*Self-Trigger Guard*)
+### Story 7.2: Déclencheurs Événementiels Idempotents (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON`, `OUTBOX_EVENT`, `MANUAL_AUTONOMOUS`), Déduplication & Protection Anti-Boucle (*Self-Trigger Guard*)
 
 As a Ingénieur Plateforme / SRE ou Directrice de BU (`Karim UJ-9/UJ-12`, `Claire UJ-11`),
-I want enregistrer des déclencheurs autonomes planifiés (`CRON`) ou événementiels (`WEBHOOK` Jira/Git/Confluence, `LOG_SINK_ALERT` depuis le puits de logs, ou événement interne `domain_events_outbox` tel que la publication d'un Pack ou d'un Processus déclenchant `generate-and-attach-help`) exécutés par le rôle `trigger-dispatcher` et dotés d'une clé d'idempotence stricte (`DBOS SetWorkflowID`), d'une fenêtre de cooldown et d'un garde-fou anti-auto-déclenchement,
-So that les rapports analytiques périodiques (`UJ-11`), la mise à jour automatique des fiches d'aide (`Principe D.4`) et les diagnostics d'erreurs de logs (`UJ-12`) se lancent automatiquement sans jamais créer de doublons lors des ré-essais ni provoquer de tempête de boucles infinies (`FR-24`, `FR-26`, `FR-29`, `AD-12`, `AD-18`, `AD-19`).
+I want enregistrer des déclencheurs autonomes planifiés (`CRON`) ou événementiels (`WEBHOOK` Jira/Git/Confluence, `LOG_SINK_ALERT` via interrogation de `LogSinkQueryPort` livrée en `Story 7.0b`, ou événement interne `domain_events_outbox` tel que la publication d'un Pack ou d'un Processus déclenchant `generate-and-attach-help`) exécutés par le rôle `trigger-dispatcher` et dotés d'une clé d'idempotence stricte (`DBOS SetWorkflowID`), d'une fenêtre de cooldown et d'un garde-fou anti-auto-déclenchement,
+So that les rapports analytiques périodiques (`UJ-11`), la mise à jour automatique des fiches d'aide (`Principe D.4`) et les diagnostics d'erreurs de logs (`UJ-12`) se lancent automatiquement sans jamais créer de doublons lors des ré-essais ni provoquer de tempête de boucles infinies (`FR-24`, `FR-26`, `FR-29`, `AD-12`, `AD-18`, `AD-19`, `AD-23`).
 
 **Acceptance Criteria:**
 
-**Given** un déclencheur actif dans `workflow_triggers` (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON` via `@DBOS.scheduled`, écouteur d'événement `domain_events_outbox` ou `MANUAL_AUTONOMOUS`) configuré depuis la modale **`⚡ Déclencheurs`** du Studio (`Story 8.5`) et géré par le rôle `trigger-dispatcher` (`M9`, `AD-19`, `AD-21`)
+**Given** la Story `7.0b` livrée (`LogSinkQueryPort`, `AD-23`) et un déclencheur actif dans `workflow_triggers` (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON` via `@DBOS.scheduled`, écouteur d'événement `domain_events_outbox` ou `MANUAL_AUTONOMOUS`) configuré depuis la modale **`⚡ Déclencheurs`** du Studio (`Story 8.5`) et géré par le rôle `trigger-dispatcher` (`M9`, `AD-19`, `AD-21`)
 **When** deux événements identiques (même `X-Webhook-Delivery-Id`, même `error_fingerprint_sha256` dans la fenêtre `cooldown_window_seconds`, même publication de version `@vX.Y.Z`, ou même fenêtre `CRON`) ou un ré-essai se présentent simultanément
-**Then** `DBOS SetWorkflowID("<trigger_id>:<idempotency_key>")`, le verrou atomique Redis `SET lock:trigger:{trigger_id}:{idempotency_key} NX EX 86400` et la contrainte PostgreSQL `UNIQUE (trigger_id, trigger_idempotency_key)` garantissent qu'un seul `workflow_run` est créé (`AD-18`).
+**Then** pour `LOG_SINK_ALERT`, la détection d'anomalies de logs est opérée côté ORCIA par un acteur de worker dédié interrogeant périodiquement `LogSinkQueryPort` (décision D5, `AD-23`), calculant l'empreinte `error_fingerprint_sha256` en Python pur, appliquant la déduplication et le cooldown, et émettant l'alerte via `domain_events_outbox`, sans aucune dépendance envers un mécanisme d'alerte propriétaire du puits (Elasticsearch Watcher ou Loki Ruler)
+**And** `DBOS SetWorkflowID("<trigger_id>:<idempotency_key>")`, le verrou atomique Redis `SET lock:trigger:{trigger_id}:{idempotency_key} NX EX 86400` et la contrainte PostgreSQL `UNIQUE (trigger_id, trigger_idempotency_key)` garantissent qu'un seul `workflow_run` est créé (`AD-18`).
 
 **Given** un événement Webhook, Outbox ou de puits de logs dont l'émetteur est le `service_principal` d'ORCIA ou qui contient le marqueur `x-orcia-origin-run-id`
 **When** le récepteur de triggers inspecte l'événement
 **Then** le **Self-Trigger Guard** ignore l'événement et publie la prévention de boucle dans `domain_events_outbox` vers `audit_ledger`
 **And** si le déclencheur dépasse `max_runs_per_hour`, `max_daily_cost_usd` ou `max_consecutive_failures` (défaut `3`), son statut passe automatiquement à `CIRCUIT_OPEN` avec alerte SSE `< 500 ms`
-**And** `lint-imports` passe à `0` violation et les tests unitaires et d'intégration sous concurrence (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du dispatcher de triggers (`AD-17`, `AD-19`).
+**And** `lint-imports` passe à `0` violation et les tests unitaires et d'intégration sous concurrence (`testcontainers` PG18 + Redis) couvrent $\ge 90\%$ du dispatcher de triggers (`AD-17`, `AD-19`, `AD-23`).
 
 **Given** la Story `3.2f` livrée (Avenant A2)
 **When** un déclencheur `WEBHOOK` ou `LOG_SINK_ALERT` instancie un *Run* dont une étape échoue sur un connecteur
@@ -922,20 +997,20 @@ So that les rapports analytiques périodiques (`UJ-11`), la mise à jour automat
 ### Story 7.3: Boucle Fermée d'Auto-Remédiation (`UJ-12` : Diagnostic >= 0.90, Reproduction TDD en Sandbox Palier 2, Test Staging Prod-Like, Déploiement & Vérification Post-Action avec Rollback Automatique)
 
 As a Ingénieur SRE ou Tech Lead (`Karim UJ-12`, `Yanis UJ-3`),
-I want qu'une erreur détectée dans le puits de logs déclenche un workflow autonome de diagnostic qui, uniquement si la cause racine est certaine ($\ge 0.90$), rédige l'intention de remédiation, reproduit et corrige le bug par tests unitaires TDD en Sandbox Palier 2 (`TIER_2_CONTAINER < 60 s`), valide le correctif au plus proche des conditions de production, l'applique en production puis vérifie dans le puits de logs que l'erreur a disparu (avec Rollback automatique sinon),
-So that les incidents récurrents à cause racine claire soient résolus en quelques minutes avec la même rigueur d'ingénierie qu'un développeur senior et une sécurité de retour arrière immédiat (`FR-13`, `FR-17`, `FR-18`, `FR-29`, `FR-30`, `AD-9`, `AD-10`, `AD-18`, `AD-19`, `UJ-12`).
+I want qu'une erreur détectée dans le puits de logs via `LogSinkQueryPort` (`Story 7.0b`) déclenche un workflow autonome de diagnostic qui, uniquement si la cause racine est certaine ($\ge 0.90$), rédige l'intention de remédiation, reproduit et corrige le bug par tests unitaires TDD en Sandbox Palier 2 (`TIER_2_CONTAINER < 60 s`), valide le correctif au plus proche des conditions de production, l'applique en production puis vérifie dans le puits de logs via `LogSinkQueryPort` que l'erreur a disparu (avec Rollback automatique sinon),
+So that les incidents récurrents à cause racine claire soient résolus en quelques minutes avec la même rigueur d'ingénierie qu'un développeur senior et une sécurité de retour arrière immédiat (`FR-13`, `FR-17`, `FR-18`, `FR-29`, `FR-30`, `AD-9`, `AD-10`, `AD-18`, `AD-19`, `AD-23`, `UJ-12`).
 
 **Acceptance Criteria:**
 
-**Given** un *Workflow Run* d'auto-remédiation déclenché par `LOG_SINK_ALERT` (`UJ-12`)
+**Given** la Story `7.0b` livrée (`LogSinkQueryPort`, `AD-23`) et un *Workflow Run* d'auto-remédiation déclenché par `LOG_SINK_ALERT` (décision D5, calcul d'anomalie côté ORCIA)
 **When** l'étape de diagnostic analyse la stacktrace et le *Graphe Tripartite (`Confluence ↔ Jira ↔ Git`)*
 **Then** si `root_cause_confidence < 0.90` ou si le périmètre touche une zone `HIGH_CRITICAL`, le workflow s'arrête immédiatement après le diagnostic et crée un ticket Jira d'escalade sans modifier aucun code (`FR-29`, `AD-18`).
 
 **Given** un diagnostic avec `root_cause_confidence >= 0.90` sur un périmètre autorisé par le *Contrat d'Autonomie*
 **When** le workflow poursuit la chaîne de remédiation (potentiellement structurée en `SUB_WORKFLOW`, `FR-30`)
-**Then** il exécute séquentiellement : (1) la génération et validation de l'**Intention de Remédiation** (`FR-13`), (2) l'écriture dans le service hors processus `sandbox-runner` Palier 2 (`TIER_2_CONTAINER`, `gVisor/Podman rootless --network=none < 60 s`, `AD-9`, `P5`, sans Rust selon `Q5`) d'un test unitaire reproduisant l'erreur (`Red`) puis du correctif applicatif ou IaC faisant passer 100 % des tests unitaires et du contrôle anti-*Pattern Drift* (`Green`) validé par une *Gate Agentique Orthogonale* (`AD-10`), (3) le déploiement et le test de non-régression / rejeu de trafic sur l'environnement **Staging / Prod-Like**, (4) la mise en production selon la stratégie du contrat, et (5) l'étape obligatoire **`POST_ACTION_VERIFICATION`** qui observe le puits de logs et les métriques pendant `verification_window_seconds`
+**Then** il exécute séquentiellement : (1) la génération et validation de l'**Intention de Remédiation** (`FR-13`), (2) l'écriture dans le service hors processus `sandbox-runner` Palier 2 (`TIER_2_CONTAINER`, `gVisor/Podman rootless --network=none < 60 s`, `AD-9`, `P5`, sans Rust selon `Q5`) d'un test unitaire reproduisant l'erreur (`Red`) puis du correctif applicatif ou IaC faisant passer 100 % des tests unitaires et du contrôle anti-*Pattern Drift* (`Green`) validé par une *Gate Agentique Orthogonale* (`AD-10`), (3) le déploiement et le test de non-régression / rejeu de trafic sur l'environnement **Staging / Prod-Like**, (4) la mise en production selon la stratégie du contrat, et (5) l'étape obligatoire **`POST_ACTION_VERIFICATION`** qui interroge le puits de logs via `LogSinkQueryPort` (`AD-23`) et les métriques pendant `verification_window_seconds`
 **And** si l'erreur réapparaît dans le puits de logs ou si le taux d'erreur/latence se dégrade pendant `POST_ACTION_VERIFICATION`, ORCIA déclenche automatiquement le **Rollback** vers la version précédente, bascule le déclencheur en `CIRCUIT_OPEN` et notifie l'astreinte en `< 500 ms` via `domain_events_outbox`
-**And** `lint-imports` passe à `0` violation et les tests unitaires, cassettes déterministes (`DeterministicCassetteLLM`) et tests d'intégration (`testcontainers` PG18 + Redis + SeaweedFS) couvrent $\ge 90\%$ de la boucle fermée et du Rollback automatique (`AD-17`, `AD-19`).
+**And** `lint-imports` passe à `0` violation et les tests unitaires, cassettes déterministes (`DeterministicCassetteLLM`) et tests d'intégration (`testcontainers` PG18 + Redis + SeaweedFS) couvrent $\ge 90\%$ de la boucle fermée et du Rollback automatique (`AD-17`, `AD-19`, `AD-23`).
 
 **Given** les Stories `3.2e` et `3.2f` livrées (Avenant A2, `AD-20`)
 **When** la boucle d'auto-remédiation génère l'Intention de Remédiation puis le correctif

@@ -88,6 +88,9 @@ development_status:
   epic-6-retrospective: optional
 
   epic-7: backlog
+  7-0a-socle-de-journalisation-unifie-12-factor-json-stdout: backlog
+  7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel: backlog
+  7-0c-conformite-deploiement-openshift-et-clusterlogforwarder: backlog
   7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: backlog
   7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler: backlog
   7-3-boucle-fermée-d-auto-remédiation-uj-12-diagnostic-0-90-repro: backlog
@@ -1090,6 +1093,36 @@ action_items:
     epic: epic-15
     description: >
       Fuites préexistantes dans packages/api-client/openapi.json faisant échouer test_story_3_2e_sdlc_pack_and_connectors.py:56 et test_story_3_2f_step_executors_invoker_and_finance.py:93 ; ne pas relâcher ces assertions de test.
+  - id: OBS-LOGSINK-LOKI-01
+    title: "LokiLogSinkAdapter : adaptateur LogQL pour stack dev locale optionnelle"
+    action: "Implémenter LokiLogSinkAdapter sous LogSinkQueryPort avec testcontainers Loki si non finalisé dans Story 7.0b"
+    priority: P2
+    depends_on: [7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel]
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-7
+    description: >
+      Adaptateur LogQL alternatif pour développeurs locaux utilisant le profil Compose logs-loki ; Elasticsearch restant le driver prioritaire cible de production OpenShift (D4, AD-23).
+  - id: OBS-FRONT-ERRORS-01
+    title: "Télémétrie des erreurs frontend (POST /api/v1/telemetry/client-errors) & nettoyage pino"
+    action: "Créer l'endpoint RFC 9457 rate-limité pour capter les erreurs React de production dans le flux stdout API et supprimer pino inutilisé de apps/web/package.json"
+    priority: P2
+    depends_on: [7-0a-socle-de-journalisation-unifie-12-factor-json-stdout]
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-7
+    description: >
+      Remontée des exceptions du navigateur vers stdout de l'API avec masquage des secrets, et purge du paquet orphelin pino de package.json (D1, NFR-OBS-1).
+  - id: OPS-OPENSHIFT-LOGGING-01
+    title: "Contrat d'intégration ClusterLogForwarder avec l'équipe plateforme OpenShift"
+    action: "Formaliser et négocier avec la plateforme OpenShift le contrat de collecte ClusterLogForwarder (parsing JSON structuredTypeKey, SA/API-key lecture seule sur index ES du namespace ORCIA, NetworkPolicy egress)"
+    priority: P1
+    depends_on: [7-0c-conformite-deploiement-openshift-et-clusterlogforwarder]
+    owner: "Karim (DevOps) / Winston (Architect)"
+    status: open
+    epic: epic-7
+    description: >
+      Contrat d'interface plateforme garantissant que les logs JSON stdout des pods ORCIA sont ingérés et interrogeables par LogSinkQueryPort sous SCC restricted (D8, AD-23).
   - id: UX-COCKPIT-DAY0-01
     title: "Revue complète UX/UI et fonctionnelle de l'écran Cockpit au Jour 0 post-initialisation"
     action: "Repenser et épurer l'écran Cockpit (/cockpit) après création du premier Administrateur Plateforme (Direction C : max 3 blocs majeurs, synchronisation Accostage 1/6, masquage des cartes de démo Human-Led/Arbitrage à vide, zéro redondance raccourcis/assistant) sur la base de la capture archivée"
