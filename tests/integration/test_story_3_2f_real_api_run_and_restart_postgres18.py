@@ -220,7 +220,10 @@ async def test_story_3_2f_real_step_executors_human_pause_restart_and_resume_pos
                     payload = snap.artifact_payload
                     assert "simulated" not in str(payload).lower()
                     assert payload.get("step_type") == "AGENT"
-                    assert payload.get("llm_model_id") == "anthropic/claude-3-7-sonnet"
+                    assert payload.get("llm_model_id") is not None
+                    assert "cassette" in payload.get("llm_model_id", "") or "claude" in payload.get(
+                        "llm_model_id", ""
+                    )
                     assert str(payload.get("llm_prompt_sha256", "")).startswith("sha256:")
             finally:
                 await engine_restarted.shutdown()

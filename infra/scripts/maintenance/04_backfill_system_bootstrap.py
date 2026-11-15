@@ -157,7 +157,7 @@ async def _async_main(argv: list[str] | None = None) -> int:
         )
     finally:
         await engine.dispose()
-    return 0 if report.bootstrap_workflows_count >= 6 and report.llm_endpoints_count >= 2 else 1
+    return 0 if report.bootstrap_workflows_count >= 6 else 1
 
 
 def main(argv: list[str] | None = None) -> int:

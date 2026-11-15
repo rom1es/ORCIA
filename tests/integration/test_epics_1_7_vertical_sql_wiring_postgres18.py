@@ -29,7 +29,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
+from orcia_api.dependencies.portal_and_assistant import (
+    get_embedding_port,
+    require_rag_available,
+)
 from orcia_api.main import create_app
 from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork
 from orcia_worker.outbox_relay import DramatiqOutboxRelay
@@ -59,8 +64,11 @@ def _load_script_module(mod_name: str, filename: str) -> Any:
 
 
 @pytest.mark.asyncio
-async def test_epics_1_7_vertical_http_to_postgres18_persistence_and_outbox_relay() -> None:
+async def test_epics_1_7_vertical_http_to_postgres18_persistence_and_outbox_relay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify full HTTP -> FastAPI -> SQL PostgreSQL 18 persistence across Epics 2 and 3."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     pg_sock_dir = _prepare_sock_dir("pg18")
     pg_container = (
         DockerContainer("pgvector/pgvector:pg18")
@@ -131,6 +139,10 @@ async def test_epics_1_7_vertical_http_to_postgres18_persistence_and_outbox_rela
                 app.state.db_engine = uow.engine
                 app.state.session_maker = uow.session_factory
                 app.state.dbos_uow = uow
+                fake_emb = FakeDeterministicEmbeddingAdapter()
+                app.state.embedding_port = fake_emb
+                app.dependency_overrides[get_embedding_port] = lambda: fake_emb
+                app.dependency_overrides[require_rag_available] = lambda: fake_emb
 
                 ws_id = "0192c4e0-0000-7000-8000-000000000201"
                 async with AsyncClient(

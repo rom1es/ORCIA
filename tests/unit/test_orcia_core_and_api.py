@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import os
 from pathlib import Path
 
 import pytest
@@ -175,14 +176,16 @@ def test_observability_trace_context_and_structlog() -> None:
     auto_id = get_current_trace_id()
     assert len(auto_id) == 32
 
-    w3c_trace = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+    # fmt: off
+    w3c_trace = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"  # pragma: allowlist secret  # noqa: E501
     extracted = resolve_or_create_trace_id(traceparent=w3c_trace)
-    assert extracted == "4bf92f3577b34da6a3ce929d0e0e4736"
+    assert extracted == "4bf92f3577b34da6a3ce929d0e0e4736"  # pragma: allowlist secret
 
     # W3C Trace Context spec: all-zero 16-hex parent-id must be rejected
-    zero_parent_trace = "00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01"
+    zero_parent_trace = "00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01"  # pragma: allowlist secret  # noqa: E501
     rejected_zero_parent = resolve_or_create_trace_id(traceparent=zero_parent_trace)
-    assert rejected_zero_parent != "4bf92f3577b34da6a3ce929d0e0e4736"
+    assert rejected_zero_parent != "4bf92f3577b34da6a3ce929d0e0e4736"  # pragma: allowlist secret
+    # fmt: on
     assert len(rejected_zero_parent) == 32
 
     header_trace = "0192c4e0000070008000000000000099"
@@ -250,12 +253,13 @@ def test_fastapi_health_shell_and_rfc9457_localization() -> None:
     assert health_res.json()["status"] == "ok"
     assert health_res.json()["trace_id"] == custom_trace
 
-    # Verify W3C traceparent header propagation on HTTP endpoint
-    w3c_header = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+    # fmt: off
+    w3c_header = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"  # pragma: allowlist secret  # noqa: E501
     tp_res = client.get("/api/v1/health", headers={"traceparent": w3c_header})
     assert tp_res.status_code == 200
-    assert tp_res.headers["X-Trace-Id"] == "4bf92f3577b34da6a3ce929d0e0e4736"
-    assert tp_res.json()["trace_id"] == "4bf92f3577b34da6a3ce929d0e0e4736"
+    assert tp_res.headers["X-Trace-Id"] == "4bf92f3577b34da6a3ce929d0e0e4736"  # pragma: allowlist secret  # noqa: E501
+    assert tp_res.json()["trace_id"] == "4bf92f3577b34da6a3ce929d0e0e4736"  # pragma: allowlist secret  # noqa: E501
+    # fmt: on
 
     shell_res = client.get("/api/v1/navigation/shell")
     assert shell_res.status_code == 200
@@ -331,109 +335,114 @@ def test_worker_idempotent_system_ping_actor() -> None:
 
 def test_centralized_env_config_loader(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify centralized `.env` loader (`orcia_core.config`) for DB, Redis, API, and Web."""
-    from orcia_core.config import (
-        generate_strong_secret,
-        get_env,
-        get_env_int,
-        init_or_rotate_env_secrets,
-        load_orcia_env,
-        resolve_api_host_and_port,
-        resolve_database_url,
-        resolve_redis_url,
-        resolve_web_host_and_port,
-    )
+    orig_env = dict(os.environ)
+    try:
+        from orcia_core.config import (
+            generate_strong_secret,
+            get_env,
+            get_env_int,
+            init_or_rotate_env_secrets,
+            load_orcia_env,
+            resolve_api_host_and_port,
+            resolve_database_url,
+            resolve_redis_url,
+            resolve_web_host_and_port,
+        )
 
-    with pytest.raises(ValueError, match="nbytes must be >= 16"):
-        generate_strong_secret(8)
+        with pytest.raises(ValueError, match="nbytes must be >= 16"):
+            generate_strong_secret(8)
 
-    custom_env = tmp_path / ".env.custom"
-    custom_env.write_text(
-        "ORCIA_WEB_HOST=127.0.0.1\n"
-        "ORCIA_WEB_PORT=3150\n"
-        "ORCIA_API_HOST=127.0.0.1\n"
-        "ORCIA_API_PORT=8150\n"
-        "POSTGRES_HOST=127.0.0.1\n"
-        "POSTGRES_PORT=5439\n"
-        "POSTGRES_USER=orcia_custom\n"
-        "POSTGRES_PASSWORD=secret_pw\n"
-        "POSTGRES_DB=orcia_custom_db\n"
-        "REDIS_HOST=127.0.0.1\n"
-        "REDIS_PORT=6389\n"
-        "REDIS_DB=2\n"
-        "ORCIA_JWT_SIGNING_SECRET=change-me\n",  # pragma: allowlist secret
-        encoding="utf-8",
-    )
-    monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("REDIS_URL", raising=False)
-    monkeypatch.delenv("ORCIA_WEB_PORT", raising=False)
-    monkeypatch.delenv("ORCIA_API_PORT", raising=False)
-    monkeypatch.delenv("POSTGRES_PORT", raising=False)
-    monkeypatch.delenv("REDIS_PORT", raising=False)
-    monkeypatch.delenv("ORCIA_JWT_SIGNING_SECRET", raising=False)
-    monkeypatch.delenv("ORCIA_PASSTHROUGH_MASTER_KEY", raising=False)
+        custom_env = tmp_path / ".env.custom"
+        custom_env.write_text(
+            "ORCIA_WEB_HOST=127.0.0.1\n"
+            "ORCIA_WEB_PORT=3150\n"
+            "ORCIA_API_HOST=127.0.0.1\n"
+            "ORCIA_API_PORT=8150\n"
+            "POSTGRES_HOST=127.0.0.1\n"
+            "POSTGRES_PORT=5439\n"
+            "POSTGRES_USER=orcia_custom\n"
+            "POSTGRES_PASSWORD=secret_pw\n"
+            "POSTGRES_DB=orcia_custom_db\n"
+            "REDIS_HOST=127.0.0.1\n"
+            "REDIS_PORT=6389\n"
+            "REDIS_DB=2\n"
+            "ORCIA_JWT_SIGNING_SECRET=change-me\n",  # pragma: allowlist secret
+            encoding="utf-8",
+        )
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.delenv("REDIS_URL", raising=False)
+        monkeypatch.delenv("ORCIA_WEB_PORT", raising=False)
+        monkeypatch.delenv("ORCIA_API_PORT", raising=False)
+        monkeypatch.delenv("POSTGRES_PORT", raising=False)
+        monkeypatch.delenv("REDIS_PORT", raising=False)
+        monkeypatch.delenv("ORCIA_JWT_SIGNING_SECRET", raising=False)
+        monkeypatch.delenv("ORCIA_PASSTHROUGH_MASTER_KEY", raising=False)
 
-    loaded_path = load_orcia_env(env_file=custom_env, override=True)
-    assert loaded_path == custom_env
-    assert get_env("ORCIA_WEB_PORT") == "3150"
-    assert get_env_int("ORCIA_WEB_PORT", 3100) == 3150
-    assert resolve_web_host_and_port() == ("127.0.0.1", 3150)
-    assert resolve_api_host_and_port() == ("127.0.0.1", 8150)
-    expected_db = (
-        "postgresql+asyncpg://orcia_custom:secret_pw@"  # pragma: allowlist secret
-        "127.0.0.1:5439/orcia_custom_db"
-    )
-    assert resolve_database_url() == expected_db
-    assert resolve_redis_url() == "redis://127.0.0.1:6389/2"
+        loaded_path = load_orcia_env(env_file=custom_env, override=True)
+        assert loaded_path == custom_env
+        assert get_env("ORCIA_WEB_PORT") == "3150"
+        assert get_env_int("ORCIA_WEB_PORT", 3100) == 3150
+        assert resolve_web_host_and_port() == ("127.0.0.1", 3150)
+        assert resolve_api_host_and_port() == ("127.0.0.1", 8150)
+        expected_db = (
+            "postgresql+asyncpg://orcia_custom:secret_pw@"  # pragma: allowlist secret
+            "127.0.0.1:5439/orcia_custom_db"
+        )
+        assert resolve_database_url() == expected_db
+        assert resolve_redis_url() == "redis://127.0.0.1:6389/2"
 
-    # Support Docker/K8s <VAR>_FILE secret mounting and fail-fast on missing file
-    secret_file = tmp_path / "pg_pass.secret"
-    secret_file.write_text("k8s_mounted_secret\n", encoding="utf-8")
-    monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(secret_file))
-    assert get_env("POSTGRES_PASSWORD") == "k8s_mounted_secret"
-    monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(tmp_path / "missing.secret"))
-    with pytest.raises(ValueError, match="POSTGRES_PASSWORD_FILE"):
-        get_env("POSTGRES_PASSWORD")
-    monkeypatch.delenv("POSTGRES_PASSWORD_FILE", raising=False)
+        # Support Docker/K8s <VAR>_FILE secret mounting and fail-fast on missing file
+        secret_file = tmp_path / "pg_pass.secret"
+        secret_file.write_text("k8s_mounted_secret\n", encoding="utf-8")
+        monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(secret_file))
+        assert get_env("POSTGRES_PASSWORD") == "k8s_mounted_secret"
+        monkeypatch.setenv("POSTGRES_PASSWORD_FILE", str(tmp_path / "missing.secret"))
+        with pytest.raises(ValueError, match="POSTGRES_PASSWORD_FILE"):
+            get_env("POSTGRES_PASSWORD")
+        monkeypatch.delenv("POSTGRES_PASSWORD_FILE", raising=False)
 
-    # Rotate weak placeholder secrets in-place and append missing ones
-    rotated = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=False)
-    assert rotated["ORCIA_JWT_SIGNING_SECRET"] is True
-    assert rotated["ORCIA_PASSTHROUGH_MASTER_KEY"] is True
-    first_jwt = get_env("ORCIA_JWT_SIGNING_SECRET")
-    assert len(first_jwt) >= 32 and first_jwt != "change-me-jwt-signing-secret"
+        # Rotate weak placeholder secrets in-place and append missing ones
+        rotated = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=False)
+        assert rotated["ORCIA_JWT_SIGNING_SECRET"] is True
+        assert rotated["ORCIA_PASSTHROUGH_MASTER_KEY"] is True
+        first_jwt = get_env("ORCIA_JWT_SIGNING_SECRET")
+        assert len(first_jwt) >= 32 and first_jwt != "change-me-jwt-signing-secret"
 
-    # Second run without force_rotate preserves strong secrets
-    rotated_again = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=False)
-    assert rotated_again["ORCIA_JWT_SIGNING_SECRET"] is False
-    assert get_env("ORCIA_JWT_SIGNING_SECRET") == first_jwt
+        # Second run without force_rotate preserves strong secrets
+        rotated_again = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=False)
+        assert rotated_again["ORCIA_JWT_SIGNING_SECRET"] is False
+        assert get_env("ORCIA_JWT_SIGNING_SECRET") == first_jwt
 
-    # Force rotation replaces even strong secrets
-    forced = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=True)
-    assert forced["ORCIA_JWT_SIGNING_SECRET"] is True
-    assert get_env("ORCIA_JWT_SIGNING_SECRET") != first_jwt
+        # Force rotation replaces even strong secrets
+        forced = init_or_rotate_env_secrets(env_file=custom_env, force_rotate=True)
+        assert forced["ORCIA_JWT_SIGNING_SECRET"] is True
+        assert get_env("ORCIA_JWT_SIGNING_SECRET") != first_jwt
 
-    monkeypatch.setenv("ORCIA_WEB_PORT", "not-an-int")
-    assert get_env_int("ORCIA_WEB_PORT", 3100) == 3100
+        monkeypatch.setenv("ORCIA_WEB_PORT", "not-an-int")
+        assert get_env_int("ORCIA_WEB_PORT", 3100) == 3100
 
-    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://explicit/db")
-    monkeypatch.setenv("REDIS_URL", "redis://explicit:6379/0")
-    assert resolve_database_url() == "postgresql+asyncpg://explicit/db"
-    assert resolve_redis_url() == "redis://explicit:6379/0"
+        monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://explicit/db")
+        monkeypatch.setenv("REDIS_URL", "redis://explicit:6379/0")
+        assert resolve_database_url() == "postgresql+asyncpg://explicit/db"
+        assert resolve_redis_url() == "redis://explicit:6379/0"
 
-    # Stdlib fallback loader when python-dotenv is absent
-    import orcia_core.config as config_mod
+        # Stdlib fallback loader when python-dotenv is absent
+        import orcia_core.config as config_mod
 
-    fallback_env = tmp_path / ".env.fallback"
-    fallback_env.write_text(
-        "# comment line\n"
-        "\n"
-        "INVALID_LINE_WITHOUT_EQUALS\n"
-        "export ORCIA_WEB_PORT='3199'\n"
-        'ORCIA_API_HOST="0.0.0.0"\n',
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(config_mod, "_dotenv_load", None)
-    monkeypatch.delenv("ORCIA_WEB_PORT", raising=False)
-    load_orcia_env(env_file=fallback_env, override=True)
-    assert get_env_int("ORCIA_WEB_PORT", 3100) == 3199
-    assert get_env("ORCIA_API_HOST") == "0.0.0.0"
+        fallback_env = tmp_path / ".env.fallback"
+        fallback_env.write_text(
+            "# comment line\n"
+            "\n"
+            "INVALID_LINE_WITHOUT_EQUALS\n"
+            "export ORCIA_WEB_PORT='3199'\n"
+            'ORCIA_API_HOST="0.0.0.0"\n',
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(config_mod, "_dotenv_load", None)
+        monkeypatch.delenv("ORCIA_WEB_PORT", raising=False)
+        load_orcia_env(env_file=fallback_env, override=True)
+        assert get_env_int("ORCIA_WEB_PORT", 3100) == 3199
+        assert get_env("ORCIA_API_HOST") == "0.0.0.0"
+    finally:
+        os.environ.clear()
+        os.environ.update(orig_env)

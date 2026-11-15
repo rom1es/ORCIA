@@ -58,7 +58,14 @@ def test_two_speed_federated_search_service_has_zero_fictional_results_by_defaul
     )
     assert report.hits == ()
 
+    from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
+
+    from orcia_api.dependencies.portal_and_assistant import require_rag_available
+
     app = create_app()
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    app.state.embedding_port = fake_emb
+    app.dependency_overrides[require_rag_available] = lambda: fake_emb
     client = TestClient(app)
     resp = client.get(
         "/api/v1/search",

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 41,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 136,
+    "techLeadReportsCount": 138,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 58,
     "verifiedCapabilitiesCount": 43
@@ -488,6 +488,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Non-Régression & Couverture Epic 19 (CAP-190..194)",
+      "reportFile": "2026-11-15-epic-19-non-regression-tests-et-couverture-tech-lead-report.md",
+      "domain": "Adaptation Non-Régression de la Suite Complète Pytest aux Invariants AD-24 (0 Modèle en Dur, 0 Mock Fallback en Prod, EmbeddingPort Pur) & Rétablissement Couverture Globale ≥ 90 %",
+      "summary": "Résolution des 8 échecs résiduels de non-régression (injections explicites de FakeDeterministicEmbeddingAdapter, configuration de tiers de test sur les moteurs d'orchestration et RAG, isolation en try...finally des variables d'environnement dans les tests de sécurité pour éliminer toute fuite de session, alignement du resolver LLM ORCIA_FORCE_LIVE_LLM_IN_TESTS, mise à jour de l'inventaire d'audit des adaptateurs SQL Epic 19), 0 régression, 0 affaiblissement de code de production, validation complète de la pyramide AD-17 et couverture globale maintenue ≥ 90 %."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Correctifs Revue Architecture Epic 19 (CAP-011, CAP-052, CAP-070, CAP-190)",
+      "reportFile": "2026-11-15-epic-19-correctifs-revue-architecture-tech-lead-report.md",
+      "domain": "Traitement Exhaustif des 7 Findings de la Revue d'Architecture Finale Epic 19 (VALIDATE Winston) : Vraie Clé Maîtresse Worker, Blocage 422/503 RAG & Assistant, Dépendance Unique require_rag_available, Éradication InMemory* Prod, Normalisation URL Pure & Découpage Volumétrique < 300 lignes",
+      "summary": "Résolution des 2 bloquants (B1: déchiffrement ORCIA_PASSTHROUGH_MASTER_KEY par le worker, B2: GET /search bloqué 422 sans modèle et 503 pendant réindexation sans repli lexical), 4 majeurs (M1: déplacement InMemoryReindexManager dans tests/unit/fakes/, M2: extraction ai_models_urls.py, M3: barrière anti-mélange vectorielle embedding_model_id = <modèle actif>, M4: dépendance FastAPI require_rag_available avec test d'audit d'exhaustivité), et 2 mineurs (m1: fermeture propre httpx worker, m2: découpage de sql_reindex.py en 3 modules < 300 lignes). 100% gates validées."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Story 19.7 (CAP-011, CAP-052, CAP-070, CAP-071, CAP-190)",

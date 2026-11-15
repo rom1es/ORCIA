@@ -15,7 +15,7 @@ import dramatiq
 import httpx
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from orcia_core.config import resolve_database_url
+from orcia_core.config import get_env, resolve_database_url
 from orcia_core.observability.logging import bind_trace_context, get_logger
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     get_ai_model_mapping_pg18,
@@ -50,14 +50,20 @@ async def execute_rag_reindex_worker_job_async(
     target_model_id: str,
     trace_id: str,
     embedding_port: EmbeddingPort | None = None,
+    vault_cipher: PassthroughVaultCipher | None = None,
     database_url: str | None = None,
 ) -> RagReindexJobRecord:
     """Async execution of reindexing job, resolving DB engine and EmbeddingPort if needed."""
     ctx = bind_trace_context(trace_id)
     db_url = database_url or resolve_database_url()
     engine = create_async_engine(db_url, echo=False)
-    cipher = PassthroughVaultCipher(master_key=b"0" * 32)
+    vault_master_key = get_env(
+        "ORCIA_PASSTHROUGH_MASTER_KEY",
+        "orcia-story-1-2-aes256gcm-master-key-2026",
+    )
+    cipher = vault_cipher or PassthroughVaultCipher(master_key=vault_master_key)
 
+    owned_http_client: httpx.AsyncClient | None = None
     eff_port = embedding_port
     if eff_port is None:
         async with engine.begin() as conn:
@@ -73,17 +79,17 @@ async def execute_rag_reindex_worker_job_async(
                 target_host=host,
             )
 
-        http_client = httpx.AsyncClient()
+        owned_http_client = httpx.AsyncClient()
         if mapping.protocol_mode == "gemini_native":
             eff_port = HttpxGeminiNativeEmbeddingAdapter(
-                http_client=http_client,
+                http_client=owned_http_client,
                 endpoint_uri=mapping.endpoint_uri,
                 model_name=mapping.model_name,
                 api_key=api_key,
             )
         else:
             eff_port = HttpxOpenAiCompatibleEmbeddingAdapter(
-                http_client=http_client,
+                http_client=owned_http_client,
                 endpoint_uri=mapping.endpoint_uri,
                 model_name=mapping.model_name,
                 api_key=api_key,
@@ -100,7 +106,11 @@ async def execute_rag_reindex_worker_job_async(
         )
         return rec
     finally:
-        await engine.dispose()
+        try:
+            if owned_http_client is not None:
+                await owned_http_client.aclose()
+        finally:
+            await engine.dispose()
 
 
 def execute_rag_reindex_worker_job(
@@ -109,6 +119,7 @@ def execute_rag_reindex_worker_job(
     target_model_id: str,
     trace_id: str,
     embedding_port: EmbeddingPort | None = None,
+    vault_cipher: PassthroughVaultCipher | None = None,
     database_url: str | None = None,
 ) -> RagReindexExecutionResult:
     """Synchronous facade running the async reindex job."""
@@ -118,6 +129,7 @@ def execute_rag_reindex_worker_job(
             target_model_id=target_model_id,
             trace_id=trace_id,
             embedding_port=embedding_port,
+            vault_cipher=vault_cipher,
             database_url=database_url,
         )
     )

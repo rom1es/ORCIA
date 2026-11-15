@@ -6,6 +6,8 @@ enveloppe RFC 9457 + `trace_id` sur les erreurs, et persona réservée au mode l
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -13,14 +15,26 @@ from orcia_api.routers.assistant_llm_providers import is_safe_llm_endpoint_url
 
 
 @pytest.fixture(scope="module")
-def client() -> TestClient:
+def client() -> Generator[TestClient, None, None]:
     import os
 
-    os.environ.setdefault("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
-    os.environ.setdefault("ORCIA_USE_CASSETTE_LLM", "true")
+    old_pg = os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC")
+    old_llm = os.environ.get("ORCIA_USE_CASSETTE_LLM")
+    os.environ["ORCIA_DISABLE_PG_BOOTSTRAP_SYNC"] = "1"
+    os.environ["ORCIA_USE_CASSETTE_LLM"] = "true"
     from orcia_api.main import create_app
 
-    return TestClient(create_app(), raise_server_exceptions=False)
+    try:
+        yield TestClient(create_app(), raise_server_exceptions=False)
+    finally:
+        if old_pg is None:
+            os.environ.pop("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", None)
+        else:
+            os.environ["ORCIA_DISABLE_PG_BOOTSTRAP_SYNC"] = old_pg
+        if old_llm is None:
+            os.environ.pop("ORCIA_USE_CASSETTE_LLM", None)
+        else:
+            os.environ["ORCIA_USE_CASSETTE_LLM"] = old_llm
 
 
 @pytest.mark.parametrize(

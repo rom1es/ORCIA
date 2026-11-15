@@ -42,10 +42,7 @@ from orcia_core.rag.errors import (
     NoActiveEmbeddingModelError,
     RagReindexInProgressError,
 )
-from orcia_core.rag.reindex import (
-    check_rag_operational_on_conn,
-    default_in_memory_reindex_manager,
-)
+from orcia_core.rag.reindex import check_rag_operational_on_conn
 
 
 def get_assistant_service(request: Request) -> AssistantAgentService:
@@ -162,12 +159,9 @@ def get_assistant_folders_and_sharing_service(
 
 async def get_embedding_port(request: Request) -> EmbeddingPort:
     """FastAPI `Depends` provider resolving the active global EmbeddingPort."""
-    engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None:
-        async with engine.begin() as conn:
-            await check_rag_operational_on_conn(conn)
-    else:
-        active_mem = default_in_memory_reindex_manager.get_active_job()
+    test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
+    if test_reindex_mgr is not None:
+        active_mem = test_reindex_mgr.get_active_job()
         if active_mem is not None:
             raise RagReindexInProgressError(
                 progress_percentage=active_mem.progress_percentage,
@@ -177,7 +171,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
                     "La recherche documentaire et Mon Assistant sont temporairement indisponibles."
                 ),
             )
-        latest_mem = default_in_memory_reindex_manager.get_latest_job()
+        latest_mem = test_reindex_mgr.get_latest_job()
         if latest_mem is not None and latest_mem.status == "FAILED":
             raise RagReindexInProgressError(
                 progress_percentage=latest_mem.progress_percentage,
@@ -188,6 +182,16 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
                     "Veuillez relancer la réindexation dans /settings/ai-models."
                 ),
             )
+
+    engine = getattr(request.app.state, "db_engine", None)
+    if engine is None and test_reindex_mgr is None:
+        from orcia_api.dependencies.core_and_lifespan import get_or_create_shared_db_engine
+
+        engine = get_or_create_shared_db_engine(request)
+
+    if engine is not None:
+        async with engine.begin() as conn:
+            await check_rag_operational_on_conn(conn)
 
     explicit_port = getattr(request.app.state, "embedding_port", None)
     if explicit_port is not None:
@@ -254,3 +258,8 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
         model_name=rec.model_name,
         api_key=api_key,
     )
+
+
+async def require_rag_available(request: Request) -> EmbeddingPort:
+    """FastAPI `Depends` provider asserting an active global embedding model and no reindex job."""
+    return await get_embedding_port(request)

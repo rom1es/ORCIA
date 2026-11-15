@@ -18,12 +18,20 @@ from orcia_api.routers.assistant_llm_gemini_adapter import (
 from orcia_api.routers.assistant_llm_gemini_adapter import (
     build_gemini_native_headers,
     build_gemini_native_request_body,
-    build_gemini_native_url,
     extract_gemini_stream_chunk_deltas,
     is_google_gemini_native_provider,
     parse_gemini_native_response,
 )
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration.ai_models_urls import (
+    build_legacy_local_chat_url as build_legacy_local_chat_url,
+)
+from orcia_core.orchestration.ai_models_urls import (
+    is_anthropic_provider as is_anthropic_provider,
+)
+from orcia_core.orchestration.ai_models_urls import (
+    normalize_chat_completions_url as normalize_chat_completions_url,
+)
 
 extract_thinking_and_clean_content = _separate_think_tags
 
@@ -75,50 +83,6 @@ def is_safe_llm_endpoint_url(url: str) -> bool:
     except ValueError:
         pass
     return True
-
-
-def is_anthropic_provider(endpoint_uri: str, provider: str = "") -> bool:
-    """Return True if the endpoint targets Anthropic Messages API (`/v1/messages`)."""
-    u, p = endpoint_uri.strip().lower().rstrip("/"), provider.strip().lower()
-    return (
-        u.endswith("/messages")
-        or "anthropic.com" in u
-        or ("anthropic" in p and not u.endswith("/chat/completions"))
-    )
-
-
-def normalize_chat_completions_url(
-    endpoint_uri: str,
-    provider: str = "",
-    *,
-    model_name: str,
-    stream: bool = False,
-) -> str:
-    """Normalize provider base URL to its canonical chat/messages/generateContent endpoint."""
-    base = endpoint_uri.strip().rstrip("/")
-    if is_anthropic_provider(base, provider):
-        if base.endswith("/messages"):
-            return base
-        return f"{base}/messages" if base.endswith("/v1") else f"{base}/v1/messages"
-    if is_google_gemini_native_provider(base, provider):
-        return build_gemini_native_url(base, model_name, stream=stream)
-    if base.endswith(("/chat/completions", "/api/chat", "/messages")):
-        return base
-    if base.endswith(("/v1beta/openai", "/openai", "/v1")):
-        return f"{base}/chat/completions"
-    if base.endswith("/api"):
-        return f"{base[:-4].rstrip('/')}/v1/chat/completions"
-    return f"{base}/v1/chat/completions"
-
-
-def build_legacy_local_chat_url(endpoint_uri: str) -> str:
-    """Build fallback `/api/chat` URL for legacy local servers returning 404 on `/v1/chat`."""
-    clean = endpoint_uri.strip().rstrip("/")
-    for suffix in ("/v1/chat/completions", "/chat/completions", "/v1", "/api/chat", "/api"):
-        if clean.endswith(suffix):
-            clean = clean[: -len(suffix)].rstrip("/")
-            break
-    return f"{clean}/api/chat"
 
 
 def build_provider_headers(ep: ResolvedLiveLlmEndpoint, target_url: str) -> dict[str, str]:

@@ -94,7 +94,9 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 break
             time.sleep(0.2)
 
-        async_url = f"postgresql+asyncpg://orcia:orcia_dev_secret@/orcia?host={pg_sock_dir}"
+        # fmt: off
+        async_url = f"postgresql+asyncpg://orcia:orcia_dev_secret@/orcia?host={pg_sock_dir}"  # pragma: allowlist secret  # noqa: E501
+        # fmt: on
         alembic_cfg = Config(str(REPO_ROOT / "infra" / "migrations" / "alembic.ini"))
         alembic_cfg.set_main_option("script_location", str(REPO_ROOT / "infra" / "migrations"))
         alembic_cfg.set_main_option("sqlalchemy.url", async_url)
@@ -157,7 +159,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 "backfill_system_bootstrap", "04_backfill_system_bootstrap.py"
             )
             sb_dry = await backfill_sb.backfill_system_bootstrap(engine, apply_changes=False)
-            assert sb_dry.llm_endpoints_count == 3 and sb_dry.bootstrap_workflows_count == 6
+            assert sb_dry.llm_endpoints_count == 0 and sb_dry.bootstrap_workflows_count == 6
             assert sb_dry.bootstrap_runs_count == 0 and sb_dry.onboarding_states_count == 0
             assert sb_dry.dry_run is True and sb_dry.committed is False
             async with engine.connect() as conn:
@@ -167,7 +169,7 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 assert int(llm_after_dry.scalar() or 0) == 0
 
             sb_apply = await backfill_sb.backfill_system_bootstrap(engine, apply_changes=True)
-            assert sb_apply.committed is True and sb_apply.llm_endpoints_count == 3
+            assert sb_apply.committed is True and sb_apply.llm_endpoints_count == 0
             assert sb_apply.bootstrap_workflows_count == 6 and sb_apply.bootstrap_runs_count == 0
             assert sb_apply.onboarding_states_count == 0
 

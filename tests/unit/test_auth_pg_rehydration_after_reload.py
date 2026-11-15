@@ -197,6 +197,7 @@ async def test_rehydrate_bearer_subject_from_pg_if_missing_middleware_helper(
     request_mock.app.state.auth_service = svc
     request_mock.app.state.db_engine = engine_mock
 
+    monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
     monkeypatch.setattr(
         "orcia_api.dependencies.get_or_create_shared_db_engine",
         lambda _req: engine_mock,

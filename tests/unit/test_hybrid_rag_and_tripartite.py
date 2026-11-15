@@ -8,7 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
-from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+from orcia_api.dependencies.portal_and_assistant import (
+    get_embedding_port,
+    require_rag_available,
+)
 from orcia_api.main import create_app
 from orcia_core.rag import (
     DifferentiatedIncrementalIndexer,
@@ -291,7 +294,9 @@ def test_fastapi_rag_search_ddl_guard_and_tripartite_audit_endpoints() -> None:
     """Verify FastAPI /api/v1/ontology-rag/rag/* and /tripartite/* endpoints."""
     app = create_app()
     fake_emb = FakeDeterministicEmbeddingAdapter()
+    app.state.embedding_port = fake_emb
     app.dependency_overrides[get_embedding_port] = lambda: fake_emb
+    app.dependency_overrides[require_rag_available] = lambda: fake_emb
     client = TestClient(app)
 
     res_search = client.post(
