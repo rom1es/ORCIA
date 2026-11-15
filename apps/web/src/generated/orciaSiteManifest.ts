@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 36,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 127,
+    "techLeadReportsCount": 128,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -481,6 +481,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.1 (CAP-052, CAP-053, CAP-190)",
+      "reportFile": "19-1-modale-ui-champs-vides-placeholders-fournisseurs-et-suppression-puces-en-dur-tech-lead-report.md",
+      "domain": "Modale UI Connecter un Modèle IA — Champs Vides, Placeholders Dynamiques par Fournisseur & Suppression des Puces Codées en Dur (D1)",
+      "summary": "Champs primaryModel et fallbackModel initialisés vides (value === \"\") en création et lors du clic sur un préréglage fournisseur, placeholders contextuels (mistral-large-latest pour Mistral, llama3.2 pour Ollama/vLLM, générique pour OpenAI/Anthropic/Gemini) extraits dans i18n, suppression définitive des puces de modèles en dur (ai-model-quick-chip-*), purge des presets et fallback platformSetupStore, suite de tests de garde-fous stricte et non-régression validée."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Epic 19 (CAP-011, CAP-052, CAP-053, CAP-070, CAP-071, CAP-190)",

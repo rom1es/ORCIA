@@ -10,6 +10,7 @@ import {
   AI_PROVIDER_PRESETS,
   GOOGLE_GEMINI_NATIVE_ENDPOINT,
   GOOGLE_GEMINI_OPENAI_ENDPOINT,
+  resolvePrimaryModelPlaceholder,
 } from "../../../routes/settingsAiModelsPresets";
 
 export const aiModelInputStyle: React.CSSProperties = {
@@ -47,7 +48,6 @@ export interface AiModelFormFieldsProps {
   readonly selectedEffort: UiInferenceEffort;
   readonly setSelectedEffort: (val: UiInferenceEffort) => void;
   readonly isGemini: boolean;
-  readonly recommendedModels: readonly string[];
 }
 
 export function AiModelFormFields({
@@ -75,7 +75,6 @@ export function AiModelFormFields({
   selectedEffort,
   setSelectedEffort,
   isGemini,
-  recommendedModels,
 }: AiModelFormFieldsProps): React.ReactElement {
   return (
     <>
@@ -92,8 +91,6 @@ export function AiModelFormFields({
                   setModelFamily(preset.familyValue);
                   setEndpointUri(preset.defaultEndpointUrl);
                   setAuthMode(preset.defaultAuthMode as "api_key" | "env_var" | "none_local");
-                  setPrimaryModel(preset.samplePrimaryModel);
-                  setFallbackModel(preset.sampleSecondaryModel);
                   setDisplayName(`${preset.label} (${selectedTier})`);
                 }}
                 style={{
@@ -195,6 +192,7 @@ export function AiModelFormFields({
             value={primaryModel}
             onChange={(e) => setPrimaryModel(e.target.value)}
             disabled={mode === "edit"}
+            placeholder={resolvePrimaryModelPlaceholder(modelFamily, labels)}
             style={aiModelInputStyle}
           />
         </label>
@@ -210,38 +208,11 @@ export function AiModelFormFields({
             data-testid="ai-model-fallback-model-input"
             value={fallbackModel}
             onChange={(e) => setFallbackModel(e.target.value)}
+            placeholder={labels.fallbackModelPlaceholder}
             style={aiModelInputStyle}
           />
         </label>
       </div>
-
-      {mode === "create" && recommendedModels.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-          {recommendedModels.map((mod) => (
-            <button
-              key={mod}
-              type="button"
-              data-testid={`ai-model-quick-chip-${mod}`}
-              onClick={() => setPrimaryModel(mod)}
-              style={{
-                padding: "2px 7px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-                backgroundColor:
-                  primaryModel === mod
-                    ? "var(--color-action-primary-subtle)"
-                    : "var(--color-surface-card)",
-                color: "var(--color-foreground)",
-                fontSize: "10px",
-                fontFamily: "var(--font-mono)",
-                cursor: "pointer",
-              }}
-            >
-              {mod}
-            </button>
-          ))}
-        </div>
-      )}
 
       <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
         <span style={{ fontWeight: 600 }}>{labels.endpointUriLabel}</span>

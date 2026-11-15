@@ -141,10 +141,15 @@ describe("Story 17.5 — AI Models Hub UI Lifecycle, Modals & F5 Survival", () =
     const endpointInput = screen.getByTestId("ai-model-endpoint-uri-input") as HTMLInputElement;
     expect(endpointInput.value).toContain("/v1beta/openai");
 
-    // Click quick chip
-    fireEvent.click(screen.getByTestId("ai-model-quick-chip-gemini-argon"));
+    // Verify fields are empty and no quick chips exist
     const modelInput = screen.getByTestId("ai-model-primary-model-input") as HTMLInputElement;
-    expect(modelInput.value).toBe("gemini-argon");
+    expect(modelInput.value).toBe("");
+    expect(modelInput.placeholder).toBe("Identifiant exact publié par le fournisseur");
+    expect(screen.queryByTestId("ai-model-quick-chip-gemini-argon")).toBeNull();
+
+    // Type model explicitly
+    fireEvent.change(modelInput, { target: { value: "gemini-2.5-flash" } });
+    expect(modelInput.value).toBe("gemini-2.5-flash");
 
     // Submit form
     fireEvent.click(screen.getByTestId("save-ai-model-btn"));

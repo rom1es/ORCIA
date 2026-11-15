@@ -40,7 +40,11 @@ export interface AiModelsHubDictionary {
   readonly displayNameLabel: string;
   readonly displayNamePlaceholder: string;
   readonly primaryModelLabel: string;
+  readonly primaryModelPlaceholderGeneric: string;
+  readonly primaryModelPlaceholderMistral: string;
+  readonly primaryModelPlaceholderOllama: string;
   readonly fallbackModelLabel: string;
+  readonly fallbackModelPlaceholder: string;
   readonly endpointUriLabel: string;
   readonly authModeLabel: string;
   readonly authModeApiKey: string;
@@ -107,7 +111,11 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   displayNameLabel: "Libellé affiché",
   displayNamePlaceholder: "Ex. Claude 3.7 Sonnet (Défaut)",
   primaryModelLabel: "Identifiant du modèle principal",
+  primaryModelPlaceholderGeneric: "Identifiant exact publié par le fournisseur",
+  primaryModelPlaceholderMistral: "ex. : mistral-large-latest",
+  primaryModelPlaceholderOllama: "ex. : llama3.2",
   fallbackModelLabel: "Modèle de secours (optionnel)",
+  fallbackModelPlaceholder: "Modèle de secours optionnel",
   endpointUriLabel: "URL de l'endpoint API",
   authModeLabel: "Mode d'authentification",
   authModeApiKey: "Clé d'API (Jeton secret)",
@@ -176,7 +184,11 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   displayNameLabel: "Display name",
   displayNamePlaceholder: "e.g. Claude 3.7 Sonnet (Default)",
   primaryModelLabel: "Primary model identifier",
+  primaryModelPlaceholderGeneric: "Exact identifier published by provider",
+  primaryModelPlaceholderMistral: "e.g. mistral-large-latest",
+  primaryModelPlaceholderOllama: "e.g. llama3.2",
   fallbackModelLabel: "Fallback model (optional)",
+  fallbackModelPlaceholder: "Optional fallback model",
   endpointUriLabel: "API Endpoint URL",
   authModeLabel: "Authentication mode",
   authModeApiKey: "API Key (Secret token)", // pragma: allowlist secret

@@ -14,10 +14,7 @@ import {
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
-import {
-  isGoogleGeminiFamily,
-  resolveRecommendedModelsForProvider,
-} from "../../../routes/settingsAiModelsPresets";
+import { isGoogleGeminiFamily } from "../../../routes/settingsAiModelsPresets";
 import { AiModelFormFields } from "./AiModelFormFields";
 
 export type AiModelModalMode = "create" | "edit" | "rotate-key";
@@ -55,7 +52,7 @@ export function AiModelConfigModal({
   const [selectedEffort, setSelectedEffort] = useState<UiInferenceEffort>("balanced");
   const [modelFamily, setModelFamily] = useState<string>("Anthropic");
   const [displayName, setDisplayName] = useState<string>("");
-  const [primaryModel, setPrimaryModel] = useState<string>("claude-3-7-sonnet");
+  const [primaryModel, setPrimaryModel] = useState<string>("");
   const [fallbackModel, setFallbackModel] = useState<string>("");
   const [endpointUri, setEndpointUri] = useState<string>("https://api.anthropic.com/v1");
   const [authMode, setAuthMode] = useState<"api_key" | "env_var" | "none_local">("api_key");
@@ -88,8 +85,8 @@ export function AiModelConfigModal({
       setSelectedEffort("balanced");
       setModelFamily("Anthropic");
       setDisplayName("");
-      setPrimaryModel("claude-3-7-sonnet");
-      setFallbackModel("claude-3-5-haiku");
+      setPrimaryModel("");
+      setFallbackModel("");
       setEndpointUri("https://api.anthropic.com/v1");
       setAuthMode("api_key");
       setEnvVarName("");
@@ -103,7 +100,6 @@ export function AiModelConfigModal({
   }, [initialMapping, mode, open]);
 
   const isGemini = isGoogleGeminiFamily(modelFamily, endpointUri);
-  const recommendedModels = resolveRecommendedModelsForProvider(modelFamily, endpointUri);
 
   const secretFieldLabels: SecretFieldLabels = {
     fieldLabel: "Clé d'API secrète",
@@ -256,7 +252,6 @@ export function AiModelConfigModal({
             selectedEffort={selectedEffort}
             setSelectedEffort={setSelectedEffort}
             isGemini={isGemini}
-            recommendedModels={recommendedModels}
           />
         )}
 

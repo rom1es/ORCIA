@@ -39,7 +39,6 @@ import {
   buildLocalLlmConnectionSuccessFeedback,
   detectGoogleGeminiProtocolMode,
   isGoogleGeminiFamily,
-  resolveRecommendedModelsForProvider,
   runRemoteLlmConnectionTestEvaluation,
   validateLlmConnectionParameters,
   type ConnectionTestFeedback,
@@ -230,7 +229,6 @@ export function SettingsAiModelsSection({
 
   const isGeminiActive = isGoogleGeminiFamily(modelFamily, endpointUrl);
   const geminiProtocolMode = detectGoogleGeminiProtocolMode(endpointUrl);
-  const recommendedModels = resolveRecommendedModelsForProvider(modelFamily, endpointUrl);
 
   const handleQuickSubmit = () => {
     if (!primaryModel.trim()) return;
@@ -355,7 +353,6 @@ export function SettingsAiModelsSection({
         setTestResult={setTestResult}
         isGeminiActive={isGeminiActive}
         geminiProtocolMode={geminiProtocolMode}
-        recommendedModels={recommendedModels}
         onQuickSubmit={handleQuickSubmit}
         onEvaluateTest={() => void evaluateConnectionTest()}
       />

@@ -235,7 +235,7 @@ capabilities:
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-2 + 17-5
+    origin_ref: 8-2 + 17-5 + 19-1
     status: live
     tests:
       - tests/security/test_api_security_baseline.py
@@ -243,6 +243,7 @@ capabilities:
       - tests/unit/test_story_17_5_ai_models_hub_secrets_and_lifecycle.py
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
       - apps/web/src/__tests__/story-17-5-ai-models-hub-modal-lifecycle-and-f5.test.tsx
+      - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
     verification: runtime
     surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + AiModelDeleteDialog", migration: "20261114_1705" }
   - id: CAP-053
@@ -512,7 +513,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant
     status: live
-    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-argon-settings-and-assistant.test.tsx]
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx]
     surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
