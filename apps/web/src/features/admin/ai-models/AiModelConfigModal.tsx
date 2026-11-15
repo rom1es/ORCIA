@@ -6,6 +6,7 @@ import type {
 import {
   OrciaDialog,
   SecretField,
+  type DiscoveredModelOption,
   type InferenceTierAndEffortLabels,
   type SecretFieldLabels,
   type UiInferenceEffort,
@@ -15,8 +16,8 @@ import {
 import React, { useEffect, useState } from "react";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
 import {
+  discoverProviderModelsViaApi,
   isGoogleGeminiFamily,
-  resolveRecommendedModelsForProvider,
 } from "../../../routes/settingsAiModelsPresets";
 import { AiModelFormFields } from "./AiModelFormFields";
 
@@ -55,7 +56,7 @@ export function AiModelConfigModal({
   const [selectedEffort, setSelectedEffort] = useState<UiInferenceEffort>("balanced");
   const [modelFamily, setModelFamily] = useState<string>("Anthropic");
   const [displayName, setDisplayName] = useState<string>("");
-  const [primaryModel, setPrimaryModel] = useState<string>("claude-3-7-sonnet");
+  const [primaryModel, setPrimaryModel] = useState<string>("");
   const [fallbackModel, setFallbackModel] = useState<string>("");
   const [endpointUri, setEndpointUri] = useState<string>("https://api.anthropic.com/v1");
   const [authMode, setAuthMode] = useState<"api_key" | "env_var" | "none_local">("api_key");
@@ -66,8 +67,12 @@ export function AiModelConfigModal({
   const [protocolMode, setProtocolMode] = useState<
     "openai_compatible" | "gemini_native" | "anthropic_messages"
   >("openai_compatible");
+  const [usage, setUsage] = useState<"chat" | "embedding">("chat");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModelOption[]>([]);
+  const [isDiscovering, setIsDiscovering] = useState<boolean>(false);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialMapping && (mode === "edit" || mode === "rotate-key")) {
@@ -81,6 +86,7 @@ export function AiModelConfigModal({
       setAuthMode(initialMapping.auth_mode as "api_key" | "env_var" | "none_local");
       setEnvVarName(initialMapping.env_var_name || "");
       setProtocolMode(initialMapping.protocol_mode);
+      setUsage((initialMapping.usage as "chat" | "embedding") ?? "chat");
       setSecretAction("keep");
       setSecretInputText("");
     } else {
@@ -88,8 +94,8 @@ export function AiModelConfigModal({
       setSelectedEffort("balanced");
       setModelFamily("Anthropic");
       setDisplayName("");
-      setPrimaryModel("claude-3-7-sonnet");
-      setFallbackModel("claude-3-5-haiku");
+      setPrimaryModel("");
+      setFallbackModel("");
       setEndpointUri("https://api.anthropic.com/v1");
       setAuthMode("api_key");
       setEnvVarName("");
@@ -97,13 +103,88 @@ export function AiModelConfigModal({
       setSecretAction("keep");
       setSecretInputText("");
       setProtocolMode("openai_compatible");
+      setUsage("chat");
     }
     setErrorMessage(null);
     setIsSubmitting(false);
   }, [initialMapping, mode, open]);
 
   const isGemini = isGoogleGeminiFamily(modelFamily, endpointUri);
-  const recommendedModels = resolveRecommendedModelsForProvider(modelFamily, endpointUri);
+
+  const triggerDiscovery = async (opts?: {
+    forcedEndpoint?: string;
+    forcedKey?: string;
+  }) => {
+    const targetEndpoint = (opts?.forcedEndpoint ?? endpointUri).trim();
+    if (!targetEndpoint || (!targetEndpoint.startsWith("http://") && !targetEndpoint.startsWith("https://"))) {
+      setDiscoveredModels([]);
+      setDiscoveryError(null);
+      return;
+    }
+
+    const effectiveProtocol =
+      isGemini && targetEndpoint.includes("openai")
+        ? "openai_compatible"
+        : isGemini
+          ? "gemini_native"
+          : protocolMode;
+
+    const effectiveKey =
+      opts?.forcedKey ??
+      (authMode === "api_key"
+        ? rawApiKey.trim() || (secretAction === "set" ? secretInputText.trim() : "") // pragma: allowlist secret
+        : undefined);
+
+    setIsDiscovering(true);
+    setDiscoveryError(null);
+
+    const res = await discoverProviderModelsViaApi({
+      endpointUri: targetEndpoint,
+      protocolMode: effectiveProtocol,
+      providerSlug: modelFamily.trim().toLowerCase(),
+      mappingId: mode === "edit" || mode === "rotate-key" ? initialMapping?.id : undefined,
+      apiKey: effectiveKey || undefined,
+    });
+
+    setIsDiscovering(false);
+    if (res.ok) {
+      setDiscoveredModels(
+        res.models.map((m) => ({
+          id: m.id,
+          displayName: m.display_name,
+          description: m.description,
+          usageHint: m.usage_hint as "chat" | "embedding" | "unknown",
+          ownedBy: m.owned_by,
+        })),
+      );
+      setDiscoveryError(null);
+    } else {
+      setDiscoveryError(res.error || labels.modelDiscoveryNoMatch);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      setDiscoveredModels([]);
+      setDiscoveryError(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      void triggerDiscovery();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    open,
+    endpointUri,
+    rawApiKey,
+    secretInputText,
+    authMode,
+    modelFamily,
+    mode,
+    initialMapping?.id,
+  ]);
 
   const secretFieldLabels: SecretFieldLabels = {
     fieldLabel: "Clé d'API secrète",
@@ -123,6 +204,11 @@ export function AiModelConfigModal({
   };
 
   const handleFormSubmit = async (andTest: boolean) => {
+    if (usage === "embedding" && modelFamily.toLowerCase() === "anthropic") {
+      setErrorMessage(labels.anthropicNoEmbeddingWarning);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -131,8 +217,8 @@ export function AiModelConfigModal({
         const payload: AiModelCreateRequest = {
           scope_level: "GLOBAL",
           display_name: displayName.trim() || primaryModel.trim(),
-          inference_tier: selectedTier,
-          effort: selectedEffort,
+          inference_tier: usage === "embedding" ? "auto" : selectedTier,
+          effort: usage === "embedding" ? "default" : selectedEffort,
           provider_slug: modelFamily.trim().toLowerCase(),
           model_family: modelFamily.trim(),
           model_name: primaryModel.trim(),
@@ -145,6 +231,7 @@ export function AiModelConfigModal({
               : isGemini
                 ? "gemini_native"
                 : protocolMode,
+          usage: usage,
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
           secret_input:
             authMode === "api_key" && rawApiKey.trim()
@@ -162,6 +249,7 @@ export function AiModelConfigModal({
           auth_mode: authMode,
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
           protocol_mode: protocolMode,
+          usage: usage,
         };
         const ok = await onSubmitPatch(initialMapping.id, patch);
         if (ok) onOpenChange(false);
@@ -256,7 +344,12 @@ export function AiModelConfigModal({
             selectedEffort={selectedEffort}
             setSelectedEffort={setSelectedEffort}
             isGemini={isGemini}
-            recommendedModels={recommendedModels}
+            usage={usage}
+            setUsage={setUsage}
+            discoveredModels={discoveredModels}
+            isDiscovering={isDiscovering}
+            discoveryError={discoveryError}
+            onRefreshDiscovery={() => void triggerDiscovery()}
           />
         )}
 

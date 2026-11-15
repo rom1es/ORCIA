@@ -6,6 +6,7 @@ PermissionGuard (`AD-21`) & Deep-Linking Auto-Focus.
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_api.main import create_app
 from orcia_core.rag.two_speed_search import (
@@ -153,6 +154,7 @@ def test_story_9_3_speed2_semantic_3_words_rule_redis_cache_and_bottom_append() 
         active_screen_route="/spaces",
         user_role="CONTRIBUTOR",
         include_speed2=True,
+        query_embedding=tuple([0.1] * 1024),
     )
     assert long_res1.speed2_executed is True
     assert long_res1.speed2_cache_hit is False
@@ -175,6 +177,7 @@ def test_story_9_3_speed2_semantic_3_words_rule_redis_cache_and_bottom_append() 
         active_screen_route="/spaces",
         user_role="CONTRIBUTOR",
         include_speed2=True,
+        query_embedding=tuple([0.1] * 1024),
     )
     assert long_res2.speed2_executed is True
     assert long_res2.speed2_cache_hit is True
@@ -183,6 +186,7 @@ def test_story_9_3_speed2_semantic_3_words_rule_redis_cache_and_bottom_append() 
 def test_story_9_3_get_api_v1_search_endpoint() -> None:
     """Verify `GET /api/v1/search` endpoint contract and PermissionGuard filtering."""
     app = create_app()
+    app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
     app.state.two_speed_search_service = TwoSpeedFederatedSearchService(
         candidates=DEFAULT_SEARCH_CANDIDATES
     )

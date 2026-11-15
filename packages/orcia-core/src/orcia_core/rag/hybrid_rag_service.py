@@ -7,12 +7,10 @@ from __future__ import annotations
 
 import math
 import re
+from typing import Any
 
-from orcia_core.rag.errors import ResourceNotFoundError
-from orcia_core.rag.indexer_and_rrf import (
-    compute_deterministic_halfvec_1024,
-    cosine_similarity,
-)
+from orcia_core.rag.errors import NoActiveEmbeddingModelError, ResourceNotFoundError
+from orcia_core.rag.indexer_and_rrf import cosine_similarity
 from orcia_core.rag.models import (
     CodeGraphEdgeEntity,
     HybridRagHit,
@@ -32,11 +30,13 @@ class HybridRagService:
         documents: tuple[KbDocumentEntity, ...] = (),
         chunks: tuple[KbChunkEntity, ...] = (),
         code_edges: tuple[CodeGraphEdgeEntity, ...] = (),
+        embedding_port: Any = None,
     ) -> None:
         self._documents: dict[str, KbDocumentEntity] = {d.id: d for d in documents}
         self._doc_by_key: dict[str, KbDocumentEntity] = {d.doc_key: d for d in documents}
         self._chunks: dict[str, KbChunkEntity] = {c.id: c for c in chunks}
         self._code_edges: list[CodeGraphEdgeEntity] = list(code_edges)
+        self._embedding_port = embedding_port
 
     def list_documents(self, *, workspace_id: str | None = None) -> tuple[KbDocumentEntity, ...]:
         docs = list(self._documents.values())
@@ -122,6 +122,7 @@ class HybridRagService:
         *,
         workspace_id: str,
         query_text: str,
+        query_embedding: tuple[float, ...] | None = None,
         allowed_datasource_aliases: frozenset[str] | None = None,
         top_k: int = 5,
     ) -> tuple[HybridRagHit, ...]:
@@ -130,6 +131,32 @@ class HybridRagService:
         When a `CHILD` chunk matches, injects the `PARENT` chunk's `content_text` into context.
         Enforces Passthrough read access filtering via `allowed_datasource_aliases`.
         """
+        if query_embedding is None and self._embedding_port is not None:
+            if hasattr(self._embedding_port, "embed_query_sync"):
+                query_embedding = tuple(self._embedding_port.embed_query_sync(query_text))
+            elif hasattr(self._embedding_port, "embed_query"):
+                import asyncio
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        pass
+                    else:
+                        query_embedding = tuple(
+                            loop.run_until_complete(self._embedding_port.embed_query(query_text))
+                        )
+                except RuntimeError:
+                    query_embedding = tuple(
+                        asyncio.run(self._embedding_port.embed_query(query_text))
+                    )
+
+        if query_embedding is None:
+            raise NoActiveEmbeddingModelError(
+                detail_override=(
+                    "Aucun modèle d'embedding actif configuré pour vectoriser la requête."
+                )
+            )
+
         searchable = [
             c
             for c in self._chunks.values()
@@ -143,12 +170,11 @@ class HybridRagService:
         if not searchable:
             return ()
 
-        query_vec = compute_deterministic_halfvec_1024(query_text)
         query_tokens = set(re.findall(r"[a-z0-9_/-]{2,}", query_text.lower()))
 
         vector_scored = sorted(
             searchable,
-            key=lambda c: cosine_similarity(query_vec, c.embedding or ()),
+            key=lambda c: cosine_similarity(query_embedding, c.embedding or ()),
             reverse=True,
         )
         vector_ranks = {c.id: rank for rank, c in enumerate(vector_scored, start=1)}

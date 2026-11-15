@@ -10,7 +10,6 @@ Enforces:
 from __future__ import annotations
 
 from typing import Annotated, Literal
-from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
@@ -23,19 +22,32 @@ from orcia_api.routers._ai_models_helpers import (
     assert_ai_models_write_allowed,
     compute_tiers_coverage,
     execute_model_connection_test,
+    execute_models_discovery,
+    resolve_mapping_decrypted_key,
     to_item_response,
+)
+from orcia_api.routers._ai_models_reindex_helpers import (
+    fetch_reindex_status_response,
+    trigger_global_reindexing_job,
+    trigger_manual_reindex_embeddings,
 )
 from orcia_api.routers._settings_helpers import to_routing_outcome_response
 from orcia_api.schemas.ai_models_hub import (
     AiModelCreateRequest,
     AiModelDeleteImpactResponse,
     AiModelDeleteResponse,
+    AiModelDiscoverRequest,
+    AiModelDiscoveryResponse,
     AiModelMappingItemResponse,
     AiModelMappingsListResponse,
     AiModelPatchRequest,
     AiModelTestResponse,
     InferenceTierLiteral,
+    LlmModelUsageLiteral,
+    LlmProtocolModeLiteral,
     PinRemovalModeLiteral,
+    RagReindexStatusResponse,
+    RagReindexTriggerResponse,
     ScopeLevelLiteral,
 )
 from orcia_api.schemas.settings_and_studio import (
@@ -52,12 +64,12 @@ from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     delete_or_drain_ai_model_mapping_pg18,
     ensure_ai_model_mappings_schema_on_postgres18,
     evaluate_ai_model_delete_impact_pg18,
-    get_ai_model_mapping_pg18,
     list_ai_model_mappings_pg18,
     record_ai_model_test_result_pg18,
     update_ai_model_mapping_pg18,
 )
 from orcia_core.permissions import AuthAndOrganizationService, SecretInputSpec
+from orcia_kernel.errors import OrciaDomainError
 
 router = APIRouter(prefix="/api/v1/settings/ai-models", tags=["settings-ai-models"])
 
@@ -70,6 +82,7 @@ async def list_ai_model_mappings(
     scope_id: Annotated[str | None, Query()] = None,
     inference_tier: Annotated[InferenceTierLiteral | None, Query()] = None,
     is_active: Annotated[bool | None, Query()] = None,
+    usage: Annotated[LlmModelUsageLiteral | None, Query()] = None,
 ) -> AiModelMappingsListResponse:
     """List configured AI model mappings with 4-tier coverage report."""
     engine = getattr(request.app.state, "db_engine", None)
@@ -82,6 +95,7 @@ async def list_ai_model_mappings(
                 scope_id=scope_id,
                 inference_tier=inference_tier,
                 is_active=is_active,
+                usage=usage,
             )
     else:
         records = hub_svc.list_mappings(
@@ -89,6 +103,7 @@ async def list_ai_model_mappings(
             scope_id=scope_id,
             inference_tier=inference_tier,
             is_active=is_active,
+            usage=usage,
         )
 
     return AiModelMappingsListResponse(
@@ -135,6 +150,7 @@ async def create_ai_model_mapping(
                 endpoint_uri=payload.endpoint_uri,
                 auth_mode=payload.auth_mode,
                 protocol_mode=payload.protocol_mode,
+                usage=payload.usage,
                 env_var_name=payload.env_var_name,
                 fallback_order=payload.fallback_order,
                 max_tokens_budget=payload.max_tokens_budget,
@@ -157,6 +173,7 @@ async def create_ai_model_mapping(
             endpoint_uri=payload.endpoint_uri,
             auth_mode=payload.auth_mode,
             protocol_mode=payload.protocol_mode,
+            usage=payload.usage,
             env_var_name=payload.env_var_name,
             fallback_order=payload.fallback_order,
             max_tokens_budget=payload.max_tokens_budget,
@@ -164,6 +181,13 @@ async def create_ai_model_mapping(
             secret_input=sec_input,
             actor_id=actor_persona or "system",
             instance=str(request.url.path),
+        )
+
+    if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
+        await trigger_global_reindexing_job(
+            request,
+            rec,
+            actor_id=actor_persona or "system",
         )
     return to_item_response(rec)
 
@@ -200,6 +224,7 @@ async def update_ai_model_mapping(
                 endpoint_uri=payload.endpoint_uri,
                 auth_mode=payload.auth_mode,
                 protocol_mode=payload.protocol_mode,
+                usage=payload.usage,
                 env_var_name=payload.env_var_name,
                 is_active=payload.is_active,
                 secret_input=sec_input,
@@ -214,13 +239,88 @@ async def update_ai_model_mapping(
             endpoint_uri=payload.endpoint_uri,
             auth_mode=payload.auth_mode,
             protocol_mode=payload.protocol_mode,
+            usage=payload.usage,
             env_var_name=payload.env_var_name,
             is_active=payload.is_active,
             secret_input=sec_input,
             actor_id=actor_persona or "system",
             instance=str(request.url.path),
         )
+
+    if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
+        await trigger_global_reindexing_job(
+            request,
+            rec,
+            actor_id=actor_persona or "system",
+        )
     return to_item_response(rec)
+
+
+@router.post("/discover", response_model=AiModelDiscoveryResponse)
+async def discover_ai_models_post(
+    payload: AiModelDiscoverRequest,
+    request: Request,
+    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
+    hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
+    actor_persona: Annotated[str | None, Query()] = None,
+) -> AiModelDiscoveryResponse:
+    """Discover available models on provider endpoint without consuming inference tokens (`0 $`)."""
+    assert_ai_models_write_allowed(request, actor_persona)
+    effective_key = payload.api_key
+    endpoint_uri = payload.endpoint_uri
+    protocol_mode = payload.protocol_mode
+    provider_slug = payload.provider_slug
+
+    if payload.mapping_id and not effective_key:
+        rec, decrypted_key = await resolve_mapping_decrypted_key(
+            request, payload.mapping_id, auth_svc, hub_svc
+        )
+        effective_key = decrypted_key
+        if not endpoint_uri:
+            endpoint_uri = rec.endpoint_uri
+        if not protocol_mode:
+            protocol_mode = rec.protocol_mode
+        if not provider_slug:
+            provider_slug = rec.provider_slug
+
+    return await execute_models_discovery(
+        request,
+        endpoint_uri=endpoint_uri,
+        protocol_mode=protocol_mode,
+        provider_slug=provider_slug,
+        api_key=effective_key,
+    )
+
+
+@router.get("/discover", response_model=AiModelDiscoveryResponse)
+async def discover_ai_models_get(
+    request: Request,
+    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
+    hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
+    base_url: Annotated[str, Query(alias="base_url", min_length=1, max_length=1024)],
+    provider: Annotated[str | None, Query(alias="provider", max_length=64)] = None,
+    protocol_mode: Annotated[LlmProtocolModeLiteral, Query()] = "openai_compatible",
+    mapping_id: Annotated[str | None, Query(max_length=128)] = None,
+    actor_persona: Annotated[str | None, Query()] = None,
+) -> AiModelDiscoveryResponse:
+    """GET discovery endpoint for local or existing models without sending secrets in URL."""
+    assert_ai_models_write_allowed(request, actor_persona)
+    effective_key: str | None = None
+    if mapping_id:
+        rec, decrypted_key = await resolve_mapping_decrypted_key(
+            request, mapping_id, auth_svc, hub_svc
+        )
+        effective_key = decrypted_key
+        if not provider:
+            provider = rec.provider_slug
+
+    return await execute_models_discovery(
+        request,
+        endpoint_uri=base_url,
+        protocol_mode=protocol_mode,
+        provider_slug=provider,
+        api_key=effective_key,
+    )
 
 
 @router.post("/mappings/{mapping_id}/test", response_model=AiModelTestResponse)
@@ -233,35 +333,37 @@ async def test_ai_model_connection(
     """Execute on-demand non-blocking connectivity test against model endpoint."""
     path = str(request.url.path)
     engine = getattr(request.app.state, "db_engine", None)
-    decrypted_key: str | None = None
+    rec, decrypted_key = await resolve_mapping_decrypted_key(request, mapping_id, auth_svc, hub_svc)
 
-    if engine is not None:
-        async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
-            rec = await get_ai_model_mapping_pg18(conn, mapping_id, instance=path)
-            if rec.encrypted_api_key:
-                host = urlparse(rec.endpoint_uri).netloc or "default"
-                parts = rec.encrypted_api_key.split(":", 1)
-                decrypted_key = auth_svc.vault_cipher.decrypt(
-                    rec.id, parts[0], parts[1], connector_scheme="llm", target_host=host
+    try:
+        health, resp = await execute_model_connection_test(rec, decrypted_key, request)
+        if engine is not None:
+            async with engine.begin() as conn:
+                await record_ai_model_test_result_pg18(
+                    conn,
+                    mapping_id,
+                    health_status=health,
+                    latency_ms=resp.latency_ms,
+                    instance=path,
                 )
-    else:
-        rec = hub_svc.get_mapping(mapping_id, instance=path)
-        decrypted_key = hub_svc.resolve_decrypted_api_key(mapping_id, instance=path)
-
-    health, resp = execute_model_connection_test(rec, decrypted_key, request)
-
-    if engine is not None:
-        async with engine.begin() as conn:
-            await record_ai_model_test_result_pg18(
-                conn, mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
+        else:
+            hub_svc.record_test_result(
+                mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
             )
-    else:
-        hub_svc.record_test_result(
-            mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
-        )
-
-    return resp
+        return resp
+    except OrciaDomainError as exc:
+        lat_val = getattr(exc, "latency_ms", None)
+        lat_ms: int = int(lat_val) if isinstance(lat_val, (int, float)) else 0
+        if engine is not None:
+            async with engine.begin() as conn:
+                await record_ai_model_test_result_pg18(
+                    conn, mapping_id, health_status="ERROR", latency_ms=lat_ms, instance=path
+                )
+        else:
+            hub_svc.record_test_result(
+                mapping_id, health_status="ERROR", latency_ms=lat_ms, instance=path
+            )
+        raise exc
 
 
 @router.get("/mappings/{mapping_id}/delete-impact", response_model=AiModelDeleteImpactResponse)
@@ -343,6 +445,23 @@ async def execute_cognitive_tier_route(
         deterministic_gate_fn=_gate_fn,
     )
     return to_routing_outcome_response(outcome)
+
+
+@router.get("/reindex-status", response_model=RagReindexStatusResponse)
+async def get_reindex_status(request: Request) -> RagReindexStatusResponse:
+    """Get current status of vector corpus reindexing (`Story 19.7`, `AD-24.7`)."""
+    return await fetch_reindex_status_response(request)
+
+
+@router.post("/reindex-embeddings", response_model=RagReindexTriggerResponse)
+async def trigger_reindex_embeddings(
+    request: Request,
+    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
+    hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
+    actor_persona: Annotated[str | None, Query()] = None,
+) -> RagReindexTriggerResponse:
+    """Trigger a global reindexing of all document chunks on active embedding model."""
+    return await trigger_manual_reindex_embeddings(request, auth_svc, hub_svc, actor_persona)
 
 
 __all__ = ["router"]

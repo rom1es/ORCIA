@@ -27,6 +27,7 @@ from typing import Any
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 import orcia_core.bootstrap as bm
 from orcia_api.main import app
@@ -65,27 +66,35 @@ def test_pillar_8_ssrf_guard_blocks_cloud_metadata_and_allows_enterprise_local()
 def test_pillar_3_agnostic_url_normalization_and_provider_headers() -> None:
     """Verify URL normalization and headers for OpenAI, Anthropic, Azure, Mistral, and Ollama."""
     assert (
-        normalize_chat_completions_url("https://api.openai.com", "OpenAI")
+        normalize_chat_completions_url("https://api.openai.com", "OpenAI", model_name="gpt-4o")
         == "https://api.openai.com/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://api.mistral.ai/v1", "Mistral")
+        normalize_chat_completions_url(
+            "https://api.mistral.ai/v1", "Mistral", model_name="mistral-large-latest"
+        )
         == "https://api.mistral.ai/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://my-gateway.internal/v1/chat/completions", "LiteLLM")
+        normalize_chat_completions_url(
+            "https://my-gateway.internal/v1/chat/completions", "LiteLLM", model_name="custom"
+        )
         == "https://my-gateway.internal/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("http://localhost:11434", "Ollama")
+        normalize_chat_completions_url("http://localhost:11434", "Ollama", model_name="llama3.2")
         == "http://localhost:11434/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://api.anthropic.com", "Anthropic")
+        normalize_chat_completions_url(
+            "https://api.anthropic.com", "Anthropic", model_name="claude-3-7-sonnet"
+        )
         == "https://api.anthropic.com/v1/messages"
     )
     assert (
-        normalize_chat_completions_url("https://api.anthropic.com/v1", "Claude")
+        normalize_chat_completions_url(
+            "https://api.anthropic.com/v1", "Claude", model_name="claude-3-7-sonnet"
+        )
         == "https://api.anthropic.com/v1/messages"
     )
 
@@ -96,7 +105,9 @@ def test_pillar_3_agnostic_url_normalization_and_provider_headers() -> None:
         auth_mode="api_key",
         api_key="sk-ant-test-key",  # pragma: allowlist secret
     )
-    ant_url = normalize_chat_completions_url(ep_anthropic.endpoint_uri, ep_anthropic.provider)
+    ant_url = normalize_chat_completions_url(
+        ep_anthropic.endpoint_uri, ep_anthropic.provider, model_name=ep_anthropic.model_name
+    )
     ant_headers = build_provider_headers(ep_anthropic, ant_url)
     assert ant_headers["x-api-key"] == "sk-ant-test-key"
     assert ant_headers["anthropic-version"] == "2023-06-01"
@@ -232,6 +243,7 @@ def test_pillar_6_true_async_sse_streaming_preserves_multiline_markdown_indentat
         )
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_sse_mock_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
@@ -354,6 +366,7 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
         )
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
@@ -498,6 +511,7 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
     sse_payload = "\n\n".join(sse_lines) + "\n\n"
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(
             transport=httpx.MockTransport(
                 lambda _: httpx.Response(

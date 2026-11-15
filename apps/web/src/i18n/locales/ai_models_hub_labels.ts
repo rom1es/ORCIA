@@ -40,7 +40,11 @@ export interface AiModelsHubDictionary {
   readonly displayNameLabel: string;
   readonly displayNamePlaceholder: string;
   readonly primaryModelLabel: string;
+  readonly primaryModelPlaceholderGeneric: string;
+  readonly primaryModelPlaceholderMistral: string;
+  readonly primaryModelPlaceholderOllama: string;
   readonly fallbackModelLabel: string;
+  readonly fallbackModelPlaceholder: string;
   readonly endpointUriLabel: string;
   readonly authModeLabel: string;
   readonly authModeApiKey: string;
@@ -64,6 +68,18 @@ export interface AiModelsHubDictionary {
   readonly healthUntested: string;
   readonly secretServerEnv: string;
   readonly secretLocalNoAuth: string;
+  readonly usageLabel: string;
+  readonly usageChat: string;
+  readonly usageEmbedding: string;
+  readonly activeEmbeddingBadge: string;
+  readonly colUsage: string;
+  readonly anthropicNoEmbeddingWarning: string;
+  readonly modelDiscoveryNoMatch: string;
+  readonly modelDiscoveryRefresh: string;
+  readonly modelDiscoveryLoading: string;
+  readonly modelDiscoveryFreeformHint: string;
+  readonly chatBadge: string;
+  readonly embeddingBadge: string;
 }
 
 export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
@@ -107,7 +123,11 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   displayNameLabel: "Libellé affiché",
   displayNamePlaceholder: "Ex. Claude 3.7 Sonnet (Défaut)",
   primaryModelLabel: "Identifiant du modèle principal",
+  primaryModelPlaceholderGeneric: "Identifiant exact publié par le fournisseur",
+  primaryModelPlaceholderMistral: "ex. : mistral-large-latest",
+  primaryModelPlaceholderOllama: "ex. : llama3.2",
   fallbackModelLabel: "Modèle de secours (optionnel)",
+  fallbackModelPlaceholder: "Modèle de secours optionnel",
   endpointUriLabel: "URL de l'endpoint API",
   authModeLabel: "Mode d'authentification",
   authModeApiKey: "Clé d'API (Jeton secret)",
@@ -133,6 +153,19 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   healthUntested: "Non testé",
   secretServerEnv: "Variable serveur", // pragma: allowlist secret
   secretLocalNoAuth: "Réseau local (sans clé)", // pragma: allowlist secret
+  usageLabel: "Rôle / Usage du modèle",
+  usageChat: "Chat & Inférence Cognitive",
+  usageEmbedding: "Embeddings Sémantiques (1024-dim RAG)",
+  activeEmbeddingBadge: "Modèle d'embedding actif (global)",
+  colUsage: "Rôle",
+  anthropicNoEmbeddingWarning:
+    "Anthropic ne propose pas d'API d'embeddings. Choisissez OpenAI, Mistral, Gemini ou Ollama.",
+  modelDiscoveryNoMatch: "Aucun modèle trouvé auprès du fournisseur",
+  modelDiscoveryRefresh: "Découvrir les modèles (0 token)",
+  modelDiscoveryLoading: "Découverte...",
+  modelDiscoveryFreeformHint: "Vous pouvez saisir un identifiant librement",
+  chatBadge: "Chat",
+  embeddingBadge: "Embedding",
 };
 
 export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
@@ -176,7 +209,11 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   displayNameLabel: "Display name",
   displayNamePlaceholder: "e.g. Claude 3.7 Sonnet (Default)",
   primaryModelLabel: "Primary model identifier",
+  primaryModelPlaceholderGeneric: "Exact identifier published by provider",
+  primaryModelPlaceholderMistral: "e.g. mistral-large-latest",
+  primaryModelPlaceholderOllama: "e.g. llama3.2",
   fallbackModelLabel: "Fallback model (optional)",
+  fallbackModelPlaceholder: "Optional fallback model",
   endpointUriLabel: "API Endpoint URL",
   authModeLabel: "Authentication mode",
   authModeApiKey: "API Key (Secret token)", // pragma: allowlist secret
@@ -202,4 +239,17 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   healthUntested: "Untested",
   secretServerEnv: "Server variable", // pragma: allowlist secret
   secretLocalNoAuth: "Local network (no key)", // pragma: allowlist secret
+  usageLabel: "Model Role / Usage",
+  usageChat: "Chat & Cognitive Inference",
+  usageEmbedding: "Semantic Embeddings (1024-dim RAG)",
+  activeEmbeddingBadge: "Active global embedding model",
+  colUsage: "Role",
+  anthropicNoEmbeddingWarning:
+    "Anthropic does not offer an embedding API. Choose OpenAI, Mistral, Gemini or Ollama.",
+  modelDiscoveryNoMatch: "No models found from provider",
+  modelDiscoveryRefresh: "Discover models (0 tokens)",
+  modelDiscoveryLoading: "Discovering...",
+  modelDiscoveryFreeformHint: "You can enter any model identifier freely",
+  chatBadge: "Chat",
+  embeddingBadge: "Embedding",
 };

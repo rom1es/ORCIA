@@ -7,6 +7,7 @@ Zero hardcoded demo datasets inside `orcia_core.rag.__init__.py` (`DEC-SEED-01`,
 from __future__ import annotations
 
 import importlib
+from typing import Any
 
 from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_core.rag.connector_hub_and_ingestion import (
@@ -30,7 +31,6 @@ from orcia_core.rag.indexer_and_rrf import (
     EMBEDDING_DIM,
     DifferentiatedIncrementalIndexer,
     build_contextual_header,
-    compute_deterministic_halfvec_1024,
     cosine_similarity,
 )
 from orcia_core.rag.models import (
@@ -45,6 +45,9 @@ from orcia_core.rag.models import (
     KbChunkEntity,
     KbDocumentEntity,
     KbStaleAlertEntity,
+    RagReindexJobRecord,
+    RagReindexJobStatus,
+    RagReindexPendingIngestionRecord,
     StaleAlertReason,
     TripartiteNodeType,
     TripartiteRelationType,
@@ -75,21 +78,27 @@ from orcia_core.rag.two_speed_search import (
 DOMAIN_NAME: str = "rag"
 
 
-def build_empty_rag_service() -> tuple[HybridRagService, TripartiteGraphAndFreshnessService]:
+def build_empty_rag_service(
+    embedding_port: Any = None,
+) -> tuple[HybridRagService, TripartiteGraphAndFreshnessService]:
     """Return an empty Hybrid RAG & Tripartite Graph bundle (default runtime state: 0 rows)."""
-    rag = HybridRagService()
+    rag = HybridRagService(embedding_port=embedding_port)
     tripartite = TripartiteGraphAndFreshnessService(rag_service=rag)
     return rag, tripartite
 
 
 def build_seeded_rag_service(
-    *, workspace_id: str = "ws-claims-alpha"
+    *,
+    workspace_id: str = "ws-claims-alpha",
+    embedding_port: Any = None,
 ) -> tuple[HybridRagService, TripartiteGraphAndFreshnessService]:
     """Delegate test dataset seeding to `orcia_core.bootstrap.rag_seeds` (`DEC-SEED-01`)."""
-    rag, tripartite = build_empty_rag_service()
+    rag, tripartite = build_empty_rag_service(embedding_port=embedding_port)
     bootstrap_mod = importlib.import_module("orcia_core.bootstrap.rag_seeds")
     populate_fn = bootstrap_mod.populate_rag_test_dataset
-    return populate_fn(rag, tripartite, workspace_id=workspace_id)  # type: ignore[no-any-return]
+    return populate_fn(  # type: ignore[no-any-return]
+        rag, tripartite, workspace_id=workspace_id, embedding_port=embedding_port
+    )
 
 
 __all__ = [
@@ -121,6 +130,9 @@ __all__ = [
     "KbStaleAlertEntity",
     "PiiArbitrationDecision",
     "RagReciprocityVerificationResult",
+    "RagReindexJobRecord",
+    "RagReindexJobStatus",
+    "RagReindexPendingIngestionRecord",
     "RemoteFingerprintProbePort",
     "SEVEN_SEARCH_FAMILIES",
     "SearchFamilyKey",
@@ -137,7 +149,6 @@ __all__ = [
     "build_empty_rag_service",
     "build_seeded_rag_service",
     "build_speed2_redis_cache_key",
-    "compute_deterministic_halfvec_1024",
     "cosine_similarity",
     "detect_pii_categories",
     "evaluate_24h_freshness_probe",

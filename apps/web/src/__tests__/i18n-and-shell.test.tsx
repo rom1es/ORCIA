@@ -1079,12 +1079,14 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "sk-ant-test-key-12345" },
     });
     fireEvent.click(screen.getByTestId("test-llm-connection-btn"));
-    expect(screen.getByTestId("llm-connection-test-result").getAttribute("data-ok")).toBe(
-      "true",
-    );
-    expect(screen.getByTestId("llm-connection-test-result").textContent).toContain(
-      "Connexion réussie au modèle « claude-3-7-sonnet » (Anthropic) sur https://api.anthropic.com/v1",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("llm-connection-test-result").getAttribute("data-ok")).toBe(
+        "true",
+      );
+      expect(screen.getByTestId("llm-connection-test-result").textContent).toContain(
+        "Connexion réussie au modèle « claude-3-7-sonnet » (Anthropic) sur https://api.anthropic.com/v1",
+      );
+    });
 
     // 4. Save the tier and verify human-readable French labels (no raw "medium", "balanced", "default", or "family-a")
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+from typing import Literal
 
+import httpx
 from fastapi import APIRouter, Request, Response
 
 from orcia_api.dependencies import (
@@ -13,7 +15,6 @@ from orcia_api.dependencies import (
 )
 from orcia_api.routers._auth_pg_helpers import set_auth_refresh_cookie
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
-from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_connection_test
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
 from orcia_core import bootstrap as bm
@@ -23,6 +24,7 @@ from orcia_core.bootstrap import (
 )
 from orcia_core.bootstrap.errors import OrciaDomainError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.orchestration import LlmProtocolMode, test_ai_model_endpoint_connection
 from orcia_core.permissions import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
@@ -224,7 +226,106 @@ async def test_welcome_setup_llm_connection(
     payload: bs.LlmConnectionTestRequest,
     request: Request,
 ) -> bs.LlmConnectionTestResponse:
-    return evaluate_welcome_llm_connection_test(payload, _trace(request))
+    trace_id = _trace(request)
+    provider = payload.provider_slug.strip() or "OpenAI / Compatible"
+    model, uri = payload.model_name.strip(), payload.endpoint_uri.strip()
+    has_key = bool((payload.api_key and payload.api_key.strip()) or payload.api_key_configured)
+
+    def _resp(
+        ok: bool,
+        st: Literal["CONNECTED", "INVALID_PARAMETERS", "AUTH_REQUIRED"],
+        lat: int,
+        fr: str,
+        en: str,
+        m_name: str = model,
+    ) -> bs.LlmConnectionTestResponse:
+        return bs.LlmConnectionTestResponse(
+            ok=ok,
+            status=st,
+            latency_ms=lat,
+            provider_slug=provider,
+            model_name=m_name,
+            endpoint_uri=uri,
+            auth_mode=payload.auth_mode,
+            message_fr=fr,
+            message_en=en,
+            trace_id=trace_id,
+        )
+
+    if not model:
+        return _resp(
+            False,
+            "INVALID_PARAMETERS",
+            0,
+            "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal.",
+            "❌ Test failed: please enter the primary model identifier.",
+            m_name="",
+        )
+    if not uri or not uri.startswith(("http://", "https://")):
+        return _resp(
+            False,
+            "INVALID_PARAMETERS",
+            0,
+            "❌ Échec du test : veuillez indiquer une URL d'API valide (https:// ou http://).",
+            "❌ Test failed: please enter a valid API URL starting with https:// or http://.",
+        )
+    if payload.auth_mode == "api_key" and not has_key:
+        return _resp(
+            False,
+            "AUTH_REQUIRED",
+            0,
+            "❌ Échec du test : veuillez saisir votre clé d'API (jeton secret) ou « Sans clé ».",
+            "❌ Test failed: please enter your API key (secret token) or select 'No key'.",
+        )
+
+    u_lower = uri.lower()
+    p_lower = provider.lower()
+    if "anthropic" in p_lower or u_lower.endswith("/messages"):
+        protocol_mode: LlmProtocolMode = "anthropic_messages"
+    elif (
+        "google" in p_lower or "gemini" in p_lower or "generativelanguage.googleapis.com" in u_lower
+    ):
+        protocol_mode = "openai_compatible" if "/openai" in u_lower else "gemini_native"
+    else:
+        protocol_mode = "openai_compatible"
+
+    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
+    if http_client is None or getattr(http_client, "is_closed", False):
+        http_client = httpx.AsyncClient(timeout=15.0)
+
+    try:
+        res = await test_ai_model_endpoint_connection(
+            http_client=http_client,
+            endpoint_uri=uri,
+            protocol_mode=protocol_mode,
+            model_name=model,
+            usage="chat",
+            api_key=payload.api_key if payload.auth_mode == "api_key" else None,
+            provider_slug=provider,
+            instance=str(request.url.path),
+        )
+        return _resp(
+            True,
+            "CONNECTED",
+            res.latency_ms,
+            res.message_fr,
+            res.message_en,
+        )
+    except OrciaDomainError as exc:
+        lat = getattr(exc, "latency_ms", 0) or 0
+        st: Literal["CONNECTED", "INVALID_PARAMETERS", "AUTH_REQUIRED"] = (
+            "AUTH_REQUIRED"
+            if getattr(exc, "http_status", 400) in (401, 403)
+            else "INVALID_PARAMETERS"
+        )
+        err_msg = str(exc.detail_override or exc)
+        return _resp(
+            False,
+            st,
+            lat,
+            f"❌ Échec du test de connexion : {err_msg}",
+            f"❌ Connection test failed: {err_msg}",
+        )
 
 
 def _sync_accostage_from_snapshot(
@@ -244,6 +345,9 @@ def _sync_accostage_from_snapshot(
             if "mistral" in provider_raw
             else provider_raw or "anthropic"
         )
+        model_name = str(t.get("primaryModel") or t.get("model") or "").strip()
+        if not model_name:
+            continue
         custom_uri = str(t.get("endpointUrl", t.get("endpoint_uri", ""))).strip()
         endpoint_uri = (
             custom_uri
@@ -256,7 +360,7 @@ def _sync_accostage_from_snapshot(
                 endpoint_key=str(t.get("tierKey", f"tier-{idx + 1}")).strip() or f"tier-{idx + 1}",
                 provider_slug=provider_raw or family,
                 model_family=family,
-                model_name=str(t.get("model", "claude-3-7-sonnet")).strip() or "claude-3-7-sonnet",
+                model_name=model_name,
                 endpoint_uri=endpoint_uri,
             )
         )

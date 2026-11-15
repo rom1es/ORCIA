@@ -23,7 +23,9 @@ DatasourceSyncReasonLiteral = Literal[
 
 SourceNatureLiteral = Literal["DOCUMENT_KB", "WORK_TRACKER", "SOURCE_CODE", "RELATIONAL_SCHEMA"]
 SourceSyncModeLiteral = Literal["WEBHOOK_PUSH", "POLLING_24H"]
-SourceFreshnessStatusLiteral = Literal["SYNCED", "STALE", "SYNC_ERROR", "PENDING_INITIAL_SYNC"]
+SourceFreshnessStatusLiteral = Literal[
+    "SYNCED", "STALE", "SYNC_ERROR", "PENDING_INITIAL_SYNC", "AWAITING_EMBEDDING_MODEL"
+]
 CodegraphAuthModeLiteral = Literal["SERVICE_ACCOUNT", "WORKSPACE_LEAD_TOKEN"]
 CodegraphStatusLiteral = Literal[
     "DISABLED", "INDEXING", "READY", "PAUSED_REFERENT_RENEWAL_REQUIRED", "ERROR"

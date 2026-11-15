@@ -38,6 +38,67 @@ RAG_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "any vectorization (AD-21).",
         ),
     },
+    "ERR_EMBEDDING_DIMENSION_MISMATCH": {
+        "fr": LocalizedErrorCopy(
+            "Dimension du modèle d'embedding incompatible (1024 requise)",
+            "Le modèle d'embedding a retourné un vecteur de dimension incompatible. "
+            "La dimension exacte imposée pour le corpus vectoriel ORCIA est de 1024.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Incompatible embedding model dimension (1024 required)",
+            "The embedding model returned a vector with an incompatible dimension. "
+            "The exact dimension required for ORCIA vector corpus is 1024.",
+        ),
+    },
+    "ERR_EMBEDDING_GENERATION_FAILED": {
+        "fr": LocalizedErrorCopy(
+            "Échec de génération des embeddings sémantiques",
+            "L'appel au fournisseur d'embeddings a échoué (erreur réseau, authentification, "
+            "dépassement de quota ou réponse invalide).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Semantic embedding generation failed",
+            "Call to embedding provider failed (network error, authentication, "
+            "rate limit or invalid response).",
+        ),
+    },
+    "ERR_EMBEDDING_PROVIDER_UNSUPPORTED": {
+        "fr": LocalizedErrorCopy(
+            "Fournisseur non compatible avec l'usage embedding",
+            "Le fournisseur ou protocole sélectionné ne propose aucune API d'embeddings "
+            "(ex. Anthropic). Choisissez un fournisseur compatible "
+            "(OpenAI, Mistral, Gemini, Ollama).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Provider unsupported for embedding usage",
+            "The selected provider or protocol does not offer a native embedding API "
+            "(e.g. Anthropic). Choose a compatible provider (OpenAI, Mistral, Gemini, Ollama).",
+        ),
+    },
+    "ERR_NO_ACTIVE_EMBEDDING_MODEL": {
+        "fr": LocalizedErrorCopy(
+            "Aucun modèle d'embedding actif configuré",
+            "La plateforme ne dispose d'aucun modèle d'embedding actif au niveau global. "
+            "Configurez et activez un modèle d'embedding dans /settings/ai-models.",
+        ),
+        "en": LocalizedErrorCopy(
+            "No active embedding model configured",
+            "The platform has no active embedding model configured globally. "
+            "Configure and activate an embedding model in /settings/ai-models.",
+        ),
+    },
+    "ERR_RAG_REINDEX_IN_PROGRESS": {
+        "fr": LocalizedErrorCopy(
+            "Réindexation sémantique en cours",
+            "Une réindexation globale du corpus vectoriel est actuellement en cours. "
+            "La recherche documentaire et Mon Assistant sont temporairement indisponibles.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Semantic reindexing in progress",
+            "A global reindexing of the vector corpus is currently in progress. "
+            "Document search and My Assistant are temporarily unavailable.",
+        ),
+    },
 }
 
 register_domain_error_catalog(RAG_ERROR_CATALOG)
@@ -53,11 +114,58 @@ class EmptyOrUnreadableDocumentError(OrciaDomainError):
     http_status, type_slug = 422, "empty-or-unreadable-document"
 
 
+class EmbeddingDimensionMismatchError(OrciaDomainError):
+    error_code = "ERR_EMBEDDING_DIMENSION_MISMATCH"
+    http_status, type_slug = 422, "embedding-dimension-mismatch"
+
+
+class EmbeddingGenerationFailedError(OrciaDomainError):
+    error_code = "ERR_EMBEDDING_GENERATION_FAILED"
+    http_status, type_slug = 502, "embedding-generation-failed"
+
+
+class EmbeddingProviderUnsupportedError(OrciaDomainError):
+    error_code = "ERR_EMBEDDING_PROVIDER_UNSUPPORTED"
+    http_status, type_slug = 422, "embedding-provider-unsupported"
+
+
+class NoActiveEmbeddingModelError(OrciaDomainError):
+    error_code = "ERR_NO_ACTIVE_EMBEDDING_MODEL"
+    http_status, type_slug = 422, "no-active-embedding-model"
+
+
+class RagReindexInProgressError(OrciaDomainError):
+    error_code = "ERR_RAG_REINDEX_IN_PROGRESS"
+    http_status, type_slug = 503, "rag-reindex-in-progress"
+
+    def __init__(
+        self,
+        *,
+        progress_percentage: int = 0,
+        job_id: str | None = None,
+        detail_override: str | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.progress_percentage = progress_percentage
+        self.job_id = job_id
+        super().__init__(
+            detail_override=detail_override,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
+
+
 __all__ = [
     "DdlOnlyTransactionalDataError",
     "EmptyOrUnreadableDocumentError",
+    "EmbeddingDimensionMismatchError",
+    "EmbeddingGenerationFailedError",
+    "EmbeddingProviderUnsupportedError",
+    "NoActiveEmbeddingModelError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "RagReindexInProgressError",
     "ResourceNotFoundError",
     "ScopeAccessDeniedError",
     "ValidationDomainError",

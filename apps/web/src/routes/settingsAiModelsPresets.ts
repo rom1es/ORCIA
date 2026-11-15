@@ -1,5 +1,6 @@
-import { createOrciaApiClient } from "@orcia/api-client";
+import { createOrciaApiClient, type DiscoveredModelItem } from "@orcia/api-client";
 import type { LlmAuthMode } from "../components/platformSetupStore";
+import type { AiModelsHubDictionary } from "../i18n/locales/ai_models_hub_labels";
 
 export type GoogleGeminiProtocolMode = "native" | "openai";
 
@@ -13,10 +14,7 @@ export interface ProviderPresetSpec {
   readonly label: string;
   readonly familyValue: string;
   readonly defaultEndpointUrl: string;
-  readonly samplePrimaryModel: string;
-  readonly sampleSecondaryModel: string;
   readonly defaultAuthMode: LlmAuthMode;
-  readonly recommendedModels: readonly string[];
 }
 
 export const AI_PROVIDER_PRESETS: readonly ProviderPresetSpec[] = [
@@ -25,59 +23,35 @@ export const AI_PROVIDER_PRESETS: readonly ProviderPresetSpec[] = [
     label: "Anthropic (Claude)",
     familyValue: "Anthropic",
     defaultEndpointUrl: "https://api.anthropic.com/v1",
-    samplePrimaryModel: "claude-3-7-sonnet",
-    sampleSecondaryModel: "claude-3-5-haiku",
     defaultAuthMode: "api_key",
-    recommendedModels: [
-      "claude-3-7-sonnet-latest",
-      "claude-3-7-sonnet",
-      "claude-3-5-haiku",
-    ],
   },
   {
     id: "openai",
     label: "OpenAI",
     familyValue: "OpenAI",
     defaultEndpointUrl: "https://api.openai.com/v1",
-    samplePrimaryModel: "gpt-4o",
-    sampleSecondaryModel: "gpt-4o-mini",
     defaultAuthMode: "api_key",
-    recommendedModels: ["gpt-4.1", "gpt-4o", "gpt-4o-mini"],
   },
   {
     id: "mistral",
     label: "Mistral AI",
     familyValue: "Mistral AI",
     defaultEndpointUrl: "https://api.mistral.ai/v1",
-    samplePrimaryModel: "mistral-large-latest",
-    sampleSecondaryModel: "ministral-8b-latest",
     defaultAuthMode: "api_key",
-    recommendedModels: ["mistral-large-latest", "ministral-8b-latest"],
   },
   {
     id: "google",
     label: "Google Gemini",
     familyValue: "Google Gemini",
     defaultEndpointUrl: GOOGLE_GEMINI_NATIVE_ENDPOINT,
-    samplePrimaryModel: "gemini-argon",
-    sampleSecondaryModel: "gemini-2.5-flash",
     defaultAuthMode: "api_key",
-    recommendedModels: ["gemini-argon", "gemini-2.5-pro", "gemini-2.5-flash"],
   },
   {
     id: "local-ollama",
     label: "Ollama / vLLM (Serveur local)",
     familyValue: "Ollama Local",
     defaultEndpointUrl: "http://localhost:11434/v1",
-    samplePrimaryModel: "llama3.3:70b",
-    sampleSecondaryModel: "qwen2.5-coder:32b",
     defaultAuthMode: "none_local",
-    recommendedModels: [
-      "gemma4:12b",
-      "qwen2.5:14b",
-      "llama3.2:latest",
-      "llama3.3:70b",
-    ],
   },
 ];
 
@@ -107,22 +81,18 @@ export function detectGoogleGeminiProtocolMode(
     : "native";
 }
 
-export function resolveRecommendedModelsForProvider(
+export function resolvePrimaryModelPlaceholder(
   modelFamily: string,
-  endpointUrl: string,
-): readonly string[] {
-  if (isGoogleGeminiFamily(modelFamily, endpointUrl)) {
-    return ["gemini-argon", "gemini-2.5-pro", "gemini-2.5-flash"];
-  }
+  labels: AiModelsHubDictionary,
+): string {
   const f = modelFamily.trim().toLowerCase();
-  const match = AI_PROVIDER_PRESETS.find(
-    (p) =>
-      p.familyValue.toLowerCase() === f ||
-      f.includes(p.id.replace("local-", "")),
-  );
-  return (
-    match?.recommendedModels ?? ["claude-3-7-sonnet", "gpt-4o", "gemini-argon"]
-  );
+  if (f.includes("mistral")) {
+    return labels.primaryModelPlaceholderMistral;
+  }
+  if (f.includes("ollama") || f.includes("vllm") || f.includes("local")) {
+    return labels.primaryModelPlaceholderOllama;
+  }
+  return labels.primaryModelPlaceholderGeneric;
 }
 
 export function validateLlmConnectionParameters(params: {
@@ -142,8 +112,8 @@ export function validateLlmConnectionParameters(params: {
     return {
       ok: false,
       message: isFr
-        ? "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal (ex. gemini-argon, claude-3-7-sonnet, gpt-4o, mistral-large-latest)."
-        : "❌ Test failed: please enter the primary model identifier (e.g. gemini-argon, claude-3-7-sonnet, gpt-4o, mistral-large-latest).",
+        ? "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal (ex. : llama3.2, mistral-large-latest)."
+        : "❌ Test failed: please enter the primary model identifier (e.g. llama3.2, mistral-large-latest).",
     };
   }
 
@@ -171,47 +141,6 @@ export function validateLlmConnectionParameters(params: {
   return null;
 }
 
-export function buildLocalLlmConnectionSuccessFeedback(params: {
-  readonly isFr: boolean;
-  readonly provider: string;
-  readonly model: string;
-  readonly uri: string;
-}): ConnectionTestFeedback {
-  const { isFr } = params;
-  const providerClean = params.provider.trim() || "Anthropic";
-  const modelClean = params.model.trim();
-  const uriClean = params.uri.trim();
-  const latencyMs =
-    uriClean.startsWith("http://localhost") ||
-    uriClean.startsWith("http://127.")
-      ? 18
-      : 42;
-  if (isGoogleGeminiFamily(providerClean, uriClean)) {
-    const mode = detectGoogleGeminiProtocolMode(uriClean);
-    const modeDescFr =
-      mode === "native"
-        ? "API Native Google Gemini (Mode B · x-goog-api-key · thinkingConfig)"
-        : "Compatible OpenAI (Mode A · Authorization: Bearer)";
-    const modeDescEn =
-      mode === "native"
-        ? "Google Gemini Native API (Mode B · x-goog-api-key · thinkingConfig)"
-        : "OpenAI-Compatible Bridge (Mode A · Authorization: Bearer)";
-    return {
-      ok: true,
-      message: isFr
-        ? `✅ Connexion réussie au modèle « ${modelClean} » (${providerClean} — ${modeDescFr}) sur ${uriClean} — Réponse reçue en ${latencyMs} ms.`
-        : `✅ Successfully connected to model '${modelClean}' (${providerClean} — ${modeDescEn}) at ${uriClean} — Response received in ${latencyMs} ms.`,
-    };
-  }
-
-  return {
-    ok: true,
-    message: isFr
-      ? `✅ Connexion réussie au modèle « ${modelClean} » (${providerClean}) sur ${uriClean} — Réponse reçue en ${latencyMs} ms.`
-      : `✅ Successfully connected to model '${modelClean}' (${providerClean}) at ${uriClean} — Response received in ${latencyMs} ms.`,
-  };
-}
-
 export async function runRemoteLlmConnectionTestEvaluation(params: {
   readonly isFr: boolean;
   readonly provider: string;
@@ -235,7 +164,43 @@ export async function runRemoteLlmConnectionTestEvaluation(params: {
       ok: remote.ok,
       message: params.isFr ? remote.message_fr : remote.message_en,
     };
-  } catch {
-    return buildLocalLlmConnectionSuccessFeedback(params);
+  } catch (err: unknown) {
+    let msg = params.isFr
+      ? "❌ Échec du test : impossible de joindre le fournisseur LLM."
+      : "❌ Test failed: unable to contact LLM provider.";
+    if (err && typeof err === "object" && "problem" in err) {
+      const p = (err as { problem?: { detail?: string; title?: string } }).problem;
+      if (p?.detail) msg = `❌ ${p.detail}`;
+      else if (p?.title) msg = `❌ ${p.title}`;
+    } else if (err instanceof Error && err.message) {
+      msg = `❌ ${err.message}`;
+    }
+    return {
+      ok: false,
+      message: msg,
+    };
+  }
+}
+
+export async function discoverProviderModelsViaApi(params: {
+  readonly endpointUri: string;
+  readonly protocolMode: "openai_compatible" | "gemini_native" | "anthropic_messages";
+  readonly providerSlug?: string;
+  readonly mappingId?: string;
+  readonly apiKey?: string;
+}): Promise<{ ok: boolean; models: DiscoveredModelItem[]; error?: string }> {
+  try {
+    const client = createOrciaApiClient({ baseUrl: "" });
+    const res = await client.discoverAiModels({
+      endpoint_uri: params.endpointUri.trim(),
+      protocol_mode: params.protocolMode,
+      provider_slug: params.providerSlug?.trim() || null,
+      mapping_id: params.mappingId?.trim() || null,
+      api_key: params.apiKey?.trim() || null,
+    });
+    return { ok: true, models: res.models };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return { ok: false, models: [], error: errMsg };
   }
 }

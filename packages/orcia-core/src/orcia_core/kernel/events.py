@@ -504,3 +504,123 @@ class DatasourceFreshnessEvaluated(DomainEvent):
             freshness_status=freshness_status,
             outcome=outcome,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class EmbeddingReindexStarted(DomainEvent):
+    """Published when a global RAG vector reindexing job starts (`Story 19.7`, `AD-24.7`)."""
+
+    job_id: str = ""
+    target_model_id: str = ""
+    target_model_name: str = ""
+    total_chunks: int = 0
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        job_id: str,
+        target_model_id: str,
+        target_model_name: str,
+        total_chunks: int = 0,
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> EmbeddingReindexStarted:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="EmbeddingReindexStarted",
+            aggregate_type="rag_reindex_job",
+            aggregate_id=job_id,
+            run_id=None,
+            workspace_id=None,
+            payload={
+                "job_id": job_id,
+                "target_model_id": target_model_id,
+                "target_model_name": target_model_name,
+                "total_chunks": total_chunks,
+            },
+            trace_id=trace_id,
+            job_id=job_id,
+            target_model_id=target_model_id,
+            target_model_name=target_model_name,
+            total_chunks=total_chunks,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class EmbeddingReindexCompleted(DomainEvent):
+    """Published when a global RAG vector reindexing job completes (`Story 19.7`, `AD-24.7`)."""
+
+    job_id: str = ""
+    target_model_id: str = ""
+    total_chunks: int = 0
+    processed_chunks: int = 0
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        job_id: str,
+        target_model_id: str,
+        total_chunks: int,
+        processed_chunks: int,
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> EmbeddingReindexCompleted:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="EmbeddingReindexCompleted",
+            aggregate_type="rag_reindex_job",
+            aggregate_id=job_id,
+            run_id=None,
+            workspace_id=None,
+            payload={
+                "job_id": job_id,
+                "target_model_id": target_model_id,
+                "total_chunks": total_chunks,
+                "processed_chunks": processed_chunks,
+            },
+            trace_id=trace_id,
+            job_id=job_id,
+            target_model_id=target_model_id,
+            total_chunks=total_chunks,
+            processed_chunks=processed_chunks,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class EmbeddingReindexFailed(DomainEvent):
+    """Published when a global RAG vector reindexing job fails (`Story 19.7`, `AD-24.7`)."""
+
+    job_id: str = ""
+    target_model_id: str = ""
+    error_message: str = ""
+    processed_chunks: int = 0
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        job_id: str,
+        target_model_id: str,
+        error_message: str,
+        processed_chunks: int = 0,
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> EmbeddingReindexFailed:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="EmbeddingReindexFailed",
+            aggregate_type="rag_reindex_job",
+            aggregate_id=job_id,
+            run_id=None,
+            workspace_id=None,
+            payload={
+                "job_id": job_id,
+                "target_model_id": target_model_id,
+                "error_message": error_message,
+                "processed_chunks": processed_chunks,
+            },
+            trace_id=trace_id,
+            job_id=job_id,
+            target_model_id=target_model_id,
+            error_message=error_message,
+            processed_chunks=processed_chunks,
+        )

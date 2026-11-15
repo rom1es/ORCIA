@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 
-from orcia_api.dependencies import get_assistant_service, get_auth_service
+from orcia_api.dependencies import (
+    get_assistant_service,
+    get_auth_service,
+    get_embedding_port,
+)
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.assistant import (
     AssistantChatRequest,
@@ -22,6 +27,7 @@ from orcia_api.schemas.assistant import (
     XyFlowNodeSchemaItem,
 )
 from orcia_core.orchestration.assistant_agent import AssistantTurnResult, AssistantWorkflowProposal
+from orcia_core.ports.embedding import EmbeddingPort
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["assistant-agent"])
 
@@ -59,6 +65,16 @@ def _serialize_proposal(
             for e in proposal.edges
         ],
     )
+
+
+def _attach_embedding_port(service: Any, port: EmbeddingPort) -> None:
+    vstore = getattr(service, "_vector_store", None)
+    if vstore is not None:
+        if getattr(vstore, "_embedding_port", None) is None:
+            vstore._embedding_port = port
+        rag = getattr(vstore, "_rag", None)
+        if rag is not None and getattr(rag, "_embedding_port", None) is None:
+            rag._embedding_port = port
 
 
 def _serialize_turn(turn: AssistantTurnResult) -> AssistantChatResponse:
@@ -110,13 +126,16 @@ def _serialize_turn(turn: AssistantTurnResult) -> AssistantChatResponse:
 async def assistant_chat_turn(
     payload: AssistantChatRequest,
     request: Request,
+    _embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> AssistantChatResponse:
     """Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`)."""
     user = resolve_request_user(request, persona_key=persona_key)
     get_auth_service(request).evaluator.resolve_workspace_access(user, payload.workspace_id)
     profile = payload.human_profile_archetype or user.human_profile_archetype
-    turn = get_assistant_service(request).run_conversation_turn(
+    svc = get_assistant_service(request)
+    _attach_embedding_port(svc, _embedding_port)
+    turn = svc.run_conversation_turn(
         workspace_id=payload.workspace_id,
         user_prompt=payload.user_prompt,
         human_profile_archetype=profile,
@@ -136,6 +155,7 @@ async def assistant_chat_turn(
 async def assistant_chat_stream(
     payload: AssistantChatRequest,
     request: Request,
+    _embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> StreamingResponse:
     """Stream SSE events (`node_trace`, `token`, `workflow_proposal`, `done`) (`NFR-PERF-1`)."""
@@ -143,6 +163,7 @@ async def assistant_chat_stream(
     get_auth_service(request).evaluator.resolve_workspace_access(user, payload.workspace_id)
     profile = payload.human_profile_archetype or user.human_profile_archetype
     service = get_assistant_service(request)
+    _attach_embedding_port(service, _embedding_port)
 
     def _event_generator() -> Iterator[str]:
         for evt in service.stream_conversation_turn_sse(

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_api.main import app
 from orcia_core.orchestration.assistant_three_speed_router import (
@@ -161,6 +162,7 @@ def test_story_10_2_three_speeds_routing_and_slos() -> None:
 
 def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
     """Verify `/api/v1/assistant/three-speed/*` endpoints (`Story 10.2`)."""
+    app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
     with TestClient(app) as client:
         # 1st turn (MISS -> populates cache)
         r1 = client.post(
@@ -236,15 +238,19 @@ def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
     )
 
     assert (
-        normalize_chat_completions_url("http://localhost:11434/api", "Ollama Local")
+        normalize_chat_completions_url(
+            "http://localhost:11434/api", "Ollama Local", model_name="llama3.2"
+        )
         == "http://localhost:11434/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://api.openai.com", "OpenAI")
+        normalize_chat_completions_url("https://api.openai.com", "OpenAI", model_name="gpt-4o")
         == "https://api.openai.com/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://api.anthropic.com", "Anthropic")
+        normalize_chat_completions_url(
+            "https://api.anthropic.com", "Anthropic", model_name="claude-3-7-sonnet"
+        )
         == "https://api.anthropic.com/v1/messages"
     )
 
@@ -281,6 +287,7 @@ def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
     monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_mock_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,
@@ -413,6 +420,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
 
     with TestClient(app) as client:
+        app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
         app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_mock_handler))
         app.state.platform_setup_snapshot = bm.PlatformSetupSnapshotRecord(
             first_admin_initialized=True,

@@ -15,6 +15,11 @@ export interface AssistantDictionarySection {
     readonly loadFailed: (detail: string) => string;
     readonly saveFailed: (detail: string) => string;
   };
+  readonly assistantNoEmbeddingModel: {
+    readonly bannerTitle: string;
+    readonly bannerDescription: string;
+    readonly configureCta: string;
+  };
 }
 
 export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
@@ -93,6 +98,12 @@ export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
       "⚠️ Ce dossier cite des sources protégées : chaque lecteur ne verra que les extraits auxquels son compte a accès.",
     searchPlaceholder: "Rechercher dans vos discussions, dossiers et brouillons...",
   },
+  assistantNoEmbeddingModel: {
+    bannerTitle: "Modèle d'embedding sémantique requis",
+    bannerDescription:
+      "Aucun modèle d'embedding sémantique actif n'est configuré sur la plateforme. L'Assistant et l'ingestion de documents sont suspendus jusqu'à la configuration d'un modèle.",
+    configureCta: "Configurer un modèle d'embedding →",
+  },
 };
 
 export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
@@ -170,5 +181,11 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     restrictedSourcesWarningText:
       "⚠️ This folder cites protected sources: each reader will only see excerpts their account is authorized to view.",
     searchPlaceholder: "Search across your discussions, folders, and drafts...",
+  },
+  assistantNoEmbeddingModel: {
+    bannerTitle: "Semantic embedding model required",
+    bannerDescription:
+      "No active semantic embedding model is configured on the platform. The Assistant and document ingestion are paused until an embedding model is configured.",
+    configureCta: "Configure an embedding model →",
   },
 };

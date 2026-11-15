@@ -48,3 +48,7 @@ class ProblemDetails(BaseModel):
         default=None,
         description="Optional remediation hint from the Permission Broker (AD-6).",
     )
+    progress_percentage: int | None = Field(
+        default=None,
+        description="Optional progress percentage (0-100) for operations like RAG reindexing.",
+    )

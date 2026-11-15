@@ -24,7 +24,6 @@ if _CORE_SRC not in sys.path:
     sys.path.insert(0, _CORE_SRC)
 
 from orcia_core.ontology import build_seeded_ontology_service  # noqa: E402
-from orcia_core.rag import compute_deterministic_halfvec_1024  # noqa: E402
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,11 +89,7 @@ async def backfill_ontology_and_rag_graph(
     edge_id = "0192c4e0-0000-7000-8000-000000000703"
     alert_id = "0192c4e0-0000-7000-8000-000000000704"
 
-    vec_literal = (
-        "["
-        + ",".join(str(v) for v in compute_deterministic_halfvec_1024("LossEvent PAY-142"))
-        + "]"
-    )
+    vec_literal = None
 
     async with engine.connect() as conn:
         trans = await conn.begin()

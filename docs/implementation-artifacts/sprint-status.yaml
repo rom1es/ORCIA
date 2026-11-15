@@ -182,6 +182,17 @@ development_status:
   18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact: done
   18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites: done
   epic-18-retrospective: optional
+
+  # Epic 19 — Hub Modèles IA Fiable, Découverte 0 Token, Test Réel & Embeddings Sémantiques (AD-24)
+  epic-19: in-progress
+  19-1-modale-ui-champs-vides-placeholders-fournisseurs-et-suppression-puces-en-dur: review
+  19-2-decouverte-dynamique-modeles-0-token-combobox-filtrable-et-saisie-libre: review
+  19-3-test-connexion-reel-chat-max-tokens-1-et-embeddings-latence-et-rfc-9457: review
+  19-4-suppression-noms-modeles-en-dur-backend-tier-mappings-vides-et-amorcage-jour-0: review
+  19-5-usage-embedding-hub-port-hexagonal-embedding-port-et-adaptateurs-httpx: review
+  19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele: review
+  19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant: review
+  epic-19-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"

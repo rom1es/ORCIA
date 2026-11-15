@@ -10,8 +10,13 @@ import {
   AI_PROVIDER_PRESETS,
   GOOGLE_GEMINI_NATIVE_ENDPOINT,
   GOOGLE_GEMINI_OPENAI_ENDPOINT,
+  resolvePrimaryModelPlaceholder,
   type ConnectionTestFeedback,
 } from "./settingsAiModelsPresets";
+import {
+  AI_MODELS_HUB_EN,
+  AI_MODELS_HUB_FR,
+} from "../i18n/locales/ai_models_hub_labels";
 
 export interface SettingsAiModelsQuickFormProps {
   readonly isFr: boolean;
@@ -33,7 +38,6 @@ export interface SettingsAiModelsQuickFormProps {
   readonly setTestResult: (val: ConnectionTestFeedback | null) => void;
   readonly isGeminiActive: boolean;
   readonly geminiProtocolMode: "native" | "openai";
-  readonly recommendedModels: readonly string[];
   readonly onQuickSubmit: () => void;
   readonly onEvaluateTest: () => void;
 }
@@ -88,10 +92,10 @@ export function SettingsAiModelsQuickForm({
   setTestResult,
   isGeminiActive,
   geminiProtocolMode,
-  recommendedModels,
   onQuickSubmit,
   onEvaluateTest,
 }: SettingsAiModelsQuickFormProps): React.ReactElement {
+  const hubLabels = isFr ? AI_MODELS_HUB_FR : AI_MODELS_HUB_EN;
   return (
     <details
       style={{
@@ -122,8 +126,6 @@ export function SettingsAiModelsQuickForm({
               setModelFamily(preset.familyValue);
               setEndpointUrl(preset.defaultEndpointUrl);
               setAuthMode(preset.defaultAuthMode);
-              setPrimaryModel(preset.samplePrimaryModel);
-              setSecondaryModel(preset.sampleSecondaryModel);
               setTestResult(null);
             }}
             style={{
@@ -249,6 +251,7 @@ export function SettingsAiModelsQuickForm({
             data-testid="llm-primary-model-input"
             value={primaryModel}
             onChange={(e) => setPrimaryModel(e.target.value)}
+            placeholder={resolvePrimaryModelPlaceholder(modelFamily, hubLabels)}
             style={inputStyle}
           />
         </label>
@@ -265,6 +268,7 @@ export function SettingsAiModelsQuickForm({
             data-testid="llm-secondary-model-input"
             value={secondaryModel}
             onChange={(e) => setSecondaryModel(e.target.value)}
+            placeholder={hubLabels.fallbackModelPlaceholder}
             style={inputStyle}
           />
         </label>
@@ -344,21 +348,6 @@ export function SettingsAiModelsQuickForm({
         >
           {testResult.message}
         </OrciaAlertBanner>
-      )}
-
-      {recommendedModels.length > 0 && (
-        <div style={{ display: "none" }}>
-          {recommendedModels.map((mod) => (
-            <button
-              key={mod}
-              type="button"
-              data-testid={`ai-model-quick-chip-${mod}`}
-              onClick={() => setPrimaryModel(mod)}
-            >
-              {mod}
-            </button>
-          ))}
-        </div>
       )}
     </details>
   );

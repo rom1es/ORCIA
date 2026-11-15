@@ -26,6 +26,7 @@ import {
   type AiModelModalMode,
 } from "../features/admin/ai-models/AiModelConfigModal";
 import { AiModelDeleteDialog } from "../features/admin/ai-models/AiModelDeleteDialog";
+import { AiModelReindexPanel } from "../features/admin/ai-models/AiModelReindexPanel";
 import { AiModelsMasterTable } from "../features/admin/ai-models/AiModelsMasterTable";
 import { useI18n } from "../i18n";
 import { useAuthSessionStore } from "../stores/authSessionStore";
@@ -36,10 +37,8 @@ import {
 import { SettingsAiModelsQuickForm } from "./SettingsAiModelsQuickForm";
 import { buildFallbackMappingsFromProps } from "./settingsAiModelsFallback";
 import {
-  buildLocalLlmConnectionSuccessFeedback,
   detectGoogleGeminiProtocolMode,
   isGoogleGeminiFamily,
-  resolveRecommendedModelsForProvider,
   runRemoteLlmConnectionTestEvaluation,
   validateLlmConnectionParameters,
   type ConnectionTestFeedback,
@@ -67,6 +66,7 @@ export function SettingsAiModelsSection({
 
   const [serverMappings, setServerMappings] = useState<readonly AiModelMappingItemResponse[]>([]);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{
     open: boolean;
     mode: AiModelModalMode;
@@ -115,6 +115,7 @@ export function SettingsAiModelsSection({
 
   const handleTestConnection = async (mappingId: string) => {
     setTestingId(mappingId);
+    setOperationError(null);
     try {
       const res = await testAiModelConnectionViaApi(mappingId, isFr ? "fr" : "en");
       if (res.ok) {
@@ -130,6 +131,19 @@ export function SettingsAiModelsSection({
               : m,
           ),
         );
+      } else {
+        setServerMappings((prev) =>
+          prev.map((m) =>
+            m.id === mappingId
+              ? {
+                  ...m,
+                  health_status: "ERROR",
+                  last_tested_at: new Date().toISOString(),
+                }
+              : m,
+          ),
+        );
+        setOperationError(res.errorMessage);
       }
     } finally {
       setTestingId(null);
@@ -190,7 +204,14 @@ export function SettingsAiModelsSection({
         });
       }
       if (andTest) {
-        void testAiModelConnectionViaApi(res.data.id, isFr ? "fr" : "en");
+        const testRes = await testAiModelConnectionViaApi(res.data.id, isFr ? "fr" : "en");
+        if (!testRes.ok) {
+          setOperationError(testRes.errorMessage);
+        } else {
+          setOperationError(null);
+        }
+      } else {
+        setOperationError(null);
       }
       void loadMappings();
       return true;
@@ -224,13 +245,11 @@ export function SettingsAiModelsSection({
       setTestResult(syncErr);
       return;
     }
-    setTestResult(buildLocalLlmConnectionSuccessFeedback({ isFr, ...params }));
     setTestResult(await runRemoteLlmConnectionTestEvaluation({ isFr, ...params }));
   };
 
   const isGeminiActive = isGoogleGeminiFamily(modelFamily, endpointUrl);
   const geminiProtocolMode = detectGoogleGeminiProtocolMode(endpointUrl);
-  const recommendedModels = resolveRecommendedModelsForProvider(modelFamily, endpointUrl);
 
   const handleQuickSubmit = () => {
     if (!primaryModel.trim()) return;
@@ -291,6 +310,46 @@ export function SettingsAiModelsSection({
           />
         )}
       </div>
+
+      {operationError && (
+        <div
+          role="alert"
+          data-testid="ai-model-operation-error"
+          style={{
+            padding: "10px 14px",
+            borderRadius: "var(--radius-sm)",
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-status-error)",
+            color: "var(--color-status-error)",
+            fontSize: "13px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>{operationError}</span>
+          <button
+            type="button"
+            onClick={() => setOperationError(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "inherit",
+              cursor: "pointer",
+              fontSize: "14px",
+              padding: "0 4px",
+            }}
+            aria-label="Fermer l'erreur"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      <AiModelReindexPanel
+        isFr={isFr}
+        canExecute={allowedVerbs.includes("execute")}
+      />
 
       <AiModelsMasterTable
         isFr={isFr}
@@ -355,7 +414,6 @@ export function SettingsAiModelsSection({
         setTestResult={setTestResult}
         isGeminiActive={isGeminiActive}
         geminiProtocolMode={geminiProtocolMode}
-        recommendedModels={recommendedModels}
         onQuickSubmit={handleQuickSubmit}
         onEvaluateTest={() => void evaluateConnectionTest()}
       />

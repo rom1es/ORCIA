@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-15",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 106,
+    "uiPrimitivesCount": 107,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 37,
-    "architectureDecisionsCount": 23,
+    "alembicMigrationsCount": 41,
+    "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 128,
-    "capabilitiesCount": 61,
-    "liveCapabilitiesCount": 57,
-    "verifiedCapabilitiesCount": 42
+    "techLeadReportsCount": 136,
+    "capabilitiesCount": 62,
+    "liveCapabilitiesCount": 58,
+    "verifiedCapabilitiesCount": 43
   },
   "activeRoutes": [
     "/",
@@ -109,6 +109,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaIcon",
     "OrciaInput",
     "OrciaKnownUserCombobox",
+    "OrciaModelCombobox",
     "OrciaProductShowcaseSiteView",
     "OrciaRadixSelect",
     "OrciaSearchableSelect",
@@ -204,7 +205,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
     "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events",
     "20261115_1901_platform_auth_policy_and_email_otp",
-    "20261115_1902_multi_lead_org_units_and_bu_no_members"
+    "20261115_1902_multi_lead_org_units_and_bu_no_members",
+    "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx",
+    "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup",
+    "20261115_2307_story_19_7_rag_reindexing_jobs_and_queue",
+    "20261115_2359_merge_iam_multi_lead_and_epic_19_heads"
   ],
   "architectureDecisions": [
     {
@@ -298,6 +303,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     {
       "code": "AD-23",
       "title": "Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (Elasticsearch/OpenSearch & Loki), Port d'Interrogation Découplé (LogSinkQueryPort), Traces OpenTelemetry OTLP et Conformité OpenShift"
+    },
+    {
+      "code": "AD-24",
+      "title": "Hub des Modèles IA Fiable, Découverte Dynamique 0 Token, Test de Connexion Réel, Port Hexagonal d'Embeddings (EmbeddingPort) et Réindexation Sémantique Bloquante"
     }
   ],
   "stackComponents": [
@@ -479,6 +488,62 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.7 (CAP-011, CAP-052, CAP-070, CAP-071, CAP-190)",
+      "reportFile": "19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant-tech-lead-report.md",
+      "domain": "Réindexation Bloquante Idempotente, Suivi de Progression & Verrouillage Assistant/Recherche pendant le Job (AD-24.8, D9, D12, Jour 0 Sans Faux Blocage)",
+      "summary": "Migration Alembic 20261115_2307 (rag_reindexing_jobs, rag_reindexing_pending_ingestions, index partiel unique actif idx_rag_reindex_single_active, extension contrainte CHECK outbox), déclenchement automatique sur première activation ou changement de modèle d'embedding GLOBAL, job Dramatiq idempotent par lots de 50 chunks sans doublon et reprise après crash/annulation propre de l'ancien job, blocage matériel RAG & Assistant (HTTP 503 RFC 9457 ERR_RAG_REINDEX_IN_PROGRESS avec progress_percentage), mise en file d'attente des ingestions concurrentes, court-circuit Jour 0 (passage direct à COMPLETED sans 503 ni fausse bannière si corpus vide), endpoints /api/v1/settings/ai-models/reindex-status et /reindex-embeddings, régénération SDK OpenAPI 3.1 0-diff, bannière UI avec pourcentage temps réel et désactivation saisie Assistant, panneau Hub avec barre de progression et relance admin (403 observateur), et validation 5 couches AD-17 (6 unitaires, 3 intégration testcontainers PG18 réels, 4 Vitest avec F5, DB reset Jour 0 vérifié)."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.6 (CAP-011, CAP-070, CAP-071, CAP-190)",
+      "reportFile": "19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele-tech-lead-report.md",
+      "domain": "Migration Alembic kb_chunks.embedding_model_id, Suppression Totale du Pseudo-Hachage SHA-256 en Production, Branchement RAG & Assistant sur EmbeddingPort & Blocage Matériel sans Modèle Actif (AD-24.7, D7, D8, D10, D11, D12)",
+      "summary": "Migration Alembic 20261115_2206 (colonnes embedding_model_id, embedding_generated_at, RAZ vecteurs SHA-256 à NULL, statut AWAITING_EMBEDDING_MODEL), éradication 100% de compute_deterministic_halfvec_1024 du code de production, branchement des indexeurs Confluence/Jira/DDL et de la recherche sur EmbeddingPort injecté, blocage matériel sans modèle actif (HTTP 422 ERR_NO_ACTIVE_EMBEDDING_MODEL au runtime, bannière UI explicite + input/bouton désactivés, survie F5), non-blocage de Codegraph/GitNexus (vecteurs NULL tolérés avec NULLS LAST), vérification Jour 0 après pnpm db:reset, et 5 couches de tests validées (8 tests unitaires dédiés, test d'intégration testcontainers PostgreSQL 18, 23 fichiers Vitest)."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.3 (CAP-052, CAP-053, CAP-190)",
+      "reportFile": "19-3-test-connexion-reel-chat-max-tokens-1-embedding-dim-1024-latence-reelle-tech-lead-report.md",
+      "domain": "Test de Connexion Réel Chat (max_tokens=1) & Embedding (Dimension 1024 Validée), Latence Réelle Mesurée, Erreurs RFC 9457 & Éradication des Latences Factices 18/42 ms (AD-24.3, D3)",
+      "summary": "Testeur de connectivité pur async test_ai_model_endpoint_connection dans orcia_core.orchestration (chat minimal max_tokens=1 pour openai_compatible, anthropic_messages, gemini_native + embedding 1024-dim via adaptateurs Story 19.5, latence réelle time.perf_counter(), anti-SSRF), persistance OPERATIONAL ou ERROR dans workspace_llm_tier_mappings PG18, 6 erreurs bilingues ERR_MODEL_CONNECTION_* RFC 9457, mise à jour de /bootstrap/welcome-setup/llm-test et /settings/ai-models/mappings/{id}/test, éradication totale du code de simulation factice (18/42 ms) et règle d'audit anti-patrons statique pérenne, UI mise à jour avec affichage d'erreur explicite sans catch muet, 16 tests unitaires (couverture 93.69%), test d'intégration testcontainers PostgreSQL 18 et Vitest validés (0 $ en CI)."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.5 (CAP-052, CAP-190)",
+      "reportFile": "19-5-usage-embedding-hub-port-hexagonal-embedding-port-et-adaptateurs-httpx-tech-lead-report.md",
+      "domain": "Usage embedding dans le Hub des Modèles IA, Port Hexagonal Pur EmbeddingPort & Adaptateurs HTTPX Asynchrones (AD-24.5, D5, D6)",
+      "summary": "Migration Alembic 20261115_2105 (colonne usage: chat \\"
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.4 (CAP-052, CAP-053, CAP-190)",
+      "reportFile": "19-4-suppression-noms-modeles-en-dur-backend-tier-mappings-vides-et-amorcage-jour-0-tech-lead-report.md",
+      "domain": "Suppression Intégrale des Noms de Modèles en Dur Côté Backend, Tier Mappings Vides, Amorçage Jour 0 Propre (Décision D4) & Script de Purge Idempotente",
+      "summary": "DEFAULT_LLM_MODEL_ENDPOINT_SEEDS et build_default_tier_mappings désormais vides (), model_name rendu obligatoire sans repli en dur (gemini-argon, claude-3-7-sonnet), exception RFC 9457 bilingue ERR_TIER_MODEL_NOT_CONFIGURED (HTTP 422) guidant vers /settings/ai-models, script de maintenance 11_purge_legacy_fictional_llm_seeds.py (--dry-run par défaut, --apply), remise à zéro vérifiée pnpm db:reset à 0 ligne résiduelle, règle d'audit statique anti-modèles en dur pérennisée."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.2 (CAP-052, CAP-053, CAP-081, CAP-190)",
+      "reportFile": "19-2-decouverte-dynamique-modeles-0-token-combobox-filtrable-et-saisie-libre-tech-lead-report.md",
+      "domain": "Découverte Dynamique des Modèles Sans Consommation de Token (0 Token, 0 $), Combobox Filtrable & Saisie Libre (Décision D2)",
+      "summary": "Module pur ai_models_discovery.py interrogeant les métadonnées fournisseurs (openai_compatible /v1/models et repli /api/tags, anthropic_messages /v1/models, gemini_native /v1beta/models avec pagination et classification chat vs embedding), endpoint FastAPI POST /api/v1/settings/ai-models/discover protégé avec réutilisation possible de clé chiffrée en base sans fuite, garde SSRF, composant @orcia/ui accessible RGAA OrciaModelCombobox (recherche, filtre par usage, saisie libre permanente, rafraîchissement manuel, retour d'erreur explicite), régénération SDK OpenAPI 0-diff et 100% de tests unitaires/UI validés (couverture 94%)."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.1 (CAP-052, CAP-053, CAP-190)",
+      "reportFile": "19-1-modale-ui-champs-vides-placeholders-fournisseurs-et-suppression-puces-en-dur-tech-lead-report.md",
+      "domain": "Modale UI Connecter un Modèle IA — Champs Vides, Placeholders Dynamiques par Fournisseur & Suppression des Puces Codées en Dur (D1)",
+      "summary": "Champs primaryModel et fallbackModel initialisés vides (value === \"\") en création et lors du clic sur un préréglage fournisseur, placeholders contextuels (mistral-large-latest pour Mistral, llama3.2 pour Ollama/vLLM, générique pour OpenAI/Anthropic/Gemini) extraits dans i18n, suppression définitive des puces de modèles en dur (ai-model-quick-chip-*), purge des presets et fallback platformSetupStore, suite de tests de garde-fous stricte et non-régression validée."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Epic 19 (CAP-011, CAP-052, CAP-053, CAP-070, CAP-071, CAP-190)",
+      "reportFile": "2026-11-15-epic-19-hub-modeles-ia-et-embeddings-semantiques-tech-lead-report.md",
+      "domain": "Cadrage Architectural & Planification Epic 19 : Hub Modèles IA Fiable, Découverte 0 Token (GET /models), Test Réel Chat (max_tokens=1) & Embeddings (Dim 1024), Purge Noms en Dur Backend, EmbeddingPort Hexagonal & RAG Sans Hachage SHA-256 (AD-24)",
+      "summary": "Analyse d'impact GitNexus (9 symboles amont, 7 flux RAG), décision d'architecture AD-24 (binds/prevents/rule), amendements AD-8 et AD-16, spécification des 7 User Stories (19.1 à 19.7) ordonnancées pour minimiser les conflits avec critères 5 couches AD-17, mise à jour sprint-status.yaml et capabilities.yaml (CAP-190 planned)."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Ajustement Transverse Auth & UX Mon Compte (CAP-001, CAP-063)",

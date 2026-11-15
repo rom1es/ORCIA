@@ -5,15 +5,31 @@ from __future__ import annotations
 import os
 from datetime import UTC, datetime
 from typing import Literal
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import Request
 
-from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_connection_test
-from orcia_api.schemas.ai_models_hub import AiModelMappingItemResponse, AiModelTestResponse
-from orcia_api.schemas.bootstrap import LlmConnectionTestRequest
+from orcia_api.schemas.ai_models_hub import (
+    AiModelDiscoveryResponse,
+    AiModelMappingItemResponse,
+    AiModelTestResponse,
+    DiscoveredModelItem,
+    LlmProtocolModeLiteral,
+)
 from orcia_api.schemas.settings_and_studio import SecretStatusResponse
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.orchestration import AiModelMappingRecord, validate_safe_llm_endpoint_url
+from orcia_core.orchestration import (
+    AiModelMappingRecord,
+    AiModelsHubService,
+    discover_models_from_provider,
+    test_ai_model_endpoint_connection,
+    validate_safe_llm_endpoint_url,
+)
+from orcia_core.orchestration._internal.sql_ai_model_mappings import (
+    ensure_ai_model_mappings_schema_on_postgres18,
+    get_ai_model_mapping_pg18,
+)
+from orcia_core.permissions import AuthAndOrganizationService
 from orcia_core.permissions.errors import ObserverModeReadOnlyError
 
 
@@ -45,6 +61,7 @@ def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
         endpoint_uri=m.endpoint_uri,
         auth_mode=m.auth_mode,
         protocol_mode=m.protocol_mode,
+        usage=m.usage,
         env_var_name=m.env_var_name,
         fallback_order=m.fallback_order,
         max_tokens_budget=m.max_tokens_budget,
@@ -66,12 +83,12 @@ def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
     )
 
 
-def execute_model_connection_test(
+async def execute_model_connection_test(
     rec: AiModelMappingRecord,
     decrypted_key: str | None,
     request: Request,
 ) -> tuple[Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"], AiModelTestResponse]:
-    """Execute connectivity test with SSRF validation and return health status and response."""
+    """Execute real non-blocking connectivity test for chat or embedding model."""
     path = str(request.url.path)
     validate_safe_llm_endpoint_url(rec.endpoint_uri, instance=path)
 
@@ -79,29 +96,31 @@ def execute_model_connection_test(
     if rec.auth_mode == "env_var" and rec.env_var_name:
         effective_key = os.environ.get(rec.env_var_name)
 
-    test_req = LlmConnectionTestRequest(
-        provider_slug=rec.provider_slug,
-        model_name=rec.model_name,
+    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
+    if http_client is None or getattr(http_client, "is_closed", False):
+        http_client = httpx.AsyncClient(timeout=15.0)
+
+    outcome = await test_ai_model_endpoint_connection(
+        http_client=http_client,
         endpoint_uri=rec.endpoint_uri,
-        auth_mode=rec.auth_mode,
+        protocol_mode=rec.protocol_mode,
+        model_name=rec.model_name,
+        usage=rec.usage,
         api_key=effective_key,
-        api_key_configured=bool(effective_key or rec.auth_mode == "none_local"),
+        provider_slug=rec.provider_slug,
+        instance=path,
     )
-    trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-    outcome = evaluate_welcome_llm_connection_test(test_req, trace_id=trace_id)
-    health: Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"] = (
-        "OPERATIONAL" if outcome.ok else "ERROR"
-    )
+
     is_fr = "fr" in request.headers.get("accept-language", "").lower()
     msg = outcome.message_fr if is_fr else outcome.message_en
     resp = AiModelTestResponse(
         mapping_id=rec.id,
-        health_status=health,
+        health_status="OPERATIONAL",
         latency_ms=outcome.latency_ms,
         tested_at=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         message=msg,
     )
-    return health, resp
+    return "OPERATIONAL", resp
 
 
 def compute_tiers_coverage(records: list[AiModelMappingRecord]) -> dict[str, bool]:
@@ -112,9 +131,93 @@ def compute_tiers_coverage(records: list[AiModelMappingRecord]) -> dict[str, boo
     }
 
 
+async def resolve_mapping_decrypted_key(
+    request: Request,
+    mapping_id: str,
+    auth_svc: AuthAndOrganizationService,
+    hub_svc: AiModelsHubService,
+) -> tuple[AiModelMappingRecord, str | None]:
+    """Resolve model mapping record and decrypt its API key if configured."""
+    path = str(request.url.path)
+    engine = getattr(request.app.state, "db_engine", None)
+    if engine is not None:
+        async with engine.begin() as conn:
+            await ensure_ai_model_mappings_schema_on_postgres18(conn)
+            rec = await get_ai_model_mapping_pg18(conn, mapping_id, instance=path)
+            decrypted_key: str | None = None
+            if rec.encrypted_api_key:
+                host = urlparse(rec.endpoint_uri).netloc or "default"
+                parts = rec.encrypted_api_key.split(":", 1)
+                decrypted_key = auth_svc.vault_cipher.decrypt(
+                    rec.id, parts[0], parts[1], connector_scheme="llm", target_host=host
+                )
+            elif rec.auth_mode == "env_var" and rec.env_var_name:
+                decrypted_key = os.environ.get(rec.env_var_name)
+            return rec, decrypted_key
+
+    rec = hub_svc.get_mapping(mapping_id, instance=path)
+    decrypted_key = hub_svc.resolve_decrypted_api_key(mapping_id, instance=path)
+    if not decrypted_key and rec.auth_mode == "env_var" and rec.env_var_name:
+        decrypted_key = os.environ.get(rec.env_var_name)
+    return rec, decrypted_key
+
+
+async def execute_models_discovery(
+    request: Request,
+    *,
+    endpoint_uri: str,
+    protocol_mode: LlmProtocolModeLiteral,
+    provider_slug: str | None,
+    api_key: str | None,
+) -> AiModelDiscoveryResponse:
+    """Execute dynamic model discovery over shared httpx client with 0 tokens consumed."""
+    client = getattr(request.app.state, "http_client", None)
+    path = str(request.url.path)
+
+    if client is not None:
+        raw_models = await discover_models_from_provider(
+            http_client=client,
+            endpoint_uri=endpoint_uri,
+            protocol_mode=protocol_mode,
+            provider_slug=provider_slug,
+            api_key=api_key,
+            instance=path,
+        )
+    else:
+        async with httpx.AsyncClient() as ephemeral_client:
+            raw_models = await discover_models_from_provider(
+                http_client=ephemeral_client,
+                endpoint_uri=endpoint_uri,
+                protocol_mode=protocol_mode,
+                provider_slug=provider_slug,
+                api_key=api_key,
+                instance=path,
+            )
+
+    items = [
+        DiscoveredModelItem(
+            id=m.id,
+            display_name=m.display_name,
+            description=m.description,
+            usage_hint=m.usage_hint,
+            owned_by=m.owned_by,
+        )
+        for m in raw_models
+    ]
+    return AiModelDiscoveryResponse(
+        endpoint_uri=endpoint_uri,
+        protocol_mode=protocol_mode,
+        provider_slug=provider_slug,
+        models=items,
+        total_count=len(items),
+    )
+
+
 __all__ = [
     "assert_ai_models_write_allowed",
     "compute_tiers_coverage",
     "execute_model_connection_test",
+    "execute_models_discovery",
+    "resolve_mapping_decrypted_key",
     "to_item_response",
 ]

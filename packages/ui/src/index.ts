@@ -534,6 +534,12 @@ export {
   type OrciaUserPillsSelectProps,
 } from "./primitives/OrciaUserPillsSelect";
 export {
+  OrciaModelCombobox,
+  type DiscoveredModelOption,
+  type OrciaModelComboboxLabels,
+  type OrciaModelComboboxProps,
+} from "./primitives/OrciaModelCombobox";
+export {
   OrciaSearchableSelect,
   type OrciaSearchableSelectOption,
   type OrciaSearchableSelectProps,

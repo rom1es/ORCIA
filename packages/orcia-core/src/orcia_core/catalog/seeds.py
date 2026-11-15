@@ -120,8 +120,8 @@ _DB_WORKFLOW_SCHEMA = _j(
         "title": "Workflow Delivery Solution Paiement",
         "description": "Pipeline gouverné de livraison multi-sources Paiement",
         "scalars": {
-            "default_model": "claude-sonnet-4",
-            "evaluator_model": "gpt-4.1",
+            "inference_tier": "complex",
+            "evaluator_tier": "medium",
             "timeout_seconds": 600,
             "human_greeting": "Bonjour Architecte",
         },

@@ -235,7 +235,7 @@ capabilities:
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-2 + 17-5
+    origin_ref: 8-2 + 17-5 + 19-1 + 19-2 + 19-4 + 19-5
     status: live
     tests:
       - tests/security/test_api_security_baseline.py
@@ -243,8 +243,17 @@ capabilities:
       - tests/unit/test_story_17_5_ai_models_hub_secrets_and_lifecycle.py
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
       - apps/web/src/__tests__/story-17-5-ai-models-hub-modal-lifecycle-and-f5.test.tsx
+      - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
+      - apps/web/src/__tests__/story-19-2-ai-models-combobox-discovery-and-freeform.test.tsx
+      - packages/ui/src/__tests__/model-combobox.test.tsx
+      - tests/unit/test_story_19_2_ai_models_discovery.py
+      - tests/unit/test_story_19_2_ai_models_discover_endpoint.py
+      - apps/web/src/__tests__/story-19-5-ai-models-usage-and-active-embedding.test.tsx
+      - tests/unit/test_story_19_5_embedding_port_and_adapters.py
+      - tests/unit/test_story_19_5_ai_models_usage_and_uniqueness.py
+      - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
     verification: runtime
-    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + AiModelDeleteDialog", migration: "20261114_1705" }
+    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + OrciaModelCombobox + AiModelDeleteDialog", migration: "20261114_1705, 20261115_2105" }
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]
@@ -512,7 +521,7 @@ capabilities:
     origin: adhoc
     origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant
     status: live
-    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-argon-settings-and-assistant.test.tsx]
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx]
     surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
@@ -581,6 +590,41 @@ capabilities:
       api: "workspace_datasources.py, datasource_webhooks.py, codegraph_mcp.py"
       ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceSourceAttachModal + WorkspaceSourceAttachCodegraphFields"
       migration: "20261114_1801, 20261114_1802"
+
+  # ───────────── Epic 19 : Hub Modèles IA & Embeddings Sémantiques ─────────────
+  - id: CAP-190
+    title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal, RAG Sans Hachage SHA-256 & Réindexation Bloquante Idempotente
+    fr: [FR-14, FR-18, FR-23, FR-28, FR-31, FR-33]
+    origin: epic
+    origin_ref: epic-19 (19-1..19-7)
+    status: live
+    tests:
+      - tests/unit/test_story_19_2_ai_models_discovery.py
+      - tests/unit/test_story_19_2_ai_models_discover_endpoint.py
+      - tests/unit/test_story_19_3_ai_model_connection_test.py
+      - tests/unit/test_story_19_4_clean_day0_seeds_and_empty_tiers.py
+      - tests/unit/test_story_19_5_ai_models_usage_and_uniqueness.py
+      - tests/unit/test_story_19_5_embedding_port_and_adapters.py
+      - tests/unit/test_migration_story_19_5_usage.py
+      - tests/unit/test_story_19_6_rag_blocking_and_embedding_model.py
+      - tests/unit/test_story_19_7_rag_reindexing_and_blocking.py
+      - tests/integration/api/test_story_19_3_ai_models_connection_test_postgres18.py
+      - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
+      - tests/integration/api/test_story_19_6_alembic_and_rag_blocking_postgres18.py
+      - tests/integration/api/test_story_19_7_reindexing_and_blocking_postgres18.py
+      - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
+      - apps/web/src/__tests__/story-19-2-ai-models-combobox-discovery-and-freeform.test.tsx
+      - apps/web/src/__tests__/story-19-3-ai-models-real-connection-test-and-no-dead-buttons.test.tsx
+      - apps/web/src/__tests__/story-19-5-ai-models-usage-and-active-embedding.test.tsx
+      - apps/web/src/__tests__/story-19-6-assistant-no-embedding-blocking-and-f5.test.tsx
+      - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
+    verification: runtime
+    surfaces:
+      route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
+      api: "ai_models_hub.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
+      migration: "20261115_2105, 20261115_2206, 20261115_2307"
+    notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
 
   # ───────────── Planifié (non livré) ─────────────
   - id: CAP-200

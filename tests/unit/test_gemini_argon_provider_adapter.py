@@ -13,7 +13,6 @@ from orcia_api.main import app
 from orcia_api.routers.assistant_llm_gemini_adapter import (
     build_gemini_native_headers,
     build_gemini_native_url,
-    evaluate_welcome_llm_connection_test,
     extract_gemini_stream_chunk_deltas,
     is_google_gemini_native_provider,
     parse_gemini_native_response,
@@ -26,13 +25,14 @@ from orcia_api.routers.assistant_llm_providers import (
     normalize_chat_completions_url,
     stream_provider_chat_sse_async,
 )
-from orcia_api.schemas import bootstrap as bs
 
 
 def test_google_gemini_mode_a_openai_bridge_url_normalization_and_bearer_headers() -> None:
     """Mode A (`/v1beta/openai`): verify URL normalization without double `/v1` & Bearer header."""
     mode_a_url = normalize_chat_completions_url(
-        "https://generativelanguage.googleapis.com/v1beta/openai", "google"
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+        "google",
+        model_name="gemini-2.5-pro",
     )
     assert mode_a_url == "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
     assert "/v1beta/openai/v1/" not in mode_a_url
@@ -291,49 +291,66 @@ async def test_google_gemini_mode_b_non_streaming_and_sse_streaming_thought_sepa
 
 
 def test_welcome_setup_llm_connection_reports_gemini_mode_b_and_mode_a() -> None:
-    """Verify `POST /api/v1/bootstrap/welcome-setup/llm-test` reports Mode B vs Mode A."""
-    trace_id = "0" * 32
-    res_b = evaluate_welcome_llm_connection_test(
-        bs.LlmConnectionTestRequest(
-            provider_slug="Google Gemini",
-            model_name="gemini-argon",
-            endpoint_uri="https://generativelanguage.googleapis.com/v1beta",
-            auth_mode="api_key",
-            api_key="AIzaSy-test-key",  # pragma: allowlist secret
-        ),
-        trace_id,
-    )
-    assert res_b.ok is True
-    assert "Mode B" in res_b.message_fr
-    assert "gemini-argon:generateContent" in res_b.message_fr
+    """Verify `POST /api/v1/bootstrap/welcome-setup/llm-test` tests real connection via HTTPX."""
 
-    res_a = evaluate_welcome_llm_connection_test(
-        bs.LlmConnectionTestRequest(
-            provider_slug="Google Gemini",
-            model_name="gemini-argon",
-            endpoint_uri="https://generativelanguage.googleapis.com/v1beta/openai",
-            auth_mode="api_key",
-            api_key="AIzaSy-test-key",  # pragma: allowlist secret
-        ),
-        trace_id,
-    )
-    assert res_a.ok is True
-    assert "Mode A" in res_a.message_fr
-    assert "/v1beta/openai/chat/completions" in res_a.message_fr
+    def handler(request: httpx.Request) -> httpx.Response:
+        url_str = str(request.url)
+        if ":generateContent" in url_str:
+            return httpx.Response(
+                200,
+                json={"candidates": [{"content": {"parts": [{"text": "P"}]}}]},
+            )
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"role": "assistant", "content": "pong"}}]},
+        )
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    app.state.http_client = mock_client
 
     with TestClient(app) as client:
-        http_res = client.post(
+        # Test Native Gemini Mode B
+        res_b = client.post(
             "/api/v1/bootstrap/welcome-setup/llm-test",
             json={
                 "provider_slug": "Google Gemini",
-                "model_name": "gemini-argon",
+                "model_name": "gemini-2.5-flash",
                 "endpoint_uri": "https://generativelanguage.googleapis.com/v1beta",
                 "auth_mode": "api_key",
                 "api_key": "AIzaSy-test-key",  # pragma: allowlist secret
             },
         )
-        assert http_res.status_code == 200
-        body = http_res.json()
-        assert body["ok"] is True
-        assert "Mode B" in body["message_fr"]
-        assert "gemini-argon" in body["message_fr"]
+        assert res_b.status_code == 200
+        body_b = res_b.json()
+        assert body_b["ok"] is True
+        assert body_b["latency_ms"] >= 0
+        assert "gemini-2.5-flash" in body_b["message_fr"]
+
+        # Test OpenAI bridge Mode A
+        res_a = client.post(
+            "/api/v1/bootstrap/welcome-setup/llm-test",
+            json={
+                "provider_slug": "Google Gemini",
+                "model_name": "gemini-2.5-flash",
+                "endpoint_uri": "https://generativelanguage.googleapis.com/v1beta/openai",
+                "auth_mode": "api_key",
+                "api_key": "AIzaSy-test-key",  # pragma: allowlist secret
+            },
+        )
+        assert res_a.status_code == 200
+        body_a = res_a.json()
+        assert body_a["ok"] is True
+        assert body_a["latency_ms"] >= 0
+        assert "gemini-2.5-flash" in body_a["message_fr"]
+
+
+def test_gemini_native_url_requires_non_empty_model_name() -> None:
+    """Story 19.4 / Decision D4: build_gemini_native_url rejects empty model_name."""
+    with pytest.raises(ValueError, match="model_name is mandatory"):
+        build_gemini_native_url("https://generativelanguage.googleapis.com", "")
+
+    with pytest.raises(ValueError, match="model_name is mandatory"):
+        build_gemini_native_url("https://generativelanguage.googleapis.com", "   ")
+
+    with pytest.raises(ValueError, match="model_name is mandatory"):
+        build_gemini_native_url("https://generativelanguage.googleapis.com", "models/")

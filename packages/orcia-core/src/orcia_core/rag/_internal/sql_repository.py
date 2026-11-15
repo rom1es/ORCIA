@@ -64,7 +64,7 @@ class SqlHybridRagRepository:
                                     ROW_NUMBER() OVER (
                                         ORDER BY (
                                             c.embedding <=> CAST(:vec_literal AS halfvec(1024))
-                                        ) ASC,
+                                        ) ASC NULLS LAST,
                                         c.chunk_key ASC
                                     ) AS vector_rank,
                                     ROW_NUMBER() OVER (

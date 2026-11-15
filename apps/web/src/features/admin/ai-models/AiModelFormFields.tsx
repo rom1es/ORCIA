@@ -1,5 +1,7 @@
 import {
   EffortSelector,
+  OrciaModelCombobox,
+  type DiscoveredModelOption,
   type InferenceTierAndEffortLabels,
   type UiInferenceEffort,
   type UiInferenceTier,
@@ -10,6 +12,7 @@ import {
   AI_PROVIDER_PRESETS,
   GOOGLE_GEMINI_NATIVE_ENDPOINT,
   GOOGLE_GEMINI_OPENAI_ENDPOINT,
+  resolvePrimaryModelPlaceholder,
 } from "../../../routes/settingsAiModelsPresets";
 
 export const aiModelInputStyle: React.CSSProperties = {
@@ -47,7 +50,12 @@ export interface AiModelFormFieldsProps {
   readonly selectedEffort: UiInferenceEffort;
   readonly setSelectedEffort: (val: UiInferenceEffort) => void;
   readonly isGemini: boolean;
-  readonly recommendedModels: readonly string[];
+  readonly usage: "chat" | "embedding";
+  readonly setUsage: (val: "chat" | "embedding") => void;
+  readonly discoveredModels?: readonly DiscoveredModelOption[];
+  readonly isDiscovering?: boolean;
+  readonly discoveryError?: string | null;
+  readonly onRefreshDiscovery?: () => void;
 }
 
 export function AiModelFormFields({
@@ -75,7 +83,12 @@ export function AiModelFormFields({
   selectedEffort,
   setSelectedEffort,
   isGemini,
-  recommendedModels,
+  usage,
+  setUsage,
+  discoveredModels = [],
+  isDiscovering = false,
+  discoveryError = null,
+  onRefreshDiscovery,
 }: AiModelFormFieldsProps): React.ReactElement {
   return (
     <>
@@ -92,8 +105,6 @@ export function AiModelFormFields({
                   setModelFamily(preset.familyValue);
                   setEndpointUri(preset.defaultEndpointUrl);
                   setAuthMode(preset.defaultAuthMode as "api_key" | "env_var" | "none_local");
-                  setPrimaryModel(preset.samplePrimaryModel);
-                  setFallbackModel(preset.sampleSecondaryModel);
                   setDisplayName(`${preset.label} (${selectedTier})`);
                 }}
                 style={{
@@ -154,15 +165,80 @@ export function AiModelFormFields({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        <EffortSelector
-          selectedTier={selectedTier}
-          selectedEffort={selectedEffort}
-          labels={tierLabels}
-          onTierChange={setSelectedTier}
-          onEffortChange={setSelectedEffort}
-        />
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <span style={{ fontSize: "12px", fontWeight: 600 }}>{labels.usageLabel} :</span>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            type="button"
+            data-testid="ai-model-usage-chat-btn"
+            onClick={() => setUsage("chat")}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "var(--radius-sm)",
+              border: `1px solid ${usage === "chat" ? "var(--color-primary-cobalt)" : "var(--color-border)"}`,
+              backgroundColor:
+                usage === "chat"
+                  ? "var(--color-action-primary-subtle)"
+                  : "var(--color-surface-card)",
+              color: usage === "chat" ? "var(--color-primary-cobalt)" : "var(--color-foreground)",
+              fontWeight: usage === "chat" ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            {labels.usageChat}
+          </button>
+          <button
+            type="button"
+            data-testid="ai-model-usage-embedding-btn"
+            disabled={modelFamily.toLowerCase() === "anthropic"}
+            onClick={() => {
+              if (modelFamily.toLowerCase() !== "anthropic") {
+                setUsage("embedding");
+              }
+            }}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "var(--radius-sm)",
+              border: `1px solid ${usage === "embedding" ? "var(--color-primary-cobalt)" : "var(--color-border)"}`,
+              backgroundColor:
+                usage === "embedding"
+                  ? "var(--color-action-primary-subtle)"
+                  : "var(--color-surface-card)",
+              color:
+                usage === "embedding"
+                  ? "var(--color-primary-cobalt)"
+                  : "var(--color-foreground)",
+              fontWeight: usage === "embedding" ? 600 : 400,
+              cursor: modelFamily.toLowerCase() === "anthropic" ? "not-allowed" : "pointer",
+              opacity: modelFamily.toLowerCase() === "anthropic" ? 0.5 : 1,
+              fontSize: "12px",
+            }}
+          >
+            {labels.usageEmbedding}
+          </button>
+        </div>
+        {modelFamily.toLowerCase() === "anthropic" && (
+          <span
+            data-testid="anthropic-no-embedding-warning"
+            style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}
+          >
+            {labels.anthropicNoEmbeddingWarning}
+          </span>
+        )}
       </div>
+
+      {usage === "chat" && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <EffortSelector
+            selectedTier={selectedTier}
+            selectedEffort={selectedEffort}
+            labels={tierLabels}
+            onTierChange={setSelectedTier}
+            onEffortChange={setSelectedEffort}
+          />
+        </div>
+      )}
 
       <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
         <span style={{ fontWeight: 600 }}>{labels.displayNameLabel}</span>
@@ -184,64 +260,49 @@ export function AiModelFormFields({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
           <span style={{ fontWeight: 600 }}>{labels.primaryModelLabel}</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ai-model-primary-model-input"
+          <OrciaModelCombobox
+            testId="ai-model-primary-model-input"
             value={primaryModel}
-            onChange={(e) => setPrimaryModel(e.target.value)}
+            onChange={setPrimaryModel}
             disabled={mode === "edit"}
-            style={aiModelInputStyle}
+            models={discoveredModels}
+            targetUsage={usage}
+            isLoading={isDiscovering}
+            errorMessage={discoveryError}
+            onRefresh={onRefreshDiscovery}
+            placeholder={resolvePrimaryModelPlaceholder(modelFamily, labels)}
+            labels={{
+              noModelsFound: labels.modelDiscoveryNoMatch,
+              refreshLabel: labels.modelDiscoveryRefresh,
+              loadingLabel: labels.modelDiscoveryLoading,
+              freeformHint: labels.modelDiscoveryFreeformHint,
+              chatBadge: labels.chatBadge,
+              embeddingBadge: labels.embeddingBadge,
+            }}
           />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
           <span style={{ fontWeight: 600 }}>{labels.fallbackModelLabel}</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ai-model-fallback-model-input"
+          <OrciaModelCombobox
+            testId="ai-model-fallback-model-input"
             value={fallbackModel}
-            onChange={(e) => setFallbackModel(e.target.value)}
-            style={aiModelInputStyle}
+            onChange={setFallbackModel}
+            models={discoveredModels}
+            targetUsage={usage}
+            isLoading={isDiscovering}
+            onRefresh={onRefreshDiscovery}
+            placeholder={labels.fallbackModelPlaceholder}
+            labels={{
+              noModelsFound: labels.modelDiscoveryNoMatch,
+              refreshLabel: labels.modelDiscoveryRefresh,
+              loadingLabel: labels.modelDiscoveryLoading,
+              freeformHint: labels.modelDiscoveryFreeformHint,
+              chatBadge: labels.chatBadge,
+              embeddingBadge: labels.embeddingBadge,
+            }}
           />
         </label>
       </div>
-
-      {mode === "create" && recommendedModels.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-          {recommendedModels.map((mod) => (
-            <button
-              key={mod}
-              type="button"
-              data-testid={`ai-model-quick-chip-${mod}`}
-              onClick={() => setPrimaryModel(mod)}
-              style={{
-                padding: "2px 7px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-                backgroundColor:
-                  primaryModel === mod
-                    ? "var(--color-action-primary-subtle)"
-                    : "var(--color-surface-card)",
-                color: "var(--color-foreground)",
-                fontSize: "10px",
-                fontFamily: "var(--font-mono)",
-                cursor: "pointer",
-              }}
-            >
-              {mod}
-            </button>
-          ))}
-        </div>
-      )}
 
       <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
         <span style={{ fontWeight: 600 }}>{labels.endpointUriLabel}</span>

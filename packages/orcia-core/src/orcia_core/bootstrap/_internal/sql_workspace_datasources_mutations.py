@@ -33,6 +33,10 @@ from orcia_core.permissions.workspace_sources_governance import (
     WorkspaceDatasourceRecord,
     infer_source_nature_from_scheme,
 )
+from orcia_core.rag.errors import (
+    NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
+)
 
 
 async def create_workspace_datasource_on_postgres18(
@@ -291,6 +295,9 @@ async def trigger_workspace_datasource_sync_on_postgres18(
     except (ValueError, AttributeError):
         raise ResourceNotFoundError(instance=instance) from None
 
+    no_model_needed = False
+    record: WorkspaceDatasourceRecord | None = None
+
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
         await ensure_iam_accounts_schema(conn)
@@ -307,30 +314,117 @@ async def trigger_workspace_datasource_sync_on_postgres18(
         if current is None:
             raise ResourceNotFoundError(instance=instance)
 
-        row = (
-            await conn.execute(
-                sa.text(
-                    f"""
-                    UPDATE workspace_datasources
-                    SET last_sync_at = NOW(),
-                        freshness_status = 'SYNCED',
-                        codegraph_status = CASE
-                            WHEN codegraph_enabled
-                                AND codegraph_status != 'PAUSED_REFERENT_RENEWAL_REQUIRED'
-                            THEN 'READY'
-                            ELSE codegraph_status
-                        END,
-                        codegraph_last_indexed_at = CASE
-                            WHEN codegraph_enabled THEN NOW()
-                            ELSE codegraph_last_indexed_at
-                        END
-                    WHERE id = :ds_id AND workspace_id = :wid
-                    RETURNING {_RETURNING_COLS}
-                    """
-                ),
-                {"ds_id": ds_uuid, "wid": wid_uuid},
-            )
-        ).fetchone()
-        assert row is not None
+        current_nature = str(current[10] or "DOCUMENT_KB")
+        reindex_in_progress_job: tuple[str, int] | None = None
+        if current_nature != "SOURCE_CODE":
+            active_model = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT id FROM workspace_llm_tier_mappings
+                        WHERE usage = 'embedding' AND is_active = TRUE AND scope_level = 'GLOBAL'
+                        LIMIT 1;
+                        """
+                    )
+                )
+            ).fetchone()
+            if active_model is None:
+                await conn.execute(
+                    sa.text(
+                        """
+                        UPDATE workspace_datasources
+                        SET freshness_status = 'AWAITING_EMBEDDING_MODEL'
+                        WHERE id = :ds_id AND workspace_id = :wid
+                        """
+                    ),
+                    {"ds_id": ds_uuid, "wid": wid_uuid},
+                )
+                no_model_needed = True
+            else:
+                active_reindex = (
+                    await conn.execute(
+                        sa.text(
+                            """
+                            SELECT id, progress_percentage FROM rag_reindexing_jobs
+                            WHERE status IN ('PENDING', 'IN_PROGRESS')
+                            ORDER BY created_at DESC
+                            LIMIT 1;
+                            """
+                        )
+                    )
+                ).fetchone()
+                if active_reindex is not None:
+                    reindex_in_progress_job = (str(active_reindex[0]), int(active_reindex[1]))
+                    pending_ing_id = new_uuid7_str()
+                    await conn.execute(
+                        sa.text(
+                            """
+                            INSERT INTO rag_reindexing_pending_ingestions (
+                                id, workspace_id, datasource_id, job_id,
+                                payload_jsonb, status, created_at
+                            ) VALUES (
+                                :id, :wid, :ds_id, :job_id,
+                                '{"reason": "sync_during_reindex"}'::jsonb,
+                                'PENDING', NOW()
+                            )
+                            """
+                        ),
+                        {
+                            "id": UUID(pending_ing_id),
+                            "wid": wid_uuid,
+                            "ds_id": ds_uuid,
+                            "job_id": UUID(active_reindex[0]),
+                        },
+                    )
 
-        return await build_datasource_record_from_conn(conn, row, wid_uuid)
+        if reindex_in_progress_job is not None:
+            # Committed queueing before raising
+            job_id_str, prog_pct = reindex_in_progress_job
+            raise RagReindexInProgressError(
+                progress_percentage=prog_pct,
+                job_id=job_id_str,
+                detail_override=(
+                    f"Réindexation sémantique en cours ({prog_pct}%). "
+                    "Synchronisation documentaire mise en attente."
+                ),
+            )
+
+        if not no_model_needed:
+            row = (
+                await conn.execute(
+                    sa.text(
+                        f"""
+                        UPDATE workspace_datasources
+                        SET last_sync_at = NOW(),
+                            freshness_status = 'SYNCED',
+                            codegraph_status = CASE
+                                WHEN codegraph_enabled
+                                    AND codegraph_status != 'PAUSED_REFERENT_RENEWAL_REQUIRED'
+                                THEN 'READY'
+                                ELSE codegraph_status
+                            END,
+                            codegraph_last_indexed_at = CASE
+                                WHEN codegraph_enabled THEN NOW()
+                                ELSE codegraph_last_indexed_at
+                            END
+                        WHERE id = :ds_id AND workspace_id = :wid
+                        RETURNING {_RETURNING_COLS}
+                        """
+                    ),
+                    {"ds_id": ds_uuid, "wid": wid_uuid},
+                )
+            ).fetchone()
+            assert row is not None
+            record = await build_datasource_record_from_conn(conn, row, wid_uuid)
+
+    if no_model_needed:
+        # Transaction committed above before raising domain error
+        raise NoActiveEmbeddingModelError(
+            detail_override=(
+                "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
+                "Ingestion documentaire bloquée."
+            )
+        )
+
+    assert record is not None
+    return record

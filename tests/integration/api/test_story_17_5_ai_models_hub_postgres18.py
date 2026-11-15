@@ -20,6 +20,7 @@ from pathlib import Path
 from urllib.parse import quote_plus
 from uuid import UUID
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
@@ -75,6 +76,18 @@ def app_client_factory(database_url: str, monkeypatch: pytest.MonkeyPatch):  # t
     def _build_client() -> AsyncClient:
         app = create_app()
         initialize_app_services(app)
+
+        def mock_llm_handler(req: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "id": "mock-msg",
+                    "content": [{"type": "text", "text": "pong"}],
+                    "choices": [{"message": {"role": "assistant", "content": "pong"}}],
+                },
+            )
+
+        app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_llm_handler))
         return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
 
     return _build_client

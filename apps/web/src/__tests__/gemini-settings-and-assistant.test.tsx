@@ -39,8 +39,8 @@ function Harness(): React.ReactElement {
   );
 }
 
-describe("Google Gemini (Gemini Argon / gemini-argon) Configuration & Assistant Model Options", () => {
-  it("selects Google Gemini preset with gemini-argon, toggles between Mode B (Native /v1beta) and Mode A (/v1beta/openai), and tests connection", async () => {
+describe("Google Gemini Configuration & Assistant Model Options", () => {
+  it("selects Google Gemini preset with empty model and generic placeholder, toggles between Mode B (Native /v1beta) and Mode A (/v1beta/openai), and tests connection", async () => {
     render(<Harness />);
 
     // Click Google Gemini preset
@@ -51,20 +51,19 @@ describe("Google Gemini (Gemini Argon / gemini-argon) Configuration & Assistant 
     const endpointInput = screen.getByTestId("llm-endpoint-url-input") as HTMLInputElement;
 
     expect(familyInput.value).toBe("Google Gemini");
-    expect(primaryInput.value).toBe("gemini-argon");
+    expect(primaryInput.value).toBe("");
+    expect(primaryInput.placeholder).toBe("Identifiant exact publié par le fournisseur");
     expect(endpointInput.value).toBe("https://generativelanguage.googleapis.com/v1beta");
 
-    // Verify quick model chips and protocol mode selector are rendered
-    expect(screen.getByTestId("ai-model-quick-chip-gemini-argon")).toBeDefined();
-    expect(screen.getByTestId("ai-model-quick-chip-gemini-2.5-pro")).toBeDefined();
-    expect(screen.getByTestId("ai-model-quick-chip-gemini-2.5-flash")).toBeDefined();
+    // Verify no quick model chips exist and protocol mode selector is rendered
+    expect(screen.queryByTestId("ai-model-quick-chip-gemini-argon")).toBeNull();
+    expect(screen.queryByTestId("ai-model-quick-chip-gemini-2.5-pro")).toBeNull();
+    expect(screen.queryByTestId("ai-model-quick-chip-gemini-2.5-flash")).toBeNull();
     expect(screen.getByTestId("google-gemini-protocol-mode-selector")).toBeDefined();
 
-    // Switch to gemini-2.5-pro via quick chip, then back to gemini-argon in 1 click
-    fireEvent.click(screen.getByTestId("ai-model-quick-chip-gemini-2.5-pro"));
-    expect(primaryInput.value).toBe("gemini-2.5-pro");
-    fireEvent.click(screen.getByTestId("ai-model-quick-chip-gemini-argon"));
-    expect(primaryInput.value).toBe("gemini-argon");
+    // Saisie explicite du modèle utilisateur
+    fireEvent.change(primaryInput, { target: { value: "gemini-2.5-flash" } });
+    expect(primaryInput.value).toBe("gemini-2.5-flash");
 
     // Switch to Mode A (OpenAI-Compatible Bridge /v1beta/openai)
     fireEvent.click(screen.getByTestId("google-gemini-mode-openai-btn"));
@@ -76,27 +75,27 @@ describe("Google Gemini (Gemini Argon / gemini-argon) Configuration & Assistant 
 
     // Enter API key and test connection
     fireEvent.change(screen.getByTestId("llm-api-key-input"), {
-      target: { value: "AIzaSy-test-argon-key" },
+      target: { value: "AIzaSy-test-key" },
     });
     fireEvent.click(screen.getByTestId("test-llm-connection-btn"));
 
     await waitFor(() => {
       const banner = screen.getByTestId("llm-connection-test-result");
       expect(banner.getAttribute("data-ok")).toBe("true");
-      expect(banner.textContent).toContain("gemini-argon");
+      expect(banner.textContent).toContain("gemini-2.5-flash");
       expect(banner.textContent).toContain("Mode B");
     });
 
     // Save the tier and verify it appears in the configured list
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
-    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("gemini-argon");
+    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("gemini-2.5-flash");
   });
 
-  it("displays distinct configured models (e.g. gemma4:12b on medium and gemini-argon on complex) in buildAssistantModelOptions", () => {
+  it("displays distinct configured models (e.g. gemma4:12b on medium and gemini-2.5-pro on complex) in buildAssistantModelOptions", () => {
     const options = buildAssistantModelOptions(
       [
         { tier: "medium", primaryModel: "gemma4:12b" },
-        { tier: "complex", primaryModel: "gemini-argon" },
+        { tier: "complex", primaryModel: "gemini-2.5-pro" },
       ],
       true,
     );
@@ -108,8 +107,8 @@ describe("Google Gemini (Gemini Argon / gemini-argon) Configuration & Assistant 
     expect(mediumOpt.subtitle).toContain("gemma4:12b");
     expect(mediumOpt.hiddenDuplicate).toBeUndefined();
 
-    expect(complexOpt.configuredModelName).toBe("gemini-argon");
-    expect(complexOpt.subtitle).toContain("gemini-argon");
+    expect(complexOpt.configuredModelName).toBe("gemini-2.5-pro");
+    expect(complexOpt.subtitle).toContain("gemini-2.5-pro");
     expect(complexOpt.hiddenDuplicate).toBeUndefined();
   });
 });

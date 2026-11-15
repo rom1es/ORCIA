@@ -182,11 +182,11 @@ class RunPilotTicketToTechSpecRequest(BaseModel):
     workspace_slug: str = Field(..., min_length=1, max_length=128)
     ticket_key: str = Field(..., min_length=2, max_length=64)
     ticket_summary: str = Field(..., min_length=3, max_length=2000)
+    generator_model_family: str = Field(..., min_length=1, max_length=64)
+    judge_model_family: str = Field(..., min_length=1, max_length=64)
     workspace_sovereignty_tier: Literal["CLOUD_PUBLIC", "EU_SOVEREIGN", "ON_PREM_AIRGAPPED"] = (
         "EU_SOVEREIGN"
     )
-    generator_model_family: str = Field(default="claude-4.6")
-    judge_model_family: str = Field(default="mistral-large-3")
     judge_sovereignty_tier: Literal["CLOUD_PUBLIC", "EU_SOVEREIGN", "ON_PREM_AIRGAPPED"] = (
         "EU_SOVEREIGN"
     )

@@ -26,6 +26,7 @@ from orcia_core.orchestration.ai_models_records import (
     InferenceEffort,
     InferenceTier,
     LlmAuthMode,
+    LlmModelUsage,
     LlmProtocolMode,
     PinRemovalMode,
     ScopeLevel,
@@ -37,6 +38,7 @@ from orcia_core.orchestration.errors import (
 )
 from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_core.permissions.secret_hint import SecretInputSpec, SecretStatusView
+from orcia_core.rag.adapters.embedding_httpx import assert_embedding_usage_supported
 from orcia_kernel.ids import new_uuid7_str
 
 
@@ -75,6 +77,7 @@ class AiModelsHubService:
         scope_id: str | None = None,
         inference_tier: InferenceTier | None = None,
         is_active: bool | None = None,
+        usage: LlmModelUsage | None = None,
     ) -> list[AiModelMappingRecord]:
         items = list(self._mappings.values())
         if scope_level is not None:
@@ -85,7 +88,21 @@ class AiModelsHubService:
             items = [m for m in items if m.inference_tier == inference_tier]
         if is_active is not None:
             items = [m for m in items if m.is_active == is_active]
+        if usage is not None:
+            items = [m for m in items if m.usage == usage]
         return sorted(items, key=lambda m: (m.inference_tier, m.fallback_order, m.created_at))
+
+    def get_active_embedding_mapping(self) -> AiModelMappingRecord | None:
+        """Return currently active GLOBAL embedding mapping if any."""
+        for m in self._mappings.values():
+            if (
+                m.usage == "embedding"
+                and m.scope_level == "GLOBAL"
+                and m.is_active
+                and not m.draining
+            ):
+                return m
+        return None
 
     def get_mapping(self, mapping_id: str, *, instance: str | None = None) -> AiModelMappingRecord:
         rec = self._mappings.get(mapping_id)
@@ -110,6 +127,7 @@ class AiModelsHubService:
         endpoint_uri: str,
         auth_mode: LlmAuthMode = "api_key",
         protocol_mode: LlmProtocolMode = "openai_compatible",
+        usage: LlmModelUsage = "chat",
         env_var_name: str | None = None,
         fallback_order: int = 1,
         max_tokens_budget: int = 8192,
@@ -119,6 +137,21 @@ class AiModelsHubService:
         instance: str | None = None,
     ) -> AiModelMappingRecord:
         clean_url = validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
+        if usage == "embedding":
+            assert_embedding_usage_supported(
+                provider_slug=provider_slug, protocol_mode=protocol_mode
+            )
+            if scope_level == "GLOBAL":
+                for existing_id, existing_rec in list(self._mappings.items()):
+                    if (
+                        existing_rec.usage == "embedding"
+                        and existing_rec.scope_level == "GLOBAL"
+                        and existing_rec.is_active
+                    ):
+                        self._mappings[existing_id] = replace(
+                            existing_rec, is_active=False, updated_at=_now_iso()
+                        )
+
         mapping_id = new_uuid7_str()
         now = _now_iso()
         host = urlparse(clean_url).netloc or "default"
@@ -154,6 +187,7 @@ class AiModelsHubService:
             endpoint_uri=clean_url,
             auth_mode=auth_mode,
             protocol_mode=protocol_mode,
+            usage=usage,
             env_var_name=env_var_name,
             fallback_order=fallback_order,
             max_tokens_budget=max_tokens_budget,
@@ -178,6 +212,7 @@ class AiModelsHubService:
         endpoint_uri: str | None = None,
         auth_mode: LlmAuthMode | None = None,
         protocol_mode: LlmProtocolMode | None = None,
+        usage: LlmModelUsage | None = None,
         env_var_name: str | None = None,
         is_active: bool | None = None,
         secret_input: SecretInputSpec | None = None,
@@ -186,6 +221,26 @@ class AiModelsHubService:
     ) -> AiModelMappingRecord:
         current = self.get_mapping(mapping_id, instance=instance)
         now = _now_iso()
+        effective_usage = usage if usage is not None else current.usage
+        effective_protocol = protocol_mode if protocol_mode is not None else current.protocol_mode
+        effective_active = is_active if is_active is not None else current.is_active
+
+        if effective_usage == "embedding":
+            assert_embedding_usage_supported(
+                provider_slug=current.provider_slug, protocol_mode=effective_protocol
+            )
+            if effective_active and current.scope_level == "GLOBAL":
+                for existing_id, existing_rec in list(self._mappings.items()):
+                    if (
+                        existing_id != mapping_id
+                        and existing_rec.usage == "embedding"
+                        and existing_rec.scope_level == "GLOBAL"
+                        and existing_rec.is_active
+                    ):
+                        self._mappings[existing_id] = replace(
+                            existing_rec, is_active=False, updated_at=now
+                        )
+
         clean_url = current.endpoint_uri
         if endpoint_uri is not None:
             clean_url = validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
@@ -213,12 +268,15 @@ class AiModelsHubService:
             endpoint_uri=clean_url,
             auth_mode=auth_mode if auth_mode is not None else current.auth_mode,
             protocol_mode=protocol_mode if protocol_mode is not None else current.protocol_mode,
+            usage=usage if usage is not None else current.usage,
             env_var_name=env_var_name if env_var_name is not None else current.env_var_name,
             is_active=is_active if is_active is not None else current.is_active,
             updated_at=now,
             secret_status=sec_status,
             encrypted_api_key=encrypted_key,
         )
+        self._mappings[mapping_id] = updated
+        return updated
         self._mappings[mapping_id] = updated
         return updated
 

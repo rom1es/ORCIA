@@ -361,7 +361,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
               rbacGrants: rRbacGrants as unknown as ConfiguredRbacGrant[],
               llmTiers: rLlmTiers.map((raw) => ({
                 tier: (raw.tier ?? raw.tierKey ?? "medium") as UiInferenceTier,
-                primaryModel: String(raw.primaryModel ?? raw.model ?? "claude-3-7-sonnet"),
+                primaryModel: String(raw.primaryModel ?? raw.model ?? ""),
                 secondaryModel: String(raw.secondaryModel ?? ""),
                 modelFamily: String(raw.modelFamily ?? raw.provider ?? "Anthropic"),
                 defaultEffort: (raw.defaultEffort ?? "balanced") as UiInferenceEffort,

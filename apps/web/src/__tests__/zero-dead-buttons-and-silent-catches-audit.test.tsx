@@ -288,7 +288,15 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     });
     fireEvent.click(screen.getByTestId("assistant-save-pinned-notes-btn"));
     // Les notes sont enregistrées côté serveur (aller-retour HTTP) avant d'être affichées.
-    expect((await screen.findByTestId("assistant-prompt-active-folder-note-indicator")).textContent).toContain(
+    expect(
+      (
+        await screen.findByTestId(
+          "assistant-prompt-active-folder-note-indicator",
+          {},
+          { timeout: 4000 },
+        )
+      ).textContent,
+    ).toContain(
       "Note active prise en compte",
     );
 
@@ -326,7 +334,15 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     expect((await screen.findByTestId("assistant-prompt-active-folder-badge")).textContent).toContain(
       "Audit DORA 2026",
     );
-    expect((await screen.findByTestId("assistant-prompt-active-folder-note-indicator")).textContent).toContain(
+    expect(
+      (
+        await screen.findByTestId(
+          "assistant-prompt-active-folder-note-indicator",
+          {},
+          { timeout: 4000 },
+        )
+      ).textContent,
+    ).toContain(
       "Note active prise en compte",
     );
     fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));

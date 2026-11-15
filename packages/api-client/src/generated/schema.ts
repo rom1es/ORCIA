@@ -87,7 +87,7 @@ export interface components {
       custom_pii_entities?: (string)[];
       data_classification?: "PUBLIC" | "INTERNAL" | "SENSITIVE" | "RESTRICTED";
       evaluator_model_family: string;
-      evaluator_model_id?: string;
+      evaluator_model_id: string;
       executor_model_family: string;
       fact_confidence_threshold?: number;
       ontology_facts?: Record<string, string>;
@@ -136,6 +136,7 @@ export interface components {
       scope_id?: string;
       scope_level?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      usage?: "chat" | "embedding";
     };
     AiModelDeleteImpactResponse: {
       dependent_workflow_ids: (string)[];
@@ -151,6 +152,20 @@ export interface components {
     AiModelDeleteResponse: {
       mapping_id: string;
       status: "DELETED" | "DRAINING";
+    };
+    AiModelDiscoverRequest: {
+      api_key?: string | null;
+      endpoint_uri: string;
+      mapping_id?: string | null;
+      protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages";
+      provider_slug?: string | null;
+    };
+    AiModelDiscoveryResponse: {
+      endpoint_uri: string;
+      models: (components["schemas"]["DiscoveredModelItem"])[];
+      protocol_mode: "openai_compatible" | "gemini_native" | "anthropic_messages";
+      provider_slug?: string | null;
+      total_count: number;
     };
     AiModelMappingItemResponse: {
       auth_mode: "api_key" | "env_var" | "none_local";
@@ -178,6 +193,7 @@ export interface components {
       scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       secret_status: components["schemas"]["SecretStatusResponse"];
       updated_at: string;
+      usage?: "chat" | "embedding";
     };
     AiModelMappingsListResponse: {
       active_tiers_coverage: Record<string, boolean>;
@@ -193,6 +209,7 @@ export interface components {
       is_active?: boolean | null;
       protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages" | null;
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      usage?: "chat" | "embedding" | null;
     };
     AiModelTestResponse: {
       health_status: "OPERATIONAL" | "DEGRADED" | "ERROR" | "UNTESTED";
@@ -1012,6 +1029,13 @@ export interface components {
       toolbox_mcp_permissions?: (Record<string, string>)[];
       trigger_condition_label: string;
       write_preview_required?: boolean;
+    };
+    DiscoveredModelItem: {
+      description?: string | null;
+      display_name?: string | null;
+      id: string;
+      owned_by?: string | null;
+      usage_hint?: "chat" | "embedding" | "unknown";
     };
     DiscoveredRemoteCapabilitySchema: {
       badge_fr: string;
@@ -2466,6 +2490,7 @@ export interface components {
       error_code: string;
       instance?: string | null;
       permission_broker_hint?: string | null;
+      progress_percentage?: number | null;
       status: number;
       title: string;
       trace_id: string;
@@ -2506,6 +2531,27 @@ export interface components {
       passed: boolean;
       response_markdown: string;
       uri: string;
+    };
+    RagReindexStatusResponse: {
+      completed_at?: string | null;
+      created_at?: string | null;
+      error_message?: string | null;
+      job_id?: string | null;
+      processed_chunks?: number;
+      progress_percentage?: number;
+      started_at?: string | null;
+      status?: "IDLE" | "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+      target_model_id?: string | null;
+      target_model_name?: string | null;
+      total_chunks?: number;
+      updated_at?: string | null;
+    };
+    RagReindexTriggerResponse: {
+      job_id: string;
+      message: string;
+      status?: "IDLE" | "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+      target_model_id: string;
+      target_model_name: string;
     };
     RawGlossaryCandidateInput: {
       canonical_term: string;
@@ -2757,8 +2803,8 @@ export interface components {
       trace_id: string;
     };
     RunPilotTicketToTechSpecRequest: {
-      generator_model_family?: string;
-      judge_model_family?: string;
+      generator_model_family: string;
+      judge_model_family: string;
       judge_sovereignty_tier?: "CLOUD_PUBLIC" | "EU_SOVEREIGN" | "ON_PREM_AIRGAPPED";
       run_override_uri?: string | null;
       ticket_key: string;
@@ -3931,7 +3977,7 @@ export interface components {
       connector_id?: string | null;
       created_at_iso: string;
       fingerprint_hash?: string | null;
-      freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC";
+      freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC" | "AWAITING_EMBEDDING_MODEL";
       id: string;
       last_probe_at_iso?: string | null;
       last_sync_at_iso?: string | null;
@@ -5067,6 +5113,18 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/ai-models/discover": {
+    get: {
+      responses: {
+        200: components["schemas"]["AiModelDiscoveryResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: components["schemas"]["AiModelDiscoveryResponse"];
+      };
+    };
+  };
   "/api/v1/settings/ai-models/mappings": {
     get: {
       responses: {
@@ -5102,6 +5160,20 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["AiModelTestResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/reindex-embeddings": {
+    post: {
+      responses: {
+        200: components["schemas"]["RagReindexTriggerResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/reindex-status": {
+    get: {
+      responses: {
+        200: components["schemas"]["RagReindexStatusResponse"];
       };
     };
   };
@@ -5566,6 +5638,8 @@ export type AgentsAndSkillsListResponse = components["schemas"]["AgentsAndSkills
 export type AiModelCreateRequest = components["schemas"]["AiModelCreateRequest"];
 export type AiModelDeleteImpactResponse = components["schemas"]["AiModelDeleteImpactResponse"];
 export type AiModelDeleteResponse = components["schemas"]["AiModelDeleteResponse"];
+export type AiModelDiscoverRequest = components["schemas"]["AiModelDiscoverRequest"];
+export type AiModelDiscoveryResponse = components["schemas"]["AiModelDiscoveryResponse"];
 export type AiModelMappingItemResponse = components["schemas"]["AiModelMappingItemResponse"];
 export type AiModelMappingsListResponse = components["schemas"]["AiModelMappingsListResponse"];
 export type AiModelPatchRequest = components["schemas"]["AiModelPatchRequest"];
@@ -5663,6 +5737,7 @@ export type DeterministicControlSpec = components["schemas"]["DeterministicContr
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
 export type DeterministicSubStepSpec = components["schemas"]["DeterministicSubStepSpec"];
+export type DiscoveredModelItem = components["schemas"]["DiscoveredModelItem"];
 export type DiscoveredRemoteCapabilitySchema = components["schemas"]["DiscoveredRemoteCapabilitySchema"];
 export type DnaChainNodeSchema = components["schemas"]["DnaChainNodeSchema"];
 export type DnaChainPackSeedItemRequest = components["schemas"]["DnaChainPackSeedItemRequest"];
@@ -5840,6 +5915,8 @@ export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlock
 export type PublicAuthConfigResponse = components["schemas"]["PublicAuthConfigResponse"];
 export type QuickActionSpec = components["schemas"]["QuickActionSpec"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
+export type RagReindexStatusResponse = components["schemas"]["RagReindexStatusResponse"];
+export type RagReindexTriggerResponse = components["schemas"]["RagReindexTriggerResponse"];
 export type RawGlossaryCandidateInput = components["schemas"]["RawGlossaryCandidateInput"];
 export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
 export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];

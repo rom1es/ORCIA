@@ -91,6 +91,8 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly initialElapsedSeconds?: number;
   readonly generationStopped?: boolean;
   readonly errorMessage?: string | null;
+  readonly disabled?: boolean;
+  readonly disabledReasonBanner?: React.ReactNode;
   readonly labels: AssistantSpeedSelectorAndStreamViewLabels;
   readonly onOpenFoldersFromPlus?: () => void;
   readonly onStopGeneration?: () => void;
@@ -119,7 +121,8 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
     welcomeTitle = "Par quoi voulez-vous commencer ?", showWelcomeHero = true, hideTechnicalCacheHeader = false,
     hideLegacySpeedPills = false, hideDuplicateCompletedStream = false, cacheHit = true, cacheLookupMs = 1.4,
     nodes1To4DeterministicMs = 18.2, ttftMs = 398.2, stepProgress, streamedText = "", activeUserPrompt,
-    isGenerating = false, initialElapsedSeconds = 0, generationStopped = false, errorMessage = null, labels,
+    isGenerating = false, initialElapsedSeconds = 0, generationStopped = false, errorMessage = null,
+    disabled = false, disabledReasonBanner = null, labels,
     onOpenFoldersFromPlus, onStopGeneration, onRegenerateLastTurn, onSaveDraftFromResponse, onContinueInProcessFromResponse,
     currentTurnFeedback = null, onFeedbackLastTurn, onSendTurn,
   } = props;
@@ -214,6 +217,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   };
 
   const triggerSendTurn = (overridePrompt?: string) => {
+    if (disabled) return;
     const trimmed = (overridePrompt ?? promptText).trim();
     const fallbackPrompt = labels.sendPromptCta.toLowerCase().includes("envoyer")
       ? "Bonjour, peux-tu te présenter brièvement et confirmer que tu es opérationnel ?"
@@ -240,6 +244,10 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) {
+      e.preventDefault();
+      return;
+    }
     if (e.key === "Enter") {
       if (effectiveAutocompleteTrigger !== null) {
         const list = effectiveAutocompleteTrigger.kind === "agent" ? mergedAgentOptions : mergedSkillOptions;
@@ -356,16 +364,17 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
             {onClearActiveFolder ? <button type="button" data-testid="assistant-prompt-clear-active-folder-btn" onClick={onClearActiveFolder} aria-label="Détacher le dossier actif" className="ml-1 font-bold hover:opacity-80"><OrciaIcon name="times" /></button> : null}
           </div>
         ) : null}
+        {disabledReasonBanner}
         <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
           <AssistantAttachedFilesInlineBar attachedFiles={attachedFiles} onRemoveAttachedFile={(fileId) => setAttachedFiles((prev) => prev.filter((f) => f.id !== fileId))} />
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" data-testid="assistant-prompt-plus-btn" aria-label="Actions rapides et dossiers" onClick={() => { setPlusMenuOpen((prev) => !prev); setPickerOpen(false); }} className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated"><OrciaIcon name="plus" /></button>
-            <input ref={inputRef} type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="assistant-three-speed-input" value={promptText} placeholder={labels.inputPlaceholder} onChange={(e) => handlePromptChange(e.target.value)} onKeyDown={handleInputKeyDown} className="flex-1 min-w-[200px] border-0 bg-transparent px-2 py-1 text-xs text-text-primary focus:outline-none" />
+            <input ref={inputRef} type="text" disabled={disabled} autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="assistant-three-speed-input" value={promptText} placeholder={labels.inputPlaceholder} onChange={(e) => handlePromptChange(e.target.value)} onKeyDown={handleInputKeyDown} className={`flex-1 min-w-[200px] border-0 bg-transparent px-2 py-1 text-xs text-text-primary focus:outline-none ${disabled ? "opacity-60 cursor-not-allowed" : ""}`} />
             <button type="button" data-testid="assistant-model-and-effort-picker-trigger" aria-expanded={pickerOpen} onClick={() => { setPickerOpen((prev) => !prev); setPlusMenuOpen(false); }} className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-surface-elevated">
               {visibleModelCount === 1 ? <span>{activeEffortOption.title}</span> : (<><span>{displayModelBadge}</span><span className="text-text-secondary">· {activeEffortOption.title}</span></>)}
               <OrciaIcon name="caretDown" />
             </button>
-            <button type="button" data-testid="assistant-three-speed-send-btn" aria-label={actionAriaLabel} title={isGenerating ? "Arrêter" : "Envoyer"} onClick={() => { if (isGenerating) { setLocalStoppedFlag(true); onStopGeneration?.(); inputRef.current?.focus(); return; } triggerSendTurn(); }} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-xs font-semibold text-white hover:opacity-95">
+            <button type="button" data-testid="assistant-three-speed-send-btn" disabled={disabled && !isGenerating} aria-label={actionAriaLabel} title={isGenerating ? "Arrêter" : "Envoyer"} onClick={() => { if (disabled && !isGenerating) return; if (isGenerating) { setLocalStoppedFlag(true); onStopGeneration?.(); inputRef.current?.focus(); return; } triggerSendTurn(); }} className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-xs font-semibold text-white hover:opacity-95 ${disabled && !isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}>
               {isGenerating ? <OrciaIcon name="stopSquare" testId="assistant-stop-square-icon" /> : <OrciaIcon name="play" testId="assistant-send-play-icon" />}
             </button>
           </div>

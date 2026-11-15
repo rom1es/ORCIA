@@ -77,23 +77,7 @@ class UserOnboardingStateSeed:
     linked_connectors_json: str
 
 
-DEFAULT_LLM_MODEL_ENDPOINT_SEEDS: tuple[LlmModelEndpointSeed, ...] = (
-    LlmModelEndpointSeed(
-        "0192c4e0-0000-7000-8000-000000001201", "llm-anthropic-claude-sonnet-4",
-        "anthropic", "anthropic-claude", "claude-sonnet-4-20260514",
-        "https://api.anthropic.com/v1/messages", True, True,
-    ),
-    LlmModelEndpointSeed(
-        "0192c4e0-0000-7000-8000-000000001202", "llm-openai-gpt-4-1",
-        "openai", "openai-gpt", "gpt-4.1-2026-04-14",
-        "https://api.openai.com/v1/chat/completions", True, True,
-    ),
-    LlmModelEndpointSeed(
-        "0192c4e0-0000-7000-8000-000000001203", "llm-mistral-large-2",
-        "mistral", "mistral-large", "mistral-large-2511",
-        "https://api.mistral.ai/v1/chat/completions", True, True,
-    ),
-)  # fmt: skip
+DEFAULT_LLM_MODEL_ENDPOINT_SEEDS: tuple[LlmModelEndpointSeed, ...] = ()
 
 
 def _wf_seed(
@@ -182,8 +166,8 @@ DEFAULT_SYSTEM_BOOTSTRAP_RUN_SEEDS: tuple[SystemBootstrapRunSeed, ...] = (
         _j(
             {
                 "auth_rbac_valid": True,
-                "verified_llm_families": ["anthropic-claude", "mistral-large", "openai-gpt"],
-                "distinct_families_count": 3,
+                "verified_llm_families": [],
+                "distinct_families_count": 0,
             }
         ),
         _j({"organization_name": "Entreprise ORCIA Group", "seeded_workflows": 6}),

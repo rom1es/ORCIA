@@ -609,7 +609,6 @@
             "type": "string"
           },
           "evaluator_model_id": {
-            "default": "google/gemini-2.5-pro",
             "maxLength": 128,
             "minLength": 1,
             "title": "Evaluator Model Id",
@@ -704,7 +703,8 @@
           "step_execution_id",
           "step_key",
           "executor_model_family",
-          "evaluator_model_family"
+          "evaluator_model_family",
+          "evaluator_model_id"
         ],
         "title": "AgenticGateEvaluateRequest",
         "type": "object"
@@ -948,6 +948,15 @@
                 "type": "null"
               }
             ]
+          },
+          "usage": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding"
+            ],
+            "title": "Usage",
+            "type": "string"
           }
         },
         "required": [
@@ -1048,6 +1057,118 @@
           "status"
         ],
         "title": "AiModelDeleteResponse",
+        "type": "object"
+      },
+      "AiModelDiscoverRequest": {
+        "additionalProperties": false,
+        "description": "Parameters to query a provider's model metadata endpoint without inference tokens.",
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "endpoint_uri": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "mapping_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Id"
+          },
+          "protocol_mode": {
+            "default": "openai_compatible",
+            "enum": [
+              "openai_compatible",
+              "gemini_native",
+              "anthropic_messages"
+            ],
+            "title": "Protocol Mode",
+            "type": "string"
+          },
+          "provider_slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Slug"
+          }
+        },
+        "required": [
+          "endpoint_uri"
+        ],
+        "title": "AiModelDiscoverRequest",
+        "type": "object"
+      },
+      "AiModelDiscoveryResponse": {
+        "additionalProperties": false,
+        "description": "Response containing the list of discovered models.",
+        "properties": {
+          "endpoint_uri": {
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredModelItem"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "protocol_mode": {
+            "enum": [
+              "openai_compatible",
+              "gemini_native",
+              "anthropic_messages"
+            ],
+            "title": "Protocol Mode",
+            "type": "string"
+          },
+          "provider_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Slug"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "endpoint_uri",
+          "protocol_mode",
+          "models",
+          "total_count"
+        ],
+        "title": "AiModelDiscoveryResponse",
         "type": "object"
       },
       "AiModelMappingItemResponse": {
@@ -1214,6 +1335,15 @@
           "updated_at": {
             "title": "Updated At",
             "type": "string"
+          },
+          "usage": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding"
+            ],
+            "title": "Usage",
+            "type": "string"
           }
         },
         "required": [
@@ -1377,6 +1507,21 @@
                 "type": "null"
               }
             ]
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "enum": [
+                  "chat",
+                  "embedding"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
           }
         },
         "title": "AiModelPatchRequest",
@@ -6599,6 +6744,64 @@
           "checkpoint_label"
         ],
         "title": "DeterministicSubStepSpec",
+        "type": "object"
+      },
+      "DiscoveredModelItem": {
+        "additionalProperties": false,
+        "description": "Public representation of a model discovered on a provider metadata endpoint.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "owned_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owned By"
+          },
+          "usage_hint": {
+            "default": "unknown",
+            "enum": [
+              "chat",
+              "embedding",
+              "unknown"
+            ],
+            "title": "Usage Hint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DiscoveredModelItem",
         "type": "object"
       },
       "DiscoveredRemoteCapabilitySchema": {
@@ -16060,6 +16263,18 @@
             "description": "Optional remediation hint from the Permission Broker (AD-6).",
             "title": "Permission Broker Hint"
           },
+          "progress_percentage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional progress percentage (0-100) for operations like RAG reindexing.",
+            "title": "Progress Percentage"
+          },
           "status": {
             "description": "HTTP status code generated by the origin server.",
             "maximum": 599.0,
@@ -16308,6 +16523,173 @@
           "cited_chunk_id"
         ],
         "title": "RagReciprocityResponse",
+        "type": "object"
+      },
+      "RagReindexStatusResponse": {
+        "additionalProperties": false,
+        "description": "Current status of the global RAG vector reindexing job (`Story 19.7`).",
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "processed_chunks": {
+            "default": 0,
+            "title": "Processed Chunks",
+            "type": "integer"
+          },
+          "progress_percentage": {
+            "default": 0,
+            "title": "Progress Percentage",
+            "type": "integer"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "default": "IDLE",
+            "enum": [
+              "IDLE",
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Model Id"
+          },
+          "target_model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Model Name"
+          },
+          "total_chunks": {
+            "default": 0,
+            "title": "Total Chunks",
+            "type": "integer"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "title": "RagReindexStatusResponse",
+        "type": "object"
+      },
+      "RagReindexTriggerResponse": {
+        "additionalProperties": false,
+        "description": "Response returned upon triggering a global RAG vector reindexing job (`Story 19.7`).",
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "default": "PENDING",
+            "enum": [
+              "IDLE",
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_model_id": {
+            "title": "Target Model Id",
+            "type": "string"
+          },
+          "target_model_name": {
+            "title": "Target Model Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "target_model_id",
+          "target_model_name",
+          "message"
+        ],
+        "title": "RagReindexTriggerResponse",
         "type": "object"
       },
       "RawGlossaryCandidateInput": {
@@ -17890,12 +18272,14 @@
         "description": "Request to execute `orcia://pack-sdlc/workflows/ticket-to-tech-spec` (`Verrou V3`).",
         "properties": {
           "generator_model_family": {
-            "default": "claude-4.6",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Generator Model Family",
             "type": "string"
           },
           "judge_model_family": {
-            "default": "mistral-large-3",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Judge Model Family",
             "type": "string"
           },
@@ -17952,7 +18336,9 @@
         "required": [
           "workspace_slug",
           "ticket_key",
-          "ticket_summary"
+          "ticket_summary",
+          "generator_model_family",
+          "judge_model_family"
         ],
         "title": "RunPilotTicketToTechSpecRequest",
         "type": "object"
@@ -26102,7 +26488,8 @@
               "SYNCED",
               "STALE",
               "SYNC_ERROR",
-              "PENDING_INITIAL_SYNC"
+              "PENDING_INITIAL_SYNC",
+              "AWAITING_EMBEDDING_MODEL"
             ],
             "title": "Freshness Status",
             "type": "string"
@@ -45533,6 +45920,308 @@
         ]
       }
     },
+    "/api/v1/settings/ai-models/discover": {
+      "get": {
+        "description": "GET discovery endpoint for local or existing models without sending secrets in URL.",
+        "operationId": "discover_ai_models_get_api_v1_settings_ai_models_discover_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "base_url",
+            "required": true,
+            "schema": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Base Url",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            }
+          },
+          {
+            "in": "query",
+            "name": "protocol_mode",
+            "required": false,
+            "schema": {
+              "default": "openai_compatible",
+              "enum": [
+                "openai_compatible",
+                "gemini_native",
+                "anthropic_messages"
+              ],
+              "title": "Protocol Mode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mapping_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mapping Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Discover Ai Models Get",
+        "tags": [
+          "settings-ai-models"
+        ]
+      },
+      "post": {
+        "description": "Discover available models on provider endpoint without consuming inference tokens (`0 $`).",
+        "operationId": "discover_ai_models_post_api_v1_settings_ai_models_discover_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiModelDiscoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Discover Ai Models Post",
+        "tags": [
+          "settings-ai-models"
+        ]
+      }
+    },
     "/api/v1/settings/ai-models/mappings": {
       "get": {
         "description": "List configured AI model mappings with 4-tier coverage report.",
@@ -45612,6 +46301,26 @@
                 }
               ],
               "title": "Is Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "usage",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "chat",
+                    "embedding"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Usage"
             }
           }
         ],
@@ -46327,6 +47036,222 @@
           }
         },
         "summary": "Test Ai Model Connection",
+        "tags": [
+          "settings-ai-models"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/reindex-embeddings": {
+      "post": {
+        "description": "Trigger a global reindexing of all document chunks on active embedding model.",
+        "operationId": "trigger_reindex_embeddings_api_v1_settings_ai_models_reindex_embeddings_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagReindexTriggerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Trigger Reindex Embeddings",
+        "tags": [
+          "settings-ai-models"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/reindex-status": {
+      "get": {
+        "description": "Get current status of vector corpus reindexing (`Story 19.7`, `AD-24.7`).",
+        "operationId": "get_reindex_status_api_v1_settings_ai_models_reindex_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagReindexStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Reindex Status",
         "tags": [
           "settings-ai-models"
         ]

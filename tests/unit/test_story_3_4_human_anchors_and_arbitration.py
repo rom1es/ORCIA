@@ -26,6 +26,7 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_api.main import create_app
 
@@ -96,9 +97,14 @@ def test_story_3_4_migration_0015_real_postgres_container(
         shutil.rmtree(sock_dir, ignore_errors=True)
 
 
-def test_story_3_4_mandatory_human_anchor_and_agent_rejection() -> None:
+def test_story_3_4_mandatory_human_anchor_and_agent_rejection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify `human_authored_required: true` blocks execution until >= 30 chars human signature."""
-    client = TestClient(create_app())
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
+    app = create_app()
+    app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
+    client = TestClient(app)
 
     init_resp = client.post(
         "/api/v1/orchestration/runs/instantiate?persona_key=marc",
@@ -215,8 +221,11 @@ def test_story_3_4_mandatory_human_anchor_and_agent_rejection() -> None:
     assert "human_authored_required: true" in socratic_resp.json()["response_text"]
 
 
-def test_story_3_4_arbitration_pause_and_escalate_outbox_and_resolve() -> None:
+def test_story_3_4_arbitration_pause_and_escalate_outbox_and_resolve(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify `PAUSE_AND_ESCALATE` pauses step, emits Outbox event, and resumes on human choice."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
     app = create_app()
     client = TestClient(app)
 

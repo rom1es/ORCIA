@@ -31,8 +31,13 @@ def _sha256_text(text: str) -> str:
 class HybridRagVectorStoreAdapter(VectorStorePort):
     """`VectorStorePort` adapter backed by `HybridRagService` (`DEC-CTX-01`)."""
 
-    def __init__(self, rag_service: HybridRagService) -> None:
+    def __init__(
+        self,
+        rag_service: HybridRagService,
+        embedding_port: Any = None,
+    ) -> None:
         self._rag = rag_service
+        self._embedding_port = embedding_port or getattr(rag_service, "_embedding_port", None)
 
     def hybrid_search(
         self,
@@ -41,10 +46,32 @@ class HybridRagVectorStoreAdapter(VectorStorePort):
         query_text: str,
         allowed_datasource_aliases: frozenset[str],
         top_k: int = 5,
+        query_embedding: tuple[float, ...] | None = None,
     ) -> tuple[VectorSearchHitRecord, ...]:
+        effective_embedding = query_embedding
+        if effective_embedding is None and self._embedding_port is not None:
+            if hasattr(self._embedding_port, "embed_query_sync"):
+                effective_embedding = tuple(self._embedding_port.embed_query_sync(query_text))
+            elif hasattr(self._embedding_port, "embed_query"):
+                import asyncio
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        pass
+                    else:
+                        effective_embedding = tuple(
+                            loop.run_until_complete(self._embedding_port.embed_query(query_text))
+                        )
+                except RuntimeError:
+                    effective_embedding = tuple(
+                        asyncio.run(self._embedding_port.embed_query(query_text))
+                    )
+
         hits = self._rag.search_hybrid_rrf(
             workspace_id=workspace_id,
             query_text=query_text,
+            query_embedding=effective_embedding,
             allowed_datasource_aliases=(
                 allowed_datasource_aliases if allowed_datasource_aliases else None
             ),

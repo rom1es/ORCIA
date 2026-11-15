@@ -16,6 +16,15 @@ from orcia_core.catalog.errors import ReadSourceDeniedError
 from orcia_core.ontology.errors import OntologyConflictError
 from orcia_core.orchestration.ai_models_errors import (
     LastTierModelInUseError,
+    ModelConnectionAuthFailedError,
+    ModelConnectionNetworkError,
+    ModelConnectionNotFoundError,
+    ModelConnectionRateLimitedError,
+    ModelConnectionTimeoutError,
+    ModelConnectionUpstreamError,
+    ModelDiscoveryAuthFailedError,
+    ModelDiscoveryEndpointNotFoundError,
+    ModelDiscoveryNetworkError,
     UnsafeLlmEndpointUrlError,
 )
 from orcia_core.orchestration.errors import (
@@ -60,7 +69,14 @@ from orcia_core.permissions.errors import (
     WeakPasswordPolicyError,
     WebhookSignatureInvalidError,
 )
-from orcia_core.rag.errors import DdlOnlyTransactionalDataError
+from orcia_core.rag.errors import (
+    DdlOnlyTransactionalDataError,
+    EmbeddingDimensionMismatchError,
+    EmbeddingGenerationFailedError,
+    EmbeddingProviderUnsupportedError,
+    NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
+)
 from orcia_kernel.errors import (
     ERROR_CATALOG,
     OrciaDomainError,
@@ -125,12 +141,26 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     AuditLedgerImmutableViolationError,
     UnsafeLlmEndpointUrlError,
     LastTierModelInUseError,
+    ModelDiscoveryAuthFailedError,
+    ModelDiscoveryEndpointNotFoundError,
+    ModelDiscoveryNetworkError,
+    ModelConnectionAuthFailedError,
+    ModelConnectionNotFoundError,
+    ModelConnectionRateLimitedError,
+    ModelConnectionTimeoutError,
+    ModelConnectionNetworkError,
+    ModelConnectionUpstreamError,
     WebhookSignatureInvalidError,
     LocalAuthDisabledByPolicyError,
     SsoAuthDisabledByPolicyError,
     SsoConfigurationIncompleteError,
     SmtpConnectorRequiredForEmailOtpError,
     InvalidOrExpiredLoginChallengeError,
+    EmbeddingDimensionMismatchError,
+    EmbeddingGenerationFailedError,
+    EmbeddingProviderUnsupportedError,
+    NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {
@@ -169,6 +199,10 @@ __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "DOMAIN_ERROR_CLASSES",
     "DdlOnlyTransactionalDataError",
+    "EmbeddingDimensionMismatchError",
+    "EmbeddingGenerationFailedError",
+    "EmbeddingProviderUnsupportedError",
+    "NoActiveEmbeddingModelError",
     "ERROR_CATALOG",
     "ERROR_CLASS_REGISTRY",
     "ERROR_CODE_REGISTRY",
@@ -193,6 +227,7 @@ __all__ = [
     "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
     "ReadSourceDeniedError",
+    "RagReindexInProgressError",
     "ResourceNotFoundError",
     "RevokedTokenError",
     "ScopeAccessDeniedError",
