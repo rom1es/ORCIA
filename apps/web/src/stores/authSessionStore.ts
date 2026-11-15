@@ -36,6 +36,29 @@ export type UserSettingsModalTabKey =
   | "PASSTHROUGH_SOURCES"
   | "IDE_MCP_KEYS";
 
+export function resolveWebApiBaseUrl(): string {
+  const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
+  const envUrl = meta?.env?.VITE_ORCIA_API_BASE_URL ?? meta?.env?.VITE_ORCIA_API_URL;
+  if (envUrl && envUrl.trim().length > 0) {
+    return envUrl.trim();
+  }
+  return "";
+}
+
+export const UNAUTHENTICATED_SESSION_STATE = {
+  isAuthenticated: false,
+  isHydrating: false,
+  mustChangePassword: false,
+  accessToken: null as string | null,
+  roles: [] as readonly string[],
+  activeHat: "",
+  readOnlyObserver: false,
+  email: null as string | null,
+  displayName: null as string | null,
+  userSettingsModalOpen: false,
+  userSettingsModalInitialTab: null as UserSettingsModalTabKey | null,
+};
+
 export interface AuthSessionStoreState {
   readonly isAuthenticated: boolean;
   readonly isHydrating: boolean;
@@ -78,7 +101,7 @@ export interface AuthSessionStoreState {
     mustChangePassword?: boolean;
   }) => void;
   readonly logoutSession: () => Promise<void>;
-  readonly hydrateSession: () => Promise<void>;
+  readonly hydrateSession: (options?: { force?: boolean }) => Promise<void>;
   readonly resetAuthSession: () => void;
 }
 
@@ -103,21 +126,14 @@ export function getInitialSessionState() {
     };
   }
   return {
-    isAuthenticated: false,
+    ...UNAUTHENTICATED_SESSION_STATE,
     isHydrating: true,
-    mustChangePassword: false,
-    accessToken: null as string | null,
-    roles: [] as readonly string[],
-    activeHat: "",
-    readOnlyObserver: false,
-    email: null as string | null,
-    displayName: null as string | null,
-    userSettingsModalOpen: false,
-    userSettingsModalInitialTab: null as UserSettingsModalTabKey | null,
   };
 }
 
-export const useAuthSessionStore = create<AuthSessionStoreState>((set) => ({
+let activeHydrationPromise: Promise<void> | null = null;
+
+export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => ({
   ...getInitialSessionState(),
   setAuthSession: (patch) =>
     set((state) => {
@@ -166,82 +182,104 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set) => ({
     });
   },
   logoutSession: async () => {
-    const client = createOrciaApiClient({ baseUrl: "" });
+    activeHydrationPromise = null;
+    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
     try {
       await client.logoutSession();
     } catch {
       // Best-effort
     }
     set({
-      isAuthenticated: false,
+      ...UNAUTHENTICATED_SESSION_STATE,
       isHydrating: false,
-      accessToken: null,
-      roles: [],
-      activeHat: "",
-      email: null,
-      displayName: null,
-      mustChangePassword: false,
-      userSettingsModalOpen: false,
-      userSettingsModalInitialTab: null,
     });
   },
-  hydrateSession: async () => {
-    const client = createOrciaApiClient({ baseUrl: "" });
-    try {
-      const tokenRes = await client.refreshSession();
-      if (tokenRes && tokenRes.access_token) {
-        const authedClient = createOrciaApiClient({ baseUrl: "", accessToken: tokenRes.access_token });
-        const me = await authedClient.getMe().catch(() => null);
-        const roles =
-          tokenRes.roles && tokenRes.roles.length > 0
-            ? tokenRes.roles
-            : me?.roles && me.roles.length > 0
-              ? me.roles
-              : [tokenRes.platform_role];
-        set({
-          isAuthenticated: true,
-          isHydrating: false,
-          accessToken: tokenRes.access_token,
-          roles,
-          activeHat: roles[0] || "PLATFORM_ADMIN",
-          email: tokenRes.email || me?.email || null,
-          displayName: tokenRes.display_name || me?.display_name || null,
-          mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),
-        });
-        return;
-      }
-    } catch {
-      // Refresh failed
+  hydrateSession: async (options?: { force?: boolean }) => {
+    if (activeHydrationPromise) {
+      return activeHydrationPromise;
     }
-    set({
-      isAuthenticated: false,
-      isHydrating: false,
-      accessToken: null,
-      roles: [],
-      activeHat: "",
-      email: null,
-      displayName: null,
-      mustChangePassword: false,
+    if (!options?.force && !get().isHydrating) {
+      return;
+    }
+    set({ isHydrating: true });
+
+    const runHydration = async () => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Hydration timed out after 5000ms"));
+        }, 5000);
+      });
+
+      try {
+        const hydrationWork = (async () => {
+          const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
+          const tokenRes = await client.refreshSession();
+          if (tokenRes && tokenRes.access_token) {
+            const authedClient = createOrciaApiClient({
+              baseUrl: resolveWebApiBaseUrl(),
+              accessToken: tokenRes.access_token,
+            });
+            const me = await authedClient.getMe().catch(() => null);
+            const roles =
+              tokenRes.roles && tokenRes.roles.length > 0
+                ? tokenRes.roles
+                : me?.roles && me.roles.length > 0
+                  ? me.roles
+                  : [tokenRes.platform_role];
+            set({
+              isAuthenticated: true,
+              isHydrating: false,
+              accessToken: tokenRes.access_token,
+              roles,
+              activeHat: roles[0] || "PLATFORM_ADMIN",
+              email: tokenRes.email || me?.email || null,
+              displayName: tokenRes.display_name || me?.display_name || null,
+              mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),
+            });
+            return;
+          }
+          set({
+            ...UNAUTHENTICATED_SESSION_STATE,
+            isHydrating: false,
+          });
+        })();
+
+        await Promise.race([hydrationWork, timeoutPromise]);
+      } catch {
+        set({
+          ...UNAUTHENTICATED_SESSION_STATE,
+          isHydrating: false,
+        });
+      } finally {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+        }
+      }
+    };
+
+    activeHydrationPromise = runHydration().finally(() => {
+      activeHydrationPromise = null;
     });
+    return activeHydrationPromise;
   },
-  resetAuthSession: () => set({ ...getInitialSessionState() }),
+  resetAuthSession: () => {
+    activeHydrationPromise = null;
+    set({ ...getInitialSessionState() });
+  },
 }));
 
 export function resetAuthSessionStore(): void {
+  activeHydrationPromise = null;
   useAuthSessionStore.getState().resetAuthSession();
 }
 
+export const resetAuthSessionForTests = resetAuthSessionStore;
+
 export function simulateUnauthenticatedBrowser(): void {
+  activeHydrationPromise = null;
   useAuthSessionStore.setState({
-    isAuthenticated: false,
+    ...UNAUTHENTICATED_SESSION_STATE,
     isHydrating: false,
-    mustChangePassword: false,
-    accessToken: null,
-    roles: [],
-    activeHat: "",
-    email: null,
-    displayName: null,
-    userSettingsModalOpen: false,
-    userSettingsModalInitialTab: null,
   });
 }

@@ -1,17 +1,20 @@
 import {
-  BiModeLoginView,
   FourZoneDirectionCShell,
   type EightFixedMenuKey,
   type UiHumanProfileBadge,
   type UiModuleKey,
 } from "@orcia/ui";
-import React from "react";
+import React, { useEffect } from "react";
 import { useI18n } from "../i18n";
 import {
   resolveSessionHatLabel,
   useAuthSessionStore,
 } from "../stores/authSessionStore";
 import { buildContextualHelpArticle } from "./contextualHelpCatalog";
+import {
+  ShellHydratingLoaderView,
+  ShellUnauthenticatedView,
+} from "./ShellAuthFallbackView";
 import { useOrciaNavigation } from "./navigationAdapter";
 import { PlatformSetupProvider, usePlatformSetup } from "./platformSetupStore";
 import { ShellContainerModals } from "./ShellContainerModals";
@@ -62,7 +65,9 @@ function InnerShellContainer({
 }) {
   const { locale, dictionary, setLocale } = useI18n();
   const { pathname, navigateTo } = useOrciaNavigation();
+  const setup = usePlatformSetup();
   const {
+    isInitialLoading,
     platformAdmin,
     scopes,
     orgUnits,
@@ -72,24 +77,46 @@ function InnerShellContainer({
     llmTiers,
     runs,
     createPlatformAdmin,
-  } = usePlatformSetup();
+  } = setup;
 
-  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
-  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
-  const mustChangePassword = useAuthSessionStore((s) => s.mustChangePassword);
-  const roles = useAuthSessionStore((s) => s.roles);
-  const activeHat = useAuthSessionStore((s) => s.activeHat);
-  const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
-  const sessionEmail = useAuthSessionStore((s) => s.email);
-  const sessionDisplayName = useAuthSessionStore((s) => s.displayName);
-  const userSettingsModalOpen = useAuthSessionStore((s) => s.userSettingsModalOpen);
-  const setActiveHat = useAuthSessionStore((s) => s.setActiveHat);
-  const setUserSettingsModalOpen = useAuthSessionStore((s) => s.setUserSettingsModalOpen);
-  const openUserSettingsModalAtTab = useAuthSessionStore((s) => s.openUserSettingsModalAtTab);
-  const logoutSession = useAuthSessionStore((s) => s.logoutSession);
+  const {
+    isAuthenticated, isHydrating, mustChangePassword, roles, activeHat,
+    readOnlyObserver, email: sessionEmail, displayName: sessionDisplayName,
+    userSettingsModalOpen, setActiveHat, setUserSettingsModalOpen,
+    openUserSettingsModalAtTab, logoutSession, hydrateSession,
+  } = useAuthSessionStore();
 
   const state = useShellContainerState(runs.length, pathname);
   const isFr = locale === "fr";
+
+  const dispatchNavigation = (href: string) => {
+    if (onNavigate) {
+      onNavigate(href);
+    } else {
+      navigateTo(href);
+    }
+  };
+
+  useEffect(() => {
+    if (isHydrating) {
+      void hydrateSession();
+    }
+  }, [isHydrating, hydrateSession]);
+
+  const isAdminModalOpen = platformAdmin === null && !state.adminModalDismissed;
+  const isShowcaseStandalone = Boolean(pathname?.startsWith("/showcase"));
+
+  useEffect(() => {
+    if (!isAuthenticated && !isAdminModalOpen && !isShowcaseStandalone && pathname !== "/login") {
+      dispatchNavigation("/login");
+    }
+  }, [isAuthenticated, isAdminModalOpen, isShowcaseStandalone, pathname]);
+
+  useEffect(() => {
+    if (isAuthenticated && pathname === "/login") {
+      dispatchNavigation("/");
+    }
+  }, [isAuthenticated, pathname]);
 
   const activeModuleKey = state.selectedModuleOverride ?? resolveModuleFromPathname(pathname);
   const selectedScope =
@@ -97,10 +124,7 @@ function InnerShellContainer({
 
   const effectiveProfile: UiHumanProfileBadge = {
     ...DEFAULT_HUMAN_PROFILE,
-    displayName:
-      sessionDisplayName ??
-      (isAuthenticated ? platformAdmin?.displayName : DEFAULT_HUMAN_PROFILE.displayName) ??
-      DEFAULT_HUMAN_PROFILE.displayName,
+    displayName: sessionDisplayName ?? (isAuthenticated ? platformAdmin?.displayName : DEFAULT_HUMAN_PROFILE.displayName) ?? DEFAULT_HUMAN_PROFILE.displayName,
     role: activeHat || roles[0] || "PLATFORM_ADMIN",
     accessMode: selectedScope.accessMode,
   };
@@ -113,14 +137,6 @@ function InnerShellContainer({
   const safeModuleKey: UiModuleKey = activeModuleKey;
   const activeMenuKey: EightFixedMenuKey =
     state.selectedMenuKeyOverride ?? resolveEightMenuKeyFromModule(safeModuleKey, pathname);
-
-  const dispatchNavigation = (href: string) => {
-    if (onNavigate) {
-      onNavigate(href);
-    } else {
-      navigateTo(href);
-    }
-  };
 
   const openHelpSection = (sectionId: string) => {
     state.setHelpColumnOpen(true);
@@ -163,36 +179,15 @@ function InnerShellContainer({
     defaultSummary: dictionary.modulePages[safeModuleKey].description,
   });
 
-  const isAdminModalOpen = platformAdmin === null && !state.adminModalDismissed;
   const hideSidebarShowcaseBtn =
     Boolean(pathname?.startsWith("/help")) || Boolean(pathname?.startsWith("/ontology"));
 
-  if (isHydrating) {
-    return (
-      <div
-        data-testid="auth-hydrating-loader"
-        className="flex min-h-screen items-center justify-center bg-[var(--color-bg-canvas)] text-[var(--color-text-secondary)]"
-      >
-        <span className="text-sm font-medium">
-          {isFr ? "Chargement de la session..." : "Loading session..."}
-        </span>
-      </div>
-    );
+  if (!isShowcaseStandalone && (isHydrating || (isInitialLoading && !isAuthenticated))) {
+    return <ShellHydratingLoaderView isFr={isFr} />;
   }
 
-  if (!isAuthenticated && !isAdminModalOpen && pathname !== "/login") {
-    return (
-      <div
-        data-testid="unauthenticated-shell-fallback"
-        className="flex min-h-screen flex-col items-center justify-center bg-[var(--color-bg-canvas)] p-6"
-      >
-        <BiModeLoginView
-          labels={dictionary.biModeLogin}
-          onTriggerOidcSso={() => dispatchNavigation("/login")}
-          onSubmitLocalLogin={() => dispatchNavigation("/login")}
-        />
-      </div>
-    );
+  if (!isShowcaseStandalone && !isAuthenticated && !isAdminModalOpen) {
+    return <ShellUnauthenticatedView />;
   }
 
   return (

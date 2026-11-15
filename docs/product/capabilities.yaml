@@ -36,7 +36,7 @@ capabilities:
     title: Authentification hybride bi-mode (OIDC + locale), session HttpOnly, déconnexion réelle et mot de passe temporaire
     fr: [FR-21]
     origin: epic
-    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances
+    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-blocage-chargement-session-port-3100
     status: live
     tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx]
     verification: runtime

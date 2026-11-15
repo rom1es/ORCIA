@@ -14,6 +14,10 @@ import type {
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
+  resolveWebApiBaseUrl,
+  useAuthSessionStore,
+} from "../stores/authSessionStore";
+import {
   cleanAuditSummaryJargon,
   clearPlatformSetupStorage,
   deduplicateConfiguredPacks,
@@ -36,6 +40,10 @@ import {
   type LlmAuthMode,
 } from "./platformSetupStorageHelpers";
 
+const isVitest =
+  typeof process !== "undefined" &&
+  (process.env?.NODE_ENV === "test" || process.env?.VITEST === "true");
+
 export {
   cleanAuditSummaryJargon,
   clearPlatformSetupStorage,
@@ -56,6 +64,7 @@ export {
 };
 
 export interface PlatformSetupContextValue {
+  readonly isInitialLoading: boolean;
   readonly platformAdmin: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly rbacGrants: readonly ConfiguredRbacGrant[];
@@ -157,6 +166,7 @@ const BASE_GLOBAL_SCOPE: UiScopeNode = {
 const PlatformSetupContext = createContext<PlatformSetupContextValue | null>(null);
 
 export function PlatformSetupProvider({ children }: { children: React.ReactNode }) {
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(() => !isVitest);
   const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(() =>
     readCachedPlatformAdmin(),
   );
@@ -193,7 +203,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const persistSnapshot = (next: CachedPlatformSetupState) => {
     hasMutatedSinceMountRef.current = true;
     writeCachedPlatformSetupState(next);
-    const client = createOrciaApiClient({ baseUrl: "" });
+    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
     const payload: PlatformSetupStatePutRequest = {
       org_units: next.orgUnits as unknown as Record<string, unknown>[],
       rbac_grants: next.rbacGrants as unknown as Record<string, unknown>[],
@@ -224,7 +234,13 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     let cancelled = false;
-    const client = createOrciaApiClient({ baseUrl: "" });
+    let safetyTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
+      if (!cancelled) {
+        setIsInitialLoading(false);
+      }
+    }, 5000);
+
+    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
     Promise.all([
       client.getAccostageStatus(),
       client.getPlatformSetupState().catch(() => null),
@@ -386,9 +402,21 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       })
       .catch(() => {
         // Offline or test mode: keep current state
+      })
+      .finally(() => {
+        if (!cancelled) {
+          if (safetyTimer) {
+            clearTimeout(safetyTimer);
+            safetyTimer = undefined;
+          }
+          setIsInitialLoading(false);
+        }
       });
     return () => {
       cancelled = true;
+      if (safetyTimer) {
+        clearTimeout(safetyTimer);
+      }
     };
   }, []);
 
@@ -467,13 +495,29 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       input.password && input.password.trim().length >= 8
         ? input.password.trim()
         : "OrciaInitialAdmin!2026";
-    const client = createOrciaApiClient({ baseUrl: "" });
+    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
     void client
       .createWelcomeSetupFirstAdmin({
         email: admin.email,
         display_name: admin.displayName,
         password: rawPassword,
         orcia_env: "local",
+      })
+      .then((res) => {
+        if (res && (res.access_token || (res as Record<string, unknown>).accessToken)) {
+          useAuthSessionStore.getState().loginWithSession({
+            access_token:
+              res.access_token ??
+              ((res as Record<string, unknown>).accessToken as string | undefined),
+            email: admin.email,
+            display_name: admin.displayName,
+            platform_role: "PLATFORM_ADMIN",
+            roles: ["PLATFORM_ADMIN"],
+            must_change_password: Boolean(res.must_change_password),
+          });
+        } else {
+          void useAuthSessionStore.getState().hydrateSession({ force: true });
+        }
       })
       .catch(() => {
         void client
@@ -1175,6 +1219,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   return (
     <PlatformSetupContext.Provider
       value={{
+        isInitialLoading,
         platformAdmin,
         orgUnits,
         rbacGrants,

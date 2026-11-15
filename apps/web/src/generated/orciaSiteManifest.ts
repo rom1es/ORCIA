@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-14",
+  "lastSyncedDate": "2026-11-15",
   "stats": {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 103,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 35,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 119,
+    "techLeadReportsCount": 120,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -443,6 +443,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-058, CAP-004)",
+      "reportFile": "2026-11-15-correction-blocage-chargement-session-port-3100-tech-lead-report.md",
+      "domain": "Déblocage « Chargement de la session... » sur :3100 (hydrateSession single-flight + timeout 5s au montage), Suppression du baseUrl cross-origin & Rendu autonome /login sans coquille 4-zones",
+      "summary": "Déclenchement automatique de hydrateSession() dans ShellContainer.tsx avec verrou activeHydrationPromise anti-React StrictMode, coordination isInitialLoading + auto-connexion First-Admin Jour 0 dans platformSetupStore.tsx, extraction de LoginScreenView.tsx (via resolveWebApiBaseUrl() proxy /api) & ShellAuthFallbackView.tsx sans coquille 4-zones sur /login, et 84 tests Vitest @orcia/web (dont simulation réelle isHydrating: true + StrictMode)."
+    },
     {
       "date": "2026-11-14",
       "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-051, CAP-063, CAP-067)",

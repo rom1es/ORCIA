@@ -192,6 +192,7 @@ function problemResponse(
 }
 
 export function resetVitestApiBackend(): void {
+  delete (globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__;
   backendState.firstAdmin = null;
   backendState.platformSetupState = null;
   backendState.orgUnits = [];
@@ -204,6 +205,14 @@ export function resetVitestApiBackend(): void {
   resetVitestIamMockState();
   resetVitestConnectorsMockState();
   resetAuthSessionStore();
+}
+
+export function setVitestMockRefreshFails(fails: boolean): void {
+  if (fails) {
+    (globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__ = true;
+  } else {
+    delete (globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__;
+  }
 }
 
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
@@ -355,6 +364,15 @@ async function vitestFetchTransport(
   }
 
   if (path === "/api/v1/auth/refresh" && method === "POST") {
+    if ((globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__) {
+      return problemResponse(
+        401,
+        "ERR_AUTH_TOKEN_EXPIRED",
+        "Session expirée",
+        "Le jeton de rafraîchissement est absent ou invalide.",
+        path,
+      );
+    }
     return jsonResponse({
       access_token: "mock-refreshed-token",
       token_type: "bearer",
