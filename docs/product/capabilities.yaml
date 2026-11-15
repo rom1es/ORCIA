@@ -33,14 +33,14 @@ coverage_exemptions:
 capabilities:
   # ───────────── Fondations (Epic 1, 3.2x) ─────────────
   - id: CAP-001
-    title: Authentification hybride bi-mode (OIDC + locale), session HttpOnly, déconnexion réelle et mot de passe temporaire
+    title: Authentification exclusive gouvernée (LOCAL ou SSO OIDC), double facteur configurable (NONE | EMAIL_OTP SMTP | TOTP RFC 6238), session HttpOnly et mot de passe temporaire
     fr: [FR-21]
     origin: epic
-    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-blocage-chargement-session-port-3100
+    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-blocage-chargement-session-port-3100 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-correction-erreur-ouverture-login-session-anonyme-et-gardes-e2e
     status: live
-    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx]
+    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
     verification: runtime
-    surfaces: { route: /login, api: /api/v1/auth, ui: BiModeLoginView, migration: "20261114_1706" }
+    surfaces: { route: /login, api: "/api/v1/auth (auth.py, _auth_session_routes.py, _auth_passthrough_routes.py, auth_settings.py)", ui: "BiModeLoginView + LoginTwoFactorStepPanel", migration: "20261114_1706, 20261115_1901" }
   - id: CAP-002
     title: Catalogue fédéré multi-sources (db/git/nexus/confluence/jira) et surcharges 4 niveaux
     fr: [FR-20]
@@ -258,14 +258,14 @@ capabilities:
     verification: runtime
     surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + SecretField + AiModelsMasterTable", migration: "20261114_1705" }
   - id: CAP-054
-    title: Hub connecteurs et gestion des secrets
+    title: Hub Connecteurs (Git, Jira, Confluence, SMTP_MAIL) et gestion des secrets
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag
+    origin_ref: 8-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/security/test_api_security_baseline.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/security/test_api_security_baseline.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx]
     verification: runtime
-    surfaces: { route: /settings, api: enterprise_connectors.py, ui: EnterpriseConnectorsSettingsSection, migration: "20261111_1704" }
+    surfaces: { route: /settings, api: enterprise_connectors.py, ui: "EnterpriseConnectorsSettingsSection + EnterpriseConnectorModal", migration: "20261111_1704, 20261115_1901" }
   - id: CAP-055
     title: Studio workflows et registre des packs
     fr: [FR-31]
@@ -292,21 +292,21 @@ capabilities:
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
-    title: Coquille Settings à 5 onglets adaptatifs avec permission guards dynamiques
+    title: Coquille Settings à 6 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) et gouvernance Authentification
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3, 17-1
+    origin_ref: 8-3, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx]
     verification: runtime
-    surfaces: { route: "/settings, /configuration", api: settings_and_studio.py, ui: "SettingsHubView (organization, iam, models, connectors, packs) + authSessionStore" }
+    surfaces: { route: "/settings, /configuration", api: "settings_and_studio.py, auth_settings.py", ui: "SettingsHubView (organization, iam, authentication, models, connectors, packs) + SettingsAuthenticationSection + PlatformAuthSettingsCard + authSessionStore", migration: "20261115_1901" }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
     title: Shell 4 zones Direction C (8 entrées, icônes SVG filaires 16px, barre de repli & Mon Compte) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1, 17-1
+    origin_ref: 9-1, 12-1, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale
     status: live
     tests: [apps/web/e2e/shell.spec.ts, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx]
     verification: runtime
@@ -474,9 +474,9 @@ capabilities:
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
     origin: adhoc
-    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui"
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale"
     status: live
-    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx]
+    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx]
     verification: runtime
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────

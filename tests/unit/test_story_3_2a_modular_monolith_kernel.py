@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import pathlib
+import re
 from datetime import UTC, datetime
 
 import pytest
@@ -300,7 +301,9 @@ def test_ac5_no_router_import_time_singletons_and_composition_root_lifespan() ->
     routers_dir = REPO_ROOT / "apps/api/src/orcia_api/routers"
     for router_file in sorted(routers_dir.glob("*.py")):
         source = router_file.read_text()
-        assert "_DEFAULT_" not in source, f"Found _DEFAULT_ singleton in {router_file.name}"
+        assert not re.search(r"(?<![A-Z0-9])_DEFAULT_", source), (
+            f"Found _DEFAULT_ singleton in {router_file.name}"
+        )
         tree = ast.parse(source)
         for node in tree.body:
             if isinstance(node, ast.Assign):

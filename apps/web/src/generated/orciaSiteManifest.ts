@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-15",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 103,
-    "installedPacksCount": 0,
-    "alembicMigrationsCount": 35,
+    "uiPrimitivesCount": 105,
+    "installedPacksCount": 2,
+    "alembicMigrationsCount": 36,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 120,
+    "techLeadReportsCount": 122,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -93,6 +93,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "InferenceTierBadge",
     "LLM_MODEL_TIER_LABELS_FR",
     "LayersInspectorPopover",
+    "LoginTwoFactorStepPanel",
     "MobileCompanionView",
     "ORCIA_EIGHT_MENU_ICON_NAMES",
     "ORCIA_ICONS",
@@ -120,6 +121,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "PackBuilderProcessesStudioView",
     "PermissionBrokerCard",
     "PermissionGuard",
+    "PlatformAuthSettingsCard",
     "PresenceClaimPill",
     "ProductLifecycleCard",
     "ProgressiveDay0AccostageBanner",
@@ -152,7 +154,18 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "WorkspaceFiveTabsAndExternalRebaseView",
     "WorkspaceTopologyPanel"
   ],
-  "installedPacks": [],
+  "installedPacks": [
+    {
+      "key": "orcia-pack-docs",
+      "version": "2.0.0",
+      "description": "Pack déclaratif de génération, validation bilingue FR/EN et rattachement à chaud des articles d'aide contextuelle et guides d'administration ORCIA."
+    },
+    {
+      "key": "orcia-pack-sdlc",
+      "version": "2.4.0",
+      "description": "Chaîne de valeur de l'idée à la production (11 étapes, 4 phases, 6 jalons humains, 3 agents multi-sous-étapes et sas de contrôle externe)."
+    }
+  ],
   "alembicMigrations": [
     "0001_story_1_1_foundation_extensions",
     "0002_story_1_2_auth_org_workspaces_permissions",
@@ -188,7 +201,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261114_1705_story_17_5_ai_models_hub_secrets_and_health",
     "20261114_1706_temporary_password_and_local_iam_auth",
     "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
-    "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events"
+    "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events",
+    "20261115_1901_platform_auth_policy_and_email_otp"
   ],
   "architectureDecisions": [
     {
@@ -443,6 +457,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-058)",
+      "reportFile": "2026-11-15-correction-erreur-ouverture-login-session-anonyme-et-gardes-e2e-tech-lead-report.md",
+      "domain": "Correction Ouverture /login (ERR_RESOURCE_NOT_FOUND), Bootstrap Session Anonyme 200 (GET /api/v1/auth/session), Garde d'Hydratation ShellContainer & Gardes E2E 4xx/5xx/Alertes",
+      "summary": "Redémarrage :8000 avec --reload et pré-check alembic upgrade head dans scripts/manage.py, isolation erreur technique public-config dans LoginScreenView.tsx, normalisation /api dans resolveWebApiBaseUrl(), nouvel endpoint GET /api/v1/auth/session + SDK 0-diff, garde !isHydrating dans ShellContainer.tsx, attente cookie dans createFirstAdminViaUi, durcissement watchUnexpectedPageAndApiErrors (>= 400 + pageerror + bannières) avec scénario /login dans 11-screens-smoke-without-server-errors.spec.ts (13 passed, 9/9 tâches Turbo)."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-054, CAP-058, CAP-060, CAP-100)",
+      "reportFile": "2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale-tech-lead-report.md",
+      "domain": "Politique d'Authentification Exclusive (LOCAL vs SSO), Double Facteur Configurable (NONE \\",
+      "summary": "EMAIL_OTP \\"
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-058, CAP-004)",

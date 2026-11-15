@@ -112,6 +112,7 @@ export const ORCIA_ICON_SVG_PATHS: Readonly<Record<OrciaIconName, readonly strin
   "nav.account": [CIRCLE_12_9, "M12 8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z", "M6.5 19a6.5 6.5 0 0 1 11 0"],
   "settings.org": ["M9 3h6v4H9z", "M3 17h6v4H3z", "M15 17h6v4h-6z", "M12 7v5", "M6 17v-5h12v5"],
   "settings.iam": ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "M9.5 12l2 2 3.5-3.5"],
+  "settings.auth": ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z", "M12 14v3"],
   "settings.models": ["M7 7h10v10H7z", "M9 2v3", "M15 2v3", "M9 19v3", "M15 19v3", "M2 9h3", "M2 15h3", "M19 9h3", "M19 15h3"],
   "settings.connectors": ["M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7", "M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"],
   "settings.packs": ["M12 2l8 4.5v11L12 22l-8-4.5v-11z", "M12 22V11", "M20 6.5 12 11 4 6.5"],

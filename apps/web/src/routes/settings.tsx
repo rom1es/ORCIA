@@ -17,6 +17,7 @@ import {
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 import { SettingsAiModelsSection } from "./SettingsAiModelsSection";
+import { SettingsAuthenticationSection } from "../features/admin/auth/SettingsAuthenticationSection";
 import { SettingsIamOrganizationSection } from "./SettingsIamOrganizationSection";
 import { SettingsOrganizationUnitsBlock } from "./SettingsOrganizationUnitsBlock";
 import { SettingsPacksSection } from "./SettingsPacksSection";
@@ -67,9 +68,16 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
       const tabParam = sp.get("tab") as SettingsSectionTab | null;
       if (
         tabParam &&
-        ["organization", "iam", "models", "packs", "connectors", "datasources", "retention"].includes(
-          tabParam,
-        )
+        [
+          "organization",
+          "iam",
+          "authentication",
+          "models",
+          "packs",
+          "connectors",
+          "datasources",
+          "retention",
+        ].includes(tabParam)
       ) {
         return tabParam;
       }
@@ -214,6 +222,11 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
                 openHelpSection={openHelpSection}
                 syncOrgUnitsFromServer={syncOrgUnitsFromServer}
                 syncRbacGrantsFromServer={syncRbacGrantsFromServer}
+              />
+            ) : effectiveTab === "authentication" ? (
+              <SettingsAuthenticationSection
+                canMutate={access.canMutate}
+                onNavigateToConnectors={() => setActiveTab("connectors")}
               />
             ) : effectiveTab === "models" ? (
               <SettingsAiModelsSection

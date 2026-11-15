@@ -31,7 +31,12 @@ _BLOCKED_METADATA_HOSTS: frozenset[str] = frozenset(
 )
 
 
-def validate_safe_connector_base_url(base_url: str, *, instance: str | None = None) -> str:
+def validate_safe_connector_base_url(
+    base_url: str,
+    *,
+    instance: str | None = None,
+    allow_smtp_schemes: bool = False,
+) -> str:
     """Validate `base_url` against SSRF while allowing `.local` and `.internal`."""
     raw = (base_url or "").strip()
     if not raw:
@@ -40,7 +45,10 @@ def validate_safe_connector_base_url(base_url: str, *, instance: str | None = No
         parsed = urlparse(raw)
     except ValueError as exc:
         raise UnsafeConnectorEndpointUrlError(instance=instance) from exc
-    if parsed.scheme not in ("http", "https"):
+    allowed_schemes = (
+        ("http", "https", "smtp", "smtps") if allow_smtp_schemes else ("http", "https")
+    )
+    if parsed.scheme.lower() not in allowed_schemes:
         raise UnsafeConnectorEndpointUrlError(instance=instance)
     host = (parsed.hostname or "").strip().lower().rstrip(".")
     if not host or host in _BLOCKED_METADATA_HOSTS or host.endswith(".google.internal"):

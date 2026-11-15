@@ -4,6 +4,7 @@ import {
   ALL_SETTINGS_TABS,
   formatCountNoun,
   FULL_ADMIN_PERMISSION_VERBS,
+  isPlatformAdministratorSession,
   READ_ONLY_PERMISSION_VERBS,
   resolveSessionHatLabel,
   resolveSettingsAccess,
@@ -19,6 +20,7 @@ export {
   ALL_SETTINGS_TABS,
   formatCountNoun,
   FULL_ADMIN_PERMISSION_VERBS,
+  isPlatformAdministratorSession,
   READ_ONLY_PERMISSION_VERBS,
   resolveSessionHatLabel,
   resolveSettingsAccess,
@@ -40,7 +42,12 @@ export function resolveWebApiBaseUrl(): string {
   const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
   const envUrl = meta?.env?.VITE_ORCIA_API_BASE_URL ?? meta?.env?.VITE_ORCIA_API_URL;
   if (envUrl && envUrl.trim().length > 0) {
-    return envUrl.trim();
+    // Domain client paths already begin with `/api/v1/...`, so strip any trailing `/api` or slashes.
+    const trimmed = envUrl.trim().replace(/\/+$/, "");
+    if (trimmed === "/api" || trimmed.endsWith("/api")) {
+      return trimmed.slice(0, -4);
+    }
+    return trimmed;
   }
   return "";
 }
@@ -148,7 +155,13 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
         activeHat: nextHat,
       };
     }),
-  setActiveHat: (hat) => set({ activeHat: hat }),
+  setActiveHat: (hat) =>
+    set((state) => {
+      if (hat === "PLATFORM_ADMIN" && !state.roles.includes("PLATFORM_ADMIN")) {
+        return state;
+      }
+      return { activeHat: hat };
+    }),
   setUserSettingsModalOpen: (open) =>
     set((state) => ({
       userSettingsModalOpen: open,
@@ -175,7 +188,7 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
       isHydrating: false,
       accessToken: res.access_token ?? (raw.accessToken as string | undefined) ?? null,
       roles: rolesList,
-      activeHat: rolesList[0] || "PLATFORM_ADMIN",
+      activeHat: rolesList[0] || "CONTRIBUTOR",
       email: res.email ?? (raw.email as string | undefined) ?? null,
       displayName: res.display_name ?? (raw.displayName as string | undefined) ?? null,
       mustChangePassword: Boolean(res.must_change_password ?? raw.mustChangePassword),
@@ -214,7 +227,8 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
       try {
         const hydrationWork = (async () => {
           const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-          const tokenRes = await client.refreshSession();
+          const bootstrap = await client.getSessionBootstrap();
+          const tokenRes = bootstrap?.authenticated ? bootstrap.session : null;
           if (tokenRes && tokenRes.access_token) {
             const authedClient = createOrciaApiClient({
               baseUrl: resolveWebApiBaseUrl(),
@@ -232,7 +246,7 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
               isHydrating: false,
               accessToken: tokenRes.access_token,
               roles,
-              activeHat: roles[0] || "PLATFORM_ADMIN",
+              activeHat: roles[0] || "CONTRIBUTOR",
               email: tokenRes.email || me?.email || null,
               displayName: tokenRes.display_name || me?.display_name || null,
               mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),

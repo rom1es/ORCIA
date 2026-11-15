@@ -1,46 +1,67 @@
 import { expect, test } from "@playwright/test";
+import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { resetDay0 } from "./support/day0";
+import {
+  expectZeroVisibleErrorBanners,
+  watchUnexpectedPageAndApiErrors,
+} from "./support/apiErrors";
 
-const EIGHT_MENU_KEYS = [
+const PUBLIC_DAY0_MENU_KEYS = [
   "cockpit",
   "assistant",
   "processes",
   "agents",
   "spaces",
   "finops",
-  "configuration",
   "help",
 ] as const;
 
 test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, UX-DR8)", () => {
+  let trackedErrors: string[] = [];
+
   test.beforeEach(async ({ page }) => {
+    trackedErrors = watchUnexpectedPageAndApiErrors(page);
     resetDay0();
     await page.goto("/");
     await expect(page.getByTestId("first-boot-admin-setup-modal")).toBeVisible({
       timeout: 30000,
     });
+    await expectZeroVisibleErrorBanners(page);
   });
 
-  test("présente les 4 zones et les 8 entrées fixes sans préfixe numérique", async ({ page }) => {
+  test.afterEach(() => {
+    expect(trackedErrors, trackedErrors.join("\n")).toEqual([]);
+  });
+
+  test("présente les 4 zones, masque Paramètres tant qu'aucun PLATFORM_ADMIN n'est connecté et l'affiche après création admin", async ({
+    page,
+  }) => {
     await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible();
     await expect(page.getByTestId("four-zone-top-header-bar")).toBeVisible();
     await expect(page.getByTestId("four-zone-sidebar")).toBeVisible();
     await expect(page.getByTestId("four-zone-central-workspace")).toBeAttached();
 
-    for (const key of EIGHT_MENU_KEYS) {
+    // Sans rôle PLATFORM_ADMIN actif, le menu Paramètres de la plateforme est absent du DOM.
+    await expect(page.getByTestId("eight-menu-item-configuration")).toHaveCount(0);
+
+    for (const key of PUBLIC_DAY0_MENU_KEYS) {
       const entry = page.getByTestId(`eight-menu-item-${key}`);
       await expect(entry).toBeAttached();
       const text = (await entry.innerText()).trim();
       expect(text.length, `libellé vide pour ${key}`).toBeGreaterThan(0);
       expect(text, `préfixe numérique interdit pour ${key}`).not.toMatch(/^\d+[.)]?\s/);
     }
+
+    // Une fois le premier PLATFORM_ADMIN créé et connecté, Paramètres devient visible.
+    await createFirstAdminViaUi(page);
+    await expect(page.getByTestId("eight-menu-item-configuration")).toBeVisible({ timeout: 20000 });
   });
 
   test("grise les entrées de menu tant que la plateforme n'est pas initialisée (Jour 0)", async ({
     page,
   }) => {
     const disabledReasons: string[] = [];
-    for (const key of EIGHT_MENU_KEYS) {
+    for (const key of PUBLIC_DAY0_MENU_KEYS) {
       const entry = page.getByTestId(`eight-menu-item-${key}`);
       if ((await entry.getAttribute("aria-disabled")) === "true") {
         const reason = await entry.getAttribute("data-disabled-reason");

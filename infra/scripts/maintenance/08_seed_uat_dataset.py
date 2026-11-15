@@ -30,10 +30,13 @@ from orcia_core.bootstrap.seeder import (  # noqa: E402
     DEFAULT_ORG_UNIT_SEEDS,
     DEFAULT_WORKSPACE_DATASOURCE_SEEDS,
     DEFAULT_WORKSPACE_SEEDS,
+    LLM_MODEL_ENDPOINTS_UPSERT_SPEC,
     ORG_UNITS_UPSERT_SPEC,
+    SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC,
+    USER_ONBOARDING_STATES_UPSERT_SPEC,
+    WORKFLOW_DEFINITIONS_UPSERT_SPEC,
     WORKSPACE_DATASOURCES_UPSERT_SPEC,
     WORKSPACES_UPSERT_SPEC,
-    build_bootstrap_upsert_specs,
     build_postgres_upsert_sql,
 )
 
@@ -142,7 +145,12 @@ async def seed_uat_database(
     org_sql = sa.text(build_postgres_upsert_sql(ORG_UNITS_UPSERT_SPEC))
     ws_sql = sa.text(build_postgres_upsert_sql(WORKSPACES_UPSERT_SPEC))
     ds_sql = sa.text(build_postgres_upsert_sql(WORKSPACE_DATASOURCES_UPSERT_SPEC))
-    system_specs = build_bootstrap_upsert_specs()
+    system_specs = (
+        LLM_MODEL_ENDPOINTS_UPSERT_SPEC,
+        WORKFLOW_DEFINITIONS_UPSERT_SPEC,
+        SYSTEM_BOOTSTRAP_RUNS_UPSERT_SPEC,
+        USER_ONBOARDING_STATES_UPSERT_SPEC,
+    )
 
     grant_sql = sa.text(
         """
@@ -290,11 +298,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=False,
         help="Commit the UAT dataset to the database.",
     )
+    parser.add_argument(
+        "--confirm-demo-seed",
+        action="store_true",
+        default=False,
+        help="Required alongside --apply to commit UAT/demo fixtures.",
+    )
     return parser.parse_args(argv)
 
 
 async def _async_main(argv: list[str] | None = None) -> int:
+    import sys
+
     args = parse_args(argv)
+    if args.apply and not args.confirm_demo_seed:
+        print(
+            "[08_seed_uat_dataset] Refused: --apply injects UAT demo data; "
+            "pass --confirm-demo-seed to confirm (or use --dry-run).",
+            file=sys.stderr,
+        )
+        return 2
     engine = create_async_engine(args.database_url)
     try:
         report = await seed_uat_database(engine, apply_changes=bool(args.apply))

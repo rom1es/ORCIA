@@ -4,7 +4,7 @@
 
 export interface MockEnterpriseConnectorItem {
   id: string;
-  connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+  connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE" | "SMTP_MAIL";
   name: string;
   base_url: string;
   auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
@@ -69,6 +69,11 @@ export function seedVitestConnectorsInitialData(params?: {
 }): void {
   if (params?.connectors) connectors = [...params.connectors];
   if (params?.datasources) datasources = [...params.datasources];
+}
+
+export function getActiveVitestSmtpConnectorName(): string | null {
+  const found = connectors.find((c) => c.connector_kind === "SMTP_MAIL" && c.enabled);
+  return found ? found.name : null;
 }
 
 interface HandleConnectorsRouteParams {

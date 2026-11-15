@@ -10,6 +10,7 @@ export interface components {
       amber_warning_badge?: string | null;
       assistant_trial_enabled: boolean;
       badge_label: string;
+      boot_epoch?: string | null;
       completed_count: number;
       completed_milestone_keys: (string)[];
       distinct_families: (string)[];
@@ -375,17 +376,28 @@ export interface components {
       name: string;
       slug: string;
     };
+    AuthSessionBootstrapResponse: {
+      authenticated: boolean;
+      session?: components["schemas"]["AuthTokenResponse"] | null;
+      trace_id: string;
+    };
     AuthTokenResponse: {
-      access_token: string;
+      access_token?: string;
+      challenge_kind?: "EMAIL_OTP" | "TOTP" | "TOTP_ENROLL" | null;
+      challenge_token?: string | null;
       display_name: string;
       email: string;
       expires_in_seconds?: number;
       human_profile_archetype: string;
+      masked_destination?: string | null;
       must_change_password?: boolean;
       platform_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       primary_org_unit_id: string;
+      requires_two_factor?: boolean;
       roles?: (string)[];
       token_type?: "Bearer";
+      totp_manual_key?: string | null;
+      totp_provisioning_uri?: string | null;
       trace_id: string;
       user_id: string;
     };
@@ -1085,7 +1097,7 @@ export interface components {
       admin_secret_value?: string | null;
       auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
       base_url: string;
-      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE" | "SMTP_MAIL";
       enabled?: boolean;
       name: string;
     };
@@ -1098,7 +1110,7 @@ export interface components {
       admin_secret_status: components["schemas"]["ConnectorSecretStatusResponse"];
       auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
       base_url: string;
-      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE" | "SMTP_MAIL";
       created_at_iso: string;
       enabled: boolean;
       id: string;
@@ -2068,6 +2080,28 @@ export interface components {
       status?: components["schemas"]["ControlMaturityStatus"];
       verifies_description: string;
     };
+    OidcAuthorizeUrlResponse: {
+      authorize_url: string;
+      state: string;
+      trace_id: string;
+    };
+    OidcCallbackExchangeRequest: {
+      code: string;
+      redirect_uri?: string | null;
+      state: string;
+    };
+    OidcDiscoveryTestRequest: {
+      issuer_url: string;
+    };
+    OidcDiscoveryTestResponse: {
+      authorization_endpoint: string;
+      issuer: string;
+      latency_ms: number;
+      ok?: boolean;
+      token_endpoint: string;
+      trace_id: string;
+      userinfo_endpoint?: string | null;
+    };
     OidcLoginRequest: {
       email?: string | null;
       oidc_subject: string;
@@ -2351,6 +2385,23 @@ export interface components {
       ticket_key: string;
       workflow_uri: string;
     };
+    PlatformAuthSettingsResponse: {
+      auth_mode: "LOCAL" | "SSO";
+      boot_epoch: string;
+      oidc_client_id?: string | null;
+      oidc_client_secret_configured?: boolean;
+      oidc_client_secret_fingerprint?: string | null;
+      oidc_issuer_url?: string | null;
+      oidc_redirect_uri?: string | null;
+      oidc_scopes?: string;
+      smtp_connector_configured?: boolean;
+      smtp_connector_name?: string | null;
+      sso_button_label?: string | null;
+      trace_id: string;
+      two_factor_mode: "NONE" | "EMAIL_OTP" | "TOTP";
+      updated_at_iso?: string;
+      updated_by?: string | null;
+    };
     PlatformSettingResponse: {
       category: "iam" | "connectors" | "ai-models" | "packs" | "workflows" | "audit";
       etag: string;
@@ -2423,6 +2474,14 @@ export interface components {
       immutable: boolean;
       layer_id: "1_CONSTITUTIONAL_IMMUTABLE" | "2_ONTOLOGY_AND_AXIOMS_L1_L4" | "3_HUMAN_PROFILE_ADAPTATION" | "4_FEDERATED_CONTEXT_FANOUT" | "5_CONVERSATIONAL_INTENT_AND_COMPOSER";
       layer_order: number;
+    };
+    PublicAuthConfigResponse: {
+      auth_mode: "LOCAL" | "SSO";
+      boot_epoch: string;
+      oidc_enabled: boolean;
+      sso_button_label?: string | null;
+      trace_id: string;
+      two_factor_mode: "NONE" | "EMAIL_OTP" | "TOTP";
     };
     QuickActionSpec: {
       icon?: string;
@@ -2557,6 +2616,15 @@ export interface components {
       connector_type: string;
       required_scopes?: (string)[];
       used_for: string;
+    };
+    ResendLoginTwoFactorRequest: {
+      challenge_token: string;
+    };
+    ResendLoginTwoFactorResponse: {
+      expires_in_seconds: number;
+      masked_destination?: string | null;
+      sent?: boolean;
+      trace_id: string;
     };
     ResetAssistantStudioGraphRequest: {
       scope_id: string;
@@ -3224,6 +3292,17 @@ export interface components {
     UpdateAgentSkillsRequest: {
       skill_ids?: (string)[];
     };
+    UpdatePlatformAuthSettingsRequest: {
+      auth_mode: "LOCAL" | "SSO";
+      clear_oidc_client_secret?: boolean;
+      oidc_client_id?: string | null;
+      oidc_client_secret?: string | null;
+      oidc_issuer_url?: string | null;
+      oidc_redirect_uri?: string | null;
+      oidc_scopes?: string;
+      sso_button_label?: string | null;
+      two_factor_mode?: "NONE" | "EMAIL_OTP" | "TOTP";
+    };
     UpdateUserLayerPreferencesRequest: {
       default_hat?: string;
       favorite_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP";
@@ -3421,7 +3500,7 @@ export interface components {
       base_url: string;
       connected: boolean;
       connector_id: string;
-      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE";
+      connector_kind: "GITLAB" | "JIRA" | "CONFLUENCE" | "OIDC_SSO" | "S3_OBJECT_STORE" | "SMTP_MAIL";
       connector_name: string;
       external_author_login?: string | null;
       secret_status: components["schemas"]["ConnectorSecretStatusResponse"];
@@ -3510,6 +3589,10 @@ export interface components {
       tool_outputs: (components["schemas"]["EvidenceToolCitationSchemaItem"])[];
       valid_tags: (string)[];
       verification_duration_ms: number;
+    };
+    VerifyLoginTwoFactorRequest: {
+      challenge_token: string;
+      code: string;
     };
     VsmListResponse: {
       items: (components["schemas"]["ValueStreamMapSpec"])[];
@@ -4218,6 +4301,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/auth/login/resend-2fa": {
+    post: {
+      responses: {
+        200: components["schemas"]["ResendLoginTwoFactorResponse"];
+      };
+    };
+  };
+  "/api/v1/auth/login/verify-2fa": {
+    post: {
+      responses: {
+        200: components["schemas"]["AuthTokenResponse"];
+      };
+    };
+  };
   "/api/v1/auth/logout": {
     post: {
       responses: {
@@ -4232,6 +4329,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/auth/oidc/authorize": {
+    get: {
+      responses: {
+        200: components["schemas"]["OidcAuthorizeUrlResponse"];
+      };
+    };
+  };
+  "/api/v1/auth/oidc/callback": {
+    post: {
+      responses: {
+        200: components["schemas"]["AuthTokenResponse"];
+      };
+    };
+  };
   "/api/v1/auth/passthrough-credentials": {
     post: {
       responses: {
@@ -4239,10 +4350,24 @@ export interface paths {
       };
     };
   };
+  "/api/v1/auth/public-config": {
+    get: {
+      responses: {
+        200: components["schemas"]["PublicAuthConfigResponse"];
+      };
+    };
+  };
   "/api/v1/auth/refresh": {
     post: {
       responses: {
         200: components["schemas"]["AuthTokenResponse"];
+      };
+    };
+  };
+  "/api/v1/auth/session": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuthSessionBootstrapResponse"];
       };
     };
   };
@@ -4978,6 +5103,25 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/authentication": {
+    get: {
+      responses: {
+        200: components["schemas"]["PlatformAuthSettingsResponse"];
+      };
+    };
+    put: {
+      responses: {
+        200: components["schemas"]["PlatformAuthSettingsResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/authentication/test-oidc": {
+    post: {
+      responses: {
+        200: components["schemas"]["OidcDiscoveryTestResponse"];
+      };
+    };
+  };
   "/api/v1/settings/connectors": {
     get: {
       responses: {
@@ -5437,6 +5581,7 @@ export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSc
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
+export type AuthSessionBootstrapResponse = components["schemas"]["AuthSessionBootstrapResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
 export type BackgroundAuditRunRequest = components["schemas"]["BackgroundAuditRunRequest"];
@@ -5636,6 +5781,10 @@ export type McpToolDescriptorSchema = components["schemas"]["McpToolDescriptorSc
 export type McpToolsListResponse = components["schemas"]["McpToolsListResponse"];
 export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type NonDeterministicControlSpec = components["schemas"]["NonDeterministicControlSpec"];
+export type OidcAuthorizeUrlResponse = components["schemas"]["OidcAuthorizeUrlResponse"];
+export type OidcCallbackExchangeRequest = components["schemas"]["OidcCallbackExchangeRequest"];
+export type OidcDiscoveryTestRequest = components["schemas"]["OidcDiscoveryTestRequest"];
+export type OidcDiscoveryTestResponse = components["schemas"]["OidcDiscoveryTestResponse"];
 export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
 export type OntologyAndRagStateResponse = components["schemas"]["OntologyAndRagStateResponse"];
 export type OntologyAxiomRuleInputItem = components["schemas"]["OntologyAxiomRuleInputItem"];
@@ -5671,6 +5820,7 @@ export type PermissionPolicyImportMarkdownResponse = components["schemas"]["Perm
 export type PermissionTicketActionRequest = components["schemas"]["PermissionTicketActionRequest"];
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
 export type PilotWorkflowRunResponse = components["schemas"]["PilotWorkflowRunResponse"];
+export type PlatformAuthSettingsResponse = components["schemas"]["PlatformAuthSettingsResponse"];
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type PlatformSetupStatePutRequest = components["schemas"]["PlatformSetupStatePutRequest"];
 export type PlatformSetupStateResponse = components["schemas"]["PlatformSetupStateResponse"];
@@ -5678,6 +5828,7 @@ export type ProbabilisticControlExecutionRecord = components["schemas"]["Probabi
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
+export type PublicAuthConfigResponse = components["schemas"]["PublicAuthConfigResponse"];
 export type QuickActionSpec = components["schemas"]["QuickActionSpec"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
 export type RawGlossaryCandidateInput = components["schemas"]["RawGlossaryCandidateInput"];
@@ -5695,6 +5846,8 @@ export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimReq
 export type RemoteServiceTestAndDiscoverRequest = components["schemas"]["RemoteServiceTestAndDiscoverRequest"];
 export type RemoteServiceTestAndDiscoverResponse = components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
 export type RequiredConnectorSpec = components["schemas"]["RequiredConnectorSpec"];
+export type ResendLoginTwoFactorRequest = components["schemas"]["ResendLoginTwoFactorRequest"];
+export type ResendLoginTwoFactorResponse = components["schemas"]["ResendLoginTwoFactorResponse"];
 export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
 export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
@@ -5771,6 +5924,7 @@ export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtraction
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
+export type UpdatePlatformAuthSettingsRequest = components["schemas"]["UpdatePlatformAuthSettingsRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
 export type UpdateWorkspaceDatasourceRequest = components["schemas"]["UpdateWorkspaceDatasourceRequest"];
 export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
@@ -5800,6 +5954,7 @@ export type ValidateHelpArticleResponse = components["schemas"]["ValidateHelpArt
 export type ValueStreamMapSpec = components["schemas"]["ValueStreamMapSpec"];
 export type VerifyAndFilterCitationsRequest = components["schemas"]["VerifyAndFilterCitationsRequest"];
 export type VerifyAndFilterCitationsResponse = components["schemas"]["VerifyAndFilterCitationsResponse"];
+export type VerifyLoginTwoFactorRequest = components["schemas"]["VerifyLoginTwoFactorRequest"];
 export type VsmListResponse = components["schemas"]["VsmListResponse"];
 export type VsmPassageNodeSpec = components["schemas"]["VsmPassageNodeSpec"];
 export type VsmStepNodeSpec = components["schemas"]["VsmStepNodeSpec"];

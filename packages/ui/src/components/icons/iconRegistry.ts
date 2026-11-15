@@ -113,6 +113,7 @@ export type OrciaIconName =
   | "nav.account"
   | "settings.org"
   | "settings.iam"
+  | "settings.auth"
   | "settings.models"
   | "settings.connectors"
   | "settings.packs"
@@ -232,8 +233,9 @@ export const ORCIA_ICONS: Record<OrciaIconName, OrciaIconDefinition> = {
   "nav.account": { glyph: "◎", category: "navigation", description: "Mon Compte" },
   "settings.org": { glyph: "◫", category: "governance", description: "Organisation (Directions & Équipes)" },
   "settings.iam": { glyph: "⚿", category: "governance", description: "Comptes & Habilitations" },
+  "settings.auth": { glyph: "🛡", category: "governance", description: "Authentification" },
   "settings.models": { glyph: "◇", category: "governance", description: "Modèles IA" },
-  "settings.connectors": { glyph: "⊶", category: "governance", description: "Connecteurs & SSO" },
+  "settings.connectors": { glyph: "⊶", category: "governance", description: "Connecteurs" },
   "settings.packs": { glyph: "▣", category: "governance", description: "Packs Métiers" },
   trash: { glyph: "✕", category: "action", description: "Supprimer" },
 };

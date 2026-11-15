@@ -128,8 +128,8 @@ export function EnterpriseConnectorsSettingsSection({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <strong style={{ fontSize: "15px" }}>
             {isFr
-              ? "Connecteurs d'Entreprise & SSO du Socle"
-              : "Enterprise Connectors & Foundation SSO"}
+              ? "Connecteurs d'Entreprise du Socle"
+              : "Enterprise Connectors"}
           </strong>
           <ContextualInfoTriggerButton
             sectionId="connectors-overview"
@@ -211,6 +211,9 @@ export function EnterpriseConnectorsSettingsSection({
               <option value="CONFLUENCE">Confluence</option>
               <option value="OIDC_SSO">OIDC SSO / IAM</option>
               <option value="S3_OBJECT_STORE">S3 Object Store</option>
+              <option value="SMTP_MAIL">
+                {isFr ? "Serveur SMTP (codes OTP e-mail)" : "SMTP Server (email OTP codes)"}
+              </option>
             </select>
             <input
               type="text"
@@ -222,7 +225,15 @@ export function EnterpriseConnectorsSettingsSection({
               data-testid="connector-name-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={isFr ? "Nom usuel (ex: GitLab DS3C)" : "Display name"}
+              placeholder={
+                kind === "SMTP_MAIL"
+                  ? isFr
+                    ? "Nom usuel (ex: SMTP Relais Entreprise)"
+                    : "Display name (e.g. Corporate SMTP)"
+                  : isFr
+                    ? "Nom usuel (ex: GitLab DS3C)"
+                    : "Display name"
+              }
               style={inputStyle}
             />
             <input
@@ -235,7 +246,13 @@ export function EnterpriseConnectorsSettingsSection({
               data-testid="connector-base-url-input"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder={isFr ? "URL de base (ex: https://gitlab.ds3c.internal)" : "Base URL"}
+              placeholder={
+                kind === "SMTP_MAIL"
+                  ? "smtp://smtp.entreprise.internal:587"
+                  : isFr
+                    ? "URL de base (ex: https://gitlab.ds3c.internal)"
+                    : "Base URL"
+              }
               style={inputStyle}
             />
             <select

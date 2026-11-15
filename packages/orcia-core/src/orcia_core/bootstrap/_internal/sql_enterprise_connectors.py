@@ -162,7 +162,11 @@ async def create_enterprise_connector_on_postgres18(
             detail_override="Connector name is required.",
             instance=instance,
         )
-    safe_url = validate_safe_connector_base_url(base_url, instance=instance)
+    safe_url = validate_safe_connector_base_url(
+        base_url,
+        instance=instance,
+        allow_smtp_schemes=(connector_kind == "SMTP_MAIL"),
+    )
     cid = new_uuid7_str()
     enc_secret: str | None = None
     fingerprint: str | None = None
@@ -251,7 +255,11 @@ async def update_enterprise_connector_on_postgres18(
             raise ResourceNotFoundError(instance=instance)
 
         next_url = (
-            validate_safe_connector_base_url(base_url, instance=instance)
+            validate_safe_connector_base_url(
+                base_url,
+                instance=instance,
+                allow_smtp_schemes=(str(current[1]) == "SMTP_MAIL"),
+            )
             if base_url is not None
             else str(current[3])
         )

@@ -148,15 +148,7 @@ async def upsert_human_user_credentials_on_postgres18(
     return str(row[0]) if row and row[0] else new_user_id
 
 
-async def load_local_auth_candidate_from_postgres18(
-    conn: AsyncConnection,
-    *,
-    email: str,
-) -> LocalAuthCandidate | None:
-    """Query `users` joined with `iam_accounts` by case-insensitive email."""
-    res = await conn.execute(
-        sa.text(
-            """
+_USER_AUTH_SELECT_SQL = """
             SELECT
                 u.id AS user_id,
                 u.email,
@@ -173,16 +165,10 @@ async def load_local_auth_candidate_from_postgres18(
                 i.roles_jsonb AS iam_roles_jsonb
             FROM users u
             LEFT JOIN iam_accounts i ON LOWER(i.email) = LOWER(u.email)
-            WHERE LOWER(u.email) = LOWER(:email)
-            LIMIT 1;
-            """
-        ),
-        {"email": email.strip().lower()},
-    )
-    row = res.mappings().first()
-    if row is None:
-        return None
+"""
 
+
+def _row_to_local_auth_candidate(row: sa.RowMapping) -> LocalAuthCandidate:
     roles_list: list[str] = []
     raw_roles = row["iam_roles_jsonb"]
     if isinstance(raw_roles, list):
@@ -192,7 +178,7 @@ async def load_local_auth_candidate_from_postgres18(
             parsed = json.loads(raw_roles)
             if isinstance(parsed, list):
                 roles_list = [str(r) for r in parsed if r]
-        except Exception:
+        except json.JSONDecodeError:
             roles_list = []
 
     if not roles_list and row["platform_role"]:
@@ -213,6 +199,77 @@ async def load_local_auth_candidate_from_postgres18(
         totp_enabled=bool(row["totp_enabled"]),
         human_profile_archetype=str(row["human_profile_archetype"] or "CONTRIBUTOR"),
     )
+
+
+async def load_local_auth_candidate_from_postgres18(
+    conn: AsyncConnection,
+    *,
+    email: str,
+) -> LocalAuthCandidate | None:
+    """Query `users` joined with `iam_accounts` by case-insensitive email."""
+    res = await conn.execute(
+        sa.text(f"{_USER_AUTH_SELECT_SQL} WHERE LOWER(u.email) = LOWER(:email) LIMIT 1;"),
+        {"email": email.strip().lower()},
+    )
+    row = res.mappings().first()
+    return _row_to_local_auth_candidate(row) if row is not None else None
+
+
+async def load_auth_candidate_by_id_from_postgres18(
+    conn: AsyncConnection,
+    *,
+    user_id: str,
+) -> LocalAuthCandidate | None:
+    """Query `users` joined with `iam_accounts` by canonical UUID `user_id`."""
+    try:
+        uid = UUID(user_id)
+    except ValueError:
+        return None
+    res = await conn.execute(
+        sa.text(f"{_USER_AUTH_SELECT_SQL} WHERE u.id = :user_id LIMIT 1;"),
+        {"user_id": uid},
+    )
+    row = res.mappings().first()
+    return _row_to_local_auth_candidate(row) if row is not None else None
+
+
+async def load_auth_candidate_by_oidc_from_postgres18(
+    conn: AsyncConnection,
+    *,
+    oidc_subject: str,
+    email: str | None = None,
+) -> LocalAuthCandidate | None:
+    """Resolve an enterprise OIDC user by `oidc_subject` (or bind on pre-provisioned email)."""
+    clean_sub = oidc_subject.strip()
+    clean_email = email.strip().lower() if email and email.strip() else None
+    res = await conn.execute(
+        sa.text(
+            f"""
+            {_USER_AUTH_SELECT_SQL}
+            WHERE u.oidc_subject = :sub
+               OR (:email IS NOT NULL AND LOWER(u.email) = LOWER(:email))
+            ORDER BY CASE WHEN u.oidc_subject = :sub THEN 0 ELSE 1 END
+            LIMIT 1;
+            """
+        ),
+        {"sub": clean_sub, "email": clean_email},
+    )
+    row = res.mappings().first()
+    if row is None:
+        return None
+    candidate = _row_to_local_auth_candidate(row)
+    if clean_sub:
+        await conn.execute(
+            sa.text(
+                """
+                UPDATE users
+                SET oidc_subject = :sub
+                WHERE id = :uid AND oidc_subject IS NULL;
+                """
+            ),
+            {"sub": clean_sub, "uid": UUID(candidate.user_id)},
+        )
+    return candidate
 
 
 async def update_user_password_on_postgres18(

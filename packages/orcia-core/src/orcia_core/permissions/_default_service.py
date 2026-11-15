@@ -33,11 +33,12 @@ def build_default_auth_and_org_service(
     revocation_store: RevocationStoreProtocol | None = None,
     *,
     allow_persona_impersonation: bool = True,
+    seed_reference_personas: bool = True,
 ) -> AuthAndOrganizationService:
-    """Build the reference topology (`Karim`, `Claire`, `Marc`, `Nadia`, `Partenaire`).
+    """Build the topology and optional test personas (`seed_reference_personas`).
 
-    Persona selection defaults to allowed for local tooling and tests; the API Composition Root
-    passes `persona_impersonation_allowed(ORCIA_ENV)` so it is refused outside local / test.
+    Real runtime uses `seed_reference_personas=should_seed_test_personas_in_memory()`
+    so real PostgreSQL instances start with zero in-memory mock personas (`Marc`, `Karim`, etc.).
     """
     hasher = Argon2idPasswordHasher(time_cost=1, memory_cost=8192, parallelism=1)
     org_units = tuple(
@@ -120,77 +121,83 @@ def build_default_auth_and_org_service(
             ),
         ),
     )
-    users = (
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000601",
-            email="karim.admin@orcia.io",
-            display_name="Karim (Ingénieur Plateforme)",
-            auth_mode="HYBRID",
-            oidc_subject="oidc|karim-admin",
-            password_hash_argon2id=hasher.hash_password("OrciaAdmin!2026"),
-            totp_secret=DEFAULT_TOTP_SECRET_KARIM,
-            totp_enabled=True,
-            human_profile_archetype="SECOPS",
-            platform_role="PLATFORM_ADMIN",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
-            transverse_groups=("guild-secops",),
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000602",
-            email="claire.bu@orcia.io",
-            display_name="Claire (Directrice BU / Équipe Parente)",
-            auth_mode="HYBRID",
-            oidc_subject="oidc|claire-bu",
-            password_hash_argon2id=hasher.hash_password("OrciaDirector!2026"),
-            totp_enabled=False,
-            human_profile_archetype="EXECUTIVE",
-            platform_role="BU_DIRECTOR",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000102",
-            transverse_groups=("architecture-board",),
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000603",
-            email="marc.lead@orcia.io",
-            display_name="Marc (Chef d'Équipe / Tech Lead)",
-            auth_mode="HYBRID",
-            oidc_subject="oidc|marc-lead",
-            password_hash_argon2id=hasher.hash_password("OrciaLead!2026"),
-            totp_enabled=False,
-            human_profile_archetype="TECH_LEAD",
-            platform_role="TEAM_LEAD",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
-            transverse_groups=("architecture-board",),
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000604",
-            email="nadia.dev@orcia.io",
-            display_name="Nadia (Développeuse Senior)",
-            auth_mode="LOCAL",
-            password_hash_argon2id=hasher.hash_password("OrciaDev!2026"),
-            totp_enabled=False,
-            human_profile_archetype="DEVELOPER",
-            platform_role="CONTRIBUTOR",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
-        ),
-        UserIdentity(
-            id="0192c4e0-0000-7000-8000-000000000605",
-            email="partenaire.ext@partner.io",
-            display_name="Partenaire Externe (Invité Workspace 1)",
-            auth_mode="OIDC",
-            oidc_subject="oidc|partner-ext",
-            totp_enabled=False,
-            human_profile_archetype="DEVELOPER",
-            platform_role="CONTRIBUTOR",
-            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000105",
-        ),
-    )
-    persona_map = {
-        "karim": "0192c4e0-0000-7000-8000-000000000601",
-        "claire": "0192c4e0-0000-7000-8000-000000000602",
-        "marc": "0192c4e0-0000-7000-8000-000000000603",
-        "nadia": "0192c4e0-0000-7000-8000-000000000604",
-        "partenaire": "0192c4e0-0000-7000-8000-000000000605",
-    }
+    users: tuple[UserIdentity, ...]
+    persona_map: dict[str, str]
+    if seed_reference_personas:
+        users = (
+            UserIdentity(
+                id="0192c4e0-0000-7000-8000-000000000601",
+                email="karim.admin@orcia.io",
+                display_name="Karim (Ingénieur Plateforme)",
+                auth_mode="HYBRID",
+                oidc_subject="oidc|karim-admin",
+                password_hash_argon2id=hasher.hash_password("OrciaAdmin!2026"),
+                totp_secret=DEFAULT_TOTP_SECRET_KARIM,
+                totp_enabled=True,
+                human_profile_archetype="SECOPS",
+                platform_role="PLATFORM_ADMIN",
+                primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
+                transverse_groups=("guild-secops",),
+            ),
+            UserIdentity(
+                id="0192c4e0-0000-7000-8000-000000000602",
+                email="claire.bu@orcia.io",
+                display_name="Claire (Directrice BU / Équipe Parente)",
+                auth_mode="HYBRID",
+                oidc_subject="oidc|claire-bu",
+                password_hash_argon2id=hasher.hash_password("OrciaDirector!2026"),
+                totp_enabled=False,
+                human_profile_archetype="EXECUTIVE",
+                platform_role="BU_DIRECTOR",
+                primary_org_unit_id="0192c4e0-0000-7000-8000-000000000102",
+                transverse_groups=("architecture-board",),
+            ),
+            UserIdentity(
+                id="0192c4e0-0000-7000-8000-000000000603",
+                email="marc.lead@orcia.io",
+                display_name="Marc (Chef d'Équipe / Tech Lead)",
+                auth_mode="HYBRID",
+                oidc_subject="oidc|marc-lead",
+                password_hash_argon2id=hasher.hash_password("OrciaLead!2026"),
+                totp_enabled=False,
+                human_profile_archetype="TECH_LEAD",
+                platform_role="TEAM_LEAD",
+                primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
+                transverse_groups=("architecture-board",),
+            ),
+            UserIdentity(
+                id="0192c4e0-0000-7000-8000-000000000604",
+                email="nadia.dev@orcia.io",
+                display_name="Nadia (Développeuse Senior)",
+                auth_mode="LOCAL",
+                password_hash_argon2id=hasher.hash_password("OrciaDev!2026"),
+                totp_enabled=False,
+                human_profile_archetype="DEVELOPER",
+                platform_role="CONTRIBUTOR",
+                primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
+            ),
+            UserIdentity(
+                id="0192c4e0-0000-7000-8000-000000000605",
+                email="partenaire.ext@partner.io",
+                display_name="Partenaire Externe (Invité Workspace 1)",
+                auth_mode="OIDC",
+                oidc_subject="oidc|partner-ext",
+                totp_enabled=False,
+                human_profile_archetype="DEVELOPER",
+                platform_role="CONTRIBUTOR",
+                primary_org_unit_id="0192c4e0-0000-7000-8000-000000000105",
+            ),
+        )
+        persona_map = {
+            "karim": "0192c4e0-0000-7000-8000-000000000601",
+            "claire": "0192c4e0-0000-7000-8000-000000000602",
+            "marc": "0192c4e0-0000-7000-8000-000000000603",
+            "nadia": "0192c4e0-0000-7000-8000-000000000604",
+            "partenaire": "0192c4e0-0000-7000-8000-000000000605",
+        }
+    else:
+        users = ()
+        persona_map = {}
     evaluator = MatrixPermissionEvaluator(
         org_units=org_units,
         workspaces=workspaces,

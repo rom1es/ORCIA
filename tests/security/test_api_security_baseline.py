@@ -219,3 +219,112 @@ def test_canary_secret_is_never_returned_in_cleartext_on_settings_endpoints(
     after_resp = client.get("/api/v1/settings/entries")
     assert after_resp.status_code == 200
     assert canary not in after_resp.text
+
+
+@pytest.mark.parametrize(
+    "unsafe_url",
+    [
+        "http://169.254.169.254/latest/meta-data/",
+        "http://metadata.google.internal/computeMetadata/v1/",
+    ],
+)
+def test_ssrf_blocked_on_auth_settings_test_oidc_and_smtp_connector(
+    client: TestClient,
+    unsafe_url: str,
+) -> None:
+    """Règle 4 : les IPs métadonnées cloud sont bloquées sur auth OIDC, discovery et SMTP_MAIL."""
+    put_res = client.put(
+        "/api/v1/settings/authentication?persona_key=karim",
+        json={
+            "auth_mode": "SSO",
+            "two_factor_mode": "NONE",
+            "oidc_issuer_url": unsafe_url,
+            "oidc_client_id": "orcia-web",
+            "oidc_redirect_uri": "https://orcia.local/login",
+        },
+    )
+    assert put_res.status_code == 422
+    assert put_res.json()["error_code"] == "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL"
+
+    disc_res = client.post(
+        "/api/v1/settings/authentication/test-oidc?persona_key=karim",
+        json={"issuer_url": unsafe_url},
+    )
+    assert disc_res.status_code == 422
+    assert disc_res.json()["error_code"] == "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL"
+
+    smtp_res = client.post(
+        "/api/v1/settings/connectors?persona_key=karim",
+        json={
+            "connector_kind": "SMTP_MAIL",
+            "name": "Unsafe SMTP",
+            "base_url": unsafe_url.replace("http://", "smtp://"),
+            "auth_mode": "SERVICE_SECRET",
+            "enabled": True,
+        },
+    )
+    assert smtp_res.status_code == 422
+    assert smtp_res.json()["error_code"] == "ERR_UNSAFE_CONNECTOR_ENDPOINT_URL"
+
+
+@pytest.mark.parametrize("non_admin_persona", ["claire", "marc", "nadia"])
+def test_non_platform_admin_and_observer_cannot_read_or_mutate_auth_settings(
+    client: TestClient,
+    non_admin_persona: str,
+) -> None:
+    """Seul PLATFORM_ADMIN accède à `/api/v1/settings/authentication` ; OBSERVER est rejeté 403."""
+    get_res = client.get(f"/api/v1/settings/authentication?persona_key={non_admin_persona}")
+    assert get_res.status_code == 403
+    assert get_res.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+    put_res = client.put(
+        f"/api/v1/settings/authentication?persona_key={non_admin_persona}",
+        json={"auth_mode": "LOCAL", "two_factor_mode": "NONE"},
+    )
+    assert put_res.status_code == 403
+    assert put_res.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+    obs_res = client.put(
+        "/api/v1/settings/authentication?persona_key=karim",
+        headers={"X-Orcia-Access-Mode": "READ_ONLY_OBSERVER"},
+        json={"auth_mode": "LOCAL", "two_factor_mode": "NONE"},
+    )
+    assert obs_res.status_code == 403
+    assert obs_res.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
+
+
+def test_oidc_client_secret_canary_is_never_leaked_in_auth_settings_or_public_config(
+    client: TestClient,
+) -> None:
+    """Write-Only OIDC secret (`oidc_client_secret`) n'apparaît jamais en clair sur HTTP."""
+    canary = "CANARY_OIDC_CLIENT_SECRET_555444"  # pragma: allowlist secret
+    put_res = client.put(
+        "/api/v1/settings/authentication?persona_key=karim",
+        json={
+            "auth_mode": "SSO",
+            "two_factor_mode": "NONE",
+            "oidc_issuer_url": "https://idp.example.com/realms/orcia",
+            "oidc_client_id": "orcia-web",
+            "oidc_client_secret": canary,
+            "oidc_redirect_uri": "https://orcia.local/login",
+        },
+    )
+    assert put_res.status_code == 200, put_res.text
+    assert canary not in put_res.text
+    assert put_res.json()["oidc_client_secret_configured"] is True
+
+    get_res = client.get("/api/v1/settings/authentication?persona_key=karim")
+    assert get_res.status_code == 200
+    assert canary not in get_res.text
+
+    pub_res = client.get("/api/v1/auth/public-config")
+    assert pub_res.status_code == 200
+    assert canary not in pub_res.text
+    assert "oidc_client_secret" not in pub_res.json()
+
+    # Restore default LOCAL mode cleanly at end of module fixture
+    restore_res = client.put(
+        "/api/v1/settings/authentication?persona_key=karim",
+        json={"auth_mode": "LOCAL", "two_factor_mode": "NONE"},
+    )
+    assert restore_res.status_code == 200

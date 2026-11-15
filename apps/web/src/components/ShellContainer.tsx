@@ -7,6 +7,7 @@ import {
 import React, { useEffect } from "react";
 import { useI18n } from "../i18n";
 import {
+  isPlatformAdministratorSession,
   resolveSessionHatLabel,
   useAuthSessionStore,
 } from "../stores/authSessionStore";
@@ -107,16 +108,36 @@ function InnerShellContainer({
   const isShowcaseStandalone = Boolean(pathname?.startsWith("/showcase"));
 
   useEffect(() => {
-    if (!isAuthenticated && !isAdminModalOpen && !isShowcaseStandalone && pathname !== "/login") {
+    if (
+      !isHydrating &&
+      !(isInitialLoading && !isAuthenticated) &&
+      !isAuthenticated &&
+      !isAdminModalOpen &&
+      !isShowcaseStandalone &&
+      pathname !== "/login"
+    ) {
       dispatchNavigation("/login");
     }
-  }, [isAuthenticated, isAdminModalOpen, isShowcaseStandalone, pathname]);
+  }, [
+    isHydrating,
+    isInitialLoading,
+    isAuthenticated,
+    isAdminModalOpen,
+    isShowcaseStandalone,
+    pathname,
+  ]);
 
   useEffect(() => {
     if (isAuthenticated && pathname === "/login") {
       dispatchNavigation("/");
     }
   }, [isAuthenticated, pathname]);
+
+  const isPlatformAdmin = isPlatformAdministratorSession({
+    roles,
+    activeHat,
+    readOnlyObserver,
+  });
 
   const activeModuleKey = state.selectedModuleOverride ?? resolveModuleFromPathname(pathname);
   const selectedScope =
@@ -125,7 +146,7 @@ function InnerShellContainer({
   const effectiveProfile: UiHumanProfileBadge = {
     ...DEFAULT_HUMAN_PROFILE,
     displayName: sessionDisplayName ?? (isAuthenticated ? platformAdmin?.displayName : DEFAULT_HUMAN_PROFILE.displayName) ?? DEFAULT_HUMAN_PROFILE.displayName,
-    role: activeHat || roles[0] || "PLATFORM_ADMIN",
+    role: activeHat || roles[0] || "CONTRIBUTOR",
     accessMode: selectedScope.accessMode,
   };
 
@@ -226,6 +247,7 @@ function InnerShellContainer({
         }}
         labels={dictionary.fourZoneShell}
         disabledMenuKeys={disabledMenuKeys}
+        hiddenMenuKeys={isPlatformAdmin ? [] : ["configuration"]}
         helpColumnOpen={state.helpColumnOpen}
         onHelpColumnOpenChange={state.setHelpColumnOpen}
         onSelectMenu={(menuKey) => {
@@ -260,7 +282,7 @@ function InnerShellContainer({
           <ShellHeaderAccountControl
             userDisplayName={effectiveProfile.displayName}
             userEmail={sessionEmail ?? (isAuthenticated ? platformAdmin?.email : "") ?? ""}
-            userRole={roles[0] ?? "PLATFORM_ADMIN"}
+            userRole={roles[0] ?? "CONTRIBUTOR"}
             activeHat={activeHat}
             locale={locale}
             labels={dictionary.userAccountAndSettings}

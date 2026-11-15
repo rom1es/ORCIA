@@ -12,6 +12,7 @@ export interface UserAccountDropdownMenuProps {
   readonly userDisplayName: string;
   readonly userEmail: string;
   readonly userRole: string;
+  readonly userRoles?: readonly string[];
   readonly hat: string;
   readonly theme: UiThemePreference;
   readonly locale: UiLocalePreference;
@@ -28,6 +29,7 @@ export function UserAccountDropdownMenu({
   userDisplayName,
   userEmail,
   userRole,
+  userRoles,
   hat,
   theme,
   locale,
@@ -39,6 +41,8 @@ export function UserAccountDropdownMenu({
   onOpenSettingsModal,
   onLogoutClick,
 }: UserAccountDropdownMenuProps): React.ReactElement {
+  const canAssumePlatformAdmin =
+    userRole === "PLATFORM_ADMIN" || Boolean(userRoles?.includes("PLATFORM_ADMIN"));
   return (
     <div
       role="menu"
@@ -63,7 +67,11 @@ export function UserAccountDropdownMenu({
           className="rounded border border-surface-border bg-surface-primary px-1.5 py-0.5 text-xs"
         >
           {Object.entries(roleMap)
-            .filter(([key]) => key !== "READ_ONLY_OBSERVER")
+            .filter(
+              ([key]) =>
+                key !== "READ_ONLY_OBSERVER" &&
+                (key !== "PLATFORM_ADMIN" || canAssumePlatformAdmin),
+            )
             .map(([key, label]) => (
               <option key={key} value={key}>
                 {label}

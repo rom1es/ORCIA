@@ -1,9 +1,24 @@
-import { createOrciaApiClient, OrciaProblemError } from "@orcia/api-client";
-import { BiModeLoginView, type Rfc9457LoginError } from "@orcia/ui";
-import React, { useEffect, useMemo, useState } from "react";
-import { useOrciaNavigation } from "./navigationAdapter";
+import {
+  createOrciaApiClient,
+  OrciaProblemError,
+  type AuthTokenResponse,
+  type PublicAuthConfigResponse,
+} from "@orcia/api-client";
+import {
+  BiModeLoginView,
+  type LoginTwoFactorStepState,
+  type Rfc9457LoginError,
+  type UiLoginViewMode,
+} from "@orcia/ui";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { resolveWebApiBaseUrl, useAuthSessionStore } from "../stores/authSessionStore";
+import { useOrciaNavigation } from "./navigationAdapter";
+import {
+  readStorageItem,
+  syncBrowserBootEpoch,
+  writeStorageItem,
+} from "./platformSetupStorageHelpers";
 
 const SESSION_STORAGE_KEY = "orcia.auth.session.v1";
 
@@ -11,18 +26,33 @@ export interface LoginScreenViewProps {
   readonly onAuthenticated?: () => void;
 }
 
+function mapTwoFactorStepFromResponse(res: AuthTokenResponse): LoginTwoFactorStepState | null {
+  if (!res.requires_two_factor || !res.challenge_token || !res.challenge_kind) {
+    return null;
+  }
+  return {
+    challengeToken: res.challenge_token,
+    challengeKind: res.challenge_kind,
+    maskedDestination: res.masked_destination ?? null,
+    totpProvisioningUri: res.totp_provisioning_uri ?? null,
+    totpManualKey: res.totp_manual_key ?? null,
+    expiresInSeconds: res.expires_in_seconds,
+  };
+}
+
 export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) {
   const { dictionary, locale } = useI18n();
   const { navigateTo } = useOrciaNavigation();
   const loginWithSession = useAuthSessionStore((s) => s.loginWithSession);
+  const resetAuthSession = useAuthSessionStore((s) => s.resetAuthSession);
+  const [publicConfig, setPublicConfig] = useState<PublicAuthConfigResponse | null>(null);
   const [loginError, setLoginError] = useState<Rfc9457LoginError | null>(null);
-  const [authenticatedEmail, setAuthenticatedEmail] = useState<string | null>(() => {
-    try {
-      return globalThis.localStorage?.getItem(SESSION_STORAGE_KEY) ?? null;
-    } catch {
-      return null;
-    }
-  });
+  const [twoFactorStep, setTwoFactorStep] = useState<LoginTwoFactorStepState | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const oidcCallbackHandledRef = useRef(false);
+  const [authenticatedEmail, setAuthenticatedEmail] = useState<string | null>(() =>
+    readStorageItem(SESSION_STORAGE_KEY),
+  );
 
   const apiClient = useMemo(
     () =>
@@ -33,97 +63,220 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
     [locale],
   );
 
+  const toProblemError = useCallback(
+    (err: unknown): Rfc9457LoginError => {
+      if (err instanceof OrciaProblemError) {
+        return {
+          errorCode: err.problem.error_code,
+          detail: err.problem.detail,
+          traceId: err.problem.trace_id,
+        };
+      }
+      return {
+        errorCode: "ERR_AUTH_UNAVAILABLE",
+        detail:
+          err instanceof Error && err.message
+            ? err.message
+            : dictionary.biModeLogin.errorBannerTitle,
+      };
+    },
+    [dictionary.biModeLogin.errorBannerTitle],
+  );
+
+  const completeAuthenticatedSession = useCallback(
+    (res: AuthTokenResponse) => {
+      setLoginError(null);
+      setTwoFactorStep(null);
+      setAuthenticatedEmail(res.email);
+      loginWithSession({
+        access_token: res.access_token,
+        email: res.email,
+        display_name: res.display_name,
+        platform_role: res.platform_role,
+        roles: res.roles,
+        must_change_password: res.must_change_password,
+      });
+      writeStorageItem(SESSION_STORAGE_KEY, res.email);
+      if (onAuthenticated) {
+        onAuthenticated();
+      }
+      navigateTo("/");
+    },
+    [loginWithSession, navigateTo, onAuthenticated],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void apiClient
+      .getPublicAuthConfig()
+      .then((cfg) => {
+        if (cancelled) return;
+        if (syncBrowserBootEpoch(cfg.boot_epoch)) {
+          resetAuthSession();
+          setAuthenticatedEmail(null);
+        }
+        setPublicConfig(cfg);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        // Pre-flight config failure must never render a user login-attempt error banner on mount.
+        console.warn("[orcia/auth] public-config bootstrap fallback to LOCAL mode", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiClient, resetAuthSession]);
+
+  useEffect(() => {
+    if (oidcCallbackHandledRef.current || typeof window === "undefined") {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code")?.trim();
+    const state = params.get("state")?.trim();
+    if (!code || !state) {
+      return;
+    }
+    oidcCallbackHandledRef.current = true;
+    setIsSubmitting(true);
+    setLoginError(null);
+    void apiClient
+      .exchangeOidcCallback({ code, state })
+      .then((res) => {
+        try {
+          const cleanedUrl = new URL(window.location.href);
+          cleanedUrl.searchParams.delete("code");
+          cleanedUrl.searchParams.delete("state");
+          cleanedUrl.searchParams.delete("session_state");
+          window.history.replaceState({}, "", cleanedUrl.toString());
+        } catch {
+          // Ignore URL history error
+        }
+        completeAuthenticatedSession(res);
+      })
+      .catch((err: unknown) => {
+        setLoginError(toProblemError(err));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  }, [apiClient, completeAuthenticatedSession, toProblemError]);
+
+  const handleAuthResponse = useCallback(
+    (res: AuthTokenResponse) => {
+      const challenge = mapTwoFactorStepFromResponse(res);
+      if (challenge) {
+        setLoginError(null);
+        setTwoFactorStep(challenge);
+        return;
+      }
+      completeAuthenticatedSession(res);
+    },
+    [completeAuthenticatedSession],
+  );
+
+  const authMode: UiLoginViewMode = publicConfig?.auth_mode === "SSO" ? "SSO" : "LOCAL";
+
   return (
     <div
       data-testid="login-page-container"
       data-allow-password-manager="true"
+      data-auth-mode={authMode}
       data-authenticated-user={authenticatedEmail ?? ""}
     >
       <BiModeLoginView
         labels={dictionary.biModeLogin}
+        authMode={authMode}
+        showInlineTotpField={false}
+        ssoButtonLabel={publicConfig?.sso_button_label ?? undefined}
+        oidcConfigured={publicConfig?.oidc_enabled ?? false}
+        isSubmitting={isSubmitting}
         error={loginError}
+        twoFactorStep={twoFactorStep}
         onTriggerOidcSso={() => {
+          setIsSubmitting(true);
+          setLoginError(null);
           void apiClient
-            .loginOidc({ oidc_subject: "oidc|marc-lead" })
+            .getOidcAuthorizeUrl()
             .then((res) => {
-              setLoginError(null);
-              setAuthenticatedEmail(res.email);
-              loginWithSession({
-                email: res.email,
-                displayName: res.display_name,
-                roles: res.roles,
-                mustChangePassword: false,
-              });
-              try {
-                globalThis.localStorage?.setItem(SESSION_STORAGE_KEY, res.email);
-              } catch {
-                // Ignore storage quota errors
+              if (typeof window !== "undefined" && window.location?.assign) {
+                window.location.assign(res.authorize_url);
               }
-              if (onAuthenticated) {
-                onAuthenticated();
-              }
-              navigateTo("/");
             })
             .catch((err: unknown) => {
-              if (err instanceof OrciaProblemError) {
-                setLoginError({
-                  errorCode: err.problem.error_code,
-                  detail: err.problem.detail,
-                  traceId: err.problem.trace_id,
-                });
-              }
+              setLoginError(toProblemError(err));
+            })
+            .finally(() => {
+              setIsSubmitting(false);
             });
         }}
-        onSubmitLocalLogin={({ email, password, totpCode }) => {
-          if (!email.includes("@") || password.length < 6 || totpCode === "000000") {
+        onSubmitLocalLogin={({ email, password }) => {
+          if (!email.includes("@") || password.length < 6) {
             setLoginError({
               errorCode: "ERR_INVALID_CREDENTIALS",
-              detail: "Adresse e-mail, mot de passe ou code de vérification incorrect.",
-              traceId: "0195f000-0000-7000-8000-000000009457",
+              detail: dictionary.biModeLogin.errorBannerTitle,
             });
             return;
           }
+          setIsSubmitting(true);
           setLoginError(null);
-          setAuthenticatedEmail(email);
-          try {
-            globalThis.localStorage?.setItem(SESSION_STORAGE_KEY, email);
-          } catch {
-            // Ignore storage quota errors
-          }
           void apiClient
             .loginLocal({
               email,
               password,
-              totp_code: totpCode,
             })
             .then((res) => {
-              setAuthenticatedEmail(res.email);
-              loginWithSession({
-                access_token: res.access_token,
-                email: res.email,
-                displayName: res.display_name,
-                roles: res.roles,
-                mustChangePassword: res.must_change_password,
-              });
-              try {
-                globalThis.localStorage?.setItem(SESSION_STORAGE_KEY, res.email);
-              } catch {
-                // Ignore storage quota errors
-              }
-              if (onAuthenticated) {
-                onAuthenticated();
-              }
-              navigateTo("/");
+              handleAuthResponse(res);
             })
             .catch((err: unknown) => {
-              if (err instanceof OrciaProblemError) {
-                setLoginError({
-                  errorCode: err.problem.error_code,
-                  detail: err.problem.detail,
-                  traceId: err.problem.trace_id,
-                });
-              }
+              setLoginError(toProblemError(err));
+            })
+            .finally(() => {
+              setIsSubmitting(false);
             });
+        }}
+        onSubmitTwoFactor={async (code) => {
+          if (!twoFactorStep) return;
+          setIsSubmitting(true);
+          setLoginError(null);
+          try {
+            const res = await apiClient.verifyLoginTwoFactor({
+              challenge_token: twoFactorStep.challengeToken,
+              code,
+            });
+            completeAuthenticatedSession(res);
+          } catch (err: unknown) {
+            setLoginError(toProblemError(err));
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+        onResendTwoFactor={async () => {
+          if (!twoFactorStep) return;
+          setIsSubmitting(true);
+          setLoginError(null);
+          try {
+            const res = await apiClient.resendLoginTwoFactor({
+              challenge_token: twoFactorStep.challengeToken,
+            });
+            setTwoFactorStep((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    maskedDestination: res.masked_destination ?? prev.maskedDestination,
+                    expiresInSeconds: res.expires_in_seconds,
+                  }
+                : null,
+            );
+          } catch (err: unknown) {
+            setLoginError(toProblemError(err));
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+        onCancelTwoFactor={() => {
+          setTwoFactorStep(null);
+          setLoginError(null);
         }}
       />
     </div>

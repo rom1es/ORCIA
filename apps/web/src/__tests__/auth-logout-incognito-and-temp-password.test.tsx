@@ -1,9 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { LoginScreenView } from "../components/LoginScreenView";
+import { OrciaNavigationProvider } from "../components/navigationAdapter";
 import { ShellContainer } from "../components/ShellContainer";
 import { I18nProvider } from "../i18n";
 import {
+  resolveWebApiBaseUrl,
   simulateUnauthenticatedBrowser,
   UNAUTHENTICATED_SESSION_STATE,
   useAuthSessionStore,
@@ -116,7 +119,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
     expect(screen.getByTestId("auth-hydrating-loader")).toBeDefined();
     expect(screen.getByText("Chargement de la session...")).toBeDefined();
 
-    // 2. Wait for refresh to complete (401) and standalone login to mount
+    // 2. Wait for silent session bootstrap to complete and standalone login to mount
     await waitFor(() => {
       expect(screen.queryByTestId("auth-hydrating-loader")).toBeNull();
       expect(screen.getByTestId("unauthenticated-shell-fallback")).toBeDefined();
@@ -128,15 +131,18 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
     expect(screen.queryByTestId("user-account-dropdown-trigger")).toBeNull();
     expect(screen.queryByTestId("eight-menu-item-cockpit")).toBeNull();
 
-    // 4. Verify POST /api/v1/auth/refresh was called
+    // 4. Verify GET /api/v1/auth/session was called (never noisy 401 POST /refresh)
+    const sessionCalls = getRecordedVitestApiCalls().filter(
+      (c) => c.path === "/api/v1/auth/session",
+    );
+    expect(sessionCalls.length).toBeGreaterThanOrEqual(1);
     const refreshCalls = getRecordedVitestApiCalls().filter(
       (c) => c.path === "/api/v1/auth/refresh",
     );
-    expect(refreshCalls.length).toBeGreaterThanOrEqual(1);
+    expect(refreshCalls).toHaveLength(0);
 
-    // 5. Expand local login accordion and submit valid login credentials via the form
-    const accordionToggle = screen.getByTestId("login-local-accordion-toggle");
-    fireEvent.click(accordionToggle);
+    // 5. In default exclusive LOCAL mode, credentials inputs are directly rendered (no accordion)
+    expect(screen.queryByTestId("login-local-accordion-toggle")).toBeNull();
 
     const emailInput = screen.getByTestId("login-local-email") as HTMLInputElement;
     const passwordInput = screen.getByTestId("login-local-password") as HTMLInputElement;
@@ -180,11 +186,11 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       expect(screen.getByTestId("protected-workspace-content")).toBeDefined();
     });
 
-    // 2. StrictMode double-mount must have issued exactly 1 POST /api/v1/auth/refresh
-    const refreshCalls = getRecordedVitestApiCalls().filter(
-      (c) => c.path === "/api/v1/auth/refresh",
+    // 2. StrictMode double-mount must have issued exactly 1 GET /api/v1/auth/session
+    const sessionCalls = getRecordedVitestApiCalls().filter(
+      (c) => c.path === "/api/v1/auth/session",
     );
-    expect(refreshCalls).toHaveLength(1);
+    expect(sessionCalls).toHaveLength(1);
 
     // 3. Session state is authenticated
     const session = useAuthSessionStore.getState();
@@ -233,5 +239,79 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       (c) => c.path === "/api/v1/auth/logout",
     );
     expect(logoutCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("normalizes redundant /api baseUrl suffix and keeps /login free of error banner when public-config fails on mount", async () => {
+    vi.stubEnv("VITE_ORCIA_API_BASE_URL", "/api/");
+    expect(resolveWebApiBaseUrl()).toBe("");
+    vi.stubEnv("VITE_ORCIA_API_BASE_URL", "http://localhost:8000/api");
+    expect(resolveWebApiBaseUrl()).toBe("http://localhost:8000");
+    vi.unstubAllEnvs();
+
+    const originalFetch = globalThis.fetch;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          type: "about:blank",
+          title: "Not Found",
+          status: 404,
+          error_code: "ERR_RESOURCE_NOT_FOUND",
+          detail: "La ressource ou la route demandée n'existe pas sur la plateforme ORCIA.",
+          instance: "/api/v1/auth/public-config",
+          trace_id: "01a1dea0ae92746cb77fe642462647f0",
+        }),
+        { status: 404, headers: { "Content-Type": "application/problem+json" } },
+      ),
+    ) as typeof fetch;
+
+    try {
+      render(
+        <I18nProvider initialLocale="fr">
+          <LoginScreenView />
+        </I18nProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("bi-mode-login-view")).toBeDefined();
+        expect(warnSpy).toHaveBeenCalled();
+      });
+      // Pre-flight config failure must NOT display the "Impossible de vous connecter" red alert
+      expect(screen.queryByTestId("login-rfc9457-error")).toBeNull();
+    } finally {
+      globalThis.fetch = originalFetch;
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("does not redirect away from /cockpit during initial session hydration when platformAdmin is cached", async () => {
+    seedVitestPlatformSetupState({}, { email: "admin@orcia.test", displayName: "Admin Test" });
+    setVitestMockRefreshFails(false);
+    useAuthSessionStore.setState({ ...UNAUTHENTICATED_SESSION_STATE, isHydrating: true });
+    const navigatedRoutes: string[] = [];
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <OrciaNavigationProvider
+          adapter={{
+            pathname: "/cockpit",
+            navigateTo: (href) => navigatedRoutes.push(href),
+          }}
+        >
+          <ShellContainer>
+            <div data-testid="protected-cockpit-content">Cockpit Protégé</div>
+          </ShellContainer>
+        </OrciaNavigationProvider>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("protected-cockpit-content")).toBeDefined();
+    });
+    expect(navigatedRoutes).not.toContain("/login");
+    const sessionCalls = getRecordedVitestApiCalls().filter(
+      (c) => c.path === "/api/v1/auth/session",
+    );
+    expect(sessionCalls.length).toBeGreaterThanOrEqual(1);
   });
 });

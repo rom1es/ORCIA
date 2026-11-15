@@ -9,7 +9,6 @@ import { I18nProvider } from "../i18n";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import {
   ALL_SETTINGS_TABS,
-  SCOPED_LEAD_SETTINGS_TABS,
   formatCountNoun,
   resetAuthSessionStore,
   resolveSessionHatLabel,
@@ -22,13 +21,14 @@ afterEach(() => {
   resetAuthSessionStore();
 });
 
-describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons & Mon Compte Sidebar", () => {
-  it("resolves deterministic /settings tab visibility and permission verbs across all 6 governance roles", () => {
+describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Compte Sidebar", () => {
+  it("grants /settings tabs exclusively to PLATFORM_ADMIN and restricts all non-admin roles across the 6 governance roles", () => {
     const adminAccess = resolveSettingsAccess({
       roles: ["PLATFORM_ADMIN"],
       activeHat: "PLATFORM_ADMIN",
     });
     expect(adminAccess.visibleTabs).toEqual(ALL_SETTINGS_TABS);
+    expect(adminAccess.visibleTabs).toContain("authentication");
     expect(adminAccess.canMutate).toBe(true);
     expect(adminAccess.isReadOnlyRestricted).toBe(false);
     expect(adminAccess.allowedVerbs).toEqual([
@@ -40,35 +40,16 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
       "grant",
     ]);
 
-    const secopsAccess = resolveSettingsAccess({
-      roles: ["SECOPS"],
-      activeHat: "SECOPS",
-    });
-    expect(secopsAccess.visibleTabs).toEqual(ALL_SETTINGS_TABS);
-    expect(secopsAccess.canMutate).toBe(true);
-
-    const buLeadAccess = resolveSettingsAccess({
-      roles: ["BU_LEAD"],
-      activeHat: "BU_LEAD",
-    });
-    expect(buLeadAccess.visibleTabs).toEqual(SCOPED_LEAD_SETTINGS_TABS);
-    expect(buLeadAccess.canMutate).toBe(true);
-
-    const teamLeadAccess = resolveSettingsAccess({
-      roles: ["TEAM_LEAD"],
-      activeHat: "TEAM_LEAD",
-    });
-    expect(teamLeadAccess.visibleTabs).toEqual(["organization", "iam"]);
-    expect(teamLeadAccess.canMutate).toBe(true);
-
-    const contributorAccess = resolveSettingsAccess({
-      roles: ["CONTRIBUTOR"],
-      activeHat: "CONTRIBUTOR",
-    });
-    expect(contributorAccess.visibleTabs).toEqual([]);
-    expect(contributorAccess.allowedVerbs).toEqual(["read"]);
-    expect(contributorAccess.canMutate).toBe(false);
-    expect(contributorAccess.isReadOnlyRestricted).toBe(true);
+    for (const nonAdminRole of ["SECOPS", "BU_LEAD", "TEAM_LEAD", "CONTRIBUTOR", "OBSERVER"] as const) {
+      const access = resolveSettingsAccess({
+        roles: [nonAdminRole],
+        activeHat: nonAdminRole,
+      });
+      expect(access.visibleTabs).toEqual([]);
+      expect(access.allowedVerbs).toEqual(["read"]);
+      expect(access.canMutate).toBe(false);
+      expect(access.isReadOnlyRestricted).toBe(true);
+    }
 
     const observerAccess = resolveSettingsAccess({
       roles: ["PLATFORM_ADMIN"],
@@ -99,7 +80,7 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
     );
   });
 
-  it("renders exactly 5 wireframe-icon tabs for PLATFORM_ADMIN, separates Organization from IAM, removes Workflows & Glossary tabs, and applies .orcia-ds-btn-danger", async () => {
+  it("renders all 6 wireframe-icon tabs including Authentification & Connecteurs for PLATFORM_ADMIN, removes Workflows & Glossary, and applies .orcia-ds-btn-danger", async () => {
     useAuthSessionStore.getState().setAuthSession({
       roles: ["PLATFORM_ADMIN"],
       activeHat: "PLATFORM_ADMIN",
@@ -118,12 +99,14 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
 
     const tablist = screen.getByTestId("settings-domain-tabs");
     const tabButtons = tablist.querySelectorAll('[role="tab"]');
-    expect(tabButtons.length).toBe(5);
+    expect(tabButtons.length).toBe(6);
 
     for (const key of ALL_SETTINGS_TABS) {
       const btn = screen.getByTestId(`settings-tab-${key}`);
       expect(btn.querySelector("svg")).not.toBeNull();
     }
+    expect(screen.getByTestId("settings-tab-authentication").textContent).toBe("Authentification");
+    expect(screen.getByTestId("settings-tab-connectors").textContent).toBe("Connecteurs");
 
     expect(screen.queryByTestId("settings-tab-workflows")).toBeNull();
     expect(screen.queryByTestId("settings-tab-glossary")).toBeNull();
@@ -148,10 +131,10 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
     expect(screen.queryByTestId("settings-organization-section")).toBeNull();
   });
 
-  it("restricts BU_LEAD / TEAM_LEAD to 2 adaptive tabs (organization, iam) and shows read-only notice + Mon Compte modal shortcut for CONTRIBUTOR / OBSERVER", async () => {
+  it("hides platform settings tabs & Configuration menu from SECOPS/BU_LEAD/CONTRIBUTOR and shows read-only notice + Mon Compte modal shortcut", async () => {
     useAuthSessionStore.getState().setAuthSession({
-      roles: ["BU_LEAD"],
-      activeHat: "BU_LEAD",
+      roles: ["SECOPS"],
+      activeHat: "SECOPS",
     });
 
     const queryClient = createOrciaQueryClient();
@@ -165,13 +148,11 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
       </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId("settings-tab-organization")).toBeDefined();
-    expect(screen.getByTestId("settings-tab-iam")).toBeDefined();
-    expect(screen.queryByTestId("settings-tab-models")).toBeNull();
-    expect(screen.queryByTestId("settings-tab-connectors")).toBeNull();
-    expect(screen.queryByTestId("settings-tab-packs")).toBeNull();
+    expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
+    expect(screen.queryByTestId("eight-menu-item-configuration")).toBeNull();
+    expect(screen.getByTestId("settings-readonly-access-banner").textContent).toContain("lecture seule");
 
-    // Switch role dynamically to CONTRIBUTOR -> 0 admin tabs, read-only banner + Open My Account CTA
+    // Switch role dynamically to CONTRIBUTOR -> still restricted with Open My Account CTA
     act(() => {
       useAuthSessionStore.getState().setAuthSession({
         roles: ["CONTRIBUTOR"],
@@ -180,6 +161,7 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
     });
 
     expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
+    expect(screen.queryByTestId("eight-menu-item-configuration")).toBeNull();
     const banner = screen.getByTestId("settings-readonly-access-banner");
     expect(banner.textContent).toContain("lecture seule");
 
@@ -187,7 +169,7 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
     expect(screen.getByTestId("user-settings-modal")).toBeDefined();
   });
 
-  it("displays dynamic localized userHatLabel (FR & EN) and opens UserSettingsModal from the Sidebar 'Mon Compte' entry as well as Topbar", () => {
+  it("displays dynamic localized userHatLabel (FR & EN), hides Configuration sidebar menu for SECOPS, and opens UserSettingsModal", () => {
     useAuthSessionStore.getState().setAuthSession({
       roles: ["SECOPS"],
       activeHat: "SECOPS",
@@ -208,6 +190,8 @@ describe("Story 17.1 — 5 Adaptive /settings Tabs, Dynamic RBAC, Danger Buttons
         </ShellContainer>
       </I18nProvider>,
     );
+
+    expect(screen.queryByTestId("eight-menu-item-configuration")).toBeNull();
 
     const dropdownTrigger = screen.getByTestId("user-account-dropdown-trigger");
     expect(dropdownTrigger.textContent).toContain("Sophie SecOps");

@@ -1047,10 +1047,10 @@ action_items:
     priority: P2
     depends_on: []
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-15
     description: >
-      Constaté lors de l'exécution globale de tests/unit/test_site_catalog_sync.py : assertion installedPacksCount >= 2 en échec depuis la migration Epic 15 vers packs/orcia-docs et packs/sdlc.
+      Constaté lors de l'exécution globale de tests/unit/test_site_catalog_sync.py : résolu le 2026-11-15 en scannant packs/*/pack.yaml en plus de packages/orcia-pack-*.
   - id: DEVOPS-HELM-01
     title: "Chart Helm Kubernetes complet des 9 services ORCIA incluant gitnexus-mcp (:ro) et NetworkPolicies"
     action: "Créer deploy/helm/orcia/ (pgvector, redis, seaweedfs, api, workers, gitnexus-mcp avec secret/NetworkPolicy/PDB) conformément à l'Arbitrage 6A"
@@ -1080,3 +1080,13 @@ action_items:
     epic: epic-18
     description: >
       FINDING-02 architect review : durcissement anti-énumération des datasources sur l'endpoint webhook entrant.
+  - id: DEBT-ORCH-VOCAB-01
+    title: "Migration versionnée OpenAPI des littéraux confluence_draft / jira_draft et simulated_dry_run_* hors de orcia_core.orchestration"
+    action: "Planifier une dépréciation coordonnée OpenAPI/SDK/UI (v2) pour remplacer confluence_draft/jira_draft dans agents_and_skills_models.py et simulated_dry_run_* dans remote_test_bench_and_mcp_exposure.py afin de rétablir les invariants 3.2e et 3.2f sans rupture de contrat"
+    priority: P2
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-15
+    description: >
+      Fuites préexistantes dans packages/api-client/openapi.json faisant échouer test_story_3_2e_sdlc_pack_and_connectors.py:56 et test_story_3_2f_step_executors_invoker_and_finance.py:93 ; ne pas relâcher ces assertions de test.

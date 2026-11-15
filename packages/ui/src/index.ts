@@ -45,7 +45,24 @@ export {
   type BiModeLoginLabels,
   type BiModeLoginViewProps,
   type Rfc9457LoginError,
+  type UiLoginViewMode,
 } from "./primitives/BiModeLoginView";
+export {
+  LoginTwoFactorStepPanel,
+  type LoginTwoFactorLabels,
+  type LoginTwoFactorStepPanelProps,
+  type LoginTwoFactorStepState,
+  type UiLoginChallengeKind,
+} from "./primitives/LoginTwoFactorStepPanel";
+export {
+  PlatformAuthSettingsCard,
+  type PlatformAuthOidcDiscoveryFeedback,
+  type PlatformAuthSettingsCardLabels,
+  type PlatformAuthSettingsCardProps,
+  type PlatformAuthSettingsDraft,
+  type UiPlatformAuthMode,
+  type UiPlatformTwoFactorMode,
+} from "./primitives/PlatformAuthSettingsCard";
 export {
   CollapsibleAppRail,
   type CollapsibleAppRailLabels,

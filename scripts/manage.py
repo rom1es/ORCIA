@@ -268,6 +268,31 @@ def _build_process_env() -> dict[str, str]:
     return env
 
 
+def _apply_api_migrations_if_configured(env: dict[str, str]) -> None:
+    """Apply Alembic `upgrade head` before booting local `api` so routes never outrun schema."""
+    if env.get("ORCIA_SKIP_AUTO_MIGRATE") == "1":
+        return
+    alembic_bin = REPO_ROOT / ".venv" / "bin" / "alembic"
+    alembic_ini = REPO_ROOT / "infra" / "migrations" / "alembic.ini"
+    if not alembic_bin.is_file() or not alembic_ini.is_file():
+        return
+    res = subprocess.run(
+        [str(alembic_bin), "-c", str(alembic_ini), "upgrade", "head"],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if res.returncode != 0:
+        print(
+            "⚠ [api] Vérification Alembic non bloquante en échec "
+            f"(code={res.returncode}): {(res.stderr or res.stdout).strip()[:240]}"
+        )
+    else:
+        print("✔ [api] Schéma Alembic à jour (upgrade head)")
+
+
 def start_component(component: str) -> bool:
     """Start a single component if not already running."""
     status = get_component_status(component)
@@ -291,6 +316,7 @@ def start_component(component: str) -> bool:
     env = _build_process_env()
 
     if component == "api":
+        _apply_api_migrations_if_configured(env)
         host, port = resolve_api_host_and_port()
         cmd = [
             str(REPO_ROOT / ".venv" / "bin" / "uvicorn"),
@@ -300,6 +326,18 @@ def start_component(component: str) -> bool:
             "--port",
             str(port),
         ]
+        if env.get("ORCIA_API_NO_RELOAD") != "1":
+            cmd.extend(
+                [
+                    "--reload",
+                    "--reload-dir",
+                    str(REPO_ROOT / "apps" / "api" / "src"),
+                    "--reload-dir",
+                    str(REPO_ROOT / "packages" / "orcia-core" / "src"),
+                    "--reload-dir",
+                    str(REPO_ROOT / "packages" / "orcia-connectors" / "src"),
+                ]
+            )
         cwd = REPO_ROOT
         wait_host_port: tuple[str, int] | None = (host, port)
     elif component == "worker":

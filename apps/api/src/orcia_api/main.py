@@ -16,6 +16,7 @@ from orcia_api.routers.assistant import router as assistant_router
 from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.routers.auth import router as auth_router
+from orcia_api.routers.auth_settings import router as auth_settings_router
 from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
@@ -109,6 +110,7 @@ def create_app() -> FastAPI:
     application.include_router(inbox_and_leases_router)
     application.include_router(control_center_router)
     application.include_router(iam_accounts_router)
+    application.include_router(auth_settings_router)
     application.include_router(enterprise_connectors_router)
     application.include_router(ai_models_hub_router)
     application.include_router(settings_and_studio_router)
