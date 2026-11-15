@@ -254,6 +254,7 @@ def initialize_app_services(app: FastAPI) -> None:
             llm_gateway=app.state.llm_gateway,
             orchestration_setup=app.state.orchestration_service,
             workflow_engine=app.state.orchestration_service.engine,
+            cognitive_router=app.state.cognitive_router_service,
         )
 
     if getattr(app.state, "http_client", None) is None or getattr(

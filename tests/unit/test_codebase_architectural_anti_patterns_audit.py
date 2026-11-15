@@ -134,43 +134,29 @@ def test_story_19_4_zero_hardcoded_model_names_in_production_seeds_and_router_de
     assert DEFAULT_LLM_MODEL_ENDPOINT_SEEDS == (), "Seeds must be empty tuple"
     assert build_default_tier_mappings() == (), "Tier mappings must be empty tuple"
 
-    # Enforce absence of hardcoded fallback model strings in key production router files
-    inspected_files = (
-        REPO_ROOT
-        / "packages"
-        / "orcia-core"
-        / "src"
-        / "orcia_core"
-        / "bootstrap"
-        / "workflow_bootstrap_seeds.py",
-        REPO_ROOT
-        / "packages"
-        / "orcia-core"
-        / "src"
-        / "orcia_core"
-        / "orchestration"
-        / "cognitive_router.py",
-        REPO_ROOT
-        / "apps"
-        / "api"
-        / "src"
-        / "orcia_api"
-        / "routers"
-        / "assistant_llm_gemini_adapter.py",
-        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers" / "assistant_llm_providers.py",
-        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers" / "bootstrap_accostage.py",
+    # Enforce absence of hardcoded fallback model strings across all backend production code
+    import re
+
+    scan_dirs = (
+        REPO_ROOT / "packages" / "orcia-core" / "src",
+        REPO_ROOT / "packages" / "orcia-connectors" / "src",
+        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "schemas",
+        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers",
+        REPO_ROOT / "apps" / "worker" / "src",
     )
-    banned_tokens = (
-        "gemini-argon",
-        "claude-sonnet-4-20260514",
-        "gpt-4.1-2026-04-14",
-        "mistral-large-2511",
+    banned_regex = re.compile(
+        r"gemini-|claude-|gpt-[0-9]|mistral-|llama|qwen|gemma",
+        re.IGNORECASE,
     )
     violations: list[str] = []
-    for file_path in inspected_files:
-        rel = file_path.relative_to(REPO_ROOT)
-        content = file_path.read_text(encoding="utf-8")
-        for token in banned_tokens:
-            if token in content:
-                violations.append(f"{rel} contains banned hardcoded model token `{token}`")
+    for base_dir in scan_dirs:
+        for py_path in base_dir.rglob("*.py"):
+            rel = py_path.relative_to(REPO_ROOT)
+            content = py_path.read_text(encoding="utf-8")
+            for idx, line in enumerate(content.splitlines(), start=1):
+                match = banned_regex.search(line)
+                if match:
+                    violations.append(
+                        f"{rel}:{idx} matched banned pattern `{match.group(0)}`: {line.strip()}"
+                    )
     assert violations == [], "Hardcoded model violations:\n" + "\n".join(violations)

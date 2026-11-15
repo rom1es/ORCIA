@@ -112,6 +112,7 @@ class AssistantAgentService:
         harness: AssistantHarness | None = None,
         orchestration_setup: WorkflowOrchestrationSetupService | None = None,
         workflow_engine: DurableOrchestrationEngine | None = None,
+        cognitive_router: Any | None = None,
     ) -> None:
         self._context_source = context_source
         self._vector_store = vector_store
@@ -121,6 +122,7 @@ class AssistantAgentService:
         self._engine = workflow_engine or (
             orchestration_setup.engine if orchestration_setup is not None else None
         )
+        self._cognitive_router = cognitive_router
         self._active_proposals: dict[str, AssistantWorkflowProposal] = {}
 
     def classify_intent(
@@ -353,11 +355,37 @@ class AssistantAgentService:
                 f"pour le périmètre `{workspace_id}` ?"
             )
 
+        model_family = ""
+        model_id = ""
+        if self._cognitive_router is not None:
+            try:
+                resolved = self._cognitive_router.resolve_mapping(
+                    scope_id=workspace_id,
+                    tier="complex",
+                    effort="default",
+                )
+                model_family = resolved.model_family
+                model_id = resolved.model_name
+            except Exception:
+                pass
+
+        if not model_family or not model_id:
+            if isinstance(self._llm, DeterministicCassetteLLM):
+                model_family = "cassette"
+                model_id = "cassette/assistant-agent"
+            else:
+                from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+                raise TierModelNotConfiguredError(
+                    inference_tier="complex",
+                    instance=f"assistant_agent:{workspace_id}",
+                )
+
         prompt_req = LlmPromptRequest(
             system_prompt=assembled.system_prompt,
             user_prompt=assembled.user_prompt,
-            model_family="anthropic",
-            model_id="anthropic/claude-3-7-sonnet",
+            model_family=model_family,
+            model_id=model_id,
             execution_mode="COACHING",
             metadata={"workspace_id": workspace_id, "intent": intent},
         )

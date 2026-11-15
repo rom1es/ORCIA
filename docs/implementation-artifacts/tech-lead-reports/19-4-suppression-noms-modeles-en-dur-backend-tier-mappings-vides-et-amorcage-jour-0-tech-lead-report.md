@@ -103,7 +103,16 @@
 | `tests/unit/test_assistant_agnostic_async_llm_bridge.py` | Modification | Injection explicite de noms de modèles de test dans les appels de normalisation. |
 | `tests/unit/test_gemini_argon_provider_adapter.py` | Modification | Test de rejet de `model_name` vide pour le constructeur d'URL Gemini native. |
 | `tests/unit/test_epic_10_story_10_2_three_speed_router.py` | Modification | Enregistrement de mappings de test explicites sur le routeur cognitif. |
-| `tests/unit/test_codebase_architectural_anti_patterns_audit.py` | Modification | Règle d'audit statique garantissant l'absence de noms de modèles en dur dans les routeurs et adaptateurs de production. |
+| `packages/orcia-core/src/orcia_core/orchestration/step_executors.py` | Modification | Résolution dynamique des modèles via `cognitive_router` ou `metadata` ; éradication de `"anthropic/claude-3-7-sonnet"`. |
+| `packages/orcia-core/src/orcia_core/orchestration/assistant_agent.py` | Modification | Résolution dynamique de l'agent assistant via le routeur cognitif ; éradication de `"anthropic/claude-3-7-sonnet"`. |
+| `packages/orcia-core/src/orcia_core/orchestration/agents_and_skills_manager.py` | Modification | Résolution dynamique du tier modèle de l'agent (`llm_model_tier`) via le routeur cognitif ; éradication de `"anthropic/claude-3-7-sonnet"`. |
+| `packages/orcia-core/src/orcia_core/gates/agentic_lenses.py` | Modification | `evaluator_model_id` rendu obligatoire sans valeur par défaut codée en dur. |
+| `packages/orcia-core/src/orcia_core/gates/agentic.py` | Modification | Routage souverain orthogonal sans noms de modèles en dur (`"local/ollama-qwen2.5-coder-32b"` et `"local/vllm-mistral-small-24b"` supprimés). |
+| `packages/orcia-core/src/orcia_core/catalog/seeds.py` | Modification | Suppression des scalaires modèles en dur (`"claude-sonnet-4"` et `"gpt-4.1"` remplacés par les tiers cognitifs). |
+| `apps/api/src/orcia_api/schemas/gates.py` | Modification | `evaluator_model_id` rendu obligatoire sans valeur par défaut (`google/gemini-2.5-pro` supprimé). |
+| `apps/api/src/orcia_api/schemas/workspace_governance.py` | Modification | `generator_model_family` et `judge_model_family` rendus obligatoires sans repli en dur (`claude-4.6`, `mistral-large-3`). |
+| `tests/unit/test_codebase_architectural_anti_patterns_audit.py` | Modification | Règle d'audit statique élargie scannant tout `packages/orcia-core/src`, `orcia-connectors/src`, `schemas/`, `routers/` et `apps/worker/src`. |
+| `tests/unit/test_story_4_2_agentic_gates_and_secrets.py` | Modification | Fourniture de fixtures d'évaluation orthogonale de test adaptées au contrat strict. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
 - **Couverture de tests ciblée** :
@@ -118,8 +127,9 @@
   - `mypy --strict packages/orcia-core/src apps/api/src apps/worker/src` : `Success: no issues found in 311 source files`
   - `lint-imports` : `5 contracts kept, 0 broken`
   - `lint_spine.py` : `ok: true, 0 findings`
+  - `grep -rnE "gemini-|claude-|gpt-[0-9]|mistral-|llama|qwen|gemma" apps/api/src packages/*/src apps/worker/src --include=*.py` : **0 hit** (éradication intégrale sur l'ensemble du périmètre de production).
 - **Audit Anti-Patrons Architecturaux** :
-  - `tests/unit/test_codebase_architectural_anti_patterns_audit.py` : `5 passed` (dont `test_no_hardcoded_model_names_in_production_endpoints_and_adapters` vérifiant zéro `gemini-*`, `gpt-*`, `claude-*`, etc. dans les adaptateurs/routeurs de production).
+  - `tests/unit/test_codebase_architectural_anti_patterns_audit.py` : `5 passed` (dont `test_no_hardcoded_model_names_in_production_endpoints_and_adapters` scannant récursivement `packages/orcia-core/src`, `packages/orcia-connectors/src`, `apps/api/src/orcia_api/schemas`, `apps/api/src/orcia_api/routers`, et `apps/worker/src`).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
 - **Couche 1a — Tests Unitaires Python (`pytest` + `hypothesis`)** :

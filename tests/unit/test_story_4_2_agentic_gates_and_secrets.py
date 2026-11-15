@@ -130,6 +130,7 @@ def test_agentic_gate_orthogonality_5_lenses_and_local_sovereign_routing() -> No
                 step_key="step-2-arch",
                 executor_model_family="anthropic",
                 evaluator_model_family="anthropic",
+                evaluator_model_id="test/evaluator-orth",
                 candidate_artifact={"summary": "Test"},
             )
         )
@@ -143,6 +144,7 @@ def test_agentic_gate_orthogonality_5_lenses_and_local_sovereign_routing() -> No
             step_key="step-2-arch",
             executor_model_family="anthropic",
             evaluator_model_family="google",
+            evaluator_model_id="google/evaluator-test",
             data_classification="SENSITIVE",
             anonymize_pii_reversible=True,
             custom_pii_entities=("Jean Dupont",),
@@ -178,8 +180,8 @@ def test_agentic_gate_orthogonality_5_lenses_and_local_sovereign_routing() -> No
     assert res_pass.evaluation.status == "PASS"
     assert res_pass.evaluation.score >= 0.85
     assert res_pass.routed_to_local_sovereign_model is True
-    assert res_pass.routed_model_family == "local_ollama"
-    assert res_pass.routed_model_id == "local/ollama-qwen2.5-coder-32b"
+    assert res_pass.routed_model_family == "local_engine"
+    assert res_pass.routed_model_id == "local/google/evaluator-test"
     assert res_pass.cot_items_purged == 2
     assert res_pass.pii_tokens_redacted >= 2
     assert len(res_pass.lens_results) == 5
@@ -205,6 +207,7 @@ def test_agentic_gate_orthogonality_5_lenses_and_local_sovereign_routing() -> No
             step_key="step-3-dev",
             executor_model_family="anthropic",
             evaluator_model_family="openai",
+            evaluator_model_id="openai/evaluator-test",
             candidate_artifact={
                 "summary": "Utilisation de sqlite en test d'intégration.",
                 "claims": [
@@ -354,6 +357,7 @@ def test_api_agentic_gate_endpoint_and_observer_guard() -> None:
             "step_key": "step-2",
             "executor_model_family": "anthropic",
             "evaluator_model_family": "google",
+            "evaluator_model_id": "google/evaluator-test",
             "candidate_artifact": {"summary": "Test"},
         },
     )
@@ -370,6 +374,7 @@ def test_api_agentic_gate_endpoint_and_observer_guard() -> None:
             "step_key": "step-2",
             "executor_model_family": "anthropic",
             "evaluator_model_family": "anthropic",
+            "evaluator_model_id": "anthropic/evaluator-test",
             "candidate_artifact": {"summary": "Test"},
         },
     )
@@ -386,6 +391,7 @@ def test_api_agentic_gate_endpoint_and_observer_guard() -> None:
             "step_key": "step-2",
             "executor_model_family": "anthropic",
             "evaluator_model_family": "google",
+            "evaluator_model_id": "google/evaluator-test",
             "data_classification": "SENSITIVE",
             "candidate_artifact": {
                 "summary": "<thinking>CoT</thinking> Artefact conforme pour marc@orcia.io.",

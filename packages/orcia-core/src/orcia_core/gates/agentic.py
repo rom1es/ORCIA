@@ -3,7 +3,7 @@
 Implements `FR-18`, `AD-10`, `AD-19`, `NFR-SEC-2`, and `DEC-SEC-01`:
 - Enforces `evaluator_model_family != executor_model_family` (`ModelOrthogonalityViolationError`).
 - Purges 100% of executor Chain-of-Thought before invoking the 4 independent evaluator lenses.
-- Routes `SENSITIVE` / `RESTRICTED` data to sovereign local models (`local/ollama-*` / `local/vllm`)
+- Routes `SENSITIVE` / `RESTRICTED` data to sovereign local models (`local_engine` / `local_vllm`)
   and applies `PiiReversibleScrubber` (`anonymize_pii_reversible: true`) with local re-hydration.
 - Runs the 4 independent lenses in parallel (`asyncio.gather`, zero cross-visibility) followed by
   Lens 5 (`synthesis_and_structure`) which integrates `step_memlog_jsonb`, computes `agentic_score`,
@@ -73,12 +73,23 @@ def _resolve_sovereign_evaluator_route(
 ) -> tuple[str, str, bool]:
     """Enforce model orthogonality and route `SENSITIVE`/`RESTRICTED` data to local models."""
     assert_model_orthogonality(executor_family, requested_evaluator_family)
+    is_local = (
+        "local" in requested_evaluator_family.lower()
+        or "sovereign" in requested_evaluator_family.lower()
+        or "vllm" in requested_evaluator_family.lower()
+    )
     if data_classification in ("SENSITIVE", "RESTRICTED"):
+        if is_local:
+            return requested_evaluator_family.strip().lower(), requested_evaluator_model_id, True
         exec_norm = executor_family.strip().lower()
-        if exec_norm != "local_ollama":
-            return "local_ollama", "local/ollama-qwen2.5-coder-32b", True
-        return "local_vllm", "local/vllm-mistral-small-24b", True
-    return requested_evaluator_family.strip().lower(), requested_evaluator_model_id, False
+        eval_fam = "local_vllm" if exec_norm == "local_engine" else "local_engine"
+        routed_model = (
+            requested_evaluator_model_id
+            if requested_evaluator_model_id.startswith("local/")
+            else f"local/{requested_evaluator_model_id}"
+        )
+        return eval_fam, routed_model, True
+    return requested_evaluator_family.strip().lower(), requested_evaluator_model_id, is_local
 
 
 class AgenticGateService:

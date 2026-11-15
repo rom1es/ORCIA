@@ -241,7 +241,7 @@ class AgenticGateEvaluateRequest(BaseModel):
     step_key: str = Field(..., min_length=1, max_length=128)
     executor_model_family: str = Field(..., min_length=1, max_length=64)
     evaluator_model_family: str = Field(..., min_length=1, max_length=64)
-    evaluator_model_id: str = Field(default="google/gemini-2.5-pro", min_length=1, max_length=128)
+    evaluator_model_id: str = Field(..., min_length=1, max_length=128)
     data_classification: Literal["PUBLIC", "INTERNAL", "SENSITIVE", "RESTRICTED"] = Field(
         default="INTERNAL"
     )

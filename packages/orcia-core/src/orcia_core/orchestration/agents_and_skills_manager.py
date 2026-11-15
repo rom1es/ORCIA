@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import replace
-from typing import Literal
+from typing import Any, Literal
 
 from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.orchestration.agents_and_skills_models import (
@@ -67,8 +67,14 @@ def _require_non_empty(value: str, detail_msg: str, instance: str | None) -> str
 class AgentsAndSkillsManagementService:
     """Domain service for creating, linking, and executing Skills and Agents (`🤖 Mes Agents`)."""
 
-    def __init__(self, *, llm_gateway: LLMPort | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        llm_gateway: LLMPort | None = None,
+        cognitive_router: Any | None = None,
+    ) -> None:
         self._llm: LLMPort = llm_gateway or DeterministicCassetteLLM()
+        self._router = cognitive_router
         self._skills: dict[str, ManagedSkillRecord] = {}
         self._agents: dict[str, ManagedAgentRecord] = {}
 
@@ -391,6 +397,37 @@ class AgentsAndSkillsManagementService:
             if traces
             else "Aucune compétence externe mobilisée."
         )
+        model_family = ""
+        model_id = ""
+        tier = (
+            agent.llm_model_tier
+            if agent.llm_model_tier in ("simple", "medium", "complex")
+            else "medium"
+        )
+        if self._router is not None:
+            try:
+                resolved = self._router.resolve_mapping(
+                    scope_id="",
+                    tier=tier,
+                    effort="default",
+                )
+                model_family = resolved.model_family
+                model_id = resolved.model_name
+            except Exception:
+                pass
+
+        if not model_family or not model_id:
+            if isinstance(self._llm, DeterministicCassetteLLM):
+                model_family = "cassette"
+                model_id = f"cassette/{agent.slug}"
+            else:
+                from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+                raise TierModelNotConfiguredError(
+                    inference_tier=tier,
+                    instance=f"agent_manager:{agent.slug}",
+                )
+
         llm_text = (
             llm_response_override.strip()
             if llm_response_override and llm_response_override.strip()
@@ -402,8 +439,8 @@ class AgentsAndSkillsManagementService:
                         f"Posture: {agent.posture} | Instructions: {agent.instructions}"
                     ),
                     user_prompt=f"Demande: {clean_prompt}\nCompétences: {skills_block}",
-                    model_family="anthropic",
-                    model_id="anthropic/claude-3-7-sonnet",
+                    model_family=model_family,
+                    model_id=model_id,
                     execution_mode="COACHING",
                     metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
                 ),

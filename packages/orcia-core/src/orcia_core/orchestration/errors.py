@@ -346,6 +346,21 @@ class TierModelNotConfiguredError(OrciaDomainError):
     error_code = "ERR_TIER_MODEL_NOT_CONFIGURED"
     http_status, type_slug = 422, "tier-model-not-configured"
 
+    def __init__(
+        self,
+        inference_tier: str = "",
+        *,
+        detail_override: str | None = None,
+        instance: str | None = None,
+    ) -> None:
+        self.inference_tier = inference_tier
+        msg = detail_override or (
+            f"Aucun modèle IA configuré pour le palier cognitif '{inference_tier}'."
+            if inference_tier
+            else None
+        )
+        super().__init__(detail_override=msg, instance=instance)
+
 
 __all__ = [
     "CriticalWorkflowRequiresHumanGateError",

@@ -51,8 +51,14 @@ def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> Any:
 class AgentStepExecutor:
     """Real `AGENT` step executor invoking `LLMPort` (`DeterministicCassetteLLM` in CI, `AC-F1`)."""
 
-    def __init__(self, llm_gateway: LLMPort | None = None) -> None:
+    def __init__(
+        self,
+        llm_gateway: LLMPort | None = None,
+        *,
+        cognitive_router: Any | None = None,
+    ) -> None:
         self._llm: LLMPort = llm_gateway or DeterministicCassetteLLM()
+        self._router = cognitive_router
 
     @property
     def step_type(self) -> str:
@@ -72,6 +78,36 @@ class AgentStepExecutor:
         serialized_inputs = json.dumps(
             scrub_connector_secrets(context.resolved_inputs), sort_keys=True
         )
+        model_family = str(context.metadata.get("model_family") or "")
+        model_id = str(context.metadata.get("model_id") or "")
+        if not model_family or not model_id:
+            if self._router is not None:
+                tier = str(context.metadata.get("inference_tier") or "complex")
+                effort = str(context.metadata.get("effort") or "default")
+                tier_val = tier if tier in ("simple", "medium", "complex") else "complex"
+                try:
+                    resolved = self._router.resolve_mapping(
+                        scope_id=context.workspace_id,
+                        tier=tier_val,
+                        effort=effort,
+                    )
+                    model_family = resolved.model_family
+                    model_id = resolved.model_name
+                except Exception:
+                    pass
+
+            if not model_family or not model_id:
+                if isinstance(self._llm, DeterministicCassetteLLM):
+                    model_family = "cassette"
+                    model_id = f"cassette/{context.step_key}"
+                else:
+                    from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+                    raise TierModelNotConfiguredError(
+                        inference_tier=str(context.metadata.get("inference_tier") or "complex"),
+                        instance=f"agent_step_executor:{context.step_key}",
+                    )
+
         prompt_req = LlmPromptRequest(
             system_prompt=(
                 f"ORCIA Agent Executor | workflow={context.workflow_uri} | step={context.step_key}"
@@ -81,8 +117,8 @@ class AgentStepExecutor:
                 f"Inputs: {serialized_inputs}\n"
                 f"AgentURI: {context.agent_uri or 'orcia://agents/default'}"
             ),
-            model_family="anthropic",
-            model_id="anthropic/claude-3-7-sonnet",
+            model_family=model_family,
+            model_id=model_id,
             execution_mode=mode,
             metadata={
                 "run_id": context.run_id,

@@ -100,6 +100,7 @@ def get_agents_and_skills_service(
     )
     if svc is None:
         llm = getattr(request.app.state, "llm_gateway", None)
-        svc = AgentsAndSkillsManagementService(llm_gateway=llm)
+        router = getattr(request.app.state, "cognitive_router_service", None)
+        svc = AgentsAndSkillsManagementService(llm_gateway=llm, cognitive_router=router)
         request.app.state.agents_and_skills_service = svc
     return svc

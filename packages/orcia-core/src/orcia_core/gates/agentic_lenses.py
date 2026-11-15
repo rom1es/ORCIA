@@ -107,8 +107,8 @@ class AgenticGateInput:
     step_key: str
     executor_model_family: str
     evaluator_model_family: str
+    evaluator_model_id: str
     candidate_artifact: dict[str, Any]
-    evaluator_model_id: str = "google/gemini-2.5-pro"
     data_classification: OntologyDataClassification = "INTERNAL"
     anonymize_pii_reversible: bool = True
     custom_pii_entities: tuple[str, ...] = ()
