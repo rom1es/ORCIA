@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 105,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 36,
+    "alembicMigrationsCount": 37,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 129,
+    "techLeadReportsCount": 130,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -202,7 +202,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261114_1706_temporary_password_and_local_iam_auth",
     "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
     "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events",
-    "20261115_1901_platform_auth_policy_and_email_otp"
+    "20261115_1901_platform_auth_policy_and_email_otp",
+    "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx"
   ],
   "architectureDecisions": [
     {
@@ -481,6 +482,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.5 (CAP-052, CAP-190)",
+      "reportFile": "19-5-usage-embedding-hub-port-hexagonal-embedding-port-et-adaptateurs-httpx-tech-lead-report.md",
+      "domain": "Usage embedding dans le Hub des Modèles IA, Port Hexagonal Pur EmbeddingPort & Adaptateurs HTTPX Asynchrones (AD-24.5, D5, D6)",
+      "summary": "Migration Alembic 20261115_2105 (colonne usage: chat \\"
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Story 19.4 (CAP-052, CAP-053, CAP-190)",

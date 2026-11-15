@@ -23,6 +23,7 @@ from orcia_core.orchestration.ai_models_records import (
     InferenceEffort,
     InferenceTier,
     LlmAuthMode,
+    LlmModelUsage,
     LlmProtocolMode,
     PinRemovalMode,
     ScopeLevel,
@@ -33,6 +34,7 @@ from orcia_core.orchestration.errors import (
 )
 from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_core.permissions.secret_hint import SecretInputSpec, SecretStatusView
+from orcia_core.rag.adapters.embedding_httpx import assert_embedding_usage_supported
 from orcia_kernel.ids import new_uuid7_str
 
 
@@ -65,6 +67,7 @@ async def create_ai_model_mapping_pg18(
     endpoint_uri: str,
     auth_mode: LlmAuthMode = "api_key",
     protocol_mode: LlmProtocolMode = "openai_compatible",
+    usage: LlmModelUsage = "chat",
     env_var_name: str | None = None,
     fallback_order: int = 1,
     max_tokens_budget: int = 8192,
@@ -75,6 +78,32 @@ async def create_ai_model_mapping_pg18(
 ) -> AiModelMappingRecord:
     """Insert a new mapping with AES-256-GCM encrypted API key and SSRF validation."""
     clean_url = validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
+    if usage == "embedding":
+        assert_embedding_usage_supported(provider_slug=provider_slug, protocol_mode=protocol_mode)
+        if scope_level == "GLOBAL":
+            await conn.execute(
+                sa.text(
+                    """
+                    UPDATE workspace_llm_tier_mappings
+                    SET is_active = FALSE, updated_at = NOW()
+                    WHERE usage = 'embedding' AND scope_level = 'GLOBAL' AND is_active = TRUE
+                    """
+                )
+            )
+        # Avoid collision on legacy UNIQUE (scope_id, inference_tier, effort, fallback_order)
+        max_order_res = await conn.execute(
+            sa.text(
+                """
+                SELECT COALESCE(MAX(fallback_order), 0) + 1
+                FROM workspace_llm_tier_mappings
+                WHERE scope_id = :scope_id AND inference_tier = :tier AND effort = :effort
+                """
+            ),
+            {"scope_id": scope_id, "tier": inference_tier, "effort": effort},
+        )
+        next_order = max_order_res.scalar() or 1
+        fallback_order = max(fallback_order, next_order)
+
     mapping_id = new_uuid7_str()
     now = _now_iso()
     host = urlparse(clean_url).netloc or "default"
@@ -101,7 +130,7 @@ async def create_ai_model_mapping_pg18(
                 fallback_model_name, endpoint_uri, auth_mode, protocol_mode,
                 env_var_name, encrypted_api_key, secret_fingerprint,
                 secret_masked_hint, secret_updated_at, secret_updated_by,
-                health_status, created_at
+                health_status, created_at, usage
             ) VALUES (
                 :id, :scope_level, :scope_id, :inference_tier, :effort, :provider_slug,
                 :model_family, :model_name, :max_tokens_budget, :max_cost_usd,
@@ -109,7 +138,7 @@ async def create_ai_model_mapping_pg18(
                 :fallback_model_name, :endpoint_uri, :auth_mode, :protocol_mode,
                 :env_var_name, :encrypted_api_key, :secret_fingerprint,
                 :secret_masked_hint, :secret_updated_at, :secret_updated_by,
-                'UNTESTED', NOW()
+                'UNTESTED', NOW(), :usage
             )
             """
         ),
@@ -130,6 +159,7 @@ async def create_ai_model_mapping_pg18(
             "endpoint_uri": clean_url,
             "auth_mode": auth_mode,
             "protocol_mode": protocol_mode,
+            "usage": usage,
             "env_var_name": env_var_name,
             "encrypted_api_key": encrypted_key,
             "secret_fingerprint": sec_status.fingerprint,
@@ -153,6 +183,7 @@ async def update_ai_model_mapping_pg18(
     endpoint_uri: str | None = None,
     auth_mode: LlmAuthMode | None = None,
     protocol_mode: LlmProtocolMode | None = None,
+    usage: LlmModelUsage | None = None,
     env_var_name: str | None = None,
     is_active: bool | None = None,
     secret_input: SecretInputSpec | None = None,
@@ -162,6 +193,29 @@ async def update_ai_model_mapping_pg18(
     """Update existing mapping with conditional key rotation and SSRF re-check."""
     current = await get_ai_model_mapping_pg18(conn, mapping_id, instance=instance)
     now = _now_iso()
+    effective_usage = usage if usage is not None else current.usage
+    effective_protocol = protocol_mode if protocol_mode is not None else current.protocol_mode
+    effective_active = is_active if is_active is not None else current.is_active
+
+    if effective_usage == "embedding":
+        assert_embedding_usage_supported(
+            provider_slug=current.provider_slug, protocol_mode=effective_protocol
+        )
+        if effective_active and current.scope_level == "GLOBAL":
+            await conn.execute(
+                sa.text(
+                    """
+                    UPDATE workspace_llm_tier_mappings
+                    SET is_active = FALSE, updated_at = NOW()
+                    WHERE id != :id
+                      AND usage = 'embedding'
+                      AND scope_level = 'GLOBAL'
+                      AND is_active = TRUE
+                    """
+                ),
+                {"id": mapping_id},
+            )
+
     clean_url = current.endpoint_uri
     if endpoint_uri is not None:
         clean_url = validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
@@ -187,6 +241,7 @@ async def update_ai_model_mapping_pg18(
                 endpoint_uri = :endpoint_uri,
                 auth_mode = COALESCE(:auth_mode, auth_mode),
                 protocol_mode = COALESCE(:protocol_mode, protocol_mode),
+                usage = COALESCE(:usage, usage),
                 env_var_name = COALESCE(:env_var_name, env_var_name),
                 is_active = COALESCE(:is_active, is_active),
                 encrypted_api_key = :encrypted_api_key,
@@ -205,6 +260,7 @@ async def update_ai_model_mapping_pg18(
             "endpoint_uri": clean_url,
             "auth_mode": auth_mode,
             "protocol_mode": protocol_mode,
+            "usage": usage,
             "env_var_name": env_var_name,
             "is_active": is_active,
             "encrypted_api_key": encrypted_key,

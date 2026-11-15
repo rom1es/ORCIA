@@ -68,6 +68,12 @@ export interface AiModelsHubDictionary {
   readonly healthUntested: string;
   readonly secretServerEnv: string;
   readonly secretLocalNoAuth: string;
+  readonly usageLabel: string;
+  readonly usageChat: string;
+  readonly usageEmbedding: string;
+  readonly activeEmbeddingBadge: string;
+  readonly colUsage: string;
+  readonly anthropicNoEmbeddingWarning: string;
 }
 
 export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
@@ -141,6 +147,13 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   healthUntested: "Non testé",
   secretServerEnv: "Variable serveur", // pragma: allowlist secret
   secretLocalNoAuth: "Réseau local (sans clé)", // pragma: allowlist secret
+  usageLabel: "Rôle / Usage du modèle",
+  usageChat: "Chat & Inférence Cognitive",
+  usageEmbedding: "Embeddings Sémantiques (1024-dim RAG)",
+  activeEmbeddingBadge: "Modèle d'embedding actif (global)",
+  colUsage: "Rôle",
+  anthropicNoEmbeddingWarning:
+    "Anthropic ne propose pas d'API d'embeddings. Choisissez OpenAI, Mistral, Gemini ou Ollama.",
 };
 
 export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
@@ -214,4 +227,11 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   healthUntested: "Untested",
   secretServerEnv: "Server variable", // pragma: allowlist secret
   secretLocalNoAuth: "Local network (no key)", // pragma: allowlist secret
+  usageLabel: "Model Role / Usage",
+  usageChat: "Chat & Cognitive Inference",
+  usageEmbedding: "Semantic Embeddings (1024-dim RAG)",
+  activeEmbeddingBadge: "Active global embedding model",
+  colUsage: "Role",
+  anthropicNoEmbeddingWarning:
+    "Anthropic does not offer an embedding API. Choose OpenAI, Mistral, Gemini or Ollama.",
 };

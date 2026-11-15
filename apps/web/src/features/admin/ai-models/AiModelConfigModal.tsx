@@ -63,6 +63,7 @@ export function AiModelConfigModal({
   const [protocolMode, setProtocolMode] = useState<
     "openai_compatible" | "gemini_native" | "anthropic_messages"
   >("openai_compatible");
+  const [usage, setUsage] = useState<"chat" | "embedding">("chat");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -78,6 +79,7 @@ export function AiModelConfigModal({
       setAuthMode(initialMapping.auth_mode as "api_key" | "env_var" | "none_local");
       setEnvVarName(initialMapping.env_var_name || "");
       setProtocolMode(initialMapping.protocol_mode);
+      setUsage((initialMapping.usage as "chat" | "embedding") ?? "chat");
       setSecretAction("keep");
       setSecretInputText("");
     } else {
@@ -94,6 +96,7 @@ export function AiModelConfigModal({
       setSecretAction("keep");
       setSecretInputText("");
       setProtocolMode("openai_compatible");
+      setUsage("chat");
     }
     setErrorMessage(null);
     setIsSubmitting(false);
@@ -119,6 +122,11 @@ export function AiModelConfigModal({
   };
 
   const handleFormSubmit = async (andTest: boolean) => {
+    if (usage === "embedding" && modelFamily.toLowerCase() === "anthropic") {
+      setErrorMessage(labels.anthropicNoEmbeddingWarning);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -127,8 +135,8 @@ export function AiModelConfigModal({
         const payload: AiModelCreateRequest = {
           scope_level: "GLOBAL",
           display_name: displayName.trim() || primaryModel.trim(),
-          inference_tier: selectedTier,
-          effort: selectedEffort,
+          inference_tier: usage === "embedding" ? "auto" : selectedTier,
+          effort: usage === "embedding" ? "default" : selectedEffort,
           provider_slug: modelFamily.trim().toLowerCase(),
           model_family: modelFamily.trim(),
           model_name: primaryModel.trim(),
@@ -141,6 +149,7 @@ export function AiModelConfigModal({
               : isGemini
                 ? "gemini_native"
                 : protocolMode,
+          usage: usage,
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
           secret_input:
             authMode === "api_key" && rawApiKey.trim()
@@ -158,6 +167,7 @@ export function AiModelConfigModal({
           auth_mode: authMode,
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
           protocol_mode: protocolMode,
+          usage: usage,
         };
         const ok = await onSubmitPatch(initialMapping.id, patch);
         if (ok) onOpenChange(false);
@@ -252,6 +262,8 @@ export function AiModelConfigModal({
             selectedEffort={selectedEffort}
             setSelectedEffort={setSelectedEffort}
             isGemini={isGemini}
+            usage={usage}
+            setUsage={setUsage}
           />
         )}
 

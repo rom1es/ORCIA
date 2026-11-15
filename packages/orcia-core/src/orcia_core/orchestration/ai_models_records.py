@@ -13,6 +13,7 @@ InferenceTier = Literal["simple", "medium", "complex", "auto"]
 InferenceEffort = Literal["default", "fast", "balanced", "deep"]
 LlmAuthMode = Literal["api_key", "env_var", "none_local"]
 LlmProtocolMode = Literal["openai_compatible", "gemini_native", "anthropic_messages"]
+LlmModelUsage = Literal["chat", "embedding"]
 HealthStatus = Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"]
 PinRemovalMode = Literal["reject", "drain", "force"]
 
@@ -38,6 +39,7 @@ class AiModelMappingRecord:
     endpoint_uri: str = ""
     auth_mode: LlmAuthMode = "api_key"
     protocol_mode: LlmProtocolMode = "openai_compatible"
+    usage: LlmModelUsage = "chat"
     env_var_name: str | None = None
     fallback_order: int = 1
     max_tokens_budget: int = 8192
@@ -77,6 +79,7 @@ __all__ = [
     "InferenceEffort",
     "InferenceTier",
     "LlmAuthMode",
+    "LlmModelUsage",
     "LlmProtocolMode",
     "PinRemovalMode",
     "ScopeLevel",

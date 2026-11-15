@@ -19,6 +19,7 @@ InferenceTierLiteral = Literal["simple", "medium", "complex", "auto"]
 InferenceEffortLiteral = Literal["default", "fast", "balanced", "deep"]
 LlmAuthModeLiteral = Literal["api_key", "env_var", "none_local"]
 LlmProtocolModeLiteral = Literal["openai_compatible", "gemini_native", "anthropic_messages"]
+LlmModelUsageLiteral = Literal["chat", "embedding"]
 HealthStatusLiteral = Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"]
 PinRemovalModeLiteral = Literal["reject", "drain", "force"]
 
@@ -41,6 +42,7 @@ class AiModelMappingItemResponse(BaseModel):
     endpoint_uri: str
     auth_mode: LlmAuthModeLiteral
     protocol_mode: LlmProtocolModeLiteral
+    usage: LlmModelUsageLiteral = "chat"
     env_var_name: str | None = None
     fallback_order: int
     max_tokens_budget: int
@@ -82,6 +84,7 @@ class AiModelCreateRequest(BaseModel):
     endpoint_uri: str = Field(min_length=1, max_length=1024)
     auth_mode: LlmAuthModeLiteral = "api_key"
     protocol_mode: LlmProtocolModeLiteral = "openai_compatible"
+    usage: LlmModelUsageLiteral = "chat"
     env_var_name: str | None = Field(default=None, max_length=128)
     fallback_order: int = Field(default=1, ge=1, le=100)
     max_tokens_budget: int = Field(default=8192, gt=0)
@@ -99,6 +102,7 @@ class AiModelPatchRequest(BaseModel):
     endpoint_uri: str | None = Field(default=None, max_length=1024)
     auth_mode: LlmAuthModeLiteral | None = None
     protocol_mode: LlmProtocolModeLiteral | None = None
+    usage: LlmModelUsageLiteral | None = None
     env_var_name: str | None = Field(default=None, max_length=128)
     is_active: bool | None = None
     secret_input: SecretInputRequest | None = None
@@ -153,6 +157,7 @@ __all__ = [
     "InferenceEffortLiteral",
     "InferenceTierLiteral",
     "LlmAuthModeLiteral",
+    "LlmModelUsageLiteral",
     "LlmProtocolModeLiteral",
     "PinRemovalModeLiteral",
     "ScopeLevelLiteral",

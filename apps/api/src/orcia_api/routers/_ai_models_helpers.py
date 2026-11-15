@@ -45,6 +45,7 @@ def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
         endpoint_uri=m.endpoint_uri,
         auth_mode=m.auth_mode,
         protocol_mode=m.protocol_mode,
+        usage=m.usage,
         env_var_name=m.env_var_name,
         fallback_order=m.fallback_order,
         max_tokens_budget=m.max_tokens_budget,

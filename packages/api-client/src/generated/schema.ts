@@ -87,7 +87,7 @@ export interface components {
       custom_pii_entities?: (string)[];
       data_classification?: "PUBLIC" | "INTERNAL" | "SENSITIVE" | "RESTRICTED";
       evaluator_model_family: string;
-      evaluator_model_id?: string;
+      evaluator_model_id: string;
       executor_model_family: string;
       fact_confidence_threshold?: number;
       ontology_facts?: Record<string, string>;
@@ -136,6 +136,7 @@ export interface components {
       scope_id?: string;
       scope_level?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      usage?: "chat" | "embedding";
     };
     AiModelDeleteImpactResponse: {
       dependent_workflow_ids: (string)[];
@@ -178,6 +179,7 @@ export interface components {
       scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       secret_status: components["schemas"]["SecretStatusResponse"];
       updated_at: string;
+      usage?: "chat" | "embedding";
     };
     AiModelMappingsListResponse: {
       active_tiers_coverage: Record<string, boolean>;
@@ -193,6 +195,7 @@ export interface components {
       is_active?: boolean | null;
       protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages" | null;
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      usage?: "chat" | "embedding" | null;
     };
     AiModelTestResponse: {
       health_status: "OPERATIONAL" | "DEGRADED" | "ERROR" | "UNTESTED";
@@ -2748,8 +2751,8 @@ export interface components {
       trace_id: string;
     };
     RunPilotTicketToTechSpecRequest: {
-      generator_model_family?: string;
-      judge_model_family?: string;
+      generator_model_family: string;
+      judge_model_family: string;
       judge_sovereignty_tier?: "CLOUD_PUBLIC" | "EU_SOVEREIGN" | "ON_PREM_AIRGAPPED";
       run_override_uri?: string | null;
       ticket_key: string;

@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+from typing import cast
+from urllib.parse import urlparse
+
+import httpx
 from fastapi import Request
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import ProgressiveDay0AccostageService
 from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
 from orcia_core.orchestration import AssistantAgentService
+from orcia_core.orchestration._internal.sql_ai_model_mappings import (
+    ensure_ai_model_mappings_schema_on_postgres18,
+    get_active_global_embedding_model_pg18,
+)
+from orcia_core.orchestration.ai_models_crypto import unpack_encrypted_api_key
 from orcia_core.orchestration.assistant_citations_and_v5_guard import (
     AssistantCitationAndV5GuardService,
 )
@@ -23,7 +32,13 @@ from orcia_core.orchestration.assistant_three_speed_router import (
 from orcia_core.permissions.user_preferences_and_mcp_tokens import (
     UserPreferencesAndMcpTokenService,
 )
+from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag import TwoSpeedFederatedSearchService
+from orcia_core.rag.adapters.embedding_httpx import (
+    HttpxGeminiNativeEmbeddingAdapter,
+    HttpxOpenAiCompatibleEmbeddingAdapter,
+)
+from orcia_core.rag.errors import NoActiveEmbeddingModelError
 
 
 def get_assistant_service(request: Request) -> AssistantAgentService:
@@ -136,3 +151,71 @@ def get_assistant_folders_and_sharing_service(
         svc = AssistantFoldersAndSharingService()
         request.app.state.assistant_folders_and_sharing_service = svc
     return svc
+
+
+async def get_embedding_port(request: Request) -> EmbeddingPort:
+    """FastAPI `Depends` provider resolving the active global EmbeddingPort."""
+    explicit_port = getattr(request.app.state, "embedding_port", None)
+    if explicit_port is not None:
+        return cast(EmbeddingPort, explicit_port)
+
+    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
+    if http_client is None:
+        http_client = httpx.AsyncClient()
+
+    engine = getattr(request.app.state, "db_engine", None)
+    auth_svc = getattr(request.app.state, "auth_service", None)
+    if auth_svc is None:
+        initialize_app_services(request.app)
+        auth_svc = request.app.state.auth_service
+
+    if engine is not None:
+        async with engine.begin() as conn:
+            await ensure_ai_model_mappings_schema_on_postgres18(conn)
+            resolved = await get_active_global_embedding_model_pg18(
+                conn, cipher=auth_svc.vault_cipher
+            )
+            if resolved is None:
+                raise NoActiveEmbeddingModelError(
+                    detail_override=(
+                        "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
+                        "Veuillez en configurer un dans /settings/ai-models."
+                    )
+                )
+            rec, api_key = resolved
+    else:
+        hub_svc = getattr(request.app.state, "ai_models_hub_service", None)
+        if hub_svc is None:
+            initialize_app_services(request.app)
+            hub_svc = request.app.state.ai_models_hub_service
+        rec = hub_svc.get_active_embedding_mapping()
+        if rec is None:
+            raise NoActiveEmbeddingModelError(
+                detail_override=(
+                    "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
+                    "Veuillez en configurer un dans /settings/ai-models."
+                )
+            )
+        api_key = None
+        if rec.encrypted_api_key:
+            host = urlparse(rec.endpoint_uri).netloc or "default"
+            api_key = unpack_encrypted_api_key(
+                auth_svc.vault_cipher,
+                mapping_id=rec.id,
+                packed=rec.encrypted_api_key,
+                target_host=host,
+            )
+
+    if rec.protocol_mode == "gemini_native":
+        return HttpxGeminiNativeEmbeddingAdapter(
+            http_client=http_client,
+            endpoint_uri=rec.endpoint_uri,
+            model_name=rec.model_name,
+            api_key=api_key,
+        )
+    return HttpxOpenAiCompatibleEmbeddingAdapter(
+        http_client=http_client,
+        endpoint_uri=rec.endpoint_uri,
+        model_name=rec.model_name,
+        api_key=api_key,
+    )

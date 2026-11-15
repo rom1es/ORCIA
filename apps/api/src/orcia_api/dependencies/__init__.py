@@ -39,6 +39,7 @@ from orcia_api.dependencies.portal_and_assistant import (
     get_assistant_service,
     get_assistant_three_speed_router_service,
     get_contextual_help_service,
+    get_embedding_port,
     get_two_speed_search_service,
     get_user_preferences_and_mcp_token_service,
 )
@@ -70,6 +71,7 @@ __all__ = [
     "get_control_center_service",
     "get_dna_starlark_and_glossary_service",
     "get_durable_wizard_service",
+    "get_embedding_port",
     "get_help_generation_and_attachment_service",
     "get_hierarchical_rbac_service",
     "get_iam_accounts_service",

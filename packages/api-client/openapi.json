@@ -609,7 +609,6 @@
             "type": "string"
           },
           "evaluator_model_id": {
-            "default": "google/gemini-2.5-pro",
             "maxLength": 128,
             "minLength": 1,
             "title": "Evaluator Model Id",
@@ -704,7 +703,8 @@
           "step_execution_id",
           "step_key",
           "executor_model_family",
-          "evaluator_model_family"
+          "evaluator_model_family",
+          "evaluator_model_id"
         ],
         "title": "AgenticGateEvaluateRequest",
         "type": "object"
@@ -948,6 +948,15 @@
                 "type": "null"
               }
             ]
+          },
+          "usage": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding"
+            ],
+            "title": "Usage",
+            "type": "string"
           }
         },
         "required": [
@@ -1214,6 +1223,15 @@
           "updated_at": {
             "title": "Updated At",
             "type": "string"
+          },
+          "usage": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding"
+            ],
+            "title": "Usage",
+            "type": "string"
           }
         },
         "required": [
@@ -1377,6 +1395,21 @@
                 "type": "null"
               }
             ]
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "enum": [
+                  "chat",
+                  "embedding"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
           }
         },
         "title": "AiModelPatchRequest",
@@ -17777,12 +17810,14 @@
         "description": "Request to execute `orcia://pack-sdlc/workflows/ticket-to-tech-spec` (`Verrou V3`).",
         "properties": {
           "generator_model_family": {
-            "default": "claude-4.6",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Generator Model Family",
             "type": "string"
           },
           "judge_model_family": {
-            "default": "mistral-large-3",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Judge Model Family",
             "type": "string"
           },
@@ -17839,7 +17874,9 @@
         "required": [
           "workspace_slug",
           "ticket_key",
-          "ticket_summary"
+          "ticket_summary",
+          "generator_model_family",
+          "judge_model_family"
         ],
         "title": "RunPilotTicketToTechSpecRequest",
         "type": "object"
@@ -45499,6 +45536,26 @@
                 }
               ],
               "title": "Is Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "usage",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "chat",
+                    "embedding"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Usage"
             }
           }
         ],

@@ -70,7 +70,9 @@ export function AiModelsMasterTable({
 }: AiModelsMasterTableProps): React.ReactElement {
   const activeCount = mappings.filter((m) => m.is_active && !m.draining).length;
   const configuredTiers = new Set(
-    mappings.filter((m) => m.is_active && !m.draining).map((m) => m.inference_tier),
+    mappings
+      .filter((m) => m.is_active && !m.draining && m.usage !== "embedding")
+      .map((m) => m.inference_tier),
   );
 
   return (
@@ -225,6 +227,7 @@ export function AiModelsMasterTable({
                 key={item.id}
                 data-testid={`llm-tier-row-${item.id}`}
                 data-tier={item.inference_tier}
+                data-usage={item.usage ?? "chat"}
                 style={{
                   padding: "12px 16px",
                   borderRadius: "var(--radius-sm)",
@@ -243,7 +246,40 @@ export function AiModelsMasterTable({
                     <span style={{ fontWeight: 600, fontSize: "14px" }}>
                       {item.display_name || item.model_name}
                     </span>
-                    <InferenceTierBadge tier={tierVal} effort={effortVal} labels={tierLabels} />
+                    {item.usage === "embedding" ? (
+                      <span
+                        data-testid={`usage-badge-embedding-${item.id}`}
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: "var(--radius-sm)",
+                          backgroundColor: "var(--color-action-primary-subtle)",
+                          color: "var(--color-primary-cobalt)",
+                          border: "1px solid var(--color-border)",
+                        }}
+                      >
+                        {labels.usageEmbedding}
+                      </span>
+                    ) : (
+                      <InferenceTierBadge tier={tierVal} effort={effortVal} labels={tierLabels} />
+                    )}
+                    {item.usage === "embedding" && item.is_active && !item.draining && item.scope_level === "GLOBAL" && (
+                      <span
+                        data-testid={`active-embedding-badge-${item.id}`}
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: "var(--radius-sm)",
+                          backgroundColor: "var(--color-gate-emerald-bg)",
+                          color: "var(--color-gate-emerald)",
+                          border: "1px solid var(--color-gate-emerald)",
+                        }}
+                      >
+                        ★ {labels.activeEmbeddingBadge}
+                      </span>
+                    )}
                     {item.draining && (
                       <span
                         data-testid={`draining-badge-${item.id}`}
@@ -279,9 +315,10 @@ export function AiModelsMasterTable({
                           ? isFr
                             ? "Fournisseur secondaire"
                             : "Secondary provider"
-                          : (item.model_family || item.provider_slug)}{" "}
-                      ·{" "}
-                      {tierLabels[`effort${effortVal.charAt(0).toUpperCase() + effortVal.slice(1)}` as keyof InferenceTierAndEffortLabels] ?? effortVal}
+                          : (item.model_family || item.provider_slug)}
+                      {item.usage === "embedding"
+                        ? ` · ${labels.usageEmbedding} (1024-dim)`
+                        : ` · ${tierLabels[`effort${effortVal.charAt(0).toUpperCase() + effortVal.slice(1)}` as keyof InferenceTierAndEffortLabels] ?? effortVal}`}
                     </span>
                     <span>•</span>
                     <code>{item.model_name}</code>

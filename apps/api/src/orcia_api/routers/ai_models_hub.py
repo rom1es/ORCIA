@@ -35,6 +35,7 @@ from orcia_api.schemas.ai_models_hub import (
     AiModelPatchRequest,
     AiModelTestResponse,
     InferenceTierLiteral,
+    LlmModelUsageLiteral,
     PinRemovalModeLiteral,
     ScopeLevelLiteral,
 )
@@ -70,6 +71,7 @@ async def list_ai_model_mappings(
     scope_id: Annotated[str | None, Query()] = None,
     inference_tier: Annotated[InferenceTierLiteral | None, Query()] = None,
     is_active: Annotated[bool | None, Query()] = None,
+    usage: Annotated[LlmModelUsageLiteral | None, Query()] = None,
 ) -> AiModelMappingsListResponse:
     """List configured AI model mappings with 4-tier coverage report."""
     engine = getattr(request.app.state, "db_engine", None)
@@ -82,6 +84,7 @@ async def list_ai_model_mappings(
                 scope_id=scope_id,
                 inference_tier=inference_tier,
                 is_active=is_active,
+                usage=usage,
             )
     else:
         records = hub_svc.list_mappings(
@@ -89,6 +92,7 @@ async def list_ai_model_mappings(
             scope_id=scope_id,
             inference_tier=inference_tier,
             is_active=is_active,
+            usage=usage,
         )
 
     return AiModelMappingsListResponse(
@@ -135,6 +139,7 @@ async def create_ai_model_mapping(
                 endpoint_uri=payload.endpoint_uri,
                 auth_mode=payload.auth_mode,
                 protocol_mode=payload.protocol_mode,
+                usage=payload.usage,
                 env_var_name=payload.env_var_name,
                 fallback_order=payload.fallback_order,
                 max_tokens_budget=payload.max_tokens_budget,
@@ -157,6 +162,7 @@ async def create_ai_model_mapping(
             endpoint_uri=payload.endpoint_uri,
             auth_mode=payload.auth_mode,
             protocol_mode=payload.protocol_mode,
+            usage=payload.usage,
             env_var_name=payload.env_var_name,
             fallback_order=payload.fallback_order,
             max_tokens_budget=payload.max_tokens_budget,
@@ -200,6 +206,7 @@ async def update_ai_model_mapping(
                 endpoint_uri=payload.endpoint_uri,
                 auth_mode=payload.auth_mode,
                 protocol_mode=payload.protocol_mode,
+                usage=payload.usage,
                 env_var_name=payload.env_var_name,
                 is_active=payload.is_active,
                 secret_input=sec_input,
@@ -214,6 +221,7 @@ async def update_ai_model_mapping(
             endpoint_uri=payload.endpoint_uri,
             auth_mode=payload.auth_mode,
             protocol_mode=payload.protocol_mode,
+            usage=payload.usage,
             env_var_name=payload.env_var_name,
             is_active=payload.is_active,
             secret_input=sec_input,

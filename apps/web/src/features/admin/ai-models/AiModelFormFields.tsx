@@ -48,6 +48,8 @@ export interface AiModelFormFieldsProps {
   readonly selectedEffort: UiInferenceEffort;
   readonly setSelectedEffort: (val: UiInferenceEffort) => void;
   readonly isGemini: boolean;
+  readonly usage: "chat" | "embedding";
+  readonly setUsage: (val: "chat" | "embedding") => void;
 }
 
 export function AiModelFormFields({
@@ -75,6 +77,8 @@ export function AiModelFormFields({
   selectedEffort,
   setSelectedEffort,
   isGemini,
+  usage,
+  setUsage,
 }: AiModelFormFieldsProps): React.ReactElement {
   return (
     <>
@@ -151,15 +155,80 @@ export function AiModelFormFields({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        <EffortSelector
-          selectedTier={selectedTier}
-          selectedEffort={selectedEffort}
-          labels={tierLabels}
-          onTierChange={setSelectedTier}
-          onEffortChange={setSelectedEffort}
-        />
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <span style={{ fontSize: "12px", fontWeight: 600 }}>{labels.usageLabel} :</span>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            type="button"
+            data-testid="ai-model-usage-chat-btn"
+            onClick={() => setUsage("chat")}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "var(--radius-sm)",
+              border: `1px solid ${usage === "chat" ? "var(--color-primary-cobalt)" : "var(--color-border)"}`,
+              backgroundColor:
+                usage === "chat"
+                  ? "var(--color-action-primary-subtle)"
+                  : "var(--color-surface-card)",
+              color: usage === "chat" ? "var(--color-primary-cobalt)" : "var(--color-foreground)",
+              fontWeight: usage === "chat" ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            {labels.usageChat}
+          </button>
+          <button
+            type="button"
+            data-testid="ai-model-usage-embedding-btn"
+            disabled={modelFamily.toLowerCase() === "anthropic"}
+            onClick={() => {
+              if (modelFamily.toLowerCase() !== "anthropic") {
+                setUsage("embedding");
+              }
+            }}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "var(--radius-sm)",
+              border: `1px solid ${usage === "embedding" ? "var(--color-primary-cobalt)" : "var(--color-border)"}`,
+              backgroundColor:
+                usage === "embedding"
+                  ? "var(--color-action-primary-subtle)"
+                  : "var(--color-surface-card)",
+              color:
+                usage === "embedding"
+                  ? "var(--color-primary-cobalt)"
+                  : "var(--color-foreground)",
+              fontWeight: usage === "embedding" ? 600 : 400,
+              cursor: modelFamily.toLowerCase() === "anthropic" ? "not-allowed" : "pointer",
+              opacity: modelFamily.toLowerCase() === "anthropic" ? 0.5 : 1,
+              fontSize: "12px",
+            }}
+          >
+            {labels.usageEmbedding}
+          </button>
+        </div>
+        {modelFamily.toLowerCase() === "anthropic" && (
+          <span
+            data-testid="anthropic-no-embedding-warning"
+            style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}
+          >
+            {labels.anthropicNoEmbeddingWarning}
+          </span>
+        )}
       </div>
+
+      {usage === "chat" && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <EffortSelector
+            selectedTier={selectedTier}
+            selectedEffort={selectedEffort}
+            labels={tierLabels}
+            onTierChange={setSelectedTier}
+            onEffortChange={setSelectedEffort}
+          />
+        </div>
+      )}
 
       <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
         <span style={{ fontWeight: 600 }}>{labels.displayNameLabel}</span>

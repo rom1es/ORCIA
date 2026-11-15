@@ -56,7 +56,13 @@ from orcia_core.permissions.errors import (
     WeakPasswordPolicyError,
     WebhookSignatureInvalidError,
 )
-from orcia_core.rag.errors import DdlOnlyTransactionalDataError
+from orcia_core.rag.errors import (
+    DdlOnlyTransactionalDataError,
+    EmbeddingDimensionMismatchError,
+    EmbeddingGenerationFailedError,
+    EmbeddingProviderUnsupportedError,
+    NoActiveEmbeddingModelError,
+)
 from orcia_kernel.errors import (
     ERROR_CATALOG,
     OrciaDomainError,
@@ -123,6 +129,10 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     SsoConfigurationIncompleteError,
     SmtpConnectorRequiredForEmailOtpError,
     InvalidOrExpiredLoginChallengeError,
+    EmbeddingDimensionMismatchError,
+    EmbeddingGenerationFailedError,
+    EmbeddingProviderUnsupportedError,
+    NoActiveEmbeddingModelError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {
@@ -161,6 +171,10 @@ __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "DOMAIN_ERROR_CLASSES",
     "DdlOnlyTransactionalDataError",
+    "EmbeddingDimensionMismatchError",
+    "EmbeddingGenerationFailedError",
+    "EmbeddingProviderUnsupportedError",
+    "NoActiveEmbeddingModelError",
     "ERROR_CATALOG",
     "ERROR_CLASS_REGISTRY",
     "ERROR_CODE_REGISTRY",
