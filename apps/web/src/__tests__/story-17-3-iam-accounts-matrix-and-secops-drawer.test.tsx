@@ -171,11 +171,11 @@ describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer
     expect(screen.getByTestId("iam-secops-locked-notice")).toBeDefined();
     expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(true);
 
-    // 2. Grant SECOPS role in session -> unlocks exception form
+    // 2. Grant SECOPS role to PLATFORM_ADMIN session -> unlocks exception form
     await waitFor(() => {
       useAuthSessionStore.getState().setAuthSession({
         roles: ["PLATFORM_ADMIN", "SECOPS"],
-        activeHat: "SECOPS",
+        activeHat: "PLATFORM_ADMIN",
       });
       expect(screen.queryByTestId("iam-secops-locked-notice")).toBeNull();
     });

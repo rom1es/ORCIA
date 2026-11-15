@@ -47,7 +47,7 @@ export function evaluateScopeModuleVisibility(
     gates: hasWorkspaces,
     finops: hasWorkspaces && isSupervisorOrAdmin,
     admin: isSupervisorOrAdmin,
-    bootstrap: isSupervisorOrAdmin,
+    bootstrap: role === "PLATFORM_ADMIN",
   };
 }
 

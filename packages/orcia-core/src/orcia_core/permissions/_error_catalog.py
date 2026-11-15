@@ -292,6 +292,62 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "The new password must be different from the current password.",
         ),
     },
+    "ERR_LOCAL_AUTH_DISABLED": {
+        "fr": LocalizedErrorCopy(
+            "Connexion locale désactivée par la politique d'authentification",
+            "L'administrateur de la plateforme a configuré l'authentification unique (SSO) "
+            "comme mode exclusif d'accès à ORCIA.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Local authentication disabled by platform policy",
+            "The platform administrator configured organization SSO as the exclusive sign-in mode.",
+        ),
+    },
+    "ERR_SSO_AUTH_DISABLED": {
+        "fr": LocalizedErrorCopy(
+            "Connexion SSO désactivée par la politique d'authentification",
+            "L'administrateur de la plateforme a configuré l'authentification locale "
+            "(e-mail et mot de passe) comme mode exclusif d'accès à ORCIA.",
+        ),
+        "en": LocalizedErrorCopy(
+            "SSO authentication disabled by platform policy",
+            "The platform administrator configured local credentials as the exclusive mode.",
+        ),
+    },
+    "ERR_SSO_CONFIG_INCOMPLETE": {
+        "fr": LocalizedErrorCopy(
+            "Configuration SSO OIDC incomplète",
+            "L'URL de l'émetteur OIDC, l'identifiant client et l'URI de redirection sont requis "
+            "pour activer le mode SSO exclusif.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Incomplete OIDC SSO configuration",
+            "OIDC issuer URL, client ID, and redirect URI are required to enable SSO mode.",
+        ),
+    },
+    "ERR_AUTH_SMTP_CONNECTOR_REQUIRED": {
+        "fr": LocalizedErrorCopy(
+            "Connecteur SMTP actif requis pour l'envoi de codes par e-mail",
+            "Configurez et activez un connecteur SMTP (SMTP_MAIL) dans l'onglet Connecteurs avant "
+            "d'activer la vérification à 6 chiffres par e-mail.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Active SMTP connector required for email OTP verification",
+            "Configure and enable an SMTP connector (SMTP_MAIL) under the Connectors tab before "
+            "enabling 6-digit verification codes by e-mail.",
+        ),
+    },
+    "ERR_AUTH_CHALLENGE_INVALID": {
+        "fr": LocalizedErrorCopy(
+            "Jeton ou code de vérification expiré ou invalide",
+            "Le challenge d'authentification à deux facteurs a expiré, a été consommé ou "
+            "le code saisi est incorrect.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Expired or invalid verification challenge",
+            "The two-factor challenge is expired, already consumed, or the code is invalid.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]

@@ -1367,7 +1367,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(
       screen.getByTestId("login-page-container").getAttribute("data-allow-password-manager"),
     ).toBe("true");
-    fireEvent.click(screen.getByTestId("login-local-accordion-toggle"));
+    expect(screen.queryByTestId("login-local-accordion-toggle")).toBeNull();
     const loginEmailInput = screen.getByTestId("login-local-email");
     const loginPasswordInput = screen.getByTestId("login-local-password");
     expect(loginEmailInput.getAttribute("autocomplete")).toBe("username");

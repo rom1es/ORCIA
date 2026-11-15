@@ -16,6 +16,7 @@ export interface AdminAndStudioDictionarySection {
     readonly tabs: {
       readonly organization: string;
       readonly iam: string;
+      readonly authentication: string;
       readonly models: string;
       readonly connectors: string;
       readonly packs: string;
@@ -85,8 +86,9 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
     tabs: {
       organization: "Organisation",
       iam: "Comptes & Habilitations",
+      authentication: "Authentification",
       models: "Modèles IA",
-      connectors: "Connecteurs & SSO",
+      connectors: "Connecteurs",
       packs: "Packs Métiers",
     },
     lockedSectionNotice:
@@ -156,8 +158,9 @@ export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
     tabs: {
       organization: "Organization",
       iam: "Accounts & Permissions",
+      authentication: "Authentication",
       models: "AI Models",
-      connectors: "Connectors & SSO",
+      connectors: "Connectors",
       packs: "Business Packs",
     },
     lockedSectionNotice:

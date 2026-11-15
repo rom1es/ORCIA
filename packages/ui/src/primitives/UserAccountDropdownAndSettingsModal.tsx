@@ -248,6 +248,7 @@ export function UserAccountDropdownAndSettingsModal({
           userDisplayName={userDisplayName}
           userEmail={userEmail}
           userRole={userRole}
+          userRoles={accountProfile?.roles}
           hat={hat}
           theme={theme}
           locale={locale}

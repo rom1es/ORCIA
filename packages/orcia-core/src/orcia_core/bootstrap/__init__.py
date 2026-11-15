@@ -7,6 +7,18 @@ from typing import cast
 
 from orcia_core.bootstrap import workflow_bootstrap_seeds as wbs
 from orcia_core.bootstrap._internal.litellm_adapter import LiteLLMAdapter
+from orcia_core.bootstrap._internal.smtp_otp_delivery import (
+    DispatchedEmailOtpMessage,
+    InMemoryOtpEmailSink,
+    OtpEmailSinkProtocol,
+    send_login_email_otp,
+)
+from orcia_core.bootstrap._internal.sql_auth_policy import (
+    ensure_platform_auth_policy_schema,
+    load_decrypted_oidc_client_secret,
+    load_platform_auth_policy_from_postgres18,
+    update_platform_auth_policy_on_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_enterprise_connectors import (
     UserAccountOrgUnitSummary,
     UserAccountProfileRecord,
@@ -36,9 +48,19 @@ from orcia_core.bootstrap._internal.sql_iam_grants import (
 )
 from orcia_core.bootstrap._internal.sql_local_auth import (
     LocalAuthCandidate,
+    load_auth_candidate_by_id_from_postgres18,
+    load_auth_candidate_by_oidc_from_postgres18,
     load_local_auth_candidate_from_postgres18,
     update_user_password_on_postgres18,
     upsert_human_user_credentials_on_postgres18,
+)
+from orcia_core.bootstrap._internal.sql_login_challenges import (
+    activate_user_totp_secret_on_postgres18,
+    consume_login_challenge_on_postgres18,
+    create_login_second_factor_challenge_on_postgres18,
+    increment_challenge_attempts_on_postgres18,
+    load_login_challenge_by_token_from_postgres18,
+    update_login_challenge_email_otp_on_postgres18,
 )
 from orcia_core.bootstrap._internal.sql_org_known_users import (
     load_known_org_users_from_postgres18,
@@ -269,4 +291,20 @@ __all__ = [
     "upsert_human_user_credentials_on_postgres18",
     "upsert_user_passthrough_token_on_postgres18",
     "LocalAuthCandidate",
+    "DispatchedEmailOtpMessage",
+    "InMemoryOtpEmailSink",
+    "OtpEmailSinkProtocol",
+    "activate_user_totp_secret_on_postgres18",
+    "consume_login_challenge_on_postgres18",
+    "create_login_second_factor_challenge_on_postgres18",
+    "ensure_platform_auth_policy_schema",
+    "increment_challenge_attempts_on_postgres18",
+    "load_auth_candidate_by_id_from_postgres18",
+    "load_auth_candidate_by_oidc_from_postgres18",
+    "load_decrypted_oidc_client_secret",
+    "load_login_challenge_by_token_from_postgres18",
+    "load_platform_auth_policy_from_postgres18",
+    "send_login_email_otp",
+    "update_login_challenge_email_otp_on_postgres18",
+    "update_platform_auth_policy_on_postgres18",
 ]

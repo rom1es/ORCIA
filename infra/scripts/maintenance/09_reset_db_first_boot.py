@@ -25,10 +25,15 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 _CORE_SRC = str(Path(__file__).resolve().parents[3] / "packages" / "orcia-core" / "src")
-if _CORE_SRC not in sys.path:
-    sys.path.insert(0, _CORE_SRC)
+_KERNEL_SRC = str(Path(__file__).resolve().parents[3] / "packages" / "orcia-kernel" / "src")
+for _src_path in (_KERNEL_SRC, _CORE_SRC):
+    if _src_path not in sys.path:
+        sys.path.insert(0, _src_path)
+
+from uuid import UUID  # noqa: E402
 
 from orcia_core.config import resolve_database_url  # noqa: E402
+from orcia_kernel.ids import new_uuid7_str  # noqa: E402
 
 PROTECTED_TABLES: frozenset[str] = frozenset(
     {
@@ -71,7 +76,11 @@ ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
     "workspace_memberships",
     "workspace_llm_tier_mappings",
     "role_permission_grants",
+    "auth_login_challenges",
+    "platform_auth_settings",
     "platform_settings",
+    "user_connector_passthrough_tokens",
+    "enterprise_connectors",
     "wizard_sessions",
     "system_bootstrap_runs",
     "user_onboarding_states",
@@ -134,6 +143,42 @@ async def reset_database_to_first_boot(
                 res = await conn.execute(sa.text(f"DELETE FROM {table_name}"))
                 deleted_total += int(res.rowcount or 0)
                 cleared_tables += 1
+
+            if "platform_auth_settings" in existing_tables:
+                await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO platform_auth_settings (
+                            singleton_key,
+                            auth_mode,
+                            two_factor_mode,
+                            oidc_scopes,
+                            boot_epoch
+                        )
+                        VALUES (
+                            'GLOBAL',
+                            'LOCAL',
+                            'NONE',
+                            'openid profile email',
+                            :boot_epoch
+                        )
+                        ON CONFLICT (singleton_key) DO UPDATE SET
+                            auth_mode = 'LOCAL',
+                            two_factor_mode = 'NONE',
+                            oidc_issuer_url = NULL,
+                            oidc_client_id = NULL,
+                            oidc_client_secret_encrypted = NULL,
+                            oidc_client_secret_fingerprint = NULL,
+                            oidc_scopes = 'openid profile email',
+                            oidc_redirect_uri = NULL,
+                            sso_button_label = NULL,
+                            boot_epoch = EXCLUDED.boot_epoch,
+                            updated_by = NULL,
+                            updated_at = NOW();
+                        """
+                    ),
+                    {"boot_epoch": UUID(new_uuid7_str())},
+                )
 
             users_cnt = int(
                 (await conn.execute(sa.text("SELECT COUNT(*) FROM users"))).scalar() or 0

@@ -43,7 +43,14 @@ from orcia_core.permissions.workspace_sources_governance import (
 )
 from orcia_kernel.ids import new_uuid7_str
 
-EnterpriseConnectorKind = Literal["GITLAB", "JIRA", "CONFLUENCE", "OIDC_SSO", "S3_OBJECT_STORE"]
+EnterpriseConnectorKind = Literal[
+    "GITLAB",
+    "JIRA",
+    "CONFLUENCE",
+    "OIDC_SSO",
+    "S3_OBJECT_STORE",
+    "SMTP_MAIL",
+]
 EnterpriseConnectorAuthMode = Literal[
     "OAUTH2_PASSTHROUGH", "PERSONAL_ACCESS_TOKEN", "OIDC_FEDERATION", "SERVICE_SECRET"
 ]
@@ -54,6 +61,7 @@ VALID_CONNECTOR_KINDS: tuple[EnterpriseConnectorKind, ...] = (
     "CONFLUENCE",
     "OIDC_SSO",
     "S3_OBJECT_STORE",
+    "SMTP_MAIL",
 )
 VALID_CONNECTOR_AUTH_MODES: tuple[EnterpriseConnectorAuthMode, ...] = (
     "OAUTH2_PASSTHROUGH",
@@ -135,7 +143,11 @@ class EnterpriseConnectorsGovernanceService:
                 detail_override="Connector name is required.",
                 instance=instance,
             )
-        safe_url = validate_safe_connector_base_url(base_url, instance=instance)
+        safe_url = validate_safe_connector_base_url(
+            base_url,
+            instance=instance,
+            allow_smtp_schemes=(connector_kind == "SMTP_MAIL"),
+        )
         cid = new_uuid7_str()
         now = _now_iso()
         sec_status = ConnectorSecretStatus(configured=False)
@@ -184,7 +196,11 @@ class EnterpriseConnectorsGovernanceService:
             raise ResourceNotFoundError(instance=instance)
         now = _now_iso()
         next_url = (
-            validate_safe_connector_base_url(base_url, instance=instance)
+            validate_safe_connector_base_url(
+                base_url,
+                instance=instance,
+                allow_smtp_schemes=(existing.connector_kind == "SMTP_MAIL"),
+            )
             if base_url is not None
             else existing.base_url
         )

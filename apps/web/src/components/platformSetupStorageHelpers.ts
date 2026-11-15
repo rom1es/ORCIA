@@ -12,6 +12,7 @@ import type {
 
 export const PLATFORM_ADMIN_STORAGE_KEY = "orcia.platform_admin.v1";
 export const PLATFORM_SETUP_STATE_STORAGE_KEY = "orcia.platform_setup_state.v1";
+export const PLATFORM_BOOT_EPOCH_STORAGE_KEY = "orcia.boot_epoch.v1";
 
 const fallbackMemoryStorage = new Map<string, string>();
 
@@ -29,6 +30,7 @@ export function clearPlatformSetupStorage(): void {
     try {
       window.localStorage.removeItem(PLATFORM_ADMIN_STORAGE_KEY);
       window.localStorage.removeItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
+      window.localStorage.removeItem(PLATFORM_BOOT_EPOCH_STORAGE_KEY);
       window.localStorage.removeItem("orcia.assistant_saved_conversations.v1");
     } catch {
       // Ignore
@@ -73,6 +75,22 @@ export function writeStorageItem(key: string, value: string | null): void {
       // Ignore storage quota / private mode errors
     }
   }
+}
+
+export function syncBrowserBootEpoch(serverBootEpoch: string | null | undefined): boolean {
+  const normalized = serverBootEpoch?.trim() ?? "";
+  if (!normalized) {
+    return false;
+  }
+  const previous = readStorageItem(PLATFORM_BOOT_EPOCH_STORAGE_KEY);
+  if (previous !== null && previous !== normalized) {
+    clearPlatformSetupStorage();
+    writeStorageItem("orcia.auth.session.v1", null);
+    writeStorageItem(PLATFORM_BOOT_EPOCH_STORAGE_KEY, normalized);
+    return true;
+  }
+  writeStorageItem(PLATFORM_BOOT_EPOCH_STORAGE_KEY, normalized);
+  return false;
 }
 
 export interface AttachedWorkspaceRef {

@@ -351,6 +351,7 @@ class AccostageStatusResponse(BaseModel):
     first_admin_initialized: bool = Field(default=False)
     first_admin_email: str | None = Field(default=None, max_length=255)
     first_admin_display_name: str | None = Field(default=None, max_length=128)
+    boot_epoch: str | None = Field(default=None, max_length=64)
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 

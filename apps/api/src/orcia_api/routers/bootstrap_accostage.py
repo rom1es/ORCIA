@@ -12,6 +12,7 @@ from orcia_api.dependencies import (
     get_or_create_shared_db_engine,
 )
 from orcia_api.routers._auth_pg_helpers import set_auth_refresh_cookie
+from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_connection_test
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
@@ -50,7 +51,10 @@ async def _sync_first_admin_with_postgres18(
 
 
 def _serialize_accostage_status(
-    rep: bm.AccostageStatusReport, trace_id: str
+    rep: bm.AccostageStatusReport,
+    trace_id: str,
+    *,
+    boot_epoch: str | None = None,
 ) -> bs.AccostageStatusResponse:
     return bs.AccostageStatusResponse(
         completed_count=rep.completed_count,
@@ -65,6 +69,7 @@ def _serialize_accostage_status(
         first_admin_initialized=rep.first_admin_initialized,
         first_admin_email=rep.first_admin_email,
         first_admin_display_name=rep.first_admin_display_name,
+        boot_epoch=boot_epoch,
         trace_id=trace_id,
     )
 
@@ -78,7 +83,12 @@ def _serialize_accostage_status(
 async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
     svc = get_accostage_service(request)
     await _sync_first_admin_with_postgres18(request, svc)
-    return _serialize_accostage_status(svc.get_accostage_status(), _trace(request))
+    policy_state, _, _ = await resolve_auth_policy_runtime(request)
+    return _serialize_accostage_status(
+        svc.get_accostage_status(),
+        _trace(request),
+        boot_epoch=policy_state.boot_epoch,
+    )
 
 
 @router.post(
@@ -196,7 +206,12 @@ async def register_welcome_setup_progressive_llm(
             logger.warning(
                 "bootstrap_progressive_llm_pg_sync_skipped", error_type=type(exc).__name__
             )
-    return _serialize_accostage_status(rep, _trace(request))
+    policy_state, _, _ = await resolve_auth_policy_runtime(request)
+    return _serialize_accostage_status(
+        rep,
+        _trace(request),
+        boot_epoch=policy_state.boot_epoch,
+    )
 
 
 @router.post(

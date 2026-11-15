@@ -10,7 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 EnterpriseConnectorKindLiteral = Literal[
-    "GITLAB", "JIRA", "CONFLUENCE", "OIDC_SSO", "S3_OBJECT_STORE"
+    "GITLAB", "JIRA", "CONFLUENCE", "OIDC_SSO", "S3_OBJECT_STORE", "SMTP_MAIL"
 ]
 EnterpriseConnectorAuthModeLiteral = Literal[
     "OAUTH2_PASSTHROUGH", "PERSONAL_ACCESS_TOKEN", "OIDC_FEDERATION", "SERVICE_SECRET"

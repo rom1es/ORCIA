@@ -16,6 +16,15 @@ import type {
   WorkspacesListResponse,
 } from "../generated/auth_and_org";
 import type {
+  AuthSessionBootstrapResponse,
+  OidcAuthorizeUrlResponse,
+  OidcCallbackExchangeRequest,
+  PublicAuthConfigResponse,
+  ResendLoginTwoFactorRequest,
+  ResendLoginTwoFactorResponse,
+  VerifyLoginTwoFactorRequest,
+} from "../generated/auth_policy";
+import type {
   ChangePasswordRequest,
   ChangePasswordResponse,
 } from "../generated/iam_password_models";
@@ -45,8 +54,32 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
         `/api/v1/navigation/shell${qs ? `?${qs}` : ""}`,
       );
     },
+    getPublicAuthConfig(): Promise<PublicAuthConfigResponse> {
+      return requestJson<PublicAuthConfigResponse>("/api/v1/auth/public-config");
+    },
+    getSessionBootstrap(): Promise<AuthSessionBootstrapResponse> {
+      return requestJson<AuthSessionBootstrapResponse>("/api/v1/auth/session");
+    },
     loginLocal(payload: LocalLoginRequest): Promise<AuthTokenResponse> {
       return requestJson<AuthTokenResponse>("/api/v1/auth/login/local", "POST", payload);
+    },
+    verifyLoginTwoFactor(payload: VerifyLoginTwoFactorRequest): Promise<AuthTokenResponse> {
+      return requestJson<AuthTokenResponse>("/api/v1/auth/login/verify-2fa", "POST", payload);
+    },
+    resendLoginTwoFactor(
+      payload: ResendLoginTwoFactorRequest,
+    ): Promise<ResendLoginTwoFactorResponse> {
+      return requestJson<ResendLoginTwoFactorResponse>(
+        "/api/v1/auth/login/resend-2fa",
+        "POST",
+        payload,
+      );
+    },
+    getOidcAuthorizeUrl(): Promise<OidcAuthorizeUrlResponse> {
+      return requestJson<OidcAuthorizeUrlResponse>("/api/v1/auth/oidc/authorize");
+    },
+    exchangeOidcCallback(payload: OidcCallbackExchangeRequest): Promise<AuthTokenResponse> {
+      return requestJson<AuthTokenResponse>("/api/v1/auth/oidc/callback", "POST", payload);
     },
     loginOidc(payload: OidcLoginRequest): Promise<AuthTokenResponse> {
       return requestJson<AuthTokenResponse>("/api/v1/auth/login/oidc", "POST", payload);

@@ -157,18 +157,41 @@ def parse_ui_primitives(ui_index_file: Path) -> list[str]:
 
 
 def parse_business_packs(packages_dir: Path) -> list[dict[str, str]]:
+    import yaml
+
     packs: list[dict[str, str]] = []
+    seen_keys: set[str] = set()
     for pack_toml in sorted(packages_dir.glob("orcia-pack-*/pyproject.toml")):
         text = pack_toml.read_text(encoding="utf-8")
         name_match = re.search(r'^name\s*=\s*"([^"]+)"', text, flags=re.MULTILINE)
         version_match = re.search(r'^version\s*=\s*"([^"]+)"', text, flags=re.MULTILINE)
         desc_match = re.search(r'^description\s*=\s*"([^"]+)"', text, flags=re.MULTILINE)
+        key = name_match.group(1) if name_match else pack_toml.parent.name
+        seen_keys.add(key)
         packs.append(
             {
-                "key": name_match.group(1) if name_match else pack_toml.parent.name,
+                "key": key,
                 "version": version_match.group(1) if version_match else "0.1.0",
                 "description": sanitize_no_hex_for_ts(
                     desc_match.group(1) if desc_match else "Pack Métier ORCIA"
+                ),
+            }
+        )
+    packs_dir = REPO_ROOT / "packs"
+    for pack_yaml in sorted(packs_dir.glob("*/pack.yaml")):
+        raw = yaml.safe_load(pack_yaml.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            continue
+        key = str(raw.get("id") or raw.get("slug") or pack_yaml.parent.name)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        packs.append(
+            {
+                "key": key,
+                "version": str(raw.get("version") or "1.0.0"),
+                "description": sanitize_no_hex_for_ts(
+                    str(raw.get("description") or "Pack Métier ORCIA")
                 ),
             }
         )

@@ -95,6 +95,7 @@ export interface FourZoneDirectionCShellProps {
   readonly viewportWidth?: number;
   readonly labels: FourZoneDirectionCShellLabels;
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
+  readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
   readonly onSelectActivityMenu?: (route: string) => void;
   readonly onOpenWorkspaceSwitcher?: () => void;
@@ -137,6 +138,7 @@ export function FourZoneDirectionCShell({
   viewportWidth = 1440,
   labels,
   disabledMenuKeys,
+  hiddenMenuKeys,
   onSelectMenu,
   onSelectActivityMenu,
   onOpenWorkspaceSwitcher,
@@ -257,6 +259,7 @@ export function FourZoneDirectionCShell({
           availablePacks={availablePacks}
           labels={labels}
           disabledMenuKeys={disabledMenuKeys}
+          hiddenMenuKeys={hiddenMenuKeys}
           onSelectMenu={onSelectMenu}
           onSelectActivityMenu={onSelectActivityMenu}
           onSelectPack={onSelectPack}

@@ -79,15 +79,40 @@ export const INBOX_AND_COCKPIT_FR_LABELS: InboxAndCockpitDictionarySection = {
   },
   biModeLogin: {
     title: "Connexion à ORCIA",
-    subtitle:
-      "Connectez-vous avec le compte unique de votre organisation ou avec votre compte local",
+    subtitle: "Connectez-vous avec votre adresse e-mail professionnelle et votre mot de passe.",
+    subtitleLocal: "Connectez-vous avec votre adresse e-mail professionnelle et votre mot de passe.",
+    subtitleSso: "Connectez-vous avec le compte unique (SSO) de votre organisation.",
     primarySsoCta: "Connexion avec le compte de l'organisation (SSO)",
+    ssoUnconfiguredWarning:
+      "Le mode SSO d'entreprise est activé mais les paramètres OIDC sont incomplets. Contactez un administrateur de la plateforme.",
     localAccordionToggle: "Connexion avec un compte local / Administrateur",
     emailLabel: "Adresse e-mail professionnelle",
     passwordLabel: "Mot de passe", // pragma: allowlist secret
     totpLabel: "Code de vérification à 6 chiffres",
     submitLocalCta: "Se connecter",
     errorBannerTitle: "Impossible de vous connecter",
+    twoFactor: {
+      emailOtpHeading: "Vérification par e-mail (code à 6 chiffres)",
+      emailOtpDescriptionPrefix:
+        "Un code de vérification à usage unique à 6 chiffres vient d'être envoyé à l'adresse",
+      emailOtpTtlNotice: "Ce code est valable 5 minutes.",
+      totpHeading: "Code d'application d'authentification (TOTP)",
+      totpDescription:
+        "Saisissez le code à 6 chiffres généré par votre application d'authentification (Google Authenticator, FreeOTP…).",
+      totpEnrollHeading: "Activation de la double authentification (TOTP)",
+      totpEnrollDescription:
+        "Première connexion avec double authentification TOTP requise : ajoutez cette clé dans votre application d'authentification, puis saisissez le code à 6 chiffres affiché.",
+      totpManualKeyLabel: "Clé manuelle Base32",
+      totpProvisioningUriLabel: "Lien d'enrôlement (otpauth://)",
+      copyManualKeyCta: "Copier la clé",
+      copiedManualKeyFeedback: "Clé copiée",
+      codeInputLabel: "Code de vérification à 6 chiffres",
+      codeInputPlaceholder: "000000",
+      verifyCodeCta: "Valider le code et se connecter",
+      resendCodeCta: "Renvoyer un nouveau code par e-mail",
+      resendDoneMessage: "Nouveau code envoyé par e-mail",
+      backToLoginCta: "Revenir à l'écran de connexion",
+    },
   },
   collapsibleRail: {
     railAriaLabel: "Menu latéral de navigation",
@@ -182,15 +207,39 @@ export const INBOX_AND_COCKPIT_EN_LABELS: InboxAndCockpitDictionarySection = {
   },
   biModeLogin: {
     title: "Sign in to ORCIA",
-    subtitle:
-      "Sign in with your organization's single sign-on or your local account",
+    subtitle: "Sign in with your work email address and password.",
+    subtitleLocal: "Sign in with your work email address and password.",
+    subtitleSso: "Sign in with your organization's single sign-on (SSO) account.",
     primarySsoCta: "Sign in with organization account (SSO)",
+    ssoUnconfiguredWarning:
+      "Enterprise SSO mode is active, but OIDC settings are incomplete. Please contact a platform administrator.",
     localAccordionToggle: "Sign in with a local / Administrator account",
     emailLabel: "Work email address",
     passwordLabel: "Password", // pragma: allowlist secret
     totpLabel: "6-digit verification code",
     submitLocalCta: "Sign in",
     errorBannerTitle: "Unable to sign in",
+    twoFactor: {
+      emailOtpHeading: "Email verification (6-digit code)",
+      emailOtpDescriptionPrefix: "A single-use 6-digit verification code was sent to",
+      emailOtpTtlNotice: "This code expires in 5 minutes.",
+      totpHeading: "Authenticator app verification (TOTP)",
+      totpDescription:
+        "Enter the 6-digit code from your authenticator app (Google Authenticator, FreeOTP…).",
+      totpEnrollHeading: "Activate Two-Factor Authentication (TOTP)",
+      totpEnrollDescription:
+        "First sign-in requires TOTP enrollment: add this setup key to your authenticator app, then enter the 6-digit code.",
+      totpManualKeyLabel: "Manual Base32 setup key",
+      totpProvisioningUriLabel: "Enrollment link (otpauth://)",
+      copyManualKeyCta: "Copy key",
+      copiedManualKeyFeedback: "Copied",
+      codeInputLabel: "6-digit verification code",
+      codeInputPlaceholder: "000000",
+      verifyCodeCta: "Verify code and sign in",
+      resendCodeCta: "Send a new email code",
+      resendDoneMessage: "New code sent by email",
+      backToLoginCta: "Back to sign-in",
+    },
   },
   collapsibleRail: {
     railAriaLabel: "Sidebar navigation menu",

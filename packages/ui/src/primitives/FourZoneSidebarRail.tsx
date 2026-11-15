@@ -16,6 +16,7 @@ export interface FourZoneSidebarRailProps {
   readonly availablePacks: readonly string[];
   readonly labels: FourZoneDirectionCShellLabels;
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
+  readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
   readonly onSelectActivityMenu?: (route: string) => void;
   readonly onSelectPack?: (packKey: string) => void;
@@ -40,6 +41,7 @@ export function FourZoneSidebarRail({
   availablePacks,
   labels,
   disabledMenuKeys,
+  hiddenMenuKeys,
   onSelectMenu,
   onSelectActivityMenu,
   onSelectPack,
@@ -95,7 +97,9 @@ export function FourZoneSidebarRail({
           </button>
         </div>
 
-        {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.map((entry) => {
+        {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.filter(
+          (entry) => !hiddenMenuKeys?.includes(entry.key),
+        ).map((entry) => {
           const isActive = !activityMenuActive && entry.key === activeMenuKey;
           const entryLabel = labels.menuEntries[entry.key];
           const disabledReason = disabledMenuKeys?.[entry.key];

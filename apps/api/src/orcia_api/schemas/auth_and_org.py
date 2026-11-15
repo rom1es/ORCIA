@@ -53,9 +53,9 @@ class AuthTokenResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    access_token: str = Field(..., min_length=16)
+    access_token: str = Field(default="", max_length=4096)
     token_type: Literal["Bearer"] = "Bearer"
-    expires_in_seconds: int = Field(default=900, ge=60)
+    expires_in_seconds: int = Field(default=900, ge=0)
     user_id: str
     email: str
     display_name: str
@@ -64,6 +64,12 @@ class AuthTokenResponse(BaseModel):
     primary_org_unit_id: str
     roles: list[str] = Field(default_factory=list)
     must_change_password: bool = Field(default=False)
+    requires_two_factor: bool = Field(default=False)
+    challenge_token: str | None = Field(default=None, max_length=255)
+    challenge_kind: Literal["EMAIL_OTP", "TOTP", "TOTP_ENROLL"] | None = None
+    masked_destination: str | None = Field(default=None, max_length=255)
+    totp_provisioning_uri: str | None = Field(default=None, max_length=1024)
+    totp_manual_key: str | None = Field(default=None, max_length=128)
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 

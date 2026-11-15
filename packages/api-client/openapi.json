@@ -31,6 +31,18 @@
             "title": "Badge Label",
             "type": "string"
           },
+          "boot_epoch": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boot Epoch"
+          },
           "completed_count": {
             "maximum": 6.0,
             "minimum": 1.0,
@@ -2499,14 +2511,75 @@
         "title": "AttachedWorkspaceRefResponse",
         "type": "object"
       },
+      "AuthSessionBootstrapResponse": {
+        "additionalProperties": false,
+        "description": "Silent anonymous/authenticated browser session bootstrap payload (`GET /auth/session`).",
+        "properties": {
+          "authenticated": {
+            "title": "Authenticated",
+            "type": "boolean"
+          },
+          "session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuthTokenResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authenticated",
+          "trace_id"
+        ],
+        "title": "AuthSessionBootstrapResponse",
+        "type": "object"
+      },
       "AuthTokenResponse": {
         "additionalProperties": false,
         "description": "Response payload for authentication and session refresh endpoints (AD-6).",
         "properties": {
           "access_token": {
-            "minLength": 16,
+            "default": "",
+            "maxLength": 4096,
             "title": "Access Token",
             "type": "string"
+          },
+          "challenge_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "EMAIL_OTP",
+                  "TOTP",
+                  "TOTP_ENROLL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Kind"
+          },
+          "challenge_token": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Token"
           },
           "display_name": {
             "title": "Display Name",
@@ -2518,13 +2591,25 @@
           },
           "expires_in_seconds": {
             "default": 900,
-            "minimum": 60.0,
+            "minimum": 0.0,
             "title": "Expires In Seconds",
             "type": "integer"
           },
           "human_profile_archetype": {
             "title": "Human Profile Archetype",
             "type": "string"
+          },
+          "masked_destination": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masked Destination"
           },
           "must_change_password": {
             "default": false,
@@ -2548,6 +2633,11 @@
             "title": "Primary Org Unit Id",
             "type": "string"
           },
+          "requires_two_factor": {
+            "default": false,
+            "title": "Requires Two Factor",
+            "type": "boolean"
+          },
           "roles": {
             "items": {
               "type": "string"
@@ -2561,6 +2651,30 @@
             "title": "Token Type",
             "type": "string"
           },
+          "totp_manual_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totp Manual Key"
+          },
+          "totp_provisioning_uri": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totp Provisioning Uri"
+          },
           "trace_id": {
             "maxLength": 32,
             "minLength": 32,
@@ -2573,7 +2687,6 @@
           }
         },
         "required": [
-          "access_token",
           "user_id",
           "email",
           "display_name",
@@ -7036,7 +7149,8 @@
               "JIRA",
               "CONFLUENCE",
               "OIDC_SSO",
-              "S3_OBJECT_STORE"
+              "S3_OBJECT_STORE",
+              "SMTP_MAIL"
             ],
             "title": "Connector Kind",
             "type": "string"
@@ -7114,7 +7228,8 @@
               "JIRA",
               "CONFLUENCE",
               "OIDC_SSO",
-              "S3_OBJECT_STORE"
+              "S3_OBJECT_STORE",
+              "SMTP_MAIL"
             ],
             "title": "Connector Kind",
             "type": "string"
@@ -13238,6 +13353,147 @@
         "title": "NonDeterministicControlSpec",
         "type": "object"
       },
+      "OidcAuthorizeUrlResponse": {
+        "additionalProperties": false,
+        "description": "OIDC Authorization Code flow redirect URL & CSRF state.",
+        "properties": {
+          "authorize_url": {
+            "maxLength": 2048,
+            "title": "Authorize Url",
+            "type": "string"
+          },
+          "state": {
+            "maxLength": 255,
+            "minLength": 16,
+            "title": "State",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authorize_url",
+          "state",
+          "trace_id"
+        ],
+        "title": "OidcAuthorizeUrlResponse",
+        "type": "object"
+      },
+      "OidcCallbackExchangeRequest": {
+        "additionalProperties": false,
+        "description": "OIDC authorization code + CSRF state exchange payload.",
+        "properties": {
+          "code": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redirect Uri"
+          },
+          "state": {
+            "maxLength": 255,
+            "minLength": 16,
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "state"
+        ],
+        "title": "OidcCallbackExchangeRequest",
+        "type": "object"
+      },
+      "OidcDiscoveryTestRequest": {
+        "additionalProperties": false,
+        "description": "Payload for `POST /api/v1/settings/authentication/test-oidc`.",
+        "properties": {
+          "issuer_url": {
+            "maxLength": 512,
+            "minLength": 4,
+            "title": "Issuer Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issuer_url"
+        ],
+        "title": "OidcDiscoveryTestRequest",
+        "type": "object"
+      },
+      "OidcDiscoveryTestResponse": {
+        "additionalProperties": false,
+        "description": "Result of OIDC `.well-known/openid-configuration` discovery test.",
+        "properties": {
+          "authorization_endpoint": {
+            "maxLength": 512,
+            "title": "Authorization Endpoint",
+            "type": "string"
+          },
+          "issuer": {
+            "maxLength": 512,
+            "title": "Issuer",
+            "type": "string"
+          },
+          "latency_ms": {
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "number"
+          },
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "token_endpoint": {
+            "maxLength": 512,
+            "title": "Token Endpoint",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "userinfo_endpoint": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userinfo Endpoint"
+          }
+        },
+        "required": [
+          "issuer",
+          "authorization_endpoint",
+          "token_endpoint",
+          "latency_ms",
+          "trace_id"
+        ],
+        "title": "OidcDiscoveryTestResponse",
+        "type": "object"
+      },
       "OidcLoginRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/auth/login/oidc` (Enterprise SSO OIDC / OAuth 2.1).",
@@ -15155,6 +15411,153 @@
         "title": "PilotWorkflowRunResponse",
         "type": "object"
       },
+      "PlatformAuthSettingsResponse": {
+        "additionalProperties": false,
+        "description": "Administrator view of exclusive authentication mode, 2FA, and OIDC configuration.",
+        "properties": {
+          "auth_mode": {
+            "enum": [
+              "LOCAL",
+              "SSO"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "boot_epoch": {
+            "maxLength": 64,
+            "title": "Boot Epoch",
+            "type": "string"
+          },
+          "oidc_client_id": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Client Id"
+          },
+          "oidc_client_secret_configured": {
+            "default": false,
+            "title": "Oidc Client Secret Configured",
+            "type": "boolean"
+          },
+          "oidc_client_secret_fingerprint": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Client Secret Fingerprint"
+          },
+          "oidc_issuer_url": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Issuer Url"
+          },
+          "oidc_redirect_uri": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Redirect Uri"
+          },
+          "oidc_scopes": {
+            "default": "openid profile email",
+            "maxLength": 255,
+            "title": "Oidc Scopes",
+            "type": "string"
+          },
+          "smtp_connector_configured": {
+            "default": false,
+            "title": "Smtp Connector Configured",
+            "type": "boolean"
+          },
+          "smtp_connector_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Smtp Connector Name"
+          },
+          "sso_button_label": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sso Button Label"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "two_factor_mode": {
+            "enum": [
+              "NONE",
+              "EMAIL_OTP",
+              "TOTP"
+            ],
+            "title": "Two Factor Mode",
+            "type": "string"
+          },
+          "updated_at_iso": {
+            "default": "",
+            "title": "Updated At Iso",
+            "type": "string"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "required": [
+          "auth_mode",
+          "two_factor_mode",
+          "boot_epoch",
+          "trace_id"
+        ],
+        "title": "PlatformAuthSettingsResponse",
+        "type": "object"
+      },
       "PlatformSettingResponse": {
         "additionalProperties": false,
         "description": "Versioned platform setting response with `ETag` and `SecretStatus` (`Story 8.3`).",
@@ -15660,6 +16063,65 @@
           "content_sha256"
         ],
         "title": "PromptLayerBlockSchemaItem",
+        "type": "object"
+      },
+      "PublicAuthConfigResponse": {
+        "additionalProperties": false,
+        "description": "Anonymous login page bootstrap configuration (never exposes secrets).",
+        "properties": {
+          "auth_mode": {
+            "enum": [
+              "LOCAL",
+              "SSO"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "boot_epoch": {
+            "maxLength": 64,
+            "title": "Boot Epoch",
+            "type": "string"
+          },
+          "oidc_enabled": {
+            "title": "Oidc Enabled",
+            "type": "boolean"
+          },
+          "sso_button_label": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sso Button Label"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "two_factor_mode": {
+            "enum": [
+              "NONE",
+              "EMAIL_OTP",
+              "TOTP"
+            ],
+            "title": "Two Factor Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "auth_mode",
+          "two_factor_mode",
+          "oidc_enabled",
+          "boot_epoch",
+          "trace_id"
+        ],
+        "title": "PublicAuthConfigResponse",
         "type": "object"
       },
       "QuickActionSpec": {
@@ -16456,6 +16918,63 @@
           "used_for"
         ],
         "title": "RequiredConnectorSpec",
+        "type": "object"
+      },
+      "ResendLoginTwoFactorRequest": {
+        "additionalProperties": false,
+        "description": "Request to resend a fresh 6-digit `EMAIL_OTP` code for an active challenge.",
+        "properties": {
+          "challenge_token": {
+            "maxLength": 255,
+            "minLength": 16,
+            "title": "Challenge Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_token"
+        ],
+        "title": "ResendLoginTwoFactorRequest",
+        "type": "object"
+      },
+      "ResendLoginTwoFactorResponse": {
+        "additionalProperties": false,
+        "description": "Confirmation of 6-digit `EMAIL_OTP` regeneration and SMTP dispatch.",
+        "properties": {
+          "expires_in_seconds": {
+            "minimum": 60.0,
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "masked_destination": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masked Destination"
+          },
+          "sent": {
+            "default": true,
+            "title": "Sent",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expires_in_seconds",
+          "trace_id"
+        ],
+        "title": "ResendLoginTwoFactorResponse",
         "type": "object"
       },
       "ResetAssistantStudioGraphRequest": {
@@ -20917,6 +21436,106 @@
         "title": "UpdateAgentSkillsRequest",
         "type": "object"
       },
+      "UpdatePlatformAuthSettingsRequest": {
+        "additionalProperties": false,
+        "description": "Payload for `PUT /api/v1/settings/authentication` (`PLATFORM_ADMIN` only).",
+        "properties": {
+          "auth_mode": {
+            "enum": [
+              "LOCAL",
+              "SSO"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "clear_oidc_client_secret": {
+            "default": false,
+            "title": "Clear Oidc Client Secret",
+            "type": "boolean"
+          },
+          "oidc_client_id": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Client Id"
+          },
+          "oidc_client_secret": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Client Secret"
+          },
+          "oidc_issuer_url": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Issuer Url"
+          },
+          "oidc_redirect_uri": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Redirect Uri"
+          },
+          "oidc_scopes": {
+            "default": "openid profile email",
+            "maxLength": 255,
+            "title": "Oidc Scopes",
+            "type": "string"
+          },
+          "sso_button_label": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sso Button Label"
+          },
+          "two_factor_mode": {
+            "default": "NONE",
+            "enum": [
+              "NONE",
+              "EMAIL_OTP",
+              "TOTP"
+            ],
+            "title": "Two Factor Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "auth_mode"
+        ],
+        "title": "UpdatePlatformAuthSettingsRequest",
+        "type": "object"
+      },
       "UpdateUserLayerPreferencesRequest": {
         "additionalProperties": false,
         "description": "Request payload for `PUT /api/v1/assistant/governance/mode-a/user` (`Story 10.1`).",
@@ -22479,7 +23098,8 @@
               "JIRA",
               "CONFLUENCE",
               "OIDC_SSO",
-              "S3_OBJECT_STORE"
+              "S3_OBJECT_STORE",
+              "SMTP_MAIL"
             ],
             "title": "Connector Kind",
             "type": "string"
@@ -23084,6 +23704,30 @@
           "footer_summary_line"
         ],
         "title": "VerifyAndFilterCitationsResponse",
+        "type": "object"
+      },
+      "VerifyLoginTwoFactorRequest": {
+        "additionalProperties": false,
+        "description": "Step-2 verification request for `EMAIL_OTP`, `TOTP`, or `TOTP_ENROLL`.",
+        "properties": {
+          "challenge_token": {
+            "maxLength": 255,
+            "minLength": 16,
+            "title": "Challenge Token",
+            "type": "string"
+          },
+          "code": {
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_token",
+          "code"
+        ],
+        "title": "VerifyLoginTwoFactorRequest",
         "type": "object"
       },
       "VsmListResponse": {
@@ -30581,7 +31225,7 @@
     },
     "/api/v1/auth/login/local": {
       "post": {
-        "description": "Authenticate local user, issue 15-min JWT, and set HttpOnly refresh cookie.",
+        "description": "Authenticate local user or start step-2 `EMAIL_OTP` / `TOTP` / `TOTP_ENROLL` challenge.",
         "operationId": "login_local_api_v1_auth_login_local_post",
         "requestBody": {
           "content": {
@@ -30682,7 +31326,7 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Authenticate via Local Argon2id password and optional RFC 6238 TOTP MFA",
+        "summary": "Authenticate via Local Argon2id password and configured 2FA (`NONE|EMAIL_OTP|TOTP`)",
         "tags": [
           "auth"
         ]
@@ -30690,7 +31334,7 @@
     },
     "/api/v1/auth/login/oidc": {
       "post": {
-        "description": "Authenticate OIDC user, issue 15-min JWT, and set HttpOnly refresh cookie.",
+        "description": "Authenticate OIDC user when SSO mode is enabled (blocked when exclusive LOCAL is active).",
         "operationId": "login_oidc_api_v1_auth_login_oidc_post",
         "requestBody": {
           "content": {
@@ -30792,6 +31436,224 @@
           }
         },
         "summary": "Authenticate via Enterprise SSO OIDC / OAuth 2.1 subject claim",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login/resend-2fa": {
+      "post": {
+        "description": "Dispatch a fresh 6-digit code over the active `SMTP_MAIL` connector.",
+        "operationId": "resend_login_two_factor_api_v1_auth_login_resend_2fa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendLoginTwoFactorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResendLoginTwoFactorResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Regenerate and resend a 6-digit `EMAIL_OTP` verification code",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login/verify-2fa": {
+      "post": {
+        "description": "Consume single-use login challenge and issue final JWT session tokens.",
+        "operationId": "verify_login_two_factor_api_v1_auth_login_verify_2fa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyLoginTwoFactorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Verify 6-digit `EMAIL_OTP`, `TOTP`, or `TOTP_ENROLL` step-2 login code",
         "tags": [
           "auth"
         ]
@@ -30902,7 +31764,7 @@
         "operationId": "get_current_user_me_api_v1_auth_me_get",
         "parameters": [
           {
-            "description": "Optional persona key (`karim`, `claire`, `marc`, `nadia`, `partenaire`).",
+            "description": "Optional persona key for development impersonation.",
             "in": "query",
             "name": "persona_key",
             "required": false,
@@ -30917,7 +31779,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Optional persona key (`karim`, `claire`, `marc`, `nadia`, `partenaire`).",
+              "description": "Optional persona key for development impersonation.",
               "title": "Persona Key"
             }
           }
@@ -31012,6 +31874,214 @@
           }
         },
         "summary": "Get authenticated Human Profile, OrgUnit tree, and accessible Multi-Source Workspaces",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/authorize": {
+      "get": {
+        "description": "Initiate real OIDC Authorization Code flow when platform `auth_mode == 'SSO'`.",
+        "operationId": "oidc_authorize_api_v1_auth_oidc_authorize_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcAuthorizeUrlResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Generate Enterprise SSO OIDC Authorization Code redirect URL",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/callback": {
+      "post": {
+        "description": "Complete real OIDC login, bind to PG user, and issue JWT + HttpOnly refresh cookie.",
+        "operationId": "oidc_callback_api_v1_auth_oidc_callback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcCallbackExchangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Exchange OIDC Authorization Code for ORCIA session tokens",
         "tags": [
           "auth"
         ]
@@ -31146,6 +32216,105 @@
         ]
       }
     },
+    "/api/v1/auth/public-config": {
+      "get": {
+        "description": "Expose public authentication mode and `boot_epoch` for `/login` bootstrapping.",
+        "operationId": "get_public_auth_config_api_v1_auth_public_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicAuthConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Read anonymous platform login mode, 2FA policy, and boot_epoch (zero secrets)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "description": "Rotate refresh token (revoking previous `jti` in Redis/memory) and issue new JWT.",
@@ -31240,6 +32409,105 @@
           }
         },
         "summary": "Rotate HttpOnly refresh token and issue a fresh 15-minute access JWT",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "description": "Return `{authenticated: false, session: null}` with HTTP 200 when unauthenticated.",
+        "operationId": "get_session_bootstrap_api_v1_auth_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionBootstrapResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Bootstrap browser session without 401 noise when anonymous or cookie stale",
         "tags": [
           "auth"
         ]
@@ -45057,6 +46325,414 @@
         "summary": "Execute Cognitive Tier Route",
         "tags": [
           "settings-ai-models"
+        ]
+      }
+    },
+    "/api/v1/settings/authentication": {
+      "get": {
+        "description": "Return exclusive authentication mode, 2FA mode, and Write-Only OIDC settings.",
+        "operationId": "get_platform_authentication_settings_api_v1_settings_authentication_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAuthSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Read platform authentication policy (PLATFORM_ADMIN only)",
+        "tags": [
+          "auth-settings"
+        ]
+      },
+      "put": {
+        "description": "Persist singleton authentication mode and two-factor policy in PostgreSQL 18.",
+        "operationId": "update_platform_authentication_settings_api_v1_settings_authentication_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlatformAuthSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAuthSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Configure exclusive LOCAL vs SSO authentication mode and 2FA (PLATFORM_ADMIN only)",
+        "tags": [
+          "auth-settings"
+        ]
+      }
+    },
+    "/api/v1/settings/authentication/test-oidc": {
+      "post": {
+        "description": "Perform SSRF-validated async OIDC discovery and return discovered endpoints.",
+        "operationId": "test_oidc_discovery_endpoint_api_v1_settings_authentication_test_oidc_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcDiscoveryTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcDiscoveryTestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Verify OIDC `.well-known/openid-configuration` discovery safely (PLATFORM_ADMIN only)",
+        "tags": [
+          "auth-settings"
         ]
       }
     },

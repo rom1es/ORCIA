@@ -203,7 +203,11 @@ async def create_enterprise_connector(
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> EnterpriseConnectorItemResponse:
     _enforce_mutation_access(request, require_admin=True, persona_key=persona)
-    validate_safe_connector_base_url(payload.base_url, instance=str(request.url.path))
+    validate_safe_connector_base_url(
+        payload.base_url,
+        instance=str(request.url.path),
+        allow_smtp_schemes=(payload.connector_kind == "SMTP_MAIL"),
+    )
 
     auth_svc = get_auth_service(request)
     if _pg_enabled():
@@ -246,8 +250,6 @@ async def update_enterprise_connector(
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> EnterpriseConnectorItemResponse:
     _enforce_mutation_access(request, require_admin=True, persona_key=persona)
-    if payload.base_url is not None:
-        validate_safe_connector_base_url(payload.base_url, instance=str(request.url.path))
 
     auth_svc = get_auth_service(request)
     if _pg_enabled():

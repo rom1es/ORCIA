@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from fastapi import FastAPI, Request
 
@@ -43,6 +44,7 @@ from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
     IamAccountsGovernanceService,
+    InMemoryPlatformAuthPolicyStore,
     PermissionBrokerService,
     PlatformSettingsService,
     RolePermissionGrant,
@@ -88,6 +90,25 @@ def _e2e_fixtures_enabled() -> bool:
     return os.environ.get("ORCIA_E2E_SEED_FIXTURES", "").strip() == "1"
 
 
+def should_seed_test_personas_in_memory() -> bool:
+    """Return `True` only inside automated tests or explicit E2E fixture environments.
+
+    A real server process (`uvicorn`) starts with zero in-memory mock personas (`Marc`, `Karim`,
+    `Claire`) so authentication operates strictly against PostgreSQL 18.
+    """
+    if os.environ.get("ORCIA_FORCE_REAL_RUNTIME", "").strip() == "1":
+        return False
+    if _e2e_fixtures_enabled():
+        return True
+    if os.environ.get("ORCIA_SEED_TEST_PERSONAS", "").strip() == "1":
+        return True
+    return bool(
+        os.environ.get("PYTEST_CURRENT_TEST", "").strip()
+        or os.environ.get("PYTEST_VERSION", "").strip()
+        or "pytest" in sys.modules
+    )
+
+
 def initialize_app_services(app: FastAPI) -> None:
     """Wire and attach all domain services to `app.state` (idempotent Composition Root)."""
     activate_sdlc_pack()
@@ -95,21 +116,30 @@ def initialize_app_services(app: FastAPI) -> None:
         app.state.llm_gateway = _resolve_default_llm_gateway()
     if getattr(app.state, "connector_invoker", None) is None:
         app.state.connector_invoker = ConnectorInvoker()
+    if not hasattr(app.state, "otp_email_sink"):
+        app.state.otp_email_sink = None
     register_default_step_executors(
         llm_gateway=app.state.llm_gateway,
         connector_invoker=app.state.connector_invoker,
     )
 
     if getattr(app.state, "auth_service", None) is None:
-        # BUG-E2E-04 : hors ORCIA_ENV local / test, Bearer obligatoire (aucune persona).
+        seed_personas = should_seed_test_personas_in_memory()
         auth_service = build_default_auth_and_org_service(
-            allow_persona_impersonation=persona_impersonation_allowed(
-                os.environ.get("ORCIA_ENV", "local")
-            )
+            allow_persona_impersonation=(
+                seed_personas
+                and persona_impersonation_allowed(os.environ.get("ORCIA_ENV", "local"))
+            ),
+            seed_reference_personas=seed_personas,
         )
         app.state.auth_service = auth_service
     else:
         auth_service = app.state.auth_service
+
+    if getattr(app.state, "auth_policy_store", None) is None:
+        app.state.auth_policy_store = InMemoryPlatformAuthPolicyStore(
+            cipher=auth_service.vault_cipher
+        )
 
     if getattr(app.state, "catalog_service", None) is None:
         catalog_service = build_default_federated_catalog_service(evaluator=auth_service.evaluator)
@@ -161,36 +191,23 @@ def initialize_app_services(app: FastAPI) -> None:
         )
 
     if getattr(app.state, "hierarchical_rbac_service", None) is None:
+        alpha = "org/orcia/bu/claims/team/alpha"
+        verbs: tuple[Literal["grant", "read", "execute", "update"], ...] = (
+            "grant",
+            "read",
+            "execute",
+            "update",
+        )
         app.state.hierarchical_rbac_service = HierarchicalRbacService(
-            initial_grants=(
+            initial_grants=tuple(
                 RolePermissionGrant(
-                    id="0195f000-0000-7000-8000-000000008101",
+                    id=f"0195f000-0000-7000-8000-00000000810{idx}",
                     subject_type="ROLE",
                     subject_id="TEAM_LEAD",
-                    scope_path="org/orcia/bu/claims/team/alpha",
-                    verb="grant",
-                ),
-                RolePermissionGrant(
-                    id="0195f000-0000-7000-8000-000000008102",
-                    subject_type="ROLE",
-                    subject_id="TEAM_LEAD",
-                    scope_path="org/orcia/bu/claims/team/alpha",
-                    verb="read",
-                ),
-                RolePermissionGrant(
-                    id="0195f000-0000-7000-8000-000000008103",
-                    subject_type="ROLE",
-                    subject_id="TEAM_LEAD",
-                    scope_path="org/orcia/bu/claims/team/alpha",
-                    verb="execute",
-                ),
-                RolePermissionGrant(
-                    id="0195f000-0000-7000-8000-000000008104",
-                    subject_type="ROLE",
-                    subject_id="TEAM_LEAD",
-                    scope_path="org/orcia/bu/claims/team/alpha",
-                    verb="update",
-                ),
+                    scope_path=alpha,
+                    verb=verb,
+                )
+                for idx, verb in enumerate(verbs, start=1)
             )
         )
 
@@ -348,23 +365,17 @@ def get_bootstrap_service(request: Request) -> SystemBootstrapWorkflowService:
     return svc
 
 
-def get_ontology_and_rag_services(
-    request: Request, *, fixture: bool = False
-) -> tuple[
-    OntologyGovernanceService,
-    HybridRagService,
-    TripartiteGraphAndFreshnessService,
-]:
+_OntologyRagBundle = tuple[
+    OntologyGovernanceService, HybridRagService, TripartiteGraphAndFreshnessService
+]
+
+
+def get_ontology_and_rag_services(request: Request, *, fixture: bool = False) -> _OntologyRagBundle:
     """Return either the empty runtime Ontology/RAG bundle or the deterministic test fixture."""
     if fixture:
-        seeded: (
-            tuple[
-                OntologyGovernanceService,
-                HybridRagService,
-                TripartiteGraphAndFreshnessService,
-            ]
-            | None
-        ) = getattr(request.app.state, "ontology_rag_seeded_bundle", None)
+        seeded: _OntologyRagBundle | None = getattr(
+            request.app.state, "ontology_rag_seeded_bundle", None
+        )
         if seeded is None:
             gov = build_seeded_ontology_service()
             rag, trip = build_seeded_rag_service()
@@ -372,14 +383,9 @@ def get_ontology_and_rag_services(
             request.app.state.ontology_rag_seeded_bundle = seeded
         return seeded
 
-    runtime: (
-        tuple[
-            OntologyGovernanceService,
-            HybridRagService,
-            TripartiteGraphAndFreshnessService,
-        ]
-        | None
-    ) = getattr(request.app.state, "ontology_rag_runtime_bundle", None)
+    runtime: _OntologyRagBundle | None = getattr(
+        request.app.state, "ontology_rag_runtime_bundle", None
+    )
     if runtime is None:
         gov = build_empty_ontology_service()
         rag, trip = build_empty_rag_service()

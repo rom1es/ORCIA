@@ -27,6 +27,7 @@ import {
   PLATFORM_SETUP_STATE_STORAGE_KEY,
   readCachedPlatformAdmin,
   readCachedPlatformSetupState,
+  syncBrowserBootEpoch,
   writeCachedPlatformAdmin,
   writeCachedPlatformSetupState,
   type CachedPlatformSetupState,
@@ -249,6 +250,23 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     ])
       .then(([status, remoteState, remoteOrgUnitsResp, remoteIamGrantsResp]) => {
         if (cancelled) return;
+        if (syncBrowserBootEpoch(status.boot_epoch)) {
+          hasMutatedSinceMountRef.current = false;
+          useAuthSessionStore.getState().resetAuthSession();
+          setPlatformAdmin(null);
+          setOrgUnits([]);
+          setRbacGrants([]);
+          setLlmTiers([]);
+          setWorkspaces([]);
+          setDatasources([]);
+          setPacks([]);
+          setWorkflows([]);
+          setRuns([]);
+          setCatalogItems([]);
+          setOntologyConcepts([]);
+          setAuditEvents([]);
+          return;
+        }
         const mappedApiOrgUnits: ConfiguredOrgUnit[] = (
           remoteOrgUnitsResp?.org_units ?? []
         ).map((dto) => ({

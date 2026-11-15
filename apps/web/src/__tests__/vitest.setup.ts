@@ -1,6 +1,12 @@
 import type { UiAssistantSpeedMode, UiInferenceEffort } from "@orcia/ui";
 import { beforeEach } from "vitest";
 import {
+  evaluateVitestLocalLoginPolicy,
+  getVitestBootEpoch,
+  handleVitestAuthPolicyRoute,
+  resetVitestAuthPolicyMockState,
+} from "./vitestAuthPolicyMockHandlers";
+import {
   detectAdaptiveThinkingStepsForQuestion,
   shouldUseProgressiveStepThinking,
 } from "../features/inbox/assistantBackgroundStreamStore";
@@ -204,6 +210,7 @@ export function resetVitestApiBackend(): void {
   backendState.recordedCalls = [];
   resetVitestIamMockState();
   resetVitestConnectorsMockState();
+  resetVitestAuthPolicyMockState();
   resetAuthSessionStore();
 }
 
@@ -299,12 +306,14 @@ async function vitestFetchTransport(
         first_admin_initialized: true,
         first_admin_email: backendState.firstAdmin.email,
         first_admin_display_name: backendState.firstAdmin.displayName,
+        boot_epoch: getVitestBootEpoch(),
       });
     }
     return jsonResponse({
       first_admin_initialized: false,
       first_admin_email: null,
       first_admin_display_name: null,
+      boot_epoch: getVitestBootEpoch(),
     });
   }
 
@@ -338,6 +347,17 @@ async function vitestFetchTransport(
       iamUser?.display_name ??
       (isMockFirstAdmin ? backendState.firstAdmin!.displayName : "Romain Admin");
     const roles = iamUser?.roles ?? ["PLATFORM_ADMIN"];
+    const policyGate = evaluateVitestLocalLoginPolicy({
+      email,
+      displayName,
+      roles,
+      path,
+      jsonResponse,
+      problemResponse,
+    });
+    if (policyGate !== null) {
+      return policyGate;
+    }
     return jsonResponse({
       access_token: "mock-access-token",
       token_type: "bearer",
@@ -345,6 +365,8 @@ async function vitestFetchTransport(
       user_id: iamUser?.id ?? "usr-vitest-1",
       email,
       display_name: displayName,
+      platform_role: roles[0] ?? "PLATFORM_ADMIN",
+      requires_two_factor: false,
       must_change_password: false,
       issued_at_iso: "2026-11-14T12:00:00Z",
     });
@@ -360,6 +382,35 @@ async function vitestFetchTransport(
       access_mode: "READ_WRITE",
       must_change_password: false,
       workspaces: [],
+    });
+  }
+
+  if (path === "/api/v1/auth/session" && method === "GET") {
+    if ((globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__) {
+      return jsonResponse({
+        authenticated: false,
+        session: null,
+        trace_id: "01a1dead000000000000000000000001",
+      });
+    }
+    return jsonResponse({
+      authenticated: true,
+      session: {
+        access_token: "mock-refreshed-token",
+        token_type: "Bearer",
+        expires_in_seconds: 900,
+        roles: ["PLATFORM_ADMIN"],
+        platform_role: "PLATFORM_ADMIN",
+        human_profile_archetype: "Tech Lead",
+        primary_org_unit_id: "org-root",
+        user_id: "usr-vitest-1",
+        email: backendState.firstAdmin?.email ?? "admin@orcia.local",
+        display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
+        must_change_password: false,
+        requires_two_factor: false,
+        trace_id: "01a1dead000000000000000000000002",
+      },
+      trace_id: "01a1dead000000000000000000000002",
     });
   }
 
@@ -795,6 +846,18 @@ async function vitestFetchTransport(
         trace_id: "0195f000000070008000000000000999",
       });
     }
+  }
+
+  const authPolicyResp = handleVitestAuthPolicyRoute({
+    method,
+    path,
+    body,
+    reqHeaders,
+    jsonResponse,
+    problemResponse,
+  });
+  if (authPolicyResp !== null) {
+    return authPolicyResp;
   }
 
   // 1c. Story 17.3 IAM Accounts Directory, Native 6-Role Matrix & SecOps Exceptions

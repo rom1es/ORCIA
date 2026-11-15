@@ -226,14 +226,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=100,
         help="Batch size for idempotent processing (default: 100).",
     )
+    parser.add_argument(
+        "--confirm-demo-seed",
+        action="store_true",
+        default=False,
+        help="Required alongside --apply to insert demo catalog/persona records.",
+    )
     return parser
 
 
 async def _async_main(argv: list[str] | None = None) -> int:
+    import sys
+
     from orcia_core.config import resolve_database_url
 
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+    if args.apply and not args.confirm_demo_seed:
+        print(
+            "[02_backfill_federated_catalog] Refused: --apply injects demo seed data; "
+            "pass --confirm-demo-seed to confirm (or use --dry-run).",
+            file=sys.stderr,
+        )
+        return 2
     db_url = resolve_database_url()
     engine = create_async_engine(db_url)
     try:

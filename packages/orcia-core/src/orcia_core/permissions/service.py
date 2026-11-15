@@ -147,6 +147,10 @@ class AuthAndOrganizationService:
         self._persona_map = dict(persona_map)
         self._passthrough_records: dict[str, PassthroughCredentialRecord] = {}
 
+    def list_personas(self) -> tuple[str, ...]:
+        """Return configured development persona keys (empty when isolated)."""
+        return tuple(sorted(self._persona_map.keys()))
+
     def get_user_by_id(self, user_id: str) -> UserIdentity:
         """Retrieve user by ID or raise `ResourceNotFoundError`."""
         user = self._users_by_id.get(user_id)

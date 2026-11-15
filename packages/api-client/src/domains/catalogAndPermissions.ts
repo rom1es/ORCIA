@@ -13,6 +13,12 @@ import type {
   IamAccountCreateRequest, IamAccountDeleteResponse, IamAccountPatchRequest,
   IamAccountResponse, IamAccountsListResponse, RoleMatrixResponse,
 } from "../generated/iam_accounts";
+import type {
+  OidcDiscoveryTestRequest,
+  OidcDiscoveryTestResponse,
+  PlatformAuthSettingsResponse,
+  UpdatePlatformAuthSettingsRequest,
+} from "../generated/auth_policy";
 import type { TemporaryPasswordProvisionResponse } from "../generated/iam_password_models";
 import type {
   ReconcileWorkspaceStalenessResponse,
@@ -334,6 +340,31 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
       return requestJson<ReconcileWorkspaceStalenessResponse>(
         `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/datasources/reconcile-staleness${buildPersonaQuery(personaKey)}`,
         "POST",
+      );
+    },
+    getPlatformAuthSettings(personaKey?: string): Promise<PlatformAuthSettingsResponse> {
+      return requestJson<PlatformAuthSettingsResponse>(
+        `/api/v1/settings/authentication${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    updatePlatformAuthSettings(
+      payload: UpdatePlatformAuthSettingsRequest,
+      personaKey?: string,
+    ): Promise<PlatformAuthSettingsResponse> {
+      return requestJson<PlatformAuthSettingsResponse>(
+        `/api/v1/settings/authentication${buildPersonaQuery(personaKey)}`,
+        "PUT",
+        payload,
+      );
+    },
+    testOidcDiscovery(
+      payload: OidcDiscoveryTestRequest,
+      personaKey?: string,
+    ): Promise<OidcDiscoveryTestResponse> {
+      return requestJson<OidcDiscoveryTestResponse>(
+        `/api/v1/settings/authentication/test-oidc${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
       );
     },
   };

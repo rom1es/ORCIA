@@ -187,6 +187,31 @@ class WebhookSignatureInvalidError(OrciaDomainError):
     http_status, type_slug = 401, "webhook-signature-invalid"
 
 
+class LocalAuthDisabledByPolicyError(OrciaDomainError):
+    error_code = "ERR_LOCAL_AUTH_DISABLED"
+    http_status, type_slug = 403, "local-auth-disabled"
+
+
+class SsoAuthDisabledByPolicyError(OrciaDomainError):
+    error_code = "ERR_SSO_AUTH_DISABLED"
+    http_status, type_slug = 403, "sso-auth-disabled"
+
+
+class SsoConfigurationIncompleteError(OrciaDomainError):
+    error_code = "ERR_SSO_CONFIG_INCOMPLETE"
+    http_status, type_slug = 422, "sso-config-incomplete"
+
+
+class SmtpConnectorRequiredForEmailOtpError(OrciaDomainError):
+    error_code = "ERR_AUTH_SMTP_CONNECTOR_REQUIRED"
+    http_status, type_slug = 422, "auth-smtp-connector-required"
+
+
+class InvalidOrExpiredLoginChallengeError(OrciaDomainError):
+    error_code = "ERR_AUTH_CHALLENGE_INVALID"
+    http_status, type_slug = 401, "auth-challenge-invalid"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "AuthenticationRequiredError",
@@ -198,6 +223,8 @@ __all__ = [
     "InvalidCredentialsError",
     "InvalidIamRoleError",
     "InvalidMfaCodeError",
+    "InvalidOrExpiredLoginChallengeError",
+    "LocalAuthDisabledByPolicyError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
     "OrgUnitDuplicateSlugError",
@@ -216,6 +243,9 @@ __all__ = [
     "ScopeAccessDeniedError",
     "SecretConfigReadDeniedError",
     "SettingsVersionConflictError",
+    "SmtpConnectorRequiredForEmailOtpError",
+    "SsoAuthDisabledByPolicyError",
+    "SsoConfigurationIncompleteError",
     "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
     "WeakPasswordPolicyError",
