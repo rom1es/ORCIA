@@ -33,6 +33,7 @@ export interface OrganizationTabDictionarySection extends OrganizationModalsSect
     readonly billingActive: string;
     readonly billingDisabled: string;
     readonly leadPrefix: string;
+    readonly leadsPluralPrefix: string;
     readonly rootAttachment: string;
     readonly parentAttachmentPrefix: string;
   };
@@ -82,6 +83,7 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
     billingActive: "Facturation FinOps active",
     billingDisabled: "Sans imputation FinOps",
     leadPrefix: "Responsable :",
+    leadsPluralPrefix: "Responsables :",
     rootAttachment: "Racine — Plateforme entière",
     parentAttachmentPrefix: "Rattaché à :",
   },
@@ -128,6 +130,7 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
     billingActive: "FinOps billing active",
     billingDisabled: "FinOps billing disabled",
     leadPrefix: "Lead:",
+    leadsPluralPrefix: "Leads:",
     rootAttachment: "Root — Entire platform",
     parentAttachmentPrefix: "Attached to:",
   },

@@ -63,6 +63,34 @@ def row_to_account(row: Any) -> IamAccountRecord:
 async def ensure_iam_accounts_schema(conn: AsyncConnection) -> None:
     reg = (await conn.execute(sa.text("SELECT to_regclass('public.iam_accounts')"))).scalar()
     if reg is not None:
+        await conn.execute(
+            sa.text(
+                """
+                DO $$
+                DECLARE
+                    r RECORD;
+                BEGIN
+                    FOR r IN (
+                        SELECT conname
+                        FROM pg_constraint
+                        WHERE conrelid = 'public.iam_accounts'::regclass
+                          AND contype = 'c'
+                          AND pg_get_constraintdef(oid) ILIKE '%auth_source%'
+                          AND pg_get_constraintdef(oid) NOT ILIKE '%LOCAL_PASSWORD%'
+                    ) LOOP
+                        EXECUTE 'ALTER TABLE iam_accounts DROP CONSTRAINT IF EXISTS '
+                            || quote_ident(r.conname);
+                        ALTER TABLE iam_accounts
+                            ADD CONSTRAINT chk_iam_accounts_auth_source
+                            CHECK (auth_source IN (
+                                'LOCAL_BOOTSTRAP', 'LOCAL_PASSWORD',
+                                'OIDC_FEDERATED', 'SERVICE_TOKEN'
+                            ));
+                    END LOOP;
+                END $$;
+                """
+            )
+        )
         return
     await conn.execute(
         sa.text(
@@ -75,7 +103,9 @@ async def ensure_iam_accounts_schema(conn: AsyncConnection) -> None:
                 account_kind VARCHAR(32) NOT NULL
                     CHECK (account_kind IN ('HUMAN', 'SERVICE_PRINCIPAL')),
                 auth_source VARCHAR(32) NOT NULL
-                    CHECK (auth_source IN ('LOCAL_BOOTSTRAP', 'OIDC_FEDERATED', 'SERVICE_TOKEN')),
+                    CHECK (auth_source IN (
+                        'LOCAL_BOOTSTRAP', 'LOCAL_PASSWORD', 'OIDC_FEDERATED', 'SERVICE_TOKEN'
+                    )),
                 roles_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb,
                 team_ids_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb,
                 status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE'

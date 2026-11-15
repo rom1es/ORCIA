@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -49,8 +50,9 @@ def database_url() -> Iterator[str]:
             "DATABASE_URL": url,
             "ORCIA_ENV_FILE": str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"),
         }
+        alembic_bin = str(Path(sys.executable).with_name("alembic"))
         alembic_cmd = [
-            str(REPO_ROOT / ".venv" / "bin" / "alembic"),
+            alembic_bin,
             "-c",
             "infra/migrations/alembic.ini",
         ]
@@ -423,8 +425,29 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
             assert any(u["principal_id"] == "julie.nouvelle@orcia.fr" for u in search_items)
 
             target_bu_id = created_test_bu_ids[0]
-            patch_res = await client.patch(
+            bu_patch_res = await client.patch(
                 f"/api/v1/org-units/{target_bu_id}",
+                headers=headers,
+                json={"member_user_ids": ["julie.nouvelle@orcia.fr"]},
+            )
+            assert bu_patch_res.status_code == 422
+            assert bu_patch_res.json()["error_code"] == "ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN"
+
+            # Create a TEAM under target_bu_id to test member assignment
+            r_cyber_team = await client.post(
+                "/api/v1/org-units",
+                headers=headers,
+                json={
+                    "name": "Équipe Cyber Sec",
+                    "kind": "TEAM",
+                    "parent_id": target_bu_id,
+                },
+            )
+            assert r_cyber_team.status_code == 200
+            cyber_team_id = r_cyber_team.json()["id"]
+
+            patch_res = await client.patch(
+                f"/api/v1/org-units/{cyber_team_id}",
                 headers=headers,
                 json={"member_user_ids": ["julie.nouvelle@orcia.fr"]},
             )
@@ -435,10 +458,12 @@ async def test_org_units_multi_level_hierarchy_billing_members_and_guards_postgr
                 db_members = (
                     await conn.execute(
                         sa.text("SELECT member_user_ids_jsonb FROM org_units WHERE id = :id"),
-                        {"id": target_bu_id},
+                        {"id": UUID(cyber_team_id)},
                     )
                 ).scalar_one()
             assert "julie.nouvelle@orcia.fr" in str(db_members)
+
+            await client.delete(f"/api/v1/org-units/{cyber_team_id}", headers=headers)
 
             # Cleanup created IAM account
             del_acc_res = await client.delete(

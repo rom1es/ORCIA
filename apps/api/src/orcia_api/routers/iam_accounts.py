@@ -11,7 +11,6 @@ Exposes:
 
 from __future__ import annotations
 
-import os
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path, Query, Request
@@ -29,6 +28,18 @@ from orcia_api.routers._iam_accounts_passwords import (
     provision_human_temporary_password,
     reset_temporary_password_for_account,
     sync_in_memory_team_memberships,
+)
+from orcia_api.routers._iam_accounts_routes_helpers import (
+    is_pg_sync_enabled as _pg_enabled,
+)
+from orcia_api.routers._iam_accounts_routes_helpers import (
+    refresh_evaluator_org_units_from_pg,
+)
+from orcia_api.routers._iam_accounts_routes_helpers import (
+    resolve_trace_id as _trace,
+)
+from orcia_api.routers._iam_accounts_routes_helpers import (
+    serialize_iam_account as _serialize_account,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.iam_accounts import (
@@ -50,7 +61,7 @@ from orcia_core.bootstrap import (
     sync_and_list_iam_accounts_from_postgres18,
     update_iam_account_on_postgres18,
 )
-from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.observability.logging import get_logger
 from orcia_core.permissions import (
     IamAccountRecord,
     IamAccountsGovernanceService,
@@ -74,33 +85,6 @@ router = APIRouter(
     tags=["iam-accounts"],
     responses=IAM_ACCOUNTS_PROBLEM_RESPONSES,
 )
-
-
-def _trace(request: Request) -> str:
-    return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def _pg_enabled() -> bool:
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
-
-
-def _serialize_account(
-    acc: IamAccountRecord, temporary_password: str | None = None
-) -> IamAccountResponse:
-    return IamAccountResponse(
-        id=acc.id,
-        principal_id=acc.principal_id,
-        display_name=acc.display_name,
-        email=acc.email,
-        account_kind=acc.account_kind,
-        auth_source=acc.auth_source,
-        roles=list(acc.roles),
-        team_ids=list(acc.team_ids),
-        status=acc.status,
-        temporary_password=temporary_password,
-        created_at_iso=acc.created_at_iso,
-        updated_at_iso=acc.updated_at_iso,
-    )
 
 
 @router.get(
@@ -188,8 +172,11 @@ async def create_iam_account(
                 roles=payload.roles,
                 team_ids=payload.team_ids,
                 status=payload.status,
+                led_bu_ids=payload.led_bu_ids,
+                led_team_ids=payload.led_team_ids,
                 instance=str(request.url.path),
             )
+            await refresh_evaluator_org_units_from_pg(auth_svc, engine)
         except OrciaDomainError:
             raise
         except Exception as exc:
@@ -210,6 +197,8 @@ async def create_iam_account(
             roles=payload.roles,
             team_ids=payload.team_ids,
             status=payload.status,
+            led_bu_ids=payload.led_bu_ids,
+            led_team_ids=payload.led_team_ids,
             instance=str(request.url.path),
         )
 
@@ -286,8 +275,11 @@ async def update_iam_account(
                 roles=payload.roles,
                 team_ids=payload.team_ids,
                 status=payload.status,
+                led_bu_ids=payload.led_bu_ids,
+                led_team_ids=payload.led_team_ids,
                 instance=str(request.url.path),
             )
+            await refresh_evaluator_org_units_from_pg(auth_svc, engine)
         except OrciaDomainError:
             raise
         except Exception as exc:
@@ -302,6 +294,8 @@ async def update_iam_account(
             roles=payload.roles,
             team_ids=payload.team_ids,
             status=payload.status,
+            led_bu_ids=payload.led_bu_ids,
+            led_team_ids=payload.led_team_ids,
             instance=str(request.url.path),
         )
     if payload.team_ids is not None:
@@ -345,6 +339,7 @@ async def delete_iam_account(
                     principal_id=deleted_principal,
                     email=deleted_email,
                 )
+            await refresh_evaluator_org_units_from_pg(auth_svc, engine)
         except OrciaDomainError:
             raise
         except Exception as exc:

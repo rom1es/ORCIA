@@ -26,6 +26,10 @@ export type OrgUnitApiDeleteResult =
   | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
 
 export function mapOrgUnitDtoToConfigured(dto: OrgUnitResponse): ConfiguredOrgUnit {
+  const rawLeads = Array.isArray(dto.lead_user_ids) ? dto.lead_user_ids : [];
+  const leadUserIds = rawLeads.length > 0
+    ? rawLeads
+    : dto.lead_user_id ? [dto.lead_user_id] : [];
   return {
     id: dto.id,
     name: dto.name,
@@ -33,8 +37,9 @@ export function mapOrgUnitDtoToConfigured(dto: OrgUnitResponse): ConfiguredOrgUn
     level: dto.kind,
     parentId: dto.parent_id ?? "scope-global",
     billingEnabled: dto.billing_enabled ?? true,
-    leadUserId: dto.lead_user_id ?? null,
-    memberUserIds: dto.member_user_ids ?? [],
+    leadUserId: leadUserIds[0] ?? dto.lead_user_id ?? null,
+    leadUserIds,
+    memberUserIds: dto.kind === "BU" ? [] : (dto.member_user_ids ?? []),
     attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
     attachedWorkspaces: dto.attached_workspaces
       ? dto.attached_workspaces.map((w) => ({ id: w.id, slug: w.slug, name: w.name }))
@@ -127,7 +132,11 @@ export async function createOrgUnitViaApi(
 ): Promise<OrgUnitApiMutationResult> {
   try {
     const client = buildOrgUnitsClient(locale);
-    const dto = await client.createOrgUnit(payload);
+    const sanitizedPayload: OrgUnitCreateRequest = {
+      ...payload,
+      member_user_ids: payload.kind === "BU" ? [] : payload.member_user_ids,
+    };
+    const dto = await client.createOrgUnit(sanitizedPayload);
     return { ok: true, unit: mapOrgUnitDtoToConfigured(dto) };
   } catch (err: unknown) {
     return { ok: false, ...extractApiError(err, locale) };

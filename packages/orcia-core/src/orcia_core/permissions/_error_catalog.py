@@ -199,6 +199,16 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "Another organizational unit already uses this short identifier (slug).",
         ),
     },
+    "ERR_ORG_UNIT_NOT_FOUND": {
+        "fr": LocalizedErrorCopy(
+            "Unité organisationnelle introuvable",
+            "L'unité organisationnelle spécifiée n'existe pas ou ne correspond pas au type requis.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Organizational unit not found",
+            "The specified organizational unit does not exist or does not match the required type.",
+        ),
+    },
     "ERR_ORG_UNIT_NOT_EMPTY": {
         "fr": LocalizedErrorCopy(
             "Unité organisationnelle non vide",
@@ -209,6 +219,19 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "Organizational unit is not empty",
             "Cannot delete this unit while child units or workspaces are still attached to it. "
             "Move or delete those items first.",
+        ),
+    },
+    "ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Affectation de membres interdite sur une Direction ou un Pôle (BU)",
+            "Les membres individuels doivent être rattachés à une Équipe (TEAM) et non à une "
+            "Direction ou un Pôle (BU). Seuls les co-responsables (lead_user_ids) sont "
+            "autorisés sur une BU.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Direct member assignment forbidden on Business Unit",
+            "Individual members must be assigned to a Team (TEAM), not a Business Unit (BU). "
+            "Only leads (lead_user_ids) are allowed on a BU.",
         ),
     },
     "ERR_IAM_INVALID_ROLE": {

@@ -18,7 +18,12 @@ OfficialIamRoleLiteral = Literal[
     "OBSERVER",
 ]
 IamAccountKindLiteral = Literal["HUMAN", "SERVICE_PRINCIPAL"]
-IamAuthSourceLiteral = Literal["LOCAL_BOOTSTRAP", "OIDC_FEDERATED", "SERVICE_TOKEN"]
+IamAuthSourceLiteral = Literal[
+    "LOCAL_BOOTSTRAP",
+    "LOCAL_PASSWORD",
+    "OIDC_FEDERATED",
+    "SERVICE_TOKEN",
+]
 IamAccountStatusLiteral = Literal["ACTIVE", "INVITED", "DISABLED"]
 RoleNaturalScopeLiteral = Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
 PermissionVerbLiteral = Literal["create", "read", "update", "delete", "execute", "grant"]
@@ -42,6 +47,8 @@ class IamAccountResponse(BaseModel):
     temporary_password: str | None = Field(default=None)  # pragma: allowlist secret
     created_at_iso: str
     updated_at_iso: str
+    led_bu_ids: list[str] = Field(default_factory=list)
+    led_team_ids: list[str] = Field(default_factory=list)
 
 
 class IamAccountsListResponse(BaseModel):
@@ -66,6 +73,8 @@ class IamAccountCreateRequest(BaseModel):
     roles: list[str] = Field(default_factory=lambda: ["CONTRIBUTOR"], max_length=12)
     team_ids: list[str] = Field(default_factory=list, max_length=64)
     status: IamAccountStatusLiteral = "ACTIVE"
+    led_bu_ids: list[str] | None = Field(default=None, max_length=64)
+    led_team_ids: list[str] | None = Field(default=None, max_length=64)
 
 
 class IamAccountPatchRequest(BaseModel):
@@ -78,6 +87,8 @@ class IamAccountPatchRequest(BaseModel):
     roles: list[str] | None = Field(default=None, max_length=12)
     team_ids: list[str] | None = Field(default=None, max_length=64)
     status: IamAccountStatusLiteral | None = None
+    led_bu_ids: list[str] | None = Field(default=None, max_length=64)
+    led_team_ids: list[str] | None = Field(default=None, max_length=64)
 
 
 class IamAccountDeleteResponse(BaseModel):

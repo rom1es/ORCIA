@@ -121,8 +121,24 @@ class OrgUnitDuplicateSlugError(OrciaDomainError):
     )
 
 
+class OrgUnitNotFoundError(ResourceNotFoundError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_NOT_FOUND",
+        404,
+        "org-unit-not-found",
+    )
+
+
 class OrgUnitNotEmptyError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_ORG_UNIT_NOT_EMPTY", 409, "org-unit-not-empty"
+
+
+class OrgUnitBuMembersForbiddenError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN",
+        422,
+        "org-unit-bu-members-forbidden",
+    )
 
 
 class OrgUnitStorageSchemaError(OrciaDomainError):
@@ -227,10 +243,12 @@ __all__ = [
     "LocalAuthDisabledByPolicyError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "OrgUnitBuMembersForbiddenError",
     "OrgUnitDuplicateSlugError",
     "OrgUnitHierarchyCycleError",
     "OrgUnitInvalidParentKindError",
     "OrgUnitNotEmptyError",
+    "OrgUnitNotFoundError",
     "OrgUnitStorageSchemaError",
     "OrgUnitUnknownUserError",
     "PERMISSIONS_ERROR_CATALOG",

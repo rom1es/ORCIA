@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from typing import cast
+from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -26,6 +27,7 @@ from orcia_core.permissions.org_hierarchy import (
     normalize_member_user_ids,
     sort_org_unit_summaries_dfs,
 )
+from orcia_kernel.ids import new_uuid7
 
 
 def parse_member_ids_jsonb(raw: object) -> tuple[str, ...]:
@@ -67,6 +69,21 @@ def parse_attached_workspaces_jsonb(raw: object) -> tuple[AttachedWorkspaceRef, 
     return tuple(refs)
 
 
+async def ensure_org_units_schema(conn: AsyncConnection) -> None:
+    """Ensure `lead_user_ids_jsonb` column exists idempotently."""
+    reg = (await conn.execute(sa.text("SELECT to_regclass('public.org_units')"))).scalar()
+    if reg is None:
+        return
+    await conn.execute(
+        sa.text(
+            """
+            ALTER TABLE org_units
+                ADD COLUMN IF NOT EXISTS lead_user_ids_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb;
+            """
+        )
+    )
+
+
 async def load_all_nodes_and_workspaces(
     conn: AsyncConnection,
 ) -> tuple[
@@ -75,12 +92,14 @@ async def load_all_nodes_and_workspaces(
     dict[str, tuple[AttachedWorkspaceRef, ...]],
 ]:
     """Load all `org_units` and their attached workspaces in a single query (zero N+1)."""
+    await ensure_org_units_schema(conn)
     rows = (
         await conn.execute(
             sa.text(
                 """
                 SELECT o.id, o.slug, o.name, o.unit_type, o.parent_id,
                        o.billing_enabled, o.lead_user_id, o.member_user_ids_jsonb,
+                       o.lead_user_ids_jsonb,
                        COALESCE(ws.ws_cnt, 0) AS attached_ws_cnt,
                        COALESCE(ws.attached_ws_json, '[]'::jsonb) AS attached_ws_json
                 FROM org_units o
@@ -117,10 +136,11 @@ async def load_all_nodes_and_workspaces(
             billing_enabled=bool(row[5]) if row[5] is not None else True,
             lead_user_id=str(row[6]).strip() if row[6] else None,
             member_user_ids=parse_member_ids_jsonb(row[7]),
+            lead_user_ids=parse_member_ids_jsonb(row[8]),
         )
         nodes_by_id[uid] = node
-        ws_counts[uid] = int(row[8] or 0)
-        ws_refs_by_owner[uid] = parse_attached_workspaces_jsonb(row[9])
+        ws_counts[uid] = int(row[9] or 0)
+        ws_refs_by_owner[uid] = parse_attached_workspaces_jsonb(row[10])
     return nodes_by_id, ws_counts, ws_refs_by_owner
 
 
@@ -162,6 +182,70 @@ def resolve_target_node(
     return target
 
 
+async def reassign_users_primary_org_unit_before_delete(
+    conn: AsyncConnection, target_uuid: UUID, target_parent_id: str | None
+) -> None:
+    """Reassign users referencing a deleted org unit to parent or enterprise root."""
+    fallback_id: UUID | None = None
+    if target_parent_id:
+        try:
+            fallback_id = UUID(target_parent_id)
+        except (ValueError, TypeError):
+            fallback_id = None
+    if fallback_id is None:
+        root_res = await conn.execute(
+            sa.text(
+                """
+                SELECT id FROM org_units WHERE id <> :id
+                ORDER BY
+                    CASE
+                        WHEN unit_type = 'ENTERPRISE' THEN 0
+                        WHEN unit_type = 'BU' THEN 1
+                        ELSE 2
+                    END,
+                    created_at ASC
+                LIMIT 1
+                """
+            ),
+            {"id": target_uuid},
+        )
+        fallback_id = root_res.scalar()
+    if fallback_id is None:
+        ref_cnt = (
+            await conn.execute(
+                sa.text("SELECT COUNT(*) FROM users WHERE primary_org_unit_id = :id"),
+                {"id": target_uuid},
+            )
+        ).scalar_one()
+        if int(ref_cnt) > 0:
+            ent_id = new_uuid7()
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO org_units (id, slug, name, unit_type, billing_enabled, created_at)
+                    VALUES (:id, 'global', 'Plateforme Globale ORCIA', 'ENTERPRISE', TRUE, NOW())
+                    ON CONFLICT (slug) DO NOTHING
+                    """
+                ),
+                {"id": ent_id},
+            )
+            ent_row = (
+                await conn.execute(
+                    sa.text("SELECT id FROM org_units WHERE slug = 'global' LIMIT 1")
+                )
+            ).first()
+            if ent_row is not None and ent_row[0] is not None:
+                fallback_id = ent_row[0]
+    if fallback_id is not None:
+        await conn.execute(
+            sa.text(
+                "UPDATE users SET primary_org_unit_id = :fallback_id "
+                "WHERE primary_org_unit_id = :target_id"
+            ),
+            {"fallback_id": fallback_id, "target_id": target_uuid},
+        )
+
+
 async def sync_platform_settings_org_units_if_present(
     conn: AsyncConnection,
     summaries: Sequence[OrgUnitSummary],
@@ -176,6 +260,7 @@ async def sync_platform_settings_org_units_if_present(
             "parentId": item.parent_id or "scope-global",
             "billingEnabled": item.billing_enabled,
             **({"leadUserId": item.lead_user_id} if item.lead_user_id else {}),
+            **({"leadUserIds": list(item.lead_user_ids)} if item.lead_user_ids else {}),
             **({"memberUserIds": list(item.member_user_ids)} if item.member_user_ids else {}),
         }
         for item in summaries
@@ -232,11 +317,13 @@ async def query_filtered_org_unit_summaries(
     if limit is not None:
         params["limit"] = limit
 
+    await ensure_org_units_schema(conn)
     query = sa.text(
         f"""
         SELECT o.id, o.slug, o.name, o.unit_type,
                CASE WHEN p.unit_type = 'ENTERPRISE' THEN NULL ELSE o.parent_id END AS parent_id,
                o.billing_enabled, o.lead_user_id, o.member_user_ids_jsonb,
+               o.lead_user_ids_jsonb,
                COALESCE(ws.ws_cnt, 0) AS attached_ws_cnt,
                COALESCE(ws.attached_ws_json, '[]'::jsonb) AS attached_ws_json
         FROM org_units o
@@ -273,8 +360,9 @@ async def query_filtered_org_unit_summaries(
                 billing_enabled=bool(row[5]) if row[5] is not None else True,
                 lead_user_id=str(row[6]).strip() if row[6] else None,
                 member_user_ids=parse_member_ids_jsonb(row[7]),
-                attached_workspaces_count=int(row[8] or 0),
-                attached_workspaces=parse_attached_workspaces_jsonb(row[9]),
+                attached_workspaces_count=int(row[9] or 0),
+                attached_workspaces=parse_attached_workspaces_jsonb(row[10]),
+                lead_user_ids=parse_member_ids_jsonb(row[8]),
             )
         )
     return summaries
@@ -282,12 +370,14 @@ async def query_filtered_org_unit_summaries(
 
 __all__ = [
     "build_sorted_summaries",
+    "ensure_org_units_schema",
     "escape_like_pattern",
     "load_all_nodes_and_workspaces",
     "load_known_org_users_from_postgres18",
     "parse_attached_workspaces_jsonb",
     "parse_member_ids_jsonb",
     "query_filtered_org_unit_summaries",
+    "reassign_users_primary_org_unit_before_delete",
     "resolve_target_node",
     "sync_platform_settings_org_units_if_present",
 ]

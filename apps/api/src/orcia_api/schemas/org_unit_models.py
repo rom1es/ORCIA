@@ -65,6 +65,7 @@ class OrgUnitResponse(BaseModel):
     member_user_ids: list[str] = Field(default_factory=list)
     attached_workspaces_count: int = Field(default=0, ge=0)
     attached_workspaces: list[AttachedWorkspaceRefResponse] = Field(default_factory=list)
+    lead_user_ids: list[str] = Field(default_factory=list)
 
 
 class OrgUnitsListResponse(BaseModel):
@@ -88,6 +89,7 @@ class OrgUnitCreateRequest(BaseModel):
     parent_id: str | None = Field(default=None, max_length=128)
     billing_enabled: bool = True
     lead_user_id: str | None = Field(default=None, max_length=128)
+    lead_user_ids: list[str] | None = Field(default=None, max_length=20)
     member_user_ids: list[str] = Field(default_factory=list, max_length=200)
 
 
@@ -100,6 +102,7 @@ class OrgUnitPatchRequest(BaseModel):
     parent_id: str | None = Field(default=None, max_length=128)
     billing_enabled: bool | None = None
     lead_user_id: str | None = Field(default=None, max_length=128)
+    lead_user_ids: list[str] | None = Field(default=None, max_length=20)
     member_user_ids: list[str] | None = Field(default=None, max_length=200)
 
 

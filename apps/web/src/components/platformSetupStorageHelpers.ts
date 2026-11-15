@@ -19,14 +19,8 @@ const fallbackMemoryStorage = new Map<string, string>();
 export function clearPlatformSetupStorage(): void {
   fallbackMemoryStorage.clear();
   const resetHook = (globalThis as Record<string, unknown>).__ORCIA_RESET_VITEST_BACKEND__;
-  if (typeof resetHook === "function") {
-    resetHook();
-  }
-  if (
-    typeof window !== "undefined" &&
-    window.localStorage &&
-    typeof window.localStorage.removeItem === "function"
-  ) {
+  if (typeof resetHook === "function") resetHook();
+  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.removeItem === "function") {
     try {
       window.localStorage.removeItem(PLATFORM_ADMIN_STORAGE_KEY);
       window.localStorage.removeItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
@@ -107,6 +101,7 @@ export interface ConfiguredOrgUnit {
   readonly parentId: string;
   readonly billingEnabled?: boolean;
   readonly leadUserId?: string | null;
+  readonly leadUserIds?: readonly string[];
   readonly memberUserIds?: readonly string[];
   readonly attachedWorkspacesCount?: number;
   readonly attachedWorkspaces?: readonly AttachedWorkspaceRef[];

@@ -23,6 +23,11 @@ from orcia_core.bootstrap._internal.sql_iam_account_helpers import (
     row_to_account,
     sync_team_memberships_in_org_units,
 )
+from orcia_core.bootstrap._internal.sql_org_iam_role_sync import (
+    hydrate_iam_accounts_led_units,
+    resolve_default_human_auth_source,
+    sync_lead_units_from_iam_account,
+)
 from orcia_core.permissions.errors import (
     DuplicateIamPrincipalError,
     ResourceNotFoundError,
@@ -105,7 +110,7 @@ async def sync_and_list_iam_accounts_from_postgres18(
                 },
             )
             existing = await load_accounts_from_conn(conn)
-        return existing
+        return await hydrate_iam_accounts_led_units(conn, existing)
 
 
 async def create_iam_account_on_postgres18(
@@ -119,6 +124,8 @@ async def create_iam_account_on_postgres18(
     roles: Sequence[str],
     team_ids: Sequence[str] | None = None,
     status: IamAccountStatus = "ACTIVE",
+    led_bu_ids: Sequence[str] | None = None,
+    led_team_ids: Sequence[str] | None = None,
     instance: str | None = None,
 ) -> IamAccountRecord:
     cleaned_name = display_name.strip()
@@ -137,13 +144,17 @@ async def create_iam_account_on_postgres18(
         instance=instance,
     )
     norm_teams = normalize_team_ids(team_ids)
-    effective_source: IamAuthSource = auth_source or (
-        "SERVICE_TOKEN" if account_kind == "SERVICE_PRINCIPAL" else "OIDC_FEDERATED"
-    )
     new_id = new_uuid7_str()
 
     async with engine.begin() as conn:
         await ensure_iam_accounts_schema(conn)
+        if auth_source is not None:
+            effective_source: IamAuthSource = auth_source
+        elif account_kind == "SERVICE_PRINCIPAL":
+            effective_source = "SERVICE_TOKEN"
+        else:
+            effective_source = await resolve_default_human_auth_source(conn)
+
         existing = await load_accounts_from_conn(conn, for_update=True)
         if any(a.principal_id.lower() == norm_principal.lower() for a in existing):
             raise DuplicateIamPrincipalError(instance=instance)
@@ -179,7 +190,16 @@ async def create_iam_account_on_postgres18(
         ).one()
         if norm_teams:
             await sync_team_memberships_in_org_units(conn, norm_principal, norm_teams)
-        return row_to_account(row)
+        await sync_lead_units_from_iam_account(
+            conn,
+            principal_id=norm_principal,
+            email=cleaned_email,
+            roles=valid_roles,
+            led_bu_ids=led_bu_ids,
+            led_team_ids=led_team_ids,
+        )
+        hydrated = await hydrate_iam_accounts_led_units(conn, [row_to_account(row)])
+        return hydrated[0]
 
 
 async def update_iam_account_on_postgres18(
@@ -192,6 +212,8 @@ async def update_iam_account_on_postgres18(
     roles: Sequence[str] | None = None,
     team_ids: Sequence[str] | None = None,
     status: IamAccountStatus | None = None,
+    led_bu_ids: Sequence[str] | None = None,
+    led_team_ids: Sequence[str] | None = None,
     instance: str | None = None,
 ) -> IamAccountRecord:
     try:
@@ -261,7 +283,16 @@ async def update_iam_account_on_postgres18(
         ).one()
         if team_ids is not None:
             await sync_team_memberships_in_org_units(conn, target.principal_id, next_teams)
-        return row_to_account(row)
+        await sync_lead_units_from_iam_account(
+            conn,
+            principal_id=target.principal_id,
+            email=next_email,
+            roles=next_roles,
+            led_bu_ids=led_bu_ids,
+            led_team_ids=led_team_ids,
+        )
+        hydrated = await hydrate_iam_accounts_led_units(conn, [row_to_account(row)])
+        return hydrated[0]
 
 
 async def delete_iam_account_on_postgres18(
@@ -291,6 +322,13 @@ async def delete_iam_account_on_postgres18(
             conn,
             target.principal_id,
             (),
+            remove_all=True,
+        )
+        await sync_lead_units_from_iam_account(
+            conn,
+            principal_id=target.principal_id,
+            email=target.email,
+            roles=(),
             remove_all=True,
         )
         await conn.execute(

@@ -58,6 +58,7 @@ from orcia_core.permissions.errors import (
     CodegraphWorkspaceLeadRequiredError,
     InvalidOrExpiredLoginChallengeError,
     LocalAuthDisabledByPolicyError,
+    OrgUnitBuMembersForbiddenError,
     OrgUnitStorageSchemaError,
     OrgUnitUnknownUserError,
     PasswordUnchangedError,
@@ -116,11 +117,13 @@ from orcia_core.permissions.models import (
     WorkspaceEntity,
     WorkspaceMembershipEntity,
     WorkspaceVisibilityMode,
+    normalize_lead_user_ids,
 )
 from orcia_core.permissions.org_hierarchy import (
     AttachedWorkspaceRef,
     OrgUnitKind,
     OrgUnitSummary,
+    assert_bu_has_no_members,
     assert_org_unit_deletable,
     assert_unique_org_unit_slug,
     build_org_unit_summary,
@@ -134,6 +137,7 @@ from orcia_core.permissions.org_hierarchy import (
 )
 from orcia_core.permissions.org_user_validation import (
     KnownOrgUser,
+    resolve_and_validate_org_unit_leads,
     resolve_and_validate_org_unit_users,
 )
 from orcia_core.permissions.platform_settings import (
@@ -194,7 +198,7 @@ __all__ = [
     "DatasourceScheme", "EffectiveResourcePermissions", "ExecutionIdentityMode",
     "InMemoryRevocationStore", "JwtSessionManager", "KeyValueRevocationStore",
     "MatrixPermissionEvaluator", "OrgUnitKind", "OrgUnitNode", "OrgUnitStorageSchemaError",
-    "OrgUnitSummary", "OrgUnitType", "OrgUnitUnknownUserError",
+    "OrgUnitSummary", "OrgUnitType", "OrgUnitUnknownUserError", "OrgUnitBuMembersForbiddenError",
     "PassthroughCredentialRecord", "PassthroughVaultCipher",
     "PasswordUnchangedError", "PermissionBrokerPolicy",
     "PermissionBrokerService", "PermissionBrokerTicket",
@@ -209,6 +213,7 @@ __all__ = [
     "compute_secret_masked_hint",
     "extract_connector_scheme", "generate_new_org_unit_id", "list_evaluator_org_unit_summaries",
     "list_native_role_matrix", "normalize_member_user_ids", "normalize_org_unit_slug",
+    "normalize_lead_user_ids", "assert_bu_has_no_members", "resolve_and_validate_org_unit_leads",
     "parse_permission_kb_markdown", "resolve_and_validate_org_unit_users",
     "KnownOrgUser", "sort_org_unit_dicts_topologically",
     "sort_org_unit_summaries_dfs", "validate_grant_resource_kind", "validate_iam_roles",

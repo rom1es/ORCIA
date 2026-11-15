@@ -323,6 +323,7 @@ def test_alembic_0021_story_5_1_migration_on_real_postgres18(
 ) -> None:
     """Verify Alembic 0021_story_5_1 upgrade/downgrade/upgrade on real PostgreSQL 18."""
     import os
+    import tempfile
 
     from testcontainers.core.container import DockerContainer
     from testcontainers.core.waiting_utils import wait_for_logs
@@ -330,7 +331,11 @@ def test_alembic_0021_story_5_1_migration_on_real_postgres18(
     repo_root = Path(__file__).resolve().parents[2]
     monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
     suffix = f"tc_5_1_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir_path = repo_root / ".pytest_cache" / suffix
+    sock_dir_path = (
+        Path(tempfile.gettempdir())
+        if len(str(repo_root / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
+        else repo_root / ".pytest_cache"
+    ) / suffix
     sock_dir_path.mkdir(parents=True, exist_ok=True)
     sock_dir_path.chmod(0o777)
     sock_dir = str(sock_dir_path)

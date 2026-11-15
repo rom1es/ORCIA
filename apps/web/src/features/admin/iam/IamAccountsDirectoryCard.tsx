@@ -11,6 +11,7 @@ export interface IamAccountsDirectoryCardProps {
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly labels: IamTabDictionarySection;
   readonly errorMessage: string | null;
+  readonly authMode?: "LOCAL" | "SSO";
   readonly onOpenRoleMatrix: () => void;
   readonly onOpenCreateModal: () => void;
   readonly onOpenEditModal: (account: IamAccountResponse) => void;
@@ -24,6 +25,7 @@ export function IamAccountsDirectoryCard({
   orgUnits,
   labels,
   errorMessage,
+  authMode,
   onOpenRoleMatrix,
   onOpenCreateModal,
   onOpenEditModal,
@@ -31,12 +33,6 @@ export function IamAccountsDirectoryCard({
   onResetTemporaryPassword,
 }: IamAccountsDirectoryCardProps): React.ReactElement {
   const dir = labels.directory;
-
-  const formatAuthSource = (source: IamAccountResponse["auth_source"]): string => {
-    if (source === "LOCAL_BOOTSTRAP") return dir.authLocalBootstrap;
-    if (source === "SERVICE_TOKEN") return dir.authServiceToken;
-    return dir.authFederated;
-  };
 
   const formatStatus = (
     status: IamAccountResponse["status"],
@@ -46,13 +42,49 @@ export function IamAccountsDirectoryCard({
     return { label: dir.statusDisabled, tone: "crimson" };
   };
 
-  const resolveTeamNames = (teamIds: readonly string[]): string => {
-    if (teamIds.length === 0) return dir.noTeamsAssigned;
-    const names = teamIds.map((tid) => {
-      const matched = orgUnits.find((u) => u.id === tid || u.slug === tid);
-      return matched ? matched.name : tid;
-    });
-    return `${dir.teamsPrefix} ${names.join(", ")}`;
+  const resolveAccountTopology = (acc: IamAccountResponse) => {
+    const principalLower = acc.principal_id.toLowerCase().trim();
+    const emailLower = acc.email ? acc.email.toLowerCase().trim() : null;
+
+    const isMatchUser = (idOrEmail?: string | null) => {
+      if (!idOrEmail) return false;
+      const lower = idOrEmail.toLowerCase().trim();
+      return lower === principalLower || (emailLower !== null && lower === emailLower);
+    };
+
+    const ledBus: ConfiguredOrgUnit[] = [];
+    const ledTeams: ConfiguredOrgUnit[] = [];
+    const memberTeams: ConfiguredOrgUnit[] = [];
+
+    for (const unit of orgUnits) {
+      const isLead =
+        (unit.level === "BU" && acc.led_bu_ids?.includes(unit.id)) ||
+        (unit.level === "TEAM" && acc.led_team_ids?.includes(unit.id)) ||
+        (Array.isArray(unit.leadUserIds) && unit.leadUserIds.some(isMatchUser)) ||
+        isMatchUser(unit.leadUserId);
+
+      if (unit.level === "BU") {
+        if (isLead && !ledBus.some((b) => b.id === unit.id)) {
+          ledBus.push(unit);
+        }
+      } else if (unit.level === "TEAM") {
+        if (isLead) {
+          if (!ledTeams.some((t) => t.id === unit.id)) {
+            ledTeams.push(unit);
+          }
+        } else {
+          const isMember =
+            acc.team_ids?.includes(unit.id) ||
+            acc.team_ids?.includes(unit.slug) ||
+            (Array.isArray(unit.memberUserIds) && unit.memberUserIds.some(isMatchUser));
+          if (isMember && !memberTeams.some((t) => t.id === unit.id)) {
+            memberTeams.push(unit);
+          }
+        }
+      }
+    }
+
+    return { ledBus, ledTeams, memberTeams };
   };
 
   return (
@@ -72,13 +104,7 @@ export function IamAccountsDirectoryCard({
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 style={{ margin: 0, fontSize: "15px" }}>{dir.sectionTitle}</h2>
-          <p
-            style={{
-              margin: 0,
-              fontSize: "12.5px",
-              color: "var(--color-muted-foreground)",
-            }}
-          >
+          <p style={{ margin: 0, fontSize: "12.5px", color: "var(--color-muted-foreground)" }}>
             {dir.sectionSubtitle}
           </p>
         </div>
@@ -122,6 +148,18 @@ export function IamAccountsDirectoryCard({
         <div style={{ display: "grid", gap: "8px" }}>
           {accounts.map((acc) => {
             const statusInfo = formatStatus(acc.status);
+            const { ledBus, ledTeams, memberTeams } = resolveAccountTopology(acc);
+            const hasBuLeadRole = acc.roles.includes("BU_LEAD");
+            const hasTeamLeadRole = acc.roles.includes("TEAM_LEAD");
+            const showFallbackNoTeams =
+              acc.account_kind === "HUMAN" &&
+              ledBus.length === 0 &&
+              ledTeams.length === 0 &&
+              memberTeams.length === 0 &&
+              !hasBuLeadRole &&
+              !hasTeamLeadRole &&
+              acc.roles.some((r) => r !== "PLATFORM_ADMIN" && r !== "SECOPS");
+
             return (
               <div
                 key={acc.id}
@@ -154,15 +192,9 @@ export function IamAccountsDirectoryCard({
                     >
                       {acc.email ?? acc.principal_id}
                     </code>
-                    <StatusBadge
-                      label={
-                        acc.account_kind === "SERVICE_PRINCIPAL"
-                          ? dir.servicePrincipalBadge
-                          : dir.humanBadge
-                      }
-                      tone="neutral"
-                    />
-                    <StatusBadge label={formatAuthSource(acc.auth_source)} tone="neutral" />
+                    {acc.account_kind === "SERVICE_PRINCIPAL" ? (
+                      <StatusBadge label={dir.servicePrincipalBadge} tone="neutral" />
+                    ) : null}
                     <StatusBadge label={statusInfo.label} tone={statusInfo.tone} />
                   </div>
 
@@ -178,20 +210,90 @@ export function IamAccountsDirectoryCard({
                         }
                       />
                     ))}
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--color-muted-foreground)",
-                        marginLeft: "4px",
-                      }}
-                    >
-                      · {resolveTeamNames(acc.team_ids)}
-                    </span>
+
+                    {ledBus.length > 0 ? (
+                      <span
+                        data-testid={`iam-account-led-bus-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-foreground)",
+                          fontWeight: 600,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {ledBus.length > 1 ? dir.ledBusPluralPrefix : dir.ledBusPrefix} {ledBus.map((u) => u.name).join(", ")}
+                      </span>
+                    ) : hasBuLeadRole ? (
+                      <span
+                        data-testid={`iam-account-led-bus-unassigned-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-arbitration-amber)",
+                          fontWeight: 500,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {dir.ledBusPrefix} {dir.noLedBusAssigned}
+                      </span>
+                    ) : null}
+
+                    {ledTeams.length > 0 ? (
+                      <span
+                        data-testid={`iam-account-led-teams-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-foreground)",
+                          fontWeight: 600,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {ledTeams.length > 1 ? dir.ledTeamsPluralPrefix : dir.ledTeamSingularPrefix} {ledTeams.map((u) => u.name).join(", ")}
+                      </span>
+                    ) : hasTeamLeadRole ? (
+                      <span
+                        data-testid={`iam-account-led-teams-unassigned-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-arbitration-amber)",
+                          fontWeight: 500,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {dir.ledTeamSingularPrefix} {dir.noLedTeamsAssigned}
+                      </span>
+                    ) : null}
+
+                    {memberTeams.length > 0 ? (
+                      <span
+                        data-testid={`iam-account-member-teams-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-foreground)",
+                          fontWeight: 600,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {memberTeams.length > 1 ? dir.memberTeamsPluralPrefix : dir.memberTeamSingularPrefix} {memberTeams.map((u) => u.name).join(", ")}
+                      </span>
+                    ) : null}
+
+                    {showFallbackNoTeams ? (
+                      <span
+                        data-testid={`iam-account-no-teams-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-muted-foreground)",
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {dir.noTeamsAssigned}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  {acc.account_kind === "HUMAN" && onResetTemporaryPassword ? (
+                  {acc.account_kind === "HUMAN" && authMode !== "SSO" && onResetTemporaryPassword ? (
                     <button
                       type="button"
                       data-testid={`iam-reset-password-account-btn-${acc.id}`}
@@ -200,7 +302,7 @@ export function IamAccountsDirectoryCard({
                       className="orcia-ds-btn orcia-ds-btn-secondary"
                       style={{ padding: "5px 10px", fontSize: "12px" }}
                     >
-                      {dir.editButton === "Modifier" ? "Mot de passe" : "Password"}
+                      {dir.resetPasswordButton}
                     </button>
                   ) : null}
                   <button

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -37,7 +38,11 @@ def test_story_3_4_migration_0015_real_postgres_container(
     """Verify migration 0015 creates `human_anchor_signatures` and `human_arbitration_requests`."""
     monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
     suffix = f"tc_3_4_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = REPO_ROOT / ".pytest_cache" / suffix
+    sock_dir = (
+        Path(tempfile.gettempdir())
+        if len(str(REPO_ROOT / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
+        else REPO_ROOT / ".pytest_cache"
+    ) / suffix
     sock_dir.mkdir(parents=True, exist_ok=True)
     sock_dir.chmod(0o777)
 

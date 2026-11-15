@@ -1,31 +1,15 @@
-import type { IamAccountResponse, RoleMatrixEntryResponse } from "@orcia/api-client";
-import {
-  TemporaryPasswordInvitationModal,
-  type ControlCenterWorkspaceGovItem,
-} from "@orcia/ui";
+import { createOrciaApiClient, type IamAccountResponse, type RoleMatrixEntryResponse } from "@orcia/api-client";
+import { TemporaryPasswordInvitationModal, type ControlCenterWorkspaceGovItem } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
-import type {
-  ConfiguredOrgUnit,
-  ConfiguredRbacGrant,
-} from "../components/platformSetupStore";
-import {
-  IamAccountModal,
-  type IamAccountModalSubmitValues,
-} from "../features/admin/iam/IamAccountModal";
+import type { ConfiguredOrgUnit, ConfiguredRbacGrant } from "../components/platformSetupStore";
+import { IamAccountModal, type IamAccountModalSubmitValues } from "../features/admin/iam/IamAccountModal";
 import { IamAccountsDirectoryCard } from "../features/admin/iam/IamAccountsDirectoryCard";
 import { IamRoleMatrixReferenceModal } from "../features/admin/iam/IamRoleMatrixReferenceModal";
+import { IamSecopsExceptionsDrawer } from "../features/admin/iam/IamSecopsExceptionsDrawer";
 import {
-  IamSecopsExceptionsDrawer,
-  type CreateSecopsExceptionInput,
-} from "../features/admin/iam/IamSecopsExceptionsDrawer";
-import {
-  createIamAccountViaApi,
-  deleteIamAccountViaApi,
-  fetchIamAccountsFromApi,
-  fetchIamGrantsFromApi,
-  fetchIamRoleMatrixFromApi,
-  resetIamAccountTemporaryPasswordViaApi,
-  updateIamAccountViaApi,
+  createIamAccountViaApi, deleteIamAccountViaApi, fetchIamAccountsFromApi,
+  fetchIamGrantsFromApi, fetchIamRoleMatrixFromApi,
+  resetIamAccountTemporaryPasswordViaApi, updateIamAccountViaApi,
 } from "../features/admin/iam/iamApiBridge";
 import { fetchOrgUnitsFromApi } from "../features/admin/organization/orgUnitsApiBridge";
 import type { IamTabDictionarySection } from "../i18n/locales/iam_accounts_labels";
@@ -81,6 +65,7 @@ export function SettingsIamOrganizationSection({
 
   const [accounts, setAccounts] = useState<readonly IamAccountResponse[]>([]);
   const [roleMatrix, setRoleMatrix] = useState<readonly RoleMatrixEntryResponse[]>([]);
+  const [authMode, setAuthMode] = useState<"LOCAL" | "SSO">("LOCAL");
   const [accountsError, setAccountsError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -95,11 +80,10 @@ export function SettingsIamOrganizationSection({
       (acc.email?.toLowerCase() === userEmail.toLowerCase() ||
         acc.principal_id?.toLowerCase() === userEmail.toLowerCase()),
   );
-  const currentAccountRoles = currentAccount?.roles ?? [];
   const hasSecopsRole =
     roles.includes("SECOPS") ||
     activeHat === "SECOPS" ||
-    currentAccountRoles.includes("SECOPS");
+    Boolean(currentAccount?.roles.includes("SECOPS"));
   const isSecopsAuthorized = canMutate && !readOnlyObserver && hasSecopsRole;
   const [tempPasswordModalData, setTempPasswordModalData] = useState<{
     displayName: string;
@@ -121,28 +105,31 @@ export function SettingsIamOrganizationSection({
   });
 
   const refreshAccountsAndGrants = useCallback(async () => {
-    const [accRes, matRes, grantsRes] = await Promise.all([
+    const client = createOrciaApiClient({ baseUrl: "", locale });
+    const [accRes, matRes, grantsRes, authCfgRes] = await Promise.allSettled([
       fetchIamAccountsFromApi(locale),
       fetchIamRoleMatrixFromApi(locale),
       fetchIamGrantsFromApi(locale),
+      client.getPublicAuthConfig(),
     ]);
-    if (accRes.ok) {
-      setAccounts(accRes.accounts);
-    } else {
-      setAccountsError(accRes.errorMessage);
+
+    if (accRes.status === "fulfilled") {
+      if (accRes.value.ok) setAccounts(accRes.value.accounts);
+      else setAccountsError(accRes.value.errorMessage);
     }
-    if (matRes.ok) {
-      setRoleMatrix(matRes.roles);
+    if (matRes.status === "fulfilled" && matRes.value.ok) {
+      setRoleMatrix(matRes.value.roles);
     }
-    if (grantsRes.ok) {
-      syncRbacGrantsFromServer(grantsRes.grants);
+    if (grantsRes.status === "fulfilled" && grantsRes.value.ok) {
+      syncRbacGrantsFromServer(grantsRes.value.grants);
+    }
+    if (authCfgRes.status === "fulfilled" && authCfgRes.value?.auth_mode) {
+      setAuthMode(authCfgRes.value.auth_mode);
     }
   }, [locale, syncRbacGrantsFromServer]);
 
   useEffect(() => {
-    if (isHydrating) {
-      return;
-    }
+    if (isHydrating) return;
     setAccountsError(null);
     void refreshAccountsAndGrants();
   }, [refreshAccountsAndGrants, isHydrating, accessToken]);
@@ -163,10 +150,11 @@ export function SettingsIamOrganizationSection({
         editingAccount.id,
         {
           display_name: values.displayName,
-          email:
-            values.accountKind === "HUMAN" ? values.emailOrPrincipal : editingAccount.email,
+          email: values.accountKind === "HUMAN" ? values.emailOrPrincipal : editingAccount.email,
           roles: [...values.roles],
           team_ids: [...values.teamIds],
+          led_bu_ids: values.ledBuIds ? [...values.ledBuIds] : [],
+          led_team_ids: values.ledTeamIds ? [...values.ledTeamIds] : [],
           status: values.status,
         },
         locale,
@@ -178,10 +166,6 @@ export function SettingsIamOrganizationSection({
       }
       setModalOpen(false);
       setEditingAccount(null);
-      const listRes = await fetchIamAccountsFromApi(locale);
-      if (listRes.ok) setAccounts(listRes.accounts);
-      await syncOrgUnitsAfterAccountTeamChange();
-      await useAuthSessionStore.getState().hydrateSession({ force: true });
     } else {
       const res = await createIamAccountViaApi(
         {
@@ -191,6 +175,8 @@ export function SettingsIamOrganizationSection({
           principal_id: values.emailOrPrincipal,
           roles: [...values.roles],
           team_ids: [...values.teamIds],
+          led_bu_ids: values.ledBuIds ? [...values.ledBuIds] : [],
+          led_team_ids: values.ledTeamIds ? [...values.ledTeamIds] : [],
           status: values.status,
         },
         locale,
@@ -209,11 +195,11 @@ export function SettingsIamOrganizationSection({
           accountId: res.account.id,
         });
       }
-      const listRes = await fetchIamAccountsFromApi(locale);
-      if (listRes.ok) setAccounts(listRes.accounts);
-      await syncOrgUnitsAfterAccountTeamChange();
-      await useAuthSessionStore.getState().hydrateSession({ force: true });
     }
+    const listRes = await fetchIamAccountsFromApi(locale);
+    if (listRes.ok) setAccounts(listRes.accounts);
+    await syncOrgUnitsAfterAccountTeamChange();
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
   };
 
   const handleResetTemporaryPassword = async (account: IamAccountResponse) => {
@@ -255,6 +241,7 @@ export function SettingsIamOrganizationSection({
         orgUnits={orgUnits}
         labels={iamLabels}
         errorMessage={accountsError}
+        authMode={authMode}
         onOpenRoleMatrix={() => setIsRoleMatrixModalOpen(true)}
         onOpenCreateModal={() => {
           setEditingAccount(null);

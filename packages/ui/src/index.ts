@@ -528,6 +528,11 @@ export {
   type OrciaKnownUserComboboxProps,
 } from "./primitives/OrciaKnownUserCombobox";
 export {
+  OrciaUserPillsSelect,
+  resolvePendingKnownUserId,
+  type OrciaUserPillsSelectProps,
+} from "./primitives/OrciaUserPillsSelect";
+export {
   OrciaSearchableSelect,
   type OrciaSearchableSelectOption,
   type OrciaSearchableSelectProps,

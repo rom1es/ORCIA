@@ -99,6 +99,9 @@ export function SettingsOrganizationUnitsBlock({
     setModalError(null);
     setOrgDeleteFeedback(null);
     const parentPayload = values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
+    const effectiveLeads = Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
+      ? values.leadUserIds
+      : (values.leadUserId ? [values.leadUserId] : []);
     const res = await createOrgUnitViaApi(
       {
         name: values.name,
@@ -106,7 +109,8 @@ export function SettingsOrganizationUnitsBlock({
         slug: values.slug || null,
         parent_id: parentPayload,
         billing_enabled: values.billingEnabled,
-        lead_user_id: values.leadUserId || null,
+        lead_user_id: effectiveLeads[0] ?? null,
+        lead_user_ids: effectiveLeads,
         member_user_ids: [],
       },
       locale,
@@ -125,6 +129,7 @@ export function SettingsOrganizationUnitsBlock({
       scopePath: res.unit.slug,
       scopeLabel: `${levelLabel} · ${res.unit.name}`,
     });
+    void useAuthSessionStore.getState().hydrateSession({ force: true });
     setCreateModalOpen(false);
   };
 
@@ -132,9 +137,20 @@ export function SettingsOrganizationUnitsBlock({
     setIsSubmitting(true);
     setModalError(null);
     const parentPayload = values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
+    const effectiveLeads = Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
+      ? values.leadUserIds
+      : (values.leadUserId ? [values.leadUserId] : undefined);
     const res = await patchOrgUnitViaApi(
       orgUnitId,
-      { name: values.name, parent_id: parentPayload, billing_enabled: values.billingEnabled },
+      {
+        name: values.name,
+        parent_id: parentPayload,
+        billing_enabled: values.billingEnabled,
+        ...(effectiveLeads !== undefined ? {
+          lead_user_id: effectiveLeads[0] ?? null,
+          lead_user_ids: effectiveLeads,
+        } : {}),
+      },
       locale,
     );
     setIsSubmitting(false);
@@ -151,18 +167,30 @@ export function SettingsOrganizationUnitsBlock({
       scopePath: res.unit.slug,
       scopeLabel: `${levelLabel} · ${res.unit.name}`,
     });
+    void useAuthSessionStore.getState().hydrateSession({ force: true });
     setEditingUnit(null);
   };
 
   const handleMembersSave = async (
     orgUnitId: string,
-    values: { readonly leadUserId: string | null; readonly memberUserIds: readonly string[] },
+    values: {
+      readonly leadUserId: string | null;
+      readonly leadUserIds?: readonly string[];
+      readonly memberUserIds: readonly string[];
+    },
   ) => {
     setIsSubmitting(true);
     setModalError(null);
+    const effectiveLeads = Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
+      ? values.leadUserIds
+      : (values.leadUserId ? [values.leadUserId] : []);
     const res = await patchOrgUnitViaApi(
       orgUnitId,
-      { lead_user_id: values.leadUserId, member_user_ids: [...values.memberUserIds] },
+      {
+        lead_user_id: effectiveLeads[0] ?? null,
+        lead_user_ids: effectiveLeads,
+        member_user_ids: [...values.memberUserIds],
+      },
       locale,
     );
     setIsSubmitting(false);
@@ -179,6 +207,7 @@ export function SettingsOrganizationUnitsBlock({
       scopePath: res.unit.slug,
       scopeLabel: `${levelLabel} · ${res.unit.name}`,
     });
+    void useAuthSessionStore.getState().hydrateSession({ force: true });
     setManagingMembersUnit(null);
   };
 
@@ -207,6 +236,7 @@ export function SettingsOrganizationUnitsBlock({
           }
         : undefined,
     );
+    void useAuthSessionStore.getState().hydrateSession({ force: true });
     setOrgDeleteFeedback(null);
     setDeletingRowItem(null);
   };

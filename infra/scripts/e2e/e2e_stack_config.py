@@ -52,6 +52,16 @@ def build_api_env(
     if not is_isolated_e2e_database_url(database_url):
         raise ValueError("Base de données non isolée : refus de démarrer la pile E2E.")
     env = dict(base_env)
+    pythonpath = (
+        f"{REPO_ROOT}/packages/orcia-kernel/src:"
+        f"{REPO_ROOT}/packages/orcia-core/src:"
+        f"{REPO_ROOT}/packages/orcia-connectors/src:"
+        f"{REPO_ROOT}/apps/api/src:"
+        f"{REPO_ROOT}/apps/worker/src:"
+        f"{REPO_ROOT}"
+    )
+    existing_pp = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = f"{pythonpath}:{existing_pp}" if existing_pp else pythonpath
     env.update(
         {
             "DATABASE_URL": database_url,

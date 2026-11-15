@@ -143,11 +143,13 @@ async def sync_relational_tables_on_postgres18(
     llm_tiers: list[dict[str, Any]],
 ) -> None:
     """Synchronize `org_units`, `workspaces`, and `llm_model_endpoints` with the setup snapshot."""
+    from orcia_core.bootstrap._internal.sql_org_units_queries import ensure_org_units_schema
     from orcia_core.permissions.org_hierarchy import (
         normalize_member_user_ids,
         sort_org_unit_dicts_topologically,
     )
 
+    await ensure_org_units_schema(conn)
     root_org_id = await ensure_root_org_unit(conn)
 
     # 1. Synchronize org_units in strict topological order (BU -> Sous-BU/Pôle -> TEAM)
@@ -173,11 +175,23 @@ async def sync_relational_tables_on_postgres18(
         billing_enabled = bool(raw_billing) if raw_billing is not None else True
         raw_lead = org.get("leadUserId", org.get("lead_user_id"))
         lead_user_id = str(raw_lead).strip() if raw_lead else None
+        raw_leads = org.get("leadUserIds", org.get("lead_user_ids"))
+        lead_user_ids: list[str] = (
+            [str(x).strip() for x in raw_leads if str(x).strip()]
+            if isinstance(raw_leads, list)
+            else ([lead_user_id] if lead_user_id else [])
+        )
+        lead_user_id = lead_user_ids[0] if lead_user_ids else None
+
         raw_members = org.get("memberUserIds", org.get("member_user_ids"))
         member_ids = (
-            normalize_member_user_ids([str(x) for x in raw_members])
-            if isinstance(raw_members, list)
-            else ()
+            ()
+            if unit_type == "BU"
+            else (
+                normalize_member_user_ids([str(x) for x in raw_members])
+                if isinstance(raw_members, list)
+                else ()
+            )
         )
 
         row = (
@@ -186,19 +200,29 @@ async def sync_relational_tables_on_postgres18(
                     """
                     INSERT INTO org_units (
                         id, slug, name, unit_type, parent_id,
-                        billing_enabled, lead_user_id, member_user_ids_jsonb
+                        billing_enabled, lead_user_id, lead_user_ids_jsonb, member_user_ids_jsonb
                     )
                     VALUES (
                         :id, :slug, :name, :unit_type, :parent_id,
-                        :billing_enabled, :lead_user_id, CAST(:member_user_ids_jsonb AS jsonb)
+                        :billing_enabled, :lead_user_id,
+                        CAST(:lead_user_ids_jsonb AS jsonb),
+                        CAST(:member_user_ids_jsonb AS jsonb)
                     )
                     ON CONFLICT (slug) DO UPDATE
                     SET name = EXCLUDED.name,
                         unit_type = EXCLUDED.unit_type,
                         parent_id = EXCLUDED.parent_id,
                         billing_enabled = EXCLUDED.billing_enabled,
-                        lead_user_id = EXCLUDED.lead_user_id,
-                        member_user_ids_jsonb = EXCLUDED.member_user_ids_jsonb
+                        lead_user_id = COALESCE(EXCLUDED.lead_user_id, org_units.lead_user_id),
+                        lead_user_ids_jsonb = CASE
+                            WHEN EXCLUDED.lead_user_ids_jsonb <> '[]'::jsonb
+                            THEN EXCLUDED.lead_user_ids_jsonb
+                            ELSE org_units.lead_user_ids_jsonb
+                        END,
+                        member_user_ids_jsonb = CASE
+                            WHEN EXCLUDED.unit_type = 'BU' THEN '[]'::jsonb
+                            ELSE EXCLUDED.member_user_ids_jsonb
+                        END
                     RETURNING id
                     """
                 ),
@@ -210,6 +234,7 @@ async def sync_relational_tables_on_postgres18(
                     "parent_id": resolved_parent_uuid,
                     "billing_enabled": billing_enabled,
                     "lead_user_id": lead_user_id,
+                    "lead_user_ids_jsonb": json.dumps(lead_user_ids),
                     "member_user_ids_jsonb": json.dumps(list(member_ids)),
                 },
             )

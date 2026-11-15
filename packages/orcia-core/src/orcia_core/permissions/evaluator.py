@@ -31,6 +31,23 @@ ROLLUP_SUPERVISOR_ROLES: frozenset[PlatformRole] = frozenset(
 )
 
 
+def _user_leads_node(user: UserIdentity, node: OrgUnitNode) -> bool:
+    uid_l = user.id.lower()
+    email_l = user.email.lower()
+    leads = {
+        lead_ref.lower()
+        for lead_ref in (*node.lead_user_ids, *((node.lead_user_id,) if node.lead_user_id else ()))
+    }
+    return uid_l in leads or email_l in leads
+
+
+def _user_is_member_of_node(user: UserIdentity, node: OrgUnitNode) -> bool:
+    uid_l = user.id.lower()
+    email_l = user.email.lower()
+    members = {m.lower() for m in node.member_user_ids}
+    return uid_l in members or email_l in members
+
+
 class MatrixPermissionEvaluator:
     """Pure domain evaluator for ORCIA's 3-axis authorization matrix (AD-6, AD-14, FR-21)."""
 
@@ -138,7 +155,11 @@ class MatrixPermissionEvaluator:
                     workspace, mem.role, mem.access_mode, "DIRECT_TEAM", True
                 )
 
-        if workspace.owner_org_unit_id == user.primary_org_unit_id:
+        owner_node = self._org_units_by_id.get(workspace.owner_org_unit_id)
+        if workspace.owner_org_unit_id == user.primary_org_unit_id or (
+            owner_node is not None
+            and (_user_leads_node(user, owner_node) or _user_is_member_of_node(user, owner_node))
+        ):
             mode: AccessMode = (
                 "READ_ONLY_OBSERVER"
                 if user.platform_role == "OBSERVER"
@@ -156,18 +177,34 @@ class MatrixPermissionEvaluator:
                     workspace, mem.role, mem.access_mode, "PARTNER_INVITE", False
                 )
 
-        if user.platform_role in ROLLUP_SUPERVISOR_ROLES and self.is_ancestor_of(
-            user.primary_org_unit_id, workspace.owner_org_unit_id
-        ):
-            if workspace.visibility_mode == "CONFIDENTIAL_RESTRICTED":
-                return None
-            return WorkspaceAccessSummary(
-                workspace,
-                "OBSERVER",
-                "READ_ONLY_OBSERVER",
-                "GLOBAL_ADMIN" if user.platform_role == "PLATFORM_ADMIN" else "ROLLUP_PARENT",
-                True,
-            )
+        user_roles = {user.platform_role, *user.roles}
+        is_rollup_supervisor = bool(
+            user_roles & {"PLATFORM_ADMIN", "BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD"}
+        )
+        if is_rollup_supervisor:
+            supervisor_roots: set[str] = set()
+            if user.primary_org_unit_id and (
+                user.platform_role in ROLLUP_SUPERVISOR_ROLES or "PLATFORM_ADMIN" in user.roles
+            ):
+                supervisor_roots.add(user.primary_org_unit_id)
+            for node in self._org_units_by_id.values():
+                if _user_leads_node(user, node):
+                    supervisor_roots.add(node.id)
+
+            if any(
+                self.is_ancestor_of(root_id, workspace.owner_org_unit_id)
+                for root_id in supervisor_roots
+            ):
+                if workspace.visibility_mode == "CONFIDENTIAL_RESTRICTED":
+                    return None
+                is_global = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
+                return WorkspaceAccessSummary(
+                    workspace,
+                    "OBSERVER",
+                    "READ_ONLY_OBSERVER",
+                    "GLOBAL_ADMIN" if is_global else "ROLLUP_PARENT",
+                    True,
+                )
 
         return None
 

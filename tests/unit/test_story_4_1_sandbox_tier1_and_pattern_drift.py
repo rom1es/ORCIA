@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import pathlib
 import shutil
+import tempfile
 import time
 
 import pytest
@@ -40,7 +41,11 @@ def test_story_4_1_migration_0017_real_postgres_container(
     """Verify migration `0017_story_4_1` (`gate_evaluations`) on real PostgreSQL 18 container."""
     monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
     suffix = f"tc_4_1_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = REPO_ROOT / ".pytest_cache" / suffix
+    sock_dir = (
+        pathlib.Path(tempfile.gettempdir())
+        if len(str(REPO_ROOT / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
+        else REPO_ROOT / ".pytest_cache"
+    ) / suffix
     sock_dir.mkdir(parents=True, exist_ok=True)
     sock_dir.chmod(0o777)
 

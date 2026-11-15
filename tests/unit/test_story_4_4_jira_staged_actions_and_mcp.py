@@ -369,6 +369,7 @@ def test_alembic_0019_expand_backfill_and_0020_contract_on_postgres(
     """Verify `0019` (Expand + Backfill `request_url`) and `0020` (Contract `jira_request_url`)."""
     import os
     import shutil
+    import tempfile
     import time
 
     from testcontainers.core.container import DockerContainer
@@ -377,7 +378,11 @@ def test_alembic_0019_expand_backfill_and_0020_contract_on_postgres(
     repo_root = Path(__file__).resolve().parents[2]
     monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
     suffix = f"tc_4_4_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = repo_root / ".pytest_cache" / suffix
+    sock_dir = (
+        Path(tempfile.gettempdir())
+        if len(str(repo_root / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
+        else repo_root / ".pytest_cache"
+    ) / suffix
     sock_dir.mkdir(parents=True, exist_ok=True)
     sock_dir.chmod(0o777)
 

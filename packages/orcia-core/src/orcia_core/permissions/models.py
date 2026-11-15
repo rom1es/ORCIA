@@ -5,6 +5,7 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -35,6 +36,26 @@ CatalogVisibilityScope = Literal[
 CatalogPermission = Literal["DISCOVER", "EXECUTE", "READ_SOURCE", "EDIT", "ADMIN"]
 
 
+def normalize_lead_user_ids(
+    lead_user_ids: Sequence[str] | None = None,
+    lead_user_id: str | None = None,
+) -> tuple[tuple[str, ...], str | None]:
+    """Normalize and deduplicate multiple lead user IDs while synchronizing legacy single lead."""
+    cleaned: list[str] = []
+    if lead_user_ids:
+        for item in lead_user_ids:
+            s = str(item).strip()
+            if s and s not in cleaned:
+                cleaned.append(s)
+    elif lead_user_id is not None:
+        s = str(lead_user_id).strip()
+        if s:
+            cleaned.append(s)
+    t = tuple(cleaned)
+    primary = t[0] if t else None
+    return t, primary
+
+
 @dataclass(frozen=True, slots=True)
 class OrgUnitNode:
     """Node in the hierarchical organizational tree (`org_units`, AD-6, AD-14, Story 17.2)."""
@@ -47,6 +68,12 @@ class OrgUnitNode:
     billing_enabled: bool = True
     lead_user_id: str | None = None
     member_user_ids: tuple[str, ...] = field(default_factory=tuple)
+    lead_user_ids: tuple[str, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        leads, primary = normalize_lead_user_ids(self.lead_user_ids, self.lead_user_id)
+        object.__setattr__(self, "lead_user_ids", leads)
+        object.__setattr__(self, "lead_user_id", primary)
 
 
 @dataclass(frozen=True, slots=True)

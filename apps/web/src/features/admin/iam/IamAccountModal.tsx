@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { IamTabDictionarySection } from "../../../i18n/locales/iam_accounts_labels";
 import { OFFICIAL_IAM_ROLES, type OfficialIamRoleKey } from "./iamApiBridge";
+import { IamAccountRoleScopesFieldset } from "./IamAccountRoleScopesFieldset";
 
 export interface IamAccountModalSubmitValues {
   readonly accountKind: "HUMAN" | "SERVICE_PRINCIPAL";
@@ -12,6 +13,9 @@ export interface IamAccountModalSubmitValues {
   readonly status: "ACTIVE" | "INVITED" | "DISABLED";
   readonly roles: readonly OfficialIamRoleKey[];
   readonly teamIds: readonly string[];
+  readonly ledBuIds?: readonly string[];
+  readonly ledTeamIds?: readonly string[];
+  readonly authSource?: IamAccountResponse["auth_source"] | null;
 }
 
 export interface IamAccountInitialCreateDefaults {
@@ -54,10 +58,10 @@ export function IamAccountModal({
   const [displayName, setDisplayName] = useState("");
   const [emailOrPrincipal, setEmailOrPrincipal] = useState("");
   const [status, setStatus] = useState<"ACTIVE" | "INVITED" | "DISABLED">("ACTIVE");
-  const [selectedRoles, setSelectedRoles] = useState<readonly OfficialIamRoleKey[]>([
-    "CONTRIBUTOR",
-  ]);
+  const [selectedRoles, setSelectedRoles] = useState<readonly OfficialIamRoleKey[]>(["CONTRIBUTOR"]);
   const [selectedTeamIds, setSelectedTeamIds] = useState<readonly string[]>([]);
+  const [selectedLedBuIds, setSelectedLedBuIds] = useState<readonly string[]>([]);
+  const [selectedLedTeamIds, setSelectedLedTeamIds] = useState<readonly string[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,6 +72,8 @@ export function IamAccountModal({
       setStatus(editingAccount.status);
       setSelectedRoles(editingAccount.roles as readonly OfficialIamRoleKey[]);
       setSelectedTeamIds(editingAccount.team_ids);
+      setSelectedLedBuIds(editingAccount.led_bu_ids ?? []);
+      setSelectedLedTeamIds(editingAccount.led_team_ids ?? []);
     } else {
       setAccountKind("HUMAN");
       setDisplayName(initialCreateDefaults?.displayName ?? "");
@@ -75,8 +81,21 @@ export function IamAccountModal({
       setStatus("ACTIVE");
       setSelectedRoles(["CONTRIBUTOR"]);
       setSelectedTeamIds(initialCreateDefaults?.teamIds ?? []);
+      setSelectedLedBuIds([]);
+      setSelectedLedTeamIds([]);
     }
   }, [open, editingAccount, initialCreateDefaults]);
+
+  const handleRoleToggle = (roleKey: OfficialIamRoleKey, checked: boolean) => {
+    setSelectedRoles((prev) => {
+      const nextRoles = checked
+        ? prev.includes(roleKey) ? prev : [...prev, roleKey]
+        : prev.filter((r) => r !== roleKey);
+      if (!nextRoles.includes("BU_LEAD")) setSelectedLedBuIds([]);
+      if (!nextRoles.includes("TEAM_LEAD")) setSelectedLedTeamIds([]);
+      return nextRoles;
+    });
+  };
 
   const isEditing = editingAccount !== null;
   const submitDisabled =
@@ -112,6 +131,9 @@ export function IamAccountModal({
             status,
             roles: selectedRoles,
             teamIds: selectedTeamIds,
+            ledBuIds: selectedRoles.includes("BU_LEAD") ? selectedLedBuIds : [],
+            ledTeamIds: selectedRoles.includes("TEAM_LEAD") ? selectedLedTeamIds : [],
+            authSource: isEditing ? editingAccount.auth_source : undefined,
           });
         }}
         style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}
@@ -129,9 +151,7 @@ export function IamAccountModal({
               data-testid="iam-account-kind-select"
               disabled={!canMutate || isSubmitting || isEditing}
               value={accountKind}
-              onChange={(e) =>
-                setAccountKind(e.target.value as "HUMAN" | "SERVICE_PRINCIPAL")
-              }
+              onChange={(e) => setAccountKind(e.target.value as "HUMAN" | "SERVICE_PRINCIPAL")}
               className="orcia-ds-select"
             >
               <option value="HUMAN">{dir.kindHumanOption}</option>
@@ -145,9 +165,7 @@ export function IamAccountModal({
               data-testid="iam-account-status-select"
               disabled={!canMutate || isSubmitting}
               value={status}
-              onChange={(e) =>
-                setStatus(e.target.value as "ACTIVE" | "INVITED" | "DISABLED")
-              }
+              onChange={(e) => setStatus(e.target.value as "ACTIVE" | "INVITED" | "DISABLED")}
               className="orcia-ds-select"
             >
               <option value="ACTIVE">{dir.statusActive}</option>
@@ -190,11 +208,7 @@ export function IamAccountModal({
             disabled={!canMutate || isSubmitting || (isEditing && accountKind === "SERVICE_PRINCIPAL")}
             value={emailOrPrincipal}
             onChange={(e) => setEmailOrPrincipal(e.target.value)}
-            placeholder={
-              accountKind === "SERVICE_PRINCIPAL"
-                ? dir.principalSpPlaceholder
-                : dir.emailPlaceholder
-            }
+            placeholder={accountKind === "SERVICE_PRINCIPAL" ? dir.principalSpPlaceholder : dir.emailPlaceholder}
             className="orcia-ds-input"
           />
         </label>
@@ -211,23 +225,11 @@ export function IamAccountModal({
             gap: "8px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "8px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
             <legend style={{ fontSize: "12px", fontWeight: 600, padding: "0 4px" }}>
               {dir.rolesFieldsetLabel}
             </legend>
-            <OrciaButton
-              variant="secondary"
-              size="sm"
-              testId="iam-modal-open-role-matrix-btn"
-              onClick={onOpenRoleMatrix}
-            >
+            <OrciaButton variant="secondary" size="sm" testId="iam-modal-open-role-matrix-btn" onClick={onOpenRoleMatrix}>
               {labels.matrix.openRoleMatrixCta || "Voir la matrice des 6 rôles"}
             </OrciaButton>
           </div>
@@ -236,16 +238,7 @@ export function IamAccountModal({
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
             {OFFICIAL_IAM_ROLES.map((roleKey) => (
-              <label
-                key={roleKey}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "12.5px",
-                  cursor: !canMutate || isSubmitting ? "not-allowed" : "pointer",
-                }}
-              >
+              <label key={roleKey} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", cursor: !canMutate || isSubmitting ? "not-allowed" : "pointer" }}>
                 <input
                   type="checkbox"
                   autoComplete="off"
@@ -256,21 +249,25 @@ export function IamAccountModal({
                   data-testid={`iam-account-role-checkbox-${roleKey}`}
                   disabled={!canMutate || isSubmitting}
                   checked={selectedRoles.includes(roleKey)}
-                  onChange={(e) =>
-                    setSelectedRoles((prev) =>
-                      e.target.checked
-                        ? prev.includes(roleKey)
-                          ? prev
-                          : [...prev, roleKey]
-                        : prev.filter((r) => r !== roleKey),
-                    )
-                  }
+                  onChange={(e) => handleRoleToggle(roleKey, e.target.checked)}
                 />
                 <span>{labels.roles[roleKey]}</span>
               </label>
             ))}
           </div>
         </fieldset>
+
+        <IamAccountRoleScopesFieldset
+          orgUnits={orgUnits}
+          selectedRoles={selectedRoles}
+          selectedLedBuIds={selectedLedBuIds}
+          onChangeSelectedLedBuIds={setSelectedLedBuIds}
+          selectedLedTeamIds={selectedLedTeamIds}
+          onChangeSelectedLedTeamIds={setSelectedLedTeamIds}
+          canMutate={canMutate}
+          isSubmitting={isSubmitting}
+          labels={dir}
+        />
 
         <fieldset
           data-testid="iam-account-teams-fieldset"
@@ -293,61 +290,38 @@ export function IamAccountModal({
             </p>
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {teamUnits.map((team) => {
-                const checked =
-                  selectedTeamIds.includes(team.id) || selectedTeamIds.includes(team.slug);
-                return (
-                  <label
-                    key={team.id}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      fontSize: "12.5px",
-                      cursor: !canMutate || isSubmitting ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      data-form-type="other"
-                      data-testid={`iam-account-team-checkbox-${team.id}`}
-                      disabled={!canMutate || isSubmitting}
-                      checked={checked}
-                      onChange={(e) =>
-                        setSelectedTeamIds((prev) =>
-                          e.target.checked
-                            ? [...prev.filter((id) => id !== team.slug), team.id]
-                            : prev.filter((id) => id !== team.id && id !== team.slug),
-                        )
-                      }
-                    />
-                    <span>{team.name}</span>
-                  </label>
-                );
-              })}
+              {teamUnits.map((team) => (
+                <label key={team.id} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", cursor: !canMutate || isSubmitting ? "not-allowed" : "pointer" }}>
+                  <input
+                    type="checkbox"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
+                    data-testid={`iam-account-team-checkbox-${team.id}`}
+                    disabled={!canMutate || isSubmitting}
+                    checked={selectedTeamIds.includes(team.id) || selectedTeamIds.includes(team.slug)}
+                    onChange={(e) =>
+                      setSelectedTeamIds((prev) =>
+                        e.target.checked
+                          ? [...prev.filter((id) => id !== team.slug), team.id]
+                          : prev.filter((id) => id !== team.id && id !== team.slug),
+                      )
+                    }
+                  />
+                  <span>{team.name}</span>
+                </label>
+              ))}
             </div>
           )}
         </fieldset>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
-          <button
-            type="button"
-            data-testid="iam-account-modal-cancel-btn"
-            onClick={() => onOpenChange(false)}
-            className="orcia-ds-btn orcia-ds-btn-secondary"
-          >
+          <button type="button" data-testid="iam-account-modal-cancel-btn" onClick={() => onOpenChange(false)} className="orcia-ds-btn orcia-ds-btn-secondary">
             {dir.cancelButton}
           </button>
-          <button
-            type="submit"
-            data-testid="iam-account-modal-submit-btn"
-            disabled={submitDisabled}
-            className="orcia-ds-btn orcia-ds-btn-primary"
-          >
+          <button type="submit" data-testid="iam-account-modal-submit-btn" disabled={submitDisabled} className="orcia-ds-btn orcia-ds-btn-primary">
             {isEditing ? dir.saveEditButton : dir.saveCreateButton}
           </button>
         </div>

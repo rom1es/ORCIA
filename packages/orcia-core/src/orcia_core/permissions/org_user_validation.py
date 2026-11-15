@@ -21,6 +21,50 @@ class KnownOrgUser:
     email: str | None = None
 
 
+def resolve_and_validate_org_unit_leads(
+    lead_user_ids: Sequence[str] | None,
+    lead_user_id: str | None,
+    known_users: Sequence[KnownOrgUser],
+) -> tuple[tuple[str, ...], str | None]:
+    """Validate and resolve multiple or single lead user identifiers to canonical `principal_id`."""
+    index: dict[str, str] = {}
+    for user in known_users:
+        canon = user.principal_id.strip()
+        if canon:
+            index[canon.lower()] = canon
+        if user.email:
+            clean_email = user.email.strip().lower()
+            if clean_email:
+                index[clean_email] = canon
+
+    candidates: list[str] = []
+    if lead_user_ids is not None:
+        candidates.extend([str(x).strip() for x in lead_user_ids if str(x).strip()])
+    elif lead_user_id is not None:
+        c = lead_user_id.strip()
+        if c:
+            candidates.append(c)
+
+    resolved: list[str] = []
+    seen: set[str] = set()
+    for item in candidates:
+        matched = index.get(item.lower())
+        if matched is None:
+            raise OrgUnitUnknownUserError(
+                detail_override=(
+                    f"L'identifiant de responsable '{item}' "
+                    "ne correspond à aucun utilisateur actif et connu de la plateforme."
+                )
+            )
+        if matched not in seen:
+            seen.add(matched)
+            resolved.append(matched)
+
+    t = tuple(resolved)
+    primary = t[0] if t else None
+    return t, primary
+
+
 def resolve_and_validate_org_unit_users(
     lead_user_id: str | None,
     member_user_ids: Sequence[str],
@@ -33,6 +77,12 @@ def resolve_and_validate_org_unit_users(
     the canonical `principal_id` or `email`.
     Raises `OrgUnitUnknownUserError` (HTTP 422) if any non-empty input is unknown.
     """
+    _, resolved_lead = resolve_and_validate_org_unit_leads(
+        lead_user_ids=None,
+        lead_user_id=lead_user_id,
+        known_users=known_users,
+    )
+
     index: dict[str, str] = {}
     for user in known_users:
         canon = user.principal_id.strip()
@@ -42,20 +92,6 @@ def resolve_and_validate_org_unit_users(
             clean_email = user.email.strip().lower()
             if clean_email:
                 index[clean_email] = canon
-
-    resolved_lead: str | None = None
-    if lead_user_id is not None:
-        cleaned_lead = lead_user_id.strip()
-        if cleaned_lead:
-            matched_lead = index.get(cleaned_lead.lower())
-            if matched_lead is None:
-                raise OrgUnitUnknownUserError(
-                    detail_override=(
-                        f"L'identifiant de responsable '{cleaned_lead}' "
-                        "ne correspond à aucun utilisateur actif et connu de la plateforme."
-                    )
-                )
-            resolved_lead = matched_lead
 
     resolved_members: list[str] = []
     seen_members: set[str] = set()
@@ -80,5 +116,6 @@ def resolve_and_validate_org_unit_users(
 
 __all__ = [
     "KnownOrgUser",
+    "resolve_and_validate_org_unit_leads",
     "resolve_and_validate_org_unit_users",
 ]

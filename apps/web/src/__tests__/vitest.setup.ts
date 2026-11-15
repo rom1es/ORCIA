@@ -5,6 +5,7 @@ import {
   getVitestBootEpoch,
   handleVitestAuthPolicyRoute,
   resetVitestAuthPolicyMockState,
+  seedVitestPlatformAuthPolicy,
 } from "./vitestAuthPolicyMockHandlers";
 import {
   detectAdaptiveThinkingStepsForQuestion,
@@ -28,6 +29,7 @@ interface MockOrganizationalUnit {
   parent_id: string | null;
   billing_enabled: boolean;
   lead_user_id: string | null;
+  lead_user_ids?: string[];
   member_user_ids: string[];
 }
 
@@ -80,6 +82,7 @@ import {
   getVitestIamAccounts,
   handleVitestIamRoute,
   resetVitestIamMockState,
+  syncVitestIamRolesWithOrgUnits,
 } from "./vitestIamMockHandlers";
 import {
   handleVitestConnectorsRoute,
@@ -111,6 +114,10 @@ function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit
     const rawLead = item.leadUserId ?? item.lead_user_id ?? null;
     const lead_user_id =
       typeof rawLead === "string" && rawLead.trim() ? rawLead.trim() : null;
+    const rawLeadIds = item.leadUserIds ?? item.lead_user_ids ?? [];
+    const lead_user_ids = Array.isArray(rawLeadIds) && rawLeadIds.length > 0
+      ? rawLeadIds.map((l) => String(l).trim()).filter(Boolean)
+      : (lead_user_id ? [lead_user_id] : []);
     const rawMembers = item.memberUserIds ?? item.member_user_ids ?? [];
     const member_user_ids = Array.isArray(rawMembers)
       ? rawMembers.map((m) => String(m).trim()).filter(Boolean)
@@ -122,8 +129,9 @@ function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit
       kind,
       parent_id,
       billing_enabled,
-      lead_user_id,
-      member_user_ids,
+      lead_user_id: lead_user_ids[0] ?? lead_user_id,
+      lead_user_ids,
+      member_user_ids: kind === "BU" ? [] : member_user_ids,
     };
   });
 }
@@ -137,7 +145,8 @@ function syncSetupOrgUnitsFromMock(): void {
     parentId: u.parent_id ?? "scope-global",
     billingEnabled: u.billing_enabled,
     leadUserId: u.lead_user_id,
-    memberUserIds: u.member_user_ids,
+    leadUserIds: u.lead_user_ids ?? (u.lead_user_id ? [u.lead_user_id] : []),
+    memberUserIds: u.kind === "BU" ? [] : u.member_user_ids,
   }));
   if (backendState.platformSetupState) {
     backendState.platformSetupState = {
@@ -159,6 +168,7 @@ function syncSetupOrgUnitsFromMock(): void {
       audit_events: [],
     };
   }
+  syncVitestIamRolesWithOrgUnits(backendState.orgUnits);
 }
 
 function countAttachedWorkspacesForUnit(unitId: string): {
@@ -202,6 +212,7 @@ function problemResponse(
 
 export function resetVitestApiBackend(): void {
   delete (globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__;
+  delete (globalThis as Record<string, unknown>).__VITEST_AUTH_MODE__;
   backendState.firstAdmin = null;
   writeCachedPlatformAdmin(null);
   backendState.platformSetupState = null;
@@ -216,6 +227,10 @@ export function resetVitestApiBackend(): void {
   resetVitestConnectorsMockState();
   resetVitestAuthPolicyMockState();
   resetAuthSessionStore();
+}
+
+export function setVitestPublicAuthMode(mode: "LOCAL" | "SSO"): void {
+  seedVitestPlatformAuthPolicy({ authMode: mode });
 }
 
 export function setVitestMockRefreshFails(fails: boolean): void {
@@ -601,6 +616,8 @@ async function vitestFetchTransport(
 
     let units = backendState.orgUnits.map((u) => ({
       ...u,
+      lead_user_id: u.lead_user_id ?? (u.lead_user_ids?.[0] ?? null),
+      lead_user_ids: u.lead_user_ids ?? (u.lead_user_id ? [u.lead_user_id] : []),
       attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
     }));
 
@@ -695,22 +712,18 @@ async function vitestFetchTransport(
           );
         }
       }
-      const rawLead =
-        typeof body.lead_user_id === "string" && body.lead_user_id.trim()
-          ? body.lead_user_id.trim()
-          : null;
-      if (rawLead && !isMockUserKnown(rawLead)) {
-        return problemResponse(
-          422,
-          "ERR_ORG_UNIT_UNKNOWN_USER",
-          "Utilisateur inconnu",
-          `L'utilisateur '${rawLead}' n'est pas un compte connu et actif de la plateforme.`,
-          path,
-        );
-      }
       const rawMembers = Array.isArray(body.member_user_ids)
         ? body.member_user_ids.map((m) => String(m).trim()).filter(Boolean)
         : [];
+      if (kind === "BU" && rawMembers.length > 0) {
+        return problemResponse(
+          422,
+          "ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN",
+          "Membres interdits sur une Direction (BU)",
+          "Une Direction (BU) ou un Pôle (Sous-BU) ne peut pas comporter de membres directs. Les membres doivent être rattachés à une Équipe.",
+          path,
+        );
+      }
       for (const m of rawMembers) {
         if (!isMockUserKnown(m)) {
           return problemResponse(
@@ -718,6 +731,25 @@ async function vitestFetchTransport(
             "ERR_ORG_UNIT_UNKNOWN_USER",
             "Utilisateur inconnu",
             `L'utilisateur '${m}' n'est pas un compte connu et actif de la plateforme.`,
+            path,
+          );
+        }
+      }
+
+      const rawLead =
+        typeof body.lead_user_id === "string" && body.lead_user_id.trim()
+          ? body.lead_user_id.trim()
+          : null;
+      const rawLeadIds = Array.isArray(body.lead_user_ids)
+        ? body.lead_user_ids.map((l) => String(l).trim()).filter(Boolean)
+        : (rawLead ? [rawLead] : []);
+      for (const l of rawLeadIds) {
+        if (!isMockUserKnown(l)) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_UNKNOWN_USER",
+            "Utilisateur inconnu",
+            `L'utilisateur '${l}' n'est pas un compte connu et actif de la plateforme.`,
             path,
           );
         }
@@ -732,8 +764,9 @@ async function vitestFetchTransport(
         kind,
         parent_id: rawParent,
         billing_enabled: body.billing_enabled !== undefined ? Boolean(body.billing_enabled) : true,
-        lead_user_id: rawLead,
-        member_user_ids: rawMembers,
+        lead_user_id: rawLeadIds[0] ?? null,
+        lead_user_ids: rawLeadIds,
+        member_user_ids: kind === "BU" ? [] : rawMembers,
       };
       backendState.orgUnits = [...backendState.orgUnits, created];
       syncSetupOrgUnitsFromMock();
@@ -817,7 +850,23 @@ async function vitestFetchTransport(
         nextParentId = candidate;
       }
       let nextLeadUserId = target.lead_user_id;
-      if ("lead_user_id" in body) {
+      let nextLeadUserIds = target.lead_user_ids ?? (target.lead_user_id ? [target.lead_user_id] : []);
+      if ("lead_user_ids" in body && Array.isArray(body.lead_user_ids)) {
+        const rawLeads = body.lead_user_ids.map((l) => String(l).trim()).filter(Boolean);
+        for (const l of rawLeads) {
+          if (!isMockUserKnown(l)) {
+            return problemResponse(
+              422,
+              "ERR_ORG_UNIT_UNKNOWN_USER",
+              "Utilisateur inconnu",
+              `L'utilisateur '${l}' n'est pas un compte connu et actif de la plateforme.`,
+              path,
+            );
+          }
+        }
+        nextLeadUserIds = rawLeads;
+        nextLeadUserId = rawLeads[0] ?? null;
+      } else if ("lead_user_id" in body) {
         const rawLead =
           typeof body.lead_user_id === "string" && body.lead_user_id.trim()
             ? body.lead_user_id.trim()
@@ -832,11 +881,21 @@ async function vitestFetchTransport(
           );
         }
         nextLeadUserId = rawLead;
+        nextLeadUserIds = rawLead ? [rawLead] : [];
       }
 
-      let nextMemberUserIds = target.member_user_ids;
+      let nextMemberUserIds = target.kind === "BU" ? [] : target.member_user_ids;
       if ("member_user_ids" in body && Array.isArray(body.member_user_ids)) {
         const rawMembers = body.member_user_ids.map((m) => String(m).trim()).filter(Boolean);
+        if (target.kind === "BU" && rawMembers.length > 0) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN",
+            "Membres interdits sur une Direction (BU)",
+            "Une Direction (BU) ou un Pôle (Sous-BU) ne peut pas comporter de membres directs. Les membres doivent être rattachés à une Équipe.",
+            path,
+          );
+        }
         for (const m of rawMembers) {
           if (!isMockUserKnown(m)) {
             return problemResponse(
@@ -860,7 +919,8 @@ async function vitestFetchTransport(
             ? Boolean(body.billing_enabled)
             : target.billing_enabled,
         lead_user_id: nextLeadUserId,
-        member_user_ids: nextMemberUserIds,
+        lead_user_ids: nextLeadUserIds,
+        member_user_ids: target.kind === "BU" ? [] : nextMemberUserIds,
       };
       backendState.orgUnits = backendState.orgUnits.map((u) =>
         u.id === target.id ? updated : u,

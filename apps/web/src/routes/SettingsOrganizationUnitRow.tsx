@@ -146,17 +146,22 @@ export function SettingsOrganizationUnitRow({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-        {unit.leadUserId ? (
-          (() => {
+        {(() => {
+          const effectiveLeads = Array.isArray(unit.leadUserIds) && unit.leadUserIds.length > 0
+            ? unit.leadUserIds
+            : (unit.leadUserId ? [unit.leadUserId] : []);
+          if (effectiveLeads.length === 0) return null;
+          if (effectiveLeads.length === 1) {
+            const leadId = effectiveLeads[0];
             const leadUser = knownUsers.find(
               (u) =>
-                u.principalId.toLowerCase() === unit.leadUserId?.toLowerCase() ||
-                (u.email && u.email.toLowerCase() === unit.leadUserId?.toLowerCase()),
+                u.principalId.toLowerCase() === leadId.toLowerCase() ||
+                (u.email && u.email.toLowerCase() === leadId.toLowerCase()),
             );
             const leadLabelText =
-              leadUser && leadUser.displayName && leadUser.displayName !== unit.leadUserId
-                ? `${labels.badges.leadPrefix} ${leadUser.displayName} (${unit.leadUserId})`
-                : `${labels.badges.leadPrefix} ${unit.leadUserId}`;
+              leadUser && leadUser.displayName && leadUser.displayName !== leadId
+                ? `${labels.badges.leadPrefix} ${leadUser.displayName} (${leadId})`
+                : `${labels.badges.leadPrefix} ${leadId}`;
             return (
               <StatusBadge
                 testId={`org-unit-lead-badge-${unit.id}`}
@@ -164,14 +169,32 @@ export function SettingsOrganizationUnitRow({
                 tone="neutral"
               />
             );
-          })()
-        ) : null}
+          }
+          const leadNames = effectiveLeads.map((lid) => {
+            const u = knownUsers.find(
+              (k) =>
+                k.principalId.toLowerCase() === lid.toLowerCase() ||
+                (k.email && k.email.toLowerCase() === lid.toLowerCase()),
+            );
+            return u?.displayName || lid;
+          });
+          const pluralPrefix = labels.badges.leadsPluralPrefix || "Responsables :";
+          return (
+            <StatusBadge
+              testId={`org-unit-lead-badge-${unit.id}`}
+              label={`${pluralPrefix} ${leadNames.join(", ")}`}
+              tone="neutral"
+            />
+          );
+        })()}
 
-        <StatusBadge
-          testId={`org-unit-members-count-${unit.id}`}
-          label={membersBadgeText}
-          tone="neutral"
-        />
+        {unit.level === "TEAM" ? (
+          <StatusBadge
+            testId={`org-unit-members-count-${unit.id}`}
+            label={membersBadgeText}
+            tone="neutral"
+          />
+        ) : null}
 
         <StatusBadge
           testId={`org-unit-workspaces-count-${unit.id}`}
@@ -195,15 +218,17 @@ export function SettingsOrganizationUnitRow({
           {labels.rowActions.edit}
         </OrciaButton>
 
-        <OrciaButton
-          variant="secondary"
-          testId={`manage-members-org-unit-btn-${unit.id}`}
-          disabled={!canMutate}
-          onClick={() => onManageMembers(unit)}
-          style={{ padding: "5px 10px", fontSize: "12px" }}
-        >
-          {labels.rowActions.members}
-        </OrciaButton>
+        {unit.level === "TEAM" ? (
+          <OrciaButton
+            variant="secondary"
+            testId={`manage-members-org-unit-btn-${unit.id}`}
+            disabled={!canMutate}
+            onClick={() => onManageMembers(unit)}
+            style={{ padding: "5px 10px", fontSize: "12px" }}
+          >
+            {labels.rowActions.members}
+          </OrciaButton>
+        ) : null}
 
         <OrciaButton
           variant="danger"

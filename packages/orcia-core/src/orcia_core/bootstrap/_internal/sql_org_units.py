@@ -1,8 +1,8 @@
-"""PostgreSQL 18 persistence adapter for multi-level `org_units` CRUD (Story 17.2).
+"""PostgreSQL 18 persistence adapter for multi-level `org_units` CRUD (Story 17.2 / CAP-067).
 
 Single-query hierarchy loading (`LEFT JOIN` workspace aggregation, zero `N+1`), transactional
-cycle/parent-kind validation (`HTTP 422`), non-empty deletion guard (`HTTP 409`), and atomic
-synchronization with `platform_settings` (`platform_setup_state_v1`) when present.
+cycle/parent-kind validation (`HTTP 422`), BU no-direct-members guard (`HTTP 422`), multi-lead
+persistence, and atomic bidirectional IAM role synchronization (`BU_LEAD` / `TEAM_LEAD`).
 """
 
 from __future__ import annotations
@@ -14,11 +14,16 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.bootstrap._internal.sql_org_iam_role_sync import (
+    resolve_canonical_lead_user_ids,
+    sync_iam_lead_roles_from_org_units,
+)
 from orcia_core.bootstrap._internal.sql_org_units_queries import (
     build_sorted_summaries,
     load_all_nodes_and_workspaces,
     load_known_org_users_from_postgres18,
     query_filtered_org_unit_summaries,
+    reassign_users_primary_org_unit_before_delete,
     resolve_target_node,
     sync_platform_settings_org_units_if_present,
 )
@@ -27,6 +32,7 @@ from orcia_core.permissions.models import OrgUnitNode
 from orcia_core.permissions.org_hierarchy import (
     OrgUnitKind,
     OrgUnitSummary,
+    assert_bu_has_no_members,
     assert_org_unit_deletable,
     assert_unique_org_unit_slug,
     build_org_unit_summary,
@@ -35,7 +41,6 @@ from orcia_core.permissions.org_hierarchy import (
     validate_org_unit_hierarchy,
 )
 from orcia_core.permissions.org_user_validation import resolve_and_validate_org_unit_users
-from orcia_kernel.ids import new_uuid7
 
 
 async def list_org_units_from_postgres18(
@@ -62,6 +67,7 @@ async def create_org_unit_on_postgres18(
     parent_id: str | None = None,
     billing_enabled: bool = True,
     lead_user_id: str | None = None,
+    lead_user_ids: Sequence[str] | None = None,
     member_user_ids: Sequence[str] | None = None,
 ) -> OrgUnitSummary:
     """Create a `BU` or `TEAM` on PostgreSQL 18 with hierarchy validation (`UUIDv7`)."""
@@ -69,6 +75,7 @@ async def create_org_unit_on_postgres18(
     if not cleaned_name:
         raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
     normalized_slug = normalize_org_unit_slug(slug, cleaned_name)
+    assert_bu_has_no_members(kind, member_user_ids)
 
     async with engine.begin() as conn:
         nodes_by_id, ws_counts, ws_refs = await load_all_nodes_and_workspaces(conn)
@@ -79,9 +86,14 @@ async def create_org_unit_on_postgres18(
             parent_id=parent_id,
             units_by_id=nodes_by_id,
         )
-        known_users = await load_known_org_users_from_postgres18(conn)
-        resolved_lead, resolved_members = resolve_and_validate_org_unit_users(
+        resolved_leads, resolved_lead = await resolve_canonical_lead_user_ids(
+            conn,
+            lead_user_ids=lead_user_ids,
             lead_user_id=lead_user_id,
+        )
+        known_users = await load_known_org_users_from_postgres18(conn)
+        _, resolved_members = resolve_and_validate_org_unit_users(
+            lead_user_id=None,
             member_user_ids=member_user_ids or (),
             known_users=known_users,
         )
@@ -91,11 +103,13 @@ async def create_org_unit_on_postgres18(
                 """
                 INSERT INTO org_units (
                     id, slug, name, unit_type, parent_id,
-                    billing_enabled, lead_user_id, member_user_ids_jsonb
+                    billing_enabled, lead_user_id, lead_user_ids_jsonb, member_user_ids_jsonb
                 )
                 VALUES (
                     :id, :slug, :name, :unit_type, :parent_id,
-                    :billing_enabled, :lead_user_id, CAST(:member_user_ids_jsonb AS jsonb)
+                    :billing_enabled, :lead_user_id,
+                    CAST(:lead_user_ids_jsonb AS jsonb),
+                    CAST(:member_user_ids_jsonb AS jsonb)
                 )
                 """
             ),
@@ -107,6 +121,7 @@ async def create_org_unit_on_postgres18(
                 "parent_id": UUID(resolved_parent_id) if resolved_parent_id else None,
                 "billing_enabled": billing_enabled,
                 "lead_user_id": resolved_lead,
+                "lead_user_ids_jsonb": json.dumps(list(resolved_leads)),
                 "member_user_ids_jsonb": json.dumps(list(resolved_members)),
             },
         )
@@ -118,6 +133,7 @@ async def create_org_unit_on_postgres18(
             parent_id=resolved_parent_id,
             billing_enabled=billing_enabled,
             lead_user_id=resolved_lead,
+            lead_user_ids=resolved_leads,
             member_user_ids=resolved_members,
         )
         nodes_by_id[new_id] = new_node
@@ -125,6 +141,7 @@ async def create_org_unit_on_postgres18(
         ws_refs[new_id] = ()
         summaries = build_sorted_summaries(nodes_by_id, ws_counts, ws_refs)
         await sync_platform_settings_org_units_if_present(conn, summaries)
+        await sync_iam_lead_roles_from_org_units(conn, resolved_leads)
 
     return build_org_unit_summary(
         new_node,
@@ -144,9 +161,11 @@ async def update_org_unit_on_postgres18(
     billing_enabled: bool | None = None,
     lead_user_id: str | None = None,
     lead_user_id_provided: bool = False,
+    lead_user_ids: Sequence[str] | None = None,
+    lead_user_ids_provided: bool = False,
     member_user_ids: Sequence[str] | None = None,
 ) -> OrgUnitSummary:
-    """Update name, parent_id, billing_enabled, lead_user_id, or member_user_ids on PG18."""
+    """Update name, parent_id, billing_enabled, lead_user_ids, or member_user_ids on PG18."""
     async with engine.begin() as conn:
         nodes_by_id, ws_counts, ws_refs = await load_all_nodes_and_workspaces(conn)
         target = resolve_target_node(nodes_by_id, org_unit_id)
@@ -178,31 +197,29 @@ async def update_org_unit_on_postgres18(
 
         next_billing = target.billing_enabled if billing_enabled is None else billing_enabled
 
-        should_validate_users = (lead_user_id_provided and bool((lead_user_id or "").strip())) or (
-            member_user_ids is not None
-        )
-
-        if should_validate_users:
-            known_users = await load_known_org_users_from_postgres18(conn)
-            candidate_lead = lead_user_id if lead_user_id_provided else target.lead_user_id
-            candidate_members = (
-                member_user_ids if member_user_ids is not None else target.member_user_ids
+        # Leads resolution
+        if lead_user_ids_provided or lead_user_id_provided:
+            resolved_leads, resolved_lead = await resolve_canonical_lead_user_ids(
+                conn,
+                lead_user_ids=lead_user_ids if lead_user_ids_provided else None,
+                lead_user_id=lead_user_id if lead_user_id_provided else None,
             )
-            resolved_lead, resolved_members = resolve_and_validate_org_unit_users(
-                lead_user_id=candidate_lead,
-                member_user_ids=candidate_members,
+            next_leads = resolved_leads
+            next_lead = resolved_lead
+        else:
+            next_leads = target.lead_user_ids
+            next_lead = target.lead_user_id
+
+        # Members resolution
+        if member_user_ids is not None:
+            assert_bu_has_no_members(target_kind, member_user_ids)
+            known_users = await load_known_org_users_from_postgres18(conn)
+            _, next_members = resolve_and_validate_org_unit_users(
+                lead_user_id=None,
+                member_user_ids=member_user_ids,
                 known_users=known_users,
             )
-            next_lead = resolved_lead if lead_user_id_provided else target.lead_user_id
-            next_members = (
-                resolved_members if member_user_ids is not None else target.member_user_ids
-            )
         else:
-            next_lead = (
-                ((lead_user_id or "").strip() or None)
-                if lead_user_id_provided
-                else target.lead_user_id
-            )
             next_members = target.member_user_ids
 
         await conn.execute(
@@ -213,6 +230,7 @@ async def update_org_unit_on_postgres18(
                     parent_id = :parent_id,
                     billing_enabled = :billing_enabled,
                     lead_user_id = :lead_user_id,
+                    lead_user_ids_jsonb = CAST(:lead_user_ids_jsonb AS jsonb),
                     member_user_ids_jsonb = CAST(:member_user_ids_jsonb AS jsonb)
                 WHERE id = :id
                 """
@@ -223,6 +241,7 @@ async def update_org_unit_on_postgres18(
                 "parent_id": UUID(next_parent_id) if next_parent_id else None,
                 "billing_enabled": next_billing,
                 "lead_user_id": next_lead,
+                "lead_user_ids_jsonb": json.dumps(list(next_leads)),
                 "member_user_ids_jsonb": json.dumps(list(next_members)),
             },
         )
@@ -234,11 +253,19 @@ async def update_org_unit_on_postgres18(
             parent_id=next_parent_id,
             billing_enabled=next_billing,
             lead_user_id=next_lead,
+            lead_user_ids=next_leads,
             member_user_ids=next_members,
         )
         nodes_by_id[target.id] = updated_node
         summaries = build_sorted_summaries(nodes_by_id, ws_counts, ws_refs)
         await sync_platform_settings_org_units_if_present(conn, summaries)
+
+        impacted = {*target.lead_user_ids, *next_leads}
+        if target.lead_user_id:
+            impacted.add(target.lead_user_id)
+        if next_lead:
+            impacted.add(next_lead)
+        await sync_iam_lead_roles_from_org_units(conn, list(impacted))
 
     return build_org_unit_summary(
         updated_node,
@@ -262,92 +289,25 @@ async def delete_org_unit_on_postgres18(
             for node in nodes_by_id.values()
             if node.parent_id == target.id and node.unit_type != "ENTERPRISE"
         )
-        attached_ws_count = ws_counts.get(target.id, 0)
         assert_org_unit_deletable(
             target_name=target.name,
             child_units_count=child_units_count,
-            attached_workspaces_count=attached_ws_count,
+            attached_workspaces_count=ws_counts.get(target.id, 0),
         )
         target_uuid = UUID(target.id)
-        fallback_parent_id: UUID | None = None
-        if target.parent_id:
-            try:
-                fallback_parent_id = UUID(target.parent_id)
-            except (ValueError, TypeError):
-                fallback_parent_id = None
+        await reassign_users_primary_org_unit_before_delete(conn, target_uuid, target.parent_id)
+        await conn.execute(sa.text("DELETE FROM org_units WHERE id = :id"), {"id": target_uuid})
 
-        if fallback_parent_id is None:
-            root_res = await conn.execute(
-                sa.text(
-                    """
-                    SELECT id FROM org_units
-                    WHERE id <> :id
-                    ORDER BY
-                        CASE
-                            WHEN unit_type = 'ENTERPRISE' THEN 0
-                            WHEN unit_type = 'BU' THEN 1
-                            ELSE 2
-                        END,
-                        created_at ASC
-                    LIMIT 1
-                    """
-                ),
-                {"id": target_uuid},
-            )
-            fallback_parent_id = root_res.scalar()
-
-        if fallback_parent_id is None:
-            ref_cnt = (
-                await conn.execute(
-                    sa.text("SELECT COUNT(*) FROM users WHERE primary_org_unit_id = :id"),
-                    {"id": target_uuid},
-                )
-            ).scalar_one()
-            if int(ref_cnt) > 0:
-                ent_id = new_uuid7()
-                await conn.execute(
-                    sa.text(
-                        """
-                        INSERT INTO org_units (
-                            id, slug, name, unit_type, billing_enabled, created_at
-                        )
-                        VALUES (
-                            :id, 'global', 'Plateforme Globale ORCIA', 'ENTERPRISE', TRUE, NOW()
-                        )
-                        ON CONFLICT (slug) DO NOTHING
-                        """
-                    ),
-                    {"id": ent_id},
-                )
-                ent_row = (
-                    await conn.execute(
-                        sa.text("SELECT id FROM org_units WHERE slug = 'global' LIMIT 1")
-                    )
-                ).first()
-                if ent_row is not None and ent_row[0] is not None:
-                    fallback_parent_id = ent_row[0]
-
-        if fallback_parent_id is not None:
-            await conn.execute(
-                sa.text(
-                    """
-                    UPDATE users
-                    SET primary_org_unit_id = :fallback_id
-                    WHERE primary_org_unit_id = :target_id
-                    """
-                ),
-                {"fallback_id": fallback_parent_id, "target_id": target_uuid},
-            )
-
-        await conn.execute(
-            sa.text("DELETE FROM org_units WHERE id = :id"),
-            {"id": target_uuid},
-        )
         nodes_by_id.pop(target.id, None)
         ws_counts.pop(target.id, None)
         ws_refs.pop(target.id, None)
         summaries = build_sorted_summaries(nodes_by_id, ws_counts, ws_refs)
         await sync_platform_settings_org_units_if_present(conn, summaries)
+
+        old_leads = {*target.lead_user_ids}
+        if target.lead_user_id:
+            old_leads.add(target.lead_user_id)
+        await sync_iam_lead_roles_from_org_units(conn, list(old_leads))
     return target.id
 
 
