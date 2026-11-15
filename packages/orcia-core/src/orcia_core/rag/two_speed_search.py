@@ -24,10 +24,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from orcia_core.rag.indexer_and_rrf import (
-    compute_deterministic_halfvec_1024,
-    cosine_similarity,
-)
+from orcia_core.ports.embedding import EmbeddingPort
+from orcia_core.rag.indexer_and_rrf import cosine_similarity
 
 SearchScopeMode = Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES"]
 SearchFamilyKey = Literal[
@@ -85,6 +83,7 @@ class FederatedSearchCandidate:
         "ONTOLOGY_STEWARD_L3",
         "OBSERVER",
     )
+    embedding: tuple[float, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,9 +166,11 @@ class TwoSpeedFederatedSearchService:
         self,
         *,
         candidates: Sequence[FederatedSearchCandidate] = (),
+        embedding_port: EmbeddingPort | None = None,
     ) -> None:
         self._candidates: list[FederatedSearchCandidate] = list(candidates)
         self._speed2_cache: dict[str, tuple[FederatedSearchHit, ...]] = {}
+        self._embedding_port: EmbeddingPort | None = embedding_port
 
     def register_candidate(self, candidate: FederatedSearchCandidate) -> None:
         self._candidates.append(candidate)
@@ -184,6 +185,7 @@ class TwoSpeedFederatedSearchService:
         user_role: str = "CONTRIBUTOR",
         include_speed2: bool = True,
         force_semantic: bool = False,
+        query_embedding: tuple[float, ...] | None = None,
     ) -> TwoSpeedSearchReport:
         """Execute Speed 1 lexical search and optionally Speed 2 semantic search (`>= 3` words)."""
         norm_q = normalize_search_query(query)
@@ -261,13 +263,27 @@ class TwoSpeedFederatedSearchService:
                 speed2_cache_ttl_seconds=SPEED2_REDIS_TTL_SECONDS,
             )
 
-        q_vec = compute_deterministic_halfvec_1024(norm_q)
+        if query_embedding is None:
+            return TwoSpeedSearchReport(
+                query=query,
+                scope=scope,
+                hits=tuple(speed1_hits),
+                speed1_llm_cost_usd=0.0,
+                speed2_executed=False,
+                speed2_cache_hit=False,
+                speed2_redis_key=None,
+                speed2_cache_ttl_seconds=SPEED2_REDIS_TTL_SECONDS,
+            )
+
+        q_vec = query_embedding
         speed2_candidates: list[FederatedSearchHit] = []
         for cand in authorized:
             if cand.item_id in speed1_ids:
                 continue
-            c_vec = compute_deterministic_halfvec_1024(f"{cand.title} {cand.snippet}")
-            sim = max(0.01, (cosine_similarity(q_vec, c_vec) + 1.0) / 2.0)
+            if cand.embedding is not None:
+                sim = max(0.01, (cosine_similarity(q_vec, cand.embedding) + 1.0) / 2.0)
+            else:
+                sim = 0.5
             speed2_candidates.append(
                 FederatedSearchHit(
                     item_id=cand.item_id,

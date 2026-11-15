@@ -6,7 +6,7 @@ import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from fastapi import FastAPI, Request
 
@@ -371,7 +371,9 @@ _OntologyRagBundle = tuple[
 ]
 
 
-def get_ontology_and_rag_services(request: Request, *, fixture: bool = False) -> _OntologyRagBundle:
+def get_ontology_and_rag_services(
+    request: Request, *, fixture: bool = False, embedding_port: Any = None
+) -> _OntologyRagBundle:
     """Return either the empty runtime Ontology/RAG bundle or the deterministic test fixture."""
     if fixture:
         seeded: _OntologyRagBundle | None = getattr(
@@ -379,7 +381,14 @@ def get_ontology_and_rag_services(request: Request, *, fixture: bool = False) ->
         )
         if seeded is None:
             gov = build_seeded_ontology_service()
-            rag, trip = build_seeded_rag_service()
+            emb_port = embedding_port
+            if emb_port is None:
+                from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+
+                override = request.app.dependency_overrides.get(get_embedding_port)
+                if override is not None:
+                    emb_port = override()
+            rag, trip = build_seeded_rag_service(embedding_port=emb_port)
             seeded = (gov, rag, trip)
             request.app.state.ontology_rag_seeded_bundle = seeded
         return seeded
@@ -389,7 +398,14 @@ def get_ontology_and_rag_services(request: Request, *, fixture: bool = False) ->
     )
     if runtime is None:
         gov = build_empty_ontology_service()
-        rag, trip = build_empty_rag_service()
+        emb_port = embedding_port
+        if emb_port is None:
+            from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+
+            override = request.app.dependency_overrides.get(get_embedding_port)
+            if override is not None:
+                emb_port = override()
+        rag, trip = build_empty_rag_service(embedding_port=emb_port)
         runtime = (gov, rag, trip)
         request.app.state.ontology_rag_runtime_bundle = runtime
     return runtime

@@ -190,7 +190,7 @@ development_status:
   19-3-test-connexion-reel-chat-max-tokens-1-et-embeddings-latence-et-rfc-9457: review
   19-4-suppression-noms-modeles-en-dur-backend-tier-mappings-vides-et-amorcage-jour-0: review
   19-5-usage-embedding-hub-port-hexagonal-embedding-port-et-adaptateurs-httpx: review
-  19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele: backlog
+  19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele: review
   19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant: backlog
   epic-19-retrospective: optional
 action_items:

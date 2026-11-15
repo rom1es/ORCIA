@@ -184,18 +184,20 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
                 )
             rec, api_key = resolved
     else:
-        hub_svc = getattr(request.app.state, "ai_models_hub_service", None)
-        if hub_svc is None:
-            initialize_app_services(request.app)
-            hub_svc = request.app.state.ai_models_hub_service
-        rec = hub_svc.get_active_embedding_mapping()
-        if rec is None:
+        from orcia_api.dependencies.orchestration_and_settings import (
+            get_ai_models_hub_service,
+        )
+
+        hub_svc = get_ai_models_hub_service(request)
+        active_rec = hub_svc.get_active_embedding_mapping()
+        if active_rec is None:
             raise NoActiveEmbeddingModelError(
                 detail_override=(
                     "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
                     "Veuillez en configurer un dans /settings/ai-models."
                 )
             )
+        rec = active_rec
         api_key = None
         if rec.encrypted_api_key:
             host = urlparse(rec.endpoint_uri).netloc or "default"

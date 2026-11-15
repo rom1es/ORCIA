@@ -50,6 +50,7 @@ interface MockBackendState {
     draft_artifact: Record<string, unknown>;
     committed_snapshot_id: string | null;
   }>;
+  aiModelMappings: Array<Record<string, unknown>>;
   recordedCalls: RecordedVitestApiCall[];
 }
 
@@ -71,6 +72,7 @@ const backendState: MockBackendState = {
   skills: [],
   assistantFolders: [],
   orchestrationRuns: [],
+  aiModelMappings: [],
   recordedCalls: [],
 };
 
@@ -210,6 +212,7 @@ export function resetVitestApiBackend(): void {
   backendState.skills = [];
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
+  backendState.aiModelMappings = [];
   backendState.recordedCalls = [];
   resetVitestIamMockState();
   resetVitestConnectorsMockState();
@@ -243,6 +246,26 @@ export function seedVitestPlatformSetupState(
   backendState.platformSetupState = state;
   backendState.orgUnits = hydrateMockOrgUnitsFromSetup(state.org_units);
   backendState.orgUnitSeq = backendState.orgUnits.length;
+  if (state.ai_model_mappings !== undefined) {
+    backendState.aiModelMappings = Array.isArray(state.ai_model_mappings)
+      ? (state.ai_model_mappings as Array<Record<string, unknown>>)
+      : [];
+  } else if (firstAdmin !== null) {
+    backendState.aiModelMappings = [
+      {
+        id: "01930000-0000-7000-8000-000000000099",
+        scope_level: "GLOBAL",
+        scope_id: null,
+        inference_tier: "light",
+        usage: "embedding",
+        is_active: true,
+        provider: "ollama",
+        model_name: "bge-m3:latest",
+      },
+    ];
+  } else {
+    backendState.aiModelMappings = [];
+  }
 }
 
 export function getRecordedVitestApiCalls(): readonly RecordedVitestApiCall[] {
@@ -1228,16 +1251,18 @@ async function vitestFetchTransport(
     const provider = String(body.provider_slug ?? "Anthropic");
     const model = String(body.model_name ?? "");
     const uri = String(body.endpoint_uri ?? "");
+    const isGeminiNative = uri.includes("/v1beta") && !uri.includes("/openai");
+    const modeLabel = isGeminiNative ? " - Mode B" : "";
     return jsonResponse({
       ok: true,
       provider_slug: provider,
       model_name: model,
       endpoint_uri: uri,
       auth_mode: String(body.auth_mode ?? "api_key"),
-      protocol_mode: uri.includes("/v1beta") && !uri.includes("/openai") ? "google_gemini_native" : "openai_compatible",
+      protocol_mode: isGeminiNative ? "google_gemini_native" : "openai_compatible",
       latency_ms: 24,
-      message_fr: `✅ Connexion réussie au modèle « ${model} » (${provider}) sur ${uri} — Réponse reçue en 24 ms.`,
-      message_en: `✅ Successfully connected to model '${model}' (${provider}) at ${uri} — Response received in 24 ms.`,
+      message_fr: `✅ Connexion réussie au modèle « ${model} » (${provider}${modeLabel}) sur ${uri} — Réponse reçue en 24 ms.`,
+      message_en: `✅ Successfully connected to model '${model}' (${provider}${modeLabel}) at ${uri} — Response received in 24 ms.`,
     });
   }
 
@@ -1247,6 +1272,19 @@ async function vitestFetchTransport(
     method === "POST"
   ) {
     return jsonResponse({ status: "registered", endpoint_key: body.endpoint_key ?? "medium" });
+  }
+
+  if (path === "/api/v1/settings/ai-models/mappings" && method === "GET") {
+    let items = backendState.aiModelMappings;
+    const usage = parsedUrl.searchParams.get("usage");
+    const isActive = parsedUrl.searchParams.get("is_active");
+    if (usage) {
+      items = items.filter((m) => m.usage === usage);
+    }
+    if (isActive !== null) {
+      items = items.filter((m) => String(m.is_active) === isActive);
+    }
+    return jsonResponse({ items, total: items.length });
   }
 
   // 5. MCP Test Bench, Help Validation, Starlark Compiler, Federated Search & Packs

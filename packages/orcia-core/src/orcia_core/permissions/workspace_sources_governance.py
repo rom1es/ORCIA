@@ -19,7 +19,9 @@ from orcia_core.permissions.models import OrgUnitNode
 
 SourceNature = Literal["DOCUMENT_KB", "WORK_TRACKER", "SOURCE_CODE", "RELATIONAL_SCHEMA"]
 SourceSyncMode = Literal["WEBHOOK_PUSH", "POLLING_24H"]
-SourceFreshnessStatus = Literal["SYNCED", "STALE", "SYNC_ERROR", "PENDING_INITIAL_SYNC"]
+SourceFreshnessStatus = Literal[
+    "SYNCED", "STALE", "SYNC_ERROR", "PENDING_INITIAL_SYNC", "AWAITING_EMBEDDING_MODEL"
+]
 CodegraphAuthMode = Literal["SERVICE_ACCOUNT", "WORKSPACE_LEAD_TOKEN"]
 CodegraphStatus = Literal[
     "DISABLED", "INDEXING", "READY", "PAUSED_REFERENT_RENEWAL_REQUIRED", "ERROR"
@@ -42,6 +44,7 @@ VALID_FRESHNESS_STATUSES: tuple[SourceFreshnessStatus, ...] = (
     "STALE",
     "SYNC_ERROR",
     "PENDING_INITIAL_SYNC",
+    "AWAITING_EMBEDDING_MODEL",
 )
 VALID_CODEGRAPH_AUTH_MODES: tuple[CodegraphAuthMode, ...] = (
     "SERVICE_ACCOUNT",

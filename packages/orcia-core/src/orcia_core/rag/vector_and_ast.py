@@ -1,4 +1,4 @@
-"""Deterministic 1024-d Halfvec Embeddings, Contextual Header & AST Symbol Chunker (`AD-8`).
+"""Contextual Header, Cosine Similarity & AST Symbol Chunker (`AD-8`, `AD-24.11`).
 
 Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`).
 """
@@ -6,33 +6,11 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 from __future__ import annotations
 
 import ast
-import hashlib
-import math
-import re
 
 from orcia_core.rag.models import CodeGraphEdgeEntity, KbChunkEntity
 from orcia_kernel.ids import new_uuid7_str
 
 EMBEDDING_DIM: int = 1024
-
-
-def compute_deterministic_halfvec_1024(text: str) -> tuple[float, ...]:
-    """Generate a deterministic L2-normalized 1024-d vector (`halfvec(1024)`) from tokens."""
-    vec = [0.0] * EMBEDDING_DIM
-    tokens = re.findall(r"[a-z0-9_]{2,}", text.lower())
-    if not tokens:
-        vec[0] = 1.0
-        return tuple(vec)
-
-    for tok in tokens:
-        digest = hashlib.sha256(tok.encode("utf-8")).digest()
-        for i in range(0, 16, 2):
-            idx = ((digest[i] << 8) | digest[i + 1]) % EMBEDDING_DIM
-            sign = 1.0 if (digest[(i + 2) % 32] % 2 == 0) else -1.0
-            vec[idx] += sign
-
-    norm = math.sqrt(sum(v * v for v in vec)) or 1.0
-    return tuple(round(v / norm, 6) for v in vec)
 
 
 def cosine_similarity(a: tuple[float, ...], b: tuple[float, ...]) -> float:
@@ -87,7 +65,9 @@ def chunk_ast_symbol(
         contextual_header=header,
         content_text=symbol_src,
         token_count=max(150, min(800, len(symbol_src.split()) + 150)),
-        embedding=compute_deterministic_halfvec_1024(f"{header}\n{symbol_src}"),
+        embedding=None,
+        embedding_model_id=None,
+        embedding_generated_at=None,
     )
     prefix = f"edge-{datasource_alias}-{file_path}"
     edges: list[CodeGraphEdgeEntity] = [

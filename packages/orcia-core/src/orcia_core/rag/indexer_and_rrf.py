@@ -8,8 +8,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import re
+from datetime import UTC, datetime
 
-from orcia_core.rag.errors import DdlOnlyTransactionalDataError
+from orcia_core.ports.embedding import EmbeddingPort
+from orcia_core.rag.errors import DdlOnlyTransactionalDataError, NoActiveEmbeddingModelError
 from orcia_core.rag.models import (
     CodeGraphEdgeEntity,
     KbChunkEntity,
@@ -18,7 +20,6 @@ from orcia_core.rag.models import (
 from orcia_core.rag.vector_and_ast import (
     EMBEDDING_DIM,
     build_contextual_header,
-    compute_deterministic_halfvec_1024,
     cosine_similarity,
 )
 from orcia_core.rag.vector_and_ast import (
@@ -33,7 +34,6 @@ __all__ = [
     "FORBIDDEN_TRANSACTIONAL_SQL_RE",
     "REQUIRED_DDL_SQL_RE",
     "build_contextual_header",
-    "compute_deterministic_halfvec_1024",
     "cosine_similarity",
 ]
 
@@ -53,7 +53,7 @@ class DifferentiatedIncrementalIndexer:
     """Implements the 3 indexing regimes (`DOC_PARENT_CHILD`, `CODE_AST_GRAPH`, `DB_DDL_ONLY`)."""
 
     @staticmethod
-    def index_confluence_parent_child(
+    async def index_confluence_parent_child(
         *,
         workspace_id: str,
         datasource_id: str,
@@ -63,6 +63,8 @@ class DifferentiatedIncrementalIndexer:
         hierarchy_path: str,
         markdown_sections: tuple[str, ...],
         revision_tag: str,
+        embedding_port: EmbeddingPort | None = None,
+        embedding_model_id: str | None = None,
         labels: tuple[str, ...] = ("orcia-kb",),
         page_status: str = "current",
         ontology_concepts: tuple[str, ...] = (),
@@ -72,6 +74,13 @@ class DifferentiatedIncrementalIndexer:
         """Regime 1a: CQL-filtered Confluence page -> 1 Parent chunk + N Child chunks."""
         if page_status.lower() in ("draft", "archived") or "orcia-kb" not in labels:
             return None, ()
+
+        if embedding_port is None:
+            raise NoActiveEmbeddingModelError(
+                detail_override=(
+                    "Aucun modèle d'embedding actif configuré. Ingestion documentaire bloquée."
+                )
+            )
 
         full_text = "\n\n".join(markdown_sections)
         sha256_hex = hashlib.sha256(f"{revision_tag}:{full_text}".encode()).hexdigest()
@@ -112,6 +121,10 @@ class DifferentiatedIncrementalIndexer:
             token_count=max(1024, len(full_text.split())),
             embedding=None,
         )
+
+        child_texts = [f"{header}\n{section}" for section in markdown_sections]
+        vectors = await embedding_port.embed_texts(child_texts)
+        now_iso = datetime.now(UTC).isoformat()
         children = tuple(
             KbChunkEntity(
                 id=new_uuid7_str(),
@@ -124,14 +137,18 @@ class DifferentiatedIncrementalIndexer:
                 contextual_header=header,
                 content_text=section,
                 token_count=max(256, min(512, len(section.split()) + 256)),
-                embedding=compute_deterministic_halfvec_1024(f"{header}\n{section}"),
+                embedding=tuple(vec),
+                embedding_model_id=embedding_model_id,
+                embedding_generated_at=now_iso,
             )
-            for idx, section in enumerate(markdown_sections, start=1)
+            for idx, (section, vec) in enumerate(
+                zip(markdown_sections, vectors, strict=True), start=1
+            )
         )
         return doc, (parent_chunk, *children)
 
     @staticmethod
-    def index_jira_reference_issue(
+    async def index_jira_reference_issue(
         *,
         workspace_id: str,
         datasource_id: str,
@@ -141,11 +158,20 @@ class DifferentiatedIncrementalIndexer:
         title: str,
         body_text: str,
         updated_tag: str,
+        embedding_port: EmbeddingPort | None = None,
+        embedding_model_id: str | None = None,
         ontology_concepts: tuple[str, ...] = (),
     ) -> tuple[KbDocumentEntity | None, tuple[KbChunkEntity, ...]]:
         """Regime 1b: JQL-filtered reference Jira issue -> 1 unified chunk (256-1024 tokens)."""
         if issue_type not in ALLOWED_JIRA_REFERENCE_TYPES:
             return None, ()
+
+        if embedding_port is None:
+            raise NoActiveEmbeddingModelError(
+                detail_override=(
+                    "Aucun modèle d'embedding actif configuré. Ingestion documentaire bloquée."
+                )
+            )
 
         doc_id = new_uuid7_str()
         sha256_hex = hashlib.sha256(f"{updated_tag}:{body_text}".encode()).hexdigest()
@@ -168,6 +194,8 @@ class DifferentiatedIncrementalIndexer:
             title=f"{issue_key} {title}",
             ontology_concepts=ontology_concepts,
         )
+        vec = await embedding_port.embed_query(f"{header}\n{body_text}")
+        now_iso = datetime.now(UTC).isoformat()
         chunk = KbChunkEntity(
             id=new_uuid7_str(),
             chunk_key=f"chunk-jira-{issue_key.lower()}",
@@ -179,7 +207,9 @@ class DifferentiatedIncrementalIndexer:
             contextual_header=header,
             content_text=body_text,
             token_count=max(256, min(1024, len(body_text.split()) + 256)),
-            embedding=compute_deterministic_halfvec_1024(f"{header}\n{body_text}"),
+            embedding=tuple(vec),
+            embedding_model_id=embedding_model_id,
+            embedding_generated_at=now_iso,
         )
         return doc, (chunk,)
 
@@ -229,7 +259,9 @@ class DifferentiatedIncrementalIndexer:
                 contextual_header=header,
                 content_text=python_source,
                 token_count=max(150, min(800, len(python_source.split()) + 150)),
-                embedding=compute_deterministic_halfvec_1024(f"{header}\n{python_source}"),
+                embedding=None,
+                embedding_model_id=None,
+                embedding_generated_at=None,
             )
             return doc, (fallback,), ()
 
@@ -304,7 +336,7 @@ class DifferentiatedIncrementalIndexer:
         return doc, tuple(chunks), tuple(edges)
 
     @staticmethod
-    def index_db_ddl_schema_only(
+    async def index_db_ddl_schema_only(
         *,
         workspace_id: str,
         datasource_id: str,
@@ -312,6 +344,8 @@ class DifferentiatedIncrementalIndexer:
         db_uri: str,
         ddl_sql: str,
         schema_version: str,
+        embedding_port: EmbeddingPort | None = None,
+        embedding_model_id: str | None = None,
         ontology_concepts: tuple[str, ...] = (),
     ) -> tuple[KbDocumentEntity, tuple[KbChunkEntity, ...]]:
         """Regime 3: Strictly indexes DDL schema (`CREATE TABLE`), rejecting transactional rows."""
@@ -320,6 +354,13 @@ class DifferentiatedIncrementalIndexer:
             stripped_sql
         ):
             raise DdlOnlyTransactionalDataError(instance=db_uri)
+
+        if embedding_port is None:
+            raise NoActiveEmbeddingModelError(
+                detail_override=(
+                    "Aucun modèle d'embedding actif configuré. Ingestion documentaire bloquée."
+                )
+            )
 
         doc_id = new_uuid7_str()
         sha256_hex = hashlib.sha256(f"{schema_version}:{ddl_sql}".encode()).hexdigest()
@@ -342,6 +383,8 @@ class DifferentiatedIncrementalIndexer:
             title=datasource_alias,
             ontology_concepts=ontology_concepts,
         )
+        vec = await embedding_port.embed_query(f"{header}\n{ddl_sql}")
+        now_iso = datetime.now(UTC).isoformat()
         chunk = KbChunkEntity(
             id=new_uuid7_str(),
             chunk_key=f"chunk-db-ddl-{datasource_alias}",
@@ -353,6 +396,8 @@ class DifferentiatedIncrementalIndexer:
             contextual_header=header,
             content_text=ddl_sql,
             token_count=max(150, len(ddl_sql.split())),
-            embedding=compute_deterministic_halfvec_1024(f"{header}\n{ddl_sql}"),
+            embedding=tuple(vec),
+            embedding_model_id=embedding_model_id,
+            embedding_generated_at=now_iso,
         )
         return doc, (chunk,)

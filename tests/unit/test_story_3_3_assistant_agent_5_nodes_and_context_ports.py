@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from orcia_api.main import create_app
@@ -53,10 +54,17 @@ def _build_assistant_fixture() -> tuple[AssistantAgentService, str]:
     activate_sdlc_pack()
     auth_svc = build_default_auth_and_org_service()
     setup_svc = build_default_orchestration_setup_service(evaluator=auth_svc.evaluator)
-    seeded_rag, _ = build_seeded_rag_service()
+    from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
+
+    from orcia_core.orchestration.step_executors import _DEFAULT_AGENT_EXECUTOR
+    from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+
+    _DEFAULT_AGENT_EXECUTOR.set_llm_gateway(DeterministicCassetteLLM())
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    seeded_rag, _ = build_seeded_rag_service(embedding_port=fake_emb)
     workspace_id = _WS_PAY
 
-    vector_store = HybridRagVectorStoreAdapter(seeded_rag)
+    vector_store = HybridRagVectorStoreAdapter(seeded_rag, embedding_port=fake_emb)
     context_source = CatalogAndBlackboardContextSourceAdapter(
         rag_service=seeded_rag,
         catalog_items_provider=lambda _ws: tuple(setup_svc.workflows),
@@ -245,9 +253,20 @@ def test_core_without_sdlc_zero_vocabulary_and_generic_blueprint_fallback() -> N
     assert prompt.profile_adaptation.archetype == "EXECUTIVE"
 
 
-def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints() -> None:
+def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify FastAPI `/api/v1/assistant/chat`, `/chat/stream`, and `/workflows/save-and-launch`."""
+    from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
+
+    from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+    from orcia_core.orchestration.step_executors import _DEFAULT_AGENT_EXECUTOR
+    from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    _DEFAULT_AGENT_EXECUTOR.set_llm_gateway(DeterministicCassetteLLM())
     app = create_app()
+    app.dependency_overrides[get_embedding_port] = lambda: FakeDeterministicEmbeddingAdapter()
     client = TestClient(app)
 
     # 1. POST /api/v1/assistant/chat (WORKFLOW_COMPOSE)

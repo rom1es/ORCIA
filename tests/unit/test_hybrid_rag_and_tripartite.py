@@ -6,7 +6,9 @@ import time
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
+from orcia_api.dependencies.portal_and_assistant import get_embedding_port
 from orcia_api.main import create_app
 from orcia_core.rag import (
     DifferentiatedIncrementalIndexer,
@@ -27,10 +29,15 @@ def test_default_rag_service_is_completely_empty() -> None:
     assert trip.list_alerts() == ()
 
 
-def test_3_regime_differentiated_indexing_and_ddl_transactional_guard() -> None:
+@pytest.mark.asyncio
+async def test_3_regime_differentiated_indexing_and_ddl_transactional_guard() -> None:
     """Story 2.3 AC1: Verifies Regime 1 (Confluence/Jira), Regime 2 (Git AST) & Regime 3 (DDL)."""
+    fake_emb = FakeDeterministicEmbeddingAdapter()
     # Regime 1a: Draft or unlabeled Confluence pages are skipped
-    skipped_doc, skipped_chunks = DifferentiatedIncrementalIndexer.index_confluence_parent_child(
+    (
+        skipped_doc,
+        skipped_chunks,
+    ) = await DifferentiatedIncrementalIndexer.index_confluence_parent_child(
         workspace_id="ws-1",
         datasource_id="ds-conf",
         datasource_alias="conf_main",
@@ -40,12 +47,13 @@ def test_3_regime_differentiated_indexing_and_ddl_transactional_guard() -> None:
         markdown_sections=("Sec 1",),
         revision_tag="v1",
         page_status="draft",
+        embedding_port=fake_emb,
     )
     assert skipped_doc is None
     assert skipped_chunks == ()
 
     # Regime 1b: Operational Jira task (not in reference types) is skipped
-    j_doc, j_chunks = DifferentiatedIncrementalIndexer.index_jira_reference_issue(
+    j_doc, j_chunks = await DifferentiatedIncrementalIndexer.index_jira_reference_issue(
         workspace_id="ws-1",
         datasource_id="ds-jira",
         datasource_alias="jira_main",
@@ -54,6 +62,7 @@ def test_3_regime_differentiated_indexing_and_ddl_transactional_guard() -> None:
         title="Daily chore",
         body_text="Nothing structural",
         updated_tag="t1",
+        embedding_port=fake_emb,
     )
     assert j_doc is None
     assert j_chunks == ()
@@ -82,13 +91,14 @@ def test_3_regime_differentiated_indexing_and_ddl_transactional_guard() -> None:
 
     # Regime 3: DB DDL-only rejects INSERT/UPDATE/DELETE/COPY with HTTP 422
     with pytest.raises(DdlOnlyTransactionalDataError) as exc_info:
-        DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
+        await DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
             workspace_id="ws-1",
             datasource_id="ds-db",
             datasource_alias="db_prod",
             db_uri="db://prod/users",
             ddl_sql="CREATE TABLE users (id INT); INSERT INTO users VALUES (1);",
             schema_version="v1",
+            embedding_port=fake_emb,
         )
     assert exc_info.value.error_code == "ERR_DDL_ONLY_TRANSACTIONAL_DATA_FORBIDDEN"
     assert exc_info.value.http_status == 422
@@ -96,7 +106,8 @@ def test_3_regime_differentiated_indexing_and_ddl_transactional_guard() -> None:
 
 def test_hybrid_rrf_search_parent_injection_passthrough_and_latency() -> None:
     """Story 2.3 AC2: Hybrid RRF (`halfvec(1024)` + BM25) < 50ms, parent injection & Passthrough."""
-    rag, _ = build_seeded_rag_service(workspace_id="ws-claims-alpha")
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    rag, _ = build_seeded_rag_service(workspace_id="ws-claims-alpha", embedding_port=fake_emb)
 
     t0 = time.perf_counter()
     hits = rag.search_hybrid_rrf(
@@ -127,7 +138,8 @@ def test_hybrid_rrf_search_parent_injection_passthrough_and_latency() -> None:
 
 def test_idempotent_docling_indexer_actor_skips_unchanged_sha256() -> None:
     """Story 2.3 AC1: Worker `docling_indexer_actor` is idempotent on retry with same SHA-256."""
-    rag, _ = build_empty_rag_service()
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    rag, _ = build_empty_rag_service(embedding_port=fake_emb)
     first = execute_docling_index_job(
         workspace_id="ws-1",
         datasource_id="ds-conf",
@@ -139,6 +151,7 @@ def test_idempotent_docling_indexer_actor_skips_unchanged_sha256() -> None:
         revision_tag="v1",
         trace_id="4bf92f3577b34da6a3ce929d0e0e4736",
         rag_service=rag,
+        embedding_port=fake_emb,
     )
     assert first.already_indexed is False
     assert first.chunks_count == 2
@@ -155,11 +168,14 @@ def test_idempotent_docling_indexer_actor_skips_unchanged_sha256() -> None:
         revision_tag="v1",
         trace_id="4bf92f3577b34da6a3ce929d0e0e4736",
         rag_service=rag,
+        embedding_port=fake_emb,
     )
     assert second.already_indexed is True
 
     # Also invoke the Dramatiq actor entrypoint directly and verify default worker RAG state
-    from orcia_worker.docling_indexer import _default_worker_rag
+    import orcia_worker.docling_indexer as worker_indexer_mod
+
+    worker_indexer_mod._default_worker_embedding_port = fake_emb
 
     docling_indexer_actor(
         "ws-1",
@@ -170,9 +186,9 @@ def test_idempotent_docling_indexer_actor_skips_unchanged_sha256() -> None:
         "KB > Archi",
         ["Contenu v1"],
         "v1",
-        "4bf92f3577b34da6a3ce929d0e0e4736",
+        "4bf92f3577b34da6a3ce929d0e0e4736",  # pragma: allowlist secret
     )
-    assert len(_default_worker_rag.list_documents(workspace_id="ws-1")) >= 1
+    assert len(worker_indexer_mod._default_worker_rag.list_documents(workspace_id="ws-1")) >= 1
 
     # Verify skipped path (unlabeled page) and CODE_AST_GRAPH + DB_DDL_ONLY worker regimes
     skipped_job = execute_docling_index_job(
@@ -186,6 +202,7 @@ def test_idempotent_docling_indexer_actor_skips_unchanged_sha256() -> None:
         revision_tag="v1",
         trace_id="4bf92f3577b34da6a3ce929d0e0e4736",
         rag_service=rag,
+        embedding_port=fake_emb,
         labels=(),
     )
     assert skipped_job.chunks_count == 0
@@ -216,6 +233,7 @@ def test_idempotent_docling_indexer_actor_skips_unchanged_sha256() -> None:
         revision_tag="v1",
         trace_id="4bf92f3577b34da6a3ce929d0e0e4736",
         rag_service=rag,
+        embedding_port=fake_emb,
         indexing_regime="DB_DDL_ONLY",
     )
     assert ddl_job.chunks_count == 1
@@ -226,7 +244,8 @@ def test_tripartite_graph_jira_extraction_stale_warning_and_doc_obsolete_audit()
     keys = extract_jira_issue_keys("Spec PAY-101 remplacée par PAY-142 et SECOPS-9 (PAY-142).")
     assert keys == ("PAY-101", "PAY-142", "SECOPS-9")
 
-    _, trip = build_seeded_rag_service(workspace_id="ws-claims-alpha")
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    _, trip = build_seeded_rag_service(workspace_id="ws-claims-alpha", embedding_port=fake_emb)
     edges = trip.list_edges(workspace_id="ws-claims-alpha")
     relation_types = {e.relation_type for e in edges}
     assert {
@@ -270,7 +289,10 @@ def test_tripartite_graph_jira_extraction_stale_warning_and_doc_obsolete_audit()
 
 def test_fastapi_rag_search_ddl_guard_and_tripartite_audit_endpoints() -> None:
     """Verify FastAPI /api/v1/ontology-rag/rag/* and /tripartite/* endpoints."""
-    client = TestClient(create_app())
+    app = create_app()
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    app.dependency_overrides[get_embedding_port] = lambda: fake_emb
+    client = TestClient(app)
 
     res_search = client.post(
         "/api/v1/ontology-rag/rag/search?fixture=true",

@@ -69,6 +69,13 @@ class FakeDeterministicEmbeddingAdapter(EmbeddingPort):
         res = await self.embed([query])
         return res[0]
 
+    def embed_query_sync(self, query: str) -> list[float]:
+        self.call_count += 1
+        self.last_texts = [query]
+        if query in self._cassette:
+            return self._cassette[query]
+        return _deterministic_vector_1024(query)
+
 
 __all__ = [
     "FakeDeterministicEmbeddingAdapter",

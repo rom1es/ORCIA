@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 
-from orcia_api.dependencies import get_ontology_and_rag_services
+from orcia_api.dependencies import get_embedding_port, get_ontology_and_rag_services
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import (
     get_trace_id,
@@ -25,10 +25,10 @@ from orcia_core.ontology import (
     ProfileSemanticTranslator,
 )
 from orcia_core.ontology.errors import ObserverModeReadOnlyError
+from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag import (
     DifferentiatedIncrementalIndexer,
     SqlHybridRagRepository,
-    compute_deterministic_halfvec_1024,
 )
 from orcia_kernel.ids import new_uuid7_str
 
@@ -204,9 +204,12 @@ async def promote_ontology_proposal(
 async def search_hybrid_rag(
     request: Request,
     body: s.HybridRagSearchRequest,
+    embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
     fixture: bool = Query(default=False),
 ) -> s.HybridRagSearchResponse:
-    gov, rag, _ = get_ontology_and_rag_services(request, fixture=fixture)
+    gov, rag, _ = get_ontology_and_rag_services(
+        request, fixture=fixture, embedding_port=embedding_port
+    )
     snap = gov.resolve_snapshot(workspace_scope_id=body.workspace_id)
     expanded = OntologyHierarchyResolver.expand_rag_query(body.query_text, snap)
     combined_query = " ".join((body.query_text, *expanded.expanded_terms))
@@ -217,8 +220,8 @@ async def search_hybrid_rag(
     )
     sql_rag_repo = _get_optional_sql_rag_repo(request)
     hits: tuple[Any, ...] = ()
+    query_embedding = tuple(await embedding_port.embed_query(combined_query))
     if not fixture and sql_rag_repo is not None:
-        query_embedding = compute_deterministic_halfvec_1024(combined_query)
         sql_hits = await sql_rag_repo.search_hybrid_rrf(
             workspace_id=body.workspace_id,
             query_text=combined_query,
@@ -233,6 +236,7 @@ async def search_hybrid_rag(
         hits = rag.search_hybrid_rrf(
             workspace_id=body.workspace_id,
             query_text=combined_query,
+            query_embedding=query_embedding,
             allowed_datasource_aliases=allowed,
             top_k=body.top_k,
         )
@@ -270,6 +274,7 @@ async def search_hybrid_rag(
 async def index_db_ddl_schema(
     request: Request,
     body: s.DbDdlIndexRequest,
+    embedding_port: Annotated[EmbeddingPort, Depends(get_embedding_port)],
     fixture: bool = Query(default=False),
     persona_key: str | None = Query(default=None),
 ) -> s.KbDocumentSchemaItem:
@@ -277,13 +282,14 @@ async def index_db_ddl_schema(
     if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
         raise ObserverModeReadOnlyError(instance="/api/v1/ontology-rag/rag/index-db-ddl")
     _, rag, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    doc, chunks = DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
+    doc, chunks = await DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
         workspace_id=body.workspace_id,
         datasource_id=body.datasource_id,
         datasource_alias=body.datasource_alias,
         db_uri=body.db_uri,
         ddl_sql=body.ddl_sql,
         schema_version=body.schema_version,
+        embedding_port=embedding_port,
         ontology_concepts=tuple(body.ontology_concepts),
     )
     rag.upsert_indexed_bundle(document=doc, chunks=chunks)

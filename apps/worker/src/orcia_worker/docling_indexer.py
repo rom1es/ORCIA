@@ -7,11 +7,13 @@ Story 2.3 AC:
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 
 import dramatiq
 
 from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag import (
     CodeGraphEdgeEntity,
     DifferentiatedIncrementalIndexer,
@@ -35,9 +37,10 @@ class DoclingIndexExecutionResult:
 
 
 _default_worker_rag, _ = build_empty_rag_service()
+_default_worker_embedding_port: EmbeddingPort | None = None
 
 
-def execute_docling_index_job(
+async def execute_docling_index_job_async(
     *,
     workspace_id: str,
     datasource_id: str,
@@ -55,10 +58,13 @@ def execute_docling_index_job(
     jira_issue_key: str | None = None,
     jira_issue_type: str = "Story",
     rag_service: HybridRagService | None = None,
+    embedding_port: EmbeddingPort | None = None,
+    embedding_model_id: str | None = None,
 ) -> DoclingIndexExecutionResult:
-    """Execute idempotent incremental indexing of a multi-source document across all 3 regimes."""
+    """Async execution of differentiated incremental multi-source document indexing."""
     ctx = bind_trace_context(trace_id)
     target_rag = rag_service if rag_service is not None else _default_worker_rag
+    eff_port = embedding_port if embedding_port is not None else _default_worker_embedding_port
     code_edges: tuple[CodeGraphEdgeEntity, ...] = ()
     doc: KbDocumentEntity | None
     chunks: tuple[KbChunkEntity, ...]
@@ -75,17 +81,19 @@ def execute_docling_index_job(
             commit_sha=revision_tag,
         )
     elif indexing_regime == "DB_DDL_ONLY":
-        doc, chunks = DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
+        doc, chunks = await DifferentiatedIncrementalIndexer.index_db_ddl_schema_only(
             workspace_id=workspace_id,
             datasource_id=datasource_id,
             datasource_alias=datasource_alias,
             db_uri=source_uri,
             ddl_sql=full_body,
             schema_version=revision_tag,
+            embedding_port=eff_port,
+            embedding_model_id=embedding_model_id,
             ontology_concepts=ontology_concepts,
         )
     elif jira_issue_key is not None or source_uri.startswith("jira://"):
-        doc, chunks = DifferentiatedIncrementalIndexer.index_jira_reference_issue(
+        doc, chunks = await DifferentiatedIncrementalIndexer.index_jira_reference_issue(
             workspace_id=workspace_id,
             datasource_id=datasource_id,
             datasource_alias=datasource_alias,
@@ -94,10 +102,12 @@ def execute_docling_index_job(
             title=title,
             body_text=full_body,
             updated_tag=revision_tag,
+            embedding_port=eff_port,
+            embedding_model_id=embedding_model_id,
             ontology_concepts=ontology_concepts,
         )
     else:
-        doc, chunks = DifferentiatedIncrementalIndexer.index_confluence_parent_child(
+        doc, chunks = await DifferentiatedIncrementalIndexer.index_confluence_parent_child(
             workspace_id=workspace_id,
             datasource_id=datasource_id,
             datasource_alias=datasource_alias,
@@ -106,6 +116,8 @@ def execute_docling_index_job(
             hierarchy_path=hierarchy_path,
             markdown_sections=markdown_sections,
             revision_tag=revision_tag,
+            embedding_port=eff_port,
+            embedding_model_id=embedding_model_id,
             labels=labels,
             page_status=page_status,
             ontology_concepts=ontology_concepts,
@@ -134,6 +146,52 @@ def execute_docling_index_job(
         trace_id=ctx.trace_id,
         already_indexed=not inserted_or_updated,
         chunks_count=len(chunks),
+    )
+
+
+def execute_docling_index_job(
+    *,
+    workspace_id: str,
+    datasource_id: str,
+    datasource_alias: str,
+    source_uri: str,
+    title: str,
+    hierarchy_path: str,
+    markdown_sections: tuple[str, ...],
+    revision_tag: str,
+    trace_id: str,
+    ontology_concepts: tuple[str, ...] = (),
+    labels: tuple[str, ...] = ("orcia-kb",),
+    page_status: str = "current",
+    indexing_regime: str = "DOC_PARENT_CHILD",
+    jira_issue_key: str | None = None,
+    jira_issue_type: str = "Story",
+    rag_service: HybridRagService | None = None,
+    embedding_port: EmbeddingPort | None = None,
+    embedding_model_id: str | None = None,
+) -> DoclingIndexExecutionResult:
+    """Synchronous facade running the async indexing job."""
+    return asyncio.run(
+        execute_docling_index_job_async(
+            workspace_id=workspace_id,
+            datasource_id=datasource_id,
+            datasource_alias=datasource_alias,
+            source_uri=source_uri,
+            title=title,
+            hierarchy_path=hierarchy_path,
+            markdown_sections=markdown_sections,
+            revision_tag=revision_tag,
+            trace_id=trace_id,
+            ontology_concepts=ontology_concepts,
+            labels=labels,
+            page_status=page_status,
+            indexing_regime=indexing_regime,
+            jira_issue_key=jira_issue_key,
+            jira_issue_type=jira_issue_type,
+            rag_service=rag_service,
+            embedding_port=embedding_port,
+            embedding_model_id=embedding_model_id,
+        )
     )
 
 

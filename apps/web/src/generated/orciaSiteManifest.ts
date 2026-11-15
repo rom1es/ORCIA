@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 106,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 37,
+    "alembicMigrationsCount": 38,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 132,
+    "techLeadReportsCount": 133,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -204,7 +204,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
     "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events",
     "20261115_1901_platform_auth_policy_and_email_otp",
-    "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx"
+    "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx",
+    "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup"
   ],
   "architectureDecisions": [
     {
@@ -483,6 +484,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.6 (CAP-011, CAP-070, CAP-071, CAP-190)",
+      "reportFile": "19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele-tech-lead-report.md",
+      "domain": "Migration Alembic kb_chunks.embedding_model_id, Suppression Totale du Pseudo-Hachage SHA-256 en Production, Branchement RAG & Assistant sur EmbeddingPort & Blocage Matériel sans Modèle Actif (AD-24.7, D7, D8, D10, D11, D12)",
+      "summary": "Migration Alembic 20261115_2206 (colonnes embedding_model_id, embedding_generated_at, RAZ vecteurs SHA-256 à NULL, statut AWAITING_EMBEDDING_MODEL), éradication 100% de compute_deterministic_halfvec_1024 du code de production, branchement des indexeurs Confluence/Jira/DDL et de la recherche sur EmbeddingPort injecté, blocage matériel sans modèle actif (HTTP 422 ERR_NO_ACTIVE_EMBEDDING_MODEL au runtime, bannière UI explicite + input/bouton désactivés, survie F5), non-blocage de Codegraph/GitNexus (vecteurs NULL tolérés avec NULLS LAST), vérification Jour 0 après pnpm db:reset, et 5 couches de tests validées (8 tests unitaires dédiés, test d'intégration testcontainers PostgreSQL 18, 23 fichiers Vitest)."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Story 19.3 (CAP-052, CAP-053, CAP-190)",

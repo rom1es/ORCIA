@@ -598,11 +598,12 @@ capabilities:
     origin: epic
     origin_ref: 2026-11-15-epic-19-hub-modeles-ia-et-embeddings-semantiques
     status: partial
+    last_verified: "2026-11-15"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
-      api: "ai_models_hub.py, rag.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
-      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AiModelReindexProgressModal + SettingsAiModelsSection"
-      migration: "20261115_add_embedding_model_metadata"
+      api: "ai_models_hub.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + SettingsAiModelsSection"
+      migration: "20261115_2105, 20261115_2206"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et planifié dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante."
   - id: CAP-200
     title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps

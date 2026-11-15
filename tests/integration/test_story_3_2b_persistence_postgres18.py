@@ -30,11 +30,11 @@ from dbos import DBOS
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_core.observability._internal.otel_sqlalchemy import SqlAlchemyOtelInstrumenter
 from orcia_core.observability.logging import bind_trace_context, clear_trace_context
 from orcia_core.orchestration._internal.dbos_engine import DbosDurableWorkflowEngine
-from orcia_core.rag import compute_deterministic_halfvec_1024
 from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_kernel.ids import new_uuid7_str
 
@@ -229,7 +229,7 @@ async def test_story_3_2b_sql_persistence_dbos_crash_recovery_rag_rrf_and_otel()
 
                 # 4. Native PostgreSQL 18 Hybrid RAG (`halfvec(1024)` + `ts_rank_cd` RRF `k=60`)
                 rag_repo = SqlHybridRagRepository(engine_restarted.uow.session_factory)
-                q_vec = compute_deterministic_halfvec_1024("LossEvent PAY-142")
+                q_vec = FakeDeterministicEmbeddingAdapter().embed_query_sync("LossEvent PAY-142")
                 hits = await rag_repo.search_hybrid_rrf(
                     workspace_id=ws_id,
                     query_text="LossEvent PAY-142 sinistre",

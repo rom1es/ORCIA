@@ -2,7 +2,6 @@ import { createOrciaApiClient } from "@orcia/api-client";
 import {
   AssistantCitationPillsAndArtifactCard,
   AssistantFoldersAndCollaborativeThreadView,
-  AssistantGovernanceModalAndStudio,
   AssistantSpeedSelectorAndStreamView,
   formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,
@@ -26,6 +25,9 @@ import {
   type SavedAssistantGovernancePrefs,
 } from "./assistantFoldersAndPrefsStore";
 import { ActiveConversationMessagesView, AssistantTopToolbar, SavedConversationsPanel } from "./SavedConversationsAndThreadView";
+import { AssistantGovernanceDialog } from "./AssistantGovernanceDialog";
+import { AssistantNoEmbeddingBanner } from "./AssistantNoEmbeddingBanner";
+import { useActiveEmbeddingModelStatus } from "./useActiveEmbeddingModelStatus";
 import {
   buildAssistantAutocompleteAndRagOptions,
   buildAssistantAutocompleteSuggestions,
@@ -63,6 +65,7 @@ export function InboxFeaturePanel() {
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
+  const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
   const { folders, createFolder, savePinnedNotes, changeVisibility } = useServerAssistantFolders({
     workspaceId: activeWorkspaceId,
     messages: dictionary.assistantFoldersSync,
@@ -265,42 +268,26 @@ export function InboxFeaturePanel() {
         />
       )}
 
-      {governanceOpen ? (
-        <AssistantGovernanceModalAndStudio
-          workspaceId={activeWorkspaceId}
-          canEditWorkspaceLayer={true}
-          canOpenStudioModeB={true}
-          initialUserTone={governancePrefs.responseTone}
-          initialUserFormat={governancePrefs.favoriteFormat}
-          initialDefaultHat={governancePrefs.defaultHat}
-          initialPersonalInstructions={governancePrefs.personalInstructions}
-          initialWorkspaceInstructions={governancePrefs.workspaceInstructions}
-          initialMcpExposed={governancePrefs.mcpExposeAssistant}
-          assembledLayers={[]}
-          promptTelemetryLog={promptTelemetryLog}
-          studioNodes={[]}
-          labels={dictionary.assistantGovernance}
-          onSaveUserPreferences={(payload) => {
-            setGovernancePrefs((prev) => {
-              const next: SavedAssistantGovernancePrefs = { ...prev, responseTone: payload.responseTone, favoriteFormat: payload.favoriteFormat, defaultHat: payload.defaultHat, personalInstructions: payload.personalInstructions };
-              writeSavedAssistantGovernancePrefs(next);
-              return next;
-            });
-            setGovernanceFeedback(isFr ? `✅ Préférences personnelles enregistrées automatiquement (rôle : ${payload.defaultHat}).` : `✅ Personal preferences auto-saved (role: ${payload.defaultHat}).`);
-          }}
-          onSaveWorkspaceSettings={(payload) => {
-            setGovernancePrefs((prev) => {
-              const next: SavedAssistantGovernancePrefs = { ...prev, workspaceInstructions: payload.workspaceInstructions, mcpExposeAssistant: payload.mcpExposeAssistant };
-              writeSavedAssistantGovernancePrefs(next);
-              return next;
-            });
-            setGovernanceFeedback(isFr ? `✅ Réglages de l'Espace enregistrés automatiquement (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).` : `✅ Workspace settings auto-saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`);
-          }}
-          onSaveStudioOverride={(payload) => setGovernanceFeedback(isFr ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.` : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`)}
-          onResetStudioOverride={(scopeLevel) => setGovernanceFeedback(isFr ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).` : `✅ Configuration reset to defaults (${scopeLevel}).`)}
-          onClose={() => setGovernanceOpen(false)}
-        />
-      ) : null}
+      <AssistantGovernanceDialog
+        open={governanceOpen}
+        workspaceId={activeWorkspaceId}
+        governancePrefs={governancePrefs}
+        promptTelemetryLog={promptTelemetryLog}
+        labels={dictionary.assistantGovernance}
+        isFr={isFr}
+        onSaveUserPrefs={(next, fb) => {
+          setGovernancePrefs(next);
+          writeSavedAssistantGovernancePrefs(next);
+          setGovernanceFeedback(fb);
+        }}
+        onSaveWorkspaceSettings={(next, fb) => {
+          setGovernancePrefs(next);
+          writeSavedAssistantGovernancePrefs(next);
+          setGovernanceFeedback(fb);
+        }}
+        onFeedback={setGovernanceFeedback}
+        onClose={() => setGovernanceOpen(false)}
+      />
 
       <div className="orcia-bento-card space-y-3">
         <AssistantSpeedSelectorAndStreamView
@@ -338,6 +325,17 @@ export function InboxFeaturePanel() {
           currentTurnFeedback={latestTurnInActiveConv?.userFeedback ?? null}
           onFeedbackLastTurn={(fb) => { if (latestTurnInActiveConv) handleFeedbackTurn(latestTurnInActiveConv.turnId, fb); }}
           labels={dictionary.assistantSpeedStream}
+          disabled={!hasActiveEmbeddingModel}
+          disabledReasonBanner={
+            !hasActiveEmbeddingModel ? (
+              React.createElement(AssistantNoEmbeddingBanner, {
+                title: dictionary.assistantNoEmbeddingModel.bannerTitle,
+                description: dictionary.assistantNoEmbeddingModel.bannerDescription,
+                configureCta: dictionary.assistantNoEmbeddingModel.configureCta,
+                onConfigure: () => navigateToRoute("/settings/ai-models"),
+              })
+            ) : null
+          }
           onOpenFoldersFromPlus={() => setFoldersPanelOpen((prev) => !prev)}
           onStopGeneration={stopGeneration}
           onSaveDraftFromResponse={handleSaveDraftAction}

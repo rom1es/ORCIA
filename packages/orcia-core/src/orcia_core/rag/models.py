@@ -88,6 +88,8 @@ class KbChunkEntity:
     content_text: str
     token_count: int
     embedding: tuple[float, ...] | None = None
+    embedding_model_id: str | None = None
+    embedding_generated_at: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
