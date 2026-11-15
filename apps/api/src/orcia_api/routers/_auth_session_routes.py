@@ -11,6 +11,7 @@ from orcia_api.routers._auth_pg_helpers import (
     REFRESH_COOKIE_NAME,
     execute_change_password,
     hydrate_user_identity_from_pg,
+    rehydrate_user_from_pg_by_id,
     serialize_workspace_summary,
 )
 from orcia_api.routers._auth_policy_runtime import trace_id_for
@@ -32,7 +33,11 @@ from orcia_api.schemas.iam_password_models import (
 )
 from orcia_core.observability.logging import get_logger
 from orcia_core.permissions import AuthAndOrganizationService
-from orcia_core.permissions.errors import InvalidCredentialsError, OrciaDomainError
+from orcia_core.permissions.errors import (
+    InvalidCredentialsError,
+    OrciaDomainError,
+    ResourceNotFoundError,
+)
 
 logger = get_logger("orcia.api.auth.session")
 router = APIRouter()
@@ -51,11 +56,21 @@ async def _rotate_refresh_and_hydrate(
     svc: AuthAndOrganizationService,
 ) -> AuthTokenResponse:
     """Shared refresh rotation + optional PostgreSQL identity enrichment."""
+    claims = svc.verify_refresh_token_claims(raw_refresh)
+    if not svc.has_user_in_memory(claims.sub) and _pg_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            await rehydrate_user_from_pg_by_id(engine, svc, claims.sub, auth_mode=claims.auth_mode)
+        except Exception as exc:
+            logger.warning("auth_refresh_pg_pre_hydration_failed", error_type=type(exc).__name__)
+
     user, tokens = svc.refresh_session(raw_refresh)
     if _pg_enabled():
         try:
             engine = get_or_create_shared_db_engine(request)
-            user = await hydrate_user_identity_from_pg(engine, user)
+            user = await hydrate_user_identity_from_pg(engine, user, svc=svc)
+        except ResourceNotFoundError:
+            raise
         except Exception as exc:
             logger.warning("auth_refresh_pg_hydration_failed", error_type=type(exc).__name__)
     return serialize_auth_token_response(response, user, tokens, trace_id, request)

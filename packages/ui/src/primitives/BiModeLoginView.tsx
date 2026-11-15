@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
+import { OrciaAlertBanner } from "./DesignSystemControls";
 import {
   LoginTwoFactorStepPanel,
   type LoginTwoFactorLabels,
@@ -211,26 +212,20 @@ export function BiModeLoginView({
       </header>
 
       {error && (
-        <div
+        <OrciaAlertBanner
+          tone="crimson"
           role="alert"
-          data-testid="login-rfc9457-error"
-          className="rounded-lg border p-3 text-xs space-y-1"
-          style={{
-            borderColor: "var(--color-status-error)",
-            backgroundColor: "var(--color-surface-elevated)",
-            color: "var(--color-text-primary)",
-          }}
+          testId="login-rfc9457-error"
+          title={labels.errorBannerTitle}
+          code={error.errorCode}
         >
-          <div className="font-semibold">
-            {labels.errorBannerTitle} · <code>{error.errorCode}</code>
-          </div>
           <p>{error.detail}</p>
           {error.traceId && (
             <p className="font-mono text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
               trace_id: {error.traceId}
             </p>
           )}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       {twoFactorStep && labels.twoFactor ? (

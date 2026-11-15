@@ -83,10 +83,12 @@ export function FirstBootAdminSetupModal({
       style={{ backgroundColor: "rgba(15, 23, 42, 0.45)" }}
     >
       <div
-        className="w-full max-w-md rounded-xl border p-6 shadow-xl space-y-4"
+        className="w-full max-w-lg rounded-xl border p-6 shadow-xl space-y-4"
         style={{
-          backgroundColor: "var(--color-bg-surface)",
-          borderColor: "var(--color-border-subtle)",
+          width: "100%",
+          maxWidth: "min(520px, calc(100vw - 2rem))",
+          backgroundColor: "var(--color-surface)",
+          borderColor: "var(--color-border-strong)",
           color: "var(--color-text-primary)",
         }}
       >

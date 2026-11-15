@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 36,
     "architectureDecisionsCount": 22,
     "stackComponentsCount": 40,
-    "techLeadReportsCount": 122,
+    "techLeadReportsCount": 124,
     "capabilitiesCount": 60,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -457,6 +457,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse Auth & UX (CAP-001, CAP-058, CAP-060)",
+      "reportFile": "2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa-tech-lead-report.md",
+      "domain": "Modale Jour 0 Bornée (520px / max-w-lg), Fournisseur Global Bearer @orcia/api-client & Garde !isHydrating au F5, Unification Direction C <OrciaAlertBanner />, Espacement 2FA (tokens.css & PlatformAuthSettingsCard) & UX-COCKPIT-DAY0-01",
+      "summary": "Utilitaires statiques manquants ajoutés dans tokens.css (.max-w-sm..2xl, .space-y-5/6, .pt-3..6, .mt-5/6), contrainte de largeur de FirstBootAdminSetupModal et suppression du doublon /login Jour 0, registerDefaultAccessTokenProvider dans @orcia/api-client câblé sur useAuthSessionStore + attente !isHydrating sur Settings/Cockpit/Gates, refonte unifiée .orcia-ds-alert* & <OrciaAlertBanner /> sur 6 écrans (0 rgba(...) inline), espacement 2FA mt-6 pt-5 border-t, et création du ticket UX-COCKPIT-DAY0-01 avec capture archivée."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Correctif Résilience Authentification (CAP-001)",
+      "reportFile": "2026-11-15-resilience-auth-pg18-miss-ram-uvicorn-reload-tech-lead-report.md",
+      "domain": "Résilience d'Authentification PostgreSQL 18 en cas de Miss RAM (uvicorn --reload / redémarrage worker), Méthodes Publiques has_user_in_memory et verify_*_token_claims, Middleware ASGI de Réhydratation Bearer & Survie des Sessions /session et /refresh",
+      "summary": "Méthodes publiques pures has_user_in_memory, verify_access_token_claims, verify_refresh_token_claims sur AuthAndOrganizationService (sans accès d'attribut privé), pré-hydratation PostgreSQL 18 dans _rotate_refresh_and_hydrate (/session, /refresh), middleware ASGI rehydrate_bearer_subject_from_pg_if_missing garantissant le rechargement transparent de l'utilisateur actif depuis PG 18 sur tout appel API avec Authorization: Bearer <jwt>, validation de pérennité boot_epoch, couverture unitaire 43 tests et test d'intégration testcontainers PostgreSQL 18 test_auth_pg_rehydration_postgres18.py."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Ajustement Transverse (CAP-001, CAP-058)",

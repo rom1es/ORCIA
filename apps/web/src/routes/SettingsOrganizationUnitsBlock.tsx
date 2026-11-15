@@ -2,13 +2,13 @@ import {
   ContextualInfoTriggerButton,
   OrciaAlertBanner,
   OrciaButton,
-  OrciaIcon,
   type ControlCenterWorkspaceGovItem,
   type KnownUserOption,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
+import { useAuthSessionStore } from "../stores/authSessionStore";
 import { OrgPedagogicalCallout } from "../features/admin/organization/OrgPedagogicalCallout";
 import { buildIndentedOrgTree, type OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
 import {
@@ -65,11 +65,18 @@ export function SettingsOrganizationUnitsBlock({
   const [orgDeleteFeedback, setOrgDeleteFeedback] = useState<string | null>(null);
   const [knownUsers, setKnownUsers] = useState<readonly KnownUserOption[]>([]);
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
     let cancelled = false;
     void fetchOrgUnitsFromApi(locale).then((res) => {
       if (cancelled) return;
       if (res.ok) {
+        setOrgDeleteFeedback(null);
         if (res.units.length > 0) {
           syncOrgUnitsFromServer(res.units);
         }
@@ -83,7 +90,7 @@ export function SettingsOrganizationUnitsBlock({
     return () => {
       cancelled = true;
     };
-  }, [locale]);
+  }, [locale, isHydrating, accessToken]);
 
   const treeRows = buildIndentedOrgTree(orgUnits, workspaces);
 
@@ -248,11 +255,8 @@ export function SettingsOrganizationUnitsBlock({
       />
 
       {orgDeleteFeedback ? (
-        <OrciaAlertBanner tone="amber" role="alert" testId="org-unit-delete-feedback">
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            <OrciaIcon name="warning" size={14} />
-            <span>{orgDeleteFeedback}</span>
-          </span>
+        <OrciaAlertBanner tone="crimson" role="alert" testId="org-unit-delete-feedback">
+          {orgDeleteFeedback}
         </OrciaAlertBanner>
       ) : null}
 

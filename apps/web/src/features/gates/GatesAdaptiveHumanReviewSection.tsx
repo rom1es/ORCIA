@@ -6,6 +6,7 @@ import {
   type UiChunkValidationItem,
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
 
 type HumanGateEvaluationItem = components["schemas"]["HumanGateEvaluationSchemaItem"];
@@ -53,9 +54,16 @@ export function GatesAdaptiveHumanReviewSection({
     }
   }, [workspaceId, isFr, onFeedback]);
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
+    onFeedback(null);
     void loadPersistedState();
-  }, [loadPersistedState]);
+  }, [loadPersistedState, isHydrating, accessToken]);
 
   const handleOpenHumanReview = async () => {
     setLoading(true);

@@ -1,4 +1,4 @@
-import { createOrciaApiClient } from "@orcia/api-client";
+import { createOrciaApiClient, registerDefaultAccessTokenProvider } from "@orcia/api-client";
 import { create } from "zustand";
 import {
   ALL_SETTINGS_TABS,
@@ -282,6 +282,8 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
     set({ ...getInitialSessionState() });
   },
 }));
+
+registerDefaultAccessTokenProvider(() => useAuthSessionStore.getState().accessToken);
 
 export function resetAuthSessionStore(): void {
   activeHydrationPromise = null;

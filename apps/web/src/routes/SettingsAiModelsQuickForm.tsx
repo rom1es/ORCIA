@@ -1,7 +1,8 @@
-import type {
-  InferenceTierAndEffortLabels,
-  UiInferenceEffort,
-  UiInferenceTier,
+import {
+  OrciaAlertBanner,
+  type InferenceTierAndEffortLabels,
+  type UiInferenceEffort,
+  type UiInferenceTier,
 } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredLlmTierMapping, LlmAuthMode } from "../components/platformSetupStore";
@@ -334,25 +335,15 @@ export function SettingsAiModelsQuickForm({
       </form>
 
       {testResult !== null && (
-        <div
+        <OrciaAlertBanner
+          tone={testResult.ok ? "emerald" : "crimson"}
           role={testResult.ok ? "status" : "alert"}
-          data-testid="llm-connection-test-result"
+          testId="llm-connection-test-result"
           data-ok={testResult.ok ? "true" : "false"}
-          style={{
-            padding: "8px 12px",
-            marginTop: "8px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid var(--color-border)",
-            backgroundColor: testResult.ok
-              ? "var(--color-action-primary-subtle)"
-              : "var(--color-bg-elevated)",
-            color: "var(--color-foreground)",
-            fontSize: "12px",
-            fontWeight: 600,
-          }}
+          className="mt-2"
         >
           {testResult.message}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       {recommendedModels.length > 0 && (

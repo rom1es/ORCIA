@@ -1,5 +1,6 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
+import { OrciaAlertBanner } from "./DesignSystemControls";
 import {
   SecretField,
   type SecretFieldLabels,
@@ -111,7 +112,7 @@ export function PlatformAuthSettingsCard({
   return (
     <section
       data-testid="settings-authentication-section"
-      className="rounded-xl border p-5 space-y-5"
+      className="rounded-xl border p-5 space-y-6"
       style={{
         borderColor: "var(--color-border)",
         backgroundColor: "var(--color-surface-card)",
@@ -180,8 +181,8 @@ export function PlatformAuthSettingsCard({
       </div>
 
       {value.authMode === "LOCAL" ? (
-        <div data-testid="auth-local-2fa-config" className="space-y-3 border-t pt-4" style={{ borderColor: "var(--color-border-subtle)" }}>
-          <div className="text-xs font-semibold uppercase tracking-wide">{labels.twoFactorGroupLabel}</div>
+        <div data-testid="auth-local-2fa-config" className="space-y-3 border-t mt-6 pt-5" style={{ borderColor: "var(--color-border-subtle)" }}>
+          <div className="block mb-3 text-xs font-semibold uppercase tracking-wide">{labels.twoFactorGroupLabel}</div>
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
             {twoFactorOptions.map((opt) => {
               const active = value.twoFactorMode === opt.key;
@@ -215,37 +216,32 @@ export function PlatformAuthSettingsCard({
           </div>
 
           {value.twoFactorMode === "EMAIL_OTP" && (
-            <div
-              data-testid="auth-smtp-status-badge"
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs"
-              style={{
-                borderColor: value.smtpConnectorConfigured
-                  ? "var(--color-border)"
-                  : "var(--color-status-warning)",
-                backgroundColor: "var(--color-surface-elevated)",
-              }}
+            <OrciaAlertBanner
+              tone={value.smtpConnectorConfigured ? "emerald" : "amber"}
+              role="status"
+              testId="auth-smtp-status-badge"
+              action={
+                onNavigateToConnectors ? (
+                  <button
+                    type="button"
+                    data-testid="auth-goto-connectors-btn"
+                    onClick={onNavigateToConnectors}
+                    className="orcia-ds-btn orcia-ds-btn-secondary px-2.5 py-1 text-xs"
+                  >
+                    {labels.smtpConfigureCta}
+                  </button>
+                ) : undefined
+              }
             >
-              <span>
-                {value.smtpConnectorConfigured
-                  ? `${labels.smtpConfiguredBadge}${value.smtpConnectorName ? ` · ${value.smtpConnectorName}` : ""}`
-                  : labels.smtpMissingBadge}
-              </span>
-              {onNavigateToConnectors && (
-                <button
-                  type="button"
-                  data-testid="auth-goto-connectors-btn"
-                  onClick={onNavigateToConnectors}
-                  className="orcia-ds-btn orcia-ds-btn-secondary px-2.5 py-1 text-xs"
-                >
-                  {labels.smtpConfigureCta}
-                </button>
-              )}
-            </div>
+              {value.smtpConnectorConfigured
+                ? `${labels.smtpConfiguredBadge}${value.smtpConnectorName ? ` · ${value.smtpConnectorName}` : ""}`
+                : labels.smtpMissingBadge}
+            </OrciaAlertBanner>
           )}
         </div>
       ) : (
-        <div data-testid="auth-oidc-sso-config" className="space-y-4 border-t pt-4" style={{ borderColor: "var(--color-border-subtle)" }}>
-          <div className="text-xs font-semibold uppercase tracking-wide">{labels.oidcSectionTitle}</div>
+        <div data-testid="auth-oidc-sso-config" className="space-y-4 border-t mt-6 pt-5" style={{ borderColor: "var(--color-border-subtle)" }}>
+          <div className="block mb-3 text-xs font-semibold uppercase tracking-wide">{labels.oidcSectionTitle}</div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <label className="space-y-1 text-xs">
               <span className="font-medium">{labels.oidcIssuerUrlLabel}</span>
@@ -354,20 +350,13 @@ export function PlatformAuthSettingsCard({
       )}
 
       {saveFeedback && (
-        <div
-          role="status"
-          data-testid="auth-save-feedback"
-          className="rounded-lg border px-3 py-2 text-xs"
-          style={{
-            borderColor:
-              saveFeedback.kind === "success"
-                ? "var(--color-status-success)"
-                : "var(--color-status-error)",
-            backgroundColor: "var(--color-surface-elevated)",
-          }}
+        <OrciaAlertBanner
+          tone={saveFeedback.kind === "success" ? "emerald" : "crimson"}
+          role={saveFeedback.kind === "error" ? "alert" : "status"}
+          testId="auth-save-feedback"
         >
           {saveFeedback.message}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       {!readOnly && (

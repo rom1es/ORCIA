@@ -28,6 +28,7 @@ import {
 import { AiModelDeleteDialog } from "../features/admin/ai-models/AiModelDeleteDialog";
 import { AiModelsMasterTable } from "../features/admin/ai-models/AiModelsMasterTable";
 import { useI18n } from "../i18n";
+import { useAuthSessionStore } from "../stores/authSessionStore";
 import {
   AI_MODELS_HUB_EN,
   AI_MODELS_HUB_FR,
@@ -97,9 +98,15 @@ export function SettingsAiModelsSection({
     }
   };
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
     void loadMappings();
-  }, [isFr]);
+  }, [isFr, isHydrating, accessToken]);
 
   const activeMappings =
     Array.isArray(serverMappings) && serverMappings.length > 0

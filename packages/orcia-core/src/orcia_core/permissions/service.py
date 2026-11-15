@@ -16,6 +16,7 @@ from orcia_core.permissions.crypto import (
     JwtSessionManager,
     PassthroughVaultCipher,
     SessionTokenPair,
+    TokenClaims,
     TotpManager,
 )
 from orcia_core.permissions.errors import (
@@ -158,6 +159,11 @@ class AuthAndOrganizationService:
             raise ResourceNotFoundError()
         return user
 
+    def has_user_in_memory(self, user_id: str) -> bool:
+        """Return True if user is present in memory and currently active."""
+        user = self._users_by_id.get(user_id)
+        return user is not None and user.is_active
+
     def register_user(self, user: UserIdentity) -> None:
         """Register or update an in-memory user identity."""
         self._users_by_id[user.id] = user
@@ -254,24 +260,38 @@ class AuthAndOrganizationService:
 
         return user, self._issue_for_user(user, "OIDC", now_ts)
 
+    def verify_access_token_claims(
+        self, bearer_or_raw_token: str, *, now_ts: int | None = None
+    ) -> TokenClaims:
+        """Verify signature, expiry and revocation of access JWT without requiring cached user."""
+        raw = bearer_or_raw_token.removeprefix("Bearer ").removeprefix("bearer ").strip()
+        claims = self.jwt_manager.verify_token(raw, expected_type="access", now_ts=now_ts)
+        if self.revocation_store.is_revoked(claims.jti):
+            raise RevokedTokenError()
+        return claims
+
+    def verify_refresh_token_claims(
+        self, refresh_token: str, *, now_ts: int | None = None
+    ) -> TokenClaims:
+        """Verify signature, expiry and revocation of a refresh JWT without rotating it."""
+        raw = refresh_token.removeprefix("Bearer ").removeprefix("bearer ").strip()
+        claims = self.jwt_manager.verify_token(raw, expected_type="refresh", now_ts=now_ts)
+        if self.revocation_store.is_revoked(claims.jti):
+            raise RevokedTokenError()
+        return claims
+
     def authenticate_access_token(
         self, access_token: str, *, now_ts: int | None = None
     ) -> UserIdentity:
         """Verify access JWT and ensure its `jti` is not revoked."""
-        claims = self.jwt_manager.verify_token(access_token, expected_type="access", now_ts=now_ts)
-        if self.revocation_store.is_revoked(claims.jti):
-            raise RevokedTokenError()
+        claims = self.verify_access_token_claims(access_token, now_ts=now_ts)
         return self.get_user_by_id(claims.sub)
 
     def refresh_session(
         self, refresh_token: str, *, now_ts: int | None = None
     ) -> tuple[UserIdentity, SessionTokenPair]:
         """Rotate refresh token (revoking prior `jti`) and issue a new 15-min JWT pair."""
-        claims = self.jwt_manager.verify_token(
-            refresh_token, expected_type="refresh", now_ts=now_ts
-        )
-        if self.revocation_store.is_revoked(claims.jti):
-            raise RevokedTokenError()
+        claims = self.verify_refresh_token_claims(refresh_token, now_ts=now_ts)
         self.revocation_store.revoke_jti(claims.jti)
         user = self.get_user_by_id(claims.sub)
         return user, self._issue_for_user(user, claims.auth_mode, now_ts)
