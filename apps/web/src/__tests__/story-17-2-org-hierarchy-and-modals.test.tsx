@@ -68,6 +68,9 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     const leadBadge = screen.getByTestId("org-unit-lead-badge-org-1");
     expect(leadBadge.getAttribute("data-tone")).toBe("neutral");
     expect(screen.getByTestId("org-unit-kind-badge-org-1").getAttribute("data-tone")).toBe("cobalt");
+    // BU has no direct members button nor members badge
+    expect(screen.queryByTestId("manage-members-org-unit-btn-org-1")).toBeNull();
+    expect(screen.queryByTestId("org-unit-members-count-org-1")).toBeNull();
 
     // 2. Create Sub-BU ("Pôle IA Générative", parent = org-1)
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
@@ -83,6 +86,8 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Équipe Agents RAG" } });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     expect((await screen.findByTestId("org-unit-row-org-3")).getAttribute("data-depth")).toBe("2");
+    expect(screen.getByTestId("manage-members-org-unit-btn-org-3")).toBeDefined();
+    expect(screen.getByTestId("org-unit-members-count-org-3")).toBeDefined();
 
     // 4. Edit Sub-BU
     fireEvent.click(screen.getByTestId("edit-org-unit-btn-org-2"));
@@ -161,11 +166,20 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     fireEvent.change(leadInput, { target: { value: "claire" } });
     const claireOption = await screen.findByTestId("org-unit-lead-input-option-claire.admin@orcia.fr");
     fireEvent.mouseDown(claireOption);
-    expect((leadInput as HTMLInputElement).value).toBe("claire.admin@orcia.fr");
+    expect(screen.getByTestId("org-unit-lead-input-pill-claire.admin@orcia.fr")).toBeDefined();
+
+    // Add a second lead (Marc Lead) to verify multi-leads pills and plural badge
+    fireEvent.change(leadInput, { target: { value: "marc" } });
+    const marcOption = await screen.findByTestId("org-unit-lead-input-option-marc.lead@orcia.fr");
+    fireEvent.mouseDown(marcOption);
+    expect(screen.getByTestId("org-unit-lead-input-pill-marc.lead@orcia.fr")).toBeDefined();
 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     const row = await screen.findByTestId("org-unit-row-org-1");
-    expect(screen.getByTestId("org-unit-lead-badge-org-1").textContent).toContain("Claire Admin");
+    const leadBadge = screen.getByTestId("org-unit-lead-badge-org-1");
+    expect(leadBadge.textContent).toContain("Responsables :");
+    expect(leadBadge.textContent).toContain("Claire Admin");
+    expect(leadBadge.textContent).toContain("Marc Lead");
   });
 
   it("enforces max 10 in parent selector with incremental query and anti-cycle", async () => {

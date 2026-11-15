@@ -18,6 +18,7 @@ from __future__ import annotations
 import copy
 import os
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -44,7 +45,11 @@ def test_story_3_5_migration_0016_real_postgres_container(
     """Verify migration 0016 creates `upstream_challenges` on PostgreSQL 18."""
     monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
     suffix = f"tc_3_5_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = REPO_ROOT / ".pytest_cache" / suffix
+    sock_dir = (
+        Path(tempfile.gettempdir())
+        if len(str(REPO_ROOT / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
+        else REPO_ROOT / ".pytest_cache"
+    ) / suffix
     sock_dir.mkdir(parents=True, exist_ok=True)
     sock_dir.chmod(0o777)
 

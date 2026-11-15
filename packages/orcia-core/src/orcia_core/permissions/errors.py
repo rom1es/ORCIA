@@ -121,8 +121,24 @@ class OrgUnitDuplicateSlugError(OrciaDomainError):
     )
 
 
+class OrgUnitNotFoundError(ResourceNotFoundError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_NOT_FOUND",
+        404,
+        "org-unit-not-found",
+    )
+
+
 class OrgUnitNotEmptyError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_ORG_UNIT_NOT_EMPTY", 409, "org-unit-not-empty"
+
+
+class OrgUnitBuMembersForbiddenError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN",
+        422,
+        "org-unit-bu-members-forbidden",
+    )
 
 
 class OrgUnitStorageSchemaError(OrciaDomainError):
@@ -177,6 +193,16 @@ class PasswordUnchangedError(OrciaDomainError):
     )
 
 
+class InvalidCurrentPasswordError(OrciaDomainError):
+    error_code = "ERR_AUTH_CURRENT_PASSWORD_INVALID"
+    http_status, type_slug = 422, "auth-current-password-invalid"
+
+
+class LocalPasswordChangeForbiddenForSsoError(OrciaDomainError):
+    error_code = "ERR_AUTH_SSO_PASSWORD_MANAGED_EXTERNALLY"
+    http_status, type_slug = 422, "auth-sso-password-managed-externally"
+
+
 class CodegraphWorkspaceLeadRequiredError(OrciaDomainError):
     error_code = "ERR_CODEGRAPH_WORKSPACE_LEAD_REQUIRED"
     http_status, type_slug = 403, "codegraph-workspace-lead-required"
@@ -221,16 +247,20 @@ __all__ = [
     "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
     "InvalidCredentialsError",
+    "InvalidCurrentPasswordError",
     "InvalidIamRoleError",
     "InvalidMfaCodeError",
     "InvalidOrExpiredLoginChallengeError",
     "LocalAuthDisabledByPolicyError",
+    "LocalPasswordChangeForbiddenForSsoError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "OrgUnitBuMembersForbiddenError",
     "OrgUnitDuplicateSlugError",
     "OrgUnitHierarchyCycleError",
     "OrgUnitInvalidParentKindError",
     "OrgUnitNotEmptyError",
+    "OrgUnitNotFoundError",
     "OrgUnitStorageSchemaError",
     "OrgUnitUnknownUserError",
     "PERMISSIONS_ERROR_CATALOG",

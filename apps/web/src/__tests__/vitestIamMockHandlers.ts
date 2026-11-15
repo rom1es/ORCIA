@@ -4,9 +4,11 @@ export interface MockIamAccountItem {
   display_name: string;
   email: string | null;
   account_kind: "HUMAN" | "SERVICE_PRINCIPAL";
-  auth_source: "LOCAL_BOOTSTRAP" | "OIDC_FEDERATED" | "SERVICE_TOKEN";
+  auth_source: "LOCAL_BOOTSTRAP" | "LOCAL_PASSWORD" | "OIDC_FEDERATED" | "SERVICE_TOKEN";
   roles: string[];
   team_ids: string[];
+  led_bu_ids?: string[];
+  led_team_ids?: string[];
   status: "ACTIVE" | "INVITED" | "DISABLED";
   created_at_iso: string;
   updated_at_iso: string;
@@ -32,6 +34,8 @@ interface MockOrgUnitRef {
   slug: string;
   kind: "BU" | "TEAM";
   member_user_ids: string[];
+  lead_user_id?: string | null;
+  lead_user_ids?: string[];
 }
 
 const VALID_ROLES = new Set([
@@ -110,6 +114,34 @@ function syncTeamMemberships(
       unit.member_user_ids = [...unit.member_user_ids, principalId];
     } else if (!shouldHave && has) {
       unit.member_user_ids = unit.member_user_ids.filter((m) => m !== principalId);
+    }
+  }
+}
+
+function syncLeadAssignments(
+  principalId: string,
+  desiredBuIds: readonly string[],
+  desiredTeamIds: readonly string[],
+  orgUnits: MockOrgUnitRef[],
+  removeAll = false,
+): void {
+  const desiredBus = removeAll ? new Set<string>() : new Set(desiredBuIds);
+  const desiredTeams = removeAll ? new Set<string>() : new Set(desiredTeamIds);
+  for (const unit of orgUnits) {
+    const isBu = unit.kind === "BU";
+    const targetSet = isBu ? desiredBus : desiredTeams;
+    const shouldLead = targetSet.has(unit.id) || targetSet.has(unit.slug);
+    const leads = unit.lead_user_ids
+      ? [...unit.lead_user_ids]
+      : (unit.lead_user_id ? [unit.lead_user_id] : []);
+    const hasLead = leads.some((id) => id.toLowerCase() === principalId.toLowerCase());
+    if (shouldLead && !hasLead) {
+      leads.push(principalId);
+      unit.lead_user_ids = leads;
+      unit.lead_user_id = leads[0] ?? null;
+    } else if (!shouldLead && hasLead) {
+      unit.lead_user_ids = leads.filter((id) => id.toLowerCase() !== principalId.toLowerCase());
+      unit.lead_user_id = unit.lead_user_ids[0] ?? null;
     }
   }
 }
@@ -223,24 +255,32 @@ export function handleVitestIamRoute(params: {
       );
     }
     const teamIds = Array.isArray(body.team_ids) ? body.team_ids.map(String) : [];
+    const ledBuIds = Array.isArray(body.led_bu_ids) ? body.led_bu_ids.map(String) : [];
+    const ledTeamIds = Array.isArray(body.led_team_ids) ? body.led_team_ids.map(String) : [];
     const status = (body.status as MockIamAccountItem["status"]) ?? "ACTIVE";
     iamAccountSeq += 1;
     const nowIso = "2026-11-11T12:05:00Z";
+    const authSource = typeof body.auth_source === "string" && body.auth_source
+      ? (body.auth_source as MockIamAccountItem["auth_source"])
+      : (kind === "SERVICE_PRINCIPAL" ? "SERVICE_TOKEN" : "OIDC_FEDERATED");
     const created: MockIamAccountItem = {
       id: `acc-${iamAccountSeq}`,
       principal_id: principalId,
       display_name: displayName,
       email,
       account_kind: kind,
-      auth_source: kind === "SERVICE_PRINCIPAL" ? "SERVICE_TOKEN" : "OIDC_FEDERATED",
+      auth_source: authSource,
       roles: rawRoles,
       team_ids: teamIds,
+      led_bu_ids: ledBuIds,
+      led_team_ids: ledTeamIds,
       status,
       created_at_iso: nowIso,
       updated_at_iso: nowIso,
     };
     iamAccounts = [...iamAccounts, created];
     syncTeamMemberships(principalId, teamIds, orgUnits);
+    syncLeadAssignments(principalId, ledBuIds, ledTeamIds, orgUnits);
     syncSetupOrgUnits();
     const tempPassword = kind === "HUMAN" ? "OrciaPass123" : null; // pragma: allowlist secret
     return jsonResponse(
@@ -318,6 +358,12 @@ export function handleVitestIamRoute(params: {
       const nextTeams = Array.isArray(body.team_ids)
         ? body.team_ids.map(String)
         : target.team_ids;
+      const nextLedBuIds = Array.isArray(body.led_bu_ids)
+        ? body.led_bu_ids.map(String)
+        : (target.led_bu_ids ?? []);
+      const nextLedTeamIds = Array.isArray(body.led_team_ids)
+        ? body.led_team_ids.map(String)
+        : (target.led_team_ids ?? []);
       const updated: MockIamAccountItem = {
         ...target,
         display_name:
@@ -327,6 +373,8 @@ export function handleVitestIamRoute(params: {
         email: "email" in body ? (body.email ? String(body.email).trim().toLowerCase() : null) : target.email,
         roles: nextRoles,
         team_ids: nextTeams,
+        led_bu_ids: nextLedBuIds,
+        led_team_ids: nextLedTeamIds,
         status: nextStatus,
         updated_at_iso: "2026-11-11T12:10:00Z",
       };
@@ -342,6 +390,7 @@ export function handleVitestIamRoute(params: {
       }
       iamAccounts = candidateList;
       syncTeamMemberships(updated.principal_id, nextTeams, orgUnits);
+      syncLeadAssignments(updated.principal_id, nextLedBuIds, nextLedTeamIds, orgUnits);
       syncSetupOrgUnits();
       return jsonResponse(updated);
     }
@@ -358,6 +407,7 @@ export function handleVitestIamRoute(params: {
     }
     iamAccounts = remaining;
     syncTeamMemberships(target.principal_id, [], orgUnits, true);
+    syncLeadAssignments(target.principal_id, [], [], orgUnits, true);
     syncSetupOrgUnits();
     return jsonResponse({
       deleted_id: target.id,
@@ -445,4 +495,48 @@ export function handleVitestIamRoute(params: {
   }
 
   return null;
+}
+
+export function syncVitestIamRolesWithOrgUnits(orgUnits: readonly MockOrgUnitRef[]): void {
+  for (const acc of iamAccounts) {
+    if (acc.account_kind !== "HUMAN") continue;
+    const principalLower = acc.principal_id.toLowerCase().trim();
+    const emailLower = acc.email ? acc.email.toLowerCase().trim() : null;
+    const isMatch = (id?: string | null) => {
+      if (!id) return false;
+      const l = id.toLowerCase().trim();
+      return l === principalLower || (emailLower !== null && l === emailLower);
+    };
+
+    const ledBus = orgUnits
+      .filter(
+        (u) =>
+          u.kind === "BU" &&
+          ((Array.isArray(u.lead_user_ids) && u.lead_user_ids.some(isMatch)) ||
+            isMatch(u.lead_user_id)),
+      )
+      .map((u) => u.id);
+    const ledTeams = orgUnits
+      .filter(
+        (u) =>
+          u.kind === "TEAM" &&
+          ((Array.isArray(u.lead_user_ids) && u.lead_user_ids.some(isMatch)) ||
+            isMatch(u.lead_user_id)),
+      )
+      .map((u) => u.id);
+
+    const mergedLedBus = Array.from(new Set([...(acc.led_bu_ids ?? []), ...ledBus]));
+    const mergedLedTeams = Array.from(new Set([...(acc.led_team_ids ?? []), ...ledTeams]));
+    acc.led_bu_ids = mergedLedBus;
+    acc.led_team_ids = mergedLedTeams;
+
+    const rolesSet = new Set(acc.roles);
+    if (mergedLedBus.length > 0) {
+      rolesSet.add("BU_LEAD");
+    }
+    if (mergedLedTeams.length > 0) {
+      rolesSet.add("TEAM_LEAD");
+    }
+    acc.roles = Array.from(rolesSet);
+  }
 }

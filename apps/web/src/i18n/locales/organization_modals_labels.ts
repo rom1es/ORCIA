@@ -32,6 +32,8 @@ export interface OrganizationEditModalLabels {
   readonly parentTruncatedHint: string;
   readonly rootParentOption: string;
   readonly billingCheckboxLabel: string;
+  readonly leadLabel: string;
+  readonly leadPlaceholder: string;
   readonly cancelButton: string;
   readonly saveButton: string;
 }
@@ -114,6 +116,8 @@ export const ORGANIZATION_MODALS_FR_LABELS: OrganizationModalsSection = {
     parentTruncatedHint: "organisations non affichées. Saisissez des lettres pour affiner.",
     rootParentOption: "Racine — Direction de premier niveau (Plateforme entière)",
     billingCheckboxLabel: "Activer l'imputation FinOps sur cette unité",
+    leadLabel: "Responsable(s) de l'unité",
+    leadPlaceholder: "Rechercher par nom, identifiant ou e-mail...",
     cancelButton: "Annuler",
     saveButton: "Enregistrer les modifications",
   },
@@ -192,6 +196,8 @@ export const ORGANIZATION_MODALS_EN_LABELS: OrganizationModalsSection = {
     parentTruncatedHint: "organizations hidden. Type letters to narrow down.",
     rootParentOption: "Root — Top-level Division (Entire platform)",
     billingCheckboxLabel: "Enable FinOps cost allocation on this unit",
+    leadLabel: "Unit lead(s)",
+    leadPlaceholder: "Search by name, principal ID, or email...",
     cancelButton: "Cancel",
     saveButton: "Save changes",
   },

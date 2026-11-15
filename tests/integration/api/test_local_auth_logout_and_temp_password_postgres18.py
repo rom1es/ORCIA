@@ -176,8 +176,23 @@ async def test_human_iam_account_creation_temp_password_and_login_lifecycle_post
         token = login_data["access_token"]
         assert "orcia_refresh_token" in login_res.cookies
 
-        # 4. Same password rejected
+        # 4a. Wrong current password rejected with ERR_AUTH_CURRENT_PASSWORD_INVALID (422)
         auth_headers = {"Authorization": f"Bearer {token}"}
+        wrong_curr_res = await client.post(
+            "/api/v1/auth/change-password",
+            headers=auth_headers,
+            json={
+                "current_password": "WrongCurrentPassword123",  # pragma: allowlist secret
+                "new_password": "NewValidPassword2026",  # pragma: allowlist secret
+            },
+        )
+        assert wrong_curr_res.status_code == 422
+        wrong_body = wrong_curr_res.json()
+        assert wrong_body["error_code"] == "ERR_AUTH_CURRENT_PASSWORD_INVALID"
+        assert "OIDC" not in wrong_body.get("detail", "")
+        assert "e-mail" not in wrong_body.get("detail", "").lower()
+
+        # 4b. Same password rejected
         unchanged_res = await client.post(
             "/api/v1/auth/change-password",
             headers=auth_headers,
@@ -236,8 +251,38 @@ async def test_human_iam_account_creation_temp_password_and_login_lifecycle_post
         regen_data = regen_res.json()
         assert len(regen_data["temporary_password"]) == 12
         assert regen_data["must_change_password"] is True
+        new_temp_pwd = regen_data["temporary_password"]
 
-        # 8. Logout revokes token and clears cookie
+        # 8. Test RAM/PG desync: temporary password was regenerated in PG 18 while in-memory
+        # session held Claire's previous password hash. hydrate_user_identity_from_pg pulls
+        # the fresh hash from PG 18 so changing password with new_temp_pwd succeeds!
+        desync_change_res = await client.post(
+            "/api/v1/auth/change-password",
+            headers=auth_headers,
+            json={
+                "current_password": new_temp_pwd,
+                "new_password": "ClaireFinalSecurePass2026",  # pragma: allowlist secret
+            },
+        )
+        assert desync_change_res.status_code == 200, desync_change_res.text
+        assert desync_change_res.json()["must_change_password"] is False
+
+        # Direct SQL verify must_change_password is False again
+        async with engine.connect() as conn:
+            final_row = (
+                (
+                    await conn.execute(
+                        sa.text("SELECT must_change_password FROM users WHERE email = :e"),
+                        {"e": "claire.martin@orcia.fr"},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            assert final_row is not None
+            assert final_row["must_change_password"] is False
+
+        # 9. Logout revokes token and clears cookie
         logout_res = await client.post("/api/v1/auth/logout", headers=auth_headers)
         assert logout_res.status_code == 200
         # Cookie deletion directive present in Set-Cookie header

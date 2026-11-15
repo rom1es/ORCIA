@@ -28,7 +28,11 @@ export interface SettingsOrganizationModalsGroupProps {
   readonly onOpenChangeMembers: (open: boolean) => void;
   readonly onMembersSave: (
     orgUnitId: string,
-    values: { readonly leadUserId: string | null; readonly memberUserIds: readonly string[] },
+    values: {
+      readonly leadUserId: string | null;
+      readonly leadUserIds?: readonly string[];
+      readonly memberUserIds: readonly string[];
+    },
   ) => void;
   readonly deletingRowItem: OrgTreeRowItem | null;
   readonly onOpenChangeDelete: (open: boolean) => void;
@@ -79,6 +83,8 @@ export function SettingsOrganizationModalsGroup({
         onOpenChange={onOpenChangeEdit}
         canMutate={canMutate}
         orgUnits={orgUnits}
+        knownUsers={knownUsers}
+        unknownUserErrorLabel={labels.unknownUserError}
         labels={labels.editModal}
         parentPrefixLabel={labels.createModal.parentBuOptionPrefix}
         errorMessage={modalError}

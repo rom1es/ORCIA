@@ -10619,6 +10619,7 @@
               {
                 "enum": [
                   "LOCAL_BOOTSTRAP",
+                  "LOCAL_PASSWORD",
                   "OIDC_FEDERATED",
                   "SERVICE_TOKEN"
                 ],
@@ -10648,6 +10649,36 @@
               }
             ],
             "title": "Email"
+          },
+          "led_bu_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Led Bu Ids"
+          },
+          "led_team_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Led Team Ids"
           },
           "principal_id": {
             "anyOf": [
@@ -10740,6 +10771,36 @@
             ],
             "title": "Email"
           },
+          "led_bu_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Led Bu Ids"
+          },
+          "led_team_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Led Team Ids"
+          },
           "roles": {
             "anyOf": [
               {
@@ -10805,6 +10866,7 @@
           "auth_source": {
             "enum": [
               "LOCAL_BOOTSTRAP",
+              "LOCAL_PASSWORD",
               "OIDC_FEDERATED",
               "SERVICE_TOKEN"
             ],
@@ -10833,6 +10895,20 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "led_bu_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Led Bu Ids",
+            "type": "array"
+          },
+          "led_team_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Led Team Ids",
+            "type": "array"
           },
           "principal_id": {
             "title": "Principal Id",
@@ -14146,6 +14222,21 @@
             ],
             "title": "Lead User Id"
           },
+          "lead_user_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead User Ids"
+          },
           "member_user_ids": {
             "items": {
               "type": "string"
@@ -14246,6 +14337,21 @@
             ],
             "title": "Lead User Id"
           },
+          "lead_user_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead User Ids"
+          },
           "member_user_ids": {
             "anyOf": [
               {
@@ -14334,6 +14440,13 @@
               }
             ],
             "title": "Lead User Id"
+          },
+          "lead_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Lead User Ids",
+            "type": "array"
           },
           "member_user_ids": {
             "items": {

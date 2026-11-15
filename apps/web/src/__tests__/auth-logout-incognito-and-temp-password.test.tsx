@@ -37,7 +37,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
     expect(screen.queryByTestId("protected-workspace-content")).toBeNull();
   });
 
-  it("displays persistent amber warning banner when mustChangePassword is true and opens account security tab on click", async () => {
+  it("displays persistent amber warning banner when mustChangePassword is true, handles wrong current password, and collapses inputs after valid change with F5 survival", async () => {
     seedVitestPlatformSetupState({}, { email: "admin@orcia.test", displayName: "Admin Test" });
     useAuthSessionStore.getState().loginWithSession({
       email: "nouveau.collaborateur@orcia.fr",
@@ -46,7 +46,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       mustChangePassword: true,
     });
 
-    render(
+    const { unmount } = render(
       <I18nProvider initialLocale="fr">
         <ShellContainer onNavigate={() => undefined}>
           <div data-testid="protected-workspace-content">Contenu Espace</div>
@@ -54,19 +54,77 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       </I18nProvider>,
     );
 
-    // Banner is rendered
+    // 1. Banner is rendered
     const banner = await screen.findByTestId("temporary-password-warning-banner");
     expect(banner).toBeDefined();
     expect(banner.textContent).toContain("Attention : vous utilisez un mot de passe temporaire");
 
-    // Click banner CTA
+    // 2. Click banner CTA -> Modal settings dialog is opened
     const changeBtn = screen.getByTestId("temporary-password-open-settings-btn");
     fireEvent.click(changeBtn);
 
-    // Modal settings dialog is opened
     await waitFor(() => {
       expect(screen.getByTestId("user-settings-modal")).toBeDefined();
+      expect(screen.getByTestId("user-password-change-card")).toBeDefined();
+      expect(screen.getByTestId("user-current-password-input")).toBeDefined();
     });
+
+    // 3. Attempt with wrong current password -> error banner without OIDC / email text
+    const currentInput = screen.getByTestId("user-current-password-input");
+    const newInput = screen.getByTestId("user-new-password-input");
+    const confirmInput = screen.getByTestId("user-confirm-password-input");
+
+    fireEvent.change(currentInput, { target: { value: "WrongCurrentPassword123" } }); // pragma: allowlist secret
+    fireEvent.change(newInput, { target: { value: "NewValidPassword2026" } }); // pragma: allowlist secret
+    fireEvent.change(confirmInput, { target: { value: "NewValidPassword2026" } }); // pragma: allowlist secret
+
+    fireEvent.click(screen.getByTestId("user-change-password-submit-btn"));
+
+    await waitFor(() => {
+      const feedback = screen.getByTestId("user-change-password-feedback");
+      expect(feedback.textContent).toContain("Le mot de passe actuel saisi est incorrect");
+      expect(feedback.textContent).not.toContain("OIDC");
+      expect(feedback.textContent.toLowerCase()).not.toContain("e-mail");
+      // Form inputs remain rendered
+      expect(screen.getByTestId("user-current-password-input")).toBeDefined();
+      expect(screen.getByTestId("user-new-password-input")).toBeDefined();
+      expect(screen.getByTestId("user-confirm-password-input")).toBeDefined();
+      expect(screen.getByTestId("user-change-password-submit-btn")).toBeDefined();
+    });
+
+    // 4. Valid password change -> form inputs are removed from DOM, success banner displayed
+    fireEvent.change(screen.getByTestId("user-current-password-input"), {
+      target: { value: "ValidTempSecret1" }, // pragma: allowlist secret
+    });
+    fireEvent.click(screen.getByTestId("user-change-password-submit-btn"));
+
+    await waitFor(() => {
+      // Inputs and submit button are completely hidden
+      expect(screen.queryByTestId("user-current-password-input")).toBeNull();
+      expect(screen.queryByTestId("user-new-password-input")).toBeNull();
+      expect(screen.queryByTestId("user-confirm-password-input")).toBeNull();
+      expect(screen.queryByTestId("user-change-password-submit-btn")).toBeNull();
+      expect(screen.queryByTestId("user-must-change-password-alert")).toBeNull();
+      expect(screen.queryByTestId("temporary-password-warning-banner")).toBeNull();
+      const feedback = screen.getByTestId("user-change-password-feedback");
+      expect(feedback.textContent).toContain("Mot de passe mis à jour avec succès.");
+      expect(useAuthSessionStore.getState().mustChangePassword).toBe(false);
+    });
+
+    // 5. Gate of « Survie au F5 »: unmount and re-render simulates page reload
+    unmount();
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={() => undefined}>
+          <div data-testid="protected-workspace-content">Contenu Espace Après Reload</div>
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    // Warning banner remains gone after F5 rehydration
+    expect(screen.queryByTestId("temporary-password-warning-banner")).toBeNull();
+    expect(screen.getByTestId("protected-workspace-content")).toBeDefined();
   });
 
   it("handles logout by clearing auth session and navigating to /login", async () => {

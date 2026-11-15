@@ -1,3 +1,11 @@
+import {
+  IAM_DIRECTORY_EN_LABELS,
+  IAM_DIRECTORY_FR_LABELS,
+  type IamDirectoryLabels,
+} from "./iam_accounts_directory_labels";
+
+export type { IamDirectoryLabels };
+
 export interface IamTabDictionarySection {
   readonly roles: Record<
     "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER",
@@ -8,44 +16,7 @@ export interface IamTabDictionarySection {
     "create" | "read" | "update" | "delete" | "execute" | "grant",
     string
   >;
-  readonly directory: {
-    readonly sectionTitle: string;
-    readonly sectionSubtitle: string;
-    readonly createAccountCta: string;
-    readonly openRoleMatrixCta: string;
-    readonly emptyText: string;
-    readonly humanBadge: string;
-    readonly servicePrincipalBadge: string;
-    readonly authLocalBootstrap: string;
-    readonly authFederated: string;
-    readonly authServiceToken: string;
-    readonly statusActive: string;
-    readonly statusInvited: string;
-    readonly statusDisabled: string;
-    readonly teamsPrefix: string;
-    readonly noTeamsAssigned: string;
-    readonly editButton: string;
-    readonly deleteButton: string;
-    readonly modalCreateTitle: string;
-    readonly modalEditTitle: string;
-    readonly modalDescription: string;
-    readonly kindLabel: string;
-    readonly kindHumanOption: string;
-    readonly kindServicePrincipalOption: string;
-    readonly displayNameLabel: string;
-    readonly displayNamePlaceholder: string;
-    readonly emailOrPrincipalLabel: string;
-    readonly emailPlaceholder: string;
-    readonly principalSpPlaceholder: string;
-    readonly statusLabel: string;
-    readonly rolesFieldsetLabel: string;
-    readonly rolesHelperText: string;
-    readonly teamsFieldsetLabel: string;
-    readonly noTeamsAvailableHint: string;
-    readonly cancelButton: string;
-    readonly saveCreateButton: string;
-    readonly saveEditButton: string;
-  };
+  readonly directory: IamDirectoryLabels;
   readonly matrix: {
     readonly sectionTitle: string;
     readonly sectionSubtitle: string;
@@ -127,48 +98,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     create: "Créer", read: "Consulter les ressources", update: "Modifier",
     delete: "Supprimer", execute: "Exécuter / Utiliser", grant: "Déléguer des droits",
   },
-  directory: {
-    sectionTitle: "1. Annuaire des Comptes & Attribution des Rôles",
-    sectionSubtitle:
-      "Gérez les comptes utilisateurs et les comptes techniques de service, leurs rôles officiels et leurs équipes de rattachement.",
-    createAccountCta: "+ Nouveau compte",
-    openRoleMatrixCta: "Voir la matrice des 6 rôles",
-    emptyText: "Aucun compte enregistré dans l'annuaire.",
-    humanBadge: "Utilisateur",
-    servicePrincipalBadge: "Compte technique",
-    authLocalBootstrap: "Compte initial local",
-    authFederated: "SSO d'entreprise",
-    authServiceToken: "Jeton de service",
-    statusActive: "Actif",
-    statusInvited: "Invité",
-    statusDisabled: "Désactivé",
-    teamsPrefix: "Équipes :",
-    noTeamsAssigned: "Aucune équipe rattachée",
-    editButton: "Modifier",
-    deleteButton: "Supprimer",
-    modalCreateTitle: "Créer ou inviter un compte",
-    modalEditTitle: "Modifier les rôles et équipes du compte",
-    modalDescription:
-      "Sélectionnez uniquement parmi les 6 rôles officiels de la plateforme. Au moins un Administrateur Plateforme actif est maintenu en permanence.",
-    kindLabel: "Nature du compte",
-    kindHumanOption: "Utilisateur humain",
-    kindServicePrincipalOption: "Compte technique de service",
-    displayNameLabel: "Nom complet ou libellé du service",
-    displayNamePlaceholder: "Ex. : Claire Martin, Connecteur Synchronisation...",
-    emailOrPrincipalLabel: "Adresse e-mail ou identifiant technique",
-    emailPlaceholder: "Ex. : prenom.nom",
-    principalSpPlaceholder: "Ex. : sp-connecteur-indexation",
-    statusLabel: "Statut du compte",
-    rolesFieldsetLabel: "Rôles officiels attribués (liste fermée)",
-    rolesHelperText:
-      "Un compte peut cumuler plusieurs rôles (ex. Administrateur Plateforme + Responsable Sécurité au démarrage, séparables ensuite).",
-    teamsFieldsetLabel: "Équipes de rattachement",
-    noTeamsAvailableHint:
-      "Aucune équipe n'a encore été créée dans l'onglet Organisation.",
-    cancelButton: "Annuler",
-    saveCreateButton: "+ Enregistrer le compte",
-    saveEditButton: "Enregistrer les modifications",
-  },
+  directory: IAM_DIRECTORY_FR_LABELS,
   matrix: {
     sectionTitle: "Matrice des 6 Rôles Officiels de la Plateforme",
     sectionSubtitle:
@@ -259,47 +189,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     create: "Create", read: "Read & view resources", update: "Update",
     delete: "Delete", execute: "Execute / Use", grant: "Delegate rights",
   },
-  directory: {
-    sectionTitle: "1. Accounts Directory & Role Assignment",
-    sectionSubtitle:
-      "Manage human user accounts and technical service accounts, their official roles, and team memberships.",
-    createAccountCta: "+ New account",
-    openRoleMatrixCta: "View 6-role matrix",
-    emptyText: "No account registered in the directory.",
-    humanBadge: "User",
-    servicePrincipalBadge: "Service account",
-    authLocalBootstrap: "Initial local account",
-    authFederated: "Enterprise SSO",
-    authServiceToken: "Service token",
-    statusActive: "Active",
-    statusInvited: "Invited",
-    statusDisabled: "Disabled",
-    teamsPrefix: "Teams:",
-    noTeamsAssigned: "No team assigned",
-    editButton: "Edit",
-    deleteButton: "Delete",
-    modalCreateTitle: "Create or invite an account",
-    modalEditTitle: "Edit account roles and teams",
-    modalDescription:
-      "Select strictly from the 6 official platform roles. At least one active Platform Administrator is enforced at all times.",
-    kindLabel: "Account type",
-    kindHumanOption: "Human user",
-    kindServicePrincipalOption: "Technical service account",
-    displayNameLabel: "Full name or service label",
-    displayNamePlaceholder: "e.g. Claire Martin, Sync Connector...",
-    emailOrPrincipalLabel: "Email address or service identifier",
-    emailPlaceholder: "e.g. firstname.lastname",
-    principalSpPlaceholder: "e.g. sp-indexing-worker",
-    statusLabel: "Account status",
-    rolesFieldsetLabel: "Assigned official roles (closed list)",
-    rolesHelperText:
-      "An account may hold multiple roles (e.g. Platform Administrator + Security Officer at initial setup, separable later).",
-    teamsFieldsetLabel: "Assigned teams",
-    noTeamsAvailableHint: "No team has been created yet in the Organization tab.",
-    cancelButton: "Cancel",
-    saveCreateButton: "+ Save account",
-    saveEditButton: "Save changes",
-  },
+  directory: IAM_DIRECTORY_EN_LABELS,
   matrix: {
     sectionTitle: "Platform 6 Official Roles Matrix",
     sectionSubtitle:

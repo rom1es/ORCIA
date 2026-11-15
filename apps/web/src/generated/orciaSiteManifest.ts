@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-15",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 105,
+    "uiPrimitivesCount": 106,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 36,
+    "alembicMigrationsCount": 37,
     "architectureDecisionsCount": 23,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 126,
+    "techLeadReportsCount": 128,
     "capabilitiesCount": 61,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -118,6 +118,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaTabBar",
     "OrciaTextarea",
     "OrciaTooltip",
+    "OrciaUserPillsSelect",
     "PackBuilderProcessesStudioView",
     "PermissionBrokerCard",
     "PermissionGuard",
@@ -202,7 +203,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261114_1706_temporary_password_and_local_iam_auth",
     "20261114_1801_story_18_1_workspace_sources_multi_nature_and_codegraph",
     "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events",
-    "20261115_1901_platform_auth_policy_and_email_otp"
+    "20261115_1901_platform_auth_policy_and_email_otp",
+    "20261115_1902_multi_lead_org_units_and_bu_no_members"
   ],
   "architectureDecisions": [
     {
@@ -477,6 +479,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse Auth & UX Mon Compte (CAP-001, CAP-063)",
+      "reportFile": "2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification-tech-lead-report.md",
+      "domain": "Correction Erreur Mot de Passe Actuel (ERR_AUTH_CURRENT_PASSWORD_INVALID, 422), Rejet SSO OIDC (422), Réhydratation Hash PG 18 & Masquage Complet du Formulaire Post-Succès (CAP-001, CAP-063)",
+      "summary": "Découpage de _error_catalog.py (237 l.) vers _auth_error_catalog.py (154 l.) et _auth_pg_helpers.py (317 l.) vers _auth_password_helpers.py (129 l.) ; propagation du hash Argon2id PG 18 dans hydrate_user_identity_from_pg ; levée stricte de InvalidCurrentPasswordError (HTTP 422 sans mention OIDC/email) et LocalPasswordChangeForbiddenForSsoError (HTTP 422) ; repli cookie refresh si miss RAM ; utilisation de <OrciaAlertBanner /> et masquage complet du formulaire et du badge dans UserPasswordChangeCard.tsx dès succès ; 11 tests unitaires Python dédiés, tests Vitest et intégration PostgreSQL 18."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Évolution Transverse IAM & Org (CAP-050, CAP-051)",
+      "reportFile": "2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu-tech-lead-report.md",
+      "domain": "Épuration de l'Annuaire IAM (Équipes et BUs en Texte Foncé, Suppression Badges Redondants, Bouton Mot de Passe Conditionné par Mode Auth), Co-Responsables Multi-Leads BU (lead_user_ids_jsonb), Interdiction Membres Directs BU (422 ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN) & Synchronisation Bidirectionnelle Transactionnelle B1 Strict Auto-Nettoyante",
+      "summary": "Migration réversible 20261115_1902, domaine pur orcia_core/permissions (support lead_user_ids, garde domaine assert_bu_has_no_members, roll-up multi-BU dans MatrixPermissionEvaluator), adaptateurs SQL PG18 et sync B1 sql_org_iam_role_sync.py, endpoints FastAPI /api/v1/settings/org-units et /api/v1/settings/iam/accounts, SDK OpenAPI 3.1 régénéré 0-diff, sélection multi-leads dans @orcia/ui et réconciliation instantanée des rôles."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Correctif & UX IAM/SecOps/BU (CAP-050, CAP-051, CAP-058)",

@@ -3,6 +3,8 @@ import {
   OrciaButton,
   OrciaDialog,
   OrciaKnownUserCombobox,
+  OrciaUserPillsSelect,
+  resolvePendingKnownUserId,
   StatusBadge,
   type KnownUserOption,
 } from "@orcia/ui";
@@ -25,7 +27,11 @@ export interface ManageOrgUnitMembersModalProps {
   readonly isSubmitting: boolean;
   readonly onSave: (
     orgUnitId: string,
-    values: { readonly leadUserId: string | null; readonly memberUserIds: readonly string[] },
+    values: {
+      readonly leadUserId: string | null;
+      readonly leadUserIds?: readonly string[];
+      readonly memberUserIds: readonly string[];
+    },
   ) => void;
 }
 
@@ -42,7 +48,8 @@ export function ManageOrgUnitMembersModal({
   onSave,
 }: ManageOrgUnitMembersModalProps): React.ReactElement {
   const usersSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
-  const [leadUserId, setLeadUserId] = useState("");
+  const [leadUserIds, setLeadUserIds] = useState<readonly string[]>([]);
+  const [leadDraft, setLeadDraft] = useState("");
   const [memberUserIds, setMemberUserIds] = useState<readonly string[]>([]);
   const [newMemberDraft, setNewMemberDraft] = useState("");
   const [leadValidationError, setLeadValidationError] = useState<string | null>(null);
@@ -52,8 +59,12 @@ export function ManageOrgUnitMembersModal({
 
   useEffect(() => {
     if (unit && open) {
-      setLeadUserId(unit.leadUserId ?? "");
-      setMemberUserIds(unit.memberUserIds ?? []);
+      const initialLeads = Array.isArray(unit.leadUserIds) && unit.leadUserIds.length > 0
+        ? unit.leadUserIds
+        : (unit.leadUserId ? [unit.leadUserId] : []);
+      setLeadUserIds(initialLeads);
+      setLeadDraft("");
+      setMemberUserIds(unit.level === "BU" ? [] : (unit.memberUserIds ?? []));
       setNewMemberDraft("");
       setLeadValidationError(null);
       setMemberValidationError(null);
@@ -87,14 +98,18 @@ export function ManageOrgUnitMembersModal({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!unit || !canMutate || isSubmitting) return;
-    const trimmedLead = leadUserId.trim();
-    if (trimmedLead && !isKnownUserIdentifier(trimmedLead, allAvailableUsers)) {
+    const pendingLead = resolvePendingKnownUserId(leadDraft, allAvailableUsers);
+    const finalLeads = pendingLead && !leadUserIds.some((id) => id.toLowerCase() === pendingLead.toLowerCase())
+      ? [...leadUserIds, pendingLead]
+      : leadUserIds;
+    const invalidLead = finalLeads.find((lid) => !isKnownUserIdentifier(lid, allAvailableUsers));
+    if (invalidLead) {
       setLeadValidationError(defaultUnknownError);
       return;
     }
     const pending = newMemberDraft.trim();
-    const finalMembers = [...memberUserIds];
-    if (pending) {
+    const finalMembers = unit.level === "BU" ? [] : [...memberUserIds];
+    if (pending && unit.level !== "BU") {
       if (!isKnownUserIdentifier(pending, allAvailableUsers)) {
         setMemberValidationError(defaultUnknownError);
         return;
@@ -107,13 +122,9 @@ export function ManageOrgUnitMembersModal({
       const canon = res ? res.principalId : pending;
       if (!finalMembers.includes(canon)) finalMembers.push(canon);
     }
-    const resLead = allAvailableUsers.find(
-      (u) =>
-        u.principalId.toLowerCase() === trimmedLead.toLowerCase() ||
-        (u.email && u.email.toLowerCase() === trimmedLead.toLowerCase()),
-    );
     onSave(unit.id, {
-      leadUserId: resLead ? resLead.principalId : trimmedLead || null,
+      leadUserId: finalLeads[0] ?? null,
+      leadUserIds: finalLeads,
       memberUserIds: finalMembers,
     });
   };
@@ -150,38 +161,21 @@ export function ManageOrgUnitMembersModal({
           ) : null}
 
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label htmlFor="org-unit-members-lead-input" className="orcia-ds-label">
-              {labels.leadLabel}
-            </label>
+            <label htmlFor="org-unit-members-lead-input" className="orcia-ds-label">{labels.leadLabel}</label>
             <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
               {unit?.level === "BU" ? labels.leadBuHint : labels.leadTeamHint}
             </span>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <OrciaKnownUserCombobox
-                inputId="org-unit-members-lead-input"
-                inputTestId="org-unit-members-lead-input"
-                disabled={!canMutate || isSubmitting}
-                value={leadUserId}
-                onChange={(val) => { setLeadUserId(val); setLeadValidationError(null); }}
-                onSearchQueryChange={usersSearch.onSearchQueryChange}
-                knownUsers={usersSearch.knownUsers}
-                maxDisplayedItems={10}
-                hasMoreMatches={usersSearch.hasMore}
-                truncatedHint={labels.memberTruncatedHint}
-                placeholder={labels.leadPlaceholder}
-                style={{ flex: 1 }}
-              />
-              {leadUserId.trim().length > 0 ? (
-                <OrciaButton
-                  variant="secondary"
-                  testId="org-unit-clear-lead-btn"
-                  disabled={!canMutate || isSubmitting}
-                  onClick={() => { setLeadUserId(""); setLeadValidationError(null); }}
-                >
-                  {labels.clearLeadButton}
-                </OrciaButton>
-              ) : null}
-            </div>
+            <OrciaUserPillsSelect
+              inputId="org-unit-members-lead-input"
+              inputTestId="org-unit-members-lead-input"
+              disabled={!canMutate || isSubmitting}
+              selectedUserIds={leadUserIds}
+              onChange={setLeadUserIds}
+              draftQuery={leadDraft}
+              onDraftQueryChange={(val) => { setLeadDraft(val); setLeadValidationError(null); }}
+              knownUsers={usersSearch.knownUsers}
+              placeholder={labels.leadPlaceholder}
+            />
             {leadValidationError ? (
               <div data-testid="org-unit-unknown-user-error" style={{ fontSize: "12px", color: "var(--color-status-error)" }}>
                 {leadValidationError}
@@ -189,78 +183,70 @@ export function ManageOrgUnitMembersModal({
             ) : null}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label htmlFor="org-unit-add-member-input" className="orcia-ds-label">
-              {labels.addMemberLabel}
-            </label>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <OrciaKnownUserCombobox
-                inputId="org-unit-add-member-input"
-                inputTestId="org-unit-add-member-input"
-                disabled={!canMutate || isSubmitting}
-                value={newMemberDraft}
-                onChange={(val) => { setNewMemberDraft(val); setMemberValidationError(null); }}
-                onSearchQueryChange={usersSearch.onSearchQueryChange}
-                knownUsers={usersSearch.knownUsers}
-                excludedPrincipalIds={memberUserIds}
-                maxDisplayedItems={10}
-                hasMoreMatches={usersSearch.hasMore}
-                truncatedHint={labels.memberTruncatedHint}
-                placeholder={labels.addMemberPlaceholder}
-                style={{ flex: 1 }}
-              />
-              <OrciaButton
-                variant="secondary"
-                testId="org-unit-add-member-btn"
-                disabled={!canMutate || !newMemberDraft.trim() || isSubmitting}
-                onClick={handleAddMember}
-              >
-                {labels.addMemberButton}
-              </OrciaButton>
-              <OrciaButton
-                variant="secondary"
-                testId="org-unit-new-member-btn"
-                disabled={!canMutate || isSubmitting}
-                onClick={() => setInlineCreateOpen(true)}
-              >
-                {labels.newMemberButtonLabel || "+ Nouveau membre"}
-              </OrciaButton>
-            </div>
-            {memberValidationError ? (
-              <div data-testid="org-unit-unknown-user-error" style={{ fontSize: "12px", color: "var(--color-status-error)" }}>
-                {memberValidationError}
-              </div>
-            ) : null}
-          </div>
-
-          <div data-testid="org-unit-members-list" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span className="orcia-ds-label">{`${labels.membersListTitle} (${memberUserIds.length})`}</span>
-            {memberUserIds.length === 0 ? (
-              <p data-testid="org-unit-members-empty" style={{ margin: 0, fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-                {labels.emptyMembersText}
-              </p>
-            ) : (
-              memberUserIds.map((mId) => {
-                const u = allAvailableUsers.find(
-                  (x) => x.principalId.toLowerCase() === mId.toLowerCase() || (x.email && x.email.toLowerCase() === mId.toLowerCase()),
-                );
-                const txt = u && u.displayName && u.displayName !== mId ? `${u.displayName} (${mId})` : mId;
-                return (
-                  <div key={mId} data-testid={`org-unit-member-item-${mId}`} className="orcia-ds-row" style={{ justifyContent: "space-between" }}>
-                    <StatusBadge label={txt} tone="cobalt" />
-                    <OrciaButton
-                      variant="danger"
-                      testId={`org-unit-remove-member-btn-${mId}`}
-                      disabled={!canMutate || isSubmitting}
-                      onClick={() => setMemberUserIds(memberUserIds.filter((m) => m !== mId))}
-                    >
-                      {labels.removeMemberButton}
-                    </OrciaButton>
+          {unit?.level !== "BU" ? (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label htmlFor="org-unit-add-member-input" className="orcia-ds-label">{labels.addMemberLabel}</label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <OrciaKnownUserCombobox
+                    inputId="org-unit-add-member-input"
+                    inputTestId="org-unit-add-member-input"
+                    disabled={!canMutate || isSubmitting}
+                    value={newMemberDraft}
+                    onChange={(val) => { setNewMemberDraft(val); setMemberValidationError(null); }}
+                    onSearchQueryChange={usersSearch.onSearchQueryChange}
+                    knownUsers={usersSearch.knownUsers}
+                    excludedPrincipalIds={memberUserIds}
+                    maxDisplayedItems={10}
+                    hasMoreMatches={usersSearch.hasMore}
+                    truncatedHint={labels.memberTruncatedHint}
+                    placeholder={labels.addMemberPlaceholder}
+                    style={{ flex: 1 }}
+                  />
+                  <OrciaButton variant="secondary" testId="org-unit-add-member-btn" disabled={!canMutate || !newMemberDraft.trim() || isSubmitting} onClick={handleAddMember}>
+                    {labels.addMemberButton}
+                  </OrciaButton>
+                  <OrciaButton variant="secondary" testId="org-unit-new-member-btn" disabled={!canMutate || isSubmitting} onClick={() => setInlineCreateOpen(true)}>
+                    {labels.newMemberButtonLabel || "+ Nouveau membre"}
+                  </OrciaButton>
+                </div>
+                {memberValidationError ? (
+                  <div data-testid="org-unit-unknown-user-error" style={{ fontSize: "12px", color: "var(--color-status-error)" }}>
+                    {memberValidationError}
                   </div>
-                );
-              })
-            )}
-          </div>
+                ) : null}
+              </div>
+
+              <div data-testid="org-unit-members-list" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span className="orcia-ds-label">{`${labels.membersListTitle} (${memberUserIds.length})`}</span>
+                {memberUserIds.length === 0 ? (
+                  <p data-testid="org-unit-members-empty" style={{ margin: 0, fontSize: "12px", color: "var(--color-muted-foreground)" }}>
+                    {labels.emptyMembersText}
+                  </p>
+                ) : (
+                  memberUserIds.map((mId) => {
+                    const u = allAvailableUsers.find(
+                      (x) => x.principalId.toLowerCase() === mId.toLowerCase() || (x.email && x.email.toLowerCase() === mId.toLowerCase()),
+                    );
+                    const txt = u && u.displayName && u.displayName !== mId ? `${u.displayName} (${mId})` : mId;
+                    return (
+                      <div key={mId} data-testid={`org-unit-member-item-${mId}`} className="orcia-ds-row" style={{ justifyContent: "space-between" }}>
+                        <StatusBadge label={txt} tone="cobalt" />
+                        <OrciaButton
+                          variant="danger"
+                          testId={`org-unit-remove-member-btn-${mId}`}
+                          disabled={!canMutate || isSubmitting}
+                          onClick={() => setMemberUserIds(memberUserIds.filter((m) => m !== mId))}
+                        >
+                          {labels.removeMemberButton}
+                        </OrciaButton>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          ) : null}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
             <OrciaButton variant="secondary" testId="cancel-org-unit-members-btn" onClick={() => onOpenChange(false)}>

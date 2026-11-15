@@ -7,6 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
+from orcia_api.routers._auth_pg_helpers import sync_auth_service_user_by_email_from_pg
 from orcia_api.routers._org_units_helpers import (
     classify_and_handle_pg_error,
     create_in_evaluator,
@@ -154,6 +155,7 @@ async def create_org_unit(
                 parent_id=payload.parent_id,
                 billing_enabled=payload.billing_enabled,
                 lead_user_id=payload.lead_user_id,
+                lead_user_ids=payload.lead_user_ids,
                 member_user_ids=payload.member_user_ids,
             )
             svc.evaluator.upsert_org_unit(
@@ -165,9 +167,12 @@ async def create_org_unit(
                     parent_id=created.parent_id,
                     billing_enabled=created.billing_enabled,
                     lead_user_id=created.lead_user_id,
+                    lead_user_ids=created.lead_user_ids,
                     member_user_ids=created.member_user_ids,
                 )
             )
+            for uid in created.lead_user_ids:
+                await sync_auth_service_user_by_email_from_pg(request, svc, uid)
         except OrciaDomainError:
             raise
         except Exception as exc:
@@ -214,6 +219,8 @@ async def patch_org_unit(
                 billing_enabled=payload.billing_enabled,
                 lead_user_id=payload.lead_user_id,
                 lead_user_id_provided="lead_user_id" in payload.model_fields_set,
+                lead_user_ids=payload.lead_user_ids,
+                lead_user_ids_provided="lead_user_ids" in payload.model_fields_set,
                 member_user_ids=payload.member_user_ids,
             )
             svc.evaluator.upsert_org_unit(
@@ -225,9 +232,12 @@ async def patch_org_unit(
                     parent_id=updated.parent_id,
                     billing_enabled=updated.billing_enabled,
                     lead_user_id=updated.lead_user_id,
+                    lead_user_ids=updated.lead_user_ids,
                     member_user_ids=updated.member_user_ids,
                 )
             )
+            for uid in updated.lead_user_ids:
+                await sync_auth_service_user_by_email_from_pg(request, svc, uid)
         except OrciaDomainError:
             raise
         except Exception as exc:
@@ -275,11 +285,15 @@ async def delete_org_unit(
     enforce_org_unit_mutation_access(request, persona_key)
     svc = get_auth_service(request)
     deleted_id: str | None = None
+    old_node = svc.evaluator.get_org_unit(org_unit_id)
+    old_leads = list(old_node.lead_user_ids) if old_node else []
     if pg_sync_enabled():
         try:
             engine = get_or_create_shared_db_engine(request)
             deleted_id = await delete_org_unit_on_postgres18(engine, org_unit_id=org_unit_id)
             svc.evaluator.remove_org_unit_node(deleted_id)
+            for uid in old_leads:
+                await sync_auth_service_user_by_email_from_pg(request, svc, uid)
         except OrciaDomainError:
             raise
         except Exception as exc:

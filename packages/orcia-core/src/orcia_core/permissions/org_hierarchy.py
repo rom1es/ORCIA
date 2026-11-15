@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from orcia_core.permissions.errors import (
+    OrgUnitBuMembersForbiddenError,
     OrgUnitDuplicateSlugError,
     OrgUnitHierarchyCycleError,
     OrgUnitInvalidParentKindError,
@@ -23,7 +24,8 @@ from orcia_core.permissions.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
 )
-from orcia_core.permissions.models import OrgUnitNode
+from orcia_core.permissions.models import OrgUnitNode, normalize_lead_user_ids
+from orcia_core.permissions.org_topology import sort_org_unit_dicts_topologically
 from orcia_kernel.ids import new_uuid7_str
 
 OrgUnitKind = Literal["BU", "TEAM"]
@@ -54,6 +56,20 @@ class OrgUnitSummary:
     member_user_ids: tuple[str, ...] = ()
     attached_workspaces_count: int = 0
     attached_workspaces: tuple[AttachedWorkspaceRef, ...] = ()
+    lead_user_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        leads, primary = normalize_lead_user_ids(self.lead_user_ids, self.lead_user_id)
+        object.__setattr__(self, "lead_user_ids", leads)
+        object.__setattr__(self, "lead_user_id", primary)
+
+
+def assert_bu_has_no_members(kind_or_type: str, member_user_ids: Sequence[str] | None) -> None:
+    """Reject non-empty members on BU units (`ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN`)."""
+    if str(kind_or_type).upper() in ("BU", "TRIBE") and member_user_ids:
+        cleaned = [m for m in member_user_ids if str(m).strip()]
+        if cleaned:
+            raise OrgUnitBuMembersForbiddenError()
 
 
 def normalize_org_unit_slug(raw_slug: str | None, fallback_name: str) -> str:
@@ -223,52 +239,6 @@ def sort_org_unit_summaries_dfs(items: Sequence[OrgUnitSummary]) -> list[OrgUnit
     return ordered
 
 
-def sort_org_unit_dicts_topologically(
-    raw_units: Sequence[Mapping[str, object]],
-) -> list[dict[str, object]]:
-    """Sort setup `org_units` dicts topologically so every parent precedes its children."""
-    items = [dict(u) for u in raw_units]
-    by_ref: dict[str, int] = {}
-    for idx, item in enumerate(items):
-        uid = str(item.get("id") or "").strip()
-        uslug = str(item.get("slug") or "").strip()
-        if uid:
-            by_ref[uid] = idx
-        if uslug and uslug not in by_ref:
-            by_ref[uslug] = idx
-
-    emitted: set[int] = set()
-    visiting: set[int] = set()
-    ordered: list[dict[str, object]] = []
-
-    def _emit(idx: int) -> None:
-        if idx in emitted or idx in visiting:
-            return
-        visiting.add(idx)
-        parent_ref = str(items[idx].get("parentId") or items[idx].get("parent_id") or "").strip()
-        if parent_ref and parent_ref != "scope-global" and parent_ref in by_ref:
-            parent_idx = by_ref[parent_ref]
-            if parent_idx != idx:
-                _emit(parent_idx)
-        visiting.discard(idx)
-        emitted.add(idx)
-        ordered.append(items[idx])
-
-    # Visit BUs first so root/sub-BUs precede teams deterministically
-    sorted_indices = sorted(
-        range(len(items)),
-        key=lambda i: (
-            0
-            if str(items[i].get("level") or items[i].get("unit_type") or "BU").upper() == "BU"
-            else 1,
-            i,
-        ),
-    )
-    for idx in sorted_indices:
-        _emit(idx)
-    return ordered
-
-
 def generate_new_org_unit_id() -> str:
     """Return a fresh canonical `UUIDv7` string for a newly created `OrgUnit`."""
     return new_uuid7_str()
@@ -293,6 +263,7 @@ def build_org_unit_summary(
         member_user_ids=node.member_user_ids,
         attached_workspaces_count=attached_workspaces_count,
         attached_workspaces=tuple(attached_workspaces),
+        lead_user_ids=node.lead_user_ids,
     )
 
 
@@ -349,3 +320,19 @@ def list_evaluator_org_unit_summaries(
         if node.unit_type != "ENTERPRISE"
     ]
     return sort_org_unit_summaries_dfs(summaries)
+
+
+__all__ = [
+    "AttachedWorkspaceRef",
+    "OrgUnitKind",
+    "OrgUnitSummary",
+    "assert_bu_has_no_members",
+    "assert_unique_org_unit_slug",
+    "build_org_unit_summary",
+    "list_evaluator_org_unit_summaries",
+    "normalize_member_user_ids",
+    "normalize_org_unit_slug",
+    "sort_org_unit_dicts_topologically",
+    "sort_org_unit_summaries_dfs",
+    "validate_org_unit_hierarchy",
+]

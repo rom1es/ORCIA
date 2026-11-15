@@ -27,12 +27,13 @@ from orcia_core.permissions.role_matrix import (
 from orcia_kernel.ids import new_uuid7_str
 
 IamAccountKind = Literal["HUMAN", "SERVICE_PRINCIPAL"]
-IamAuthSource = Literal["LOCAL_BOOTSTRAP", "OIDC_FEDERATED", "SERVICE_TOKEN"]
+IamAuthSource = Literal["LOCAL_BOOTSTRAP", "LOCAL_PASSWORD", "OIDC_FEDERATED", "SERVICE_TOKEN"]
 IamAccountStatus = Literal["ACTIVE", "INVITED", "DISABLED"]
 
 VALID_ACCOUNT_KINDS: tuple[IamAccountKind, ...] = ("HUMAN", "SERVICE_PRINCIPAL")
 VALID_AUTH_SOURCES: tuple[IamAuthSource, ...] = (
     "LOCAL_BOOTSTRAP",
+    "LOCAL_PASSWORD",
     "OIDC_FEDERATED",
     "SERVICE_TOKEN",
 )
@@ -55,6 +56,8 @@ class IamAccountRecord:
     status: IamAccountStatus = "ACTIVE"
     created_at_iso: str = ""
     updated_at_iso: str = ""
+    led_bu_ids: tuple[str, ...] = ()
+    led_team_ids: tuple[str, ...] = ()
 
 
 def validate_iam_roles(
@@ -225,6 +228,8 @@ class IamAccountsGovernanceService:
         roles: Sequence[str],
         team_ids: Sequence[str] | None = None,
         status: IamAccountStatus = "ACTIVE",
+        led_bu_ids: Sequence[str] | None = None,
+        led_team_ids: Sequence[str] | None = None,
         instance: str | None = None,
     ) -> IamAccountRecord:
         cleaned_name = display_name.strip()
@@ -261,6 +266,8 @@ class IamAccountsGovernanceService:
             status=status,
             created_at_iso=ts,
             updated_at_iso=ts,
+            led_bu_ids=tuple(str(x).strip() for x in (led_bu_ids or ()) if str(x).strip()),
+            led_team_ids=tuple(str(x).strip() for x in (led_team_ids or ()) if str(x).strip()),
         )
         self._accounts[created.id] = created
         return created
@@ -275,6 +282,8 @@ class IamAccountsGovernanceService:
         roles: Sequence[str] | None = None,
         team_ids: Sequence[str] | None = None,
         status: IamAccountStatus | None = None,
+        led_bu_ids: Sequence[str] | None = None,
+        led_team_ids: Sequence[str] | None = None,
         instance: str | None = None,
     ) -> IamAccountRecord:
         target = self._accounts.get(account_id)
@@ -297,6 +306,16 @@ class IamAccountsGovernanceService:
         )
         next_teams = normalize_team_ids(team_ids) if team_ids is not None else target.team_ids
         next_status = status if status is not None else target.status
+        next_led_bu = (
+            tuple(str(x).strip() for x in led_bu_ids if str(x).strip())
+            if led_bu_ids is not None
+            else target.led_bu_ids
+        )
+        next_led_teams = (
+            tuple(str(x).strip() for x in led_team_ids if str(x).strip())
+            if led_team_ids is not None
+            else target.led_team_ids
+        )
 
         mutated = replace(
             target,
@@ -305,6 +324,8 @@ class IamAccountsGovernanceService:
             roles=next_roles,
             team_ids=next_teams,
             status=next_status,
+            led_bu_ids=next_led_bu,
+            led_team_ids=next_led_teams,
             updated_at_iso=now_utc_iso(),
         )
         assert_anti_lockout_on_accounts(

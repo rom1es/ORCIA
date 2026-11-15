@@ -7,9 +7,9 @@ import os
 from fastapi import APIRouter, Query, Request, Response
 
 from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
+from orcia_api.routers._auth_password_helpers import execute_change_password
 from orcia_api.routers._auth_pg_helpers import (
     REFRESH_COOKIE_NAME,
-    execute_change_password,
     hydrate_user_identity_from_pg,
     rehydrate_user_from_pg_by_id,
     serialize_workspace_summary,

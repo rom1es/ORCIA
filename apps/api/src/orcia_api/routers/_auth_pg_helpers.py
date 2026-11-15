@@ -19,7 +19,6 @@ from orcia_core.bootstrap import (
     LocalAuthCandidate,
     load_auth_candidate_by_id_from_postgres18,
     load_local_auth_candidate_from_postgres18,
-    update_user_password_on_postgres18,
 )
 from orcia_core.observability.logging import get_logger
 from orcia_core.permissions import (
@@ -28,13 +27,10 @@ from orcia_core.permissions import (
     SessionTokenPair,
     UserIdentity,
     WorkspaceAccessSummary,
-    validate_password_policy,
 )
 from orcia_core.permissions.errors import (
-    AuthenticationRequiredError,
     InvalidCredentialsError,
     OrciaDomainError,
-    PasswordUnchangedError,
     ResourceNotFoundError,
 )
 
@@ -258,6 +254,8 @@ async def hydrate_user_identity_from_pg(
                 roles=candidate.roles,
                 must_change_password=candidate.must_change_password,
                 is_active=candidate.is_active,
+                password_hash_argon2id=candidate.password_hash_argon2id
+                or user.password_hash_argon2id,
             )
             if svc is not None:
                 svc.register_user(hydrated)
@@ -281,70 +279,18 @@ async def execute_change_password(
     svc: AuthAndOrganizationService,
     engine: AsyncEngine | None,
 ) -> ChangePasswordResponse:
-    """Validate and apply password change on PostgreSQL 18 and active memory session."""
-    raw_auth = request.headers.get("Authorization")
-    raw_refresh = request.cookies.get(REFRESH_COOKIE_NAME) or request.headers.get("X-Refresh-Token")
-
-    user: UserIdentity | None = None
-    if raw_auth:
-        raw_token = raw_auth.removeprefix("Bearer ").removeprefix("bearer ").strip()
-        try:
-            user = svc.authenticate_access_token(raw_token)
-        except Exception as exc:
-            logger.warning("auth_bearer_token_decode_failed", error_type=type(exc).__name__)
-            user = None
-
-    if user is None and raw_refresh:
-        try:
-            claims = svc.verify_refresh_token_claims(raw_refresh)
-            user = svc.get_user_by_id(claims.sub)
-        except Exception as exc:
-            logger.warning("auth_refresh_token_decode_failed", error_type=type(exc).__name__)
-            user = None
-
-    if user is None:
-        raise AuthenticationRequiredError(instance=str(request.url.path))
-
-    # Rehydrate user to get current password hash from PG if available
-    user = await hydrate_user_identity_from_pg(engine, user)
-
-    # Verify current password
-    if user.password_hash_argon2id:
-        current_valid = await asyncio.to_thread(
-            svc.hasher.verify_password,
-            user.password_hash_argon2id,
-            current_password,
-        )
-        if not current_valid:
-            raise InvalidCredentialsError(instance=str(request.url.path))
-
-    if new_password == current_password:
-        raise PasswordUnchangedError(instance=str(request.url.path))
-
-    validate_password_policy(new_password, instance=str(request.url.path))
-
-    new_hash = await asyncio.to_thread(svc.hasher.hash_password, new_password)
-
-    if engine is not None:
-        async with engine.begin() as conn:
-            await update_user_password_on_postgres18(
-                conn,
-                email=user.email,
-                new_password_hash_argon2id=new_hash,
-            )
-
-    updated_user = replace(
-        user,
-        password_hash_argon2id=new_hash,
-        must_change_password=False,
+    """Validate and apply password change (delegated to _auth_password_helpers)."""
+    from orcia_api.routers._auth_password_helpers import (
+        execute_change_password as _execute_impl,
     )
-    svc.register_user(updated_user)
 
-    return ChangePasswordResponse(
-        success=True,
-        email=user.email,
-        must_change_password=False,
+    return await _execute_impl(
+        request=request,
+        current_password=current_password,
+        new_password=new_password,
         trace_id=trace_id,
+        svc=svc,
+        engine=engine,
     )
 
 
@@ -375,3 +321,18 @@ def serialize_workspace_summary(item: WorkspaceAccessSummary) -> WorkspaceSummar
             for ds in ws.datasources
         ],
     )
+
+
+__all__ = [
+    "REFRESH_COOKIE_NAME",
+    "authenticate_via_postgres18",
+    "execute_change_password",
+    "hydrate_user_identity_from_pg",
+    "rehydrate_bearer_subject_from_pg_if_missing",
+    "rehydrate_user_from_pg_by_id",
+    "resolve_app_db_engine",
+    "serialize_workspace_summary",
+    "set_auth_refresh_cookie",
+    "sync_auth_service_user_by_email_from_pg",
+    "user_identity_from_candidate",
+]

@@ -159,6 +159,8 @@ export function UserSettingsModalTabs({
           accountProfile={accountProfile}
           mustChangePassword={mustChangePassword}
           onChangePassword={onChangePassword}
+          labels={labels}
+          passwordSecurity={labels?.passwordSecurity}
         />
       )}
 

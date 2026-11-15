@@ -24,7 +24,7 @@ def test_schemathesis_openapi_contract_compliance(
     """Fuzz all registered OpenAPI 3.1 operations via Schemathesis ASGI runner."""
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
-    schema = schemathesis.openapi.from_asgi("/openapi.json", app)
+    schema = schemathesis.openapi.from_dict(app.openapi())
 
     for op_result in schema.get_all_operations():
         operation = op_result.ok()
@@ -33,7 +33,7 @@ def test_schemathesis_openapi_contract_compliance(
         @given(case=operation.as_strategy())
         @settings(max_examples=5, deadline=None)
         def _check_operation(case: schemathesis.Case) -> None:
-            response = case.call()
+            response = case.call(app=app)
             assert response.status_code < 500
             case.validate_response(
                 response,

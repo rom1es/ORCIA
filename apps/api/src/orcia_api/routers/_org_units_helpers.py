@@ -25,6 +25,7 @@ from orcia_core.permissions import (
     OrgUnitKind,
     OrgUnitNode,
     OrgUnitSummary,
+    assert_bu_has_no_members,
     assert_org_unit_deletable,
     assert_unique_org_unit_slug,
     build_org_unit_summary,
@@ -75,6 +76,7 @@ def serialize_org_unit_summary(summary: OrgUnitSummary) -> OrgUnitResponse:
             AttachedWorkspaceRefResponse(id=ws.id, slug=ws.slug, name=ws.name)
             for ws in summary.attached_workspaces
         ],
+        lead_user_ids=list(summary.lead_user_ids),
     )
 
 
@@ -113,6 +115,7 @@ def sync_evaluator_from_summaries(
             parent_id=s.parent_id,
             billing_enabled=s.billing_enabled,
             lead_user_id=s.lead_user_id,
+            lead_user_ids=s.lead_user_ids,
             member_user_ids=s.member_user_ids,
         )
         for s in summaries
@@ -243,6 +246,7 @@ def create_in_evaluator(
         parent_id=payload.parent_id,
         units_by_id=units_by_id,
     )
+    assert_bu_has_no_members(payload.kind, payload.member_user_ids)
     effective_lead = resolved_lead or (
         (payload.lead_user_id or "").strip() if payload.lead_user_id else None
     )
@@ -250,6 +254,11 @@ def create_in_evaluator(
         resolved_members
         if resolved_members is not None
         else normalize_member_user_ids(payload.member_user_ids)
+    )
+    effective_leads = (
+        tuple(str(x).strip() for x in payload.lead_user_ids if str(x).strip())
+        if payload.lead_user_ids is not None
+        else tuple([effective_lead] if effective_lead else [])
     )
     node = OrgUnitNode(
         id=generate_new_org_unit_id(),
@@ -259,6 +268,7 @@ def create_in_evaluator(
         parent_id=resolved_parent,
         billing_enabled=payload.billing_enabled,
         lead_user_id=effective_lead,
+        lead_user_ids=effective_leads,
         member_user_ids=effective_members,
     )
     evaluator.upsert_org_unit(node)
@@ -314,13 +324,23 @@ def update_in_evaluator(
         if "lead_user_id" in payload.model_fields_set
         else target.lead_user_id
     )
-    next_members = (
-        resolved_members
-        if resolved_members is not None
-        else normalize_member_user_ids(payload.member_user_ids)
-        if payload.member_user_ids is not None
-        else target.member_user_ids
-    )
+    if payload.member_user_ids is not None:
+        assert_bu_has_no_members(target_kind, payload.member_user_ids)
+        next_members = (
+            resolved_members
+            if resolved_members is not None
+            else normalize_member_user_ids(payload.member_user_ids)
+        )
+    else:
+        next_members = target.member_user_ids
+
+    if payload.lead_user_ids is not None:
+        next_leads = tuple(str(x).strip() for x in payload.lead_user_ids if str(x).strip())
+    elif "lead_user_id" in payload.model_fields_set:
+        next_leads = tuple([next_lead] if next_lead else [])
+    else:
+        next_leads = target.lead_user_ids
+
     updated = OrgUnitNode(
         id=target.id,
         slug=target.slug,
@@ -329,6 +349,7 @@ def update_in_evaluator(
         parent_id=next_parent,
         billing_enabled=next_billing,
         lead_user_id=next_lead,
+        lead_user_ids=next_leads,
         member_user_ids=next_members,
     )
     evaluator.upsert_org_unit(updated)

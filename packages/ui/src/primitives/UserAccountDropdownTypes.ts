@@ -30,6 +30,24 @@ export interface UiPersonalMcpTokenItem {
   readonly revoked: boolean;
 }
 
+export interface UserPasswordSecurityLabels {
+  readonly title: string;
+  readonly renewalRequiredBadge: string;
+  readonly temporaryPasswordWarning: string;
+  readonly currentPasswordLabel: string;
+  readonly newPasswordLabel: string;
+  readonly confirmPasswordLabel: string;
+  readonly submitButtonLabel: string;
+  readonly submittingButtonLabel: string;
+  readonly updatedSuccessMessage: string;
+  readonly missingCurrentPasswordError: string;
+  readonly weakPasswordError: string;
+  readonly unchangedPasswordError: string;
+  readonly mismatchPasswordError: string;
+  readonly actionNotConfiguredError: string;
+  readonly genericError: string;
+}
+
 export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabels {
   readonly triggerAriaLabel: string;
   readonly dropdownWidthNote: string;
@@ -51,6 +69,7 @@ export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabe
   readonly targetWholeSpaceLabel: string;
   readonly targetSingleAgentLabel: string;
   readonly ideJsonReadyTitle: string;
+  readonly passwordSecurity?: UserPasswordSecurityLabels;
 }
 
 export interface UserAccountPreferencesPatch {

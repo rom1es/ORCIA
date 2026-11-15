@@ -2,8 +2,9 @@ import {
   OrciaAlertBanner,
   OrciaButton,
   OrciaDialog,
-  OrciaKnownUserCombobox,
   OrciaSearchableSelect,
+  OrciaUserPillsSelect,
+  resolvePendingKnownUserId,
   type KnownUserOption,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
@@ -21,6 +22,7 @@ export interface CreateOrgUnitFormValues {
   readonly parentId: string;
   readonly billingEnabled: boolean;
   readonly leadUserId: string;
+  readonly leadUserIds?: readonly string[];
 }
 
 export interface CreateOrgUnitModalProps {
@@ -62,13 +64,13 @@ export function CreateOrgUnitModal({
   });
 
   const leadSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
-
   const [kind, setKind] = useState<"BU" | "TEAM">("BU");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [parentId, setParentId] = useState("scope-global");
   const [billingEnabled, setBillingEnabled] = useState(true);
-  const [leadUserId, setLeadUserId] = useState("");
+  const [leadUserIds, setLeadUserIds] = useState<readonly string[]>([]);
+  const [leadDraft, setLeadDraft] = useState("");
   const [leadValidationError, setLeadValidationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +80,8 @@ export function CreateOrgUnitModal({
       setSlug("");
       setParentId("scope-global");
       setBillingEnabled(true);
-      setLeadUserId("");
+      setLeadUserIds([]);
+      setLeadDraft("");
       setLeadValidationError(null);
       resetParentSearch();
     }
@@ -86,11 +89,34 @@ export function CreateOrgUnitModal({
 
   const handleKindChange = (nextKind: "BU" | "TEAM") => {
     setKind(nextKind);
-    if (nextKind === "TEAM") {
-      setParentId(buUnits.length > 0 ? firstBuId : "scope-global");
-    } else {
-      setParentId("scope-global");
+    setParentId(nextKind === "TEAM" && buUnits.length > 0 ? firstBuId : "scope-global");
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canMutate || !name.trim() || isSubmitting) return;
+    const allKnownUsers = [...leadSearch.knownUsers, ...knownUsers];
+    const pendingId = resolvePendingKnownUserId(leadDraft, allKnownUsers);
+    const finalLeads = pendingId && !leadUserIds.some((id) => id.toLowerCase() === pendingId.toLowerCase())
+      ? [...leadUserIds, pendingId]
+      : leadUserIds;
+    const invalidLead = finalLeads.find((lid) => !isKnownUserIdentifier(lid, allKnownUsers));
+    if (invalidLead) {
+      setLeadValidationError(
+        unknownUserErrorLabel ||
+          "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
+      );
+      return;
     }
+    onSubmit({
+      kind,
+      name: name.trim(),
+      slug: slug.trim(),
+      parentId,
+      billingEnabled,
+      leadUserId: finalLeads[0] ?? "",
+      leadUserIds: finalLeads,
+    });
   };
 
   return (
@@ -109,27 +135,7 @@ export function CreateOrgUnitModal({
         data-1p-ignore="true"
         data-bwignore="true"
         data-form-type="other"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!canMutate || !name.trim() || isSubmitting) return;
-          const trimmedLead = leadUserId.trim();
-          const allKnownUsers = [...leadSearch.knownUsers, ...knownUsers];
-          if (trimmedLead && !isKnownUserIdentifier(trimmedLead, allKnownUsers)) {
-            setLeadValidationError(
-              unknownUserErrorLabel ||
-                "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
-            );
-            return;
-          }
-          onSubmit({
-            kind,
-            name: name.trim(),
-            slug: slug.trim(),
-            parentId,
-            billingEnabled,
-            leadUserId: trimmedLead,
-          });
-        }}
+        onSubmit={handleFormSubmit}
         style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}
       >
         {errorMessage ? (
@@ -139,9 +145,7 @@ export function CreateOrgUnitModal({
         ) : null}
 
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label htmlFor="org-unit-level-select" className="orcia-ds-label">
-            {labels.kindLabel}
-          </label>
+          <label htmlFor="org-unit-level-select" className="orcia-ds-label">{labels.kindLabel}</label>
           <select
             id="org-unit-level-select"
             data-testid="org-unit-level-select"
@@ -157,9 +161,7 @@ export function CreateOrgUnitModal({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label htmlFor="org-unit-name-input" className="orcia-ds-label">
-            {labels.nameLabel}
-          </label>
+          <label htmlFor="org-unit-name-input" className="orcia-ds-label">{labels.nameLabel}</label>
           <input
             id="org-unit-name-input"
             name="org_unit_title"
@@ -180,9 +182,7 @@ export function CreateOrgUnitModal({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label htmlFor="org-unit-slug-input" className="orcia-ds-label">
-            {labels.slugLabel}
-          </label>
+          <label htmlFor="org-unit-slug-input" className="orcia-ds-label">{labels.slugLabel}</label>
           <input
             id="org-unit-slug-input"
             name="org_unit_short_code"
@@ -203,9 +203,7 @@ export function CreateOrgUnitModal({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label htmlFor="org-unit-parent-select" className="orcia-ds-label">
-            {labels.parentLabel}
-          </label>
+          <label htmlFor="org-unit-parent-select" className="orcia-ds-label">{labels.parentLabel}</label>
           <OrciaSearchableSelect
             id="org-unit-parent-select"
             testId="org-unit-parent-select"
@@ -222,49 +220,26 @@ export function CreateOrgUnitModal({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label htmlFor="org-unit-lead-input" className="orcia-ds-label">
-            {labels.leadLabel}
-          </label>
-          <OrciaKnownUserCombobox
+          <label htmlFor="org-unit-lead-input" className="orcia-ds-label">{labels.leadLabel}</label>
+          <OrciaUserPillsSelect
             inputId="org-unit-lead-input"
             inputTestId="org-unit-lead-input"
             disabled={!canMutate || isSubmitting}
-            value={leadUserId}
-            onChange={(val) => {
-              setLeadUserId(val);
-              setLeadValidationError(null);
-            }}
-            onSearchQueryChange={leadSearch.onSearchQueryChange}
+            selectedUserIds={leadUserIds}
+            onChange={setLeadUserIds}
+            draftQuery={leadDraft}
+            onDraftQueryChange={(val) => { setLeadDraft(val); setLeadValidationError(null); }}
             knownUsers={leadSearch.knownUsers}
-            maxDisplayedItems={10}
-            hasMoreMatches={leadSearch.hasMore}
-            truncatedHint={labels.parentTruncatedHint}
             placeholder={labels.leadPlaceholder}
           />
           {leadValidationError ? (
-            <div
-              data-testid="org-unit-unknown-user-error"
-              style={{
-                fontSize: "12px",
-                color: "var(--color-status-error)",
-                marginTop: "2px",
-              }}
-            >
+            <div data-testid="org-unit-unknown-user-error" style={{ fontSize: "12px", color: "var(--color-status-error)", marginTop: "2px" }}>
               {leadValidationError}
             </div>
           ) : null}
         </div>
 
-        <label
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: canMutate ? "pointer" : "not-allowed",
-          }}
-        >
+        <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, cursor: canMutate ? "pointer" : "not-allowed" }}>
           <input
             type="checkbox"
             name="org_unit_billing_enabled"
@@ -282,19 +257,10 @@ export function CreateOrgUnitModal({
         </label>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
-          <OrciaButton
-            variant="secondary"
-            testId="cancel-create-org-unit-btn"
-            onClick={() => onOpenChange(false)}
-          >
+          <OrciaButton variant="secondary" testId="cancel-create-org-unit-btn" onClick={() => onOpenChange(false)}>
             {labels.cancelButton}
           </OrciaButton>
-          <OrciaButton
-            type="submit"
-            variant="primary"
-            testId="create-org-unit-btn"
-            disabled={!canMutate || !name.trim() || isSubmitting}
-          >
+          <OrciaButton type="submit" variant="primary" testId="create-org-unit-btn" disabled={!canMutate || !name.trim() || isSubmitting}>
             {labels.submitButton}
           </OrciaButton>
         </div>

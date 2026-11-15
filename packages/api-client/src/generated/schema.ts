@@ -1648,9 +1648,11 @@ export interface components {
     };
     IamAccountCreateRequest: {
       account_kind?: "HUMAN" | "SERVICE_PRINCIPAL";
-      auth_source?: "LOCAL_BOOTSTRAP" | "OIDC_FEDERATED" | "SERVICE_TOKEN" | null;
+      auth_source?: "LOCAL_BOOTSTRAP" | "LOCAL_PASSWORD" | "OIDC_FEDERATED" | "SERVICE_TOKEN" | null;
       display_name?: string;
       email?: string | null;
+      led_bu_ids?: (string)[] | null;
+      led_team_ids?: (string)[] | null;
       principal_id?: string | null;
       roles?: (string)[];
       status?: "ACTIVE" | "INVITED" | "DISABLED";
@@ -1663,17 +1665,21 @@ export interface components {
     IamAccountPatchRequest: {
       display_name?: string | null;
       email?: string | null;
+      led_bu_ids?: (string)[] | null;
+      led_team_ids?: (string)[] | null;
       roles?: (string)[] | null;
       status?: "ACTIVE" | "INVITED" | "DISABLED" | null;
       team_ids?: (string)[] | null;
     };
     IamAccountResponse: {
       account_kind: "HUMAN" | "SERVICE_PRINCIPAL";
-      auth_source: "LOCAL_BOOTSTRAP" | "OIDC_FEDERATED" | "SERVICE_TOKEN";
+      auth_source: "LOCAL_BOOTSTRAP" | "LOCAL_PASSWORD" | "OIDC_FEDERATED" | "SERVICE_TOKEN";
       created_at_iso: string;
       display_name: string;
       email?: string | null;
       id: string;
+      led_bu_ids?: (string)[];
+      led_team_ids?: (string)[];
       principal_id: string;
       roles: ("PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER")[];
       status: "ACTIVE" | "INVITED" | "DISABLED";
@@ -2201,6 +2207,7 @@ export interface components {
       billing_enabled?: boolean;
       kind: "BU" | "TEAM";
       lead_user_id?: string | null;
+      lead_user_ids?: (string)[] | null;
       member_user_ids?: (string)[];
       name: string;
       parent_id?: string | null;
@@ -2214,6 +2221,7 @@ export interface components {
     OrgUnitPatchRequest: {
       billing_enabled?: boolean | null;
       lead_user_id?: string | null;
+      lead_user_ids?: (string)[] | null;
       member_user_ids?: (string)[] | null;
       name?: string | null;
       parent_id?: string | null;
@@ -2225,6 +2233,7 @@ export interface components {
       id: string;
       kind: "BU" | "TEAM";
       lead_user_id?: string | null;
+      lead_user_ids?: (string)[];
       member_user_ids?: (string)[];
       name: string;
       parent_id?: string | null;

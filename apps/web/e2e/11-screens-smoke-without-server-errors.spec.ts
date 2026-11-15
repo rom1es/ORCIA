@@ -29,7 +29,8 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
       await expect(page.getByTestId(testId).first(), `écran ${route}`).toBeAttached({
         timeout: 30000,
       });
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
+      await page.waitForTimeout(250);
       await expectZeroVisibleErrorBanners(page);
     }
     expect(errors, errors.join("\n")).toEqual([]);
@@ -51,7 +52,8 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
       await expect(anonPage.getByTestId("bi-mode-login-view")).toBeVisible({ timeout: 30000 });
       await expect(anonPage.getByTestId("login-local-email")).toBeVisible();
       await expect(anonPage.getByTestId("login-local-password")).toBeVisible();
-      await anonPage.waitForLoadState("networkidle");
+      await anonPage.waitForLoadState("load");
+      await anonPage.waitForTimeout(250);
       await expectZeroVisibleErrorBanners(anonPage);
       expect(anonErrors, anonErrors.join("\n")).toEqual([]);
 

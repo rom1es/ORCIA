@@ -239,6 +239,7 @@ export {
   type UserAccountDropdownAndSettingsLabels,
   type UserAccountDropdownAndSettingsModalProps,
   type UserAccountPreferencesPatch,
+  type UserPasswordSecurityLabels,
 } from "./primitives/UserAccountDropdownAndSettingsModal";
 export {
   TemporaryPasswordInvitationModal,
@@ -527,6 +528,11 @@ export {
   type KnownUserOption,
   type OrciaKnownUserComboboxProps,
 } from "./primitives/OrciaKnownUserCombobox";
+export {
+  OrciaUserPillsSelect,
+  resolvePendingKnownUserId,
+  type OrciaUserPillsSelectProps,
+} from "./primitives/OrciaUserPillsSelect";
 export {
   OrciaSearchableSelect,
   type OrciaSearchableSelectOption,
