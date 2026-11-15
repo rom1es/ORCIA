@@ -12,10 +12,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "uiPrimitivesCount": 105,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 36,
-    "architectureDecisionsCount": 23,
+    "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 126,
-    "capabilitiesCount": 61,
+    "techLeadReportsCount": 127,
+    "capabilitiesCount": 62,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
   },
@@ -296,6 +296,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     {
       "code": "AD-23",
       "title": "Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (Elasticsearch/OpenSearch & Loki), Port d'Interrogation Découplé (LogSinkQueryPort), Traces OpenTelemetry OTLP et Conformité OpenShift"
+    },
+    {
+      "code": "AD-24",
+      "title": "Hub des Modèles IA Fiable, Découverte Dynamique 0 Token, Test de Connexion Réel, Port Hexagonal d'Embeddings (EmbeddingPort) et Réindexation Sémantique Bloquante"
     }
   ],
   "stackComponents": [
@@ -477,6 +481,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Epic 19 (CAP-011, CAP-052, CAP-053, CAP-070, CAP-071, CAP-190)",
+      "reportFile": "2026-11-15-epic-19-hub-modeles-ia-et-embeddings-semantiques-tech-lead-report.md",
+      "domain": "Cadrage Architectural & Planification Epic 19 : Hub Modèles IA Fiable, Découverte 0 Token (GET /models), Test Réel Chat (max_tokens=1) & Embeddings (Dim 1024), Purge Noms en Dur Backend, EmbeddingPort Hexagonal & RAG Sans Hachage SHA-256 (AD-24)",
+      "summary": "Analyse d'impact GitNexus (9 symboles amont, 7 flux RAG), décision d'architecture AD-24 (binds/prevents/rule), amendements AD-8 et AD-16, spécification des 7 User Stories (19.1 à 19.7) ordonnancées pour minimiser les conflits avec critères 5 couches AD-17, mise à jour sprint-status.yaml et capabilities.yaml (CAP-190 planned)."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Correctif & UX IAM/SecOps/BU (CAP-050, CAP-051, CAP-058)",
