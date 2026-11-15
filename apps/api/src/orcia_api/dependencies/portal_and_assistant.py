@@ -38,7 +38,14 @@ from orcia_core.rag.adapters.embedding_httpx import (
     HttpxGeminiNativeEmbeddingAdapter,
     HttpxOpenAiCompatibleEmbeddingAdapter,
 )
-from orcia_core.rag.errors import NoActiveEmbeddingModelError
+from orcia_core.rag.errors import (
+    NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
+)
+from orcia_core.rag.reindex import (
+    check_rag_operational_on_conn,
+    default_in_memory_reindex_manager,
+)
 
 
 def get_assistant_service(request: Request) -> AssistantAgentService:
@@ -155,6 +162,33 @@ def get_assistant_folders_and_sharing_service(
 
 async def get_embedding_port(request: Request) -> EmbeddingPort:
     """FastAPI `Depends` provider resolving the active global EmbeddingPort."""
+    engine = getattr(request.app.state, "db_engine", None)
+    if engine is not None:
+        async with engine.begin() as conn:
+            await check_rag_operational_on_conn(conn)
+    else:
+        active_mem = default_in_memory_reindex_manager.get_active_job()
+        if active_mem is not None:
+            raise RagReindexInProgressError(
+                progress_percentage=active_mem.progress_percentage,
+                job_id=active_mem.id,
+                detail_override=(
+                    f"Réindexation sémantique en cours ({active_mem.progress_percentage}%). "
+                    "La recherche documentaire et Mon Assistant sont temporairement indisponibles."
+                ),
+            )
+        latest_mem = default_in_memory_reindex_manager.get_latest_job()
+        if latest_mem is not None and latest_mem.status == "FAILED":
+            raise RagReindexInProgressError(
+                progress_percentage=latest_mem.progress_percentage,
+                job_id=latest_mem.id,
+                detail_override=(
+                    f"La réindexation sémantique a échoué "
+                    f"({latest_mem.error_message or 'erreur inconnue'}). "
+                    "Veuillez relancer la réindexation dans /settings/ai-models."
+                ),
+            )
+
     explicit_port = getattr(request.app.state, "embedding_port", None)
     if explicit_port is not None:
         return cast(EmbeddingPort, explicit_port)
@@ -163,7 +197,6 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
     if http_client is None:
         http_client = httpx.AsyncClient()
 
-    engine = getattr(request.app.state, "db_engine", None)
     auth_svc = getattr(request.app.state, "auth_service", None)
     if auth_svc is None:
         initialize_app_services(request.app)

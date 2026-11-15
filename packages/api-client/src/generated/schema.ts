@@ -2481,6 +2481,7 @@ export interface components {
       error_code: string;
       instance?: string | null;
       permission_broker_hint?: string | null;
+      progress_percentage?: number | null;
       status: number;
       title: string;
       trace_id: string;
@@ -2521,6 +2522,27 @@ export interface components {
       passed: boolean;
       response_markdown: string;
       uri: string;
+    };
+    RagReindexStatusResponse: {
+      completed_at?: string | null;
+      created_at?: string | null;
+      error_message?: string | null;
+      job_id?: string | null;
+      processed_chunks?: number;
+      progress_percentage?: number;
+      started_at?: string | null;
+      status?: "IDLE" | "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+      target_model_id?: string | null;
+      target_model_name?: string | null;
+      total_chunks?: number;
+      updated_at?: string | null;
+    };
+    RagReindexTriggerResponse: {
+      job_id: string;
+      message: string;
+      status?: "IDLE" | "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+      target_model_id: string;
+      target_model_name: string;
     };
     RawGlossaryCandidateInput: {
       canonical_term: string;
@@ -3946,7 +3968,7 @@ export interface components {
       connector_id?: string | null;
       created_at_iso: string;
       fingerprint_hash?: string | null;
-      freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC";
+      freshness_status?: "SYNCED" | "STALE" | "SYNC_ERROR" | "PENDING_INITIAL_SYNC" | "AWAITING_EMBEDDING_MODEL";
       id: string;
       last_probe_at_iso?: string | null;
       last_sync_at_iso?: string | null;
@@ -5132,6 +5154,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/ai-models/reindex-embeddings": {
+    post: {
+      responses: {
+        200: components["schemas"]["RagReindexTriggerResponse"];
+      };
+    };
+  };
+  "/api/v1/settings/ai-models/reindex-status": {
+    get: {
+      responses: {
+        200: components["schemas"]["RagReindexStatusResponse"];
+      };
+    };
+  };
   "/api/v1/settings/ai-models/route": {
     post: {
       responses: {
@@ -5870,6 +5906,8 @@ export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlock
 export type PublicAuthConfigResponse = components["schemas"]["PublicAuthConfigResponse"];
 export type QuickActionSpec = components["schemas"]["QuickActionSpec"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
+export type RagReindexStatusResponse = components["schemas"]["RagReindexStatusResponse"];
+export type RagReindexTriggerResponse = components["schemas"]["RagReindexTriggerResponse"];
 export type RawGlossaryCandidateInput = components["schemas"]["RawGlossaryCandidateInput"];
 export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
 export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];

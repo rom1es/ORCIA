@@ -1916,6 +1916,10 @@ So that aucun calcul de similarité cosinus incohérent ne soit exécuté entre 
 **When** le dernier lot est persisté
 **Then** le verrou est libéré, `reindexing_status` passe à `COMPLETED`, un événement outbox `EmbeddingReindexCompleted` est émis, et la recherche hybride RRF (`halfvec(1024)` HNSW + `tsvector` GIN) redevient immédiatement disponible avec 100 % de vecteurs homogènes générés par le nouveau modèle actif.
 
+**Given** aucun chunk documentaire ni source documentaire à réindexer (total = 0, ex. Jour 0 après `pnpm db:reset`)
+**When** un modèle d'embedding est activé ou changé
+**Then** le job passe directement à `COMPLETED` (traçé avec `EmbeddingReindexStarted` et `EmbeddingReindexCompleted`, idempotent) SANS phase de blocage visible : aucune réponse 503 `ERR_RAG_REINDEX_IN_PROGRESS`, aucune bannière « Réindexation 0 % », Assistant immédiatement débloqué.
+
 **Given** les 5 couches de validation `AD-17` de l'ensemble de l'Epic 19
 **When** toutes les suites de tests et portes de gouvernance sont exécutées
 **Then** couverture unitaire $\ge 90\%$ sur `orcia_core/llm` et `orcia_core/rag`, tests d'intégration réels sur PostgreSQL 18 + `pgvector` avec `testcontainers`, contrats OpenAPI 3.1 `0-diff`, cassettes déterministes CI et tests Playwright passent sans aucun warning ni contournement.

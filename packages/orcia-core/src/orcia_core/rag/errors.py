@@ -87,6 +87,18 @@ RAG_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Configure and activate an embedding model in /settings/ai-models.",
         ),
     },
+    "ERR_RAG_REINDEX_IN_PROGRESS": {
+        "fr": LocalizedErrorCopy(
+            "Réindexation sémantique en cours",
+            "Une réindexation globale du corpus vectoriel est actuellement en cours. "
+            "La recherche documentaire et Mon Assistant sont temporairement indisponibles.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Semantic reindexing in progress",
+            "A global reindexing of the vector corpus is currently in progress. "
+            "Document search and My Assistant are temporarily unavailable.",
+        ),
+    },
 }
 
 register_domain_error_catalog(RAG_ERROR_CATALOG)
@@ -122,6 +134,28 @@ class NoActiveEmbeddingModelError(OrciaDomainError):
     http_status, type_slug = 422, "no-active-embedding-model"
 
 
+class RagReindexInProgressError(OrciaDomainError):
+    error_code = "ERR_RAG_REINDEX_IN_PROGRESS"
+    http_status, type_slug = 503, "rag-reindex-in-progress"
+
+    def __init__(
+        self,
+        *,
+        progress_percentage: int = 0,
+        job_id: str | None = None,
+        detail_override: str | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.progress_percentage = progress_percentage
+        self.job_id = job_id
+        super().__init__(
+            detail_override=detail_override,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
+
+
 __all__ = [
     "DdlOnlyTransactionalDataError",
     "EmptyOrUnreadableDocumentError",
@@ -131,6 +165,7 @@ __all__ = [
     "NoActiveEmbeddingModelError",
     "ObserverModeReadOnlyError",
     "OrciaDomainError",
+    "RagReindexInProgressError",
     "ResourceNotFoundError",
     "ScopeAccessDeniedError",
     "ValidationDomainError",

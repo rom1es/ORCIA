@@ -27,7 +27,9 @@ import {
 import { ActiveConversationMessagesView, AssistantTopToolbar, SavedConversationsPanel } from "./SavedConversationsAndThreadView";
 import { AssistantGovernanceDialog } from "./AssistantGovernanceDialog";
 import { AssistantNoEmbeddingBanner } from "./AssistantNoEmbeddingBanner";
+import { AssistantReindexingBanner } from "./AssistantReindexingBanner";
 import { useActiveEmbeddingModelStatus } from "./useActiveEmbeddingModelStatus";
+import { useRagReindexStatus } from "./useRagReindexStatus";
 import {
   buildAssistantAutocompleteAndRagOptions,
   buildAssistantAutocompleteSuggestions,
@@ -66,6 +68,13 @@ export function InboxFeaturePanel() {
 
   const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
   const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
+  const {
+    isReindexing,
+    isReindexFailed,
+    progressPercentage,
+    errorMessage: reindexErrorMessage,
+    relaunchReindex,
+  } = useRagReindexStatus();
   const { folders, createFolder, savePinnedNotes, changeVisibility } = useServerAssistantFolders({
     workspaceId: activeWorkspaceId,
     messages: dictionary.assistantFoldersSync,
@@ -325,13 +334,31 @@ export function InboxFeaturePanel() {
           currentTurnFeedback={latestTurnInActiveConv?.userFeedback ?? null}
           onFeedbackLastTurn={(fb) => { if (latestTurnInActiveConv) handleFeedbackTurn(latestTurnInActiveConv.turnId, fb); }}
           labels={dictionary.assistantSpeedStream}
-          disabled={!hasActiveEmbeddingModel}
+          disabled={!hasActiveEmbeddingModel || isReindexing || isReindexFailed}
           disabledReasonBanner={
             !hasActiveEmbeddingModel ? (
               React.createElement(AssistantNoEmbeddingBanner, {
                 title: dictionary.assistantNoEmbeddingModel.bannerTitle,
                 description: dictionary.assistantNoEmbeddingModel.bannerDescription,
                 configureCta: dictionary.assistantNoEmbeddingModel.configureCta,
+                onConfigure: () => navigateToRoute("/settings/ai-models"),
+              })
+            ) : isReindexing ? (
+              React.createElement(AssistantReindexingBanner, {
+                status: "IN_PROGRESS",
+                progressPercentage,
+                isFr,
+                onConfigure: () => navigateToRoute("/settings/ai-models"),
+              })
+            ) : isReindexFailed ? (
+              React.createElement(AssistantReindexingBanner, {
+                status: "FAILED",
+                progressPercentage,
+                errorMessage: reindexErrorMessage,
+                isFr,
+                onRelaunch: () => {
+                  void relaunchReindex();
+                },
                 onConfigure: () => navigateToRoute("/settings/ai-models"),
               })
             ) : null

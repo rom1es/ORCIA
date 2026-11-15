@@ -11,13 +11,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 106,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 38,
+    "alembicMigrationsCount": 39,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 133,
+    "techLeadReportsCount": 134,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 57,
-    "verifiedCapabilitiesCount": 42
+    "liveCapabilitiesCount": 58,
+    "verifiedCapabilitiesCount": 43
   },
   "activeRoutes": [
     "/",
@@ -205,7 +205,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261114_1802_story_18_2_webhook_deliveries_and_outbox_events",
     "20261115_1901_platform_auth_policy_and_email_otp",
     "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx",
-    "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup"
+    "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup",
+    "20261115_2307_story_19_7_rag_reindexing_jobs_and_queue"
   ],
   "architectureDecisions": [
     {
@@ -484,6 +485,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.7 (CAP-011, CAP-052, CAP-070, CAP-071, CAP-190)",
+      "reportFile": "19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant-tech-lead-report.md",
+      "domain": "Réindexation Bloquante Idempotente, Suivi de Progression & Verrouillage Assistant/Recherche pendant le Job (AD-24.8, D9, D12, Jour 0 Sans Faux Blocage)",
+      "summary": "Migration Alembic 20261115_2307 (rag_reindexing_jobs, rag_reindexing_pending_ingestions, index partiel unique actif idx_rag_reindex_single_active, extension contrainte CHECK outbox), déclenchement automatique sur première activation ou changement de modèle d'embedding GLOBAL, job Dramatiq idempotent par lots de 50 chunks sans doublon et reprise après crash/annulation propre de l'ancien job, blocage matériel RAG & Assistant (HTTP 503 RFC 9457 ERR_RAG_REINDEX_IN_PROGRESS avec progress_percentage), mise en file d'attente des ingestions concurrentes, court-circuit Jour 0 (passage direct à COMPLETED sans 503 ni fausse bannière si corpus vide), endpoints /api/v1/settings/ai-models/reindex-status et /reindex-embeddings, régénération SDK OpenAPI 3.1 0-diff, bannière UI avec pourcentage temps réel et désactivation saisie Assistant, panneau Hub avec barre de progression et relance admin (403 observateur), et validation 5 couches AD-17 (6 unitaires, 3 intégration testcontainers PG18 réels, 4 Vitest avec F5, DB reset Jour 0 vérifié)."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Story 19.6 (CAP-011, CAP-070, CAP-071, CAP-190)",

@@ -591,20 +591,42 @@ capabilities:
       ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceSourceAttachModal + WorkspaceSourceAttachCodegraphFields"
       migration: "20261114_1801, 20261114_1802"
 
-  # ───────────── Planifié (non livré) ─────────────
+  # ───────────── Epic 19 : Hub Modèles IA & Embeddings Sémantiques ─────────────
   - id: CAP-190
-    title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal & RAG Sans Hachage SHA-256
+    title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal, RAG Sans Hachage SHA-256 & Réindexation Bloquante Idempotente
     fr: [FR-14, FR-18, FR-23, FR-28, FR-31, FR-33]
     origin: epic
-    origin_ref: 2026-11-15-epic-19-hub-modeles-ia-et-embeddings-semantiques
-    status: partial
-    last_verified: "2026-11-15"
+    origin_ref: epic-19 (19-1..19-7)
+    status: live
+    tests:
+      - tests/unit/test_story_19_2_ai_models_discovery.py
+      - tests/unit/test_story_19_2_ai_models_discover_endpoint.py
+      - tests/unit/test_story_19_3_ai_model_connection_test.py
+      - tests/unit/test_story_19_4_clean_day0_seeds_and_empty_tiers.py
+      - tests/unit/test_story_19_5_ai_models_usage_and_uniqueness.py
+      - tests/unit/test_story_19_5_embedding_port_and_adapters.py
+      - tests/unit/test_migration_story_19_5_usage.py
+      - tests/unit/test_story_19_6_rag_blocking_and_embedding_model.py
+      - tests/unit/test_story_19_7_rag_reindexing_and_blocking.py
+      - tests/integration/api/test_story_19_3_ai_models_connection_test_postgres18.py
+      - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
+      - tests/integration/api/test_story_19_6_alembic_and_rag_blocking_postgres18.py
+      - tests/integration/api/test_story_19_7_reindexing_and_blocking_postgres18.py
+      - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
+      - apps/web/src/__tests__/story-19-2-ai-models-combobox-discovery-and-freeform.test.tsx
+      - apps/web/src/__tests__/story-19-3-ai-models-real-connection-test-and-no-dead-buttons.test.tsx
+      - apps/web/src/__tests__/story-19-5-ai-models-usage-and-active-embedding.test.tsx
+      - apps/web/src/__tests__/story-19-6-assistant-no-embedding-blocking-and-f5.test.tsx
+      - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
+    verification: runtime
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
-      api: "ai_models_hub.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
-      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + SettingsAiModelsSection"
-      migration: "20261115_2105, 20261115_2206"
-    notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et planifié dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante."
+      api: "ai_models_hub.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
+      migration: "20261115_2105, 20261115_2206, 20261115_2307"
+    notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
+
+  # ───────────── Planifié (non livré) ─────────────
   - id: CAP-200
     title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps
     fr: [FR-25, FR-26, FR-27]

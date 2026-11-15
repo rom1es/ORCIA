@@ -33,7 +33,10 @@ from orcia_core.permissions.workspace_sources_governance import (
     WorkspaceDatasourceRecord,
     infer_source_nature_from_scheme,
 )
-from orcia_core.rag.errors import NoActiveEmbeddingModelError
+from orcia_core.rag.errors import (
+    NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
+)
 
 
 async def create_workspace_datasource_on_postgres18(
@@ -312,6 +315,7 @@ async def trigger_workspace_datasource_sync_on_postgres18(
             raise ResourceNotFoundError(instance=instance)
 
         current_nature = str(current[10] or "DOCUMENT_KB")
+        reindex_in_progress_job: tuple[str, int] | None = None
         if current_nature != "SOURCE_CODE":
             active_model = (
                 await conn.execute(
@@ -336,6 +340,54 @@ async def trigger_workspace_datasource_sync_on_postgres18(
                     {"ds_id": ds_uuid, "wid": wid_uuid},
                 )
                 no_model_needed = True
+            else:
+                active_reindex = (
+                    await conn.execute(
+                        sa.text(
+                            """
+                            SELECT id, progress_percentage FROM rag_reindexing_jobs
+                            WHERE status IN ('PENDING', 'IN_PROGRESS')
+                            ORDER BY created_at DESC
+                            LIMIT 1;
+                            """
+                        )
+                    )
+                ).fetchone()
+                if active_reindex is not None:
+                    reindex_in_progress_job = (str(active_reindex[0]), int(active_reindex[1]))
+                    pending_ing_id = new_uuid7_str()
+                    await conn.execute(
+                        sa.text(
+                            """
+                            INSERT INTO rag_reindexing_pending_ingestions (
+                                id, workspace_id, datasource_id, job_id,
+                                payload_jsonb, status, created_at
+                            ) VALUES (
+                                :id, :wid, :ds_id, :job_id,
+                                '{"reason": "sync_during_reindex"}'::jsonb,
+                                'PENDING', NOW()
+                            )
+                            """
+                        ),
+                        {
+                            "id": UUID(pending_ing_id),
+                            "wid": wid_uuid,
+                            "ds_id": ds_uuid,
+                            "job_id": UUID(active_reindex[0]),
+                        },
+                    )
+
+        if reindex_in_progress_job is not None:
+            # Committed queueing before raising
+            job_id_str, prog_pct = reindex_in_progress_job
+            raise RagReindexInProgressError(
+                progress_percentage=prog_pct,
+                job_id=job_id_str,
+                detail_override=(
+                    f"Réindexation sémantique en cours ({prog_pct}%). "
+                    "Synchronisation documentaire mise en attente."
+                ),
+            )
 
         if not no_model_needed:
             row = (
@@ -367,8 +419,6 @@ async def trigger_workspace_datasource_sync_on_postgres18(
 
     if no_model_needed:
         # Transaction committed above before raising domain error
-        # TODO(19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant): # noqa: E501
-        # Déclencher la réindexation globale bloquante des sources en attente.
         raise NoActiveEmbeddingModelError(
             detail_override=(
                 "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "

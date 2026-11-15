@@ -67,6 +67,7 @@ def build_problem_response(
     detail_override: str | None = None,
     instance_override: str | None = None,
     permission_broker_hint: str | None = None,
+    progress_percentage: int | None = None,
 ) -> JSONResponse:
     """Construct a localized RFC 9457 `application/problem+json` response."""
     trace_id = _extract_request_trace_id(request)
@@ -81,6 +82,7 @@ def build_problem_response(
         error_code=error_code,
         trace_id=trace_id,
         permission_broker_hint=permission_broker_hint,
+        progress_percentage=progress_percentage,
     )
     logger.warning(
         "api.problem_details",
@@ -107,6 +109,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(OrciaDomainError)
     async def handle_domain_error(request: Request, exc: OrciaDomainError) -> JSONResponse:
         mapping = resolve_domain_error_mapping(exc)
+        progress_pct = getattr(exc, "progress_percentage", None)
         return build_problem_response(
             request,
             status_code=mapping.http_status,
@@ -115,6 +118,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             detail_override=exc.detail_override,
             instance_override=exc.instance,
             permission_broker_hint=exc.permission_broker_hint,
+            progress_percentage=progress_pct,
         )
 
     @app.exception_handler(StarletteHTTPException)

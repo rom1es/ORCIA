@@ -26,6 +26,11 @@ from orcia_api.routers._ai_models_helpers import (
     resolve_mapping_decrypted_key,
     to_item_response,
 )
+from orcia_api.routers._ai_models_reindex_helpers import (
+    fetch_reindex_status_response,
+    trigger_global_reindexing_job,
+    trigger_manual_reindex_embeddings,
+)
 from orcia_api.routers._settings_helpers import to_routing_outcome_response
 from orcia_api.schemas.ai_models_hub import (
     AiModelCreateRequest,
@@ -41,6 +46,8 @@ from orcia_api.schemas.ai_models_hub import (
     LlmModelUsageLiteral,
     LlmProtocolModeLiteral,
     PinRemovalModeLiteral,
+    RagReindexStatusResponse,
+    RagReindexTriggerResponse,
     ScopeLevelLiteral,
 )
 from orcia_api.schemas.settings_and_studio import (
@@ -175,6 +182,13 @@ async def create_ai_model_mapping(
             actor_id=actor_persona or "system",
             instance=str(request.url.path),
         )
+
+    if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
+        await trigger_global_reindexing_job(
+            request,
+            rec,
+            actor_id=actor_persona or "system",
+        )
     return to_item_response(rec)
 
 
@@ -231,6 +245,13 @@ async def update_ai_model_mapping(
             secret_input=sec_input,
             actor_id=actor_persona or "system",
             instance=str(request.url.path),
+        )
+
+    if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
+        await trigger_global_reindexing_job(
+            request,
+            rec,
+            actor_id=actor_persona or "system",
         )
     return to_item_response(rec)
 
@@ -424,6 +445,23 @@ async def execute_cognitive_tier_route(
         deterministic_gate_fn=_gate_fn,
     )
     return to_routing_outcome_response(outcome)
+
+
+@router.get("/reindex-status", response_model=RagReindexStatusResponse)
+async def get_reindex_status(request: Request) -> RagReindexStatusResponse:
+    """Get current status of vector corpus reindexing (`Story 19.7`, `AD-24.7`)."""
+    return await fetch_reindex_status_response(request)
+
+
+@router.post("/reindex-embeddings", response_model=RagReindexTriggerResponse)
+async def trigger_reindex_embeddings(
+    request: Request,
+    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
+    hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
+    actor_persona: Annotated[str | None, Query()] = None,
+) -> RagReindexTriggerResponse:
+    """Trigger a global reindexing of all document chunks on active embedding model."""
+    return await trigger_manual_reindex_embeddings(request, auth_svc, hub_svc, actor_persona)
 
 
 __all__ = ["router"]

@@ -51,6 +51,7 @@ interface MockBackendState {
     committed_snapshot_id: string | null;
   }>;
   aiModelMappings: Array<Record<string, unknown>>;
+  mockReindexStatus: Record<string, unknown>;
   recordedCalls: RecordedVitestApiCall[];
 }
 
@@ -73,6 +74,7 @@ const backendState: MockBackendState = {
   assistantFolders: [],
   orchestrationRuns: [],
   aiModelMappings: [],
+  mockReindexStatus: { status: "IDLE", progress_percentage: 0 },
   recordedCalls: [],
 };
 
@@ -213,6 +215,7 @@ export function resetVitestApiBackend(): void {
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
   backendState.aiModelMappings = [];
+  backendState.mockReindexStatus = { status: "IDLE", progress_percentage: 0 };
   backendState.recordedCalls = [];
   resetVitestIamMockState();
   resetVitestConnectorsMockState();
@@ -226,6 +229,10 @@ export function setVitestMockRefreshFails(fails: boolean): void {
   } else {
     delete (globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__;
   }
+}
+
+export function setVitestMockReindexStatus(statusRecord: Record<string, unknown>): void {
+  backendState.mockReindexStatus = { ...statusRecord };
 }
 
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
@@ -1285,6 +1292,26 @@ async function vitestFetchTransport(
       items = items.filter((m) => String(m.is_active) === isActive);
     }
     return jsonResponse({ items, total: items.length });
+  }
+
+  if (path === "/api/v1/settings/ai-models/reindex-status" && method === "GET") {
+    return jsonResponse(backendState.mockReindexStatus);
+  }
+
+  if (path === "/api/v1/settings/ai-models/reindex-embeddings" && method === "POST") {
+    backendState.mockReindexStatus = {
+      status: "PENDING",
+      progress_percentage: 0,
+      total_chunks: 50,
+      processed_chunks: 0,
+    };
+    return jsonResponse({
+      job_id: "mock-reindex-job-1",
+      status: "PENDING",
+      target_model_id: "mod-1",
+      target_model_name: "text-embedding-3-small",
+      message: "Réindexation globale lancée",
+    });
   }
 
   // 5. MCP Test Bench, Help Validation, Starlark Compiler, Federated Search & Packs

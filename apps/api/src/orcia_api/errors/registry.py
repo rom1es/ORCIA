@@ -71,6 +71,7 @@ from orcia_core.rag.errors import (
     EmbeddingGenerationFailedError,
     EmbeddingProviderUnsupportedError,
     NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
 )
 from orcia_kernel.errors import (
     ERROR_CATALOG,
@@ -151,6 +152,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     EmbeddingGenerationFailedError,
     EmbeddingProviderUnsupportedError,
     NoActiveEmbeddingModelError,
+    RagReindexInProgressError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {
@@ -213,6 +215,7 @@ __all__ = [
     "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
     "ReadSourceDeniedError",
+    "RagReindexInProgressError",
     "ResourceNotFoundError",
     "RevokedTokenError",
     "ScopeAccessDeniedError",

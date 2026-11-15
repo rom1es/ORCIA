@@ -166,3 +166,40 @@ class DocVsCodeAuditFinding:
     qualification_marker: Literal["[DOC_OBSOLETE_SUSPECTED]", "[BUG_CODE_SUSPECTED]", "[ALIGNED]"]
     justifying_jira_key: str | None
     explanation: str
+
+
+RagReindexJobStatus = Literal["IDLE", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]
+
+
+@dataclass(frozen=True, slots=True)
+class RagReindexJobRecord:
+    """Record representing a persistent vector reindexing job (`Story 19.7`, `AD-24.7`)."""
+
+    id: str
+    target_model_id: str
+    target_model_name: str
+    status: RagReindexJobStatus
+    total_chunks: int = 0
+    processed_chunks: int = 0
+    progress_percentage: int = 0
+    error_message: str | None = None
+    created_at: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
+    updated_at: str | None = None
+    created_by: str = "system"
+    cancelled_by_job_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RagReindexPendingIngestionRecord:
+    """Pending datasource ingestion deferred during an active reindexing job (`Story 19.7`)."""
+
+    id: str
+    workspace_id: str
+    datasource_id: str
+    job_id: str | None
+    payload_jsonb: dict[str, object]
+    status: Literal["PENDING", "PROCESSED", "FAILED"] = "PENDING"
+    created_at: str | None = None
+    processed_at: str | None = None

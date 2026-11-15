@@ -15,3 +15,5 @@ export type AiModelMappingsListResponse = components["schemas"]["AiModelMappings
 export type AiModelPatchRequest = components["schemas"]["AiModelPatchRequest"];
 export type AiModelTestResponse = components["schemas"]["AiModelTestResponse"];
 export type DiscoveredModelItem = components["schemas"]["DiscoveredModelItem"];
+export type RagReindexStatusResponse = components["schemas"]["RagReindexStatusResponse"];
+export type RagReindexTriggerResponse = components["schemas"]["RagReindexTriggerResponse"];

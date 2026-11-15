@@ -22,6 +22,9 @@ LlmProtocolModeLiteral = Literal["openai_compatible", "gemini_native", "anthropi
 LlmModelUsageLiteral = Literal["chat", "embedding"]
 HealthStatusLiteral = Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"]
 PinRemovalModeLiteral = Literal["reject", "drain", "force"]
+RagReindexJobStatusLiteral = Literal[
+    "IDLE", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"
+]
 
 
 class AiModelMappingItemResponse(BaseModel):
@@ -181,6 +184,37 @@ class AiModelDiscoveryResponse(BaseModel):
     total_count: int
 
 
+class RagReindexStatusResponse(BaseModel):
+    """Current status of the global RAG vector reindexing job (`Story 19.7`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: str | None = None
+    status: RagReindexJobStatusLiteral = "IDLE"
+    target_model_id: str | None = None
+    target_model_name: str | None = None
+    total_chunks: int = 0
+    processed_chunks: int = 0
+    progress_percentage: int = 0
+    error_message: str | None = None
+    created_at: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
+    updated_at: str | None = None
+
+
+class RagReindexTriggerResponse(BaseModel):
+    """Response returned upon triggering a global RAG vector reindexing job (`Story 19.7`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: str
+    status: RagReindexJobStatusLiteral = "PENDING"
+    target_model_id: str
+    target_model_name: str
+    message: str
+
+
 __all__ = [
     "AiModelCreateRequest",
     "AiModelDeleteImpactResponse",
@@ -199,5 +233,8 @@ __all__ = [
     "LlmModelUsageLiteral",
     "LlmProtocolModeLiteral",
     "PinRemovalModeLiteral",
+    "RagReindexJobStatusLiteral",
+    "RagReindexStatusResponse",
+    "RagReindexTriggerResponse",
     "ScopeLevelLiteral",
 ]

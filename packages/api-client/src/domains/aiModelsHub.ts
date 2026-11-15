@@ -8,6 +8,8 @@ import type {
   AiModelMappingsListResponse,
   AiModelPatchRequest,
   AiModelTestResponse,
+  RagReindexStatusResponse,
+  RagReindexTriggerResponse,
 } from "../generated/ai_models_hub";
 import { buildPersonaQuery, type createRequestJson } from "../helpers";
 
@@ -92,6 +94,19 @@ export function createAiModelsHubDomainClient(requestJson: RequestJsonFn) {
       return requestJson<AiModelDeleteResponse>(
         `/api/v1/settings/ai-models/mappings/${encodeURIComponent(mappingId)}?${q.toString()}`,
         "DELETE",
+      );
+    },
+
+    getReindexStatus(): Promise<RagReindexStatusResponse> {
+      return requestJson<RagReindexStatusResponse>(
+        "/api/v1/settings/ai-models/reindex-status",
+      );
+    },
+
+    reindexEmbeddings(actorPersona?: string): Promise<RagReindexTriggerResponse> {
+      return requestJson<RagReindexTriggerResponse>(
+        `/api/v1/settings/ai-models/reindex-embeddings${buildPersonaQuery(actorPersona)}`,
+        "POST",
       );
     },
   };

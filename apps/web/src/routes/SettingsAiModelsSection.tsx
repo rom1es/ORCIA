@@ -26,6 +26,7 @@ import {
   type AiModelModalMode,
 } from "../features/admin/ai-models/AiModelConfigModal";
 import { AiModelDeleteDialog } from "../features/admin/ai-models/AiModelDeleteDialog";
+import { AiModelReindexPanel } from "../features/admin/ai-models/AiModelReindexPanel";
 import { AiModelsMasterTable } from "../features/admin/ai-models/AiModelsMasterTable";
 import { useI18n } from "../i18n";
 import { useAuthSessionStore } from "../stores/authSessionStore";
@@ -344,6 +345,11 @@ export function SettingsAiModelsSection({
           </button>
         </div>
       )}
+
+      <AiModelReindexPanel
+        isFr={isFr}
+        canExecute={allowedVerbs.includes("execute")}
+      />
 
       <AiModelsMasterTable
         isFr={isFr}
