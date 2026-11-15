@@ -162,6 +162,7 @@ export function CreateOrgUnitModal({
           </label>
           <input
             id="org-unit-name-input"
+            name="org_unit_title"
             type="text"
             autoComplete="off"
             data-lpignore="true"
@@ -184,6 +185,7 @@ export function CreateOrgUnitModal({
           </label>
           <input
             id="org-unit-slug-input"
+            name="org_unit_short_code"
             type="text"
             autoComplete="off"
             data-lpignore="true"
@@ -265,6 +267,7 @@ export function CreateOrgUnitModal({
         >
           <input
             type="checkbox"
+            name="org_unit_billing_enabled"
             autoComplete="off"
             data-lpignore="true"
             data-1p-ignore="true"

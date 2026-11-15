@@ -13,13 +13,8 @@ from dataclasses import replace
 from fastapi import Request, Response
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from orcia_api.schemas.auth_and_org import (
-    WorkspaceDatasourceItem,
-    WorkspaceSummaryItem,
-)
-from orcia_api.schemas.iam_password_models import (
-    ChangePasswordResponse,
-)
+from orcia_api.schemas.auth_and_org import WorkspaceDatasourceItem, WorkspaceSummaryItem
+from orcia_api.schemas.iam_password_models import ChangePasswordResponse
 from orcia_core.bootstrap import (
     LocalAuthCandidate,
     load_auth_candidate_by_id_from_postgres18,
@@ -118,6 +113,52 @@ async def rehydrate_user_from_pg_by_id(
     return None
 
 
+def resolve_app_db_engine(request: Request) -> AsyncEngine | None:
+    """Resolve shared PostgreSQL `AsyncEngine`, returning `None` if PG is disabled."""
+    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+        return None
+    try:
+        from orcia_api.dependencies import get_or_create_shared_db_engine
+
+        return get_or_create_shared_db_engine(request)
+    except Exception as exc:
+        logger.warning("resolve_app_db_engine_failed", error_type=type(exc).__name__)
+        return None
+
+
+async def sync_auth_service_user_by_email_from_pg(
+    request: Request,
+    auth_svc: AuthAndOrganizationService,
+    email: str | None,
+) -> None:
+    """Sync in-memory user cache in `AuthAndOrganizationService` from PG 18 by email/principal."""
+    if not email or not email.strip():
+        return
+    clean_email = email.strip()
+    engine = resolve_app_db_engine(request)
+    if engine is None:
+        return
+    try:
+        conn_ctx = engine.connect()
+        if inspect.iscoroutine(conn_ctx):
+            conn_ctx.close()
+            return
+        async with conn_ctx as conn:
+            candidate = await load_local_auth_candidate_from_postgres18(conn, email=clean_email)
+        if candidate is not None and candidate.is_active and candidate.iam_status != "DISABLED":
+            auth_svc.register_user(user_identity_from_candidate(candidate))
+        elif candidate is not None and (
+            not candidate.is_active or candidate.iam_status == "DISABLED"
+        ):
+            auth_svc.unregister_user(candidate.user_id)
+    except Exception as exc:
+        logger.warning(
+            "sync_auth_service_user_by_email_from_pg_failed",
+            email=clean_email,
+            error_type=type(exc).__name__,
+        )
+
+
 async def rehydrate_bearer_subject_from_pg_if_missing(request: Request) -> None:
     """ASGI/HTTP middleware hook rehydrating caller identity from PG 18 if RAM was cleared."""
     auth_hdr = request.headers.get("Authorization")
@@ -142,20 +183,18 @@ async def rehydrate_bearer_subject_from_pg_if_missing(request: Request) -> None:
     if auth_svc.has_user_in_memory(claims.sub):
         return
 
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return
-
-    try:
-        from orcia_api.dependencies import get_or_create_shared_db_engine
-
-        engine = get_or_create_shared_db_engine(request)
-        await rehydrate_user_from_pg_by_id(engine, auth_svc, claims.sub, auth_mode=claims.auth_mode)
-    except Exception as exc:
-        get_logger("orcia.api.auth").warning(
-            "rehydrate_bearer_subject_from_pg_failed",
-            sub=claims.sub,
-            error_type=type(exc).__name__,
-        )
+    engine = resolve_app_db_engine(request)
+    if engine is not None:
+        try:
+            await rehydrate_user_from_pg_by_id(
+                engine, auth_svc, claims.sub, auth_mode=claims.auth_mode
+            )
+        except Exception as exc:
+            get_logger("orcia.api.auth").warning(
+                "rehydrate_bearer_subject_from_pg_failed",
+                sub=claims.sub,
+                error_type=type(exc).__name__,
+            )
 
 
 async def authenticate_via_postgres18(
@@ -214,12 +253,15 @@ async def hydrate_user_identity_from_pg(
                 if svc is not None:
                     svc.unregister_user(user.id)
                 raise ResourceNotFoundError()
-            return replace(
+            hydrated = replace(
                 user,
                 roles=candidate.roles,
                 must_change_password=candidate.must_change_password,
                 is_active=candidate.is_active,
             )
+            if svc is not None:
+                svc.register_user(hydrated)
+            return hydrated
         else:
             if svc is not None:
                 svc.unregister_user(user.id)

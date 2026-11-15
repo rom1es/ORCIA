@@ -35,6 +35,7 @@ interface MockBackendState {
   firstAdmin: {
     email: string;
     displayName: string;
+    roles?: string[];
   } | null;
   platformSetupState: Record<string, unknown> | null;
   orgUnits: MockOrganizationalUnit[];
@@ -74,7 +75,7 @@ const backendState: MockBackendState = {
   recordedCalls: [],
 };
 
-import { resetAuthSessionStore } from "../stores/authSessionStore";
+import { resetAuthSessionStore, useAuthSessionStore } from "../stores/authSessionStore";
 import {
   getVitestIamAccounts,
   handleVitestIamRoute,
@@ -228,7 +229,7 @@ export function setVitestMockRefreshFails(fails: boolean): void {
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
 export function seedVitestPlatformSetupState(
   state: Record<string, unknown>,
-  firstAdmin: { email: string; displayName: string } | null = { email: "admin@orcia.test", displayName: "Admin Test" },
+  firstAdmin: { email: string; displayName: string; roles?: string[] } | null = { email: "admin@orcia.test", displayName: "Admin Test" },
 ): void {
   backendState.firstAdmin = firstAdmin;
   writeCachedPlatformAdmin(
@@ -394,12 +395,32 @@ async function vitestFetchTransport(
   }
 
   if (path === "/api/v1/auth/me" && method === "GET") {
+    const targetEmail =
+      backendState.firstAdmin?.email ??
+      useAuthSessionStore.getState().email ??
+      "admin@orcia.local";
+    const targetDisplayName =
+      backendState.firstAdmin?.displayName ??
+      useAuthSessionStore.getState().displayName ??
+      "Administrateur Plateforme";
+    const matchedAccount = getVitestIamAccounts().find(
+      (a) =>
+        a.principal_id.toLowerCase() === targetEmail.toLowerCase() ||
+        (a.email && a.email.toLowerCase() === targetEmail.toLowerCase()),
+    );
+    const storeRoles = useAuthSessionStore.getState().roles;
+    const resolvedRoles =
+      matchedAccount?.roles ?? (storeRoles.length > 0 ? storeRoles : ["PLATFORM_ADMIN"]);
+    const activeHat =
+      useAuthSessionStore.getState().activeHat ||
+      (resolvedRoles.includes("PLATFORM_ADMIN") ? "PLATFORM_ADMIN" : resolvedRoles[0] || "CONTRIBUTOR");
+
     return jsonResponse({
       user_id: "usr-vitest-1",
-      email: backendState.firstAdmin?.email ?? "admin@orcia.local",
-      display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
-      roles: ["PLATFORM_ADMIN"],
-      active_hat: "PLATFORM_ADMIN",
+      email: targetEmail,
+      display_name: targetDisplayName,
+      roles: resolvedRoles,
+      active_hat: activeHat,
       access_mode: "READ_WRITE",
       must_change_password: false,
       workspaces: [],
@@ -414,19 +435,39 @@ async function vitestFetchTransport(
         trace_id: "01a1dead000000000000000000000001",
       });
     }
+    const targetEmail =
+      backendState.firstAdmin?.email ??
+      useAuthSessionStore.getState().email ??
+      "admin@orcia.local";
+    const targetDisplayName =
+      backendState.firstAdmin?.displayName ??
+      useAuthSessionStore.getState().displayName ??
+      "Administrateur Plateforme";
+    const matchedAccount = getVitestIamAccounts().find(
+      (a) =>
+        a.principal_id.toLowerCase() === targetEmail.toLowerCase() ||
+        (a.email && a.email.toLowerCase() === targetEmail.toLowerCase()),
+    );
+    const storeRoles = useAuthSessionStore.getState().roles;
+    const resolvedRoles =
+      matchedAccount?.roles ?? (storeRoles.length > 0 ? storeRoles : ["PLATFORM_ADMIN"]);
+    const platformRole = resolvedRoles.includes("PLATFORM_ADMIN")
+      ? "PLATFORM_ADMIN"
+      : resolvedRoles[0] || "CONTRIBUTOR";
+
     return jsonResponse({
       authenticated: true,
       session: {
         access_token: "mock-refreshed-token",
         token_type: "Bearer",
         expires_in_seconds: 900,
-        roles: ["PLATFORM_ADMIN"],
-        platform_role: "PLATFORM_ADMIN",
+        roles: resolvedRoles,
+        platform_role: platformRole,
         human_profile_archetype: "Tech Lead",
         primary_org_unit_id: "org-root",
         user_id: "usr-vitest-1",
-        email: backendState.firstAdmin?.email ?? "admin@orcia.local",
-        display_name: backendState.firstAdmin?.displayName ?? "Administrateur Plateforme",
+        email: targetEmail,
+        display_name: targetDisplayName,
         must_change_password: false,
         requires_two_factor: false,
         trace_id: "01a1dead000000000000000000000002",

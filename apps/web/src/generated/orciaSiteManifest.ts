@@ -12,10 +12,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "uiPrimitivesCount": 105,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 36,
-    "architectureDecisionsCount": 22,
-    "stackComponentsCount": 40,
-    "techLeadReportsCount": 124,
-    "capabilitiesCount": 60,
+    "architectureDecisionsCount": 23,
+    "stackComponentsCount": 44,
+    "techLeadReportsCount": 126,
+    "capabilitiesCount": 61,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
   },
@@ -292,6 +292,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     {
       "code": "AD-22",
       "title": "Socle Design System Open Source @orcia/ui (Radix UI Primitives + Architecture shadcn/ui), Séparation Stricte Look & Feel (tokens.css) / Logique (apps/web) / Contenus (i18n), Conformité RGAA 4.1 & Hiérarchie Chromatique des Onglets"
+    },
+    {
+      "code": "AD-23",
+      "title": "Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (Elasticsearch/OpenSearch & Loki), Port d'Interrogation Découplé (LogSinkQueryPort), Traces OpenTelemetry OTLP et Conformité OpenShift"
     }
   ],
   "stackComponents": [
@@ -328,8 +332,24 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "version": "26.1.0"
     },
     {
-      "name": "opentelemetry-sdk + opentelemetry-instrumentation-fastapi",
-      "version": "1.31.0 / 0.52b0"
+      "name": "opentelemetry-sdk + opentelemetry-exporter-otlp",
+      "version": "1.31.0 / 1.31.0"
+    },
+    {
+      "name": "opentelemetry-instrumentation-fastapi + sqlalchemy + httpx",
+      "version": "0.52b0 / 0.52b0 / 0.52b0"
+    },
+    {
+      "name": "elasticsearch-py / opensearch-py (Log Sink Client & OpenSearch Compatibility)",
+      "version": "8.17.1 / 2.8.0"
+    },
+    {
+      "name": "Grafana / Loki / OpenTelemetry Collector (Dev Observability Stack & Profiles)",
+      "version": "11.5.1 / 3.4.1 / 0.120.0"
+    },
+    {
+      "name": "OpenShift Logging / ClusterLogForwarder (Target Prod Platform Sink)",
+      "version": "5.9+ / 6.0"
     },
     {
       "name": "SQLAlchemy (Asyncio) + asyncpg + Alembic",
@@ -459,6 +479,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "techLeadReports": [
     {
       "date": "2026-11-15",
+      "phaseOrStory": "Correctif & UX IAM/SecOps/BU (CAP-050, CAP-051, CAP-058)",
+      "reportFile": "2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu-tech-lead-report.md",
+      "domain": "Blocage extensions mots de passe (LastPass/1Password), Modale à la demande de la Matrice des 6 Rôles, Synchronisation RBAC SecOps (iam_accounts ↔ /auth ↔ HierarchicalRbacService) & Hiérarchie visuelle BGPN / StatusBadge cobalt pastel",
+      "summary": "Champs type=\"search\" + data-lpignore=\"true\" & garde-fous CSS sur combobox/modales, extraction IamRoleMatrixReferenceModal (option A1) et renumérotation section SecOps, jointure SQL sql_local_auth.py + _effective_identity_roles dans hierarchical_rbac.py (DEBT-RBAC-SPLIT-01) + resync RAM/session iam_accounts.py & authSessionStore.hydrateSession({ force }), accentuation strong.text-base sur nom BU et passage StatusBadge cobalt en pastel sémantique (option A2)."
+    },
+    {
+      "date": "2026-11-15",
       "phaseOrStory": "Ajustement Transverse Auth & UX (CAP-001, CAP-058, CAP-060)",
       "reportFile": "2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa-tech-lead-report.md",
       "domain": "Modale Jour 0 Bornée (520px / max-w-lg), Fournisseur Global Bearer @orcia/api-client & Garde !isHydrating au F5, Unification Direction C <OrciaAlertBanner />, Espacement 2FA (tokens.css & PlatformAuthSettingsCard) & UX-COCKPIT-DAY0-01",
@@ -470,6 +497,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "reportFile": "2026-11-15-resilience-auth-pg18-miss-ram-uvicorn-reload-tech-lead-report.md",
       "domain": "Résilience d'Authentification PostgreSQL 18 en cas de Miss RAM (uvicorn --reload / redémarrage worker), Méthodes Publiques has_user_in_memory et verify_*_token_claims, Middleware ASGI de Réhydratation Bearer & Survie des Sessions /session et /refresh",
       "summary": "Méthodes publiques pures has_user_in_memory, verify_access_token_claims, verify_refresh_token_claims sur AuthAndOrganizationService (sans accès d'attribut privé), pré-hydratation PostgreSQL 18 dans _rotate_refresh_and_hydrate (/session, /refresh), middleware ASGI rehydrate_bearer_subject_from_pg_if_missing garantissant le rechargement transparent de l'utilisateur actif depuis PG 18 sur tout appel API avec Authorization: Bearer <jwt>, validation de pérennité boot_epoch, couverture unitaire 43 tests et test d'intégration testcontainers PostgreSQL 18 test_auth_pg_rehydration_postgres18.py."
+    },
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Ajustement Transverse / Architecture ADR AD-23 (CAP-202)",
+      "reportFile": "2026-11-15-adr-journalisation-puits-de-logs-tech-lead-report.md",
+      "domain": "Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (LogSinkQueryPort), Traces OTel OTLP & Cible OpenShift Logging",
+      "summary": "Formalisation de la décision d'architecture AD-23 : émission 12-factor JSON unifiée sur stdout via structlog ProcessorFormatter unifiant la stdlib ; découplage complet de l'application vis-à-vis du puits ; port abstrait LogSinkQueryPort avec adaptateur Elasticsearch/OpenSearch prioritaire et alternative Loki en dev ; détection d'anomalies côté ORCIA (error_fingerprint_sha256, déduplication, cooldown, Outbox) sans alerting propriétaire ; traces distribuées OpenTelemetry via OTLP standard ; 4 invariants stricts de réversibilité (bascule infra en 2–3 jours sans code applicatif) ; conformité conteneur non-root pour cible OpenShift (SCC restricted, FS read-only, ClusterLogForwarder avec structuredTypeKey) ; création des Stories 7.0a, 7.0b, 7.0c débloquant Stories 7.2 et 7.3 de l'Epic 7 ; et enregistrement de CAP-202 (planned)."
     },
     {
       "date": "2026-11-15",

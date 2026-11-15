@@ -164,25 +164,45 @@ _USER_AUTH_SELECT_SQL = """
                 i.status AS iam_status,
                 i.roles_jsonb AS iam_roles_jsonb
             FROM users u
-            LEFT JOIN iam_accounts i ON LOWER(i.email) = LOWER(u.email)
+            LEFT JOIN LATERAL (
+                SELECT
+                    status,
+                    roles_jsonb
+                FROM iam_accounts
+                WHERE LOWER(email) = LOWER(u.email) OR LOWER(principal_id) = LOWER(u.email)
+                ORDER BY
+                    CASE WHEN LOWER(email) = LOWER(u.email) THEN 0 ELSE 1 END,
+                    updated_at DESC
+                LIMIT 1
+            ) i ON TRUE
 """
 
 
 def _row_to_local_auth_candidate(row: sa.RowMapping) -> LocalAuthCandidate:
     roles_list: list[str] = []
+    iam_status = str(row["iam_status"]) if row["iam_status"] else None
     raw_roles = row["iam_roles_jsonb"]
-    if isinstance(raw_roles, list):
-        roles_list = [str(r) for r in raw_roles if r]
-    elif isinstance(raw_roles, str):
-        try:
-            parsed = json.loads(raw_roles)
-            if isinstance(parsed, list):
-                roles_list = [str(r) for r in parsed if r]
-        except json.JSONDecodeError:
-            roles_list = []
 
-    if not roles_list and row["platform_role"]:
-        roles_list = [str(row["platform_role"])]
+    if iam_status in ("ACTIVE", None) and raw_roles is not None:
+        parsed_roles: list[str] = []
+        if isinstance(raw_roles, list):
+            parsed_roles = [str(r).strip() for r in raw_roles if r and str(r).strip()]
+        elif isinstance(raw_roles, str):
+            try:
+                parsed = json.loads(raw_roles)
+                if isinstance(parsed, list):
+                    parsed_roles = [str(r).strip() for r in parsed if r and str(r).strip()]
+            except json.JSONDecodeError:
+                parsed_roles = []
+        seen: set[str] = set()
+        for r in parsed_roles:
+            if r not in seen:
+                seen.add(r)
+                roles_list.append(r)
+
+    if not roles_list:
+        fallback_role = str(row.get("platform_role") or "CONTRIBUTOR")
+        roles_list = [fallback_role]
 
     return LocalAuthCandidate(
         user_id=str(row["user_id"]),
@@ -192,8 +212,8 @@ def _row_to_local_auth_candidate(row: sa.RowMapping) -> LocalAuthCandidate:
         is_active=bool(row["is_active"]),
         must_change_password=bool(row["must_change_password"]),
         platform_role=str(row["platform_role"]),
-        roles=tuple(roles_list) if roles_list else _DEFAULT_HUMAN_ROLES,
-        iam_status=str(row["iam_status"]) if row["iam_status"] else None,
+        roles=tuple(roles_list),
+        iam_status=iam_status,
         primary_org_unit_id=str(row["primary_org_unit_id"]),
         totp_secret_encrypted=row["totp_secret_encrypted"],
         totp_enabled=bool(row["totp_enabled"]),

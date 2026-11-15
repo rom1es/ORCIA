@@ -111,7 +111,13 @@ export function SettingsOrganizationUnitRow({
           size={15}
         />
 
-        <strong>{unit.name}</strong>
+        <strong
+          data-testid={`org-unit-name-${unit.id}`}
+          className="text-base font-semibold tracking-tight"
+          style={{ color: "var(--color-foreground)" }}
+        >
+          {unit.name}
+        </strong>
 
         <StatusBadge
           testId={`org-unit-kind-badge-${unit.id}`}
@@ -155,7 +161,7 @@ export function SettingsOrganizationUnitRow({
               <StatusBadge
                 testId={`org-unit-lead-badge-${unit.id}`}
                 label={leadLabelText}
-                tone="cobalt"
+                tone="neutral"
               />
             );
           })()

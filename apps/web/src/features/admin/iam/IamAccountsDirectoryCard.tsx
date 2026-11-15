@@ -1,5 +1,5 @@
 import type { IamAccountResponse } from "@orcia/api-client";
-import { OrciaAlertBanner, OrciaIcon, StatusBadge } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaButton, OrciaIcon, StatusBadge } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { IamTabDictionarySection } from "../../../i18n/locales/iam_accounts_labels";
@@ -11,6 +11,7 @@ export interface IamAccountsDirectoryCardProps {
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly labels: IamTabDictionarySection;
   readonly errorMessage: string | null;
+  readonly onOpenRoleMatrix: () => void;
   readonly onOpenCreateModal: () => void;
   readonly onOpenEditModal: (account: IamAccountResponse) => void;
   readonly onDeleteAccount: (account: IamAccountResponse) => void;
@@ -23,6 +24,7 @@ export function IamAccountsDirectoryCard({
   orgUnits,
   labels,
   errorMessage,
+  onOpenRoleMatrix,
   onOpenCreateModal,
   onOpenEditModal,
   onDeleteAccount,
@@ -80,16 +82,27 @@ export function IamAccountsDirectoryCard({
             {dir.sectionSubtitle}
           </p>
         </div>
-        <button
-          type="button"
-          data-testid="iam-open-create-account-btn"
-          disabled={!canMutate}
-          onClick={onOpenCreateModal}
-          className="orcia-ds-btn orcia-ds-btn-primary"
-        >
-          <OrciaIcon name="user" size={14} />
-          <span>{dir.createAccountCta}</span>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          <OrciaButton
+            variant="secondary"
+            size="sm"
+            testId="iam-open-role-matrix-modal-btn"
+            onClick={onOpenRoleMatrix}
+          >
+            <OrciaIcon name="document" size={14} />
+            <span>{labels.directory.openRoleMatrixCta || labels.matrix.openRoleMatrixCta}</span>
+          </OrciaButton>
+          <button
+            type="button"
+            data-testid="iam-open-create-account-btn"
+            disabled={!canMutate}
+            onClick={onOpenCreateModal}
+            className="orcia-ds-btn orcia-ds-btn-primary"
+          >
+            <OrciaIcon name="user" size={14} />
+            <span>{dir.createAccountCta}</span>
+          </button>
+        </div>
       </div>
 
       {errorMessage ? (

@@ -18,9 +18,9 @@ export interface StatusBadgeProps {
 
 const TONE_STYLES: Record<StatusBadgeTone, React.CSSProperties> = {
   cobalt: {
-    backgroundColor: "var(--color-primary-cobalt)",
-    color: "var(--color-primary-foreground)",
-    border: "1px solid var(--color-primary-cobalt)",
+    backgroundColor: "var(--color-badge-cobalt-bg)",
+    color: "var(--color-badge-cobalt-fg)",
+    border: "1px solid var(--color-badge-cobalt-border)",
   },
   amber: {
     backgroundColor: "var(--color-arbitration-bg)",

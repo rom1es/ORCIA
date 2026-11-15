@@ -22,6 +22,7 @@ from orcia_api.dependencies import (
     get_iam_accounts_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.routers._auth_pg_helpers import sync_auth_service_user_by_email_from_pg
 from orcia_api.routers._iam_accounts_passwords import (
     cleanup_or_disable_linked_user_on_postgres18,
     enforce_iam_accounts_mutation_access,
@@ -226,6 +227,10 @@ async def create_iam_account(
 
     if created.team_ids:
         sync_in_memory_team_memberships(auth_svc.evaluator, created.principal_id, created.team_ids)
+    if created.email:
+        await sync_auth_service_user_by_email_from_pg(request, auth_svc, created.email)
+    if created.principal_id and created.principal_id != created.email:
+        await sync_auth_service_user_by_email_from_pg(request, auth_svc, created.principal_id)
     return _serialize_account(created, temporary_password=temp_pw)
 
 
@@ -301,6 +306,10 @@ async def update_iam_account(
         )
     if payload.team_ids is not None:
         sync_in_memory_team_memberships(auth_svc.evaluator, updated.principal_id, updated.team_ids)
+    if updated.email:
+        await sync_auth_service_user_by_email_from_pg(request, auth_svc, updated.email)
+    if updated.principal_id and updated.principal_id != updated.email:
+        await sync_auth_service_user_by_email_from_pg(request, auth_svc, updated.principal_id)
     return _serialize_account(updated)
 
 
@@ -349,6 +358,8 @@ async def delete_iam_account(
     if deleted_principal:
         sync_in_memory_team_memberships(auth_svc.evaluator, deleted_principal, (), remove_all=True)
         auth_svc.unregister_user(deleted_principal)
+        await sync_auth_service_user_by_email_from_pg(request, auth_svc, deleted_principal)
     if deleted_email and deleted_email != deleted_principal:
         auth_svc.unregister_user(deleted_email)
+        await sync_auth_service_user_by_email_from_pg(request, auth_svc, deleted_email)
     return IamAccountDeleteResponse(deleted_id=deleted_id, trace_id=_trace(request))

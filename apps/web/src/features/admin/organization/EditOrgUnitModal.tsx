@@ -103,6 +103,7 @@ export function EditOrgUnitModal({
           </label>
           <input
             id="edit-org-unit-name-input"
+            name="org_unit_title"
             type="text"
             autoComplete="off"
             data-lpignore="true"
@@ -149,6 +150,7 @@ export function EditOrgUnitModal({
         >
           <input
             type="checkbox"
+            name="org_unit_billing_enabled"
             autoComplete="off"
             data-lpignore="true"
             data-1p-ignore="true"

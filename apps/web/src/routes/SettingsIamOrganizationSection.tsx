@@ -13,7 +13,7 @@ import {
   type IamAccountModalSubmitValues,
 } from "../features/admin/iam/IamAccountModal";
 import { IamAccountsDirectoryCard } from "../features/admin/iam/IamAccountsDirectoryCard";
-import { IamNativeRoleMatrixCard } from "../features/admin/iam/IamNativeRoleMatrixCard";
+import { IamRoleMatrixReferenceModal } from "../features/admin/iam/IamRoleMatrixReferenceModal";
 import {
   IamSecopsExceptionsDrawer,
   type CreateSecopsExceptionInput,
@@ -74,20 +74,33 @@ export function SettingsIamOrganizationSection({
   const locale: "fr" | "en" = isFr ? "fr" : "en";
   const roles = useAuthSessionStore((s) => s.roles);
   const activeHat = useAuthSessionStore((s) => s.activeHat);
+  const userEmail = useAuthSessionStore((s) => s.email);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
-
-  const hasSecopsRole = roles.includes("SECOPS") || activeHat === "SECOPS";
-  const isSecopsAuthorized = canMutate && !readOnlyObserver && hasSecopsRole;
 
   const [accounts, setAccounts] = useState<readonly IamAccountResponse[]>([]);
   const [roleMatrix, setRoleMatrix] = useState<readonly RoleMatrixEntryResponse[]>([]);
   const [accountsError, setAccountsError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isRoleMatrixModalOpen, setIsRoleMatrixModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<IamAccountResponse | null>(null);
   const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
+
+  const currentAccount = accounts.find(
+    (acc) =>
+      acc.status === "ACTIVE" &&
+      userEmail &&
+      (acc.email?.toLowerCase() === userEmail.toLowerCase() ||
+        acc.principal_id?.toLowerCase() === userEmail.toLowerCase()),
+  );
+  const currentAccountRoles = currentAccount?.roles ?? [];
+  const hasSecopsRole =
+    roles.includes("SECOPS") ||
+    activeHat === "SECOPS" ||
+    currentAccountRoles.includes("SECOPS");
+  const isSecopsAuthorized = canMutate && !readOnlyObserver && hasSecopsRole;
   const [tempPasswordModalData, setTempPasswordModalData] = useState<{
     displayName: string;
     email: string;
@@ -168,6 +181,7 @@ export function SettingsIamOrganizationSection({
       const listRes = await fetchIamAccountsFromApi(locale);
       if (listRes.ok) setAccounts(listRes.accounts);
       await syncOrgUnitsAfterAccountTeamChange();
+      await useAuthSessionStore.getState().hydrateSession({ force: true });
     } else {
       const res = await createIamAccountViaApi(
         {
@@ -198,6 +212,7 @@ export function SettingsIamOrganizationSection({
       const listRes = await fetchIamAccountsFromApi(locale);
       if (listRes.ok) setAccounts(listRes.accounts);
       await syncOrgUnitsAfterAccountTeamChange();
+      await useAuthSessionStore.getState().hydrateSession({ force: true });
     }
   };
 
@@ -226,6 +241,7 @@ export function SettingsIamOrganizationSection({
     const listRes = await fetchIamAccountsFromApi(locale);
     if (listRes.ok) setAccounts(listRes.accounts);
     await syncOrgUnitsAfterAccountTeamChange();
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
   };
 
   return (
@@ -239,6 +255,7 @@ export function SettingsIamOrganizationSection({
         orgUnits={orgUnits}
         labels={iamLabels}
         errorMessage={accountsError}
+        onOpenRoleMatrix={() => setIsRoleMatrixModalOpen(true)}
         onOpenCreateModal={() => {
           setEditingAccount(null);
           setModalError(null);
@@ -255,12 +272,6 @@ export function SettingsIamOrganizationSection({
         onResetTemporaryPassword={(acc) => {
           void handleResetTemporaryPassword(acc);
         }}
-      />
-
-      <IamNativeRoleMatrixCard
-        roleMatrix={roleMatrix}
-        labels={iamLabels}
-        openHelpSection={openHelpSection}
       />
 
       <IamSecopsExceptionsDrawer
@@ -285,6 +296,14 @@ export function SettingsIamOrganizationSection({
         }}
       />
 
+      <IamRoleMatrixReferenceModal
+        isOpen={isRoleMatrixModalOpen}
+        onClose={() => setIsRoleMatrixModalOpen(false)}
+        roleMatrix={roleMatrix}
+        labels={iamLabels}
+        openHelpSection={openHelpSection}
+      />
+
       <IamAccountModal
         open={modalOpen}
         onOpenChange={setModalOpen}
@@ -294,6 +313,7 @@ export function SettingsIamOrganizationSection({
         labels={iamLabels}
         errorMessage={modalError}
         isSubmitting={isSubmittingAccount}
+        onOpenRoleMatrix={() => setIsRoleMatrixModalOpen(true)}
         onSubmit={(values) => {
           void handleAccountModalSubmit(values);
         }}

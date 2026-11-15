@@ -45,6 +45,21 @@ from orcia_kernel.events import AccessRequested, DomainEvent, PermissionGranted,
 from orcia_kernel.ids import new_uuid7_str
 
 
+def _effective_identity_roles(user: UserIdentity) -> tuple[str, ...]:
+    """Derive deduplicated effective roles for a user identity preserving declaration order."""
+    candidate_roles: list[str] = [user.platform_role, *user.roles]
+    if user.human_profile_archetype == "SECOPS":
+        candidate_roles.append("SECOPS")
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for r in candidate_roles:
+        clean = str(r).strip()
+        if clean and clean not in seen:
+            seen.add(clean)
+            deduped.append(clean)
+    return tuple(deduped)
+
+
 class HierarchicalRbacService:
     """Domain service for the 6-verb hierarchical RBAC/ABAC model (`Story 8.1`, `Story 17.3`)."""
 
@@ -126,16 +141,37 @@ class HierarchicalRbacService:
     def resolve_effective_verbs(
         self,
         *,
-        subject_id: str,
+        subject_id: str = "",
         subject_type: SubjectType = "USER",
         roles: tuple[str, ...] = (),
         scope_path: str,
         context: dict[str, Any] | None = None,
+        user: UserIdentity | None = None,
     ) -> set[PermissionVerb]:
         """Compute effective allowed verbs along `scope_path` with `DENY` & `inheritance_block`."""
-        if subject_id in self._revoked_subjects:
+        effective_roles: tuple[str, ...] = roles
+        effective_sub_id: str = subject_id
+        if user is not None:
+            user_roles = _effective_identity_roles(user)
+            if not effective_roles:
+                effective_roles = user_roles
+            else:
+                combined: list[str] = []
+                seen_roles: set[str] = set()
+                for r in (*effective_roles, *user_roles):
+                    clean_r = str(r).strip()
+                    if clean_r and clean_r not in seen_roles:
+                        seen_roles.add(clean_r)
+                        combined.append(clean_r)
+                effective_roles = tuple(combined)
+            if not effective_sub_id:
+                effective_sub_id = user.id
+
+        if effective_sub_id in self._revoked_subjects:
             return set()
-        if ("PLATFORM_ADMIN" in roles or "SECOPS" in roles) and subject_type == "USER":
+        if (
+            "PLATFORM_ADMIN" in effective_roles or "SECOPS" in effective_roles
+        ) and subject_type == "USER":
             prefixes = iter_scope_prefixes(scope_path)
             denied_admin: set[PermissionVerb] = set()
             for pfx in prefixes:
@@ -145,8 +181,8 @@ class HierarchicalRbacService:
                         and g.effect == "DENY"
                         and self._grant_applies_to_resource_kind(g, context)
                         and (
-                            (g.subject_type == subject_type and g.subject_id == subject_id)
-                            or (g.subject_type == "ROLE" and g.subject_id in roles)
+                            (g.subject_type == subject_type and g.subject_id == effective_sub_id)
+                            or (g.subject_type == "ROLE" and g.subject_id in effective_roles)
                         )
                     ):
                         denied_admin.add(g.verb)
@@ -162,8 +198,8 @@ class HierarchicalRbacService:
                 for g in self._grants.values()
                 if g.scope_path == pfx
                 and (
-                    (g.subject_type == subject_type and g.subject_id == subject_id)
-                    or (g.subject_type == "ROLE" and g.subject_id in roles)
+                    (g.subject_type == subject_type and g.subject_id == effective_sub_id)
+                    or (g.subject_type == "ROLE" and g.subject_id in effective_roles)
                 )
             ]
             if any(
@@ -186,7 +222,7 @@ class HierarchicalRbacService:
     def evaluate_resource_access(
         self,
         *,
-        subject_id: str,
+        subject_id: str = "",
         subject_type: SubjectType = "USER",
         roles: tuple[str, ...] = (),
         scope_path: str,
@@ -195,6 +231,7 @@ class HierarchicalRbacService:
         require_secret_read: bool = False,
         require_execute: bool = False,
         instance: str | None = None,
+        user: UserIdentity | None = None,
     ) -> ResourceDiscoveryOutcome:
         """Evaluate access on a resource (`execute` vs `read` isolation & passive lock)."""
         norm_path = normalize_scope_path(scope_path)
@@ -204,6 +241,7 @@ class HierarchicalRbacService:
             roles=roles,
             scope_path=norm_path,
             context=context,
+            user=user,
         )
         ordered_verbs = tuple(v for v in ALL_PERMISSION_VERBS if v in verbs)
         has_read = "read" in verbs
@@ -265,16 +303,13 @@ class HierarchicalRbacService:
             raise ObserverModeReadOnlyError(instance=instance)
         norm_path = normalize_scope_path(scope_path)
         valid_res_kind = validate_grant_resource_kind(resource_kind, instance=instance)
-        delegator_roles = (
-            (delegator.platform_role, "SECOPS")
-            if delegator.human_profile_archetype == "SECOPS"
-            else (delegator.platform_role,)
-        )
+        delegator_roles = _effective_identity_roles(delegator)
         held = self.resolve_effective_verbs(
             subject_id=delegator.id,
             subject_type="USER",
             roles=delegator_roles,
             scope_path=norm_path,
+            user=delegator,
         )
         if "grant" not in held:
             raise GrantEscalationForbiddenError(instance=instance)

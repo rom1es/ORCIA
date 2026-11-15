@@ -53,6 +53,11 @@
   --color-accent-primary: var(--color-primary-cobalt);
   --color-brand-primary: var(--color-primary-cobalt);
 
+  /* StatusBadge Cobalt Tokens (Direction C: pastel blue badge) */
+  --color-badge-cobalt-bg: #EFF6FF;
+  --color-badge-cobalt-fg: #1D4ED8;
+  --color-badge-cobalt-border: #BFDBFE;
+
   /* Unified Tab Tokens: Intense Blue on Focus/Active + Pale Blue on Inactive */
   --color-tab-active-bg: var(--color-primary-cobalt);
   --color-tab-active-fg: #FFFFFF;
@@ -181,6 +186,11 @@
   --color-tab-inactive-hover-bg: #1D4ED8;
   --color-tab-inactive-fg: #DBEAFE;
   --color-tab-inactive-border: #3B82F6;
+
+  /* StatusBadge Cobalt Tokens (Dark mode) */
+  --color-badge-cobalt-bg: rgba(37, 99, 235, 0.18);
+  --color-badge-cobalt-fg: #93C5FD;
+  --color-badge-cobalt-border: rgba(96, 165, 250, 0.35);
 }
 
 *,
@@ -371,7 +381,7 @@ button {
 .text-\[var\(--orcia-text-primary\)\] { color: var(--orcia-text-primary); }
 .text-\[var\(--orcia-text-secondary\)\] { color: var(--orcia-text-secondary); }
 .text-\[var\(--orcia-text-on-action\)\] { color: var(--orcia-text-on-action); }
-.text-base { font-size: 15px; }
+.text-base { font-size: 0.9375rem; line-height: 1.375rem; }
 
 .text-xs { font-size: 12.5px; }
 .text-sm { font-size: 14px; }
@@ -632,6 +642,11 @@ button {
   border: 1px solid transparent;
   background-color: transparent;
   color: var(--color-muted-foreground);
+}
+
+.orcia-ds-btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
 }
 
 .orcia-sidebar-rail-header {
@@ -943,12 +958,40 @@ button {
   letter-spacing: 0.08em;
 }
 
-/* Neutralize LastPass DOM icon injection everywhere outside /login */
+/* Normalize input[type="search"] to look and behave identically to OrciaInput */
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+/* Neutralize LastPass & password manager DOM icon injections everywhere outside /login */
 *:not([data-allow-password-manager="true"]):not([data-testid="bi-mode-login-view"]):not([data-testid="login-page-container"]) > div[data-lastpass-icon-root],
+*:not([data-allow-password-manager="true"]):not([data-testid="bi-mode-login-view"]):not([data-testid="login-page-container"]) > div[data-lastpass-infield],
+*:not([data-allow-password-manager="true"]):not([data-testid="bi-mode-login-view"]):not([data-testid="login-page-container"]) > div[data-lastpass-root],
+*:not([data-allow-password-manager="true"]):not([data-testid="bi-mode-login-view"]):not([data-testid="login-page-container"]) > com-1password-button,
+[data-lpignore="true"] div[data-lastpass-icon-root],
+[data-lpignore="true"] div[data-lastpass-infield],
+[data-lpignore="true"] div[data-lastpass-root],
+[data-lpignore="true"] [id^="__lpform_"],
+[data-lpignore="true"] com-1password-button,
 input[data-lpignore="true"] + div[data-lastpass-icon-root],
+input[data-lpignore="true"] + div[data-lastpass-infield],
 textarea[data-lpignore="true"] + div[data-lastpass-icon-root],
+textarea[data-lpignore="true"] + div[data-lastpass-infield],
 form[data-lpignore="true"] div[data-lastpass-icon-root],
-form[data-lpignore="true"] div[data-lastpass-root] {
+form[data-lpignore="true"] div[data-lastpass-infield],
+form[data-lpignore="true"] div[data-lastpass-root],
+form[data-lpignore="true"] [id^="__lpform_"],
+form[data-lpignore="true"] com-1password-button {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;

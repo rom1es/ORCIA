@@ -161,7 +161,8 @@ export function OrciaKnownUserCombobox({
     >
       <input
         id={effectiveId}
-        type="text"
+        name="orcia_directory_filter_q"
+        type="search"
         role="combobox"
         aria-expanded={isOpen}
         aria-controls={listboxId}
@@ -169,9 +170,13 @@ export function OrciaKnownUserCombobox({
         aria-activedescendant={activeDescendantId}
         aria-label={ariaLabel}
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        spellCheck={false}
         data-lpignore="true"
         data-1p-ignore="true"
         data-bwignore="true"
+        data-protonpass-ignore="true"
         data-form-type="other"
         data-testid={inputTestId}
         disabled={disabled}

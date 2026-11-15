@@ -1,5 +1,5 @@
 import type { IamAccountResponse } from "@orcia/api-client";
-import { OrciaAlertBanner, OrciaDialog } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaButton, OrciaDialog } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { IamTabDictionarySection } from "../../../i18n/locales/iam_accounts_labels";
@@ -30,6 +30,7 @@ export interface IamAccountModalProps {
   readonly errorMessage: string | null;
   readonly isSubmitting: boolean;
   readonly initialCreateDefaults?: IamAccountInitialCreateDefaults;
+  readonly onOpenRoleMatrix: () => void;
   readonly onSubmit: (values: IamAccountModalSubmitValues) => void;
 }
 
@@ -43,6 +44,7 @@ export function IamAccountModal({
   errorMessage,
   isSubmitting,
   initialCreateDefaults,
+  onOpenRoleMatrix,
   onSubmit,
 }: IamAccountModalProps): React.ReactElement {
   const dir = labels.directory;
@@ -158,6 +160,7 @@ export function IamAccountModal({
         <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
           <span style={{ fontWeight: 600 }}>{dir.displayNameLabel}</span>
           <input
+            name="iam_member_full_name"
             type="text"
             autoComplete="off"
             data-lpignore="true"
@@ -176,6 +179,7 @@ export function IamAccountModal({
         <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
           <span style={{ fontWeight: 600 }}>{dir.emailOrPrincipalLabel}</span>
           <input
+            name="iam_member_directory_ref"
             type="text"
             autoComplete="off"
             data-lpignore="true"
@@ -207,9 +211,26 @@ export function IamAccountModal({
             gap: "8px",
           }}
         >
-          <legend style={{ fontSize: "12px", fontWeight: 600, padding: "0 4px" }}>
-            {dir.rolesFieldsetLabel}
-          </legend>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+            }}
+          >
+            <legend style={{ fontSize: "12px", fontWeight: 600, padding: "0 4px" }}>
+              {dir.rolesFieldsetLabel}
+            </legend>
+            <OrciaButton
+              variant="secondary"
+              size="sm"
+              testId="iam-modal-open-role-matrix-btn"
+              onClick={onOpenRoleMatrix}
+            >
+              {labels.matrix.openRoleMatrixCta || "Voir la matrice des 6 rôles"}
+            </OrciaButton>
+          </div>
           <p style={{ margin: 0, fontSize: "11.5px", color: "var(--color-muted-foreground)" }}>
             {dir.rolesHelperText}
           </p>

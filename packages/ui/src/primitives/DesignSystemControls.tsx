@@ -8,6 +8,7 @@ export type OrciaButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 export interface OrciaButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: OrciaButtonVariant;
+  readonly size?: "sm" | "md";
   readonly testId?: string;
   readonly disabledReason?: string;
 }
@@ -21,6 +22,7 @@ const BUTTON_VARIANT_CLASS: Record<OrciaButtonVariant, string> = {
 
 export function OrciaButton({
   variant = "primary",
+  size,
   testId,
   disabledReason,
   disabled,
@@ -30,7 +32,8 @@ export function OrciaButton({
   children,
   ...rest
 }: OrciaButtonProps): React.ReactElement {
-  const mergedClassName = [BUTTON_VARIANT_CLASS[variant], className]
+  const sizeClass = size === "sm" ? "orcia-ds-btn-sm" : undefined;
+  const mergedClassName = [BUTTON_VARIANT_CLASS[variant], sizeClass, className]
     .filter(Boolean)
     .join(" ");
   const resolvedTestId =
@@ -66,6 +69,14 @@ export interface OrciaInputProps
   readonly allowPasswordManager?: boolean;
 }
 
+const LOGIN_AUTOCOMPLETE_TOKENS = new Set([
+  "email",
+  "username",
+  "current-password",
+  "new-password",
+  "one-time-code",
+]);
+
 export function OrciaInput({
   testId,
   allowPasswordManager = false,
@@ -77,7 +88,11 @@ export function OrciaInput({
     .filter(Boolean)
     .join(" ");
 
-  if (allowPasswordManager) {
+  const isLoginField =
+    allowPasswordManager ||
+    (typeof autoComplete === "string" && LOGIN_AUTOCOMPLETE_TOKENS.has(autoComplete));
+
+  if (isLoginField) {
     const loginProps: React.InputHTMLAttributes<HTMLInputElement> = {
       autoComplete: autoComplete ?? "on",
       ...rest,
@@ -99,6 +114,7 @@ export function OrciaInput({
       data-lpignore="true"
       data-1p-ignore="true"
       data-bwignore="true"
+      data-protonpass-ignore="true"
       data-form-type="other"
       spellCheck={false}
       {...rest}
@@ -133,6 +149,7 @@ export function OrciaSelect({
       data-lpignore={allowPasswordManager ? undefined : "true"}
       data-1p-ignore={allowPasswordManager ? undefined : "true"}
       data-bwignore={allowPasswordManager ? undefined : "true"}
+      data-protonpass-ignore={allowPasswordManager ? undefined : "true"}
       data-form-type={allowPasswordManager ? undefined : "other"}
       {...rest}
     >
@@ -180,6 +197,7 @@ export function OrciaTextarea({
       data-lpignore="true"
       data-1p-ignore="true"
       data-bwignore="true"
+      data-protonpass-ignore="true"
       data-form-type="other"
       spellCheck={false}
       {...rest}
