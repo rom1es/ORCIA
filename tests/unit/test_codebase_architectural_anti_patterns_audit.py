@@ -160,3 +160,40 @@ def test_story_19_4_zero_hardcoded_model_names_in_production_seeds_and_router_de
                         f"{rel}:{idx} matched banned pattern `{match.group(0)}`: {line.strip()}"
                     )
     assert violations == [], "Hardcoded model violations:\n" + "\n".join(violations)
+
+
+def test_story_19_3_zero_hardcoded_or_fake_latencies_in_connection_testers() -> None:
+    """Story 19.3 / D3: zero fake latency (18/42 ms) or simulated connection tests for AI models."""
+    import re
+
+    fake_latency_re = re.compile(
+        r"\b18\s+if\b.*?\belse\s+42\b|\blatency_ms\s*=\s*(18|42)\b", re.IGNORECASE
+    )
+    violations: list[str] = []
+    scan_paths: list[Path] = []
+    for base_dir in (
+        REPO_ROOT / "packages" / "orcia-core" / "src" / "orcia_core" / "orchestration",
+        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers",
+    ):
+        for py_path in base_dir.rglob("*.py"):
+            name = py_path.name
+            if "ai_model" in name or "assistant_llm" in name or "bootstrap_accostage" in name:
+                scan_paths.append(py_path)
+
+    for py_path in scan_paths:
+        rel = py_path.relative_to(REPO_ROOT)
+        content = py_path.read_text(encoding="utf-8")
+        for lineno, line in enumerate(content.splitlines(), start=1):
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue
+            if "evaluate_welcome_llm_connection_test" in stripped:
+                violations.append(
+                    f"{rel}:{lineno} uses deprecated `evaluate_welcome_llm_connection_test`: "
+                    f"{stripped}"
+                )
+            if fake_latency_re.search(stripped):
+                violations.append(f"{rel}:{lineno} has hardcoded fake latency pattern: {stripped}")
+    assert violations == [], "Hardcoded fake latency violations in AI models code:\n" + "\n".join(
+        violations
+    )

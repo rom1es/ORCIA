@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 37,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 131,
+    "techLeadReportsCount": 132,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -483,6 +483,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.3 (CAP-052, CAP-053, CAP-190)",
+      "reportFile": "19-3-test-connexion-reel-chat-max-tokens-1-embedding-dim-1024-latence-reelle-tech-lead-report.md",
+      "domain": "Test de Connexion Réel Chat (max_tokens=1) & Embedding (Dimension 1024 Validée), Latence Réelle Mesurée, Erreurs RFC 9457 & Éradication des Latences Factices 18/42 ms (AD-24.3, D3)",
+      "summary": "Testeur de connectivité pur async test_ai_model_endpoint_connection dans orcia_core.orchestration (chat minimal max_tokens=1 pour openai_compatible, anthropic_messages, gemini_native + embedding 1024-dim via adaptateurs Story 19.5, latence réelle time.perf_counter(), anti-SSRF), persistance OPERATIONAL ou ERROR dans workspace_llm_tier_mappings PG18, 6 erreurs bilingues ERR_MODEL_CONNECTION_* RFC 9457, mise à jour de /bootstrap/welcome-setup/llm-test et /settings/ai-models/mappings/{id}/test, éradication totale du code de simulation factice (18/42 ms) et règle d'audit anti-patrons statique pérenne, UI mise à jour avec affichage d'erreur explicite sans catch muet, 16 tests unitaires (couverture 93.69%), test d'intégration testcontainers PostgreSQL 18 et Vitest validés (0 $ en CI)."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Story 19.5 (CAP-052, CAP-190)",

@@ -141,47 +141,6 @@ export function validateLlmConnectionParameters(params: {
   return null;
 }
 
-export function buildLocalLlmConnectionSuccessFeedback(params: {
-  readonly isFr: boolean;
-  readonly provider: string;
-  readonly model: string;
-  readonly uri: string;
-}): ConnectionTestFeedback {
-  const { isFr } = params;
-  const providerClean = params.provider.trim() || "Anthropic";
-  const modelClean = params.model.trim();
-  const uriClean = params.uri.trim();
-  const latencyMs =
-    uriClean.startsWith("http://localhost") ||
-    uriClean.startsWith("http://127.")
-      ? 18
-      : 42;
-  if (isGoogleGeminiFamily(providerClean, uriClean)) {
-    const mode = detectGoogleGeminiProtocolMode(uriClean);
-    const modeDescFr =
-      mode === "native"
-        ? "API Native Google Gemini (Mode B · x-goog-api-key · thinkingConfig)"
-        : "Compatible OpenAI (Mode A · Authorization: Bearer)";
-    const modeDescEn =
-      mode === "native"
-        ? "Google Gemini Native API (Mode B · x-goog-api-key · thinkingConfig)"
-        : "OpenAI-Compatible Bridge (Mode A · Authorization: Bearer)";
-    return {
-      ok: true,
-      message: isFr
-        ? `✅ Connexion réussie au modèle « ${modelClean} » (${providerClean} — ${modeDescFr}) sur ${uriClean} — Réponse reçue en ${latencyMs} ms.`
-        : `✅ Successfully connected to model '${modelClean}' (${providerClean} — ${modeDescEn}) at ${uriClean} — Response received in ${latencyMs} ms.`,
-    };
-  }
-
-  return {
-    ok: true,
-    message: isFr
-      ? `✅ Connexion réussie au modèle « ${modelClean} » (${providerClean}) sur ${uriClean} — Réponse reçue en ${latencyMs} ms.`
-      : `✅ Successfully connected to model '${modelClean}' (${providerClean}) at ${uriClean} — Response received in ${latencyMs} ms.`,
-  };
-}
-
 export async function runRemoteLlmConnectionTestEvaluation(params: {
   readonly isFr: boolean;
   readonly provider: string;
@@ -205,8 +164,21 @@ export async function runRemoteLlmConnectionTestEvaluation(params: {
       ok: remote.ok,
       message: params.isFr ? remote.message_fr : remote.message_en,
     };
-  } catch {
-    return buildLocalLlmConnectionSuccessFeedback(params);
+  } catch (err: unknown) {
+    let msg = params.isFr
+      ? "❌ Échec du test : impossible de joindre le fournisseur LLM."
+      : "❌ Test failed: unable to contact LLM provider.";
+    if (err && typeof err === "object" && "problem" in err) {
+      const p = (err as { problem?: { detail?: string; title?: string } }).problem;
+      if (p?.detail) msg = `❌ ${p.detail}`;
+      else if (p?.title) msg = `❌ ${p.title}`;
+    } else if (err instanceof Error && err.message) {
+      msg = `❌ ${err.message}`;
+    }
+    return {
+      ok: false,
+      message: msg,
+    };
   }
 }
 

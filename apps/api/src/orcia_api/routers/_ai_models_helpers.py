@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import httpx
 from fastapi import Request
 
-from orcia_api.routers.assistant_llm_gemini_adapter import evaluate_welcome_llm_connection_test
 from orcia_api.schemas.ai_models_hub import (
     AiModelDiscoveryResponse,
     AiModelMappingItemResponse,
@@ -18,13 +17,12 @@ from orcia_api.schemas.ai_models_hub import (
     DiscoveredModelItem,
     LlmProtocolModeLiteral,
 )
-from orcia_api.schemas.bootstrap import LlmConnectionTestRequest
 from orcia_api.schemas.settings_and_studio import SecretStatusResponse
-from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.orchestration import (
     AiModelMappingRecord,
     AiModelsHubService,
     discover_models_from_provider,
+    test_ai_model_endpoint_connection,
     validate_safe_llm_endpoint_url,
 )
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
@@ -85,12 +83,12 @@ def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
     )
 
 
-def execute_model_connection_test(
+async def execute_model_connection_test(
     rec: AiModelMappingRecord,
     decrypted_key: str | None,
     request: Request,
 ) -> tuple[Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"], AiModelTestResponse]:
-    """Execute connectivity test with SSRF validation and return health status and response."""
+    """Execute real non-blocking connectivity test for chat or embedding model."""
     path = str(request.url.path)
     validate_safe_llm_endpoint_url(rec.endpoint_uri, instance=path)
 
@@ -98,29 +96,31 @@ def execute_model_connection_test(
     if rec.auth_mode == "env_var" and rec.env_var_name:
         effective_key = os.environ.get(rec.env_var_name)
 
-    test_req = LlmConnectionTestRequest(
-        provider_slug=rec.provider_slug,
-        model_name=rec.model_name,
+    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
+    if http_client is None or getattr(http_client, "is_closed", False):
+        http_client = httpx.AsyncClient(timeout=15.0)
+
+    outcome = await test_ai_model_endpoint_connection(
+        http_client=http_client,
         endpoint_uri=rec.endpoint_uri,
-        auth_mode=rec.auth_mode,
+        protocol_mode=rec.protocol_mode,
+        model_name=rec.model_name,
+        usage=rec.usage,
         api_key=effective_key,
-        api_key_configured=bool(effective_key or rec.auth_mode == "none_local"),
+        provider_slug=rec.provider_slug,
+        instance=path,
     )
-    trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-    outcome = evaluate_welcome_llm_connection_test(test_req, trace_id=trace_id)
-    health: Literal["OPERATIONAL", "DEGRADED", "ERROR", "UNTESTED"] = (
-        "OPERATIONAL" if outcome.ok else "ERROR"
-    )
+
     is_fr = "fr" in request.headers.get("accept-language", "").lower()
     msg = outcome.message_fr if is_fr else outcome.message_en
     resp = AiModelTestResponse(
         mapping_id=rec.id,
-        health_status=health,
+        health_status="OPERATIONAL",
         latency_ms=outcome.latency_ms,
         tested_at=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         message=msg,
     )
-    return health, resp
+    return "OPERATIONAL", resp
 
 
 def compute_tiers_coverage(records: list[AiModelMappingRecord]) -> dict[str, bool]:

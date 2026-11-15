@@ -10,7 +10,6 @@ import {
   detectAdaptiveThinkingStepsForQuestion,
   shouldUseProgressiveStepThinking,
 } from "../features/inbox/assistantBackgroundStreamStore";
-import { buildLocalLlmConnectionSuccessFeedback } from "../routes/settingsAiModelsPresets";
 import { writeCachedPlatformAdmin } from "../components/platformSetupStorageHelpers";
 
 export interface RecordedVitestApiCall {
@@ -1229,28 +1228,16 @@ async function vitestFetchTransport(
     const provider = String(body.provider_slug ?? "Anthropic");
     const model = String(body.model_name ?? "");
     const uri = String(body.endpoint_uri ?? "");
-    const fr = buildLocalLlmConnectionSuccessFeedback({
-      isFr: true,
-      provider,
-      model,
-      uri,
-    });
-    const en = buildLocalLlmConnectionSuccessFeedback({
-      isFr: false,
-      provider,
-      model,
-      uri,
-    });
     return jsonResponse({
-      ok: fr.ok,
+      ok: true,
       provider_slug: provider,
       model_name: model,
       endpoint_uri: uri,
       auth_mode: String(body.auth_mode ?? "api_key"),
       protocol_mode: uri.includes("/v1beta") && !uri.includes("/openai") ? "google_gemini_native" : "openai_compatible",
-      latency_ms: 18,
-      message_fr: fr.message,
-      message_en: en.message,
+      latency_ms: 24,
+      message_fr: `✅ Connexion réussie au modèle « ${model} » (${provider}) sur ${uri} — Réponse reçue en 24 ms.`,
+      message_en: `✅ Successfully connected to model '${model}' (${provider}) at ${uri} — Response received in 24 ms.`,
     });
   }
 

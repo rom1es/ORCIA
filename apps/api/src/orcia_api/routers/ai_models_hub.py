@@ -62,6 +62,7 @@ from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     update_ai_model_mapping_pg18,
 )
 from orcia_core.permissions import AuthAndOrganizationService, SecretInputSpec
+from orcia_kernel.errors import OrciaDomainError
 
 router = APIRouter(prefix="/api/v1/settings/ai-models", tags=["settings-ai-models"])
 
@@ -312,19 +313,36 @@ async def test_ai_model_connection(
     path = str(request.url.path)
     engine = getattr(request.app.state, "db_engine", None)
     rec, decrypted_key = await resolve_mapping_decrypted_key(request, mapping_id, auth_svc, hub_svc)
-    health, resp = execute_model_connection_test(rec, decrypted_key, request)
 
-    if engine is not None:
-        async with engine.begin() as conn:
-            await record_ai_model_test_result_pg18(
-                conn, mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
+    try:
+        health, resp = await execute_model_connection_test(rec, decrypted_key, request)
+        if engine is not None:
+            async with engine.begin() as conn:
+                await record_ai_model_test_result_pg18(
+                    conn,
+                    mapping_id,
+                    health_status=health,
+                    latency_ms=resp.latency_ms,
+                    instance=path,
+                )
+        else:
+            hub_svc.record_test_result(
+                mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
             )
-    else:
-        hub_svc.record_test_result(
-            mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
-        )
-
-    return resp
+        return resp
+    except OrciaDomainError as exc:
+        lat_val = getattr(exc, "latency_ms", None)
+        lat_ms: int = int(lat_val) if isinstance(lat_val, (int, float)) else 0
+        if engine is not None:
+            async with engine.begin() as conn:
+                await record_ai_model_test_result_pg18(
+                    conn, mapping_id, health_status="ERROR", latency_ms=lat_ms, instance=path
+                )
+        else:
+            hub_svc.record_test_result(
+                mapping_id, health_status="ERROR", latency_ms=lat_ms, instance=path
+            )
+        raise exc
 
 
 @router.get("/mappings/{mapping_id}/delete-impact", response_model=AiModelDeleteImpactResponse)

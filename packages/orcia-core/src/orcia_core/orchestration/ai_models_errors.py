@@ -68,6 +68,71 @@ AI_MODELS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = 
             "Failed to reach the LLM provider endpoint: connection timed out or network error.",
         ),
     },
+    "ERR_MODEL_CONNECTION_AUTH_FAILED": {
+        "fr": LocalizedErrorCopy(
+            "Authentification échouée auprès du fournisseur IA",
+            "La clé d'API ou les identifiants fournis ont été refusés "
+            "par le fournisseur (HTTP 401/403).",
+        ),
+        "en": LocalizedErrorCopy(
+            "AI model provider authentication failed",
+            "The provided API key or credentials were rejected by the provider (HTTP 401/403).",
+        ),
+    },
+    "ERR_MODEL_CONNECTION_NOT_FOUND": {
+        "fr": LocalizedErrorCopy(
+            "Modèle ou point de terminaison introuvable",
+            "Le modèle spécifié n'existe pas chez le fournisseur "
+            "ou l'URL d'API est incorrecte (HTTP 404).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Model or endpoint not found",
+            "The specified model does not exist on the provider "
+            "or the API URL is incorrect (HTTP 404).",
+        ),
+    },
+    "ERR_MODEL_CONNECTION_RATE_LIMITED": {
+        "fr": LocalizedErrorCopy(
+            "Limite de requêtes atteinte auprès du fournisseur IA",
+            "Le quota ou la limite de requêtes (rate limit) "
+            "du fournisseur a été dépassé (HTTP 429).",
+        ),
+        "en": LocalizedErrorCopy(
+            "AI provider rate limit exceeded",
+            "The provider quota or rate limit has been exceeded (HTTP 429).",
+        ),
+    },
+    "ERR_MODEL_CONNECTION_TIMEOUT": {
+        "fr": LocalizedErrorCopy(
+            "Délai d'attente dépassé lors du test de connexion",
+            "Le fournisseur IA n'a pas répondu dans le délai imparti (timeout).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Connection test timed out",
+            "The AI provider did not respond within the allocated timeout.",
+        ),
+    },
+    "ERR_MODEL_CONNECTION_NETWORK_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur réseau lors du test de connexion",
+            "Impossible de joindre l'adresse du fournisseur IA "
+            "(hôte injoignable ou connexion refusée).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Network error during connection test",
+            "Failed to reach the AI provider endpoint (unreachable host or connection refused).",
+        ),
+    },
+    "ERR_MODEL_CONNECTION_UPSTREAM_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur renvoyée par le fournisseur IA",
+            "Le fournisseur IA a retourné une erreur interne ou une réponse invalide (HTTP 5xx).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Upstream error from AI provider",
+            "The AI provider returned an internal error or invalid response (HTTP 5xx).",
+        ),
+    },
 }
 
 register_domain_error_catalog(AI_MODELS_ERROR_CATALOG)
@@ -98,9 +163,105 @@ class ModelDiscoveryNetworkError(OrciaDomainError):
     http_status, type_slug = 502, "model-discovery-network-error"
 
 
+class ModelConnectionAuthFailedError(OrciaDomainError):
+    error_code = "ERR_MODEL_CONNECTION_AUTH_FAILED"
+    http_status, type_slug = 401, "model-connection-auth-failed"
+
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        instance: str | None = None,
+        latency_ms: int | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, instance=instance)
+        self.latency_ms = latency_ms
+
+
+class ModelConnectionNotFoundError(OrciaDomainError):
+    error_code = "ERR_MODEL_CONNECTION_NOT_FOUND"
+    http_status, type_slug = 404, "model-connection-not-found"
+
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        instance: str | None = None,
+        latency_ms: int | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, instance=instance)
+        self.latency_ms = latency_ms
+
+
+class ModelConnectionRateLimitedError(OrciaDomainError):
+    error_code = "ERR_MODEL_CONNECTION_RATE_LIMITED"
+    http_status, type_slug = 429, "model-connection-rate-limited"
+
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        instance: str | None = None,
+        latency_ms: int | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, instance=instance)
+        self.latency_ms = latency_ms
+
+
+class ModelConnectionTimeoutError(OrciaDomainError):
+    error_code = "ERR_MODEL_CONNECTION_TIMEOUT"
+    http_status, type_slug = 504, "model-connection-timeout"
+
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        instance: str | None = None,
+        latency_ms: int | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, instance=instance)
+        self.latency_ms = latency_ms
+
+
+class ModelConnectionNetworkError(OrciaDomainError):
+    error_code = "ERR_MODEL_CONNECTION_NETWORK_ERROR"
+    http_status, type_slug = 502, "model-connection-network-error"
+
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        instance: str | None = None,
+        latency_ms: int | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, instance=instance)
+        self.latency_ms = latency_ms
+
+
+class ModelConnectionUpstreamError(OrciaDomainError):
+    error_code = "ERR_MODEL_CONNECTION_UPSTREAM_ERROR"
+    http_status, type_slug = 502, "model-connection-upstream-error"
+
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        instance: str | None = None,
+        latency_ms: int | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, instance=instance)
+        self.latency_ms = latency_ms
+
+
 __all__ = [
     "AI_MODELS_ERROR_CATALOG",
     "LastTierModelInUseError",
+    "ModelConnectionAuthFailedError",
+    "ModelConnectionNetworkError",
+    "ModelConnectionNotFoundError",
+    "ModelConnectionRateLimitedError",
+    "ModelConnectionTimeoutError",
+    "ModelConnectionUpstreamError",
     "ModelDiscoveryAuthFailedError",
     "ModelDiscoveryEndpointNotFoundError",
     "ModelDiscoveryNetworkError",

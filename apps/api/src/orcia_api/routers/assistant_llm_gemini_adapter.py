@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Literal
+from typing import Any
 from urllib.parse import urlparse
-
-from orcia_api.schemas import bootstrap as bs
 
 _THINK_TAG_RE = re.compile(r"<think>(.*?)</think>", re.DOTALL | re.IGNORECASE)
 _UNCLOSED_THINK_RE = re.compile(r"<think>(.*)$", re.DOTALL | re.IGNORECASE)
-_OFFLINE_TEST_HOSTS: frozenset[str] = frozenset({"api.openai.local", "api.anthropic.local", "api.google.local", "api.mistral.local", "mock-llm", "example.com", "api.example.com"})  # fmt: skip  # noqa: E501
 
 
 def _separate_think_tags(raw_content: str, explicit_reasoning: str = "") -> tuple[str, str]:
@@ -156,86 +153,3 @@ def extract_gemini_stream_chunk_deltas(chunk: dict[str, Any]) -> tuple[str, str]
         if isinstance(part, dict) and (txt := str(part.get("text") or "")):
             (r_deltas if part.get("thought") is True else c_deltas).append(txt)
     return "".join(c_deltas), "".join(r_deltas)
-
-
-def evaluate_welcome_llm_connection_test(
-    payload: bs.LlmConnectionTestRequest, trace_id: str
-) -> bs.LlmConnectionTestResponse:
-    """Validate LLM endpoint parameters and report Google Gemini Mode B vs Mode A diagnostics."""
-    provider = payload.provider_slug.strip() or "OpenAI / Compatible"
-    model, uri, auth_mode = payload.model_name.strip(), payload.endpoint_uri.strip(), payload.auth_mode  # fmt: skip  # noqa: E501
-    has_key = bool((payload.api_key and payload.api_key.strip()) or payload.api_key_configured)
-
-    def _resp(
-        ok: bool,
-        st: Literal["CONNECTED", "INVALID_PARAMETERS", "AUTH_REQUIRED"],
-        lat: int,
-        fr: str,
-        en: str,
-        m_name: str = model,
-    ) -> bs.LlmConnectionTestResponse:
-        return bs.LlmConnectionTestResponse(
-            ok=ok, status=st, latency_ms=lat, provider_slug=provider, model_name=m_name,
-            endpoint_uri=uri, auth_mode=auth_mode, message_fr=fr, message_en=en, trace_id=trace_id,
-        )  # fmt: skip  # noqa: E501
-
-    if not model:
-        return _resp(
-            False,
-            "INVALID_PARAMETERS",
-            2,
-            "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal.",
-            "❌ Test failed: please enter the primary model identifier.",
-            m_name="",
-        )
-    if not uri or not uri.startswith(("http://", "https://")):
-        return _resp(
-            False,
-            "INVALID_PARAMETERS",
-            2,
-            "❌ Échec du test : veuillez indiquer une URL d'API valide (https:// ou http://).",
-            "❌ Test failed: please enter a valid API URL starting with https:// or http://.",
-        )
-    if auth_mode == "api_key" and not has_key:
-        return _resp(
-            False,
-            "AUTH_REQUIRED",
-            3,
-            "❌ Échec du test : veuillez saisir votre clé d'API (jeton secret) ou « Sans clé ».",
-            "❌ Test failed: please enter your API key (secret token) or select 'No key'.",
-        )
-
-    host = (urlparse(uri).hostname or "").lower()
-    lat = 18 if uri.startswith(("http://localhost", "http://127.")) else 42
-    if host not in _OFFLINE_TEST_HOSTS and (
-        "generativelanguage.googleapis.com" in host
-        or "google" in provider.lower()
-        or "gemini" in provider.lower()
-    ):
-        if is_google_gemini_native_provider(uri, provider):
-            res_url = build_gemini_native_url(uri, model, stream=False)
-            m_fr = f"API Native Google Gemini (Mode B · x-goog-api-key · {res_url})"
-            m_en = f"Google Gemini Native API (Mode B · x-goog-api-key · {res_url})"
-        else:
-            cb = uri.rstrip("/")
-            res_url = cb if cb.endswith("/chat/completions") else f"{cb}/chat/completions"
-            m_fr = f"Compatible OpenAI (Mode A · Authorization: Bearer · {res_url})"
-            m_en = f"OpenAI-Compatible Bridge (Mode A · Authorization: Bearer · {res_url})"
-        return _resp(
-            True,
-            "CONNECTED",
-            lat,
-            f"✅ Connexion réussie au modèle « {model} » ({provider} — {m_fr}) "
-            f"sur {uri} — Réponse reçue en {lat} ms.",
-            f"✅ Successfully connected to model '{model}' ({provider} — {m_en}) "
-            f"at {uri} — Response received in {lat} ms.",
-        )
-    return _resp(
-        True,
-        "CONNECTED",
-        lat,
-        f"✅ Connexion réussie au modèle « {model} » ({provider}) "
-        f"sur {uri} — Réponse reçue en {lat} ms.",
-        f"✅ Successfully connected to model '{model}' ({provider}) "
-        f"at {uri} — Response received in {lat} ms.",
-    )

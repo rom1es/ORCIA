@@ -33,6 +33,10 @@ from orcia_core.orchestration.agents_and_skills_manager import (
     ManagedSkillRecord,
     SkillExecutionOutcome,
 )
+from orcia_core.orchestration.ai_models_connection import (
+    AiModelConnectionTestSuccess,
+    test_ai_model_endpoint_connection,
+)
 from orcia_core.orchestration.ai_models_discovery import (
     DEFAULT_DISCOVERY_TIMEOUT_SECONDS,
     DiscoveredModel,
@@ -41,6 +45,12 @@ from orcia_core.orchestration.ai_models_discovery import (
 )
 from orcia_core.orchestration.ai_models_errors import (
     LastTierModelInUseError,
+    ModelConnectionAuthFailedError,
+    ModelConnectionNetworkError,
+    ModelConnectionNotFoundError,
+    ModelConnectionRateLimitedError,
+    ModelConnectionTimeoutError,
+    ModelConnectionUpstreamError,
     ModelDiscoveryAuthFailedError,
     ModelDiscoveryEndpointNotFoundError,
     ModelDiscoveryNetworkError,
@@ -242,6 +252,14 @@ __all__ = [
     "AgentSkillVisibilityScope",
     "AgentThinkingLevel",
     "AgentsAndSkillsManagementService",
+    "AiModelConnectionTestSuccess",
+    "test_ai_model_endpoint_connection",
+    "ModelConnectionAuthFailedError",
+    "ModelConnectionNetworkError",
+    "ModelConnectionNotFoundError",
+    "ModelConnectionRateLimitedError",
+    "ModelConnectionTimeoutError",
+    "ModelConnectionUpstreamError",
     "AsyncSubscriberCallback",
     "DEFAULT_CLAIM_TTL_SECONDS",
     "DEFAULT_GUIDANCE_DRAWER_STEPS",
