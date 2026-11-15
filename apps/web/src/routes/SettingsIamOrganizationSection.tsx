@@ -75,6 +75,8 @@ export function SettingsIamOrganizationSection({
   const roles = useAuthSessionStore((s) => s.roles);
   const activeHat = useAuthSessionStore((s) => s.activeHat);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
 
   const hasSecopsRole = roles.includes("SECOPS") || activeHat === "SECOPS";
   const isSecopsAuthorized = canMutate && !readOnlyObserver && hasSecopsRole;
@@ -125,8 +127,12 @@ export function SettingsIamOrganizationSection({
   }, [locale, syncRbacGrantsFromServer]);
 
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
+    setAccountsError(null);
     void refreshAccountsAndGrants();
-  }, [refreshAccountsAndGrants]);
+  }, [refreshAccountsAndGrants, isHydrating, accessToken]);
 
   const syncOrgUnitsAfterAccountTeamChange = async () => {
     const orgRes = await fetchOrgUnitsFromApi(locale);

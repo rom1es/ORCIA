@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from collections.abc import Awaitable, Callable
+
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from orcia_api.dependencies import app_lifespan, initialize_app_services
 from orcia_api.middleware.trace_and_error import (
     TraceContextMiddleware,
     register_exception_handlers,
+)
+from orcia_api.routers._auth_pg_helpers import (
+    rehydrate_bearer_subject_from_pg_if_missing,
 )
 from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
 from orcia_api.routers.ai_models_hub import router as ai_models_hub_router
@@ -97,6 +102,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @application.middleware("http")
+    async def bearer_auth_rehydration_middleware(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        await rehydrate_bearer_subject_from_pg_if_missing(request)
+        return await call_next(request)
+
     application.add_middleware(TraceContextMiddleware)
     register_exception_handlers(application)
     application.include_router(health_router)

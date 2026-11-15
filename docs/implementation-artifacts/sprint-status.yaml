@@ -1090,3 +1090,14 @@ action_items:
     epic: epic-15
     description: >
       Fuites préexistantes dans packages/api-client/openapi.json faisant échouer test_story_3_2e_sdlc_pack_and_connectors.py:56 et test_story_3_2f_step_executors_invoker_and_finance.py:93 ; ne pas relâcher ces assertions de test.
+  - id: UX-COCKPIT-DAY0-01
+    title: "Revue complète UX/UI et fonctionnelle de l'écran Cockpit au Jour 0 post-initialisation"
+    action: "Repenser et épurer l'écran Cockpit (/cockpit) après création du premier Administrateur Plateforme (Direction C : max 3 blocs majeurs, synchronisation Accostage 1/6, masquage des cartes de démo Human-Led/Arbitrage à vide, zéro redondance raccourcis/assistant) sur la base de la capture archivée"
+    priority: P1
+    depends_on: []
+    owner: "Sally (UX) / Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-9
+    reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-15-cockpit-jour0-revue-ux-reference.jpg"
+    description: >
+      Constat utilisateur du 2026-11-15 (capture archivée) : 1) empilement > 6 bandeaux/cartes violant la règle <= 3 blocs majeurs de DESIGN.md ; 2) Accostage 1/6 affiche encore « Créer le compte Administrateur » après connexion admin ; 3) affichage prématuré des cartes HumanLedAnchorCard et ArbitrationTieBreakCard Option A/B à vide (0 run, 0 arbitrage) ; 4) redondance entre barre d'accès rapide Mon Assistant, 3 cartes raccourcis et état vide Espaces/Processus. Ne pas implémenter avant arbitrage dédié.

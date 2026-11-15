@@ -5,7 +5,7 @@ import {
   type PlatformAuthSettingsDraft,
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
-import { resolveWebApiBaseUrl } from "../../../stores/authSessionStore";
+import { resolveWebApiBaseUrl, useAuthSessionStore } from "../../../stores/authSessionStore";
 import { useI18n } from "../../../i18n";
 
 export interface SettingsAuthenticationSectionProps {
@@ -34,7 +34,7 @@ const DEFAULT_DRAFT: PlatformAuthSettingsDraft = {
 
 function resolveProblemText(err: unknown, fallback: string): string {
   if (err instanceof OrciaProblemError) {
-    return `${err.problem.detail} (${err.problem.error_code})`;
+    return err.problem.detail || fallback;
   }
   if (err instanceof Error && err.message.trim()) {
     return err.message;
@@ -96,9 +96,16 @@ export function SettingsAuthenticationSection({
     }
   }, [locale, copy.loadErrorMessage]);
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
+    setFeedback(null);
     void loadSettings();
-  }, [loadSettings]);
+  }, [loadSettings, isHydrating, accessToken]);
 
   const handleSave = async (): Promise<void> => {
     setIsSaving(true);

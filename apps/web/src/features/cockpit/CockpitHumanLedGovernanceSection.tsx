@@ -3,9 +3,11 @@ import {
   ArbitrationTieBreakCard,
   type ArbitrationTieBreakOptionView,
   HumanLedAnchorCard,
+  OrciaAlertBanner,
   StatusBadge,
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
 
 const DEFAULT_WORKFLOW_URI = "orcia://workflows/claims-engineering-delivery";
@@ -14,24 +16,8 @@ const DEFAULT_SECTION_KEY = "human_architecture_intent";
 const DEFAULT_FALLBACK_WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201";
 
 const DEFAULT_ARBITRATION_OPTIONS: ArbitrationTieBreakOptionView[] = [
-  {
-    optionKey: "OPT_A_SPOT_15M",
-    title: "Option A — Taux Spot 15 min",
-    pros: ["Compatible API partenaire v3", "Latence minimale"],
-    cons: ["Fenêtre client 15 min"],
-    siImpact: "1 microservice impacté",
-    finopsImpact: "0.02 USD / run",
-    recommended: true,
-  },
-  {
-    optionKey: "OPT_B_LOCK_48H",
-    title: "Option B — Taux Bloqué 48h",
-    pros: ["Confort client 48h"],
-    cons: ["Incompatible API v3"],
-    siImpact: "3 systèmes centraux impactés",
-    finopsImpact: "0.18 USD / run",
-    recommended: false,
-  },
+  { optionKey: "OPT_A_SPOT_15M", title: "Option A — Taux Spot 15 min", pros: ["Compatible API partenaire v3", "Latence minimale"], cons: ["Fenêtre client 15 min"], siImpact: "1 microservice impacté", finopsImpact: "0.02 USD / run", recommended: true },
+  { optionKey: "OPT_B_LOCK_48H", title: "Option B — Taux Bloqué 48h", pros: ["Confort client 48h"], cons: ["Incompatible API v3"], siImpact: "3 systèmes centraux impactés", finopsImpact: "0.18 USD / run", recommended: false },
 ];
 
 export interface CockpitHumanLedGovernanceSectionProps {
@@ -112,7 +98,14 @@ export function CockpitHumanLedGovernanceSection({
     [apiClient],
   );
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
+    setErrorBanner(null);
     let cancelled = false;
     void (async () => {
       try {
@@ -134,7 +127,7 @@ export function CockpitHumanLedGovernanceSection({
     return () => {
       cancelled = true;
     };
-  }, [apiClient, hydrateFromRun, refreshSignal]);
+  }, [apiClient, hydrateFromRun, refreshSignal, isHydrating, accessToken]);
 
   const ensureServerRun = async (): Promise<string> => {
     if (serverRunId) {
@@ -304,19 +297,13 @@ export function CockpitHumanLedGovernanceSection({
       </div>
 
       {errorBanner && (
-        <div
-          data-testid="cockpit-human-led-error-banner"
+        <OrciaAlertBanner
+          tone="crimson"
           role="alert"
-          style={{
-            padding: "8px 12px",
-            borderRadius: "var(--radius-sm)",
-            backgroundColor: "var(--color-arbitration-bg)",
-            color: "var(--color-arbitration-amber)",
-            fontSize: "13px",
-          }}
+          testId="cockpit-human-led-error-banner"
         >
           {errorBanner}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       <HumanLedAnchorCard

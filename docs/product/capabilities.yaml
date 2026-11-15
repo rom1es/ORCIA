@@ -36,9 +36,9 @@ capabilities:
     title: Authentification exclusive gouvernée (LOCAL ou SSO OIDC), double facteur configurable (NONE | EMAIL_OTP SMTP | TOTP RFC 6238), session HttpOnly et mot de passe temporaire
     fr: [FR-21]
     origin: epic
-    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-blocage-chargement-session-port-3100 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-correction-erreur-ouverture-login-session-anonyme-et-gardes-e2e
+    origin_ref: 1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-blocage-chargement-session-port-3100 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-correction-erreur-ouverture-login-session-anonyme-et-gardes-e2e + 2026-11-15-resilience-auth-pg18-miss-ram-uvicorn-reload + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
-    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
+    tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, packages/api-client/src/__tests__/default-access-token-provider.test.ts, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
     verification: runtime
     surfaces: { route: /login, api: "/api/v1/auth (auth.py, _auth_session_routes.py, _auth_passthrough_routes.py, auth_settings.py)", ui: "BiModeLoginView + LoginTwoFactorStepPanel", migration: "20261114_1706, 20261115_1901" }
   - id: CAP-002
@@ -295,20 +295,20 @@ capabilities:
     title: Coquille Settings à 6 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) et gouvernance Authentification
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale
+    origin_ref: 8-3, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx]
     verification: runtime
-    surfaces: { route: "/settings, /configuration", api: "settings_and_studio.py, auth_settings.py", ui: "SettingsHubView (organization, iam, authentication, models, connectors, packs) + SettingsAuthenticationSection + PlatformAuthSettingsCard + authSessionStore", migration: "20261115_1901" }
+    surfaces: { route: "/settings, /configuration", api: "settings_and_studio.py, auth_settings.py", ui: "SettingsHubView (organization, iam, authentication, models, connectors, packs) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901" }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
     title: Shell 4 zones Direction C (8 entrées, icônes SVG filaires 16px, barre de repli & Mon Compte) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale
+    origin_ref: 9-1, 12-1, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
-    tests: [apps/web/e2e/shell.spec.ts, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx]
+    tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx]
     verification: runtime
     surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: /api/v1/navigation }
   - id: CAP-061

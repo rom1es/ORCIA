@@ -1,5 +1,6 @@
 import {
   ContextualInfoTriggerButton,
+  OrciaAlertBanner,
   OrciaIcon,
   StatusBadge,
   type ControlCenterDatasourceItem,
@@ -12,6 +13,7 @@ import {
   type EnterpriseConnectorItemResponse,
 } from "@orcia/api-client";
 import type { TranslationDictionary } from "../../../i18n/types";
+import { useAuthSessionStore } from "../../../stores/authSessionStore";
 import type { PlatformSetupContextValue } from "../../../components/platformSetupStore";
 
 export interface EnterpriseConnectorsSettingsSectionProps {
@@ -67,9 +69,16 @@ export function EnterpriseConnectorsSettingsSection({
     }
   }, [isFr]);
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+
   useEffect(() => {
+    if (isHydrating) {
+      return;
+    }
+    setErrorMessage(null);
     void loadConnectors();
-  }, [loadConnectors]);
+  }, [loadConnectors, isHydrating, accessToken]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,35 +156,15 @@ export function EnterpriseConnectorsSettingsSection({
       </div>
 
       {errorMessage && (
-        <div
-          data-testid="connectors-error-banner"
-          style={{
-            padding: "8px 12px",
-            borderRadius: "var(--radius-sm)",
-            backgroundColor: "rgba(239, 68, 68, 0.1)",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            color: "var(--color-status-danger)",
-            fontSize: "12px",
-          }}
-        >
+        <OrciaAlertBanner tone="crimson" testId="connectors-error-banner">
           {errorMessage}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       {successMessage && (
-        <div
-          data-testid="connectors-success-banner"
-          style={{
-            padding: "8px 12px",
-            borderRadius: "var(--radius-sm)",
-            backgroundColor: "rgba(34, 197, 94, 0.1)",
-            border: "1px solid rgba(34, 197, 94, 0.3)",
-            color: "var(--color-status-success)",
-            fontSize: "12px",
-          }}
-        >
+        <OrciaAlertBanner tone="emerald" role="status" testId="connectors-success-banner">
           {successMessage}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       {/* Formulaire d'enregistrement de connecteur socle */}

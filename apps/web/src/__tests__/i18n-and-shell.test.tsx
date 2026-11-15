@@ -16,6 +16,8 @@ import { enDictionary } from "../i18n/locales/en";
 import { frDictionary } from "../i18n/locales/fr";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { preloadModuleQueryData, validateOrciaRouteSearch } from "../routes/searchSchema";
+import { simulateUnauthenticatedBrowser } from "../stores/authSessionStore";
+import { seedVitestPlatformSetupState } from "./vitest.setup";
 
 const mockPush = vi.fn();
 if (typeof window !== "undefined") {
@@ -1354,6 +1356,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     unmount();
 
     // Runtime verification on /login (BiModeLoginView)
+    simulateUnauthenticatedBrowser();
+    seedVitestPlatformSetupState({}, { email: "admin@orcia.fr", displayName: "Admin ORCIA" });
     const loginHistory = createMemoryHistory({ initialEntries: ["/login"] });
     const loginRouter = createOrciaRouter({ queryClient, history: loginHistory });
     await loginRouter.load();
@@ -1368,8 +1372,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.getByTestId("login-page-container").getAttribute("data-allow-password-manager"),
     ).toBe("true");
     expect(screen.queryByTestId("login-local-accordion-toggle")).toBeNull();
-    const loginEmailInput = screen.getByTestId("login-local-email");
-    const loginPasswordInput = screen.getByTestId("login-local-password");
+    const loginEmailInput = await screen.findByTestId("login-local-email");
+    const loginPasswordInput = await screen.findByTestId("login-local-password");
     expect(loginEmailInput.getAttribute("autocomplete")).toBe("username");
     expect(loginPasswordInput.getAttribute("type")).toBe("password");
     expect(loginPasswordInput.getAttribute("autocomplete")).toBe("current-password");

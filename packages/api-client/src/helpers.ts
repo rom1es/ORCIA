@@ -5,7 +5,16 @@ export interface OrciaApiClientOptions {
   locale?: "fr" | "en";
   traceId?: string;
   accessToken?: string;
+  getAccessToken?: () => string | null | undefined;
   fetchImpl?: typeof fetch;
+}
+
+let defaultAccessTokenProvider: (() => string | null | undefined) | null = null;
+
+export function registerDefaultAccessTokenProvider(
+  provider: (() => string | null | undefined) | null,
+): void {
+  defaultAccessTokenProvider = provider;
 }
 
 export class OrciaProblemError extends Error {
@@ -75,9 +84,6 @@ export function createRequestJson(options: OrciaApiClientOptions) {
   if (options.traceId) {
     baseHeaders["X-Trace-Id"] = options.traceId;
   }
-  if (options.accessToken) {
-    baseHeaders.Authorization = `Bearer ${options.accessToken}`;
-  }
 
   return async function requestJson<T>(
     path: string,
@@ -85,6 +91,13 @@ export function createRequestJson(options: OrciaApiClientOptions) {
     body?: unknown,
   ): Promise<T> {
     const headers: Record<string, string> = { ...baseHeaders };
+    const resolvedAccessToken =
+      options.accessToken !== undefined
+        ? options.accessToken
+        : (options.getAccessToken?.() ?? defaultAccessTokenProvider?.() ?? undefined);
+    if (resolvedAccessToken) {
+      headers.Authorization = `Bearer ${resolvedAccessToken}`;
+    }
     const init: RequestInit = { method, headers, credentials: "include" };
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";

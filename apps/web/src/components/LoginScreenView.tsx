@@ -14,6 +14,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useI18n } from "../i18n";
 import { resolveWebApiBaseUrl, useAuthSessionStore } from "../stores/authSessionStore";
 import { useOrciaNavigation } from "./navigationAdapter";
+import { useOptionalPlatformSetup } from "./platformSetupStore";
 import {
   readStorageItem,
   syncBrowserBootEpoch,
@@ -42,6 +43,8 @@ function mapTwoFactorStepFromResponse(res: AuthTokenResponse): LoginTwoFactorSte
 
 export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) {
   const { dictionary, locale } = useI18n();
+  const setup = useOptionalPlatformSetup();
+  const isDay0Unconfigured = setup !== null && setup.platformAdmin === null;
   const { navigateTo } = useOrciaNavigation();
   const loginWithSession = useAuthSessionStore((s) => s.loginWithSession);
   const resetAuthSession = useAuthSessionStore((s) => s.resetAuthSession);
@@ -176,6 +179,26 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
   );
 
   const authMode: UiLoginViewMode = publicConfig?.auth_mode === "SSO" ? "SSO" : "LOCAL";
+
+  if (isDay0Unconfigured) {
+    return (
+      <div
+        data-testid="login-page-container"
+        data-allow-password-manager="true"
+        data-auth-mode={authMode}
+        data-authenticated-user=""
+        className="flex min-h-[400px] items-center justify-center p-8 text-center"
+      >
+        <div className="space-y-2" style={{ color: "var(--color-text-secondary)" }}>
+          <p className="text-sm">
+            {locale === "en"
+              ? "Platform initialization in progress..."
+              : "Initialisation de la plateforme en cours..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

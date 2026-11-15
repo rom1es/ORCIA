@@ -1287,3 +1287,7 @@ export function usePlatformSetup(): PlatformSetupContextValue {
   }
   return ctx;
 }
+
+export function useOptionalPlatformSetup(): PlatformSetupContextValue | null {
+  return useContext(PlatformSetupContext);
+}

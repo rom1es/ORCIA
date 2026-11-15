@@ -11,11 +11,13 @@ import {
   shouldUseProgressiveStepThinking,
 } from "../features/inbox/assistantBackgroundStreamStore";
 import { buildLocalLlmConnectionSuccessFeedback } from "../routes/settingsAiModelsPresets";
+import { writeCachedPlatformAdmin } from "../components/platformSetupStorageHelpers";
 
 export interface RecordedVitestApiCall {
   readonly method: string;
   readonly path: string;
   readonly body: unknown;
+  readonly headers?: Record<string, string>;
 }
 
 interface MockOrganizationalUnit {
@@ -200,6 +202,7 @@ function problemResponse(
 export function resetVitestApiBackend(): void {
   delete (globalThis as Record<string, unknown>).__ORCIA_MOCK_REFRESH_FAILS__;
   backendState.firstAdmin = null;
+  writeCachedPlatformAdmin(null);
   backendState.platformSetupState = null;
   backendState.orgUnits = [];
   backendState.orgUnitSeq = 0;
@@ -225,9 +228,18 @@ export function setVitestMockRefreshFails(fails: boolean): void {
 /** Pré-remplit le 1er administrateur et l'état de plateforme servis par le backend simulé. */
 export function seedVitestPlatformSetupState(
   state: Record<string, unknown>,
-  firstAdmin: { email: string; displayName: string } = { email: "admin@orcia.test", displayName: "Admin Test" },
+  firstAdmin: { email: string; displayName: string } | null = { email: "admin@orcia.test", displayName: "Admin Test" },
 ): void {
   backendState.firstAdmin = firstAdmin;
+  writeCachedPlatformAdmin(
+    firstAdmin
+      ? {
+          displayName: firstAdmin.displayName,
+          email: firstAdmin.email,
+          role: "PLATFORM_ADMIN",
+        }
+      : null,
+  );
   backendState.platformSetupState = state;
   backendState.orgUnits = hydrateMockOrgUnitsFromSetup(state.org_units);
   backendState.orgUnitSeq = backendState.orgUnits.length;
@@ -296,8 +308,17 @@ async function vitestFetchTransport(
   const method = (init?.method ?? "GET").toUpperCase();
   const body = parseJsonBody(init);
   const reqHeaders = new Headers(init?.headers);
+  const capturedHeadersObj: Record<string, string> = {};
+  reqHeaders.forEach((v, k) => {
+    capturedHeadersObj[k.toLowerCase()] = v;
+  });
 
-  backendState.recordedCalls.push({ method, path, body });
+  backendState.recordedCalls.push({
+    method,
+    path,
+    body,
+    headers: capturedHeadersObj,
+  });
 
   // 1. Accostage & Platform Setup State
   if (path === "/api/v1/bootstrap/accostage-status" && method === "GET") {
