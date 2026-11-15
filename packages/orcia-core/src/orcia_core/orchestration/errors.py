@@ -233,6 +233,18 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
             "the Workspace.",
         ),
     },
+    "ERR_TIER_MODEL_NOT_CONFIGURED": {
+        "fr": LocalizedErrorCopy(
+            "Modèle IA non configuré pour ce palier d'inférence",
+            "Aucun modèle IA actif n'est associé au palier demandé. Veuillez configurer et activer "
+            "un modèle pour ce palier dans les paramètres de la plateforme (/settings/ai-models).",
+        ),
+        "en": LocalizedErrorCopy(
+            "AI model not configured for this inference tier",
+            "No active AI model is configured for the requested tier. Please configure "
+            "and activate a model for this tier in platform settings (/settings/ai-models).",
+        ),
+    },
 }
 
 register_domain_error_catalog(ORCHESTRATION_ERROR_CATALOG)
@@ -328,6 +340,13 @@ class OrthogonalJudgeSovereigntyViolationError(OrciaDomainError):
     http_status, type_slug = 422, "orthogonal-judge-sovereignty-violation"
 
 
+class TierModelNotConfiguredError(OrciaDomainError):
+    """Raised when an inference tier has no active configured AI model."""
+
+    error_code = "ERR_TIER_MODEL_NOT_CONFIGURED"
+    http_status, type_slug = 422, "tier-model-not-configured"
+
+
 __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "CyclicResourceWaitDetectedError",
@@ -351,6 +370,7 @@ __all__ = [
     "SubWorkflowCycleDetectedError",
     "SubWorkflowMaxDepthExceededError",
     "ThreadTurnLockHeldError",
+    "TierModelNotConfiguredError",
     "UnknownWorkflowPolicyError",
     "ValidationDomainError",
 ]

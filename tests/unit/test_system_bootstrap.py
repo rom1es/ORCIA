@@ -55,6 +55,43 @@ freshness_ttl_days: 14
 Autorisation gouvernée pour les sources 3DS et SEPA de l'équipe Paiement.
 """
 
+TEST_ORTHOGONAL_ENDPOINTS = (
+    LlmModelEndpoint(
+        id="0192c4e0-0000-7000-8000-000000000501",
+        endpoint_key="anthropic-evaluator",
+        provider_slug="anthropic",
+        model_family="anthropic-claude",
+        model_name="claude-3-5-sonnet",
+        endpoint_uri="https://api.anthropic.com/v1",
+        connectivity_verified=True,
+        is_active=True,
+    ),
+    LlmModelEndpoint(
+        id="0192c4e0-0000-7000-8000-000000000502",
+        endpoint_key="openai-executor",
+        provider_slug="openai",
+        model_family="openai-gpt",
+        model_name="gpt-4o",
+        endpoint_uri="https://api.openai.com/v1",
+        connectivity_verified=True,
+        is_active=True,
+    ),
+)
+
+TEST_ORTHOGONAL_ENDPOINTS_JSON = [
+    {
+        "id": ep.id,
+        "endpoint_key": ep.endpoint_key,
+        "provider_slug": ep.provider_slug,
+        "model_family": ep.model_family,
+        "model_name": ep.model_name,
+        "endpoint_uri": ep.endpoint_uri,
+        "connectivity_verified": ep.connectivity_verified,
+        "is_active": ep.is_active,
+    }
+    for ep in TEST_ORTHOGONAL_ENDPOINTS
+]
+
 
 def _load_script_04() -> Any:
     repo_root = Path(__file__).resolve().parents[2]
@@ -107,10 +144,12 @@ def test_system_bootstrap_workflows_domain_and_guards() -> None:
     assert len(svc.list_onboarding_states()) == 2
 
     org_payload = InitOrganizationInput(
-        "ORCIA Enterprise Holding", True, True,
+        "ORCIA Enterprise Holding",
+        True,
+        True,
         {"PLATFORM_ADMIN": "orcia-admins", "TEAM_LEAD": "orcia-leads"},
-        tuple(svc.model_router.list_endpoints()),
-    )  # fmt: skip
+        TEST_ORTHOGONAL_ENDPOINTS,
+    )
     with pytest.raises(ScopeAccessDeniedError):
         svc.execute_init_organization(marc, org_payload)
     with pytest.raises(ObserverModeReadOnlyError):
@@ -197,6 +236,7 @@ async def test_fastapi_bootstrap_routes_and_maintenance_script_04() -> None:
     client = TestClient(create_app())
     state_res = client.get("/api/v1/bootstrap/state?persona_key=marc")
     assert state_res.status_code == 200 and len(state_res.json()["workflows"]) == 6
+    assert state_res.json()["llm_endpoints"] == []
 
     org_base = {
         "organization_name": "ORCIA Root", "oidc_enabled": True,
@@ -204,7 +244,7 @@ async def test_fastapi_bootstrap_routes_and_maintenance_script_04() -> None:
     }  # fmt: skip
     bad_org = client.post(
         "/api/v1/bootstrap/init-organization?persona_key=karim",
-        json={**org_base, "llm_endpoints": [state_res.json()["llm_endpoints"][0]]},
+        json={**org_base, "llm_endpoints": [TEST_ORTHOGONAL_ENDPOINTS_JSON[0]]},
     )
     assert bad_org.status_code == 422
     assert bad_org.json()["error_code"] == "ERR_MODEL_ORTHOGONALITY_VIOLATION"
@@ -223,7 +263,7 @@ async def test_fastapi_bootstrap_routes_and_maintenance_script_04() -> None:
 
     ok_org = client.post(
         "/api/v1/bootstrap/init-organization?persona_key=karim",
-        json={**org_base, "llm_endpoints": state_res.json()["llm_endpoints"]},
+        json={**org_base, "llm_endpoints": TEST_ORTHOGONAL_ENDPOINTS_JSON},
     )
     assert ok_org.status_code == 200
     ok_ws = client.post(
@@ -251,7 +291,7 @@ async def test_fastapi_bootstrap_routes_and_maintenance_script_04() -> None:
             "passthrough_secrets": [
                 {
                     "connector_scheme": "git", "target_host": "gitlab.entreprise.io",
-                    "plaintext_secret": "glpat-nadia-secret-999",
+                    "plaintext_secret": "glpat-nadia-secret-999",  # pragma: allowlist secret
                 }
             ],
         },

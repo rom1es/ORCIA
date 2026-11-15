@@ -244,6 +244,9 @@ def _sync_accostage_from_snapshot(
             if "mistral" in provider_raw
             else provider_raw or "anthropic"
         )
+        model_name = str(t.get("primaryModel") or t.get("model") or "").strip()
+        if not model_name:
+            continue
         custom_uri = str(t.get("endpointUrl", t.get("endpoint_uri", ""))).strip()
         endpoint_uri = (
             custom_uri
@@ -256,7 +259,7 @@ def _sync_accostage_from_snapshot(
                 endpoint_key=str(t.get("tierKey", f"tier-{idx + 1}")).strip() or f"tier-{idx + 1}",
                 provider_slug=provider_raw or family,
                 model_family=family,
-                model_name=str(t.get("model", "claude-3-7-sonnet")).strip() or "claude-3-7-sonnet",
+                model_name=model_name,
                 endpoint_uri=endpoint_uri,
             )
         )

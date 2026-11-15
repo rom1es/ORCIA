@@ -32,7 +32,9 @@ from orcia_api.schemas import bootstrap as bs
 def test_google_gemini_mode_a_openai_bridge_url_normalization_and_bearer_headers() -> None:
     """Mode A (`/v1beta/openai`): verify URL normalization without double `/v1` & Bearer header."""
     mode_a_url = normalize_chat_completions_url(
-        "https://generativelanguage.googleapis.com/v1beta/openai", "google"
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+        "google",
+        model_name="gemini-2.5-pro",
     )
     assert mode_a_url == "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
     assert "/v1beta/openai/v1/" not in mode_a_url
@@ -336,4 +338,15 @@ def test_welcome_setup_llm_connection_reports_gemini_mode_b_and_mode_a() -> None
         body = http_res.json()
         assert body["ok"] is True
         assert "Mode B" in body["message_fr"]
-        assert "gemini-argon" in body["message_fr"]
+
+
+def test_gemini_native_url_requires_non_empty_model_name() -> None:
+    """Story 19.4 / Decision D4: build_gemini_native_url rejects empty model_name."""
+    with pytest.raises(ValueError, match="model_name is mandatory"):
+        build_gemini_native_url("https://generativelanguage.googleapis.com", "")
+
+    with pytest.raises(ValueError, match="model_name is mandatory"):
+        build_gemini_native_url("https://generativelanguage.googleapis.com", "   ")
+
+    with pytest.raises(ValueError, match="model_name is mandatory"):
+        build_gemini_native_url("https://generativelanguage.googleapis.com", "models/")

@@ -41,12 +41,15 @@ def is_google_gemini_native_provider(endpoint_uri: str, provider: str = "") -> b
     )
 
 
-def build_gemini_native_url(
-    endpoint_uri: str, model_name: str = "gemini-argon", *, stream: bool = False
-) -> str:
+def build_gemini_native_url(endpoint_uri: str, model_name: str, *, stream: bool = False) -> str:
     """Construct Google Gemini Native `:generateContent` or `:streamGenerateContent?alt=sse` URL."""
     base = endpoint_uri.strip().rstrip("/")
-    model_id = (model_name or "gemini-argon").strip().removeprefix("models/") or "gemini-argon"
+    cleaned_name = (model_name or "").strip()
+    if not cleaned_name:
+        raise ValueError("model_name is mandatory and cannot be empty")
+    model_id = cleaned_name.removeprefix("models/").strip()
+    if not model_id:
+        raise ValueError("model_name is mandatory and cannot be empty")
     action = "streamGenerateContent?alt=sse" if stream else "generateContent"
     if ":generateContent" in base or ":streamGenerateContent" in base:
         prefix = base.split(":generateContent")[0].split(":streamGenerateContent")[0]

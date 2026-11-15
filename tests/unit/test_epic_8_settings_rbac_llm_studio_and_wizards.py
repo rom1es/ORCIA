@@ -48,6 +48,8 @@ from orcia_core.bootstrap.seeder import (
 from orcia_core.orchestration.cognitive_router import (
     CognitiveModelRouterService,
     ResolvedInferenceTier,
+    TierModelNotConfiguredError,
+    WorkspaceLlmTierMapping,
 )
 from orcia_core.orchestration.errors import (
     ResourcePinnedByActiveRunsError,
@@ -79,6 +81,7 @@ from orcia_core.rag.connector_hub_and_ingestion import ConnectorHubAndIngestionS
 from orcia_core.rag.errors import EmptyOrUnreadableDocumentError
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.errors import ModelOrthogonalityViolationError
+from orcia_kernel.secret_ports import SecretRef
 
 
 def _make_user(
@@ -357,8 +360,65 @@ def test_story_8_1_hypothesis_rbac_precedence_invariants(
 
 def test_story_8_2_cognitive_router_tiers_idempotency_orthogonality_and_proc01() -> None:
     llm = DeterministicCassetteLLM()
-    router = CognitiveModelRouterService(llm_gateway=llm)
     ws_id = "0195f000-0000-7000-8000-000000000301"
+
+    # Story 19.4 / Decision D4: empty router raises TierModelNotConfiguredError
+    empty_router = CognitiveModelRouterService(llm_gateway=llm)
+    with pytest.raises(TierModelNotConfiguredError) as exc_empty:
+        asyncio.run(
+            empty_router.execute_with_tier_routing(
+                run_id="run-empty-check",
+                step_execution_id="step-empty",
+                scope_id=ws_id,
+                system_prompt="System",
+                user_prompt="Prompt",
+                inference_tier="simple",
+            )
+        )
+    assert exc_empty.value.error_code == "ERR_TIER_MODEL_NOT_CONFIGURED"
+
+    test_mappings = (
+        WorkspaceLlmTierMapping(
+            id="0195f000-0000-7000-8000-000000008201",
+            scope_level="WORKSPACE",
+            scope_id=ws_id,
+            inference_tier="simple",
+            effort="default",
+            provider_slug="anthropic",
+            model_family="anthropic-claude",
+            model_name="claude-3-5-haiku",
+            secret_ref=SecretRef(f"secret://workspace/{ws_id}/ai-models/simple"),
+            max_tokens_budget=4096,
+            max_cost_usd=2.0,
+        ),
+        WorkspaceLlmTierMapping(
+            id="0195f000-0000-7000-8000-000000008202",
+            scope_level="WORKSPACE",
+            scope_id=ws_id,
+            inference_tier="medium",
+            effort="default",
+            provider_slug="openai",
+            model_family="openai-gpt",
+            model_name="gpt-4o-mini",
+            secret_ref=SecretRef(f"secret://workspace/{ws_id}/ai-models/medium"),
+            max_tokens_budget=8192,
+            max_cost_usd=5.0,
+        ),
+        WorkspaceLlmTierMapping(
+            id="0195f000-0000-7000-8000-000000008203",
+            scope_level="WORKSPACE",
+            scope_id=ws_id,
+            inference_tier="complex",
+            effort="default",
+            provider_slug="anthropic",
+            model_family="anthropic-claude",
+            model_name="claude-3-7-sonnet",
+            secret_ref=SecretRef(f"secret://workspace/{ws_id}/ai-models/complex"),
+            max_tokens_budget=16384,
+            max_cost_usd=15.0,
+        ),
+    )
+    router = CognitiveModelRouterService(llm_gateway=llm, initial_mappings=test_mappings)
 
     # Orthogonality violation if generator and evaluator share the same model family
     with pytest.raises(ModelOrthogonalityViolationError):
@@ -882,6 +942,57 @@ def test_epic_8_fastapi_endpoints_contract_and_rfc9457() -> None:
     mappings_resp = client.get("/api/v1/settings/ai-models/mappings")
     assert mappings_resp.status_code == 200
     assert len(mappings_resp.json()) >= 3
+
+    # Story 19.4: without configured tier models, /route returns 422 ERR_TIER_MODEL_NOT_CONFIGURED
+    unconfigured_resp = client.post(
+        "/api/v1/settings/ai-models/route",
+        json={
+            "run_id": "run-unconfigured",
+            "step_execution_id": "step-unconfigured",
+            "scope_id": "0195f000-0000-7000-8000-000000000301",
+            "system_prompt": "System",
+            "user_prompt": "Prompt",
+            "inference_tier": "auto",
+            "effort": "balanced",
+        },
+    )
+    assert unconfigured_resp.status_code == 422
+    assert unconfigured_resp.json()["error_code"] == "ERR_TIER_MODEL_NOT_CONFIGURED"
+
+    # Configure test tier mappings on router service
+    for m in (
+        WorkspaceLlmTierMapping(
+            id="0195f000-0000-7000-8000-000000008201",
+            scope_level="WORKSPACE",
+            scope_id="0195f000-0000-7000-8000-000000000301",
+            inference_tier="simple",
+            effort="default",
+            provider_slug="anthropic",
+            model_family="anthropic-claude",
+            model_name="claude-3-5-haiku",
+            secret_ref=SecretRef(
+                "secret://workspace/0195f000-0000-7000-8000-000000000301/ai-models/simple"
+            ),
+            max_tokens_budget=4096,
+            max_cost_usd=2.0,
+        ),
+        WorkspaceLlmTierMapping(
+            id="0195f000-0000-7000-8000-000000008202",
+            scope_level="WORKSPACE",
+            scope_id="0195f000-0000-7000-8000-000000000301",
+            inference_tier="medium",
+            effort="default",
+            provider_slug="openai",
+            model_family="openai-gpt",
+            model_name="gpt-4o-mini",
+            secret_ref=SecretRef(
+                "secret://workspace/0195f000-0000-7000-8000-000000000301/ai-models/medium"
+            ),
+            max_tokens_budget=8192,
+            max_cost_usd=5.0,
+        ),
+    ):
+        app.state.cognitive_router_service.upsert_mapping(m)
 
     route_resp = client.post(
         "/api/v1/settings/ai-models/route",

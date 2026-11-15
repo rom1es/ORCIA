@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 36,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 128,
+    "techLeadReportsCount": 129,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 57,
     "verifiedCapabilitiesCount": 42
@@ -481,6 +481,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-15",
+      "phaseOrStory": "Story 19.4 (CAP-052, CAP-053, CAP-190)",
+      "reportFile": "19-4-suppression-noms-modeles-en-dur-backend-tier-mappings-vides-et-amorcage-jour-0-tech-lead-report.md",
+      "domain": "Suppression Intégrale des Noms de Modèles en Dur Côté Backend, Tier Mappings Vides, Amorçage Jour 0 Propre (Décision D4) & Script de Purge Idempotente",
+      "summary": "DEFAULT_LLM_MODEL_ENDPOINT_SEEDS et build_default_tier_mappings désormais vides (), model_name rendu obligatoire sans repli en dur (gemini-argon, claude-3-7-sonnet), exception RFC 9457 bilingue ERR_TIER_MODEL_NOT_CONFIGURED (HTTP 422) guidant vers /settings/ai-models, script de maintenance 11_purge_legacy_fictional_llm_seeds.py (--dry-run par défaut, --apply), remise à zéro vérifiée pnpm db:reset à 0 ligne résiduelle, règle d'audit statique anti-modèles en dur pérennisée."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Story 19.1 (CAP-052, CAP-053, CAP-190)",

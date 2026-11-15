@@ -23,6 +23,7 @@ from orcia_core.orchestration.errors import (
     ResourceNotFoundError,
     ResourcePinnedByActiveRunsError,
     ScopeAccessDeniedError,
+    TierModelNotConfiguredError,
     ValidationDomainError,
 )
 from orcia_kernel.ids import new_uuid7_str
@@ -133,48 +134,12 @@ class DurableProc01RunState:
 def build_default_tier_mappings(
     workspace_id: str = "0195f000-0000-7000-8000-000000000301",
 ) -> tuple[WorkspaceLlmTierMapping, ...]:
-    """Return default `simple`, `medium`, and `complex` tier mappings for `workspace_id`."""
-    return (
-        WorkspaceLlmTierMapping(
-            id="0195f000-0000-7000-8000-000000008201",
-            scope_level="WORKSPACE",
-            scope_id=workspace_id,
-            inference_tier="simple",
-            effort="default",
-            provider_slug="anthropic",
-            model_family="anthropic-claude",
-            model_name="claude-3-5-haiku",
-            secret_ref=SecretRef(f"secret://workspace/{workspace_id}/ai-models/simple"),
-            max_tokens_budget=4096,
-            max_cost_usd=2.0,
-        ),
-        WorkspaceLlmTierMapping(
-            id="0195f000-0000-7000-8000-000000008202",
-            scope_level="WORKSPACE",
-            scope_id=workspace_id,
-            inference_tier="medium",
-            effort="default",
-            provider_slug="openai",
-            model_family="openai-gpt",
-            model_name="gpt-4o-mini",
-            secret_ref=SecretRef(f"secret://workspace/{workspace_id}/ai-models/medium"),
-            max_tokens_budget=8192,
-            max_cost_usd=5.0,
-        ),
-        WorkspaceLlmTierMapping(
-            id="0195f000-0000-7000-8000-000000008203",
-            scope_level="WORKSPACE",
-            scope_id=workspace_id,
-            inference_tier="complex",
-            effort="default",
-            provider_slug="anthropic",
-            model_family="anthropic-claude",
-            model_name="claude-3-7-sonnet",
-            secret_ref=SecretRef(f"secret://workspace/{workspace_id}/ai-models/complex"),
-            max_tokens_budget=16384,
-            max_cost_usd=15.0,
-        ),
-    )
+    """Return default empty tier mappings for Day-0 state (D4).
+
+    Tier mappings remain unassigned until configured in `/settings/ai-models`.
+    """
+    _ = workspace_id
+    return ()
 
 
 class CognitiveModelRouterService:
@@ -301,8 +266,11 @@ class CognitiveModelRouterService:
                 if m.inference_tier == tier and m.is_active and (allow_draining or not m.draining)
             ]
         if not candidates:
-            raise ResourceNotFoundError(
-                detail_override=f"No active LLM mapping found for tier='{tier}'."
+            raise TierModelNotConfiguredError(
+                detail_override=(
+                    f"No active AI model configured for tier '{tier}'. "
+                    "Please configure and activate a model for this tier in /settings/ai-models."
+                )
             )
         exact_effort = [m for m in candidates if m.effort == effort]
         chosen_pool = exact_effort if exact_effort else candidates
@@ -537,6 +505,7 @@ __all__ = [
     "InferenceTier",
     "PinRemovalMode",
     "ResolvedInferenceTier",
+    "TierModelNotConfiguredError",
     "WorkspaceLlmTierMapping",
     "build_default_tier_mappings",
 ]

@@ -124,3 +124,53 @@ def test_rule_4_zero_silent_except_exception_in_api_routers_and_ssrf_guard() -> 
     assert not is_safe_llm_endpoint_url("http://metadata.google.internal/computeMetadata/v1/")
     assert is_safe_llm_endpoint_url("http://ollama.corp.local:11434")
     assert is_safe_llm_endpoint_url("https://vllm.ai.internal:8443/v1")
+
+
+def test_story_19_4_zero_hardcoded_model_names_in_production_seeds_and_router_defaults() -> None:
+    """Story 19.4 / D4: clean Day-0 seeds, empty tier mappings, and no hardcoded models."""
+    from orcia_core.bootstrap.workflow_bootstrap_seeds import DEFAULT_LLM_MODEL_ENDPOINT_SEEDS
+    from orcia_core.orchestration.cognitive_router import build_default_tier_mappings
+
+    assert DEFAULT_LLM_MODEL_ENDPOINT_SEEDS == (), "Seeds must be empty tuple"
+    assert build_default_tier_mappings() == (), "Tier mappings must be empty tuple"
+
+    # Enforce absence of hardcoded fallback model strings in key production router files
+    inspected_files = (
+        REPO_ROOT
+        / "packages"
+        / "orcia-core"
+        / "src"
+        / "orcia_core"
+        / "bootstrap"
+        / "workflow_bootstrap_seeds.py",
+        REPO_ROOT
+        / "packages"
+        / "orcia-core"
+        / "src"
+        / "orcia_core"
+        / "orchestration"
+        / "cognitive_router.py",
+        REPO_ROOT
+        / "apps"
+        / "api"
+        / "src"
+        / "orcia_api"
+        / "routers"
+        / "assistant_llm_gemini_adapter.py",
+        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers" / "assistant_llm_providers.py",
+        REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers" / "bootstrap_accostage.py",
+    )
+    banned_tokens = (
+        "gemini-argon",
+        "claude-sonnet-4-20260514",
+        "gpt-4.1-2026-04-14",
+        "mistral-large-2511",
+    )
+    violations: list[str] = []
+    for file_path in inspected_files:
+        rel = file_path.relative_to(REPO_ROOT)
+        content = file_path.read_text(encoding="utf-8")
+        for token in banned_tokens:
+            if token in content:
+                violations.append(f"{rel} contains banned hardcoded model token `{token}`")
+    assert violations == [], "Hardcoded model violations:\n" + "\n".join(violations)

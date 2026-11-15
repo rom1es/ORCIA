@@ -236,15 +236,19 @@ def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
     )
 
     assert (
-        normalize_chat_completions_url("http://localhost:11434/api", "Ollama Local")
+        normalize_chat_completions_url(
+            "http://localhost:11434/api", "Ollama Local", model_name="llama3.2"
+        )
         == "http://localhost:11434/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://api.openai.com", "OpenAI")
+        normalize_chat_completions_url("https://api.openai.com", "OpenAI", model_name="gpt-4o")
         == "https://api.openai.com/v1/chat/completions"
     )
     assert (
-        normalize_chat_completions_url("https://api.anthropic.com", "Anthropic")
+        normalize_chat_completions_url(
+            "https://api.anthropic.com", "Anthropic", model_name="claude-3-7-sonnet"
+        )
         == "https://api.anthropic.com/v1/messages"
     )
 

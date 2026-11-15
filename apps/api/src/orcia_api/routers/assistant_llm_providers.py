@@ -91,7 +91,7 @@ def normalize_chat_completions_url(
     endpoint_uri: str,
     provider: str = "",
     *,
-    model_name: str = "gemini-argon",
+    model_name: str,
     stream: bool = False,
 ) -> str:
     """Normalize provider base URL to its canonical chat/messages/generateContent endpoint."""
