@@ -259,14 +259,20 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
     """Verify FastAPI `/api/v1/assistant/chat`, `/chat/stream`, and `/workflows/save-and-launch`."""
     from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
-    from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+    from orcia_api.dependencies.portal_and_assistant import (
+        get_embedding_port,
+        require_rag_available,
+    )
     from orcia_core.orchestration.step_executors import _DEFAULT_AGENT_EXECUTOR
     from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     _DEFAULT_AGENT_EXECUTOR.set_llm_gateway(DeterministicCassetteLLM())
     app = create_app()
-    app.dependency_overrides[get_embedding_port] = lambda: FakeDeterministicEmbeddingAdapter()
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    app.state.embedding_port = fake_emb
+    app.dependency_overrides[get_embedding_port] = lambda: fake_emb
+    app.dependency_overrides[require_rag_available] = lambda: fake_emb
     client = TestClient(app)
 
     # 1. POST /api/v1/assistant/chat (WORKFLOW_COMPOSE)

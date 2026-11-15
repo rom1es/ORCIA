@@ -64,7 +64,10 @@ async def resolve_configured_llm_endpoint(
     requested_tier: str | None = None,
 ) -> ResolvedLiveLlmEndpoint | None:
     """Resolve active LLM endpoint asynchronously from PG18 table or Day-0 snapshot."""
-    if os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes"):
+    if (
+        os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes")
+        and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1"
+    ):
         return None
 
     snap = getattr(request.app.state, "platform_setup_snapshot", None)

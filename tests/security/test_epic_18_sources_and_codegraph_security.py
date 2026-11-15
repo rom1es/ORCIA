@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -49,11 +50,23 @@ VALID_DS_UUID = "018f0000-0000-7000-8000-000000000002"
 
 
 @pytest.fixture(scope="module")
-def client() -> TestClient:
-    os.environ.setdefault("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
-    os.environ.setdefault("ORCIA_USE_CASSETTE_LLM", "true")
+def client() -> Generator[TestClient, None, None]:
+    old_pg = os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC")
+    old_llm = os.environ.get("ORCIA_USE_CASSETTE_LLM")
+    os.environ["ORCIA_DISABLE_PG_BOOTSTRAP_SYNC"] = "1"
+    os.environ["ORCIA_USE_CASSETTE_LLM"] = "true"
     app = create_app()
-    return TestClient(app, raise_server_exceptions=False)
+    try:
+        yield TestClient(app, raise_server_exceptions=False)
+    finally:
+        if old_pg is None:
+            os.environ.pop("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", None)
+        else:
+            os.environ["ORCIA_DISABLE_PG_BOOTSTRAP_SYNC"] = old_pg
+        if old_llm is None:
+            os.environ.pop("ORCIA_USE_CASSETTE_LLM", None)
+        else:
+            os.environ["ORCIA_USE_CASSETTE_LLM"] = old_llm
 
 
 # ------------------------------------------------------------------------------

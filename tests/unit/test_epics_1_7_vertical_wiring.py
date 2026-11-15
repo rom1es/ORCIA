@@ -80,6 +80,6 @@ async def test_epics_1_7_public_exports_and_seaweedfs_router_wiring() -> None:
 
 def test_litellm_gateway_resolution_when_env_configured() -> None:
     """Verify `initialize_app_services` wires `LiteLLMAdapter` when `ORCIA_LLM_GATEWAY=litellm`."""
-    with patch.dict(os.environ, {"ORCIA_LLM_GATEWAY": "litellm"}):
+    with patch.dict(os.environ, {"ORCIA_LLM_GATEWAY": "litellm", "ORCIA_USE_CASSETTE_LLM": ""}):
         app = create_app()
         assert app.state.llm_gateway.__class__.__name__ == "LiteLLMAdapter"

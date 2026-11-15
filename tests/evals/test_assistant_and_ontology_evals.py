@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_core.gates.errors import ModelOrthogonalityViolationError
 from orcia_core.ontology import (
@@ -50,8 +51,9 @@ def _build_assistant_service() -> AssistantAgentService:
     activate_sdlc_pack()
     auth_svc = build_default_auth_and_org_service()
     setup_svc = build_default_orchestration_setup_service(evaluator=auth_svc.evaluator)
-    seeded_rag, _ = build_seeded_rag_service()
-    vector_store = HybridRagVectorStoreAdapter(seeded_rag)
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    seeded_rag, _ = build_seeded_rag_service(embedding_port=fake_emb)
+    vector_store = HybridRagVectorStoreAdapter(seeded_rag, embedding_port=fake_emb)
     context_source = CatalogAndBlackboardContextSourceAdapter(
         rag_service=seeded_rag,
         catalog_items_provider=lambda _ws: tuple(setup_svc.workflows),
