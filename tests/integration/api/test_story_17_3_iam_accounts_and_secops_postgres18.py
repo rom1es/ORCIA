@@ -16,72 +16,22 @@ Verifies against a real `pgvector/pgvector:pg18` testcontainer:
 from __future__ import annotations
 
 import json
-import os
-import subprocess
-import sys
-from collections.abc import Iterator
-from pathlib import Path
-from urllib.parse import quote_plus
 from uuid import UUID
 
 import pytest
 import sqlalchemy as sa
-from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
-from testcontainers.postgres import PostgresContainer
+from tests.integration.api._story_17_3_fixtures import (
+    app_client_factory,
+    count_grants_by_id,
+    database_url,
+    reset_iam_test_db,
+    seed_day0_admin_user,
+)
 
 from orcia_kernel.ids import new_uuid7_str
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DB_NAME = "orcia_story_17_3"
-DB_USER = "orcia"
-DB_PASSWORD = "orcia_story_17_3_pw"  # pragma: allowlist secret
-
-
-@pytest.fixture(scope="module")
-def database_url() -> Iterator[str]:
-    with PostgresContainer(
-        "pgvector/pgvector:pg18", username=DB_USER, password=DB_PASSWORD, dbname=DB_NAME
-    ) as pg:
-        url = (
-            f"postgresql+asyncpg://{DB_USER}:{quote_plus(DB_PASSWORD)}"
-            f"@127.0.0.1:{pg.get_exposed_port(5432)}/{DB_NAME}"
-        )
-        env = {
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-            "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
-            "DATABASE_URL": url,
-            "ORCIA_ENV_FILE": str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"),
-        }
-        alembic_bin = str(Path(sys.executable).with_name("alembic"))
-        alembic_cmd = [alembic_bin, "-c", "infra/migrations/alembic.ini"]
-        # Verify upgrade -> downgrade -> upgrade idempotency of revision 20261111_1703
-        subprocess.run([*alembic_cmd, "upgrade", "head"], cwd=REPO_ROOT, env=env, check=True)
-        subprocess.run(
-            [*alembic_cmd, "downgrade", "20261111_1702"], cwd=REPO_ROOT, env=env, check=True
-        )
-        subprocess.run([*alembic_cmd, "upgrade", "head"], cwd=REPO_ROOT, env=env, check=True)
-        yield url
-
-
-@pytest.fixture
-def app_client_factory(database_url: str, monkeypatch: pytest.MonkeyPatch):  # type: ignore[no-untyped-def]
-    monkeypatch.setenv("DATABASE_URL", database_url)
-    monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
-    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
-    monkeypatch.setenv("ORCIA_JWT_SIGNING_SECRET", "orcia-story-17-3-jwt-secret-0001")
-    monkeypatch.setenv("ORCIA_PASSTHROUGH_MASTER_KEY", "orcia-story-17-3-vault-key-0001")
-    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
-    monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
-    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
-    from orcia_api.main import create_app
-
-    def _build_client() -> AsyncClient:
-        app = create_app()
-        initialize_app_services(app)
-        return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
-
-    return _build_client
+__all__ = ["app_client_factory", "database_url"]
 
 
 @pytest.mark.asyncio
@@ -92,51 +42,18 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
     headers = {"X-Orcia-Persona": "karim"}
     engine = create_async_engine(database_url)
     try:
-        async with engine.begin() as conn:
-            await conn.execute(sa.text("DELETE FROM role_permission_grants"))
-            await conn.execute(sa.text("DELETE FROM iam_accounts"))
-            await conn.execute(sa.text("DELETE FROM workspaces"))
-            await conn.execute(sa.text("DELETE FROM org_units WHERE unit_type <> 'ENTERPRISE'"))
-            await conn.execute(sa.text("DELETE FROM users"))
-            # Seed a Day-0 initial admin in `users` to verify automatic directory sync
-            root_ou = (
-                await conn.execute(
-                    sa.text("SELECT id FROM org_units WHERE unit_type = 'ENTERPRISE' LIMIT 1")
-                )
-            ).scalar()
-            if root_ou is None:
-                root_ou = UUID(new_uuid7_str())
-                await conn.execute(
-                    sa.text(
-                        """
-                        INSERT INTO org_units (id, slug, name, unit_type, parent_id)
-                        VALUES (:id, 'orcia-root', 'ORCIA Enterprise', 'ENTERPRISE', NULL)
-                        """
-                    ),
-                    {"id": root_ou},
-                )
-            await conn.execute(
-                sa.text(
-                    """
-                    INSERT INTO users (
-                        id, email, display_name, auth_mode, human_profile_archetype,
-                        platform_role, primary_org_unit_id, is_active
-                    )
-                    VALUES (
-                        :id, 'romain.admin@orcia.fr', 'Romain Admin Jour 0', 'LOCAL',
-                        'SECOPS', 'PLATFORM_ADMIN', :ou_id, TRUE
-                    )
-                    """
-                ),
-                {"id": UUID(new_uuid7_str()), "ou_id": root_ou},
-            )
+        await reset_iam_test_db(engine)
+        await seed_day0_admin_user(
+            engine, email="romain.admin@orcia.fr", display_name="Romain Admin Jour 0"
+        )
 
         async with app_client_factory() as client:
             # 1. Native 6-role matrix check
             r_matrix = await client.get("/api/v1/settings/iam/role-matrix", headers=headers)
             assert r_matrix.status_code == 200, r_matrix.text
             matrix_body = r_matrix.json()
-            assert matrix_body["secret_visibility_policy"] == "WRITE_ONLY_NEVER_READABLE"
+            expected_policy = "WRITE_ONLY_NEVER_READABLE"  # pragma: allowlist secret
+            assert matrix_body["secret_visibility_policy"] == expected_policy
             assert [r["role"] for r in matrix_body["roles"]] == [
                 "PLATFORM_ADMIN",
                 "SECOPS",
@@ -260,14 +177,18 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
                     headers=headers,
                     json=bad_patch,
                 )
-                assert r_lock.status_code == 422
-                assert r_lock.json()["error_code"] == "ERR_ADMIN_LOCKOUT_PREVENTED"
+                assert (
+                    r_lock.status_code == 422
+                    and r_lock.json()["error_code"] == "ERR_ADMIN_LOCKOUT_PREVENTED"
+                )
 
             r_del_lock = await client.delete(
                 f"/api/v1/settings/iam/accounts/{day0_acc['id']}", headers=headers
             )
-            assert r_del_lock.status_code == 422
-            assert r_del_lock.json()["error_code"] == "ERR_ADMIN_LOCKOUT_PREVENTED"
+            assert (
+                r_del_lock.status_code == 422
+                and r_del_lock.json()["error_code"] == "ERR_ADMIN_LOCKOUT_PREVENTED"
+            )
 
             # Promote a second ACTIVE PLATFORM_ADMIN, then delete the first one
             r_backup = await client.post(
@@ -322,35 +243,28 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
                 db_grant = (
                     await conn.execute(
                         sa.text(
-                            """
-                            SELECT resource_kind, effect, inheritance_block
-                            FROM role_permission_grants
-                            WHERE id = :id
-                            """
+                            "SELECT resource_kind, effect, inheritance_block "
+                            "FROM role_permission_grants WHERE id = :id"
                         ),
                         {"id": UUID(grant_id)},
                     )
                 ).one()
-            assert db_grant[0] == "DATASOURCE"
-            assert db_grant[1] == "INHERITANCE_BLOCK"
-            assert db_grant[2] is True
+            assert (
+                db_grant[0] == "DATASOURCE"
+                and db_grant[1] == "INHERITANCE_BLOCK"
+                and db_grant[2] is True
+            )
 
             r_grants_get = await client.get("/api/v1/settings/iam/grants", headers=headers)
-            assert r_grants_get.status_code == 200
-            assert any(g["id"] == grant_id for g in r_grants_get.json())
+            assert r_grants_get.status_code == 200 and any(
+                g["id"] == grant_id for g in r_grants_get.json()
+            )
 
             r_grant_del = await client.delete(
                 f"/api/v1/settings/iam/grants/{grant_id}", headers=headers
             )
             assert r_grant_del.status_code == 200
-            async with engine.connect() as conn:
-                rem_cnt = (
-                    await conn.execute(
-                        sa.text("SELECT COUNT(*) FROM role_permission_grants WHERE id = :id"),
-                        {"id": UUID(grant_id)},
-                    )
-                ).scalar_one()
-            assert rem_cnt == 0
+            assert await count_grants_by_id(engine, grant_id) == 0
 
             # 6. Team unassignment + 404 / validation edge cases on PostgreSQL 18
             rssi_id = r_rssi.json()["id"]
@@ -359,9 +273,11 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
                 headers=headers,
                 json={"display_name": "Claire RSSI Lead", "team_ids": []},
             )
-            assert r_unassign.status_code == 200
-            assert r_unassign.json()["display_name"] == "Claire RSSI Lead"
-            assert r_unassign.json()["team_ids"] == []
+            assert (
+                r_unassign.status_code == 200
+                and r_unassign.json()["display_name"] == "Claire RSSI Lead"
+                and r_unassign.json()["team_ids"] == []
+            )
 
             for bad_url in (
                 "/api/v1/settings/iam/accounts/not-a-uuid",
@@ -371,24 +287,108 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
                     await client.patch(bad_url, headers=headers, json={"display_name": "X"})
                 ).status_code == 404
                 assert (await client.delete(bad_url, headers=headers)).status_code == 404
-            assert (
-                await client.delete("/api/v1/settings/iam/grants/not-a-uuid", headers=headers)
-            ).status_code == 404
-            assert (
-                await client.delete(
-                    f"/api/v1/settings/iam/grants/{new_uuid7_str()}", headers=headers
-                )
-            ).status_code == 404
+            for bad_grant in (
+                "/api/v1/settings/iam/grants/not-a-uuid",
+                f"/api/v1/settings/iam/grants/{new_uuid7_str()}",
+            ):
+                assert (await client.delete(bad_grant, headers=headers)).status_code == 404
 
             # 7. Schema auto-recreation + Day-0 placeholder & platform_settings fallback
             async with engine.begin() as conn:
-                await conn.execute(sa.text("DROP TABLE iam_accounts"))
-                await conn.execute(sa.text("DROP TABLE role_permission_grants"))
-                await conn.execute(sa.text("DELETE FROM users"))
-                await conn.execute(sa.text("DELETE FROM platform_settings"))
+                for stmt in (
+                    "DROP TABLE iam_accounts",
+                    "DROP TABLE role_permission_grants",
+                    "DELETE FROM users",
+                    "DELETE FROM platform_settings",
+                ):
+                    await conn.execute(sa.text(stmt))
             r_placeholder = await client.get("/api/v1/settings/iam/accounts", headers=headers)
             assert r_placeholder.status_code == 200
             assert r_placeholder.json()["accounts"][0]["principal_id"] == "admin@orcia.local"
             assert (await client.get("/api/v1/settings/iam/grants", headers=headers)).json() == []
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_iam_admin_secops_elevation_vertical_postgres18(
+    database_url: str,
+    app_client_factory,  # type: ignore[no-untyped-def]
+) -> None:
+    engine = create_async_engine(database_url)
+    try:
+        await reset_iam_test_db(engine)
+        async with app_client_factory() as client:
+            admin_email = "alex.admin@orcia.fr"
+            admin_pw = "OrciaAdmin!2026"  # pragma: allowlist secret
+            setup_res = await client.post(
+                "/api/v1/bootstrap/welcome-setup/first-admin",
+                json={"email": admin_email, "password": admin_pw, "display_name": "Alex Admin"},
+            )
+            assert setup_res.status_code == 200, setup_res.text
+
+            login_res = await client.post(
+                "/api/v1/auth/login/local",
+                json={"email": admin_email, "password": admin_pw},
+            )
+            assert login_res.status_code == 200, login_res.text
+            bearer = login_res.json()["access_token"]
+            assert client.cookies.get("orcia_refresh_token") is not None
+
+            # Retrieve IAM accounts and force initial roles strictly to ["PLATFORM_ADMIN"]
+            acc_list = (
+                await client.get(
+                    "/api/v1/settings/iam/accounts",
+                    headers={"Authorization": f"Bearer {bearer}"},
+                )
+            ).json()["accounts"]
+            account_id = acc_list[0]["id"]
+            p_init = await client.patch(
+                f"/api/v1/settings/iam/accounts/{account_id}",
+                headers={"Authorization": f"Bearer {bearer}"},
+                json={"roles": ["PLATFORM_ADMIN"]},
+            )
+            assert p_init.status_code == 200 and p_init.json()["roles"] == ["PLATFORM_ADMIN"]
+
+            # GET /api/v1/auth/session sees ["PLATFORM_ADMIN"]
+            s1 = (await client.get("/api/v1/auth/session")).json()
+            assert s1["authenticated"] is True and s1["session"]["roles"] == ["PLATFORM_ADMIN"]
+            tok1 = s1["session"]["access_token"]
+
+            # Elevate with "SECOPS" via PATCH /api/v1/settings/iam/accounts/{id}
+            p_elev = await client.patch(
+                f"/api/v1/settings/iam/accounts/{account_id}",
+                headers={"Authorization": f"Bearer {tok1}"},
+                json={"roles": ["PLATFORM_ADMIN", "SECOPS"]},
+            )
+            assert p_elev.status_code == 200 and "SECOPS" in p_elev.json()["roles"]
+
+            # GET /api/v1/auth/session immediately sees "SECOPS" without server restart
+            s2 = (await client.get("/api/v1/auth/session")).json()
+            assert s2["authenticated"] is True and "SECOPS" in s2["session"]["roles"]
+            elev_auth = {"Authorization": f"Bearer {s2['session']['access_token']}"}
+
+            # Create SecOps grant exception via POST /api/v1/settings/iam/grants
+            g_res = await client.post(
+                "/api/v1/settings/iam/grants",
+                headers=elev_auth,
+                json={
+                    "subject_type": "ROLE",
+                    "subject_id": "TEAM_LEAD",
+                    "scope_path": "bu-cyber/ws-vault",
+                    "verbs": ["read", "execute"],
+                    "effect": "ALLOW",
+                    "resource_kind": "DATASOURCE",
+                },
+            )
+            assert g_res.status_code == 200, g_res.text
+            grant_id = g_res.json()[0]["id"]
+            assert await count_grants_by_id(engine, grant_id) == 1
+
+            del_res = await client.delete(
+                f"/api/v1/settings/iam/grants/{grant_id}", headers=elev_auth
+            )
+            assert del_res.status_code == 200, del_res.text
+            assert await count_grants_by_id(engine, grant_id) == 0
     finally:
         await engine.dispose()

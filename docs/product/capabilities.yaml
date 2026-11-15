@@ -217,20 +217,20 @@ capabilities:
     title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 6 rôles et exceptions SecOps
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-1, 17-3
+    origin_ref: 8-1, 17-3 + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu
     status: live
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py]
     verification: runtime
-    surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py)", migration: "20261111_1703" }
+    surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py) + orcia_core/permissions/hierarchical_rbac.py", migration: "20261111_1703" }
   - id: CAP-051
-    title: Annuaire des comptes (anti-lockout), mot de passe temporaire 12 car., matrice des 6 rôles, exceptions SecOps et modale copier-coller
+    title: Annuaire des comptes (anti-lockout), mot de passe temporaire 12 car., matrice des 6 rôles en modale, exceptions SecOps et modale copier-coller
     fr: [FR-31]
     origin: epic
-    origin_ref: 17-3 + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances
+    origin_ref: 17-3 + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu
     status: live
-    tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx]
+    tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx]
     verification: runtime
-    surfaces: { route: /settings, api: iam_accounts.py, ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamNativeRoleMatrixCard + IamSecopsExceptionsDrawer + TemporaryPasswordInvitationModal", migration: "20261111_1703 + 20261114_1706" }
+    surfaces: { route: /settings, api: "iam_accounts.py, _auth_pg_helpers.py, _auth_session_routes.py", ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamRoleMatrixReferenceModal + IamAccountModal + IamSecopsExceptionsDrawer + TemporaryPasswordInvitationModal", migration: "20261111_1703 + 20261114_1706" }
   - id: CAP-052
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
@@ -292,14 +292,14 @@ capabilities:
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
-    title: Coquille Settings à 6 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) et gouvernance Authentification
+    title: Coquille Settings à 6 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN), hiérarchie BU et gouvernance Authentification
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
+    origin_ref: 8-3, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx]
     verification: runtime
-    surfaces: { route: "/settings, /configuration", api: "settings_and_studio.py, auth_settings.py", ui: "SettingsHubView (organization, iam, authentication, models, connectors, packs) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901" }
+    surfaces: { route: "/settings, /configuration", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py", ui: "SettingsHubView (organization, iam, authentication, models, connectors, packs) + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901" }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060

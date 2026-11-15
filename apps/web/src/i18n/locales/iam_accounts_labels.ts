@@ -1,30 +1,18 @@
 export interface IamTabDictionarySection {
-  readonly roles: {
-    readonly PLATFORM_ADMIN: string;
-    readonly SECOPS: string;
-    readonly BU_LEAD: string;
-    readonly TEAM_LEAD: string;
-    readonly CONTRIBUTOR: string;
-    readonly OBSERVER: string;
-  };
-  readonly roleScopes: {
-    readonly GLOBAL: string;
-    readonly BU: string;
-    readonly TEAM: string;
-    readonly WORKSPACE: string;
-  };
-  readonly verbs: {
-    readonly create: string;
-    readonly read: string;
-    readonly update: string;
-    readonly delete: string;
-    readonly execute: string;
-    readonly grant: string;
-  };
+  readonly roles: Record<
+    "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER",
+    string
+  >;
+  readonly roleScopes: Record<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE", string>;
+  readonly verbs: Record<
+    "create" | "read" | "update" | "delete" | "execute" | "grant",
+    string
+  >;
   readonly directory: {
     readonly sectionTitle: string;
     readonly sectionSubtitle: string;
     readonly createAccountCta: string;
+    readonly openRoleMatrixCta: string;
     readonly emptyText: string;
     readonly humanBadge: string;
     readonly servicePrincipalBadge: string;
@@ -61,6 +49,8 @@ export interface IamTabDictionarySection {
   readonly matrix: {
     readonly sectionTitle: string;
     readonly sectionSubtitle: string;
+    readonly openRoleMatrixCta: string;
+    readonly closeRoleMatrixCta: string;
     readonly secretBannerTitle: string;
     readonly secretBannerBody: string;
     readonly colRole: string;
@@ -98,13 +88,10 @@ export interface IamTabDictionarySection {
     readonly teamScopePrefix: string;
     readonly workspaceScopePrefix: string;
     readonly resourceKindLabel: string;
-    readonly resourceKinds: {
-      readonly ALL: string;
-      readonly WORKFLOW: string;
-      readonly AGENT: string;
-      readonly DATASOURCE: string;
-      readonly CONNECTOR: string;
-    };
+    readonly resourceKinds: Record<
+      "ALL" | "WORKFLOW" | "AGENT" | "DATASOURCE" | "CONNECTOR",
+      string
+    >;
     readonly effectLabel: string;
     readonly effectAllow: string;
     readonly effectDeny: string;
@@ -128,32 +115,24 @@ export interface IamTabDictionarySection {
 
 export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
   roles: {
-    PLATFORM_ADMIN: "Administrateur Plateforme",
-    SECOPS: "Responsable Sécurité (SecOps)",
-    BU_LEAD: "Responsable de Direction (BU)",
-    TEAM_LEAD: "Responsable d'Équipe",
-    CONTRIBUTOR: "Contributeur",
-    OBSERVER: "Observateur",
+    PLATFORM_ADMIN: "Administrateur Plateforme", SECOPS: "Responsable Sécurité (SecOps)",
+    BU_LEAD: "Responsable de Direction (BU)", TEAM_LEAD: "Responsable d'Équipe",
+    CONTRIBUTOR: "Contributeur", OBSERVER: "Observateur",
   },
   roleScopes: {
-    GLOBAL: "Plateforme entière",
-    BU: "Direction / Pôle (BU)",
-    TEAM: "Équipe",
-    WORKSPACE: "Espace de travail",
+    GLOBAL: "Plateforme entière", BU: "Direction / Pôle (BU)",
+    TEAM: "Équipe", WORKSPACE: "Espace de travail",
   },
   verbs: {
-    create: "Créer",
-    read: "Consulter les ressources",
-    update: "Modifier",
-    delete: "Supprimer",
-    execute: "Exécuter / Utiliser",
-    grant: "Déléguer des droits",
+    create: "Créer", read: "Consulter les ressources", update: "Modifier",
+    delete: "Supprimer", execute: "Exécuter / Utiliser", grant: "Déléguer des droits",
   },
   directory: {
     sectionTitle: "1. Annuaire des Comptes & Attribution des Rôles",
     sectionSubtitle:
       "Gérez les comptes utilisateurs et les comptes techniques de service, leurs rôles officiels et leurs équipes de rattachement.",
     createAccountCta: "+ Nouveau compte",
+    openRoleMatrixCta: "Voir la matrice des 6 rôles",
     emptyText: "Aucun compte enregistré dans l'annuaire.",
     humanBadge: "Utilisateur",
     servicePrincipalBadge: "Compte technique",
@@ -177,7 +156,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     displayNameLabel: "Nom complet ou libellé du service",
     displayNamePlaceholder: "Ex. : Claire Martin, Connecteur Synchronisation...",
     emailOrPrincipalLabel: "Adresse e-mail ou identifiant technique",
-    emailPlaceholder: "Ex. : claire.martin@entreprise.fr",
+    emailPlaceholder: "Ex. : prenom.nom",
     principalSpPlaceholder: "Ex. : sp-connecteur-indexation",
     statusLabel: "Statut du compte",
     rolesFieldsetLabel: "Rôles officiels attribués (liste fermée)",
@@ -191,10 +170,12 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     saveEditButton: "Enregistrer les modifications",
   },
   matrix: {
-    sectionTitle: "2. Matrice des 6 Rôles Officiels de la Plateforme",
+    sectionTitle: "Matrice des 6 Rôles Officiels de la Plateforme",
     sectionSubtitle:
       "Synthèse claire des droits natifs par périmètre. Vous n'avez aucune règle manuelle à créer pour le fonctionnement courant.",
-    secretBannerTitle: "Confidentialité absolue des secrets (saisie seule)",
+    openRoleMatrixCta: "Voir la matrice des 6 rôles",
+    closeRoleMatrixCta: "Fermer",
+    secretBannerTitle: "Confidentialité absolue des secrets (saisie seule)", // pragma: allowlist secret
     secretBannerBody:
       "Aucun rôle — pas même Administrateur Plateforme ou Responsable Sécurité — ne permet de relire ou d'afficher une clé secrète après son enregistrement. Les secrets peuvent uniquement être définis, remplacés ou effacés.",
     colRole: "Rôle officiel",
@@ -210,7 +191,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     summaryObserver: "Consultation uniquement — aucune modification ni exécution",
   },
   secopsDrawer: {
-    toggleTitle: "3. Exceptions & Isolation de Périmètre (Avancé — SecOps)",
+    toggleTitle: "2. Exceptions & Isolation de Périmètre (Avancé — SecOps)",
     toggleSubtitle:
       "Réservé aux cas particuliers : isoler un espace confidentiel, interdire une action précise ou accorder une dérogation ciblée.",
     secopsBadge: "Gouvernance SecOps",
@@ -266,32 +247,24 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
 
 export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
   roles: {
-    PLATFORM_ADMIN: "Platform Administrator",
-    SECOPS: "Security Officer (SecOps)",
-    BU_LEAD: "Division Lead (BU)",
-    TEAM_LEAD: "Team Lead",
-    CONTRIBUTOR: "Contributor",
-    OBSERVER: "Observer",
+    PLATFORM_ADMIN: "Platform Administrator", SECOPS: "Security Officer (SecOps)",
+    BU_LEAD: "Division Lead (BU)", TEAM_LEAD: "Team Lead",
+    CONTRIBUTOR: "Contributor", OBSERVER: "Observer",
   },
   roleScopes: {
-    GLOBAL: "Entire platform",
-    BU: "Division / Sub-BU",
-    TEAM: "Team",
-    WORKSPACE: "Workspace",
+    GLOBAL: "Entire platform", BU: "Division / Sub-BU",
+    TEAM: "Team", WORKSPACE: "Workspace",
   },
   verbs: {
-    create: "Create",
-    read: "Read & view resources",
-    update: "Update",
-    delete: "Delete",
-    execute: "Execute / Use",
-    grant: "Delegate rights",
+    create: "Create", read: "Read & view resources", update: "Update",
+    delete: "Delete", execute: "Execute / Use", grant: "Delegate rights",
   },
   directory: {
     sectionTitle: "1. Accounts Directory & Role Assignment",
     sectionSubtitle:
       "Manage human user accounts and technical service accounts, their official roles, and team memberships.",
     createAccountCta: "+ New account",
+    openRoleMatrixCta: "View 6-role matrix",
     emptyText: "No account registered in the directory.",
     humanBadge: "User",
     servicePrincipalBadge: "Service account",
@@ -315,7 +288,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     displayNameLabel: "Full name or service label",
     displayNamePlaceholder: "e.g. Claire Martin, Sync Connector...",
     emailOrPrincipalLabel: "Email address or service identifier",
-    emailPlaceholder: "e.g. claire.martin@company.com",
+    emailPlaceholder: "e.g. firstname.lastname",
     principalSpPlaceholder: "e.g. sp-indexing-worker",
     statusLabel: "Account status",
     rolesFieldsetLabel: "Assigned official roles (closed list)",
@@ -328,10 +301,12 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     saveEditButton: "Save changes",
   },
   matrix: {
-    sectionTitle: "2. Native 6-Role Permission Matrix",
+    sectionTitle: "Platform 6 Official Roles Matrix",
     sectionSubtitle:
       "Clear overview of native permissions per scope. No manual rule is needed for standard operations.",
-    secretBannerTitle: "Strict write-only secret confidentiality",
+    openRoleMatrixCta: "View 6-role matrix",
+    closeRoleMatrixCta: "Close",
+    secretBannerTitle: "Strict write-only secret confidentiality", // pragma: allowlist secret
     secretBannerBody:
       "No role — not even Platform Administrator or Security Officer — can ever read or display a secret key after saving. Secrets can only be set, replaced, or cleared.",
     colRole: "Official role",
@@ -347,7 +322,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     summaryObserver: "Read-only consultation — no edits or executions",
   },
   secopsDrawer: {
-    toggleTitle: "3. Scope Exceptions & Isolation (Advanced — SecOps)",
+    toggleTitle: "2. Scope Exceptions & Isolation (Advanced — SecOps)",
     toggleSubtitle:
       "Reserved for special cases: isolate a confidential workspace, deny a specific action, or grant a targeted override.",
     secopsBadge: "SecOps Governance",

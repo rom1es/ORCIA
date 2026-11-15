@@ -1134,3 +1134,13 @@ action_items:
     reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-15-cockpit-jour0-revue-ux-reference.jpg"
     description: >
       Constat utilisateur du 2026-11-15 (capture archivée) : 1) empilement > 6 bandeaux/cartes violant la règle <= 3 blocs majeurs de DESIGN.md ; 2) Accostage 1/6 affiche encore « Créer le compte Administrateur » après connexion admin ; 3) affichage prématuré des cartes HumanLedAnchorCard et ArbitrationTieBreakCard Option A/B à vide (0 run, 0 arbitrage) ; 4) redondance entre barre d'accès rapide Mon Assistant, 3 cartes raccourcis et état vide Espaces/Processus. Ne pas implémenter avant arbitrage dédié.
+  - id: DEBT-RBAC-SPLIT-01
+    title: "Découpage modulaire de hierarchical_rbac.py (485 lignes > seuil 400 L)"
+    action: "Extraire les helpers de résolution d'héritage/délégation et les modèles de portée dans packages/orcia-core/src/orcia_core/permissions/_internal/ afin de ramener hierarchical_rbac.py sous le seuil des 300–350 lignes sans modifier les contrats publics"
+    priority: P2
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-8
+    description: >
+      Ticket ouvert le 2026-11-15 après l'ajout chirurgical (+35 L, total 485 L) du helper _effective_identity_roles dans hierarchical_rbac.py pour unifier la résolution des rôles multi-attribution issus de iam_accounts (SecOps). À découper dans un refactoring dédié.

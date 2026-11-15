@@ -69,6 +69,7 @@ async def _rotate_refresh_and_hydrate(
         try:
             engine = get_or_create_shared_db_engine(request)
             user = await hydrate_user_identity_from_pg(engine, user, svc=svc)
+            svc.register_user(user)
         except ResourceNotFoundError:
             raise
         except Exception as exc:

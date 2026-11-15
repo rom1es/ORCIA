@@ -62,6 +62,12 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     const rootRow = await screen.findByTestId("org-unit-row-org-1");
     expect(rootRow.getAttribute("data-depth")).toBe("0");
+    const nameStrong = screen.getByTestId("org-unit-name-org-1");
+    expect(nameStrong.textContent).toBe("Direction Produit");
+    expect(nameStrong.className).toContain("text-base font-semibold tracking-tight");
+    const leadBadge = screen.getByTestId("org-unit-lead-badge-org-1");
+    expect(leadBadge.getAttribute("data-tone")).toBe("neutral");
+    expect(screen.getByTestId("org-unit-kind-badge-org-1").getAttribute("data-tone")).toBe("cobalt");
 
     // 2. Create Sub-BU ("Pôle IA Générative", parent = org-1)
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
@@ -137,6 +143,14 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
 
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     const leadInput = screen.getByTestId("org-unit-lead-input");
+    expect(leadInput.getAttribute("type")).toBe("search");
+    expect(leadInput.getAttribute("name")).toBe("orcia_directory_filter_q");
+    expect(leadInput.getAttribute("data-lpignore")).toBe("true");
+    expect(leadInput.getAttribute("data-1p-ignore")).toBe("true");
+    expect(leadInput.getAttribute("data-bwignore")).toBe("true");
+    expect(leadInput.getAttribute("data-protonpass-ignore")).toBe("true");
+    expect(leadInput.getAttribute("data-form-type")).toBe("other");
+    expect(leadInput.getAttribute("placeholder")).toBe("Rechercher un membre par nom (ex. : Claire Martin)...");
     fireEvent.change(screen.getByTestId("org-unit-name-input"), { target: { value: "Pôle Sécurité" } });
 
     fireEvent.focus(leadInput);
@@ -216,6 +230,14 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
 
     // 2. Typing into member combobox triggers live search
     const memberInput = screen.getByTestId("org-unit-add-member-input");
+    expect(memberInput.getAttribute("type")).toBe("search");
+    expect(memberInput.getAttribute("name")).toBe("orcia_directory_filter_q");
+    expect(memberInput.getAttribute("data-lpignore")).toBe("true");
+    expect(memberInput.getAttribute("data-1p-ignore")).toBe("true");
+    expect(memberInput.getAttribute("data-bwignore")).toBe("true");
+    expect(memberInput.getAttribute("data-protonpass-ignore")).toBe("true");
+    expect(memberInput.getAttribute("data-form-type")).toBe("other");
+    expect(memberInput.getAttribute("placeholder")).toBe("Rechercher un collaborateur par nom...");
     fireEvent.focus(memberInput);
     fireEvent.change(memberInput, { target: { value: "nouveau.collaborateur@orcia.fr" } });
     await act(async () => Promise.resolve());

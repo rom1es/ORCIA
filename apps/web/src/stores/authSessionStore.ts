@@ -214,7 +214,9 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
     if (!options?.force && !get().isHydrating) {
       return;
     }
-    set({ isHydrating: true });
+    if (!get().isAuthenticated) {
+      set({ isHydrating: true });
+    }
 
     const runHydration = async () => {
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -241,12 +243,17 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
                 : me?.roles && me.roles.length > 0
                   ? me.roles
                   : [tokenRes.platform_role];
+            const currentHat = get().activeHat;
+            const nextHat =
+              currentHat && roles.includes(currentHat)
+                ? currentHat
+                : roles[0] || "CONTRIBUTOR";
             set({
               isAuthenticated: true,
               isHydrating: false,
               accessToken: tokenRes.access_token,
               roles,
-              activeHat: roles[0] || "CONTRIBUTOR",
+              activeHat: nextHat,
               email: tokenRes.email || me?.email || null,
               displayName: tokenRes.display_name || me?.display_name || null,
               mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),

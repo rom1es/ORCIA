@@ -60,11 +60,15 @@ export function getVitestIamAccounts(): readonly MockIamAccountItem[] {
 }
 
 function ensureDay0AdminSeeded(
-  firstAdmin: { email: string; displayName: string } | null,
+  firstAdmin: { email: string; displayName: string; roles?: string[] } | null,
 ): void {
   const targetEmail = (firstAdmin?.email ?? "admin@orcia.local").trim().toLowerCase();
   const targetName =
     firstAdmin?.displayName?.trim() || "Administrateur Plateforme (Jour 0)";
+  const initialRoles =
+    Array.isArray(firstAdmin?.roles) && firstAdmin.roles.length > 0
+      ? [...firstAdmin.roles]
+      : ["PLATFORM_ADMIN", "SECOPS"];
   const already = iamAccounts.some((a) => a.principal_id.toLowerCase() === targetEmail);
   if (!already) {
     if (firstAdmin && targetEmail !== "admin@orcia.local") {
@@ -80,7 +84,7 @@ function ensureDay0AdminSeeded(
         email: targetEmail,
         account_kind: "HUMAN",
         auth_source: "LOCAL_BOOTSTRAP",
-        roles: ["PLATFORM_ADMIN", "SECOPS"],
+        roles: initialRoles,
         team_ids: [],
         status: "ACTIVE",
         created_at_iso: nowIso,
@@ -122,7 +126,7 @@ export function handleVitestIamRoute(params: {
   readonly parsedUrl: URL;
   readonly body: Record<string, unknown>;
   readonly reqHeaders: Headers;
-  readonly firstAdmin: { email: string; displayName: string } | null;
+  readonly firstAdmin: { email: string; displayName: string; roles?: string[] } | null;
   readonly orgUnits: MockOrgUnitRef[];
   readonly syncSetupOrgUnits: () => void;
   readonly jsonResponse: (payload: unknown, status?: number) => Response;

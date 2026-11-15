@@ -6,6 +6,7 @@ import {
   IamAccountModal,
   type IamAccountModalSubmitValues,
 } from "../iam/IamAccountModal";
+import { IamRoleMatrixReferenceModal } from "../iam/IamRoleMatrixReferenceModal";
 import {
   createIamAccountViaApi,
   resetIamAccountTemporaryPasswordViaApi,
@@ -34,6 +35,7 @@ export function OrgUnitInlineCreateMemberModal({
   const iamLabels = dictionary.settingsHub.iamTab;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRoleMatrixOpen, setIsRoleMatrixOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tempPasswordModalData, setTempPasswordModalData] = useState<{
     displayName: string;
@@ -132,7 +134,16 @@ export function OrgUnitInlineCreateMemberModal({
         errorMessage={errorMessage}
         isSubmitting={isSubmitting}
         initialCreateDefaults={initialCreateDefaults}
+        onOpenRoleMatrix={() => setIsRoleMatrixOpen(true)}
         onSubmit={(values) => void handleSubmit(values)}
+      />
+
+      <IamRoleMatrixReferenceModal
+        isOpen={isRoleMatrixOpen}
+        onClose={() => setIsRoleMatrixOpen(false)}
+        roleMatrix={[]}
+        labels={iamLabels}
+        openHelpSection={() => undefined}
       />
 
       {tempPasswordModalData && (

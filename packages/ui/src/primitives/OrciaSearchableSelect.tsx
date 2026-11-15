@@ -196,13 +196,17 @@ export function OrciaSearchableSelect({
           <div style={{ padding: "8px", borderBottom: "1px solid var(--color-border)" }}>
             <input
               ref={inputRef}
-              type="text"
+              name="orcia_select_filter_q"
+              type="search"
               data-testid={`${testId}-search-input`}
               autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
               spellCheck={false}
               data-lpignore="true"
               data-1p-ignore="true"
               data-bwignore="true"
+              data-protonpass-ignore="true"
               data-form-type="other"
               placeholder={searchPlaceholder}
               value={searchQuery}

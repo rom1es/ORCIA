@@ -4,7 +4,7 @@ Covers:
 - Closed set of 6 official roles (`PLATFORM_ADMIN`, `SECOPS`, `BU_LEAD`, `TEAM_LEAD`,
   `CONTRIBUTOR`, `OBSERVER`) and `422 ERR_IAM_INVALID_ROLE` on unknown roles.
 - `DEFAULT_ROLE_PERMISSION_MATRIX` including `BU_LEAD` and enforcing
-  `secret_visibility == "WRITE_ONLY_NEVER_READABLE"` (`AD-21`).
+  `secret_visibility == "WRITE_ONLY_NEVER_READABLE"` (`AD-21`).  # pragma: allowlist secret
 - Anti-lockout deterministic invariant (`422 ERR_ADMIN_LOCKOUT_PREVENTED`) when demoting,
   disabling, or deleting the last `ACTIVE` `PLATFORM_ADMIN`, while allowing `SECOPS` separation
   onto a dedicated RSSI account.
@@ -84,7 +84,7 @@ def test_story_17_3_closed_six_roles_and_matrix_invariants() -> None:
     matrix_list = list_native_role_matrix()
     assert len(matrix_list) == 6
     for entry in matrix_list:
-        assert entry.secret_visibility == "WRITE_ONLY_NEVER_READABLE"
+        assert entry.secret_visibility == "WRITE_ONLY_NEVER_READABLE"  # pragma: allowlist secret
         assert set(entry.resource_permissions.keys()) == {
             "workflows",
             "agents",
@@ -280,7 +280,8 @@ def test_story_17_3_http_endpoints_in_memory_fallback_and_observer_guard(
     matrix_resp = client.get("/api/v1/settings/iam/role-matrix")
     assert matrix_resp.status_code == 200
     matrix_json = matrix_resp.json()
-    assert matrix_json["secret_visibility_policy"] == "WRITE_ONLY_NEVER_READABLE"
+    expected_policy = "WRITE_ONLY_NEVER_READABLE"  # pragma: allowlist secret
+    assert matrix_json["secret_visibility_policy"] == expected_policy
     assert [r["role"] for r in matrix_json["roles"]] == list(VALID_IAM_ROLES)
 
     # 2. GET /api/v1/settings/iam/accounts auto-seeds Day-0 admin with PLATFORM_ADMIN + SECOPS
@@ -392,3 +393,53 @@ def test_story_17_3_helpers_and_validation_edge_cases() -> None:
     assert _parse_conditions('{"env": "prod"}') == {"env": "prod"}
     assert _parse_conditions("{bad-json") == {}
     assert _parse_conditions(None) == {}
+
+
+def test_story_17_3_secops_delegation_authorized_via_iam_roles() -> None:
+    svc = HierarchicalRbacService()
+
+    secops_user = UserIdentity(
+        id="user-contributor-secops",
+        email="auditor@orcia.fr",
+        display_name="Auditeur SecOps",
+        auth_mode="LOCAL",
+        human_profile_archetype="CONTRIBUTOR",
+        platform_role="CONTRIBUTOR",
+        primary_org_unit_id="org-root",
+        roles=("CONTRIBUTOR", "SECOPS"),
+    )
+
+    grants = svc.delegate_grant(
+        secops_user,
+        subject_type="USER",
+        subject_id="target-user-01",
+        scope_path="bu-finance/ws-confidential",
+        verbs=("read", "execute"),
+        effect="ALLOW",
+        resource_kind="DATASOURCE",
+    )
+    assert len(grants) == 2
+    assert all(g.resource_kind == "DATASOURCE" for g in grants)
+
+    admin_secops = UserIdentity(
+        id="user-admin-secops",
+        email="admin.secops@orcia.fr",
+        display_name="Admin SecOps",
+        auth_mode="LOCAL",
+        human_profile_archetype="PLATFORM_ADMIN",
+        platform_role="PLATFORM_ADMIN",
+        primary_org_unit_id="org-root",
+        roles=("PLATFORM_ADMIN", "SECOPS"),
+    )
+    grants_admin = svc.delegate_grant(
+        admin_secops,
+        subject_type="ROLE",
+        subject_id="TEAM_LEAD",
+        scope_path="bu-finance/ws-confidential",
+        verbs=("read",),
+        effect="INHERITANCE_BLOCK",
+        resource_kind="WORKFLOW",
+    )
+    assert len(grants_admin) == 1
+    assert grants_admin[0].effect == "INHERITANCE_BLOCK"
+    assert grants_admin[0].resource_kind == "WORKFLOW"

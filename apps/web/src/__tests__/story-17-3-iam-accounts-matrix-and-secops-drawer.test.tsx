@@ -27,7 +27,7 @@ async function mountSettingsHub(initialPath = "/settings") {
 }
 
 describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer & Zero Exposed Secrets", () => {
-  it("eradicates 'Lire / Voir les secrets', displays AD-21 Write-Only secret banner, and renders all 6 roles including BU_LEAD", async () => {
+  it("eradicates 'Lire / Voir les secrets', displays AD-21 Write-Only secret banner inside on-demand modal, and renders all 6 roles including BU_LEAD", async () => {
     seedVitestPlatformSetupState(
       { org_units: [], rbac_grants: [], llm_tiers: [], workspaces: [] },
       { email: "claire.admin@orcia.fr", displayName: "Claire Fondatrice" },
@@ -37,8 +37,17 @@ describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     await screen.findByTestId("iam-account-row-acc-1");
 
-    // Expand SecOps drawer as well so all 3 sections are in the DOM
+    // Expand SecOps drawer as well
     fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
+
+    // 1. Initial state: role matrix table is NOT present in the page flow
+    expect(screen.queryByTestId("iam-role-matrix-table")).toBeNull();
+    expect(screen.queryByTestId("iam-role-matrix-modal")).toBeNull();
+
+    // 2. Open role matrix modal via directory CTA
+    fireEvent.click(screen.getByTestId("iam-open-role-matrix-modal-btn"));
+    expect(screen.getByTestId("iam-role-matrix-modal")).toBeDefined();
+    expect(screen.getByTestId("iam-role-matrix-table")).toBeDefined();
 
     const fullText = document.body.textContent ?? "";
     expect(fullText).not.toContain("Lire / Voir les secrets");
@@ -50,7 +59,7 @@ describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer
     expect(secretBanner.textContent).toContain("saisie seule");
     expect(secretBanner.textContent).toContain("Aucun rôle");
 
-    // All 6 official roles including BU_LEAD are rendered in Section 2
+    // All 6 official roles including BU_LEAD are rendered inside the modal
     for (const roleKey of [
       "PLATFORM_ADMIN",
       "SECOPS",
@@ -64,6 +73,33 @@ describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer
     expect(screen.getByTestId("iam-matrix-role-row-BU_LEAD").textContent).toContain(
       "Responsable de Direction (BU)",
     );
+
+    // Close via close button
+    fireEvent.click(screen.getByTestId("iam-close-role-matrix-modal-btn"));
+    expect(screen.queryByTestId("iam-role-matrix-modal")).toBeNull();
+
+    // Re-open and close via Escape
+    fireEvent.click(screen.getByTestId("iam-open-role-matrix-modal-btn"));
+    expect(screen.getByTestId("iam-role-matrix-modal")).toBeDefined();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("iam-role-matrix-modal")).toBeNull();
+
+    // 3. Open role matrix from inside IamAccountModal without closing IamAccountModal on Escape
+    fireEvent.click(screen.getByTestId("iam-open-create-account-btn"));
+    expect(screen.getByTestId("iam-account-modal")).toBeDefined();
+
+    fireEvent.click(screen.getByTestId("iam-modal-open-role-matrix-btn"));
+    expect(screen.getByTestId("iam-role-matrix-modal")).toBeDefined();
+    expect(screen.getByTestId("iam-account-modal")).toBeDefined();
+
+    // Escape closes role matrix modal BUT leaves IamAccountModal open
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("iam-role-matrix-modal")).toBeNull();
+    expect(screen.getByTestId("iam-account-modal")).toBeDefined();
+
+    // Close IamAccountModal via its cancel button
+    fireEvent.click(screen.getByTestId("iam-account-modal-cancel-btn"));
+    expect(screen.queryByTestId("iam-account-modal")).toBeNull();
   });
 
   it("auto-seeds Day-0 admin (PLATFORM_ADMIN + SECOPS), allows RSSI separation & SERVICE_PRINCIPAL creation, and enforces anti-lockout (422)", async () => {
@@ -250,5 +286,47 @@ describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer
     fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
     const persistedRow = await screen.findByTestId("rbac-grant-row-grant-1");
     expect(persistedRow.textContent).toContain("Périmètre isolé");
+  });
+
+  it("immediately unlocks SecOps drawer when admin edits their own account to add SECOPS role", async () => {
+    seedVitestPlatformSetupState(
+      {
+        org_units: [
+          { id: "org-bu-1", name: "Direction Sécurité", slug: "dir-secu", level: "BU", parentId: "scope-global" },
+        ],
+        rbac_grants: [],
+        llm_tiers: [],
+        workspaces: [],
+      },
+      { email: "admin.standalone@orcia.fr", displayName: "Admin Standalone", roles: ["PLATFORM_ADMIN"] },
+    );
+
+    // Admin starts with PLATFORM_ADMIN only (no SECOPS)
+    useAuthSessionStore.getState().setAuthSession({
+      roles: ["PLATFORM_ADMIN"],
+      activeHat: "PLATFORM_ADMIN",
+      email: "admin.standalone@orcia.fr",
+    });
+
+    await mountSettingsHub("/settings");
+    fireEvent.click(screen.getByTestId("settings-tab-iam"));
+    await screen.findByTestId("iam-account-row-acc-1");
+
+    // Open SecOps drawer -> locked notice is displayed and submit button is disabled
+    fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
+    expect(screen.getByTestId("iam-secops-locked-notice")).toBeDefined();
+    expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(true);
+
+    // Admin edits own account to add SECOPS role
+    fireEvent.click(screen.getByTestId("iam-edit-account-btn-acc-1"));
+    expect(screen.getByTestId("iam-account-modal")).toBeDefined();
+    fireEvent.click(screen.getByTestId("iam-account-role-checkbox-SECOPS"));
+    fireEvent.click(screen.getByTestId("iam-account-modal-submit-btn"));
+
+    // Immediately unlocks SecOps drawer!
+    await waitFor(() => {
+      expect(screen.queryByTestId("iam-secops-locked-notice")).toBeNull();
+      expect((screen.getByTestId("create-rbac-grant-btn") as HTMLButtonElement).disabled).toBe(false);
+    });
   });
 });
