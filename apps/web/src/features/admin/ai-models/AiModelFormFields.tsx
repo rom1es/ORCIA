@@ -1,5 +1,7 @@
 import {
   EffortSelector,
+  OrciaModelCombobox,
+  type DiscoveredModelOption,
   type InferenceTierAndEffortLabels,
   type UiInferenceEffort,
   type UiInferenceTier,
@@ -50,6 +52,10 @@ export interface AiModelFormFieldsProps {
   readonly isGemini: boolean;
   readonly usage: "chat" | "embedding";
   readonly setUsage: (val: "chat" | "embedding") => void;
+  readonly discoveredModels?: readonly DiscoveredModelOption[];
+  readonly isDiscovering?: boolean;
+  readonly discoveryError?: string | null;
+  readonly onRefreshDiscovery?: () => void;
 }
 
 export function AiModelFormFields({
@@ -79,6 +85,10 @@ export function AiModelFormFields({
   isGemini,
   usage,
   setUsage,
+  discoveredModels = [],
+  isDiscovering = false,
+  discoveryError = null,
+  onRefreshDiscovery,
 }: AiModelFormFieldsProps): React.ReactElement {
   return (
     <>
@@ -250,35 +260,46 @@ export function AiModelFormFields({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
           <span style={{ fontWeight: 600 }}>{labels.primaryModelLabel}</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ai-model-primary-model-input"
+          <OrciaModelCombobox
+            testId="ai-model-primary-model-input"
             value={primaryModel}
-            onChange={(e) => setPrimaryModel(e.target.value)}
+            onChange={setPrimaryModel}
             disabled={mode === "edit"}
+            models={discoveredModels}
+            targetUsage={usage}
+            isLoading={isDiscovering}
+            errorMessage={discoveryError}
+            onRefresh={onRefreshDiscovery}
             placeholder={resolvePrimaryModelPlaceholder(modelFamily, labels)}
-            style={aiModelInputStyle}
+            labels={{
+              noModelsFound: labels.modelDiscoveryNoMatch,
+              refreshLabel: labels.modelDiscoveryRefresh,
+              loadingLabel: labels.modelDiscoveryLoading,
+              freeformHint: labels.modelDiscoveryFreeformHint,
+              chatBadge: labels.chatBadge,
+              embeddingBadge: labels.embeddingBadge,
+            }}
           />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
           <span style={{ fontWeight: 600 }}>{labels.fallbackModelLabel}</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ai-model-fallback-model-input"
+          <OrciaModelCombobox
+            testId="ai-model-fallback-model-input"
             value={fallbackModel}
-            onChange={(e) => setFallbackModel(e.target.value)}
+            onChange={setFallbackModel}
+            models={discoveredModels}
+            targetUsage={usage}
+            isLoading={isDiscovering}
+            onRefresh={onRefreshDiscovery}
             placeholder={labels.fallbackModelPlaceholder}
-            style={aiModelInputStyle}
+            labels={{
+              noModelsFound: labels.modelDiscoveryNoMatch,
+              refreshLabel: labels.modelDiscoveryRefresh,
+              loadingLabel: labels.modelDiscoveryLoading,
+              freeformHint: labels.modelDiscoveryFreeformHint,
+              chatBadge: labels.chatBadge,
+              embeddingBadge: labels.embeddingBadge,
+            }}
           />
         </label>
       </div>

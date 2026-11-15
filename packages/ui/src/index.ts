@@ -528,6 +528,12 @@ export {
   type OrciaKnownUserComboboxProps,
 } from "./primitives/OrciaKnownUserCombobox";
 export {
+  OrciaModelCombobox,
+  type DiscoveredModelOption,
+  type OrciaModelComboboxLabels,
+  type OrciaModelComboboxProps,
+} from "./primitives/OrciaModelCombobox";
+export {
   OrciaSearchableSelect,
   type OrciaSearchableSelectOption,
   type OrciaSearchableSelectProps,

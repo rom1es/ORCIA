@@ -153,6 +153,20 @@ export interface components {
       mapping_id: string;
       status: "DELETED" | "DRAINING";
     };
+    AiModelDiscoverRequest: {
+      api_key?: string | null;
+      endpoint_uri: string;
+      mapping_id?: string | null;
+      protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages";
+      provider_slug?: string | null;
+    };
+    AiModelDiscoveryResponse: {
+      endpoint_uri: string;
+      models: (components["schemas"]["DiscoveredModelItem"])[];
+      protocol_mode: "openai_compatible" | "gemini_native" | "anthropic_messages";
+      provider_slug?: string | null;
+      total_count: number;
+    };
     AiModelMappingItemResponse: {
       auth_mode: "api_key" | "env_var" | "none_local";
       created_at: string;
@@ -1015,6 +1029,13 @@ export interface components {
       toolbox_mcp_permissions?: (Record<string, string>)[];
       trigger_condition_label: string;
       write_preview_required?: boolean;
+    };
+    DiscoveredModelItem: {
+      description?: string | null;
+      display_name?: string | null;
+      id: string;
+      owned_by?: string | null;
+      usage_hint?: "chat" | "embedding" | "unknown";
     };
     DiscoveredRemoteCapabilitySchema: {
       badge_fr: string;
@@ -5061,6 +5082,18 @@ export interface paths {
       };
     };
   };
+  "/api/v1/settings/ai-models/discover": {
+    get: {
+      responses: {
+        200: components["schemas"]["AiModelDiscoveryResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: components["schemas"]["AiModelDiscoveryResponse"];
+      };
+    };
+  };
   "/api/v1/settings/ai-models/mappings": {
     get: {
       responses: {
@@ -5560,6 +5593,8 @@ export type AgentsAndSkillsListResponse = components["schemas"]["AgentsAndSkills
 export type AiModelCreateRequest = components["schemas"]["AiModelCreateRequest"];
 export type AiModelDeleteImpactResponse = components["schemas"]["AiModelDeleteImpactResponse"];
 export type AiModelDeleteResponse = components["schemas"]["AiModelDeleteResponse"];
+export type AiModelDiscoverRequest = components["schemas"]["AiModelDiscoverRequest"];
+export type AiModelDiscoveryResponse = components["schemas"]["AiModelDiscoveryResponse"];
 export type AiModelMappingItemResponse = components["schemas"]["AiModelMappingItemResponse"];
 export type AiModelMappingsListResponse = components["schemas"]["AiModelMappingsListResponse"];
 export type AiModelPatchRequest = components["schemas"]["AiModelPatchRequest"];
@@ -5657,6 +5692,7 @@ export type DeterministicControlSpec = components["schemas"]["DeterministicContr
 export type DeterministicGateEvaluateRequest = components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse = components["schemas"]["DeterministicGateEvaluateResponse"];
 export type DeterministicSubStepSpec = components["schemas"]["DeterministicSubStepSpec"];
+export type DiscoveredModelItem = components["schemas"]["DiscoveredModelItem"];
 export type DiscoveredRemoteCapabilitySchema = components["schemas"]["DiscoveredRemoteCapabilitySchema"];
 export type DnaChainNodeSchema = components["schemas"]["DnaChainNodeSchema"];
 export type DnaChainPackSeedItemRequest = components["schemas"]["DnaChainPackSeedItemRequest"];

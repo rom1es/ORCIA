@@ -2,6 +2,8 @@ import type {
   AiModelCreateRequest,
   AiModelDeleteImpactResponse,
   AiModelDeleteResponse,
+  AiModelDiscoverRequest,
+  AiModelDiscoveryResponse,
   AiModelMappingItemResponse,
   AiModelMappingsListResponse,
   AiModelPatchRequest,
@@ -61,6 +63,17 @@ export function createAiModelsHubDomainClient(requestJson: RequestJsonFn) {
       return requestJson<AiModelTestResponse>(
         `/api/v1/settings/ai-models/mappings/${encodeURIComponent(mappingId)}/test`,
         "POST",
+      );
+    },
+
+    discoverAiModels(
+      payload: AiModelDiscoverRequest,
+      actorPersona?: string,
+    ): Promise<AiModelDiscoveryResponse> {
+      return requestJson<AiModelDiscoveryResponse>(
+        `/api/v1/settings/ai-models/discover${buildPersonaQuery(actorPersona)}`,
+        "POST",
+        payload,
       );
     },
 

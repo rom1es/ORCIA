@@ -1059,6 +1059,118 @@
         "title": "AiModelDeleteResponse",
         "type": "object"
       },
+      "AiModelDiscoverRequest": {
+        "additionalProperties": false,
+        "description": "Parameters to query a provider's model metadata endpoint without inference tokens.",
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "endpoint_uri": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "mapping_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Id"
+          },
+          "protocol_mode": {
+            "default": "openai_compatible",
+            "enum": [
+              "openai_compatible",
+              "gemini_native",
+              "anthropic_messages"
+            ],
+            "title": "Protocol Mode",
+            "type": "string"
+          },
+          "provider_slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Slug"
+          }
+        },
+        "required": [
+          "endpoint_uri"
+        ],
+        "title": "AiModelDiscoverRequest",
+        "type": "object"
+      },
+      "AiModelDiscoveryResponse": {
+        "additionalProperties": false,
+        "description": "Response containing the list of discovered models.",
+        "properties": {
+          "endpoint_uri": {
+            "title": "Endpoint Uri",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredModelItem"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "protocol_mode": {
+            "enum": [
+              "openai_compatible",
+              "gemini_native",
+              "anthropic_messages"
+            ],
+            "title": "Protocol Mode",
+            "type": "string"
+          },
+          "provider_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Slug"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "endpoint_uri",
+          "protocol_mode",
+          "models",
+          "total_count"
+        ],
+        "title": "AiModelDiscoveryResponse",
+        "type": "object"
+      },
       "AiModelMappingItemResponse": {
         "additionalProperties": false,
         "description": "Full public representation of an AI model mapping with health and masked secret.",
@@ -6632,6 +6744,64 @@
           "checkpoint_label"
         ],
         "title": "DeterministicSubStepSpec",
+        "type": "object"
+      },
+      "DiscoveredModelItem": {
+        "additionalProperties": false,
+        "description": "Public representation of a model discovered on a provider metadata endpoint.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "owned_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owned By"
+          },
+          "usage_hint": {
+            "default": "unknown",
+            "enum": [
+              "chat",
+              "embedding",
+              "unknown"
+            ],
+            "title": "Usage Hint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DiscoveredModelItem",
         "type": "object"
       },
       "DiscoveredRemoteCapabilitySchema": {
@@ -45454,6 +45624,308 @@
         "summary": "Execute 2-Speed Federated & Contextual Search (`⌘K`, Zero Layout Shift, `Story 9.3`)",
         "tags": [
           "portal-and-help"
+        ]
+      }
+    },
+    "/api/v1/settings/ai-models/discover": {
+      "get": {
+        "description": "GET discovery endpoint for local or existing models without sending secrets in URL.",
+        "operationId": "discover_ai_models_get_api_v1_settings_ai_models_discover_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "base_url",
+            "required": true,
+            "schema": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Base Url",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            }
+          },
+          {
+            "in": "query",
+            "name": "protocol_mode",
+            "required": false,
+            "schema": {
+              "default": "openai_compatible",
+              "enum": [
+                "openai_compatible",
+                "gemini_native",
+                "anthropic_messages"
+              ],
+              "title": "Protocol Mode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mapping_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mapping Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Discover Ai Models Get",
+        "tags": [
+          "settings-ai-models"
+        ]
+      },
+      "post": {
+        "description": "Discover available models on provider endpoint without consuming inference tokens (`0 $`).",
+        "operationId": "discover_ai_models_post_api_v1_settings_ai_models_discover_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiModelDiscoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Discover Ai Models Post",
+        "tags": [
+          "settings-ai-models"
         ]
       }
     },

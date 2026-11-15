@@ -235,7 +235,7 @@ capabilities:
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-2 + 17-5 + 19-1 + 19-4 + 19-5
+    origin_ref: 8-2 + 17-5 + 19-1 + 19-2 + 19-4 + 19-5
     status: live
     tests:
       - tests/security/test_api_security_baseline.py
@@ -244,12 +244,16 @@ capabilities:
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
       - apps/web/src/__tests__/story-17-5-ai-models-hub-modal-lifecycle-and-f5.test.tsx
       - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
+      - apps/web/src/__tests__/story-19-2-ai-models-combobox-discovery-and-freeform.test.tsx
+      - packages/ui/src/__tests__/model-combobox.test.tsx
+      - tests/unit/test_story_19_2_ai_models_discovery.py
+      - tests/unit/test_story_19_2_ai_models_discover_endpoint.py
       - apps/web/src/__tests__/story-19-5-ai-models-usage-and-active-embedding.test.tsx
       - tests/unit/test_story_19_5_embedding_port_and_adapters.py
       - tests/unit/test_story_19_5_ai_models_usage_and_uniqueness.py
       - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
     verification: runtime
-    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + AiModelDeleteDialog", migration: "20261114_1705, 20261115_2105" }
+    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + OrciaModelCombobox + AiModelDeleteDialog", migration: "20261114_1705, 20261115_2105" }
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]

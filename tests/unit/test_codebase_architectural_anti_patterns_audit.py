@@ -145,7 +145,7 @@ def test_story_19_4_zero_hardcoded_model_names_in_production_seeds_and_router_de
         REPO_ROOT / "apps" / "worker" / "src",
     )
     banned_regex = re.compile(
-        r"gemini-|claude-|gpt-[0-9]|mistral-|llama|qwen|gemma",
+        r"gemini-|claude-|gpt-[0-9]|mistral-|(?<!o)llama|qwen|gemma",
         re.IGNORECASE,
     )
     violations: list[str] = []

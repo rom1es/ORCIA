@@ -6,6 +6,7 @@ import type {
 import {
   OrciaDialog,
   SecretField,
+  type DiscoveredModelOption,
   type InferenceTierAndEffortLabels,
   type SecretFieldLabels,
   type UiInferenceEffort,
@@ -14,7 +15,10 @@ import {
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
-import { isGoogleGeminiFamily } from "../../../routes/settingsAiModelsPresets";
+import {
+  discoverProviderModelsViaApi,
+  isGoogleGeminiFamily,
+} from "../../../routes/settingsAiModelsPresets";
 import { AiModelFormFields } from "./AiModelFormFields";
 
 export type AiModelModalMode = "create" | "edit" | "rotate-key";
@@ -66,6 +70,9 @@ export function AiModelConfigModal({
   const [usage, setUsage] = useState<"chat" | "embedding">("chat");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModelOption[]>([]);
+  const [isDiscovering, setIsDiscovering] = useState<boolean>(false);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialMapping && (mode === "edit" || mode === "rotate-key")) {
@@ -103,6 +110,81 @@ export function AiModelConfigModal({
   }, [initialMapping, mode, open]);
 
   const isGemini = isGoogleGeminiFamily(modelFamily, endpointUri);
+
+  const triggerDiscovery = async (opts?: {
+    forcedEndpoint?: string;
+    forcedKey?: string;
+  }) => {
+    const targetEndpoint = (opts?.forcedEndpoint ?? endpointUri).trim();
+    if (!targetEndpoint || (!targetEndpoint.startsWith("http://") && !targetEndpoint.startsWith("https://"))) {
+      setDiscoveredModels([]);
+      setDiscoveryError(null);
+      return;
+    }
+
+    const effectiveProtocol =
+      isGemini && targetEndpoint.includes("openai")
+        ? "openai_compatible"
+        : isGemini
+          ? "gemini_native"
+          : protocolMode;
+
+    const effectiveKey =
+      opts?.forcedKey ??
+      (authMode === "api_key"
+        ? rawApiKey.trim() || (secretAction === "set" ? secretInputText.trim() : "") // pragma: allowlist secret
+        : undefined);
+
+    setIsDiscovering(true);
+    setDiscoveryError(null);
+
+    const res = await discoverProviderModelsViaApi({
+      endpointUri: targetEndpoint,
+      protocolMode: effectiveProtocol,
+      providerSlug: modelFamily.trim().toLowerCase(),
+      mappingId: mode === "edit" || mode === "rotate-key" ? initialMapping?.id : undefined,
+      apiKey: effectiveKey || undefined,
+    });
+
+    setIsDiscovering(false);
+    if (res.ok) {
+      setDiscoveredModels(
+        res.models.map((m) => ({
+          id: m.id,
+          displayName: m.display_name,
+          description: m.description,
+          usageHint: m.usage_hint as "chat" | "embedding" | "unknown",
+          ownedBy: m.owned_by,
+        })),
+      );
+      setDiscoveryError(null);
+    } else {
+      setDiscoveryError(res.error || labels.modelDiscoveryNoMatch);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      setDiscoveredModels([]);
+      setDiscoveryError(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      void triggerDiscovery();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    open,
+    endpointUri,
+    rawApiKey,
+    secretInputText,
+    authMode,
+    modelFamily,
+    mode,
+    initialMapping?.id,
+  ]);
 
   const secretFieldLabels: SecretFieldLabels = {
     fieldLabel: "Clé d'API secrète",
@@ -264,6 +346,10 @@ export function AiModelConfigModal({
             isGemini={isGemini}
             usage={usage}
             setUsage={setUsage}
+            discoveredModels={discoveredModels}
+            isDiscovering={isDiscovering}
+            discoveryError={discoveryError}
+            onRefreshDiscovery={() => void triggerDiscovery()}
           />
         )}
 

@@ -33,8 +33,17 @@ from orcia_core.orchestration.agents_and_skills_manager import (
     ManagedSkillRecord,
     SkillExecutionOutcome,
 )
+from orcia_core.orchestration.ai_models_discovery import (
+    DEFAULT_DISCOVERY_TIMEOUT_SECONDS,
+    DiscoveredModel,
+    ModelUsageHint,
+    discover_models_from_provider,
+)
 from orcia_core.orchestration.ai_models_errors import (
     LastTierModelInUseError,
+    ModelDiscoveryAuthFailedError,
+    ModelDiscoveryEndpointNotFoundError,
+    ModelDiscoveryNetworkError,
     UnsafeLlmEndpointUrlError,
 )
 from orcia_core.orchestration.ai_models_governance import (
@@ -345,11 +354,18 @@ __all__ = [
     "AiModelDeleteImpact",
     "AiModelMappingRecord",
     "AiModelsHubService",
+    "DEFAULT_DISCOVERY_TIMEOUT_SECONDS",
+    "DiscoveredModel",
     "HealthStatus",
     "LastTierModelInUseError",
     "LlmAuthMode",
     "LlmProtocolMode",
+    "ModelDiscoveryAuthFailedError",
+    "ModelDiscoveryEndpointNotFoundError",
+    "ModelDiscoveryNetworkError",
+    "ModelUsageHint",
     "UnsafeLlmEndpointUrlError",
+    "discover_models_from_provider",
     "pack_encrypted_api_key",
     "unpack_encrypted_api_key",
     "validate_safe_llm_endpoint_url",

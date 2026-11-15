@@ -145,14 +145,53 @@ class AiModelDeleteResponse(BaseModel):
     status: Literal["DELETED", "DRAINING"]
 
 
+class DiscoveredModelItem(BaseModel):
+    """Public representation of a model discovered on a provider metadata endpoint."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    display_name: str | None = None
+    description: str | None = None
+    usage_hint: Literal["chat", "embedding", "unknown"] = "unknown"
+    owned_by: str | None = None
+
+
+class AiModelDiscoverRequest(BaseModel):
+    """Parameters to query a provider's model metadata endpoint without inference tokens."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    endpoint_uri: str = Field(min_length=1, max_length=1024)
+    protocol_mode: LlmProtocolModeLiteral = "openai_compatible"
+    provider_slug: str | None = Field(default=None, max_length=64)
+    mapping_id: str | None = Field(default=None, max_length=128)
+    api_key: str | None = Field(default=None, max_length=512)
+
+
+class AiModelDiscoveryResponse(BaseModel):
+    """Response containing the list of discovered models."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    endpoint_uri: str
+    protocol_mode: LlmProtocolModeLiteral
+    provider_slug: str | None = None
+    models: list[DiscoveredModelItem]
+    total_count: int
+
+
 __all__ = [
     "AiModelCreateRequest",
     "AiModelDeleteImpactResponse",
     "AiModelDeleteResponse",
+    "AiModelDiscoverRequest",
+    "AiModelDiscoveryResponse",
     "AiModelMappingItemResponse",
     "AiModelMappingsListResponse",
     "AiModelPatchRequest",
     "AiModelTestResponse",
+    "DiscoveredModelItem",
     "HealthStatusLiteral",
     "InferenceEffortLiteral",
     "InferenceTierLiteral",

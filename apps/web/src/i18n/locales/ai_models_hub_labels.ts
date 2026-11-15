@@ -74,6 +74,12 @@ export interface AiModelsHubDictionary {
   readonly activeEmbeddingBadge: string;
   readonly colUsage: string;
   readonly anthropicNoEmbeddingWarning: string;
+  readonly modelDiscoveryNoMatch: string;
+  readonly modelDiscoveryRefresh: string;
+  readonly modelDiscoveryLoading: string;
+  readonly modelDiscoveryFreeformHint: string;
+  readonly chatBadge: string;
+  readonly embeddingBadge: string;
 }
 
 export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
@@ -154,6 +160,12 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   colUsage: "Rôle",
   anthropicNoEmbeddingWarning:
     "Anthropic ne propose pas d'API d'embeddings. Choisissez OpenAI, Mistral, Gemini ou Ollama.",
+  modelDiscoveryNoMatch: "Aucun modèle trouvé auprès du fournisseur",
+  modelDiscoveryRefresh: "Découvrir les modèles (0 token)",
+  modelDiscoveryLoading: "Découverte...",
+  modelDiscoveryFreeformHint: "Vous pouvez saisir un identifiant librement",
+  chatBadge: "Chat",
+  embeddingBadge: "Embedding",
 };
 
 export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
@@ -234,4 +246,10 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   colUsage: "Role",
   anthropicNoEmbeddingWarning:
     "Anthropic does not offer an embedding API. Choose OpenAI, Mistral, Gemini or Ollama.",
+  modelDiscoveryNoMatch: "No models found from provider",
+  modelDiscoveryRefresh: "Discover models (0 tokens)",
+  modelDiscoveryLoading: "Discovering...",
+  modelDiscoveryFreeformHint: "You can enter any model identifier freely",
+  chatBadge: "Chat",
+  embeddingBadge: "Embedding",
 };

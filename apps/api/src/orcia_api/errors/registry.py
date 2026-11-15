@@ -16,6 +16,9 @@ from orcia_core.catalog.errors import ReadSourceDeniedError
 from orcia_core.ontology.errors import OntologyConflictError
 from orcia_core.orchestration.ai_models_errors import (
     LastTierModelInUseError,
+    ModelDiscoveryAuthFailedError,
+    ModelDiscoveryEndpointNotFoundError,
+    ModelDiscoveryNetworkError,
     UnsafeLlmEndpointUrlError,
 )
 from orcia_core.orchestration.errors import (
@@ -123,6 +126,9 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     AuditLedgerImmutableViolationError,
     UnsafeLlmEndpointUrlError,
     LastTierModelInUseError,
+    ModelDiscoveryAuthFailedError,
+    ModelDiscoveryEndpointNotFoundError,
+    ModelDiscoveryNetworkError,
     WebhookSignatureInvalidError,
     LocalAuthDisabledByPolicyError,
     SsoAuthDisabledByPolicyError,

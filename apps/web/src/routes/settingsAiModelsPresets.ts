@@ -1,4 +1,4 @@
-import { createOrciaApiClient } from "@orcia/api-client";
+import { createOrciaApiClient, type DiscoveredModelItem } from "@orcia/api-client";
 import type { LlmAuthMode } from "../components/platformSetupStore";
 import type { AiModelsHubDictionary } from "../i18n/locales/ai_models_hub_labels";
 
@@ -207,5 +207,28 @@ export async function runRemoteLlmConnectionTestEvaluation(params: {
     };
   } catch {
     return buildLocalLlmConnectionSuccessFeedback(params);
+  }
+}
+
+export async function discoverProviderModelsViaApi(params: {
+  readonly endpointUri: string;
+  readonly protocolMode: "openai_compatible" | "gemini_native" | "anthropic_messages";
+  readonly providerSlug?: string;
+  readonly mappingId?: string;
+  readonly apiKey?: string;
+}): Promise<{ ok: boolean; models: DiscoveredModelItem[]; error?: string }> {
+  try {
+    const client = createOrciaApiClient({ baseUrl: "" });
+    const res = await client.discoverAiModels({
+      endpoint_uri: params.endpointUri.trim(),
+      protocol_mode: params.protocolMode,
+      provider_slug: params.providerSlug?.trim() || null,
+      mapping_id: params.mappingId?.trim() || null,
+      api_key: params.apiKey?.trim() || null,
+    });
+    return { ok: true, models: res.models };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return { ok: false, models: [], error: errMsg };
   }
 }
