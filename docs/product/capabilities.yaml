@@ -597,3 +597,11 @@ capabilities:
     origin: epic
     origin_ref: epic-7 (7-1..7-4, backlog)
     status: planned
+  - id: CAP-202
+    title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki) et traces distribuées OpenTelemetry OTLP
+    fr: [] # NFR-OBS-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift
+    origin: adhoc
+    origin_ref: 2026-11-15-adr-journalisation-puits-de-logs
+    status: planned
+    surfaces: { api: "observability (logging.py, ports/log_sink.py)", worker: "configure_logging()", compose: "profiles logs-loki / logs-elastic" }
+    notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et découpé en Stories 7.0a, 7.0b, 7.0c. Prérequis bloquant pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et la vérification post-action POST_ACTION_VERIFICATION (Story 7.3) de l'Epic 7."
