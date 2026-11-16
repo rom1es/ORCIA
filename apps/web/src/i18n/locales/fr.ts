@@ -1,4 +1,5 @@
 import type { TranslationDictionary } from "../types";
+import { ACTIVITY_FR_LABELS } from "./activity_labels";
 import { ADMIN_AND_STUDIO_FR_LABELS } from "./admin_and_studio_labels";
 import { AI_MODELS_HUB_FR } from "./ai_models_hub_labels";
 import { ASSISTANT_FR_LABELS } from "./assistant_labels";
@@ -14,6 +15,7 @@ export const frDictionary: TranslationDictionary = {
   ...SHELL_AND_SEARCH_FR_LABELS,
   ...ASSISTANT_FR_LABELS,
   ...GOVERNANCE_AND_PACKS_FR_LABELS,
+  ...ACTIVITY_FR_LABELS,
   locale: "fr",
   aiModelsHub: AI_MODELS_HUB_FR,
   authSettings: AUTH_SETTINGS_FR_LABELS,

@@ -22,6 +22,19 @@ register_domain_error_catalog(
                 "Updating or deleting rows in audit_ledger is strictly forbidden.",
             ),
         },
+        "ERR_AUDIT_RUN_NOT_FOUND": {
+            "fr": LocalizedErrorCopy(
+                "Exécution d'audit introuvable",
+                (
+                    "Aucun enregistrement d'audit ou dossier de provenance n'a été trouvé "
+                    "pour cet identifiant d'exécution."
+                ),
+            ),
+            "en": LocalizedErrorCopy(
+                "Audit run not found",
+                "No audit record or provenance report was found for this run identifier.",
+            ),
+        },
     }
 )
 
@@ -31,8 +44,14 @@ class AuditLedgerImmutableViolationError(OrciaDomainError):
     http_status, type_slug = 409, "audit-ledger-immutable"
 
 
+class AuditRunNotFoundError(ResourceNotFoundError):
+    error_code = "ERR_AUDIT_RUN_NOT_FOUND"
+    http_status, type_slug = 404, "audit-run-not-found"
+
+
 __all__ = [
     "AuditLedgerImmutableViolationError",
+    "AuditRunNotFoundError",
     "OrciaDomainError",
     "ResourceNotFoundError",
     "ValidationDomainError",

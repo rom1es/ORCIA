@@ -103,6 +103,11 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       ArbitrationTieBreakCard: ["onSelectOption"],
       CognitiveReviewBriefingGrid: ["onInspectHypotheses"],
       ChunkValidationCard: ["onDecideChunk", "onFinalizeGate"],
+      ActivityLogExplorerView: [
+        "onInspectProvenance",
+        "onExportProvenance",
+        "onSelectRunId",
+      ],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

@@ -589,6 +589,69 @@ async function vitestFetchTransport(
     );
   }
 
+  // 1c. Audit Ledger & Run Provenance (Story 6.1)
+  if (path.startsWith("/api/v1/audit/ledger") && method === "GET") {
+    if (path.includes("/provenance")) {
+      const parts = path.split("/");
+      const runId = parts[5] ?? "run-1";
+      return jsonResponse({
+        run_id: runId,
+        root_run_id: null,
+        total_events: 1,
+        total_input_tokens: 1000,
+        total_output_tokens: 500,
+        total_cost_usd: 0.002,
+        models_invoked: ["qwen2.5-coder"],
+        actors_involved: ["Admin"],
+        run_lock_sha256: "sha256-verified-lock",
+        workflow_contract_sha256: "sha256-contract",
+        cas_references: ["seaweedfs://blobs/sha-1"],
+        is_run_lock_aligned: true,
+        first_event_at: new Date().toISOString(),
+        last_event_at: new Date().toISOString(),
+      });
+    }
+    if (path.includes("/export")) {
+      const parts = path.split("/");
+      const runId = parts[5] ?? "run-1";
+      const isMd = (parsedUrl.searchParams.get("format") ?? "json") === "md";
+      return jsonResponse({
+        run_id: runId,
+        format: isMd ? "md" : "json",
+        content: isMd ? "# Dossier Certifié" : "{}",
+        exported_at: new Date().toISOString(),
+        manifest_sha256: "sha256-verified-lock",
+        entries_count: 1,
+      });
+    }
+
+    const rawAudit = (backendState.platformSetupState?.audit_events as Array<Record<string, unknown>>) ?? [];
+    const entries = rawAudit.map((e, idx) => ({
+      id: String(e.id ?? `evt-${idx + 1}`),
+      source_event_id: String(e.source_event_id ?? e.sourceEventId ?? `01933e7e-0000-7000-8000-${String(idx + 1).padStart(12, "0")}`),
+      workspace_id: e.workspace_id ?? e.workspaceId ?? e.scopeId ?? null,
+      scope_path: String(e.scope_path ?? e.scopePath ?? "GLOBAL"),
+      run_id: e.run_id ?? e.runId ?? null,
+      actor_type: String(e.actor_type ?? e.actorType ?? "USER"),
+      actor_id: String(e.actor_id ?? e.actorId ?? e.actorEmail ?? "admin"),
+      actor_display_name: String(e.actor_display_name ?? e.actorName ?? "Administrateur"),
+      actor_email: e.actor_email ?? e.actorEmail ?? null,
+      event_type: String(e.event_type ?? e.eventType ?? "RecordedAction"),
+      summary: String(e.summary ?? ""),
+      cost_usd: Number(e.cost_usd ?? e.costUsd ?? 0),
+      input_tokens: Number(e.input_tokens ?? e.inputTokens ?? 0),
+      output_tokens: Number(e.output_tokens ?? e.outputTokens ?? 0),
+      created_at: String(e.created_at ?? e.timestampIso ?? new Date().toISOString()),
+    }));
+
+    return jsonResponse({
+      entries,
+      total: entries.length,
+      limit: Number(parsedUrl.searchParams.get("limit") ?? 500),
+      offset: Number(parsedUrl.searchParams.get("offset") ?? 0),
+    });
+  }
+
   // 1b. Hierarchical Organization Units CRUD (/api/v1/org-units — Story 17.2)
   const MOCK_KNOWN_ORG_USERS = [
     { principal_id: "claire.admin@orcia.fr", display_name: "Claire Admin", email: "claire.admin@orcia.fr" },

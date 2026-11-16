@@ -357,14 +357,26 @@ capabilities:
     verification: runtime
     surfaces: { route: /help, api: portal_and_help.py }
   - id: CAP-065
-    title: Journal d'activité (auteurs, horodatage, filtres)
-    fr: [FR-25, FR-32]   # chevauche Story 6.1 (backlog) — à réconcilier (CAP-ACT-3)
-    origin: adhoc
-    origin_ref: 2026-11-05-journal-activite-menu-dedie-auteurs-horodatage-et-filtres
-    status: partial
-    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
-    surfaces: { route: /activity, ui: ActivityLogExplorerView }
-    notes: "Lit auditEvents du snapshot d'accostage (bootstrap_accostage.py), pas un audit_ledger append-only. Story 6.1 doit remplacer cette source (réconciliation CAP-ACT-3, 2026-11-08)."
+    title: Registre de provenance auditable immuable (`audit_ledger` append-only) & journal d'activité (/activity)
+    fr: [FR-25, FR-32]
+    origin: epic
+    origin_ref: 6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen
+    status: live
+    verification: runtime
+    tests:
+      - tests/unit/test_story_6_1_audit_ledger_core.py
+      - tests/unit/test_story_6_1_outbox_subscriber.py
+      - tests/unit/test_story_6_1_sql_audit_ledger.py
+      - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
+      - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
+      - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
+      - apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx
+    surfaces:
+      route: /activity
+      api: audit_ledger.py
+      migration: "20261116_0601"
+      ui: ActivityLogExplorerView
+    notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée par déclencheur ERR_AUDIT_LEDGER_IMMUTABLE, traçabilité des tests à chaud ADMIN_CONNECTION_TEST, export JSON/Markdown certifiés conforme run_lock.json et refs CAS SeaweedFS."
   - id: CAP-066
     title: Site de présentation /showcase et site statique autonome (sync auto)
     fr: []

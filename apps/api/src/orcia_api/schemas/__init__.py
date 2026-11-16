@@ -1,5 +1,11 @@
 """Pydantic v2 contracts (single source of truth for OpenAPI 3.1 schema generation, AD-1)."""
 
+from orcia_api.schemas.audit_finops import (
+    AuditExportResponse,
+    AuditLedgerEntrySchema,
+    AuditLedgerPageResponse,
+    AuditProvenanceSummaryResponse,
+)
 from orcia_api.schemas.auth_and_org import (
     AuthTokenResponse,
     CatalogResourceInspectionResponse,
@@ -121,6 +127,10 @@ __all__ = [
     "AccessMode",
     "ArtifactTemplateCompileRequest",
     "ArtifactTemplateCompileResponse",
+    "AuditExportResponse",
+    "AuditLedgerEntrySchema",
+    "AuditLedgerPageResponse",
+    "AuditProvenanceSummaryResponse",
     "AuthTokenResponse",
     "BmadSkillPackImportRequest",
     "BmadSkillPackImportResponse",

@@ -19,6 +19,7 @@ from orcia_api.dependencies.core_and_lifespan import (
 )
 from orcia_api.dependencies.orchestration_and_settings import (
     get_ai_models_hub_service,
+    get_audit_ledger_service,
     get_cognitive_router_service,
     get_connector_hub_service,
     get_control_center_service,
@@ -28,6 +29,7 @@ from orcia_api.dependencies.orchestration_and_settings import (
     get_notification_service,
     get_orchestration_service,
     get_platform_settings_service,
+    get_provenance_exporter_service,
     get_resource_lease_service,
     get_studio_and_pack_service,
 )
@@ -63,6 +65,7 @@ __all__ = [
     "get_assistant_governance_service",
     "get_assistant_service",
     "get_assistant_three_speed_router_service",
+    "get_audit_ledger_service",
     "get_auth_service",
     "get_bootstrap_service",
     "get_catalog_service",
@@ -83,6 +86,7 @@ __all__ = [
     "get_pack_builder_system_service",
     "get_permission_broker_service",
     "get_platform_settings_service",
+    "get_provenance_exporter_service",
     "get_remote_test_bench_and_mcp_service",
     "get_resource_lease_service",
     "get_studio_and_pack_service",

@@ -1425,6 +1425,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
     fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-builder"));
     fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-builder"));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
 
     // 4. Click the dedicated left-menu entry '📜 Journal d'Activité' -> navigates to /activity
     fireEvent.click(activityMenuBtn);
@@ -1435,6 +1438,14 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     const activityPage = screen.getByTestId("activity-log-explorer-page");
     expect(activityPage).toBeDefined();
     expect(activityMenuBtn.getAttribute("aria-current")).toBe("page");
+
+    // Wait for the async API ledger fetch to populate the table
+    const latestEvtTimestamp = await screen.findByTestId("activity-event-timestamp-evt-4");
+    const latestEvtActor = screen.getByTestId("activity-event-actor-evt-4");
+    const latestEvtScope = screen.getByTestId("activity-event-scope-evt-4");
+    expect(latestEvtTimestamp.textContent).toMatch(/\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}/);
+    expect(latestEvtActor.textContent).toContain("Romain Admin (romain@orcia.fr)");
+    expect(latestEvtScope.textContent).toContain("Plateforme entière");
 
     // 5. Verify zero raw English eventType badges ("PackDeactivated", "PackRegistered", "OrgUnitCreated") or raw "GLOBAL"
     const pageText = activityPage.textContent ?? "";
@@ -1451,14 +1462,6 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(pageText).toContain("Pack désactivé");
     expect(pageText).toContain("Pack activé");
     expect(pageText).toContain("Plateforme entière");
-
-    // 6. Verify every row displays its timestamp, author name ("Romain Admin (romain@orcia.fr)"), and scope
-    const latestEvtTimestamp = screen.getByTestId("activity-event-timestamp-evt-4");
-    const latestEvtActor = screen.getByTestId("activity-event-actor-evt-4");
-    const latestEvtScope = screen.getByTestId("activity-event-scope-evt-4");
-    expect(latestEvtTimestamp.textContent).toMatch(/\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}/);
-    expect(latestEvtActor.textContent).toContain("Romain Admin (romain@orcia.fr)");
-    expect(latestEvtScope.textContent).toContain("Plateforme entière");
 
     // 7. Verify default filtering at the connected login's observation level (topbar workspace/scope selector)
     expect(screen.getByTestId("activity-observation-scope-badge").textContent).toContain(

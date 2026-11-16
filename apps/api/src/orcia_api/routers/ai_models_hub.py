@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Path, Query, Request
 
 from orcia_api.dependencies import (
     get_ai_models_hub_service,
+    get_audit_ledger_service,
     get_auth_service,
     get_cognitive_router_service,
 )
@@ -54,6 +55,11 @@ from orcia_api.schemas.settings_and_studio import (
     CognitiveRoutingOutcomeResponse,
     ExecuteTierRoutingRequest,
 )
+from orcia_core.audit_finops import (
+    SqlAuditLedgerService,
+    map_domain_event_to_ledger_entry,
+)
+from orcia_core.kernel.events import AdminConnectionTested
 from orcia_core.orchestration import (
     AiModelsHubService,
     CognitiveModelRouterService,
@@ -329,6 +335,7 @@ async def test_ai_model_connection(
     request: Request,
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
+    audit_svc: Annotated[SqlAuditLedgerService, Depends(get_audit_ledger_service)],
 ) -> AiModelTestResponse:
     """Execute on-demand non-blocking connectivity test against model endpoint."""
     path = str(request.url.path)
@@ -350,6 +357,23 @@ async def test_ai_model_connection(
             hub_svc.record_test_result(
                 mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
             )
+        evt = AdminConnectionTested.create(
+            actor_id="admin",
+            target_type="AI_MODEL",
+            target_id=mapping_id,
+            protocol="HTTP_INFERENCE",
+            test_status=health,
+            latency_ms=resp.latency_ms,
+            detail=f"Test de connexion modèle IA {mapping_id}: {health}",
+            metadata={
+                "actor_type": "ADMIN_CONNECTION_TEST",
+                "model_id": rec.model_name if rec else mapping_id,
+                "provider": rec.provider_slug if rec else None,
+                "health_status": health,
+            },
+        )
+        entry = map_domain_event_to_ledger_entry(evt)
+        await audit_svc.record_entry(entry)
         return resp
     except OrciaDomainError as exc:
         lat_val = getattr(exc, "latency_ms", None)
@@ -363,6 +387,24 @@ async def test_ai_model_connection(
             hub_svc.record_test_result(
                 mapping_id, health_status="ERROR", latency_ms=lat_ms, instance=path
             )
+        evt_err = AdminConnectionTested.create(
+            actor_id="admin",
+            target_type="AI_MODEL",
+            target_id=mapping_id,
+            protocol="HTTP_INFERENCE",
+            test_status="ERROR",
+            latency_ms=lat_ms,
+            detail=f"Test de connexion modèle IA {mapping_id}: ERROR ({type(exc).__name__})",
+            metadata={
+                "actor_type": "ADMIN_CONNECTION_TEST",
+                "model_id": rec.model_name if rec else mapping_id,
+                "provider": rec.provider_slug if rec else None,
+                "health_status": "ERROR",
+                "error_type": type(exc).__name__,
+            },
+        )
+        entry_err = map_domain_event_to_ledger_entry(evt_err)
+        await audit_svc.record_entry(entry_err)
         raise exc
 
 

@@ -218,6 +218,7 @@ CostSource = Literal["INTERNAL_VERIFIED", "EXTERNAL_REPORTED", "ESTIMATED_SCALE"
 @dataclass(frozen=True, slots=True)
 class RemoteUsageRawPayload:
     """Raw telemetry payload extracted from MCP _meta.usage or X-Orcia-Usage header."""
+
     input_tokens: int | None = None
     output_tokens: int | None = None
     cost_amount: float | None = None
@@ -231,6 +232,7 @@ class RemoteUsageRawPayload:
 @dataclass(frozen=True, slots=True)
 class SanitizedRemoteUsage:
     """Sanitized, currency-normalized and bounded telemetry record."""
+
     input_tokens: int
     output_tokens: int
     cost_usd: float
@@ -247,6 +249,7 @@ class SanitizedRemoteUsage:
 @dataclass(frozen=True, slots=True)
 class FinopsCostLedgerEntry:
     """Immutable accounting entry ready for audit_ledger insertion."""
+
     run_id: str | None
     step_execution_id: str | None
     actor_type: str
@@ -276,6 +279,7 @@ class FinopsCostLedgerEntry:
 @dataclass(frozen=True, slots=True)
 class CircuitBreakerDecision:
     """Evaluation result of a connector or workflow budget circuit breaker."""
+
     is_allowed: bool
     circuit_state: CircuitBreakerState
     reason: str
@@ -286,6 +290,7 @@ class CircuitBreakerDecision:
 @runtime_checkable
 class RemoteUsageSanitizerPort(Protocol):
     """Port for sanitizing external MCP and A2A consumption telemetry."""
+
     def sanitize(
         self,
         raw: RemoteUsageRawPayload,
@@ -294,45 +299,43 @@ class RemoteUsageSanitizerPort(Protocol):
         fixed_cost_per_call_eur: float,
         fixed_cost_per_unit_eur: float,
         max_reported_cost_per_call_eur: float,
-    ) -> SanitizedRemoteUsage:
-        ...
+    ) -> SanitizedRemoteUsage: ...
 
 
 @runtime_checkable
 class ConnectorQuotaGuardPort(Protocol):
     """Port for checking and updating isolated connector quotas."""
+
     async def evaluate_call_allowed(
         self,
         connector_id: str,
         scope_type: str,
         scope_id: str | None,
-    ) -> CircuitBreakerDecision:
-        ...
+    ) -> CircuitBreakerDecision: ...
 
     async def record_call_usage(
         self,
         connector_id: str,
         usage: SanitizedRemoteUsage,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 @runtime_checkable
 class BudgetCircuitGuardPort(Protocol):
     """Port for evaluating hierarchical workflow run and scope budgets."""
+
     async def evaluate_budget_allowance(
         self,
         run_id: str,
         estimated_step_cost_usd: float,
-    ) -> CircuitBreakerDecision:
-        ...
+    ) -> CircuitBreakerDecision: ...
 
 
 @runtime_checkable
 class AuditLedgerSinkPort(Protocol):
     """Port for recording immutable provenance entries."""
-    async def record_entry(self, entry: FinopsCostLedgerEntry) -> str:
-        ...
+
+    async def record_entry(self, entry: FinopsCostLedgerEntry) -> str: ...
 ```
 
 ### 4.3 Câblage au Composition Root (`apps/api` & `apps/worker`)
@@ -370,7 +373,7 @@ Conformément à `AD-19` (Règle 4 : Zéro singleton à l'import, assemblage uni
       "finops_scope_budgets",
       "finops_connector_quotas",
       "domain_events_outbox",
-      ...
+      ...,
   )
   ```
 

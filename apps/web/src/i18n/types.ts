@@ -33,6 +33,7 @@ export interface InboxAndClaimsCopy {
   presencePill: PresenceClaimPillLabels;
 }
 
+import type { ActivityDictionarySection } from "./locales/activity_labels";
 import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
 import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
 import type { AssistantDictionarySection } from "./locales/assistant_labels";
@@ -47,7 +48,8 @@ export interface TranslationDictionary
     AdminAndStudioDictionarySection,
     ShellAndSearchDictionarySection,
     AssistantDictionarySection,
-    GovernanceAndPacksDictionarySection {
+    GovernanceAndPacksDictionarySection,
+    ActivityDictionarySection {
   locale: SupportedWebLocale;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;

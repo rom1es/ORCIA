@@ -393,6 +393,71 @@ export interface components {
       name: string;
       slug: string;
     };
+    AuditExportResponse: {
+      content: string;
+      entries_count: number;
+      exported_at: string;
+      format: "json" | "md";
+      manifest_sha256?: string | null;
+      run_id: string;
+    };
+    AuditLedgerEntrySchema: {
+      actor_display_name?: string | null;
+      actor_email?: string | null;
+      actor_id: string;
+      actor_type: string;
+      cas_references?: (string)[];
+      cost_source?: string;
+      cost_usd?: number;
+      created_at?: string | null;
+      effort?: string | null;
+      event_type: string;
+      id: string;
+      inference_tier?: string | null;
+      input_tokens?: number;
+      latency_ms?: number;
+      metadata?: Record<string, unknown>;
+      model_id?: string | null;
+      native_currency?: string | null;
+      native_metric_type?: string | null;
+      native_metric_value?: number | null;
+      org_unit_id?: string | null;
+      output_tokens?: number;
+      pre_prompt_sha256?: string | null;
+      reported_by_remote?: boolean;
+      root_run_id?: string | null;
+      run_id?: string | null;
+      run_lock_sha256?: string | null;
+      scope_path?: string;
+      source_event_id: string;
+      step_execution_id?: string | null;
+      summary: string;
+      trace_id: string;
+      workflow_contract_sha256?: string | null;
+      workspace_id?: string | null;
+    };
+    AuditLedgerPageResponse: {
+      entries: (components["schemas"]["AuditLedgerEntrySchema"])[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+    AuditProvenanceSummaryResponse: {
+      actors_involved: (string)[];
+      cas_references: (string)[];
+      first_event_at?: string | null;
+      is_run_lock_aligned: boolean;
+      last_event_at?: string | null;
+      models_invoked: (string)[];
+      root_run_id?: string | null;
+      run_id: string;
+      run_lock_sha256?: string | null;
+      total_cost_usd: number;
+      total_events: number;
+      total_input_tokens: number;
+      total_output_tokens: number;
+      workflow_contract_sha256?: string | null;
+    };
     AuthSessionBootstrapResponse: {
       authenticated: boolean;
       session?: components["schemas"]["AuthTokenResponse"] | null;
@@ -4335,6 +4400,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/audit/ledger": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuditLedgerPageResponse"];
+      };
+    };
+  };
+  "/api/v1/audit/ledger/{run_id}/export": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuditExportResponse"];
+      };
+    };
+  };
+  "/api/v1/audit/ledger/{run_id}/provenance": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuditProvenanceSummaryResponse"];
+      };
+    };
+  };
   "/api/v1/auth/change-password": {
     post: {
       responses: {
@@ -5664,6 +5750,10 @@ export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSc
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
+export type AuditExportResponse = components["schemas"]["AuditExportResponse"];
+export type AuditLedgerEntrySchema = components["schemas"]["AuditLedgerEntrySchema"];
+export type AuditLedgerPageResponse = components["schemas"]["AuditLedgerPageResponse"];
+export type AuditProvenanceSummaryResponse = components["schemas"]["AuditProvenanceSummaryResponse"];
 export type AuthSessionBootstrapResponse = components["schemas"]["AuthSessionBootstrapResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];

@@ -13,8 +13,10 @@ from dataclasses import dataclass, field
 import dramatiq
 from dbos import DBOS
 
+from orcia_core.audit_finops import AuditLedgerOutboxSubscriber
 from orcia_core.observability.logging import bind_trace_context, get_logger
 from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork, SqlDomainEventsOutboxRepository
+from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort
 from orcia_kernel.events import DomainEvent
 from orcia_kernel.ports import OutboxRelayPort
 
@@ -33,8 +35,12 @@ class OutboxEventBus:
     ontology_extraction_queue: list[DomainEvent] = field(default_factory=list)
     notifications_queue: list[DomainEvent] = field(default_factory=list)
     sse_published_messages: list[tuple[str, DomainEvent]] = field(default_factory=list)
+    audit_sink: AuditLedgerSinkPort | None = None
+    audit_subscriber: AuditLedgerOutboxSubscriber | None = None
 
     def __post_init__(self) -> None:
+        if self.audit_sink is not None and self.audit_subscriber is None:
+            self.audit_subscriber = AuditLedgerOutboxSubscriber(self.audit_sink)
         self.subscribe("*", "audit_finops", self._on_audit_finops)
         self.subscribe("ArtifactProduced", "ontology", self._on_ontology_l4)
         self.subscribe("*", "notifications", self._on_notifications)
@@ -68,6 +74,8 @@ class OutboxEventBus:
     async def publish_idempotent_async(self, event: DomainEvent) -> None:
         """Async callback for `SqlDomainEventsOutboxRepository.claim_and_relay_pending_batch`."""
         self.publish_idempotent(event)
+        if self.audit_subscriber is not None:
+            await self.audit_subscriber.on_domain_event(event)
 
     def _on_audit_finops(self, event: DomainEvent) -> None:
         self.audit_finops_ledger.append(event)

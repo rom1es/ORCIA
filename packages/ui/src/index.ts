@@ -321,11 +321,20 @@ export {
   ActivityLogExplorerView,
   type ActivityLogExplorerLabels,
   type ActivityLogExplorerViewProps,
+  type ActivityLogProvenanceLabels,
   type ActivityMaxLimitOption,
   type ActivityTimeWindowOption,
   type UiActivityLogEventItem,
   type UiActivityScopeFilterOption,
 } from "./primitives/ActivityLogExplorerView";
+export {
+  ActivityLogFiltersBar,
+  type ActivityLogFiltersBarProps,
+} from "./primitives/ActivityLogFiltersBar";
+export {
+  ActivityLogProvenanceExportBar,
+  type ActivityLogProvenanceExportBarProps,
+} from "./primitives/ActivityLogProvenanceExportBar";
 export {
   ASSISTANT_DEFAULT_HAT_OPTIONS,
   AssistantGovernanceModalAndStudio,

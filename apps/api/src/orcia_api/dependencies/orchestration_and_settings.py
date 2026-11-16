@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from fastapi import Request
+
+if TYPE_CHECKING:
+    from orcia_core.audit_finops import ProvenanceExporterService, SqlAuditLedgerService
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import DurableOnboardingWizardService
@@ -162,3 +167,27 @@ def get_ai_models_hub_service(request: Request) -> AiModelsHubService:
         svc = AiModelsHubService(vault_cipher=auth.vault_cipher)
         request.app.state.ai_models_hub_service = svc
     return svc
+
+
+def get_audit_ledger_service(request: Request) -> SqlAuditLedgerService:
+    """FastAPI `Depends` provider returning `SqlAuditLedgerService` (`Story 6.1`)."""
+    from orcia_core.audit_finops import SqlAuditLedgerService
+
+    svc: SqlAuditLedgerService | None = getattr(request.app.state, "audit_ledger_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = getattr(request.app.state, "audit_ledger_service", None)
+        if svc is None:
+            engine = getattr(request.app.state, "db_engine", None)
+            svc = SqlAuditLedgerService(engine=engine)
+            request.app.state.audit_ledger_service = svc
+    assert svc is not None
+    return svc
+
+
+def get_provenance_exporter_service(request: Request) -> ProvenanceExporterService:
+    """FastAPI `Depends` provider returning `ProvenanceExporterService` (`Story 6.1`)."""
+    from orcia_core.audit_finops import ProvenanceExporterService
+
+    ledger_svc = get_audit_ledger_service(request)
+    return ProvenanceExporterService(ledger_svc)

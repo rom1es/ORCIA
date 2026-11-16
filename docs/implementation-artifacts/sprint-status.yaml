@@ -81,8 +81,8 @@ development_status:
   epic-5-retrospective: optional
 
   epic-6: in-progress
-  6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: backlog
-  6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: backlog
+  6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: done
+  6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: in-progress
   6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: backlog
   6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu: backlog
   epic-6-retrospective: optional

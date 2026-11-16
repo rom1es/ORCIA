@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-16",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 107,
+    "uiPrimitivesCount": 109,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 41,
+    "alembicMigrationsCount": 42,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 139,
+    "techLeadReportsCount": 144,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 58,
-    "verifiedCapabilitiesCount": 43
+    "liveCapabilitiesCount": 59,
+    "verifiedCapabilitiesCount": 44
   },
   "activeRoutes": [
     "/",
@@ -52,6 +52,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
+    "ActivityLogFiltersBar",
+    "ActivityLogProvenanceExportBar",
     "AgentDetailAndSandboxModal",
     "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
@@ -209,7 +211,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx",
     "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup",
     "20261115_2307_story_19_7_rag_reindexing_jobs_and_queue",
-    "20261115_2359_merge_iam_multi_lead_and_epic_19_heads"
+    "20261115_2359_merge_iam_multi_lead_and_epic_19_heads",
+    "20261116_0601_story_6_1_audit_ledger_append_only"
   ],
   "architectureDecisions": [
     {
@@ -488,6 +491,41 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Story 6.4 (CAP-200)",
+      "reportFile": "6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu-tech-lead-report.md",
+      "domain": "Télémétrie FinOps Multi-Métriques des Services MCP & Agents Distants (_meta.usage / X-Orcia-Usage), RemoteUsageSanitizer, Onglet Services & Agents externes & Coupe-Circuit Isolé par Connecteur",
+      "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.4)."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Story 6.3 (CAP-200)",
+      "reportFile": "6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp-tech-lead-report.md",
+      "domain": "Tableau de Bord Exécutif d'Impact Cognitif, Détection des Validations Expéditives, Indice de Réversibilité Humaine & Recommandations de Gates",
+      "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.3)."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Story 6.2 (CAP-200)",
+      "reportFile": "6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt-tech-lead-report.md",
+      "domain": "Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM), Coupe-Circuits Budgétaires / Anti-Boucles (PAUSED_BUDGET_EXCEEDED, PAUSED_MAX_RETRIES) & Rallonge Budgétaire",
+      "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.2)."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Story 6.1 (CAP-065, CAP-200)",
+      "reportFile": "6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen-tech-lead-report.md",
+      "domain": "Registre de Provenance Auditable Immuable (audit_ledger Append-Only), Traçabilité des Tests à Chaud (ADMIN_CONNECTION_TEST), Export JSON/Markdown & Rebasage /activity",
+      "summary": "Implémentation terminée : migration Alembic 20261116_0601 (audit_ledger, trigger d'immutabilité PostgreSQL 18 ERR_AUDIT_LEDGER_IMMUTABLE, élargissement domain_events_outbox), domaine hexagonal audit_finops (93 % couverture), traceur direct & Outbox AdminConnectionTested, routeur FastAPI /api/v1/audit/ledger, pont typé @orcia/api-client, refonte découpage Direction C (ActivityLogFiltersBar, ActivityLogProvenanceExportBar), modale d'inspection de provenance, export scellé JSON/MD, 0 bouton muet et survie prouvée au F5 unmount/render."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Epic 6 — Phase 1 Analyse Préalable Winston & Sally (CAP-065, CAP-200)",
+      "reportFile": "2026-11-16-epic-6-analyse-architecture-et-ux-winston-sally-tech-lead-report.md",
+      "domain": "Analyse Préalable d'Architecture Système Winston (🏗️) et de Design UX Sally (🎨) de l'Epic 6 : Provenance Auditable Immuable (audit_ledger), FinOps Consolidé, Coupe-Circuits Hiérarchiques, RemoteUsageSanitizer MCP & Réversibilité Humaine",
+      "summary": "Analyse d'impact GitNexus (7 symboles dont enforce_scope_mutation_guard critique), arbitrage frontière lint-imports sous AD-19 Contract 2 & 3 via port hexagonal pur ports/finops_telemetry.py, chaîne linéaire des 3 migrations Alembic (6.1, 6.2, 6.4) depuis head = 20261115_2359, trigger PostgreSQL 18 append-only, réconciliation CAP-ACT-3 (/activity CAP-065 vs /finops CAP-200), architecture Direction C de 📊 FinOps (masquage à vide total == 0, 4 KPIs sobres, 4 onglets, modale plafond anti-LastPass), glossaire strict anti-jargon FR/EN et rédaction du document socle epic-6-context.md débloquant la Phase 2 (spécifications 6.1..6.4)."
+    },
     {
       "date": "2026-11-16",
       "phaseOrStory": "Cadrage IAM & Org (IAM-ORG-DELEGATION-01, UX-AUTH-DOUBLE-ICON-01 — CAP-050, CAP-051, CAP-058, CAP-067)",

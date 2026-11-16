@@ -6,7 +6,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from orcia_api.dependencies import get_remote_test_bench_and_mcp_service
+from orcia_api.dependencies import (
+    get_audit_ledger_service,
+    get_remote_test_bench_and_mcp_service,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.mcp_test_bench import (
     ConfigureAgentMcpExposureRequest,
@@ -18,6 +21,11 @@ from orcia_api.schemas.mcp_test_bench import (
     RemoteServiceTestAndDiscoverResponse,
     TestBenchStepResultSchema,
 )
+from orcia_core.audit_finops import (
+    SqlAuditLedgerService,
+    map_domain_event_to_ledger_entry,
+)
+from orcia_core.kernel.events import AdminConnectionTested
 from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
     RemoteServiceTestBenchAndGovernedMcpService,
 )
@@ -33,6 +41,10 @@ TestBenchMcpServiceDep = Annotated[
     RemoteServiceTestBenchAndGovernedMcpService,
     Depends(get_remote_test_bench_and_mcp_service),
 ]
+AuditLedgerServiceDep = Annotated[
+    SqlAuditLedgerService,
+    Depends(get_audit_ledger_service),
+]
 
 
 @router.post(
@@ -40,10 +52,11 @@ TestBenchMcpServiceDep = Annotated[
     response_model=RemoteServiceTestAndDiscoverResponse,
     summary="Run the 4-Step Hot Test Bench & Contract Discovery (Story 11.3)",
 )
-def test_and_discover_connector(
+async def test_and_discover_connector(
     body: RemoteServiceTestAndDiscoverRequest,
     user: CurrentUserDep,
     svc: TestBenchMcpServiceDep,
+    audit_svc: AuditLedgerServiceDep,
 ) -> RemoteServiceTestAndDiscoverResponse:
     """Execute the 4-step Hot Test Bench (`🔌`) for MCP/OpenAPI/A2A/WASM services."""
     res = svc.test_and_discover_remote_service(
@@ -58,6 +71,29 @@ def test_and_discover_connector(
         simulated_dry_run_elapsed_ms=body.simulated_dry_run_elapsed_ms,
         simulated_dry_run_bytes=body.simulated_dry_run_bytes,
     )
+    status_str = "SUCCESS" if res.can_activate else "FAILURE"
+    evt = AdminConnectionTested.create(
+        actor_id=user.id,
+        target_type="MCP_CONNECTOR",
+        target_id=body.endpoint_url,
+        protocol=body.protocol,
+        test_status=status_str,
+        latency_ms=int(body.simulated_dry_run_elapsed_ms or 0),
+        detail=(
+            f"Banc de test connecteur {body.protocol}: {'Activé' if res.can_activate else 'Refusé'}"
+        ),
+        metadata={
+            "actor_type": "ADMIN_CONNECTION_TEST",
+            "actor_display_name": getattr(user, "display_name", None),
+            "actor_email": getattr(user, "email", None),
+            "can_activate": res.can_activate,
+            "steps_count": len(res.steps),
+            "tools_count": len(res.discovered_capabilities),
+        },
+    )
+    entry = map_domain_event_to_ledger_entry(evt)
+    await audit_svc.record_entry(entry)
+
     return RemoteServiceTestAndDiscoverResponse(
         protocol=res.protocol,
         endpoint_url=res.endpoint_url,

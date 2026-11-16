@@ -239,6 +239,12 @@ def initialize_app_services(app: FastAPI) -> None:
     if getattr(app.state, "durable_wizard_service", None) is None:
         app.state.durable_wizard_service = DurableOnboardingWizardService()
 
+    if getattr(app.state, "audit_ledger_service", None) is None:
+        from orcia_core.audit_finops import SqlAuditLedgerService
+
+        db_engine = getattr(app.state, "db_engine", None)
+        app.state.audit_ledger_service = SqlAuditLedgerService(engine=db_engine)
+
     if getattr(app.state, "assistant_service", None) is None:
         seeded_rag, _ = build_seeded_rag_service()
         context_source = CatalogAndBlackboardContextSourceAdapter(
@@ -279,6 +285,9 @@ def initialize_app_services(app: FastAPI) -> None:
             db_engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
             app.state.db_engine = db_engine
             app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+            audit_svc = getattr(app.state, "audit_ledger_service", None)
+            if audit_svc is not None and getattr(audit_svc, "_engine", None) is None:
+                audit_svc._engine = db_engine
         except Exception as exc:
             from orcia_core.observability.logging import get_logger
 
