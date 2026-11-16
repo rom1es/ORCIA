@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-08-2026 14:40
+last_updated: 11-16-2026 22:35
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -80,7 +80,7 @@ development_status:
   5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
   epic-5-retrospective: optional
 
-  epic-6: backlog
+  epic-6: in-progress
   6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: backlog
   6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: backlog
   6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: backlog
@@ -1155,3 +1155,36 @@ action_items:
     epic: epic-8
     description: >
       Ticket ouvert le 2026-11-15 après l'ajout chirurgical (+35 L, total 485 L) du helper _effective_identity_roles dans hierarchical_rbac.py pour unifier la résolution des rôles multi-attribution issus de iam_accounts (SecOps). À découper dans un refactoring dédié.
+  - id: IAM-ORG-DELEGATION-01
+    title: "Délégation hiérarchique effective de l'organigramme et de l'invitation de comptes pour BU_LEAD (BU, sous-BUs, équipes) et TEAM_LEAD (équipes dirigées)"
+    action: "Implémenter org_delegation.py et iam_delegated_invitation.py (contrôle descendant BU -> Sous-BU -> Team, garde anti-auto-éviction 422 ERR_ORG_UNIT_LAST_LEAD_REMOVAL_FORBIDDEN, création/invitation déléguée de comptes HUMAN bornée au périmètre : BU_LEAD -> CONTRIBUTOR/OBSERVER/TEAM_LEAD/BU_LEAD sur son sous-arbre, TEAM_LEAD -> CONTRIBUTOR/OBSERVER/TEAM_LEAD sur ses équipes, rejet 403 anti-escalade PLATFORM_ADMIN/SECOPS/SERVICE_PRINCIPAL), sécuriser POST/PATCH/DELETE /api/v1/org-units et l'invitation IAM, exposer les permissions calculées par nœud dans OpenAPI, et rouvrir l'onglet Organisation (/settings?tab=organization + modale + Nouveau membre scopée) aux BU_LEAD et TEAM_LEAD sans exposer les onglets plateforme"
+    priority: P1
+    depends_on: []
+    owner: "Winston (Architect) / Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-17
+    story_ref: "17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation"
+    tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md"
+    reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-16-bu-lead-settings-readonly-et-doubles-icones.png"
+    description: >
+      Analyse et plan détaillés dans docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md
+      (capture Rouge Gorge du 2026-11-16). Corrige : 1) le verrouillage exclusif PLATFORM_ADMIN introduit le 2026-11-15 dans shellPresets.ts
+      et settingsRbacResolver.ts (SCOPED_LEAD_SETTINGS_TABS = []) ; 2) l'absence de contrôle de sous-arbre sur POST/PATCH/DELETE /api/v1/org-units
+      (_org_units_helpers.py) et de garde anti-auto-éviction du dernier responsable ; 3) l'ouverture sécurisée de la création/invitation de nouveaux
+      comptes humains (+ Nouveau membre, mot de passe temporaire LOCAL ou compte SSO) par BU_LEAD et TEAM_LEAD sur leur périmètre respectif
+      (PLATFORM_ADMIN n'est pas le seul créateur de comptes). Couvre CAP-050, CAP-051, CAP-058 et CAP-067.
+  - id: UX-AUTH-DOUBLE-ICON-01
+    title: "Suppression des doubles icônes (SVG filaire + emoji résiduel) sur le bandeau de mot de passe temporaire et le menu Mon Compte"
+    action: "Éliminer le doublon d'icône d'alerte (⚠️ ⚠️) dans TemporaryPasswordWarningBanner et les préfixes emojis résiduels (⚙️, 🔗) à côté de <OrciaIcon /> dans UserAccountDropdownMenu / dictionnaires i18n FR/EN"
+    priority: P3
+    depends_on: []
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-17
+    story_ref: "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration"
+    tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md"
+    reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-16-bu-lead-settings-readonly-et-doubles-icones.png"
+    description: >
+      Relevé sur la capture utilisateur du 2026-11-16 (voir docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md) :
+      coexistence d'une icône SVG <OrciaIcon /> et d'un glyphe Unicode/emoji en dur sur TemporaryPasswordWarningBanner et dans les entrées
+      « Paramètres de mon compte » / « Mes connexions aux outils » du menu déroulant utilisateur.

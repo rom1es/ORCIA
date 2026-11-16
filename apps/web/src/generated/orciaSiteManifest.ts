@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-15",
+  "lastSyncedDate": "2026-11-16",
   "stats": {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 107,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 41,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 138,
+    "techLeadReportsCount": 139,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 58,
     "verifiedCapabilitiesCount": 43
@@ -488,6 +488,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Cadrage IAM & Org (IAM-ORG-DELEGATION-01, UX-AUTH-DOUBLE-ICON-01 — CAP-050, CAP-051, CAP-058, CAP-067)",
+      "reportFile": "2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md",
+      "domain": "Cadrage de la Délégation Hiérarchique d'Organisation (BU_LEAD / TEAM_LEAD), Invitation/Création Déléguée de Comptes sur Périmètre, Garde Anti-Auto-Éviction & Ticket UX-AUTH-DOUBLE-ICON-01",
+      "summary": "Diagnostic complet des 3 verrous (UI settingsRbacResolver.ts / shellPresets.ts, domaine evaluator.py, API _org_units_helpers.py / iam_accounts.py) avec capture archivée (Rouge Gorge), formalisation des décisions D1 (création/invitation de comptes HUMAN par BU_LEAD en CONTRIBUTOR/TEAM_LEAD/BU_LEAD sur sous-arbre et par TEAM_LEAD en CONTRIBUTOR/TEAM_LEAD sur ses équipes, anti-escalade stricte), D2 (gestion descendante sous-BUs/équipes + garde 422 dernier responsable) et D3 (doubles icônes UX), et création des tickets IAM-ORG-DELEGATION-01 (P1) et UX-AUTH-DOUBLE-ICON-01 (P3) dans sprint-status.yaml."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Non-Régression & Couverture Epic 19 (CAP-190..194)",
