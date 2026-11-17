@@ -23,6 +23,9 @@ from orcia_core.kernel._finops_audit_events import (
 )
 from orcia_core.kernel._governance_events import (
     AccessRequested,
+    AutonomousContractRevoked,
+    AutonomousContractSigned,
+    AutonomousEscalated,
     PermissionGranted,
     PermissionRevoked,
     SettingsChanged,
@@ -39,6 +42,9 @@ __all__ = [
     "AccessRequested",
     "AdminConnectionTested",
     "ArtifactProduced",
+    "AutonomousContractRevoked",
+    "AutonomousContractSigned",
+    "AutonomousEscalated",
     "BudgetCircuitTripped",
     "BudgetOverrideApproved",
     "ConnectorCircuitTripped",

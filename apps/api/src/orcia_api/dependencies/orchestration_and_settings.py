@@ -29,6 +29,7 @@ from orcia_core.orchestration import (
     WorkflowStudioAndPackService,
 )
 from orcia_core.permissions import (
+    AutonomyContractService,
     HierarchicalRbacService,
     IamAccountsGovernanceService,
     PlatformSettingsService,
@@ -305,3 +306,30 @@ def get_log_sink_port(request: Request) -> LogSinkQueryPort:
             )
             request.app.state.log_sink = sink
     return sink
+
+
+def get_autonomy_contract_service(request: Request) -> AutonomyContractService:
+    """FastAPI `Depends` provider returning `AutonomyContractService` (`Story 7.1`)."""
+    import os
+
+    from orcia_core.bootstrap import SqlAutonomyContractRepository
+
+    engine = getattr(request.app.state, "db_engine", None)
+    use_pg = engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    svc: AutonomyContractService | None = getattr(
+        request.app.state, "autonomy_contract_service", None
+    )
+    if svc is None:
+        rbac_svc = get_hierarchical_rbac_service(request)
+        audit_sink = get_audit_ledger_service(request)
+        repo: SqlAutonomyContractRepository | None = None
+        if use_pg:
+            assert engine is not None
+            repo = SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
+        svc = AutonomyContractService(rbac_service=rbac_svc, repository=repo)
+        request.app.state.autonomy_contract_service = svc
+    elif use_pg and getattr(svc, "_repo", None) is None:
+        assert engine is not None
+        audit_sink = get_audit_ledger_service(request)
+        svc._repo = SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
+    return svc

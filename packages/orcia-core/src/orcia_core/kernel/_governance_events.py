@@ -196,3 +196,134 @@ class SettingsChanged(DomainEvent):
             key=key,
             version=version,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class AutonomousContractSigned(DomainEvent):
+    """Published when an autonomy contract is signed on a workflow (`Story 7.1`, `AD-18`)."""
+
+    workflow_id: str = ""
+    service_principal_id: str = ""
+    signed_by_user_id: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        contract_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        workflow_version: str,
+        service_principal_id: str,
+        signed_by_user_id: str,
+        signed_by_role: str,
+        signature_sha256: str,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> AutonomousContractSigned:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="AutonomousContractSigned",
+            aggregate_type="autonomy_contract",
+            aggregate_id=contract_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "contract_id": contract_id,
+                "workflow_id": workflow_id,
+                "workflow_version": workflow_version,
+                "service_principal_id": service_principal_id,
+                "signed_by_user_id": signed_by_user_id,
+                "signed_by_role": signed_by_role,
+                "signature_sha256": signature_sha256,
+                "scope_path": scope_path,
+                "actor_id": signed_by_user_id,
+                "actor_type": "USER",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            service_principal_id=service_principal_id,
+            signed_by_user_id=signed_by_user_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AutonomousContractRevoked(DomainEvent):
+    """Published when an autonomy contract is revoked (`Story 7.1`, `AD-18`)."""
+
+    workflow_id: str = ""
+    revoked_by_user_id: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        contract_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        revoked_by_user_id: str,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> AutonomousContractRevoked:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="AutonomousContractRevoked",
+            aggregate_type="autonomy_contract",
+            aggregate_id=contract_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "contract_id": contract_id,
+                "workflow_id": workflow_id,
+                "revoked_by_user_id": revoked_by_user_id,
+                "scope_path": scope_path,
+                "actor_id": revoked_by_user_id,
+                "actor_type": "USER",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            revoked_by_user_id=revoked_by_user_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AutonomousEscalated(DomainEvent):
+    """Published when an autonomous run suspends to human escalation (`Story 7.1`, `AD-18`)."""
+
+    workflow_id: str = ""
+    reason: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        run_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        reason: str,
+        contract_id: str | None = None,
+        service_principal_id: str | None = None,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> AutonomousEscalated:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="AutonomousEscalated",
+            aggregate_type="workflow_run",
+            aggregate_id=run_id,
+            run_id=run_id,
+            workspace_id=workspace_id,
+            payload={
+                "run_id": run_id,
+                "workflow_id": workflow_id,
+                "reason": reason,
+                "contract_id": contract_id,
+                "service_principal_id": service_principal_id,
+                "scope_path": scope_path,
+                "actor_id": f"sp:{service_principal_id}" if service_principal_id else "system",
+                "actor_type": "SERVICE_PRINCIPAL" if service_principal_id else "SYSTEM",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            reason=reason,
+        )

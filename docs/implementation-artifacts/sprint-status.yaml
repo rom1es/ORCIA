@@ -91,7 +91,7 @@ development_status:
   7-0a-socle-de-journalisation-unifie-12-factor-json-stdout: done
   7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel: done
   7-0c-conformite-deploiement-openshift-et-clusterlogforwarder: done
-  7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: backlog
+  7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: done
   7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler: backlog
   7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: backlog
   epic-7-retrospective: optional

@@ -491,6 +491,52 @@ export interface components {
       trace_id: string;
       user_id: string;
     };
+    AutonomousActionInput: {
+      action_key: string;
+      payload?: Record<string, unknown>;
+      scheme?: string;
+      secret_ref_uri?: string | null;
+    };
+    AutonomousRunExecutionResponse: {
+      contract_id: string;
+      escalation_reason?: string | null;
+      executed_actions?: (Record<string, unknown>)[];
+      issued_token_preview_ids?: (string)[];
+      run_id: string;
+      status: "COMMITTED_AUTONOMOUS" | "PAUSED_AUTONOMOUS_ESCALATION";
+      trace_id: string;
+      workflow_id: string;
+      workspace_id: string;
+    };
+    AutonomyContractResponse: {
+      allowed_read_sources?: (string)[];
+      allowed_write_actions?: (string)[];
+      criticality: "LOW_NON_CRITICAL" | "STANDARD";
+      id: string;
+      max_cost_per_run_usd: number;
+      post_hoc_sampling_rate: number;
+      revoked_at_iso?: string | null;
+      revoked_by_user_id?: string | null;
+      service_principal_id: string;
+      signature_sha256: string;
+      signed_at_iso: string;
+      signed_by_role: "TEAM_LEAD" | "BU_LEAD" | "PLATFORM_ADMIN";
+      signed_by_user_id: string;
+      status: "ACTIVE" | "REVOKED" | "SUPERSEDED";
+      tie_break_policy: "ONTOLOGY_AXIOM_FIRST" | "DEFER_AND_CONTINUE_WITH_ASSUMPTION" | "PAUSE_AND_ESCALATE";
+      workflow_id: string;
+      workflow_sha256: string;
+      workflow_version: string;
+      workspace_id: string;
+    };
+    AutonomyContractStateResponse: {
+      active_contract?: components["schemas"]["AutonomyContractResponse"] | null;
+      eligible_service_principals?: (components["schemas"]["EligibleServicePrincipalItem"])[];
+      history?: (components["schemas"]["AutonomyContractResponse"])[];
+      trace_id: string;
+      workflow_id: string;
+      workspace_id: string;
+    };
     BackgroundAuditReportSchemaItem: {
       assumptions: (components["schemas"]["StepMemlogSchemaItem"])[];
       run_id: string;
@@ -1226,6 +1272,14 @@ export interface components {
       trace_id: string;
     };
     EffortLevel: "default" | "low" | "medium" | "high";
+    EligibleServicePrincipalItem: {
+      display_name: string;
+      id: string;
+      principal_id: string;
+      roles?: (string)[];
+      status: string;
+      team_ids?: (string)[];
+    };
     EnterpriseConnectorCreateRequest: {
       admin_secret_value?: string | null;
       auth_mode: "OAUTH2_PASSTHROUGH" | "PERSONAL_ACCESS_TOKEN" | "OIDC_FEDERATION" | "SERVICE_SECRET";
@@ -2963,6 +3017,9 @@ export interface components {
       target_sub_step_id?: string | null;
       when_condition: string;
     };
+    RevokeAutonomyContractRequest: {
+      scope_path?: string;
+    };
     RevokePassthroughTokenResponse: {
       connector_id: string;
       revoked?: boolean;
@@ -3133,6 +3190,18 @@ export interface components {
       scopes: (components["schemas"]["ScopeNode"])[];
       trace_id: string;
     };
+    SignAutonomyContractRequest: {
+      allowed_read_sources?: (string)[];
+      allowed_write_actions?: (string)[];
+      criticality?: "LOW_NON_CRITICAL" | "STANDARD" | "HIGH_CRITICAL";
+      max_cost_per_run_usd?: number;
+      post_hoc_sampling_rate?: number;
+      scope_path?: string;
+      service_principal_id: string;
+      tie_break_policy?: "ONTOLOGY_AXIOM_FIRST" | "DEFER_AND_CONTINUE_WITH_ASSUMPTION" | "PAUSE_AND_ESCALATE";
+      workflow_sha256?: string;
+      workflow_version?: string;
+    };
     SignedApprovalToken: {
       approved_at_utc: string;
       approver_user_id: string;
@@ -3224,6 +3293,19 @@ export interface components {
       message_fr: string;
       rule_id: string;
       status: "PASS" | "FAIL";
+    };
+    StartAutonomousRunRequest: {
+      actions?: (components["schemas"]["AutonomousActionInput"])[];
+      agentic_score?: number;
+      criticality?: "LOW_NON_CRITICAL" | "STANDARD" | "HIGH_CRITICAL";
+      deterministic_passed?: boolean;
+      estimated_cost_usd?: number;
+      fact_verification_score?: number;
+      help_article_lang?: "fr" | "en";
+      help_article_markdown?: string | null;
+      ontology_conflicts?: number;
+      scope_path?: string;
+      stale_warnings?: number;
     };
     StartWorkflowV2RunRequest: {
       auto_approve_checkpoints?: boolean;
@@ -6003,6 +6085,32 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/autonomy-contract": {
+    get: {
+      responses: {
+        200: components["schemas"]["AutonomyContractStateResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/autonomy-contract/revoke": {
+    post: {
+      responses: {
+        200: components["schemas"]["AutonomyContractResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/runs/autonomous": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
   "/ready": {
     get: {
       responses: {
@@ -6056,6 +6164,10 @@ export type AuditLedgerPageResponse = components["schemas"]["AuditLedgerPageResp
 export type AuditProvenanceSummaryResponse = components["schemas"]["AuditProvenanceSummaryResponse"];
 export type AuthSessionBootstrapResponse = components["schemas"]["AuthSessionBootstrapResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
+export type AutonomousActionInput = components["schemas"]["AutonomousActionInput"];
+export type AutonomousRunExecutionResponse = components["schemas"]["AutonomousRunExecutionResponse"];
+export type AutonomyContractResponse = components["schemas"]["AutonomyContractResponse"];
+export type AutonomyContractStateResponse = components["schemas"]["AutonomyContractStateResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
 export type BackgroundAuditRunRequest = components["schemas"]["BackgroundAuditRunRequest"];
 export type BackgroundAuditRunResponse = components["schemas"]["BackgroundAuditRunResponse"];
@@ -6142,6 +6254,7 @@ export type DuplicateAgentRequest = components["schemas"]["DuplicateAgentRequest
 export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWorkflowResolveRequest"];
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EffortLevel = components["schemas"]["EffortLevel"];
+export type EligibleServicePrincipalItem = components["schemas"]["EligibleServicePrincipalItem"];
 export type EnterpriseConnectorCreateRequest = components["schemas"]["EnterpriseConnectorCreateRequest"];
 export type EnterpriseConnectorDeleteResponse = components["schemas"]["EnterpriseConnectorDeleteResponse"];
 export type EnterpriseConnectorItemResponse = components["schemas"]["EnterpriseConnectorItemResponse"];
@@ -6343,6 +6456,7 @@ export type ResolvedArtifactDestinationResponse = components["schemas"]["Resolve
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type ReturnLoopSpec = components["schemas"]["ReturnLoopSpec"];
+export type RevokeAutonomyContractRequest = components["schemas"]["RevokeAutonomyContractRequest"];
 export type RevokePassthroughTokenResponse = components["schemas"]["RevokePassthroughTokenResponse"];
 export type RoleMatrixEntryResponse = components["schemas"]["RoleMatrixEntryResponse"];
 export type RoleMatrixResponse = components["schemas"]["RoleMatrixResponse"];
@@ -6366,6 +6480,7 @@ export type SendCollaborativeThreadTurnResponse = components["schemas"]["SendCol
 export type SetWorkflowBaselineRequest = components["schemas"]["SetWorkflowBaselineRequest"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
+export type SignAutonomyContractRequest = components["schemas"]["SignAutonomyContractRequest"];
 export type SignedApprovalToken = components["schemas"]["SignedApprovalToken"];
 export type SkillItemResponse = components["schemas"]["SkillItemResponse"];
 export type SseEventEnvelopeResponse = components["schemas"]["SseEventEnvelopeResponse"];
@@ -6376,6 +6491,7 @@ export type StagedJiraActionListResponse = components["schemas"]["StagedJiraActi
 export type StarlarkEvaluationResponse = components["schemas"]["StarlarkEvaluationResponse"];
 export type StarlarkStagedEffectSchema = components["schemas"]["StarlarkStagedEffectSchema"];
 export type StarlarkVerdictSchema = components["schemas"]["StarlarkVerdictSchema"];
+export type StartAutonomousRunRequest = components["schemas"]["StartAutonomousRunRequest"];
 export type StartWorkflowV2RunRequest = components["schemas"]["StartWorkflowV2RunRequest"];
 export type StepControlsPipeline_Input = components["schemas"]["StepControlsPipeline-Input"];
 export type StepControlsPipeline_Output = components["schemas"]["StepControlsPipeline-Output"];

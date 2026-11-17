@@ -15,6 +15,12 @@ from orcia_connectors.adapters import (
     SqlReadonlyConnector,
     get_default_enterprise_connectors,
 )
+from orcia_connectors.autonomous_runner import (
+    AutonomousActionRequest,
+    AutonomousGateInput,
+    AutonomousRunOutcome,
+    execute_autonomous_contract_run,
+)
 from orcia_connectors.legacy_sdlc import (
     SDLC_BUG_CODE_MARKER,
     SDLC_DOC_OBSOLETE_MARKER,
@@ -57,6 +63,9 @@ __version__: str = "0.1.0"
 __all__ = [
     "AtlassianConfluenceConnector",
     "AtlassianJiraConnector",
+    "AutonomousActionRequest",
+    "AutonomousGateInput",
+    "AutonomousRunOutcome",
     "CodegraphMcpConnector",
     "ConnectorHealthStatus",
     "GitProviderConnector",
@@ -86,6 +95,7 @@ __all__ = [
     "create_sdlc_assistant_template_plugin",
     "create_sdlc_fr13_policy_plugin",
     "create_sdlc_memlog_marker_plugin",
+    "execute_autonomous_contract_run",
     "get_bmad_pack_format_adapter",
     "get_default_enterprise_connectors",
     "get_git_code_ast_indexer",

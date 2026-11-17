@@ -39,6 +39,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "audit_finops",
     "auth_and_org",
     "auth_policy",
+    "autonomy_contracts",
     "blackboard",
     "bootstrap",
     "catalog",

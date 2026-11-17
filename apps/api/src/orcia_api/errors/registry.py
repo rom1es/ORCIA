@@ -42,8 +42,11 @@ from orcia_core.orchestration.errors import (
 )
 from orcia_core.permissions.errors import (
     AdminLockoutPreventedError,
+    AutonomyContractNotFoundError,
+    AutonomyContractSignForbiddenError,
     CodegraphWorkspaceLeadRequiredError,
     ConfusedDeputyBlockedError,
+    ContractPrivilegeEscalationError,
     DuplicateIamPrincipalError,
     GrantEscalationForbiddenError,
     InvalidCredentialsError,
@@ -67,6 +70,7 @@ from orcia_core.permissions.errors import (
     RevokedTokenError,
     ScopeAccessDeniedError,
     SecretConfigReadDeniedError,
+    ServicePrincipalInvalidForContractError,
     SmtpConnectorRequiredForEmailOtpError,
     SsoAuthDisabledByPolicyError,
     SsoConfigurationIncompleteError,
@@ -169,6 +173,10 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     UnsafeLogSinkUrlError,
     UnsupportedLogSinkBackendError,
     LogSinkQueryFailedError,
+    AutonomyContractNotFoundError,
+    AutonomyContractSignForbiddenError,
+    ContractPrivilegeEscalationError,
+    ServicePrincipalInvalidForContractError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {

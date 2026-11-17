@@ -81,6 +81,8 @@ ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
     "workspace_llm_tier_mappings",
     "role_permission_grants",
     "auth_login_challenges",
+    "autonomy_contracts",
+    "iam_accounts",
     "platform_auth_settings",
     "platform_settings",
     "user_connector_passthrough_tokens",

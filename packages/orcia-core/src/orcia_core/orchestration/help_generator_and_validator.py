@@ -73,6 +73,7 @@ KNOWN_ORCIA_UI_COMPONENTS: frozenset[str] = frozenset(
         "HumanLedAnchorCard",
         "CognitiveReviewBriefing",
         "ArbitrationTieBreakCard",
+        "AutonomyContractModal",
     }
 )
 

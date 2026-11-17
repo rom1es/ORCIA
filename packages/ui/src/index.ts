@@ -170,11 +170,14 @@ export {
   type UiInferenceTier,
 } from "./primitives/InferenceTierAndEffortSelector";
 export {
-  WorkflowTopGovernanceBar,
-  type StudioLifecycleTabCount,
-  type StudioLifecycleTabKey,
-  type WorkflowTopGovernanceBarProps,
-} from "./primitives/WorkflowTopGovernanceBar";
+  AutonomyContractModal,
+  type AutonomyContractModalLabels,
+  type AutonomyContractModalProps,
+  type SignAutonomyContractDraft,
+  type UiActiveAutonomyContractView,
+  type UiAutonomyTieBreakPolicy,
+  type UiEligibleServiceAccountOption,
+} from "./primitives/AutonomyContractModal";
 export {
   LayersInspectorPopover,
   type LayersInspectorPopoverProps,

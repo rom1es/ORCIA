@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 119,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 45,
+    "alembicMigrationsCount": 46,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 149,
+    "techLeadReportsCount": 150,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 61,
     "verifiedCapabilitiesCount": 46
@@ -71,6 +71,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AssistantThinkingSliderIndicator",
     "AssistantThinkingSubWindow",
     "AssistantUserQuestionBubble",
+    "AutonomyContractModal",
     "BiModeLoginView",
     "BootstrapOnboardingPanel",
     "CatalogExplorerPanel",
@@ -162,7 +163,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "UserAccountDropdownAndSettingsModal",
     "UserPasswordChangeCard",
     "WorkflowStudioSection",
-    "WorkflowTopGovernanceBar",
     "WorkspaceAssistantPinnedCard",
     "WorkspaceControlCenter",
     "WorkspaceFiveTabsAndExternalRebaseView",
@@ -225,7 +225,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261116_0601_story_6_1_audit_ledger_append_only",
     "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses",
     "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry",
-    "20261117_0605_epic6_review_adaptive_gate_policy_check"
+    "20261117_0605_epic6_review_adaptive_gate_policy_check",
+    "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses"
   ],
   "architectureDecisions": [
     {
@@ -504,6 +505,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.1 (CAP-201)",
+      "reportFile": "7-1-contrat-d-autonomie-signé-identité-service-principal-scopée-tech-lead-report.md",
+      "domain": "Contrat d'Autonomie Signé (autonomy_contracts), Identité SERVICE_PRINCIPAL Scopée sans Co-Signature SECOPS (AD-3, AD-6, AD-18), SignedApprovalToken.issue_autonomous, Modale Studio V2 & Suppression WorkflowTopGovernanceBar",
+      "summary": "Migration Alembic 20261117_0701 (autonomy_contracts, PAUSED_AUTONOMOUS_ESCALATION, COMMITTED_AUTONOMOUS, 3 événements Outbox) + 09_reset_db_first_boot.py ; domaine pur orcia_core.permissions (_autonomy_confinement.py, autonomy_contracts.py 99 % couv.) avec signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN sans SECOPS, rejet 422 HIGH_CRITICAL et double garde noyau (SERVICE_PRINCIPAL actif scopé + Actions ⊆ Droits(Signataire) ∩ Droits(SP)) ; adaptateur PG18 sql_autonomy_contracts.py + audit_ledger ; SignedApprovalToken.issue_autonomous et runner autonomous_runner.py (96 % couv.) ; routeur FastAPI + SDK OpenAPI 0-diff ; modale AutonomyContractModal (OrciaDialog, Direction C), découpage WorkflowFiveBlocksCanvas.tsx (322 l.) + useWorkflowAutonomyContract.ts et suppression de WorkflowTopGovernanceBar ; 96,58 % couv. Story 7.1, 9/9 tâches Turbo et test d'intégration testcontainers PG18 validés."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 7.0c (CAP-202)",

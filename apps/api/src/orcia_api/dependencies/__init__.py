@@ -20,6 +20,7 @@ from orcia_api.dependencies.core_and_lifespan import (
 from orcia_api.dependencies.orchestration_and_settings import (
     get_ai_models_hub_service,
     get_audit_ledger_service,
+    get_autonomy_contract_service,
     get_cognitive_impact_service,
     get_cognitive_router_service,
     get_connector_hub_service,
@@ -72,6 +73,7 @@ __all__ = [
     "get_assistant_three_speed_router_service",
     "get_audit_ledger_service",
     "get_auth_service",
+    "get_autonomy_contract_service",
     "get_bootstrap_service",
     "get_catalog_service",
     "get_cognitive_impact_service",

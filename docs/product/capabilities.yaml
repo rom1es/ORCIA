@@ -681,9 +681,20 @@ capabilities:
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
     fr: [FR-29, FR-30]
     origin: epic
-    origin_ref: epic-7 (7-1, 7-2, 7-4, backlog)
-    status: planned
-    notes: "Rebasé le 2026-11-17 (AD-3, AD-6, AD-18) : table dédiée autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD sans co-signature SECOPS, Studio V2 (/processes/studio/$workflowId), opt-in explicite pour generate-and-attach-help, et exclusion de toute écriture code/Git (la boucle fermée de gouvernance d'incident sans code ni écriture Git est reportée dans AIOPS-INCIDENT-LOOP-01)."
+    origin_ref: epic-7 (7-1 done; 7-2, 7-4 backlog)
+    status: partial
+    verification: runtime
+    surfaces:
+      route: /processes/studio/$workflowId
+      api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous)"
+      ui: "AutonomyContractModal + StudioWorkflowHeaderBar + StudioFiveBlocksGrid + WorkflowFiveBlocksCanvas"
+      migration: "20261117_0701"
+    tests:
+      - tests/unit/test_story_7_1_autonomy_contracts.py
+      - tests/security/test_story_7_1_contract_confinement_and_secrets.py
+      - tests/integration/api/test_story_7_1_autonomy_contracts_postgres18.py
+      - apps/web/src/__tests__/story-7-1-studio-autonomy-contract-modal-and-f5.test.tsx
+    notes: "Story 7.1 livrée (2026-11-17, AD-3, AD-6, AD-18) : table dédiée autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN sans co-signature SECOPS, double garde noyau (SERVICE_PRINCIPAL actif sur le périmètre + Actions ⊆ Droits(Signataire) ∩ Droits(SERVICE_PRINCIPAL)), SignedApprovalToken.issue_autonomous et runner COMMITTED_AUTONOMOUS vs PAUSED_AUTONOMOUS_ESCALATION, modale AutonomyContractModal dans Studio V2 (/processes/studio/$workflowId) et suppression de WorkflowTopGovernanceBar. Stories 7.2 et 7.4 restent en backlog (la boucle fermée de gouvernance d'incident sans code ni écriture Git est reportée dans AIOPS-INCIDENT-LOOP-01)."
   - id: CAP-202
     title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki), traces distribuées OpenTelemetry OTLP et conformité OpenShift SCC restricted
     fr: [] # NFR-OBS-1, NFR-SEC-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift

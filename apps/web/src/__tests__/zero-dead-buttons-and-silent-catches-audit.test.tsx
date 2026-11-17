@@ -117,6 +117,11 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onUpdateConnectorQuota",
         "onResetConnectorCircuit",
       ],
+      AutonomyContractModal: [
+        "onSignContract",
+        "onRevokeContract",
+        "onOpenHelpSection",
+      ],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

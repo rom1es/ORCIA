@@ -38,6 +38,7 @@ import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio
 import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
 import type { AssistantDictionarySection } from "./locales/assistant_labels";
 import type { AuthSettingsDictionarySection } from "./locales/auth_settings_labels";
+import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
 import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
 import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
@@ -55,6 +56,7 @@ export interface TranslationDictionary
   locale: SupportedWebLocale;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
+  autonomyContract: AutonomyContractStudioCopy;
   epic18Sources: Epic18SourcesLabels;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {

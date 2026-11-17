@@ -28,6 +28,9 @@ AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
         "BudgetOverrideApproved",
         "RemoteUsageAnomalyCapped",
         "ConnectorCircuitTripped",
+        "AutonomousContractSigned",
+        "AutonomousContractRevoked",
+        "AutonomousEscalated",
     }
 )
 
@@ -73,6 +76,17 @@ def _build_event_summary(event: DomainEvent) -> str:
         cid = payload.get("connector_id", "")
         reason = payload.get("reason", "")
         return f"Coupe-circuit ouvert sur connecteur {cid} : {reason}"
+    if etype == "AutonomousContractSigned":
+        wf_id = payload.get("workflow_id", "")
+        sp_id = payload.get("service_principal_id", "")
+        return f"Contrat d'autonomie signé sur {wf_id} (compte de service {sp_id})"
+    if etype == "AutonomousContractRevoked":
+        wf_id = payload.get("workflow_id", "")
+        return f"Contrat d'autonomie révoqué sur {wf_id}"
+    if etype == "AutonomousEscalated":
+        wf_id = payload.get("workflow_id", "")
+        reason = payload.get("reason", "")
+        return f"Escalade d'exécution autonome sur {wf_id} : {reason}"
     return f"Événement enregistré : {etype}"
 
 

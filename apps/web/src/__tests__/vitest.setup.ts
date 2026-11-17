@@ -53,6 +53,7 @@ interface MockBackendState {
     committed_snapshot_id: string | null;
   }>;
   aiModelMappings: Array<Record<string, unknown>>;
+  autonomyContracts: Array<Record<string, unknown>>;
   mockReindexStatus: Record<string, unknown>;
   recordedCalls: RecordedVitestApiCall[];
 }
@@ -76,6 +77,7 @@ const backendState: MockBackendState = {
   assistantFolders: [],
   orchestrationRuns: [],
   aiModelMappings: [],
+  autonomyContracts: [],
   mockReindexStatus: { status: "IDLE", progress_percentage: 0 },
   recordedCalls: [],
 };
@@ -226,6 +228,7 @@ export function resetVitestApiBackend(): void {
   backendState.assistantFolders = [];
   backendState.orchestrationRuns = [];
   backendState.aiModelMappings = [];
+  backendState.autonomyContracts = [];
   backendState.mockReindexStatus = { status: "IDLE", progress_percentage: 0 };
   backendState.recordedCalls = [];
   resetVitestIamMockState();
@@ -1834,6 +1837,89 @@ async function vitestFetchTransport(
       },
       trace_id: "0195f000000070008000000000000999",
     });
+  }
+
+  const autonomyContractMatch =
+    /^\/api\/v1\/workspaces\/([^/]+)\/workflows\/([^/]+)\/autonomy-contract(\/revoke)?$/.exec(
+      path,
+    );
+  if (autonomyContractMatch) {
+    const wsId = decodeURIComponent(autonomyContractMatch[1] ?? "");
+    const wfId = decodeURIComponent(autonomyContractMatch[2] ?? "");
+    const isRevoke = autonomyContractMatch[3] === "/revoke";
+    const defaultSp = {
+      id: "0195f000-0000-7000-8000-000000007101",
+      principal_id: "sp-docs-automation",
+      display_name: "Robot Documentation Espace",
+      roles: ["TEAM_LEAD"],
+      team_ids: [wsId],
+      status: "ACTIVE",
+    };
+    if (method === "GET" && !isRevoke) {
+      const history = backendState.autonomyContracts.filter(
+        (c) => c.workspace_id === wsId && c.workflow_id === wfId,
+      );
+      const active = history.find((c) => c.status === "ACTIVE") ?? null;
+      return jsonResponse({
+        workspace_id: wsId,
+        workflow_id: wfId,
+        active_contract: active,
+        history,
+        eligible_service_principals: [defaultSp],
+        trace_id: "0195f000000070008000000000000711",
+      });
+    }
+    if (method === "POST" && !isRevoke) {
+      if (String(body.criticality ?? "STANDARD") === "HIGH_CRITICAL") {
+        return jsonResponse(
+          {
+            error_code: "ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE",
+            detail: "Ce workflow critique exige une Gate Humaine.",
+          },
+          422,
+        );
+      }
+      for (const existing of backendState.autonomyContracts) {
+        if (existing.workspace_id === wsId && existing.workflow_id === wfId && existing.status === "ACTIVE") {
+          existing.status = "SUPERSEDED";
+        }
+      }
+      const created = {
+        id: `0195f000-0000-7000-8000-00000000720${backendState.autonomyContracts.length + 1}`,
+        workspace_id: wsId,
+        workflow_id: wfId,
+        workflow_version: String(body.workflow_version ?? "1.0.0"),
+        workflow_sha256: String(body.workflow_sha256 ?? "sha256-mock"),
+        criticality: String(body.criticality ?? "STANDARD"),
+        service_principal_id: String(body.service_principal_id ?? defaultSp.id),
+        allowed_read_sources: Array.isArray(body.allowed_read_sources) ? body.allowed_read_sources : [],
+        allowed_write_actions: Array.isArray(body.allowed_write_actions) ? body.allowed_write_actions : [],
+        max_cost_per_run_usd: Number(body.max_cost_per_run_usd ?? 5),
+        tie_break_policy: String(body.tie_break_policy ?? "ONTOLOGY_AXIOM_FIRST"),
+        post_hoc_sampling_rate: Number(body.post_hoc_sampling_rate ?? 0.15),
+        status: "ACTIVE",
+        signed_by_user_id: "0195f000-0000-7000-8000-000000000203",
+        signed_by_role: "TEAM_LEAD",
+        signature_sha256: "a".repeat(64),
+        signed_at_iso: "2026-11-17T10:00:00Z",
+        revoked_at_iso: null,
+        revoked_by_user_id: null,
+      };
+      backendState.autonomyContracts.unshift(created);
+      return jsonResponse(created, 201);
+    }
+    if (method === "POST" && isRevoke) {
+      const active = backendState.autonomyContracts.find(
+        (c) => c.workspace_id === wsId && c.workflow_id === wfId && c.status === "ACTIVE",
+      );
+      if (!active) {
+        return jsonResponse({ error_code: "ERR_AUTONOMY_CONTRACT_NOT_FOUND" }, 404);
+      }
+      active.status = "REVOKED";
+      active.revoked_at_iso = "2026-11-17T10:05:00Z";
+      active.revoked_by_user_id = "0195f000-0000-7000-8000-000000000203";
+      return jsonResponse(active);
+    }
   }
 
   return jsonResponse({});
