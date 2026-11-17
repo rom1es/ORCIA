@@ -1568,6 +1568,52 @@
         "title": "AiModelTestResponse",
         "type": "object"
       },
+      "ApplyRecommendationResponse": {
+        "description": "Response returned upon applying a gate policy recommendation (`Story 6.3`).",
+        "properties": {
+          "applied_at": {
+            "description": "Application timestamp",
+            "format": "date-time",
+            "title": "Applied At",
+            "type": "string"
+          },
+          "applied_by": {
+            "description": "Applying user UUID",
+            "title": "Applied By",
+            "type": "string"
+          },
+          "recommendation_id": {
+            "description": "Applied recommendation ID",
+            "title": "Recommendation Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "APPLIED",
+            "description": "New status",
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_policy": {
+            "description": "Applied policy configuration",
+            "title": "Suggested Policy",
+            "type": "string"
+          },
+          "workflow_id": {
+            "description": "Target workflow UUID",
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recommendation_id",
+          "applied_at",
+          "applied_by",
+          "workflow_id",
+          "suggested_policy"
+        ],
+        "title": "ApplyRecommendationResponse",
+        "type": "object"
+      },
       "ArbitrationOptionSchemaItem": {
         "additionalProperties": false,
         "description": "Comparative option inside an `Arbitration Tie-Break Matrix` (`UX-DR6`).",
@@ -4890,6 +4936,133 @@
           "trace_id"
         ],
         "title": "CodegraphToolsListResponse",
+        "type": "object"
+      },
+      "CognitiveImpactDashboardResponse": {
+        "description": "Executive Cognitive Impact, Human Mastery & Reversibility response (`Story 6.3`, `FR-27`).",
+        "properties": {
+          "active_framing_alert": {
+            "description": "True if active framing ratio is below target threshold",
+            "title": "Active Framing Alert",
+            "type": "boolean"
+          },
+          "active_framing_hours": {
+            "description": "Time spent actively framing in hours",
+            "title": "Active Framing Hours",
+            "type": "number"
+          },
+          "active_framing_ratio": {
+            "description": "Ratio of active framing time over total human time (target >= 40%)",
+            "title": "Active Framing Ratio",
+            "type": "number"
+          },
+          "active_framing_target": {
+            "default": 0.4,
+            "description": "Target minimum ratio for active framing",
+            "title": "Active Framing Target",
+            "type": "number"
+          },
+          "architecture_deviation_alert": {
+            "description": "True if any uncovered deviations exist",
+            "title": "Architecture Deviation Alert",
+            "type": "boolean"
+          },
+          "architecture_deviation_index": {
+            "description": "Index of architecture deviations not covered by waiver (target 0%)",
+            "title": "Architecture Deviation Index",
+            "type": "number"
+          },
+          "architecture_deviation_target": {
+            "default": 0.0,
+            "description": "Target for architecture deviation index",
+            "title": "Architecture Deviation Target",
+            "type": "number"
+          },
+          "pattern_drift_alert": {
+            "description": "Compatibility alias for architecture deviation alert",
+            "title": "Pattern Drift Alert",
+            "type": "boolean"
+          },
+          "pattern_drift_index": {
+            "description": "Compatibility alias for architecture deviation index",
+            "title": "Pattern Drift Index",
+            "type": "number"
+          },
+          "quick_pass_alert": {
+            "description": "True if quick-pass rate exceeds threshold",
+            "title": "Quick Pass Alert",
+            "type": "boolean"
+          },
+          "quick_pass_rate": {
+            "description": "Rate of approvals with fast warning or unopened brief (threshold < 5%)",
+            "title": "Quick Pass Rate",
+            "type": "number"
+          },
+          "quick_pass_threshold": {
+            "default": 0.05,
+            "description": "Warning threshold for quick-pass approvals",
+            "title": "Quick Pass Threshold",
+            "type": "number"
+          },
+          "recommendations": {
+            "description": "Actionable gate policy recommendations",
+            "items": {
+              "$ref": "#/components/schemas/GatePolicyRecommendationSchema"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "review_hours": {
+            "description": "Time spent reviewing in hours",
+            "title": "Review Hours",
+            "type": "number"
+          },
+          "rubber_stamping_alert": {
+            "description": "Compatibility alias for quick-pass approvals alert",
+            "title": "Rubber Stamping Alert",
+            "type": "boolean"
+          },
+          "rubber_stamping_rate": {
+            "description": "Compatibility alias for quick-pass approvals rate",
+            "title": "Rubber Stamping Rate",
+            "type": "number"
+          },
+          "total_human_hours": {
+            "description": "Total valorized human time in hours",
+            "title": "Total Human Hours",
+            "type": "number"
+          },
+          "uncovered_deviations_count": {
+            "description": "Count of active deviations without waiver",
+            "title": "Uncovered Deviations Count",
+            "type": "integer"
+          },
+          "workflow_breakdowns": {
+            "description": "Per-workflow metrics",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowCognitiveMetricsSchema"
+            },
+            "title": "Workflow Breakdowns",
+            "type": "array"
+          }
+        },
+        "required": [
+          "active_framing_ratio",
+          "active_framing_alert",
+          "quick_pass_rate",
+          "quick_pass_alert",
+          "rubber_stamping_rate",
+          "rubber_stamping_alert",
+          "architecture_deviation_index",
+          "architecture_deviation_alert",
+          "pattern_drift_index",
+          "pattern_drift_alert",
+          "total_human_hours",
+          "active_framing_hours",
+          "review_hours",
+          "uncovered_deviations_count"
+        ],
+        "title": "CognitiveImpactDashboardResponse",
         "type": "object"
       },
       "CognitiveRoutingOutcomeResponse": {
@@ -9675,6 +9848,94 @@
           "probabilistic_invoked"
         ],
         "title": "GatePipelineExecutionReport",
+        "type": "object"
+      },
+      "GatePolicyRecommendationSchema": {
+        "description": "Actionable recommendation for human validation gate policy adjustment (`Story 6.3`).",
+        "properties": {
+          "action_label": {
+            "description": "Action button label",
+            "title": "Action Label",
+            "type": "string"
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Application timestamp",
+            "title": "Applied At"
+          },
+          "applied_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Applying user identifier",
+            "title": "Applied By"
+          },
+          "description": {
+            "description": "Detailed rationale",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "description": "Recommendation UUID or identifier",
+            "title": "Id",
+            "type": "string"
+          },
+          "recommendation_type": {
+            "description": "Type of recommendation (SWITCH_TO_RISK_OR_SAMPLING, STRENGTHEN_HUMAN_ANCHORS)",
+            "title": "Recommendation Type",
+            "type": "string"
+          },
+          "status": {
+            "default": "PROPOSED",
+            "description": "PROPOSED, APPLIED, or DISMISSED",
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_policy": {
+            "description": "Target policy setting (e.g. SAMPLING_20_PCT)",
+            "title": "Suggested Policy",
+            "type": "string"
+          },
+          "title": {
+            "description": "Clear business title",
+            "title": "Title",
+            "type": "string"
+          },
+          "workflow_id": {
+            "description": "Target workflow definition UUID",
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_title": {
+            "description": "Human-readable workflow title",
+            "title": "Workflow Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workflow_id",
+          "workflow_title",
+          "recommendation_type",
+          "title",
+          "description",
+          "action_label",
+          "suggested_policy"
+        ],
+        "title": "GatePolicyRecommendationSchema",
         "type": "object"
       },
       "GenerateAndAttachHelpRequest": {
@@ -26288,6 +26549,75 @@
         "title": "WorkflowBaselineResponse",
         "type": "object"
       },
+      "WorkflowCognitiveMetricsSchema": {
+        "description": "Workflow-level cognitive mastery metrics (`Story 6.3`).",
+        "properties": {
+          "criticality": {
+            "description": "Workflow criticality level",
+            "title": "Criticality",
+            "type": "string"
+          },
+          "has_alert": {
+            "description": "Whether workflow triggers a warning",
+            "title": "Has Alert",
+            "type": "boolean"
+          },
+          "human_gates_count": {
+            "description": "Total human gates evaluated",
+            "title": "Human Gates Count",
+            "type": "integer"
+          },
+          "human_passes_count": {
+            "description": "Total approved gates",
+            "title": "Human Passes Count",
+            "type": "integer"
+          },
+          "median_review_duration_ms": {
+            "description": "Median human review duration in ms",
+            "title": "Median Review Duration Ms",
+            "type": "integer"
+          },
+          "quick_pass_rate": {
+            "description": "Quick pass rate",
+            "title": "Quick Pass Rate",
+            "type": "number"
+          },
+          "quick_passes_count": {
+            "description": "Approvals flagged as quick-pass",
+            "title": "Quick Passes Count",
+            "type": "integer"
+          },
+          "uncovered_drift_count": {
+            "description": "Number of architecture deviations not covered by a waiver",
+            "title": "Uncovered Drift Count",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "description": "Workflow UUID",
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_title": {
+            "description": "Workflow title",
+            "title": "Workflow Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "workflow_title",
+          "criticality",
+          "human_gates_count",
+          "human_passes_count",
+          "quick_passes_count",
+          "quick_pass_rate",
+          "median_review_duration_ms",
+          "uncovered_drift_count",
+          "has_alert"
+        ],
+        "title": "WorkflowCognitiveMetricsSchema",
+        "type": "object"
+      },
       "WorkflowContract": {
         "properties": {
           "output_schema_uri": {
@@ -38362,6 +38692,171 @@
         ]
       }
     },
+    "/api/v1/finops/cognitive-impact": {
+      "get": {
+        "operationId": "get_cognitive_impact_api_v1_finops_cognitive_impact_get",
+        "parameters": [
+          {
+            "description": "Scope filter: GLOBAL, BU, TEAM, WORKSPACE",
+            "in": "query",
+            "name": "scope_type",
+            "required": false,
+            "schema": {
+              "default": "GLOBAL",
+              "description": "Scope filter: GLOBAL, BU, TEAM, WORKSPACE",
+              "enum": [
+                "GLOBAL",
+                "BU",
+                "TEAM",
+                "WORKSPACE"
+              ],
+              "title": "Scope Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Target scope UUID",
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Target scope UUID",
+              "title": "Scope Id"
+            }
+          },
+          {
+            "description": "Time window for aggregation: 7D, 30D, 90D, ALL",
+            "in": "query",
+            "name": "time_window",
+            "required": false,
+            "schema": {
+              "default": "30D",
+              "description": "Time window for aggregation: 7D, 30D, 90D, ALL",
+              "title": "Time Window",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CognitiveImpactDashboardResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get executive cognitive impact and gate recommendations",
+        "tags": [
+          "finops",
+          "finops"
+        ]
+      }
+    },
     "/api/v1/finops/dashboard": {
       "get": {
         "operationId": "get_finops_dashboard_api_v1_finops_dashboard_get",
@@ -38510,6 +39005,134 @@
         },
         "summary": "Get consolidated FinOps dashboard metrics, processes, tiers, and baselines",
         "tags": [
+          "finops"
+        ]
+      }
+    },
+    "/api/v1/finops/gates/policy-recommendation/{recommendation_id}/apply": {
+      "post": {
+        "operationId": "apply_gate_policy_recommendation_api_v1_finops_gates_policy_recommendation__recommendation_id__apply_post",
+        "parameters": [
+          {
+            "description": "Target recommendation ID to apply",
+            "in": "path",
+            "name": "recommendation_id",
+            "required": true,
+            "schema": {
+              "description": "Target recommendation ID to apply",
+              "title": "Recommendation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyRecommendationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Apply actionable gate policy adjustment under scope guard protection",
+        "tags": [
+          "finops",
           "finops"
         ]
       }

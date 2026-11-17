@@ -649,8 +649,8 @@ capabilities:
     status: partial
     surfaces:
       route: /finops
-      api: "finops.py, audit_ledger.py"
-      ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + ActivityLogExplorerView"
+      api: "finops.py, audit_ledger.py, finops_cognitive.py"
+      ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + ActivityLogExplorerView + FinopsHumanMasteryTab + CognitiveMetricCard"
       migration: "20261116_0601, 20261116_0602"
     tests:
       - tests/unit/test_story_6_1_audit_ledger_core.py
@@ -658,7 +658,11 @@ capabilities:
       - tests/unit/test_story_6_1_outbox_subscriber.py
       - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
       - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
-    notes: "Story 6.1 (audit_ledger append-only, ADMIN_CONNECTION_TEST) et Story 6.2 (Comptabilité FinOps complète, coupes-circuits budgétaires, anti-boucles et pauses)."
+      - tests/unit/test_story_6_3_cognitive_governance_and_drift.py
+      - tests/evals/test_story_6_3_cognitive_governance_evals.py
+      - tests/integration/api/test_story_6_3_cognitive_impact_postgres18.py
+      - apps/web/src/__tests__/story-6-3-finops-cognitive-impact-and-f5.test.tsx
+    notes: "Story 6.1 (audit_ledger append-only), Story 6.2 (Comptabilité FinOps complète) et Story 6.3 (Tableau de bord d'impact cognitif, contre-métriques FR-27, alertes de validations expéditives et indice de réversibilité humaine)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs idempotents, auto-remédiation (UJ-12)
     fr: [FR-29, FR-30]

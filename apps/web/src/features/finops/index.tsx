@@ -1,11 +1,13 @@
 import {
   createOrciaApiClient,
+  type CognitiveImpactDashboardResponse,
   type FinopsBreakdownResponse,
   type UpdateScopeBudgetRequest,
 } from "@orcia/api-client";
 import {
   FinopsGovernanceDashboardView,
   OrciaAlertBanner,
+  type FinopsHumanMasteryTabProps,
   type FinopsProcessRowData,
   type FinopsTierRowData,
 } from "@orcia/ui";
@@ -21,6 +23,7 @@ export function FinopsFeaturePanel() {
 
   const [selectedScope, setSelectedScope] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">("GLOBAL");
   const [dashboardData, setDashboardData] = useState<FinopsBreakdownResponse | null>(null);
+  const [cognitiveData, setCognitiveData] = useState<CognitiveImpactDashboardResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
@@ -43,11 +46,19 @@ export function FinopsFeaturePanel() {
       setErrorMessage(null);
       const targetScopeId =
         selectedScope === "GLOBAL" ? null : (activeScopeNode?.id ?? null);
-      const data = await apiClient.getFinopsDashboard({
-        scopeType: selectedScope,
-        scopeId: targetScopeId,
-      });
+      const [data, cog] = await Promise.all([
+        apiClient.getFinopsDashboard({
+          scopeType: selectedScope,
+          scopeId: targetScopeId,
+        }),
+        apiClient.getCognitiveImpact({
+          scopeType: selectedScope,
+          scopeId: targetScopeId,
+          timeWindow: "30D",
+        }),
+      ]);
       setDashboardData(data);
+      setCognitiveData(cog);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMessage(msg);
@@ -77,9 +88,7 @@ export function FinopsFeaturePanel() {
           hard_stop_pct: hardStopPct,
         };
         await apiClient.updateScopeBudget(payload);
-        setSuccessMessage(
-          dictionary.finops.modals.saveButton + " ✓",
-        );
+        setSuccessMessage(dictionary.finops.modals.saveButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -98,9 +107,7 @@ export function FinopsFeaturePanel() {
           override_amount_usd: amountUsd,
           reason,
         });
-        setSuccessMessage(
-          dictionary.finops.modals.overrideSubmitButton + " ✓",
-        );
+        setSuccessMessage(dictionary.finops.modals.overrideSubmitButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -108,6 +115,22 @@ export function FinopsFeaturePanel() {
       }
     },
     [apiClient, dictionary.finops.modals.overrideSubmitButton],
+  );
+
+  const handleApplyRecommendation = useCallback(
+    async (recommendationId: string) => {
+      try {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        await apiClient.applyGatePolicyRecommendation(recommendationId);
+        setSuccessMessage(dictionary.finops.humanMastery.appliedBadge);
+        setReloadTrigger((prev) => prev + 1);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setErrorMessage(msg);
+      }
+    },
+    [apiClient, dictionary.finops.humanMastery.appliedBadge],
   );
 
   const mappedProcesses: readonly FinopsProcessRowData[] = useMemo(() => {
@@ -140,6 +163,44 @@ export function FinopsFeaturePanel() {
       costEur: t.cost_eur,
     }));
   }, [dashboardData?.tiers]);
+
+  const mappedCognitiveProps: FinopsHumanMasteryTabProps | null = useMemo(() => {
+    if (!cognitiveData) return null;
+    return {
+      activeFramingRatio: cognitiveData.active_framing_ratio,
+      activeFramingAlert: cognitiveData.active_framing_alert,
+      quickPassRate: cognitiveData.quick_pass_rate,
+      quickPassAlert: cognitiveData.quick_pass_alert,
+      architectureDeviationIndex: cognitiveData.architecture_deviation_index,
+      architectureDeviationAlert: cognitiveData.architecture_deviation_alert,
+      uncoveredDeviationsCount: cognitiveData.uncovered_deviations_count,
+      workflows: (cognitiveData.workflow_breakdowns ?? []).map((w) => ({
+        workflowId: w.workflow_id,
+        workflowTitle: w.workflow_title,
+        criticality: w.criticality,
+        humanGatesCount: w.human_gates_count,
+        humanPassesCount: w.human_passes_count,
+        quickPassesCount: w.quick_passes_count,
+        quickPassRate: w.quick_pass_rate,
+        medianReviewDurationMs: w.median_review_duration_ms,
+        uncoveredDriftCount: w.uncovered_drift_count,
+        hasAlert: w.has_alert,
+      })),
+      recommendations: (cognitiveData.recommendations ?? []).map((r) => ({
+        id: r.id,
+        workflowId: r.workflow_id,
+        workflowTitle: r.workflow_title,
+        recommendationType: r.recommendation_type,
+        title: r.title,
+        description: r.description,
+        actionLabel: r.action_label,
+        suggestedPolicy: r.suggested_policy,
+        status: (r.status as "PROPOSED" | "APPLIED" | "DISMISSED") || "PROPOSED",
+        appliedAt: r.applied_at,
+      })),
+      labels: dictionary.finops.humanMastery,
+    };
+  }, [cognitiveData, dictionary.finops.humanMastery]);
 
   const overview = dashboardData?.overview;
 
@@ -176,9 +237,11 @@ export function FinopsFeaturePanel() {
         processes={mappedProcesses}
         tiers={mappedTiers}
         labels={dictionary.finops}
+        cognitiveData={mappedCognitiveProps}
         onOpenHelpSection={openHelpSection}
         onSaveBudget={handleSaveBudget}
         onSubmitOverride={handleSubmitOverride}
+        onApplyRecommendation={handleApplyRecommendation}
       />
     </div>
   );

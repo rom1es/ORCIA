@@ -9,7 +9,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-16",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 114,
+    "uiPrimitivesCount": 116,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 43,
     "architectureDecisionsCount": 24,
@@ -74,6 +74,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "BootstrapOnboardingPanel",
     "CatalogExplorerPanel",
     "ChunkValidationCard",
+    "CognitiveMetricCard",
     "CognitiveReviewBriefingGrid",
     "CollapsibleAppRail",
     "CommandPaletteModal",
@@ -88,6 +89,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FinopsBudgetOverrideModal",
     "FinopsBudgetPolicyModal",
     "FinopsGovernanceDashboardView",
+    "FinopsHumanMasteryTab",
     "FinopsKpiStrip",
     "FinopsProcessAndTiersTab",
     "FormattedMarkdownContent",
@@ -505,11 +507,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.4)."
     },
     {
-      "date": "2026-11-16",
+      "date": "2026-11-17",
       "phaseOrStory": "Story 6.3 (CAP-200)",
       "reportFile": "6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp-tech-lead-report.md",
       "domain": "Tableau de Bord Exécutif d'Impact Cognitif, Détection des Validations Expéditives, Indice de Réversibilité Humaine & Recommandations de Gates",
-      "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.3)."
+      "summary": "Implémentation terminée : 3 contre-métriques FR-27 calculées en SQL pur (sql_cognitive_impact.py), moteur de recommandations d'ajustement des Gates (cognitive_impact_service.py, 99 % couverture), routeur FastAPI /api/v1/finops/cognitive-impact avec garde observateur, SDK typé @orcia/api-client, 4e onglet « Maîtrise humaine & Qualité » sous Direction C (0 hex, 0 jargon banni), survie F5 validée et intégration testcontainers PostgreSQL 18."
     },
     {
       "date": "2026-11-16",

@@ -8,6 +8,7 @@ from fastapi import Request
 
 if TYPE_CHECKING:
     from orcia_core.audit_finops import (
+        CognitiveImpactService,
         FinopsAccountingService,
         ProvenanceExporterService,
         SqlAuditLedgerService,
@@ -213,5 +214,20 @@ def get_finops_accounting_service(request: Request) -> FinopsAccountingService:
             sse_broker = getattr(request.app.state, "sse_broker", None)
             svc = FinopsAccountingService(engine=engine, sse_broker=sse_broker)
             request.app.state.finops_accounting_service = svc
+    assert svc is not None
+    return svc
+
+
+def get_cognitive_impact_service(request: Request) -> CognitiveImpactService:
+    """FastAPI `Depends` provider returning `CognitiveImpactService` (`Story 6.3`)."""
+    from orcia_core.audit_finops import CognitiveImpactService
+
+    svc: CognitiveImpactService | None = getattr(
+        request.app.state, "cognitive_impact_service", None
+    )
+    if svc is None:
+        engine = getattr(request.app.state, "db_engine", None)
+        svc = CognitiveImpactService(engine=engine)
+        request.app.state.cognitive_impact_service = svc
     assert svc is not None
     return svc

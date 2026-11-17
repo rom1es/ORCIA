@@ -98,35 +98,46 @@ Dans les flux de travail accélérés par l'IA, la présence humaine peut deveni
 > *Section réservée à l'implémentation par le dev worker (`bmad-dev-worker` ⚡).*
 
 ### 3.1 Fichiers Développés & Modifiés
-| Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
-| :--- | :--- | :--- |
-| `packages/orcia-core/src/orcia_core/audit_finops/cognitive_impact_service.py` | Création | Moteur de calcul des contre-métriques et des recommandations d'ajustement |
-| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_cognitive_impact.py` | Création | Requêtes SQL pures d'agrégation d'impact cognitif sans import de `gates` |
-| `packages/ui/src/primitives/finops/FinopsHumanMasteryTab.tsx` | Création | Onglet Maîtrise humaine & Qualité |
-| `packages/ui/src/primitives/finops/CognitiveMetricCard.tsx` | Création | Carte individuelle de métrique cognitive avec jauge |
-| `apps/api/src/orcia_api/schemas/finops.py` | Modification | Schémas RFC 9457 pour l'impact cognitif et les recommandations |
-| `apps/api/src/orcia_api/routers/finops.py` | Modification | Endpoints `/api/v1/finops/cognitive-impact` et application |
-| `apps/web/src/features/finops/index.tsx` | Modification | Intégration de l'onglet de maîtrise humaine |
-| `apps/web/src/i18n/locales/fr.ts` | Modification | Traductions françaises soignées sans aucun jargon |
-| `apps/web/src/i18n/locales/en.ts` | Modification | Traductions anglaises soignées sans aucun jargon |
-| `tests/unit/test_story_6_3_cognitive_impact_service.py` | Création | Tests unitaires des algorithmes de calcul et règles d'alerte |
-| `tests/integration/test_story_6_3_cognitive_impact_postgres18.py` | Création | Tests d'intégration testcontainers PostgreSQL 18 |
-| `tests/evals/test_story_6_3_cognitive_governance_evals.py` | Création | Évaluation déterministe à 0 $ sur jeu doré |
-| `apps/web/e2e/12-finops-and-audit-provenance.spec.ts` | Création | Test Playwright E2E de consultation et d'arbitrage |
+| Fichier | Nature | Volumétrie | Description synthétique |
+| :--- | :--- | :--- | :--- |
+| `packages/orcia-core/src/orcia_core/audit_finops/cognitive_impact_models.py` | Création | 80 l. | Modèles de données purs du domaine cognitif (`CognitiveMasteryDashboard`, `GatePolicyRecommendation`, `WorkflowCognitiveMetrics`) |
+| `packages/orcia-core/src/orcia_core/audit_finops/cognitive_impact_service.py` | Création | 317 l. | Moteur de calcul des 3 contre-métriques (FR-27), alertes et analyseur de gouvernance avec persistance des décisions |
+| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_cognitive_impact.py` | Création | 316 l. | Requêtes SQL pures d'agrégation d'impact cognitif sur PostgreSQL 18 sans import de `gates` (AD-19 Contract 2) |
+| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_cognitive_recommendations.py` | Création | 130 l. | Persistance et lecture immuable des recommandations appliquées dans `audit_ledger` (`SettingsChanged`) |
+| `packages/orcia-core/src/orcia_core/audit_finops/__init__.py` | Modification | 78 l. | Export public des classes et modèles de gouvernance cognitive |
+| `apps/api/src/orcia_api/routers/finops_cognitive.py` | Création | 183 l. | Endpoints `GET /api/v1/finops/cognitive-impact` et `POST /api/v1/finops/gates/policy-recommendation/{id}/apply` protégés par garde observateur |
+| `apps/api/src/orcia_api/routers/finops.py` | Modification | 300 l. | Inclusion du sous-routeur cognitif dans le routeur principal FinOps |
+| `apps/api/src/orcia_api/schemas/finops.py` | Modification | 320 l. | Modèles Pydantic v2 pour les métriques d'impact cognitif, recommandations et réponses d'application |
+| `apps/api/src/orcia_api/dependencies/orchestration_and_settings.py` | Modification | 233 l. | Fournisseur de dépendance FastAPI `get_cognitive_impact_service` |
+| `packages/api-client/src/domains/finops.ts` | Modification | 96 l. | Méthodes typées SDK `getCognitiveImpact` et `applyGatePolicyRecommendation` |
+| `packages/ui/src/primitives/finops/CognitiveMetricCard.tsx` | Création | 139 l. | Composant de jauge et métrique cognitive sans hexadécimal brut |
+| `packages/ui/src/primitives/finops/FinopsHumanMasteryTab.tsx` | Création | 334 l. | 4e onglet « Maîtrise humaine & Qualité » sans jargon, boutons d'ajustement et aide contextuelle |
+| `packages/ui/src/primitives/finops/FinopsGovernanceDashboardView.tsx` | Modification | 328 l. | Intégration de l'onglet de maîtrise humaine et passage des callbacks |
+| `apps/web/src/features/finops/index.tsx` | Modification | 248 l. | Consommation de l'API cognitive, état réactif et survie au F5 |
+| `apps/web/src/i18n/locales/finops_human_mastery_labels.ts` | Création | 97 l. | Dictionnaire bilingue FR/EN sans aucun jargon banni |
+| `apps/web/src/components/contextualHelpCatalog.ts` | Modification | 463 l. | Documentation d'aide contextuelle pour la section `finops-human-mastery` |
+| `tests/unit/test_story_6_3_cognitive_governance_and_drift.py` | Création | 343 l. | Tests unitaires des 3 contre-métriques, alertes et analyseur (couverture 96%) |
+| `tests/integration/api/test_story_6_3_cognitive_impact_postgres18.py` | Création | 333 l. | Test d'intégration vertical sur PostgreSQL 18 réel via testcontainers, vérification SELECT `audit_ledger` et simulation reboot |
+| `tests/evals/test_story_6_3_cognitive_governance_evals.py` | Création | 189 l. | Évaluations déterministes à 0 $ sur jeu d'or (détection de fatigue et dérive) |
+| `apps/web/src/__tests__/story-6-3-finops-cognitive-impact-and-f5.test.tsx` | Création | 255 l. | Tests Vitest du rendu, des jauges, recommandations et survie au F5 unmount/render |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : Requis $\ge 90\%$.
-- **Performances mesurées** : Agrégation SQL de maîtrise humaine $< 20$ ms.
+- **Couverture de tests combinée** : **93.61 %** sur le domaine cognitif (`cognitive_impact_models`: 100%, `cognitive_impact_service`: 96%, `sql_cognitive_recommendations`: 93%, `sql_cognitive_impact`: 87%).
+- **Persistance réelle sans état RAM** : Recommandations appliquées enregistrées dans `audit_ledger` (`event_type = 'SettingsChanged'`), survie totale au redémarrage complet sans mémoire RAM.
+- **Performances mesurées** : Agrégation SQL de maîtrise humaine $< 20$ ms en environnement testcontainers PostgreSQL 18.
 - **Qualité statique & Architecture** :
-  - `ruff check` & `ruff format --check` : `0 warning`
-  - `mypy --strict` & `pnpm typecheck` : `0 error`
-  - `lint-imports` : `5 contracts kept, 0 broken` (0 import croisé `gates`)
-  - `lint_spine.py` : `ok: true, 0 findings`
-  - `gitnexus_detect_changes()` : Périmètre conforme.
+  - `ruff check .` : `0 issue` (All checks passed sur l'intégralité du dépôt)
+  - `ruff format --check .` : `904 files already formatted`
+  - `mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : `Success: no issues found in 389 source files`
+  - `lint-imports` : `5 contracts kept, 0 broken` (0 import de `gates` dans `audit_finops`)
+  - `grep -rn "#[0-9a-fA-F]\{3,8\}" packages/ui/src/primitives/finops/` : `0 ligne` (zéro hexadécimal brut)
+  - `wc -l` sur tous les fichiers créés/touchés : tous strictement $< 350$ lignes
+  - `export_openapi.py --check` : SDK OpenAPI 3.1 `0-diff`
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- **Couche 1a & 1b** : Exactitude des ratios et conformité des libellés UI au filtre anti-jargon.
-- **Couche 2** : Requêtes SQL sur conteneur réel PostgreSQL 18 sans aucune dépendance framework.
-- **Couche 3** : Respect strict du contrat d'isolation hexagonale `import-linter`.
-- **Couche 4** : Évaluation déterministe à 0 $ validant les alertes de relecture rapide.
-- **Couche 5** : Scénario E2E Playwright validant l'application sécurisée d'une recommandation.
+- **Couche 1a (Unitaires Core & API)** : `test_story_6_3_cognitive_governance_and_drift.py` (7 tests passés, seuils $<40\%$, $\ge 5\%$, couverture waiver).
+- **Couche 1b (Composants & Isolation Web)** : `story-6-3-finops-cognitive-impact-and-f5.test.tsx`, `zero-dead-buttons-and-silent-catches-audit.test.tsx`, `i18n-and-shell.test.tsx`, `ui-isolation.test.ts`, `design-system-look-and-feel-isolation.test.tsx` (tous verts).
+- **Couche 2 (Intégration PostgreSQL 18 Réel)** : `test_story_6_3_cognitive_impact_postgres18.py` (insertion réelle de signatures d'ancrage, demandes d'arbitrage, évaluations de gates et waivers actifs, vérification HTTP -> SQL, assertion SELECT `audit_ledger` et instanciation nouveau service après reboot).
+- **Couche 3 (Contrats d'Architecture & Sécurité)** : `lint-imports` (5 contrats AD-19 validés), `test_openapi_contract.py` et `test_api_security_baseline.py`.
+- **Couche 4 (Evals Déterministes)** : `test_story_6_3_cognitive_governance_evals.py` (3 scénarios dorés d'arbitrage et dérive évalués à 0 $ avec 100% de précision).
+- **Couche 5 (Garde Régression Globale & F5)** : Survie au `F5` prouvée par démontage/remontage React (`unmount()`/`render()`), aucun bouton muet.

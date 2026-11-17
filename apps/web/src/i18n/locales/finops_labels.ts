@@ -11,6 +11,12 @@
  * - No raw latency or database names in user-facing French text
  */
 
+import type { HumanMasteryLabels } from "@orcia/ui";
+import {
+  HUMAN_MASTERY_EN_LABELS,
+  HUMAN_MASTERY_FR_LABELS,
+} from "./finops_human_mastery_labels";
+
 export interface FinopsDictionarySection {
   finops: {
     pageTitle: string;
@@ -87,6 +93,7 @@ export interface FinopsDictionarySection {
       overrideReasonLabel: string;
       overrideSubmitButton: string;
     };
+    humanMastery: HumanMasteryLabels;
   };
 }
 
@@ -170,6 +177,7 @@ export const FINOPS_FR_LABELS: FinopsDictionarySection = {
       overrideReasonLabel: "Justification de la rallonge",
       overrideSubmitButton: "Valider la reprise",
     },
+    humanMastery: HUMAN_MASTERY_FR_LABELS,
   },
 };
 
@@ -253,5 +261,6 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       overrideReasonLabel: "Business justification",
       overrideSubmitButton: "Approve and Resume",
     },
+    humanMastery: HUMAN_MASTERY_EN_LABELS,
   },
 };

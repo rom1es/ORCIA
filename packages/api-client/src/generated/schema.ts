@@ -218,6 +218,14 @@ export interface components {
       message: string;
       tested_at: string;
     };
+    ApplyRecommendationResponse: {
+      applied_at: string;
+      applied_by: string;
+      recommendation_id: string;
+      status?: string;
+      suggested_policy: string;
+      workflow_id: string;
+    };
     ArbitrationOptionSchemaItem: {
       cons?: (string)[];
       finops_impact: string;
@@ -725,6 +733,27 @@ export interface components {
       tools?: (components["schemas"]["CodegraphToolItemResponse"])[];
       trace_id: string;
       workspace_id: string;
+    };
+    CognitiveImpactDashboardResponse: {
+      active_framing_alert: boolean;
+      active_framing_hours: number;
+      active_framing_ratio: number;
+      active_framing_target?: number;
+      architecture_deviation_alert: boolean;
+      architecture_deviation_index: number;
+      architecture_deviation_target?: number;
+      pattern_drift_alert: boolean;
+      pattern_drift_index: number;
+      quick_pass_alert: boolean;
+      quick_pass_rate: number;
+      quick_pass_threshold?: number;
+      recommendations?: (components["schemas"]["GatePolicyRecommendationSchema"])[];
+      review_hours: number;
+      rubber_stamping_alert: boolean;
+      rubber_stamping_rate: number;
+      total_human_hours: number;
+      uncovered_deviations_count: number;
+      workflow_breakdowns?: (components["schemas"]["WorkflowCognitiveMetricsSchema"])[];
     };
     CognitiveRoutingOutcomeResponse: {
       attempts: (components["schemas"]["InferenceAttemptResponse"])[];
@@ -1488,6 +1517,19 @@ export interface components {
       probabilistic_invoked: boolean;
       probabilistic_records?: (components["schemas"]["ProbabilisticControlExecutionRecord"])[];
       total_self_heal_retries_used?: number;
+    };
+    GatePolicyRecommendationSchema: {
+      action_label: string;
+      applied_at?: string | null;
+      applied_by?: string | null;
+      description: string;
+      id: string;
+      recommendation_type: string;
+      status?: string;
+      suggested_policy: string;
+      title: string;
+      workflow_id: string;
+      workflow_title: string;
     };
     GenerateAndAttachHelpRequest: {
       actor_role?: string;
@@ -3949,6 +3991,18 @@ export interface components {
       target_ttm_reduction_pct?: number;
       workflow_definition_id: string;
     };
+    WorkflowCognitiveMetricsSchema: {
+      criticality: string;
+      has_alert: boolean;
+      human_gates_count: number;
+      human_passes_count: number;
+      median_review_duration_ms: number;
+      quick_pass_rate: number;
+      quick_passes_count: number;
+      uncovered_drift_count: number;
+      workflow_id: string;
+      workflow_title: string;
+    };
     WorkflowContract: {
       output_schema_uri?: string | null;
       parameters?: (components["schemas"]["ContractParameter"])[];
@@ -4808,10 +4862,24 @@ export interface paths {
       };
     };
   };
+  "/api/v1/finops/cognitive-impact": {
+    get: {
+      responses: {
+        200: components["schemas"]["CognitiveImpactDashboardResponse"];
+      };
+    };
+  };
   "/api/v1/finops/dashboard": {
     get: {
       responses: {
         200: components["schemas"]["FinopsBreakdownResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/gates/policy-recommendation/{recommendation_id}/apply": {
+    post: {
+      responses: {
+        200: components["schemas"]["ApplyRecommendationResponse"];
       };
     };
   };
@@ -5860,6 +5928,7 @@ export type AiModelMappingItemResponse = components["schemas"]["AiModelMappingIt
 export type AiModelMappingsListResponse = components["schemas"]["AiModelMappingsListResponse"];
 export type AiModelPatchRequest = components["schemas"]["AiModelPatchRequest"];
 export type AiModelTestResponse = components["schemas"]["AiModelTestResponse"];
+export type ApplyRecommendationResponse = components["schemas"]["ApplyRecommendationResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactCardActionRequest = components["schemas"]["ArtifactCardActionRequest"];
 export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActionResponse"];
@@ -5916,6 +5985,7 @@ export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
 export type CodegraphActiveRepoResponse = components["schemas"]["CodegraphActiveRepoResponse"];
 export type CodegraphToolItemResponse = components["schemas"]["CodegraphToolItemResponse"];
 export type CodegraphToolsListResponse = components["schemas"]["CodegraphToolsListResponse"];
+export type CognitiveImpactDashboardResponse = components["schemas"]["CognitiveImpactDashboardResponse"];
 export type CognitiveRoutingOutcomeResponse = components["schemas"]["CognitiveRoutingOutcomeResponse"];
 export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteEntryResponse"];
 export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
@@ -6004,6 +6074,7 @@ export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSche
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GateExecutionStrategy = components["schemas"]["GateExecutionStrategy"];
 export type GatePipelineExecutionReport = components["schemas"]["GatePipelineExecutionReport"];
+export type GatePolicyRecommendationSchema = components["schemas"]["GatePolicyRecommendationSchema"];
 export type GenerateAndAttachHelpRequest = components["schemas"]["GenerateAndAttachHelpRequest"];
 export type GenerateAndAttachHelpResponse = components["schemas"]["GenerateAndAttachHelpResponse"];
 export type GeneratedStarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
@@ -6282,6 +6353,7 @@ export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"]
 export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];
 export type WorkflowAsCodeDefinitionSchemaItem = components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"];
 export type WorkflowBaselineResponse = components["schemas"]["WorkflowBaselineResponse"];
+export type WorkflowCognitiveMetricsSchema = components["schemas"]["WorkflowCognitiveMetricsSchema"];
 export type WorkflowContract = components["schemas"]["WorkflowContract"];
 export type WorkflowDefinitionResponseItem = components["schemas"]["WorkflowDefinitionResponseItem"];
 export type WorkflowDefinitionV2_Input = components["schemas"]["WorkflowDefinitionV2-Input"];

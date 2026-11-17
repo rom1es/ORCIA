@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from orcia_core.audit_finops._internal.sql_audit_ledger import SqlAuditLedgerService
 from orcia_core.audit_finops.budget_guard_service import BudgetGuardService
+from orcia_core.audit_finops.cognitive_impact_service import (
+    CognitiveImpactService,
+    CognitiveMasteryDashboard,
+    GatePolicyRecommendation,
+    WorkflowCognitiveMetrics,
+)
 from orcia_core.audit_finops.errors import (
     AuditLedgerImmutableViolationError,
     AuditRunNotFoundError,
@@ -49,6 +55,8 @@ __all__ = [
     "AuditRunNotFoundError",
     "AuditTimeWindow",
     "BudgetGuardService",
+    "CognitiveImpactService",
+    "CognitiveMasteryDashboard",
     "DEFAULT_AMORTIZATION_RUNS",
     "DEFAULT_EUR_USD_RATE",
     "DEFAULT_HOURLY_RATE_USD",
@@ -61,8 +69,10 @@ __all__ = [
     "FinopsScopeBudget",
     "FinopsTierEffortItem",
     "FinopsWorkflowBaseline",
+    "GatePolicyRecommendation",
     "ProvenanceExporterService",
     "ScopeType",
     "SqlAuditLedgerService",
+    "WorkflowCognitiveMetrics",
     "map_domain_event_to_ledger_entry",
 ]

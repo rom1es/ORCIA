@@ -91,6 +91,12 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Pilotez l'équation économique complète de vos processus : coût de setup initial amorti, coût des exécutions par niveau de modèle IA, et temps humain investi comparé à votre référence sans automatisation. Configurez des seuils d'alerte à 80 % et des suspensions automatiques à 100 % pour protéger vos budgets d'équipe.",
     category: "whatFor",
   },
+  {
+    sectionId: "finops-human-mastery",
+    title: "Maîtrise humaine, qualité et réversibilité d'architecture",
+    body: "Préservez le discernement de vos experts et la conformité aux décisions verrouillées. Les trois indicateurs mesurent l'équilibre entre cadrage amont et relecture, préviennent les validations trop rapides et signalent tout écart structurel non couvert par une dérogation.",
+    category: "whatFor",
+  },
 ];
 
 const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -172,6 +178,12 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     body: "Track the complete economic equation of your processes: amortized initial setup cost, execution run cost across AI model levels, and human time invested compared to manual baseline without automation. Configure 80% warning alerts and 100% hard stops to safeguard team budgets.",
     category: "whatFor",
   },
+  {
+    sectionId: "finops-human-mastery",
+    title: "Human mastery, quality, and architecture reversibility",
+    body: "Preserve active expert critical thinking and compliance with locked architectural decisions. The three indicators balance upstream framing against review time, prevent quick approvals, and report any architectural deviation not covered by an approved exception.",
+    category: "whatFor",
+  },
 ];
 
 const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
@@ -241,6 +253,12 @@ const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Pilotez l'équation économique complète de vos processus : coût de setup initial amorti, coût des exécutions par niveau de modèle IA, et temps humain investi comparé à votre référence sans automatisation. Configurez des seuils d'alerte à 80 % et des suspensions automatiques à 100 % pour protéger vos budgets d'équipe.",
     category: "whatFor",
   },
+  {
+    sectionId: "finops-human-mastery",
+    title: "Maîtrise humaine, qualité et réversibilité d'architecture",
+    body: "Préservez le discernement de vos experts et la conformité aux décisions verrouillées. Les trois indicateurs mesurent l'équilibre entre cadrage amont et relecture, préviennent les validations trop rapides et signalent tout écart structurel non couvert par une dérogation.",
+    category: "whatFor",
+  },
 ];
 
 const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -308,6 +326,12 @@ const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     sectionId: "finops-overview",
     title: "Cost governance and budget thresholds",
     body: "Track the complete economic equation of your processes: amortized initial setup cost, execution run cost across AI model levels, and human time invested compared to manual baseline without automation. Configure 80% warning alerts and 100% hard stops to safeguard team budgets.",
+    category: "whatFor",
+  },
+  {
+    sectionId: "finops-human-mastery",
+    title: "Human mastery, quality, and architecture reversibility",
+    body: "Preserve active expert critical thinking and compliance with locked architectural decisions. The three indicators balance upstream framing against review time, prevent quick approvals, and report any architectural deviation not covered by an approved exception.",
     category: "whatFor",
   },
 ];

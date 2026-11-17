@@ -3,6 +3,7 @@ import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTrig
 import { OrciaTabBar, type OrciaTabItem } from "../RadixDesignSystemPrimitives";
 import { FinopsBudgetOverrideModal } from "./FinopsBudgetOverrideModal";
 import { FinopsBudgetPolicyModal } from "./FinopsBudgetPolicyModal";
+import { FinopsHumanMasteryTab, type FinopsHumanMasteryTabProps } from "./FinopsHumanMasteryTab";
 import { FinopsKpiStrip, type FinopsKpiStripLabels } from "./FinopsKpiStrip";
 import {
   FinopsProcessAndTiersTab,
@@ -103,6 +104,8 @@ export interface FinopsGovernanceDashboardViewProps {
     hardStopPct: number,
   ) => void;
   readonly onSubmitOverride?: (runId: string, amountUsd: number, reason: string) => void;
+  readonly cognitiveData?: FinopsHumanMasteryTabProps | null;
+  readonly onApplyRecommendation?: (recommendationId: string) => void;
 }
 
 export function FinopsGovernanceDashboardView({
@@ -125,6 +128,8 @@ export function FinopsGovernanceDashboardView({
   onOpenHelpSection,
   onSaveBudget,
   onSubmitOverride,
+  cognitiveData,
+  onApplyRecommendation,
 }: FinopsGovernanceDashboardViewProps): React.ReactElement {
   const [activeTab, setActiveTab] = useState<FinopsTabKey>("processes");
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -185,55 +190,31 @@ export function FinopsGovernanceDashboardView({
           <div
             className="finops-scope-pills"
             data-testid="finops-scope-pills"
-            style={{
-              display: "inline-flex",
-              borderRadius: "6px",
-              background: "var(--color-surface-muted)",
-              padding: "2px",
-            }}
+            style={{ display: "inline-flex", borderRadius: "6px", background: "var(--color-surface-muted)", padding: "2px" }}
           >
-            <button
-              type="button"
-              data-testid="finops-scope-workspace"
-              className={`orcia-ds-tab ${scopeType === "WORKSPACE" ? "active" : ""}`}
-              style={{
-                fontSize: "12px",
-                padding: "4px 10px",
-                borderRadius: "4px",
-                background: scopeType === "WORKSPACE" ? "var(--color-surface-card)" : "transparent",
-              }}
-              onClick={() => onScopeChange?.("WORKSPACE")}
-            >
-              {labels.scopeSelector.currentWorkspace}
-            </button>
-            <button
-              type="button"
-              data-testid="finops-scope-team"
-              className={`orcia-ds-tab ${scopeType === "TEAM" ? "active" : ""}`}
-              style={{
-                fontSize: "12px",
-                padding: "4px 10px",
-                borderRadius: "4px",
-                background: scopeType === "TEAM" ? "var(--color-surface-card)" : "transparent",
-              }}
-              onClick={() => onScopeChange?.("TEAM")}
-            >
-              {labels.scopeSelector.currentTeam}
-            </button>
-            <button
-              type="button"
-              data-testid="finops-scope-global"
-              className={`orcia-ds-tab ${scopeType === "GLOBAL" ? "active" : ""}`}
-              style={{
-                fontSize: "12px",
-                padding: "4px 10px",
-                borderRadius: "4px",
-                background: scopeType === "GLOBAL" ? "var(--color-surface-card)" : "transparent",
-              }}
-              onClick={() => onScopeChange?.("GLOBAL")}
-            >
-              {labels.scopeSelector.entirePlatform}
-            </button>
+            {(
+              [
+                ["WORKSPACE", "finops-scope-workspace", labels.scopeSelector.currentWorkspace],
+                ["TEAM", "finops-scope-team", labels.scopeSelector.currentTeam],
+                ["GLOBAL", "finops-scope-global", labels.scopeSelector.entirePlatform],
+              ] as const
+            ).map(([sKey, testId, label]) => (
+              <button
+                key={sKey}
+                type="button"
+                data-testid={testId}
+                className={`orcia-ds-tab ${scopeType === sKey ? "active" : ""}`}
+                style={{
+                  fontSize: "12px",
+                  padding: "4px 10px",
+                  borderRadius: "4px",
+                  background: scopeType === sKey ? "var(--color-surface-card)" : "transparent",
+                }}
+                onClick={() => onScopeChange?.(sKey)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {/* Bouton de configuration de plafond */}
@@ -301,7 +282,13 @@ export function FinopsGovernanceDashboardView({
                 </p>
               </div>
             ),
-            cognitiveGovernance: (
+            cognitiveGovernance: cognitiveData ? (
+              <FinopsHumanMasteryTab
+                {...cognitiveData}
+                onApplyRecommendation={onApplyRecommendation}
+                onOpenHelpSection={onOpenHelpSection}
+              />
+            ) : (
               <div
                 className="orcia-bento-card"
                 data-testid="finops-governance-placeholder"

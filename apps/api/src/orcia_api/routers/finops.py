@@ -20,6 +20,7 @@ from orcia_api.dependencies import (
     get_finops_accounting_service,
 )
 from orcia_api.routers.auth import resolve_request_user
+from orcia_api.routers.finops_cognitive import router as cognitive_router
 from orcia_api.schemas.finops import (
     BudgetOverrideRequest,
     BudgetOverrideResponse,
@@ -39,6 +40,7 @@ from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.errors import ValidationDomainError
 
 router = APIRouter(tags=["finops"])
+router.include_router(cognitive_router)
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 FinopsServiceDep = Annotated[FinopsAccountingService, Depends(get_finops_accounting_service)]

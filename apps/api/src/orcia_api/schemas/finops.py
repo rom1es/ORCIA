@@ -201,15 +201,120 @@ class BudgetOverrideResponse(BaseModel):
     new_run_status: str = Field(default="RUNNING", description="Updated run status")
 
 
+class GatePolicyRecommendationSchema(BaseModel):
+    """Actionable recommendation for human validation gate policy adjustment (`Story 6.3`)."""
+
+    id: str = Field(..., description="Recommendation UUID or identifier")
+    workflow_id: str = Field(..., description="Target workflow definition UUID")
+    workflow_title: str = Field(..., description="Human-readable workflow title")
+    recommendation_type: str = Field(
+        ...,
+        description="Type of recommendation (SWITCH_TO_RISK_OR_SAMPLING, STRENGTHEN_HUMAN_ANCHORS)",
+    )
+    title: str = Field(..., description="Clear business title")
+    description: str = Field(..., description="Detailed rationale")
+    action_label: str = Field(..., description="Action button label")
+    suggested_policy: str = Field(..., description="Target policy setting (e.g. SAMPLING_20_PCT)")
+    status: str = Field(default="PROPOSED", description="PROPOSED, APPLIED, or DISMISSED")
+    applied_at: datetime | None = Field(default=None, description="Application timestamp")
+    applied_by: str | None = Field(default=None, description="Applying user identifier")
+
+
+class WorkflowCognitiveMetricsSchema(BaseModel):
+    """Workflow-level cognitive mastery metrics (`Story 6.3`)."""
+
+    workflow_id: str = Field(..., description="Workflow UUID")
+    workflow_title: str = Field(..., description="Workflow title")
+    criticality: str = Field(..., description="Workflow criticality level")
+    human_gates_count: int = Field(..., description="Total human gates evaluated")
+    human_passes_count: int = Field(..., description="Total approved gates")
+    quick_passes_count: int = Field(..., description="Approvals flagged as quick-pass")
+    quick_pass_rate: float = Field(..., description="Quick pass rate")
+    median_review_duration_ms: int = Field(..., description="Median human review duration in ms")
+    uncovered_drift_count: int = Field(
+        ..., description="Number of architecture deviations not covered by a waiver"
+    )
+    has_alert: bool = Field(..., description="Whether workflow triggers a warning")
+
+
+class CognitiveImpactDashboardResponse(BaseModel):
+    """Executive Cognitive Impact, Human Mastery & Reversibility response (`Story 6.3`, `FR-27`)."""
+
+    active_framing_ratio: float = Field(
+        ..., description="Ratio of active framing time over total human time (target >= 40%)"
+    )
+    active_framing_target: float = Field(
+        default=0.40, description="Target minimum ratio for active framing"
+    )
+    active_framing_alert: bool = Field(
+        ..., description="True if active framing ratio is below target threshold"
+    )
+    quick_pass_rate: float = Field(
+        ..., description="Rate of approvals with fast warning or unopened brief (threshold < 5%)"
+    )
+    quick_pass_threshold: float = Field(
+        default=0.05, description="Warning threshold for quick-pass approvals"
+    )
+    quick_pass_alert: bool = Field(..., description="True if quick-pass rate exceeds threshold")
+    rubber_stamping_rate: float = Field(
+        ..., description="Compatibility alias for quick-pass approvals rate"
+    )
+    rubber_stamping_alert: bool = Field(
+        ..., description="Compatibility alias for quick-pass approvals alert"
+    )
+    architecture_deviation_index: float = Field(
+        ..., description="Index of architecture deviations not covered by waiver (target 0%)"
+    )
+    architecture_deviation_target: float = Field(
+        default=0.00, description="Target for architecture deviation index"
+    )
+    architecture_deviation_alert: bool = Field(
+        ..., description="True if any uncovered deviations exist"
+    )
+    pattern_drift_index: float = Field(
+        ..., description="Compatibility alias for architecture deviation index"
+    )
+    pattern_drift_alert: bool = Field(
+        ..., description="Compatibility alias for architecture deviation alert"
+    )
+    total_human_hours: float = Field(..., description="Total valorized human time in hours")
+    active_framing_hours: float = Field(..., description="Time spent actively framing in hours")
+    review_hours: float = Field(..., description="Time spent reviewing in hours")
+    uncovered_deviations_count: int = Field(
+        ..., description="Count of active deviations without waiver"
+    )
+    workflow_breakdowns: list[WorkflowCognitiveMetricsSchema] = Field(
+        default_factory=list, description="Per-workflow metrics"
+    )
+    recommendations: list[GatePolicyRecommendationSchema] = Field(
+        default_factory=list, description="Actionable gate policy recommendations"
+    )
+
+
+class ApplyRecommendationResponse(BaseModel):
+    """Response returned upon applying a gate policy recommendation (`Story 6.3`)."""
+
+    recommendation_id: str = Field(..., description="Applied recommendation ID")
+    status: str = Field(default="APPLIED", description="New status")
+    applied_at: datetime = Field(..., description="Application timestamp")
+    applied_by: str = Field(..., description="Applying user UUID")
+    workflow_id: str = Field(..., description="Target workflow UUID")
+    suggested_policy: str = Field(..., description="Applied policy configuration")
+
+
 __all__ = [
+    "ApplyRecommendationResponse",
     "BudgetOverrideRequest",
     "BudgetOverrideResponse",
+    "CognitiveImpactDashboardResponse",
     "FinopsBreakdownResponse",
     "FinopsOverviewResponse",
     "FinopsProcessItemResponse",
     "FinopsTierEffortItemResponse",
+    "GatePolicyRecommendationSchema",
     "ScopeBudgetResponse",
     "SetWorkflowBaselineRequest",
     "UpdateScopeBudgetRequest",
     "WorkflowBaselineResponse",
+    "WorkflowCognitiveMetricsSchema",
 ]

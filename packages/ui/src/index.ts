@@ -568,6 +568,18 @@ export {
   type FinopsBudgetOverrideModalProps,
 } from "./primitives/finops/FinopsBudgetOverrideModal";
 export {
+  CognitiveMetricCard,
+  type CognitiveMetricCardProps,
+  type MetricTone,
+} from "./primitives/finops/CognitiveMetricCard";
+export {
+  FinopsHumanMasteryTab,
+  type FinopsHumanMasteryTabProps,
+  type HumanMasteryLabels,
+  type HumanMasteryRecommendationItem,
+  type HumanMasteryWorkflowRow,
+} from "./primitives/finops/FinopsHumanMasteryTab";
+export {
   OrciaModelCombobox,
   type DiscoveredModelOption,
   type OrciaModelComboboxLabels,

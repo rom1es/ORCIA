@@ -61,16 +61,20 @@ from orcia_api.schemas.catalog import (
     WorkflowStepItem,
 )
 from orcia_api.schemas.finops import (
+    ApplyRecommendationResponse,
     BudgetOverrideRequest,
     BudgetOverrideResponse,
+    CognitiveImpactDashboardResponse,
     FinopsBreakdownResponse,
     FinopsOverviewResponse,
     FinopsProcessItemResponse,
     FinopsTierEffortItemResponse,
+    GatePolicyRecommendationSchema,
     ScopeBudgetResponse,
     SetWorkflowBaselineRequest,
     UpdateScopeBudgetRequest,
     WorkflowBaselineResponse,
+    WorkflowCognitiveMetricsSchema,
 )
 from orcia_api.schemas.ontology_and_rag import (
     DbDdlIndexRequest,
@@ -137,6 +141,7 @@ from orcia_api.schemas.shell import (
 
 __all__ = [
     "AccessMode",
+    "ApplyRecommendationResponse",
     "ArtifactTemplateCompileRequest",
     "ArtifactTemplateCompileResponse",
     "AuditExportResponse",
@@ -145,6 +150,7 @@ __all__ = [
     "AuditProvenanceSummaryResponse",
     "BudgetOverrideRequest",
     "BudgetOverrideResponse",
+    "CognitiveImpactDashboardResponse",
     "AuthTokenResponse",
     "BmadSkillPackImportRequest",
     "BmadSkillPackImportResponse",
@@ -159,6 +165,7 @@ __all__ = [
     "CatalogUriResolveRequest",
     "CatalogUriResolveResponse",
     "CompiledArtifactTemplateSchemaItem",
+    "GatePolicyRecommendationSchema",
     "CompiledMarkdownChunkSchemaItem",
     "DbDdlIndexRequest",
     "DocVsCodeAuditRequest",
@@ -237,6 +244,7 @@ __all__ = [
     "WhatIfSimulationResponse",
     "WorkflowAsCodeDefinitionSchemaItem",
     "WorkflowBaselineResponse",
+    "WorkflowCognitiveMetricsSchema",
     "WorkflowDefinitionResponseItem",
     "WorkflowManifestRegisterRequest",
     "WorkflowManifestRegisterResponse",
