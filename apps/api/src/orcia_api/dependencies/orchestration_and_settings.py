@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING
 from fastapi import Request
 
 if TYPE_CHECKING:
-    from orcia_core.audit_finops import ProvenanceExporterService, SqlAuditLedgerService
+    from orcia_core.audit_finops import (
+        FinopsAccountingService,
+        ProvenanceExporterService,
+        SqlAuditLedgerService,
+    )
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import DurableOnboardingWizardService
@@ -191,3 +195,23 @@ def get_provenance_exporter_service(request: Request) -> ProvenanceExporterServi
 
     ledger_svc = get_audit_ledger_service(request)
     return ProvenanceExporterService(ledger_svc)
+
+
+def get_finops_accounting_service(request: Request) -> FinopsAccountingService:
+    """FastAPI `Depends` provider returning `FinopsAccountingService` (`Story 6.2`)."""
+    from orcia_core.audit_finops import FinopsAccountingService
+
+    svc: FinopsAccountingService | None = getattr(
+        request.app.state, "finops_accounting_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = getattr(request.app.state, "finops_accounting_service", None)
+        if svc is None:
+            engine = getattr(request.app.state, "db_engine", None)
+            assert engine is not None, "PostgreSQL database engine must be initialized"
+            sse_broker = getattr(request.app.state, "sse_broker", None)
+            svc = FinopsAccountingService(engine=engine, sse_broker=sse_broker)
+            request.app.state.finops_accounting_service = svc
+    assert svc is not None
+    return svc

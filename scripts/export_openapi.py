@@ -36,6 +36,7 @@ from orcia_api.main import create_app  # noqa: E402
 SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "agents_and_skills",
     "ai_models_hub",
+    "audit_finops",
     "auth_and_org",
     "auth_policy",
     "blackboard",
@@ -44,6 +45,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "codegraph_mcp",
     "datasource_webhooks",
     "enterprise_connectors",
+    "finops",
     "iam_accounts",
     "iam_password_models",
     "ontology_and_rag",

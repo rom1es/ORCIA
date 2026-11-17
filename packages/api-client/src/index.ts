@@ -6,6 +6,7 @@ import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOn
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
 import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
+import { createFinopsDomainClient } from "./domains/finops";
 import type { paths } from "./generated/schema";
 import {
   buildKnownOrgUsersQuery,
@@ -29,6 +30,7 @@ export {
   createCatalogAndPermissionsDomainClient,
   createCodegraphMcpDomainClient,
   createEpics1To7OperationsDomainClient,
+  createFinopsDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
   type ListKnownOrgUsersParams,
@@ -65,6 +67,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
+    ...createFinopsDomainClient(requestJson),
     ...aiModelsHubClient,
     aiModelsHub: aiModelsHubClient,
   };

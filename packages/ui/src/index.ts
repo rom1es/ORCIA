@@ -543,6 +543,31 @@ export {
   type OrciaUserPillsSelectProps,
 } from "./primitives/OrciaUserPillsSelect";
 export {
+  FinopsGovernanceDashboardView,
+  type FinopsDashboardLabels,
+  type FinopsGovernanceDashboardViewProps,
+  type FinopsTabKey,
+} from "./primitives/finops/FinopsGovernanceDashboardView";
+export {
+  FinopsKpiStrip,
+  type FinopsKpiStripLabels,
+  type FinopsKpiStripProps,
+} from "./primitives/finops/FinopsKpiStrip";
+export {
+  FinopsProcessAndTiersTab,
+  type FinopsProcessAndTiersTabProps,
+  type FinopsProcessRowData,
+  type FinopsTierRowData,
+} from "./primitives/finops/FinopsProcessAndTiersTab";
+export {
+  FinopsBudgetPolicyModal,
+  type FinopsBudgetPolicyModalProps,
+} from "./primitives/finops/FinopsBudgetPolicyModal";
+export {
+  FinopsBudgetOverrideModal,
+  type FinopsBudgetOverrideModalProps,
+} from "./primitives/finops/FinopsBudgetOverrideModal";
+export {
   OrciaModelCombobox,
   type DiscoveredModelOption,
   type OrciaModelComboboxLabels,

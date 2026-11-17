@@ -102,45 +102,67 @@ Le pilotage de la rentabilité des processus assistés ou autonomes exige d'alle
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *Section réservée à l'implémentation par le dev worker (`bmad-dev-worker` ⚡).*
-
 ### 3.1 Fichiers Développés & Modifiés
-| Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
-| :--- | :--- | :--- |
-| `infra/migrations/versions/20261116_0602_story_6_2_finops_budgets_baselines_and_pauses.py` | Création | Migration Alembic élargissant les statuts de run et créant les tables FinOps |
-| `infra/scripts/maintenance/09_reset_db_first_boot.py` | Modification | Ajout des 3 tables mutables dans `ORDERED_MUTABLE_TABLES_TO_CLEAR` |
-| `packages/orcia-core/src/orcia_core/kernel/enums.py` | Modification | Ajout des statuts `PAUSED_BUDGET_EXCEEDED` et `PAUSED_MAX_RETRIES` |
-| `packages/orcia-core/src/orcia_core/orchestration/models.py` | Modification | Alignement des statuts de run |
-| `packages/orcia-core/src/orcia_core/orchestration/cognitive_router.py` | Refactoring | Découpage et allègement sous 350 lignes |
-| `packages/orcia-core/src/orcia_core/orchestration/_cognitive_budget_guard.py` | Création | Extraction du garde budgétaire et anti-boucles |
-| `packages/orcia-core/src/orcia_core/audit_finops/finops_accounting_service.py` | Création | Moteur de calcul de l'équation économique en `Decimal` |
-| `packages/orcia-core/src/orcia_core/audit_finops/budget_guard_service.py` | Création | Implémentation de `BudgetCircuitGuardPort` |
-| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_finops_accounting.py` | Création | Requêtes SQL d'agrégation budgétaire |
-| `packages/ui/src/primitives/finops/FinopsGovernanceDashboardView.tsx` | Création | Vue principale avec onglets |
-| `packages/ui/src/primitives/finops/FinopsKpiStrip.tsx` | Création | Barre des KPI consolidés ou état vide |
-| `packages/ui/src/primitives/finops/FinopsProcessAndTiersTab.tsx` | Création | Tableau ventilé processus/tiers |
-| `packages/ui/src/primitives/finops/FinopsBudgetPolicyModal.tsx` | Création | Modale de gestion des plafonds budgétaires |
-| `apps/api/src/orcia_api/schemas/finops.py` | Création | Schémas RFC 9457 pour FinOps et overrides |
-| `apps/api/src/orcia_api/routers/finops.py` | Création | Routeur FastAPI `/api/v1/finops/*` |
-| `apps/web/src/features/finops/index.tsx` | Refactoring | Montage du tableau de bord complet avec survie au F5 |
-| `tests/unit/test_story_6_2_finops_accounting_decimal.py` | Création | Tests unitaires `hypothesis` sur calculs `Decimal` |
-| `tests/unit/test_story_6_2_budget_circuit_guards.py` | Création | Tests unitaires des coupe-circuits et suspensions |
-| `tests/integration/test_story_6_2_finops_postgres18.py` | Création | Tests d'intégration testcontainers PG18 + Redis |
-| `tests/evals/test_story_6_2_cognitive_escalation_finops.py` | Création | Évaluation déterministe à 0 $ |
+| Fichier | Nature | Description synthétique | Lignes (`wc -l`) |
+| :--- | :--- | :--- | :--- |
+| `infra/migrations/versions/20261116_0602_story_6_2_finops_budgets_baselines_and_pauses.py` | Création | Migration Alembic réversible créant `finops_scope_budgets`, `finops_workflow_baselines`, `finops_budget_overrides` et élargissant les statuts de run | 290 |
+| `infra/scripts/maintenance/09_reset_db_first_boot.py` | Modification | Enregistrement des 3 tables mutables dans `ORDERED_MUTABLE_TABLES_TO_CLEAR` | 276 |
+| `packages/orcia-core/src/orcia_core/kernel/enums.py` | Modification | Ajout des statuts `PAUSED_BUDGET_EXCEEDED` et `PAUSED_MAX_RETRIES` | 162 |
+| `packages/orcia-core/src/orcia_core/orchestration/models.py` | Modification | Intégration de `PAUSED_MAX_RETRIES` dans `WorkflowRunStatus` | 303 |
+| `packages/orcia-core/src/orcia_core/orchestration/cognitive_router.py` | Refactoring | Découpage modulaire du routeur cognitif ramené à 254 lignes | 254 |
+| `packages/orcia-core/src/orcia_core/orchestration/_cognitive_budget_guard.py` | Création | Extraction du garde budgétaire hiérarchique et coupe-circuit anti-boucle | 274 |
+| `packages/orcia-core/src/orcia_core/orchestration/_cognitive_router_execution.py` | Création | Boucle d'exécution d'escalade cognitive et gestion des tentatives DBOS | 192 |
+| `packages/orcia-core/src/orcia_core/orchestration/_cognitive_router_models.py` | Création | Dataclasses, types et fabrique `make_paused_outcome` | 162 |
+| `packages/orcia-core/src/orcia_core/audit_finops/finops_accounting_service.py` | Création | Moteur de calcul de l'équation économique 3 composantes en `Decimal` | 327 |
+| `packages/orcia-core/src/orcia_core/audit_finops/budget_guard_service.py` | Création | Implémentation hexagonale de `BudgetCircuitGuardPort` | 101 |
+| `packages/orcia-core/src/orcia_core/audit_finops/finops_models.py` | Création | Dataclasses immuables du domaine FinOps en `Decimal` strict | 142 |
+| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_finops_accounting.py` | Création | Requêtes SQL d'agrégation, upsert de budgets et enregistrement d'overrides | 343 |
+| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_finops_dashboard.py` | Création | Requêtes SQL d'agrégation du tableau de bord consolidé | 240 |
+| `packages/ui/src/primitives/finops/FinopsGovernanceDashboardView.tsx` | Création | Coquille du tableau de bord FinOps avec onglets et aide contextuelle | 337 |
+| `packages/ui/src/primitives/finops/FinopsKpiStrip.tsx` | Création | Bandeau des 4 KPI avec masquage strict à l'état vide (`total == 0`) | 184 |
+| `packages/ui/src/primitives/finops/FinopsProcessAndTiersTab.tsx` | Création | Tableaux ventilés par processus et tiers/effort cognitifs | 198 |
+| `packages/ui/src/primitives/finops/FinopsBudgetPolicyModal.tsx` | Création | Modale de configuration des plafonds budgétaires et alertes | 169 |
+| `packages/ui/src/primitives/finops/FinopsBudgetOverrideModal.tsx` | Création | Modale d'approbation d'extension budgétaire pour reprise de Run | 117 |
+| `apps/api/src/orcia_api/schemas/finops.py` | Création | Schémas Pydantic v2 de transport RFC 9457 pour FinOps | 215 |
+| `apps/api/src/orcia_api/routers/finops.py` | Création | Routeur FastAPI `/api/v1/finops/*` avec garde `_enforce_finops_mutation_guard` | 298 |
+| `apps/web/src/features/finops/index.tsx` | Refactoring | Câblage réel du tableau de bord sur `@orcia/api-client` avec survie au F5 | 185 |
+| `apps/web/src/i18n/locales/finops_labels.ts` | Création | Dictionnaire i18n sans jargon interdit pour le domaine FinOps | 245 |
+| `tests/unit/test_story_6_2_finops_accounting_decimal.py` | Création | Tests unitaires `hypothesis` sur calculs `Decimal` et services FinOps | 320 |
+| `tests/unit/test_story_6_2_budget_circuit_guards.py` | Création | Tests unitaires des coupe-circuits, anti-boucles et réversibilité SQL | 294 |
+| `tests/integration/api/test_story_6_2_finops_postgres18.py` | Création | Tests d'intégration réels `testcontainers` PostgreSQL 18 | 342 |
+| `tests/evals/test_story_6_2_cognitive_escalation_finops.py` | Création | Évaluation déterministe à 0 $ sur scénario d'escalade cognitive | 138 |
+| `apps/web/src/__tests__/story-6-2-finops-dashboard-kpis-and-modals.test.tsx` | Création | Tests Vitest du tableau de bord, masquage KPI vide et survie F5 | 229 |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : Requis $\ge 90\%$.
-- **Performances mesurées** : Évaluation du coupe-circuit $< 5$ ms, Calcul consolidé du tableau de bord $< 20$ ms.
+- **Couverture de tests** : **90.40%** atteinte sur `packages/orcia-core/src/orcia_core/audit_finops` (seuil minimum $\ge 90\%$ respecté, 34 tests passés).
+- **Volumétrie & Modularité** : **100% des fichiers $< 350$ lignes** (`wc -l`). `cognitive_router.py` a été ramené de 511 à 254 lignes grâce aux modules satellites `_cognitive_budget_guard.py` (274 l.), `_cognitive_router_execution.py` (192 l.), `_cognitive_router_models.py` (162 l.), `_cognitive_router_proc01.py` (108 l.) et `_cognitive_router_registry.py` (107 l.).
+- **Design System Direction C & Isolation Visuelle** :
+  - `grep -rn "#[0-9a-fA-F]\{3,8\}" packages/ui/src/primitives/finops/` : **0 occurrence** (100% tokens CSS bare `var(--color-...)` sans couleur hex en dur).
+  - Suppression intégrale des parenthèses techniques anglaises dans les sélecteurs de portée (`"Plateforme entière"`, `"Direction"`, `"Équipe"`, `"Espace"` en FR, `"Entire platform"`, `"Business unit"`, `"Team"`, `"Workspace"` en EN via prop typée `labels` depuis `finops_labels.ts`).
 - **Qualité statique & Architecture** :
-  - `ruff check` & `ruff format --check` : `0 warning`
-  - `mypy --strict` & `pnpm typecheck` : `0 error`
-  - `lint-imports` : `5 contracts kept, 0 broken`
-  - `lint_spine.py` : `ok: true, 0 findings`
-  - `gitnexus_detect_changes()` : Périmètre conforme.
+  - `ruff check .` & `ruff format --check .` : **0 erreur, 896 fichiers conformes**
+  - `mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **0 erreur sur 384 fichiers sources**
+  - `lint-imports` : **5 contrats architecturaux AD-19/AD-20 validés, 0 rompu**
+  - `lint_spine.py` : **ok: true, 0 findings**
+  - `pnpm site:sync && pnpm site:check` : **0 findings**, catalogue `/showcase` synchronisé
+  - Schemathesis Layer 3 Contract Tests : **2 passed in 48.12s** (`test_openapi_client_zero_diff_gate` + `test_schemathesis_openapi_contract_compliance`)
+  - Tests Vitest Frontend `@orcia/ui` : **25 suites passées (107 tests)** (incluant `ui-isolation.test.ts`)
+  - Tests Vitest Frontend `apps/web` : **42 tests passés** (incluant `design-system-look-and-feel-isolation`, `zero-dead-buttons-and-silent-catches-audit`, `i18n-and-shell` et `story-6-2-finops-dashboard-kpis-and-modals`)
+  - `pnpm turbo run lint typecheck` : **6/6 tâches passées avec succès**
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- **Couche 1a & 1b** : Précision arithmétique `Decimal` et comportement du composant d'état vide.
-- **Couche 2** : Suspension réelle du workflow et déblocage par appel API d'extension budgétaire.
-- **Couche 3** : Conformité du schéma OpenAPI `0-diff`.
-- **Couche 4** : Évaluation déterministe à 0 $ validant le respect du budget sur scénario d'escalade.
-- **Couche 5** : Vérification Playwright du tableau de bord et de la modale de budget.
+- **Couche 1a (Unitaires Python & Hypothesis)** :
+  - `test_story_6_2_finops_accounting_decimal.py` (7 tests) : validation arithmétique `Decimal` stricte (6 décimales USD, 2 décimales EUR), absence de dérive flottante prouvée par `hypothesis`, équation 3 composantes (Setup amorti + Run consolidé + Temps humain valorisé), gestion des dépassements de précision par `ValidationDomainError`.
+  - `test_story_6_2_budget_circuit_guards.py` (4 tests) : test du coupe-circuit anti-boucle `PAUSED_MAX_RETRIES` (seuil à 3 tentatives), seuils hiérarchiques (80% alerte Outbox/SSE, 100% suspension `PAUSED_BUDGET_EXCEEDED`), et réversibilité complète `upgrade()` / `downgrade()` de la migration Alembic 6.2.
+- **Couche 1b (Composants React Vitest)** :
+  - `story-6-2-finops-dashboard-kpis-and-modals.test.tsx` (5 tests) : vérification du masquage strict des 4 compteurs KPI à l'état vide (`data-testid="finops-empty-state"`), ouverture et validation des formulaires avec attributs anti-LastPass, affichage d'alerte RFC 9457 sur erreur, et survie intégrale au rafraîchissement URL (`unmount()` $\rightarrow$ `render()`).
+  - `zero-dead-buttons-and-silent-catches-audit.test.tsx` (7 tests) : validation de l'absence de bouton muet ou de callback omis.
+- **Couche 2 (Intégration PostgreSQL 18 `testcontainers`)** :
+  - `test_story_6_2_finops_postgres18.py` (3 tests) :
+    1. `test_finops_dashboard_and_scope_budgets_postgres18` : consultation du dashboard consolidé et persistance réelle des budgets par portée (`GLOBAL`, `WORKSPACE`).
+    2. `test_finops_run_pause_and_budget_override_postgres18` : suspension effective d'un Run en `PAUSED_BUDGET_EXCEEDED`, appel de l'endpoint `POST /api/v1/runs/{id}/budget-override`, enregistrement en base dans `finops_budget_overrides`, réactivation du Run en statut `RUNNING` et émission d'événement outbox `BudgetOverrideApproved`.
+    3. `test_finops_observer_mode_mutation_forbidden_403` : rejet immédiat en `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` pour le profil `READ_ONLY_OBSERVER`.
+- **Couche 3 (Contrats API OpenAPI 3.1 & Schemathesis)** :
+  - Fuzzing de l'ensemble des 230 opérations OpenAPI avec `Schemathesis` et vérification de la concordance SDK `0-diff`.
+- **Couche 4 (Évaluations Déterministes `0 $`)** :
+  - `test_story_6_2_cognitive_escalation_finops.py` : vérification déterministe avec cassette LLM de l'escalade cognitive `auto` (`simple -> medium -> complex`) et ventilation comptable exacte des coûts et tokens.

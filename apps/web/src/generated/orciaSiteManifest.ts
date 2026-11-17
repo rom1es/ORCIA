@@ -9,9 +9,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-16",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 109,
+    "uiPrimitivesCount": 114,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 42,
+    "alembicMigrationsCount": 43,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
     "techLeadReportsCount": 144,
@@ -85,6 +85,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "DurableWizardRunnerView",
     "EffortSelector",
     "FederatedUriBadge",
+    "FinopsBudgetOverrideModal",
+    "FinopsBudgetPolicyModal",
+    "FinopsGovernanceDashboardView",
+    "FinopsKpiStrip",
+    "FinopsProcessAndTiersTab",
     "FormattedMarkdownContent",
     "FourZoneDirectionCShell",
     "GlobalSidebar",
@@ -212,7 +217,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup",
     "20261115_2307_story_19_7_rag_reindexing_jobs_and_queue",
     "20261115_2359_merge_iam_multi_lead_and_epic_19_heads",
-    "20261116_0601_story_6_1_audit_ledger_append_only"
+    "20261116_0601_story_6_1_audit_ledger_append_only",
+    "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses"
   ],
   "architectureDecisions": [
     {
@@ -509,8 +515,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-16",
       "phaseOrStory": "Story 6.2 (CAP-200)",
       "reportFile": "6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt-tech-lead-report.md",
-      "domain": "Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM), Coupe-Circuits Budgétaires / Anti-Boucles (PAUSED_BUDGET_EXCEEDED, PAUSED_MAX_RETRIES) & Rallonge Budgétaire",
-      "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.2)."
+      "domain": "Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM), Coupe-Circuits Budgétaires / Anti-Boucles (PAUSED_BUDGET_EXCEEDED, PAUSED_MAX_RETRIES), Rallonge Budgétaire & Tableau de Bord /finops",
+      "summary": "Implémentation terminée : migration Alembic 20261116_0602 (finops_scope_budgets, finops_workflow_baselines, finops_budget_overrides, statuts PAUSED_*), découpage modulaire de cognitive_router.py ramené à 254 lignes avec _cognitive_budget_guard.py et _cognitive_router_execution.py, domaine audit_finops (couverture 90.40% avec finops_accounting_service.py 100% strict Decimal), routeur FastAPI /api/v1/finops/* avec garde observateur 403, SDK OpenAPI 3.1 0-diff + Schemathesis fuzzing validé, tableau de bord @orcia/ui Direction C avec masquage strict à l'état vide (total == 0), modale de budget anti-LastPass, protocole de rallonge budgétaire et réactivation en RUNNING, survie F5 prouvée."
     },
     {
       "date": "2026-11-16",

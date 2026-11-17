@@ -319,7 +319,7 @@ capabilities:
     status: live
     tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx]
     verification: runtime
-    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: /api/v1/navigation }
+    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: "/api/v1/navigation (shell.py)" }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
@@ -645,10 +645,20 @@ capabilities:
     title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps
     fr: [FR-25, FR-26, FR-27]
     origin: epic
-    origin_ref: epic-6 (6-1..6-4, backlog)
-    status: planned
-    surfaces: { route: /finops (shell existant), "orcia_core/audit_finops": "errors.py seul" }
-    notes: "Constat 2026-11-08 : aucune migration audit_ledger, audit_finops = errors.py, /finops = coquille. SEC-03 (DEK/KEK) livré via 4.2. Story 6.1 réutilise ActivityLogExplorerView (CAP-065)."
+    origin_ref: epic-6 (6-1..6-4)
+    status: partial
+    surfaces:
+      route: /finops
+      api: "finops.py, audit_ledger.py"
+      ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + ActivityLogExplorerView"
+      migration: "20261116_0601, 20261116_0602"
+    tests:
+      - tests/unit/test_story_6_1_audit_ledger_core.py
+      - tests/unit/test_story_6_1_sql_audit_ledger.py
+      - tests/unit/test_story_6_1_outbox_subscriber.py
+      - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
+      - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
+    notes: "Story 6.1 (audit_ledger append-only, ADMIN_CONNECTION_TEST) et Story 6.2 (Comptabilité FinOps complète, coupes-circuits budgétaires, anti-boucles et pauses)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs idempotents, auto-remédiation (UJ-12)
     fr: [FR-29, FR-30]

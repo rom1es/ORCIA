@@ -34,6 +34,7 @@ WorkflowRunStatus = Literal[
     "WAITING_FOR_HUMAN_GATE",
     "PAUSED_CIRCUIT_BREAKER",
     "PAUSED_BUDGET_EXCEEDED",
+    "PAUSED_MAX_RETRIES",
     "COMPLETED",
     "FAILED",
     "ROLLED_BACK",

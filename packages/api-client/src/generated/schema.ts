@@ -550,6 +550,21 @@ export interface components {
       workflow_slug: string;
       workflow_version: string;
     };
+    BudgetOverrideRequest: {
+      override_amount_usd: number;
+      reason: string;
+      workspace_id?: string | null;
+    };
+    BudgetOverrideResponse: {
+      approved_by: string;
+      created_at?: string | null;
+      id: string;
+      new_run_status?: string;
+      override_amount_usd: number;
+      reason: string;
+      requested_by: string;
+      run_id: string;
+    };
     CasObjectResponse: {
       cas_key: string;
       content_text: string;
@@ -1379,6 +1394,60 @@ export interface components {
       previous_sha256: string;
       previous_version: number;
       step_memlog_annotations: (string)[];
+    };
+    FinopsBreakdownResponse: {
+      baselines?: (components["schemas"]["WorkflowBaselineResponse"])[];
+      overview: components["schemas"]["FinopsOverviewResponse"];
+      processes?: (components["schemas"]["FinopsProcessItemResponse"])[];
+      scope_budgets?: (components["schemas"]["ScopeBudgetResponse"])[];
+      tiers?: (components["schemas"]["FinopsTierEffortItemResponse"])[];
+    };
+    FinopsOverviewResponse: {
+      accounted_runs_count?: number;
+      active_circuit_breakers_count?: number;
+      cache_savings_eur?: number;
+      cache_savings_usd?: number;
+      external_units_breakdown?: Record<string, number>;
+      internal_tokens: number;
+      paused_runs_count?: number;
+      remote_tokens: number;
+      reported_external_cost_eur: number;
+      reported_external_cost_usd: number;
+      total_cost_eur: number;
+      total_cost_usd: number;
+      total_external_calls: number;
+      total_llm_tokens: number;
+      verified_internal_cost_eur: number;
+      verified_internal_cost_usd: number;
+    };
+    FinopsProcessItemResponse: {
+      active_budget_override?: boolean;
+      amortized_setup_cost_eur: number;
+      amortized_setup_cost_usd: number;
+      baseline_manual_cost_eur: number;
+      baseline_manual_cost_usd: number;
+      human_time_cost_eur: number;
+      human_time_cost_usd: number;
+      paused_runs_count?: number;
+      run_cost_eur: number;
+      run_cost_usd: number;
+      runs_count: number;
+      total_cost_eur: number;
+      total_cost_usd: number;
+      ttm_reduction_pct: number;
+      workflow_id: string;
+      workflow_title: string;
+    };
+    FinopsTierEffortItemResponse: {
+      cost_eur: number;
+      cost_usd: number;
+      effort: string;
+      escalated_from_auto_count?: number;
+      inference_tier: string;
+      input_tokens: number;
+      invocations_count: number;
+      output_tokens: number;
+      total_tokens: number;
     };
     FolderShareGrantSchemaItem: {
       access_role?: "READ_ONLY" | "CO_CONTRIBUTOR";
@@ -2891,6 +2960,16 @@ export interface components {
       forked_as_draft: boolean;
       workflow: components["schemas"]["WorkflowDefinitionV2-Output"];
     };
+    ScopeBudgetResponse: {
+      created_at?: string | null;
+      hard_stop_pct?: number;
+      id: string;
+      monthly_budget_usd: number;
+      scope_id?: string | null;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      updated_at?: string | null;
+      warning_threshold_pct?: number;
+    };
     ScopeMutationCheckResponse: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       allowed?: boolean;
@@ -2935,6 +3014,13 @@ export interface components {
       sse_presence_banner: string;
       thread_id: string;
       workspace_id: string;
+    };
+    SetWorkflowBaselineRequest: {
+      manual_cost_usd: number;
+      manual_time_minutes: number;
+      scope_id?: string | null;
+      target_ttm_reduction_pct?: number;
+      workflow_definition_id: string;
     };
     ShellModuleItem: {
       contributor_badge_count?: number;
@@ -3095,7 +3181,7 @@ export interface components {
       id: string;
       max_agent_retries: number;
       run_id: string;
-      status: "PENDING" | "WAITING_FOR_HUMAN_ANCHOR" | "EXECUTING_AGENT" | "WAITING_FOR_HUMAN_ARBITRATION" | "EVALUATING_GATES" | "WAITING_FOR_HUMAN_GATE" | "COMMITTED" | "CHALLENGED_REWIND" | "FAILED";
+      status: "PENDING" | "WAITING_FOR_HUMAN_ANCHOR" | "EXECUTING_AGENT" | "WAITING_FOR_HUMAN_ARBITRATION" | "EVALUATING_GATES" | "WAITING_FOR_HUMAN_GATE" | "COMMITTED" | "CHALLENGED_REWIND" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "FAILED";
       step_execution_key: string;
       step_index: number;
       step_key: string;
@@ -3422,6 +3508,13 @@ export interface components {
       oidc_scopes?: string;
       sso_button_label?: string | null;
       two_factor_mode?: "NONE" | "EMAIL_OTP" | "TOTP";
+    };
+    UpdateScopeBudgetRequest: {
+      hard_stop_pct?: number;
+      monthly_budget_usd: number;
+      scope_id?: string | null;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      warning_threshold_pct?: number;
     };
     UpdateUserLayerPreferencesRequest: {
       default_hat?: string;
@@ -3847,6 +3940,15 @@ export interface components {
       version: string;
       workspace_id?: string | null;
     };
+    WorkflowBaselineResponse: {
+      created_at?: string | null;
+      id: string;
+      manual_cost_usd: number;
+      manual_time_minutes: number;
+      scope_id?: string | null;
+      target_ttm_reduction_pct?: number;
+      workflow_definition_id: string;
+    };
     WorkflowContract: {
       output_schema_uri?: string | null;
       parameters?: (components["schemas"]["ContractParameter"])[];
@@ -3956,7 +4058,7 @@ export interface components {
       root_run_id: string;
       run_key: string;
       run_lock: components["schemas"]["RecursiveRunLockManifestSchemaItem"];
-      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
+      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
       trigger_id?: string | null;
       trigger_idempotency_key?: string | null;
       workflow_def_id: string;
@@ -4692,6 +4794,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/finops/baselines": {
+    put: {
+      responses: {
+        200: components["schemas"]["WorkflowBaselineResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/budgets": {
+    put: {
+      responses: {
+        200: components["schemas"]["ScopeBudgetResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/dashboard": {
+    get: {
+      responses: {
+        200: components["schemas"]["FinopsBreakdownResponse"];
+      };
+    };
+  };
   "/api/v1/gates/agentic/evaluate": {
     post: {
       responses: {
@@ -5175,6 +5298,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["WorkflowV2RunResponse"];
+      };
+    };
+  };
+  "/api/v1/runs/{run_id}/budget-override": {
+    post: {
+      responses: {
+        200: components["schemas"]["BudgetOverrideResponse"];
       };
     };
   };
@@ -5764,6 +5894,8 @@ export type BmadSkillPackImportRequest = components["schemas"]["BmadSkillPackImp
 export type BmadSkillPackImportResponse = components["schemas"]["BmadSkillPackImportResponse"];
 export type BmadSkillStepInputItem = components["schemas"]["BmadSkillStepInputItem"];
 export type BoundedWorkflowRunState = components["schemas"]["BoundedWorkflowRunState"];
+export type BudgetOverrideRequest = components["schemas"]["BudgetOverrideRequest"];
+export type BudgetOverrideResponse = components["schemas"]["BudgetOverrideResponse"];
 export type CasObjectResponse = components["schemas"]["CasObjectResponse"];
 export type CatalogItemResponse = components["schemas"]["CatalogItemResponse"];
 export type CatalogItemsListResponse = components["schemas"]["CatalogItemsListResponse"];
@@ -5863,6 +5995,10 @@ export type ExportFromWorkspaceToPackRequest = components["schemas"]["ExportFrom
 export type ExportFromWorkspaceToPackResponse = components["schemas"]["ExportFromWorkspaceToPackResponse"];
 export type ExposedMcpAgentResponse = components["schemas"]["ExposedMcpAgentResponse"];
 export type ExternalRebaseResponse = components["schemas"]["ExternalRebaseResponse"];
+export type FinopsBreakdownResponse = components["schemas"]["FinopsBreakdownResponse"];
+export type FinopsOverviewResponse = components["schemas"]["FinopsOverviewResponse"];
+export type FinopsProcessItemResponse = components["schemas"]["FinopsProcessItemResponse"];
+export type FinopsTierEffortItemResponse = components["schemas"]["FinopsTierEffortItemResponse"];
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
@@ -6043,12 +6179,14 @@ export type RunPilotTicketToTechSpecRequest = components["schemas"]["RunPilotTic
 export type SaveAssistantStudioGraphRequest = components["schemas"]["SaveAssistantStudioGraphRequest"];
 export type SaveWorkflowV2Request = components["schemas"]["SaveWorkflowV2Request"];
 export type SaveWorkflowV2Response = components["schemas"]["SaveWorkflowV2Response"];
+export type ScopeBudgetResponse = components["schemas"]["ScopeBudgetResponse"];
 export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationCheckResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
 export type SecretStatusResponse = components["schemas"]["SecretStatusResponse"];
 export type SendCollaborativeThreadTurnRequest = components["schemas"]["SendCollaborativeThreadTurnRequest"];
 export type SendCollaborativeThreadTurnResponse = components["schemas"]["SendCollaborativeThreadTurnResponse"];
+export type SetWorkflowBaselineRequest = components["schemas"]["SetWorkflowBaselineRequest"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
 export type SignedApprovalToken = components["schemas"]["SignedApprovalToken"];
@@ -6101,6 +6239,7 @@ export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchH
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
 export type UpdatePlatformAuthSettingsRequest = components["schemas"]["UpdatePlatformAuthSettingsRequest"];
+export type UpdateScopeBudgetRequest = components["schemas"]["UpdateScopeBudgetRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
 export type UpdateWorkspaceDatasourceRequest = components["schemas"]["UpdateWorkspaceDatasourceRequest"];
 export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
@@ -6142,6 +6281,7 @@ export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepR
 export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"];
 export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];
 export type WorkflowAsCodeDefinitionSchemaItem = components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"];
+export type WorkflowBaselineResponse = components["schemas"]["WorkflowBaselineResponse"];
 export type WorkflowContract = components["schemas"]["WorkflowContract"];
 export type WorkflowDefinitionResponseItem = components["schemas"]["WorkflowDefinitionResponseItem"];
 export type WorkflowDefinitionV2_Input = components["schemas"]["WorkflowDefinitionV2-Input"];

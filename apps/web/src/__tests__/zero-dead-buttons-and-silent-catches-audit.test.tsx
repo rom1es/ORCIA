@@ -108,6 +108,11 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onExportProvenance",
         "onSelectRunId",
       ],
+      FinopsGovernanceDashboardView: [
+        "onSaveBudget",
+        "onSubmitOverride",
+        "onOpenHelpSection",
+      ],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

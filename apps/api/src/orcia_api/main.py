@@ -38,6 +38,7 @@ from orcia_api.routers.dna_and_glossary import (
 from orcia_api.routers.enterprise_connectors import (
     router as enterprise_connectors_router,
 )
+from orcia_api.routers.finops import router as finops_router
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
@@ -150,6 +151,7 @@ def create_app() -> FastAPI:
     application.include_router(packs_router)
     application.include_router(workflows_v2_router)
     application.include_router(audit_ledger_router)
+    application.include_router(finops_router)
     return application
 
 

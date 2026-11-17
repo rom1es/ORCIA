@@ -1,136 +1,185 @@
-import { createOrciaApiClient } from "@orcia/api-client";
-import { StatusBadge } from "@orcia/ui";
-import React, { useEffect, useMemo, useState } from "react";
+import {
+  createOrciaApiClient,
+  type FinopsBreakdownResponse,
+  type UpdateScopeBudgetRequest,
+} from "@orcia/api-client";
+import {
+  FinopsGovernanceDashboardView,
+  OrciaAlertBanner,
+  type FinopsProcessRowData,
+  type FinopsTierRowData,
+} from "@orcia/ui";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 
-const FINOPS_SNAPSHOT_STORAGE_KEY = "orcia.finops.overview.v1";
-
-interface PersistedFinopsSnapshot {
-  consolidatedFinopsUsd: number;
-  accountedRunsCount: number;
-}
-
-function resolveApiBaseUrl(): string {
-  const envUrl = (import.meta as unknown as { env?: Record<string, string | undefined> }).env
-    ?.VITE_ORCIA_API_URL;
-  if (envUrl && envUrl.trim().length > 0) {
-    return envUrl.trim();
-  }
-  return "http://localhost:8000";
-}
-
-function readPersistedFinopsSnapshot(): PersistedFinopsSnapshot | null {
-  try {
-    const raw = globalThis.localStorage?.getItem(FINOPS_SNAPSHOT_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<PersistedFinopsSnapshot>;
-    if (
-      typeof parsed.consolidatedFinopsUsd === "number" &&
-      typeof parsed.accountedRunsCount === "number"
-    ) {
-      return {
-        consolidatedFinopsUsd: parsed.consolidatedFinopsUsd,
-        accountedRunsCount: parsed.accountedRunsCount,
-      };
-    }
-  } catch {
-    // Ignore malformed storage entries
-  }
-  return null;
-}
-
 export function FinopsFeaturePanel() {
-  const { dictionary, locale } = useI18n();
-  const { runs, llmTiers } = usePlatformSetup();
-  const [remoteSnapshot, setRemoteSnapshot] = useState<PersistedFinopsSnapshot | null>(() =>
-    readPersistedFinopsSnapshot(),
+  const { dictionary } = useI18n();
+  const { activeScopeId, openHelpSection } = useShellNavigation();
+  const { scopes } = usePlatformSetup();
+
+  const [selectedScope, setSelectedScope] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">("GLOBAL");
+  const [dashboardData, setDashboardData] = useState<FinopsBreakdownResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState<number>(0);
+
+  const activeScopeNode = useMemo(
+    () => scopes.find((s) => s.id === activeScopeId),
+    [scopes, activeScopeId],
   );
 
   const apiClient = useMemo(
     () =>
       createOrciaApiClient({
-        baseUrl: resolveApiBaseUrl(),
-        locale,
+        baseUrl: "",
       }),
-    [locale],
+    [],
   );
 
-  useEffect(() => {
-    let active = true;
-    void apiClient
-      .getControlCenterOverview({ scopeType: "GLOBAL" })
-      .then((overview) => {
-        if (!active || typeof overview?.consolidated_finops_usd !== "number") return;
-        const accountedRuns =
-          (overview.contributor_runs?.length ?? 0) + (overview.observer_runs?.length ?? 0);
-        const snap: PersistedFinopsSnapshot = {
-          consolidatedFinopsUsd: overview.consolidated_finops_usd,
-          accountedRunsCount: accountedRuns,
-        };
-        setRemoteSnapshot(snap);
-        try {
-          globalThis.localStorage?.setItem(FINOPS_SNAPSHOT_STORAGE_KEY, JSON.stringify(snap));
-        } catch {
-          // Ignore storage quota errors
-        }
-      })
-      .catch(() => {
-        // Offline / unit test environment without mock fetch
+  const loadDashboard = useCallback(async () => {
+    try {
+      setErrorMessage(null);
+      const targetScopeId =
+        selectedScope === "GLOBAL" ? null : (activeScopeNode?.id ?? null);
+      const data = await apiClient.getFinopsDashboard({
+        scopeType: selectedScope,
+        scopeId: targetScopeId,
       });
-    return () => {
-      active = false;
-    };
-  }, [apiClient]);
+      setDashboardData(data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(msg);
+    }
+  }, [apiClient, selectedScope, activeScopeNode?.id]);
 
-  const copy = dictionary.modulePages.finops;
-  const isFr = locale === "fr";
-  const localTotalUsd = runs.reduce((acc, r) => acc + r.budgetConsumedUsd, 0);
-  const totalUsd =
-    runs.length > 0 ? localTotalUsd : (remoteSnapshot?.consolidatedFinopsUsd ?? localTotalUsd);
-  const accountedRunsCount =
-    runs.length > 0 ? runs.length : (remoteSnapshot?.accountedRunsCount ?? runs.length);
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard, reloadTrigger]);
+
+  const handleSaveBudget = useCallback(
+    async (
+      scopeType: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE",
+      scopeId: string | null,
+      monthlyBudgetUsd: number,
+      warningThresholdPct: number,
+      hardStopPct: number,
+    ) => {
+      try {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        const payload: UpdateScopeBudgetRequest = {
+          scope_type: scopeType,
+          scope_id: scopeId,
+          monthly_budget_usd: monthlyBudgetUsd,
+          warning_threshold_pct: warningThresholdPct,
+          hard_stop_pct: hardStopPct,
+        };
+        await apiClient.updateScopeBudget(payload);
+        setSuccessMessage(
+          dictionary.finops.modals.saveButton + " ✓",
+        );
+        setReloadTrigger((prev) => prev + 1);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setErrorMessage(msg);
+      }
+    },
+    [apiClient, dictionary.finops.modals.saveButton],
+  );
+
+  const handleSubmitOverride = useCallback(
+    async (runId: string, amountUsd: number, reason: string) => {
+      try {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        await apiClient.applyBudgetOverride(runId, {
+          override_amount_usd: amountUsd,
+          reason,
+        });
+        setSuccessMessage(
+          dictionary.finops.modals.overrideSubmitButton + " ✓",
+        );
+        setReloadTrigger((prev) => prev + 1);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setErrorMessage(msg);
+      }
+    },
+    [apiClient, dictionary.finops.modals.overrideSubmitButton],
+  );
+
+  const mappedProcesses: readonly FinopsProcessRowData[] = useMemo(() => {
+    if (!dashboardData?.processes) return [];
+    return dashboardData.processes.map((p) => ({
+      workflowId: p.workflow_id,
+      workflowTitle: p.workflow_title,
+      runsCount: p.runs_count,
+      amortizedSetupCostEur: p.amortized_setup_cost_eur,
+      runCostEur: p.run_cost_eur,
+      humanTimeCostEur: p.human_time_cost_eur,
+      totalCostEur: p.total_cost_eur,
+      ttmReductionPct: p.ttm_reduction_pct,
+      activeBudgetOverride: p.active_budget_override,
+      pausedRunsCount: p.paused_runs_count,
+      pausedReason: p.paused_runs_count && p.paused_runs_count > 0 ? "BUDGET" : null,
+      samplePausedRunId: undefined,
+    }));
+  }, [dashboardData?.processes]);
+
+  const mappedTiers: readonly FinopsTierRowData[] = useMemo(() => {
+    if (!dashboardData?.tiers) return [];
+    return dashboardData.tiers.map((t) => ({
+      inferenceTier: t.inference_tier,
+      effort: t.effort,
+      invocationsCount: t.invocations_count,
+      inputTokens: t.input_tokens,
+      outputTokens: t.output_tokens,
+      totalTokens: t.total_tokens,
+      costEur: t.cost_eur,
+    }));
+  }, [dashboardData?.tiers]);
+
+  const overview = dashboardData?.overview;
 
   return (
     <div
-      className="orcia-bento-card"
       data-testid="finops-feature-panel"
-      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "8px",
-          flexWrap: "wrap",
-        }}
-      >
-        <span>{copy.subtitle}</span>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <StatusBadge
-            testId="finops-total-usd-badge"
-            label={`${totalUsd.toFixed(2)} USD`}
-            tone="emerald"
-            monospace
-          />
-          <StatusBadge
-            testId="finops-uri-badge"
-            label={copy.uriBadgeExample}
-            tone="cobalt"
-            monospace
-          />
-        </div>
-      </div>
+      {errorMessage && (
+        <OrciaAlertBanner tone="crimson" role="alert" testId="finops-error-banner">
+          {errorMessage}
+        </OrciaAlertBanner>
+      )}
+      {successMessage && (
+        <OrciaAlertBanner tone="emerald" role="status" testId="finops-success-banner">
+          {successMessage}
+        </OrciaAlertBanner>
+      )}
 
-      <p
-        data-testid="finops-empty-summary"
-        style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
-      >
-        {isFr
-          ? `${accountedRunsCount} exécution(s) comptabilisée(s) · ${llmTiers.length} niveau(x) de modèle IA configuré(s).`
-          : `${accountedRunsCount} execution(s) accounted · ${llmTiers.length} AI model level(s) configured.`}
-      </p>
+      <FinopsGovernanceDashboardView
+        scopeType={selectedScope}
+        onScopeChange={setSelectedScope}
+        totalRuns={overview?.accounted_runs_count ?? 0}
+        totalCostEur={overview?.total_cost_eur ?? 0}
+        verifiedInternalCostEur={overview?.verified_internal_cost_eur ?? 0}
+        reportedExternalCostEur={overview?.reported_external_cost_eur ?? 0}
+        totalLlmTokens={overview?.total_llm_tokens ?? 0}
+        internalTokens={overview?.internal_tokens ?? 0}
+        remoteTokens={overview?.remote_tokens ?? 0}
+        totalExternalCalls={overview?.total_external_calls ?? 0}
+        cacheSavingsEur={overview?.cache_savings_eur}
+        activeCircuitBreakersCount={overview?.active_circuit_breakers_count}
+        pausedRunsCount={overview?.paused_runs_count}
+        processes={mappedProcesses}
+        tiers={mappedTiers}
+        labels={dictionary.finops}
+        onOpenHelpSection={openHelpSection}
+        onSaveBudget={handleSaveBudget}
+        onSubmitOverride={handleSubmitOverride}
+      />
     </div>
   );
 }

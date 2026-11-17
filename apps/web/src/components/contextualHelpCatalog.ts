@@ -85,6 +85,12 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Le Journal d'Activité (accessible depuis le menu de gauche 📜 Journal d'Activité) trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Vous pouvez filtrer par utilisateur, sur les 50 / 100 / 200 / 500 derniers événements ou sur une fenêtre temporelle. Le suivi des coûts et des budgets par espace est quant à lui géré séparément dans l'écran 📊 Coûts & Activité.",
     category: "faq",
   },
+  {
+    sectionId: "finops-overview",
+    title: "Gouvernance des coûts et plafonds budgétaires",
+    body: "Pilotez l'équation économique complète de vos processus : coût de setup initial amorti, coût des exécutions par niveau de modèle IA, et temps humain investi comparé à votre référence sans automatisation. Configurez des seuils d'alerte à 80 % et des suspensions automatiques à 100 % pour protéger vos budgets d'équipe.",
+    category: "whatFor",
+  },
 ];
 
 const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -160,6 +166,12 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     body: "The Activity Log (accessible from the left menu 📜 Activity Log) tracks who performed each action, when, and on which scope (filtered by default to your active observation level). Filter by user, by the last 50 / 100 / 200 / 500 events, or by time window. Cost tracking and workspace budgets are managed separately in 📊 Costs & Activity.",
     category: "faq",
   },
+  {
+    sectionId: "finops-overview",
+    title: "Cost governance and budget thresholds",
+    body: "Track the complete economic equation of your processes: amortized initial setup cost, execution run cost across AI model levels, and human time invested compared to manual baseline without automation. Configure 80% warning alerts and 100% hard stops to safeguard team budgets.",
+    category: "whatFor",
+  },
 ];
 
 const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
@@ -223,6 +235,12 @@ const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Le Journal d'Activité (accessible depuis le menu de gauche 📜 Journal d'Activité) trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Vous pouvez filtrer par utilisateur, sur les 50 / 100 / 200 / 500 derniers événements ou sur une fenêtre temporelle. Le suivi des coûts et des budgets par espace est quant à lui géré séparément dans l'écran 📊 Coûts & Activité.",
     category: "faq",
   },
+  {
+    sectionId: "finops-overview",
+    title: "Gouvernance des coûts et plafonds budgétaires",
+    body: "Pilotez l'équation économique complète de vos processus : coût de setup initial amorti, coût des exécutions par niveau de modèle IA, et temps humain investi comparé à votre référence sans automatisation. Configurez des seuils d'alerte à 80 % et des suspensions automatiques à 100 % pour protéger vos budgets d'équipe.",
+    category: "whatFor",
+  },
 ];
 
 const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -285,6 +303,12 @@ const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     title: "Activity log: authors, timestamps, and observation filters",
     body: "The Activity Log (accessible from the left menu 📜 Activity Log) tracks who performed each action, when, and on which scope (filtered by default to your active observation level). Filter by user, by the last 50 / 100 / 200 / 500 events, or by time window. Cost tracking and workspace budgets are managed separately in 📊 Costs & Activity.",
     category: "faq",
+  },
+  {
+    sectionId: "finops-overview",
+    title: "Cost governance and budget thresholds",
+    body: "Track the complete economic equation of your processes: amortized initial setup cost, execution run cost across AI model levels, and human time invested compared to manual baseline without automation. Configure 80% warning alerts and 100% hard stops to safeguard team budgets.",
+    category: "whatFor",
   },
 ];
 

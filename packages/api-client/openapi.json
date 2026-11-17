@@ -3765,6 +3765,107 @@
         "title": "BoundedWorkflowRunState",
         "type": "object"
       },
+      "BudgetOverrideRequest": {
+        "description": "Request payload to extend budget and awaken a paused run.",
+        "properties": {
+          "override_amount_usd": {
+            "description": "Additional budget amount to allocate in USD",
+            "exclusiveMinimum": 0.0,
+            "maximum": 999999.999999,
+            "title": "Override Amount Usd",
+            "type": "number"
+          },
+          "reason": {
+            "description": "Business justification for the extension",
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Target workspace ID for scope guard validation",
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "override_amount_usd",
+          "reason"
+        ],
+        "title": "BudgetOverrideRequest",
+        "type": "object"
+      },
+      "BudgetOverrideResponse": {
+        "description": "Response returned upon approving a budget override.",
+        "properties": {
+          "approved_by": {
+            "description": "Approving manager UUID",
+            "title": "Approved By",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Approval timestamp",
+            "title": "Created At"
+          },
+          "id": {
+            "description": "Override record UUID",
+            "title": "Id",
+            "type": "string"
+          },
+          "new_run_status": {
+            "default": "RUNNING",
+            "description": "Updated run status",
+            "title": "New Run Status",
+            "type": "string"
+          },
+          "override_amount_usd": {
+            "description": "Allocated extension amount in USD",
+            "title": "Override Amount Usd",
+            "type": "number"
+          },
+          "reason": {
+            "description": "Business justification",
+            "title": "Reason",
+            "type": "string"
+          },
+          "requested_by": {
+            "description": "Requesting user UUID",
+            "title": "Requested By",
+            "type": "string"
+          },
+          "run_id": {
+            "description": "Target workflow run UUID",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_id",
+          "requested_by",
+          "approved_by",
+          "override_amount_usd",
+          "reason"
+        ],
+        "title": "BudgetOverrideResponse",
+        "type": "object"
+      },
       "CasObjectResponse": {
         "additionalProperties": false,
         "description": "Response payload for `GET /api/v1/cas/{sha256}`.",
@@ -8999,6 +9100,327 @@
           "step_memlog_annotations"
         ],
         "title": "ExternalRebaseResponse",
+        "type": "object"
+      },
+      "FinopsBreakdownResponse": {
+        "description": "Complete FinOps governance breakdown payload.",
+        "properties": {
+          "baselines": {
+            "description": "Declared baselines",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowBaselineResponse"
+            },
+            "title": "Baselines",
+            "type": "array"
+          },
+          "overview": {
+            "$ref": "#/components/schemas/FinopsOverviewResponse",
+            "description": "Aggregated KPI overview"
+          },
+          "processes": {
+            "description": "Process breakdown",
+            "items": {
+              "$ref": "#/components/schemas/FinopsProcessItemResponse"
+            },
+            "title": "Processes",
+            "type": "array"
+          },
+          "scope_budgets": {
+            "description": "Configured scope ceilings",
+            "items": {
+              "$ref": "#/components/schemas/ScopeBudgetResponse"
+            },
+            "title": "Scope Budgets",
+            "type": "array"
+          },
+          "tiers": {
+            "description": "Tier/effort breakdown",
+            "items": {
+              "$ref": "#/components/schemas/FinopsTierEffortItemResponse"
+            },
+            "title": "Tiers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "overview"
+        ],
+        "title": "FinopsBreakdownResponse",
+        "type": "object"
+      },
+      "FinopsOverviewResponse": {
+        "description": "Top-level FinOps dashboard summary response.",
+        "properties": {
+          "accounted_runs_count": {
+            "default": 0,
+            "description": "Total runs accounted for",
+            "title": "Accounted Runs Count",
+            "type": "integer"
+          },
+          "active_circuit_breakers_count": {
+            "default": 0,
+            "description": "Number of currently tripped circuit breakers",
+            "title": "Active Circuit Breakers Count",
+            "type": "integer"
+          },
+          "cache_savings_eur": {
+            "default": 0.0,
+            "description": "Estimated cache savings in EUR",
+            "title": "Cache Savings Eur",
+            "type": "number"
+          },
+          "cache_savings_usd": {
+            "default": 0.0,
+            "description": "Estimated cache savings in USD",
+            "title": "Cache Savings Usd",
+            "type": "number"
+          },
+          "external_units_breakdown": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Custom metric units",
+            "title": "External Units Breakdown",
+            "type": "object"
+          },
+          "internal_tokens": {
+            "description": "Tokens from internal models",
+            "title": "Internal Tokens",
+            "type": "integer"
+          },
+          "paused_runs_count": {
+            "default": 0,
+            "description": "Number of paused workflow runs",
+            "title": "Paused Runs Count",
+            "type": "integer"
+          },
+          "remote_tokens": {
+            "description": "Tokens reported by remote tools/agents",
+            "title": "Remote Tokens",
+            "type": "integer"
+          },
+          "reported_external_cost_eur": {
+            "description": "Reported external tool/MCP cost in EUR",
+            "title": "Reported External Cost Eur",
+            "type": "number"
+          },
+          "reported_external_cost_usd": {
+            "description": "Reported external tool/MCP cost in USD",
+            "title": "Reported External Cost Usd",
+            "type": "number"
+          },
+          "total_cost_eur": {
+            "description": "Consolidated total cost in EUR",
+            "title": "Total Cost Eur",
+            "type": "number"
+          },
+          "total_cost_usd": {
+            "description": "Consolidated total cost in USD",
+            "title": "Total Cost Usd",
+            "type": "number"
+          },
+          "total_external_calls": {
+            "description": "Total invocations of external services",
+            "title": "Total External Calls",
+            "type": "integer"
+          },
+          "total_llm_tokens": {
+            "description": "Sum of all processed tokens",
+            "title": "Total Llm Tokens",
+            "type": "integer"
+          },
+          "verified_internal_cost_eur": {
+            "description": "Verified internal LLM cost in EUR",
+            "title": "Verified Internal Cost Eur",
+            "type": "number"
+          },
+          "verified_internal_cost_usd": {
+            "description": "Verified internal LLM cost in USD",
+            "title": "Verified Internal Cost Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total_cost_usd",
+          "total_cost_eur",
+          "verified_internal_cost_usd",
+          "verified_internal_cost_eur",
+          "reported_external_cost_usd",
+          "reported_external_cost_eur",
+          "total_llm_tokens",
+          "internal_tokens",
+          "remote_tokens",
+          "total_external_calls"
+        ],
+        "title": "FinopsOverviewResponse",
+        "type": "object"
+      },
+      "FinopsProcessItemResponse": {
+        "description": "Accounting item per workflow process.",
+        "properties": {
+          "active_budget_override": {
+            "default": false,
+            "description": "Whether an active budget extension exists",
+            "title": "Active Budget Override",
+            "type": "boolean"
+          },
+          "amortized_setup_cost_eur": {
+            "description": "Amortized initial setup engineering cost (EUR)",
+            "title": "Amortized Setup Cost Eur",
+            "type": "number"
+          },
+          "amortized_setup_cost_usd": {
+            "description": "Amortized initial setup engineering cost (USD)",
+            "title": "Amortized Setup Cost Usd",
+            "type": "number"
+          },
+          "baseline_manual_cost_eur": {
+            "description": "Declared manual baseline cost (EUR)",
+            "title": "Baseline Manual Cost Eur",
+            "type": "number"
+          },
+          "baseline_manual_cost_usd": {
+            "description": "Declared manual baseline cost (USD)",
+            "title": "Baseline Manual Cost Usd",
+            "type": "number"
+          },
+          "human_time_cost_eur": {
+            "description": "Valorized human review and arbitration time (EUR)",
+            "title": "Human Time Cost Eur",
+            "type": "number"
+          },
+          "human_time_cost_usd": {
+            "description": "Valorized human review and arbitration time (USD)",
+            "title": "Human Time Cost Usd",
+            "type": "number"
+          },
+          "paused_runs_count": {
+            "default": 0,
+            "description": "Number of currently paused runs for this process",
+            "title": "Paused Runs Count",
+            "type": "integer"
+          },
+          "run_cost_eur": {
+            "description": "Consolidated execution run cost (EUR)",
+            "title": "Run Cost Eur",
+            "type": "number"
+          },
+          "run_cost_usd": {
+            "description": "Consolidated execution run cost (USD)",
+            "title": "Run Cost Usd",
+            "type": "number"
+          },
+          "runs_count": {
+            "description": "Total executions of this workflow",
+            "title": "Runs Count",
+            "type": "integer"
+          },
+          "total_cost_eur": {
+            "description": "Complete 3-component economic cost (EUR)",
+            "title": "Total Cost Eur",
+            "type": "number"
+          },
+          "total_cost_usd": {
+            "description": "Complete 3-component economic cost (USD)",
+            "title": "Total Cost Usd",
+            "type": "number"
+          },
+          "ttm_reduction_pct": {
+            "description": "Observed Time-to-Market reduction % vs baseline",
+            "title": "Ttm Reduction Pct",
+            "type": "number"
+          },
+          "workflow_id": {
+            "description": "Workflow definition UUID",
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_title": {
+            "description": "Human-readable title of the workflow",
+            "title": "Workflow Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "workflow_title",
+          "runs_count",
+          "amortized_setup_cost_usd",
+          "amortized_setup_cost_eur",
+          "run_cost_usd",
+          "run_cost_eur",
+          "human_time_cost_usd",
+          "human_time_cost_eur",
+          "total_cost_usd",
+          "total_cost_eur",
+          "baseline_manual_cost_usd",
+          "baseline_manual_cost_eur",
+          "ttm_reduction_pct"
+        ],
+        "title": "FinopsProcessItemResponse",
+        "type": "object"
+      },
+      "FinopsTierEffortItemResponse": {
+        "description": "Breakdown item by cognitive inference tier and effort level.",
+        "properties": {
+          "cost_eur": {
+            "description": "Attributed cost in EUR",
+            "title": "Cost Eur",
+            "type": "number"
+          },
+          "cost_usd": {
+            "description": "Attributed cost in USD",
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "effort": {
+            "description": "Inference effort (default, fast, balanced, deep)",
+            "title": "Effort",
+            "type": "string"
+          },
+          "escalated_from_auto_count": {
+            "default": 0,
+            "description": "Number of escalations originating from auto tier",
+            "title": "Escalated From Auto Count",
+            "type": "integer"
+          },
+          "inference_tier": {
+            "description": "Cognitive tier (simple, medium, complex, auto)",
+            "title": "Inference Tier",
+            "type": "string"
+          },
+          "input_tokens": {
+            "description": "Prompt input tokens",
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "invocations_count": {
+            "description": "Total invocations",
+            "title": "Invocations Count",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "description": "Generated completion tokens",
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "description": "Sum of input and output tokens",
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inference_tier",
+          "effort",
+          "invocations_count",
+          "input_tokens",
+          "output_tokens",
+          "total_tokens",
+          "cost_usd",
+          "cost_eur"
+        ],
+        "title": "FinopsTierEffortItemResponse",
         "type": "object"
       },
       "FolderShareGrantSchemaItem": {
@@ -18897,6 +19319,89 @@
         "title": "SaveWorkflowV2Response",
         "type": "object"
       },
+      "ScopeBudgetResponse": {
+        "description": "Configured budget ceiling for a specific organizational scope.",
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Creation timestamp",
+            "title": "Created At"
+          },
+          "hard_stop_pct": {
+            "default": 100,
+            "description": "Hard stop ceiling percentage (e.g. 100)",
+            "title": "Hard Stop Pct",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Budget record UUID",
+            "title": "Id",
+            "type": "string"
+          },
+          "monthly_budget_usd": {
+            "description": "Monthly spending limit in USD",
+            "title": "Monthly Budget Usd",
+            "type": "number"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Scope target identifier or None for GLOBAL",
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "description": "Scope level: GLOBAL, BU, TEAM, WORKSPACE",
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last update timestamp",
+            "title": "Updated At"
+          },
+          "warning_threshold_pct": {
+            "default": 80,
+            "description": "Warning threshold percentage (e.g. 80)",
+            "title": "Warning Threshold Pct",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "scope_type",
+          "monthly_budget_usd"
+        ],
+        "title": "ScopeBudgetResponse",
+        "type": "object"
+      },
       "ScopeMutationCheckResponse": {
         "additionalProperties": false,
         "description": "Response for `POST /api/v1/workspaces/{workspace_id}/mutations/check`.",
@@ -19181,6 +19686,58 @@
           "assistant_reply_markdown"
         ],
         "title": "SendCollaborativeThreadTurnResponse",
+        "type": "object"
+      },
+      "SetWorkflowBaselineRequest": {
+        "description": "Request payload to set a pre-automation manual reference baseline.",
+        "properties": {
+          "manual_cost_usd": {
+            "description": "Estimated manual cost in USD",
+            "maximum": 999999.999999,
+            "minimum": 0.0,
+            "title": "Manual Cost Usd",
+            "type": "number"
+          },
+          "manual_time_minutes": {
+            "description": "Estimated manual time in minutes",
+            "maximum": 525600.0,
+            "minimum": 0.0,
+            "title": "Manual Time Minutes",
+            "type": "integer"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Target workspace scope UUID or None",
+            "title": "Scope Id"
+          },
+          "target_ttm_reduction_pct": {
+            "default": 25,
+            "description": "Target reduction percentage",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Target Ttm Reduction Pct",
+            "type": "integer"
+          },
+          "workflow_definition_id": {
+            "description": "Workflow definition UUID",
+            "minLength": 1,
+            "title": "Workflow Definition Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_definition_id",
+          "manual_time_minutes",
+          "manual_cost_usd"
+        ],
+        "title": "SetWorkflowBaselineRequest",
         "type": "object"
       },
       "ShellModuleItem": {
@@ -20221,6 +20778,8 @@
               "WAITING_FOR_HUMAN_GATE",
               "COMMITTED",
               "CHALLENGED_REWIND",
+              "PAUSED_BUDGET_EXCEEDED",
+              "PAUSED_MAX_RETRIES",
               "FAILED"
             ],
             "title": "Status",
@@ -22514,6 +23073,63 @@
           "auth_mode"
         ],
         "title": "UpdatePlatformAuthSettingsRequest",
+        "type": "object"
+      },
+      "UpdateScopeBudgetRequest": {
+        "description": "Request payload to configure or update a scope budget.",
+        "properties": {
+          "hard_stop_pct": {
+            "default": 100,
+            "description": "Hard stop ceiling percentage",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Hard Stop Pct",
+            "type": "integer"
+          },
+          "monthly_budget_usd": {
+            "description": "Monthly spending limit in USD",
+            "maximum": 999999.999999,
+            "minimum": 0.0,
+            "title": "Monthly Budget Usd",
+            "type": "number"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Target scope ID or None for GLOBAL",
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "description": "Scope type: GLOBAL, BU, TEAM, or WORKSPACE",
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "warning_threshold_pct": {
+            "default": 80,
+            "description": "Warning threshold percentage",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Warning Threshold Pct",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scope_type",
+          "monthly_budget_usd"
+        ],
+        "title": "UpdateScopeBudgetRequest",
         "type": "object"
       },
       "UpdateUserLayerPreferencesRequest": {
@@ -25608,6 +26224,70 @@
         "title": "WorkflowAsCodeDefinitionSchemaItem",
         "type": "object"
       },
+      "WorkflowBaselineResponse": {
+        "description": "Declared manual baseline for a workflow definition.",
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Creation timestamp",
+            "title": "Created At"
+          },
+          "id": {
+            "description": "Baseline record UUID",
+            "title": "Id",
+            "type": "string"
+          },
+          "manual_cost_usd": {
+            "description": "Pre-automation manual execution cost in USD",
+            "title": "Manual Cost Usd",
+            "type": "number"
+          },
+          "manual_time_minutes": {
+            "description": "Pre-automation manual execution duration in minutes",
+            "title": "Manual Time Minutes",
+            "type": "integer"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Workspace scope UUID or None",
+            "title": "Scope Id"
+          },
+          "target_ttm_reduction_pct": {
+            "default": 25,
+            "description": "Target TTM reduction percentage",
+            "title": "Target Ttm Reduction Pct",
+            "type": "integer"
+          },
+          "workflow_definition_id": {
+            "description": "Associated workflow definition UUID",
+            "title": "Workflow Definition Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workflow_definition_id",
+          "manual_time_minutes",
+          "manual_cost_usd"
+        ],
+        "title": "WorkflowBaselineResponse",
+        "type": "object"
+      },
       "WorkflowContract": {
         "properties": {
           "output_schema_uri": {
@@ -26369,6 +27049,7 @@
               "WAITING_FOR_HUMAN_GATE",
               "PAUSED_CIRCUIT_BREAKER",
               "PAUSED_BUDGET_EXCEEDED",
+              "PAUSED_MAX_RETRIES",
               "COMPLETED",
               "FAILED",
               "ROLLED_BACK"
@@ -37429,6 +38110,410 @@
         ]
       }
     },
+    "/api/v1/finops/baselines": {
+      "put": {
+        "operationId": "set_workflow_baseline_api_v1_finops_baselines_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetWorkflowBaselineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowBaselineResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Set or update pre-automation manual reference baseline",
+        "tags": [
+          "finops"
+        ]
+      }
+    },
+    "/api/v1/finops/budgets": {
+      "put": {
+        "operationId": "update_scope_budget_api_v1_finops_budgets_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScopeBudgetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopeBudgetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Configure scope budget ceiling and warning thresholds",
+        "tags": [
+          "finops"
+        ]
+      }
+    },
+    "/api/v1/finops/dashboard": {
+      "get": {
+        "operationId": "get_finops_dashboard_api_v1_finops_dashboard_get",
+        "parameters": [
+          {
+            "description": "Scope filter: GLOBAL, BU, TEAM, WORKSPACE",
+            "in": "query",
+            "name": "scope_type",
+            "required": false,
+            "schema": {
+              "default": "GLOBAL",
+              "description": "Scope filter: GLOBAL, BU, TEAM, WORKSPACE",
+              "enum": [
+                "GLOBAL",
+                "BU",
+                "TEAM",
+                "WORKSPACE"
+              ],
+              "title": "Scope Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Target scope UUID",
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Target scope UUID",
+              "title": "Scope Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinopsBreakdownResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get consolidated FinOps dashboard metrics, processes, tiers, and baselines",
+        "tags": [
+          "finops"
+        ]
+      }
+    },
     "/api/v1/gates/agentic/evaluate": {
       "post": {
         "operationId": "evaluate_agentic_gate_endpoint_api_v1_gates_agentic_evaluate_post",
@@ -46537,6 +47622,143 @@
         "summary": "Get Workflow V2 Run",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/budget-override": {
+      "post": {
+        "operationId": "approve_run_budget_override_api_v1_runs__run_id__budget_override_post",
+        "parameters": [
+          {
+            "description": "Target paused workflow run UUID",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Target paused workflow run UUID",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetOverrideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOverrideResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Approve budget extension for a paused run and awaken workflow",
+        "tags": [
+          "finops"
         ]
       }
     },
