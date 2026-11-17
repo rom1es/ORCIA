@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 45,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 145,
+    "techLeadReportsCount": 146,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 60,
     "verifiedCapabilitiesCount": 45
@@ -504,6 +504,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Cadrage & Rebasage Epic 7 (CAP-201, CAP-202)",
+      "reportFile": "2026-11-17-epic-7-rebasage-sans-agent-codeur-et-action-item-incident-tech-lead-report.md",
+      "domain": "Rebasage de l'Epic 7 (7.0a..7.4), Retrait Story 7.3 (Agent Codeur/Git/CI-CD) & Création ACTION_ITEM AIOPS-INCIDENT-LOOP-01 (AD-3, AD-6, AD-18)",
+      "summary": "Audit codebase pré-implémentation de l'Epic 7 (6 fractures identifiées) : amendements AD-3, AD-6 et AD-18 (table autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD sans co-signature SECOPS, SignedApprovalToken sous contrat, OUTBOX_EVENT opt-in), rebasage epics.md (7.0a..7.2, 7.4 sous Studio V2, Kustomize OpenShift sans Podman-in-Pod, Direction C /finops onglet existant sans jargon), retrait de 7-3 de sprint-status.yaml et ouverture de AIOPS-INCIDENT-LOOP-01 (boucle fermée de gouvernance d'incident sans modification de code ni écriture Git), et synchronisation CAP-201 + site:sync/site:check."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Correctifs Revue Architecture & UX Epic 6 (CAP-065, CAP-200)",
