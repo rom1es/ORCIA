@@ -1,5 +1,12 @@
 """Hexagonal ports for ORCIA Core (pure Python Protocols, zero adapter dependencies)."""
 
+from orcia_core.ports.bounded_workflow_port import (
+    BoundedSubStepAgentCallback,
+    BoundedWorkflowLauncherPort,
+    BoundedWorkflowLaunchOutcome,
+    BoundedWorkflowSubStepDto,
+    SubStepAgentExecutionOutcome,
+)
 from orcia_core.ports.embedding import (
     EMBEDDING_FIXED_DIMENSION,
     EmbeddingPort,
@@ -18,9 +25,41 @@ from orcia_core.ports.log_sink import (
     LogSinkQueryPort,
     NoopLogSinkAdapter,
 )
+from orcia_core.ports.reflexive_runtime_ports import (
+    AgentTraceEvent,
+    PendingWritePreviewSpec,
+    ReflexiveActionKind,
+    ReflexiveEventStreamPort,
+    ReflexiveLlmChunk,
+    ReflexiveLlmPort,
+    ReflexiveSessionStorePort,
+    ReflexiveTurnDecision,
+    ReflexiveTurnInput,
+    ReflexiveWriteApprovalInput,
+    ReflexiveWriteGatePort,
+    TraceEventKind,
+)
+from orcia_core.ports.surgical_explorer_port import (
+    MAX_SURGICAL_LINES,
+    SurgicalExplorerPort,
+    SurgicalFileBadgeCode,
+    SurgicalLineEntry,
+    SurgicalLineSlice,
+    SurgicalObservation,
+    SurgicalOutlineNode,
+    SurgicalPrimitiveName,
+    SurgicalSnippetMatch,
+)
 
 __all__ = [
     "EMBEDDING_FIXED_DIMENSION",
+    "MAX_LOG_QUERY_LIMIT",
+    "MAX_SURGICAL_LINES",
+    "AgentTraceEvent",
+    "BoundedSubStepAgentCallback",
+    "BoundedWorkflowLaunchOutcome",
+    "BoundedWorkflowLauncherPort",
+    "BoundedWorkflowSubStepDto",
     "EmbeddingPort",
     "LlmCompletionResponse",
     "LlmGatewayPort",
@@ -28,8 +67,27 @@ __all__ = [
     "LogEntry",
     "LogQuery",
     "LogSinkQueryPort",
-    "MAX_LOG_QUERY_LIMIT",
     "NoopLogSinkAdapter",
+    "PendingWritePreviewSpec",
+    "ReflexiveActionKind",
+    "ReflexiveEventStreamPort",
+    "ReflexiveLlmChunk",
+    "ReflexiveLlmPort",
+    "ReflexiveSessionStorePort",
+    "ReflexiveTurnDecision",
+    "ReflexiveTurnInput",
+    "ReflexiveWriteApprovalInput",
+    "ReflexiveWriteGatePort",
+    "SubStepAgentExecutionOutcome",
+    "SurgicalExplorerPort",
+    "SurgicalFileBadgeCode",
+    "SurgicalLineEntry",
+    "SurgicalLineSlice",
+    "SurgicalObservation",
+    "SurgicalOutlineNode",
+    "SurgicalPrimitiveName",
+    "SurgicalSnippetMatch",
+    "TraceEventKind",
     "assert_model_orthogonality",
     "compute_prompt_sha256",
 ]

@@ -1,22 +1,33 @@
-import { createOrciaApiClient, type WorkflowDefinitionV2_Output } from "@orcia/api-client";
-import { AutonomyContractModal, OrciaAlertBanner, WorkflowTriggersModal } from "@orcia/ui";
+import { AutonomyContractModal, WorkflowTriggersModal } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
 import { useShellNavigation } from "../../../components/ShellContainer";
 import { usePlatformSetup } from "../../../components/platformSetupStore";
 import { useI18n } from "../../../i18n";
 import { InteractiveRunDrawer } from "../execution/InteractiveRunDrawer";
-import {
-  INITIAL_WORKFLOWS_V2,
-  loadPersistedWorkflowsV2,
-  savePersistedWorkflowV2,
-  type WorkflowDefinitionV2Item,
-} from "../processStudioV2Data";
 import { StudioCopilotSidebar } from "./StudioCopilotSidebar";
-import { StudioFiveBlocksGrid } from "./StudioFiveBlocksGrid";
-import { StudioWhatIfPanel } from "./StudioWhatIfPanel";
-import { StudioWorkflowHeaderBar, type StudioViewMode } from "./StudioWorkflowHeaderBar";
+import {
+  attachDeterministicGateToWorkflow,
+  attachMcpToolToWorkflow,
+  attachSkillToWorkflow,
+} from "./studioLabelsAndMappers";
+import { useStudioWorkflowController } from "./useStudioWorkflowController";
 import { useWorkflowAutonomyContract } from "./useWorkflowAutonomyContract";
 import { useWorkflowTriggers } from "./useWorkflowTriggers";
+import { WorkflowBlock2ExecutionSection } from "./WorkflowBlock2ExecutionSection";
+import {
+  WorkflowBlock1ContractSection,
+  WorkflowBlocks345Sections,
+  WorkflowDeclarativePreviewPanel,
+  WorkflowWhatIfSandboxPanel,
+} from "./WorkflowBlocks1345Sections";
+import {
+  WorkflowOrchestrationModeSelector,
+  type UiProcessOrchestrationType,
+} from "./WorkflowOrchestrationModeSelector";
+import {
+  WorkflowStudioHeaderBar,
+  type StudioViewMode,
+} from "./WorkflowStudioHeaderBar";
 
 export type { StudioViewMode };
 
@@ -26,19 +37,12 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   const { locale, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const { workspaces } = usePlatformSetup();
-  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
   const isFr = locale === "fr";
+  const modesCopy = dictionary.processOrchestrationModes;
   const contractLabels = dictionary.autonomyContract;
   const triggersLabels = dictionary.workflowTriggers;
-
-  const initialWf = useMemo(() => {
-    const list = loadPersistedWorkflowsV2();
-    const targetId = workflowId ?? "wf-01-qualification-prd";
-    return (
-      list.find((w) => w.id === targetId || w.slug === targetId) ??
-      INITIAL_WORKFLOWS_V2[0]!
-    );
-  }, [workflowId]);
+  const targetId = workflowId ?? "wf-01-qualification-prd";
+  const [showRunDrawer, setShowRunDrawer] = useState<boolean>(false);
 
   const resolvedWorkspaceId = useMemo(() => {
     const scopeWsId = activeScopeId.startsWith("scope-ws-")
@@ -50,17 +54,28 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     return workspaces[0]?.workspaceId ?? DEFAULT_FALLBACK_WORKSPACE_ID;
   }, [activeScopeId, workspaces]);
 
-  const [workflow, setWorkflow] = useState<WorkflowDefinitionV2Item>(initialWf);
-  const [viewMode, setViewMode] = useState<StudioViewMode>("design");
-  const [showRunDrawer, setShowRunDrawer] = useState<boolean>(false);
-  const [statusBanner, setStatusBanner] = useState<string | null>(null);
-  const [publishError, setPublishError] = useState<string | null>(null);
-  const [whatIfResult, setWhatIfResult] = useState<{
-    subStepsEvaluated: number;
-    deterministicGatesPassed: boolean;
-    externalWritesExecuted: number;
-    estimatedCostUsd: number;
-  } | null>(null);
+  const {
+    workflow,
+    viewMode,
+    setViewMode,
+    statusBanner,
+    setStatusBanner,
+    whatIfResult,
+    persistUpdate,
+    handleSelectOrchestrationType,
+    handleChangeGoalObjective,
+    handleToggleDelegateAgent,
+    handleToggleSubStepEnabled,
+    handleSwitchExecutionMode,
+    handleSaveAsDraft,
+    handlePublishWorkflow,
+    handleRunWhatIfSimulation,
+  } = useStudioWorkflowController({
+    targetId,
+    locale,
+    modesCopy,
+    workspaceId: resolvedWorkspaceId,
+  });
 
   const {
     showContractModal,
@@ -79,7 +94,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     workflowVersion: workflow.version,
     knowledgeBaseRefs: workflow.knowledge_base_refs,
     contractLabels,
-    onBanner: setStatusBanner,
+    onBanner: (msg) =>
+      setStatusBanner(msg ? { tone: "success", message: msg } : null),
   });
 
   const {
@@ -98,127 +114,16 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     workspaceId: resolvedWorkspaceId,
     workflowId: workflow.id,
     triggersLabels,
-    onBanner: setStatusBanner,
+    onBanner: (msg) =>
+      setStatusBanner(msg ? { tone: "success", message: msg } : null),
   });
 
-  const persistUpdate = (nextWf: WorkflowDefinitionV2Item, banner?: string) => {
-    setWorkflow(nextWf);
-    savePersistedWorkflowV2(nextWf);
-    if (banner) setStatusBanner(banner);
-  };
-
-  const ensureDraftOnEdit = (base: WorkflowDefinitionV2Item): WorkflowDefinitionV2Item => {
-    if (base.status === "published") {
-      const cleanVer = base.version.replace(/-draft$/, "");
-      return { ...base, status: "draft", version: `${cleanVer}-draft` };
-    }
-    return base;
-  };
-
-  const handleToggleSubStepEnabled = (subStepId: string) => {
-    const base = ensureDraftOnEdit(workflow);
-    const nextSubSteps = base.sub_steps.map((s) =>
-      s.id === subStepId ? { ...s, enabled: !s.enabled } : s,
-    );
-    const toggled = nextSubSteps.find((s) => s.id === subStepId);
-    persistUpdate(
-      { ...base, sub_steps: nextSubSteps },
-      isFr
-        ? `Étape « ${toggled?.short_label} » ${toggled?.enabled ? "activée" : "ignorée"} dans votre copie de travail.`
-        : `Step "${toggled?.short_label}" ${toggled?.enabled ? "enabled" : "skipped"} in your working draft.`,
-    );
-  };
-
-  const handleSwitchExecutionMode = (mode: "native_orcia" | "external_delegated") => {
-    const base = ensureDraftOnEdit(workflow);
-    persistUpdate(
-      {
-        ...base,
-        execution_mode: mode,
-        external_tool_label:
-          mode === "external_delegated"
-            ? base.external_tool_label ?? "IDE / Git de l'équipe"
-            : base.external_tool_label,
-        external_completion_event:
-          mode === "external_delegated"
-            ? base.external_completion_event ?? "git:pr_opened"
-            : base.external_completion_event,
-      },
-      isFr
-        ? `Mode de réalisation basculé sur « ${mode === "external_delegated" ? "Réalisation dans l'IDE / Git de l'équipe" : "Exécution guidée dans ORCIA"} ».`
-        : `Execution mode switched to "${mode}".`,
-    );
-  };
-
-  const handleSaveAsDraft = () => {
-    const drafted = ensureDraftOnEdit(workflow);
-    persistUpdate(
-      drafted,
-      isFr ? `Brouillon enregistré (${drafted.version}).` : `Draft saved (${drafted.version}).`,
-    );
-  };
-
-  const handlePublishWorkflow = async () => {
-    setPublishError(null);
-    const cleanVer = workflow.version.replace(/-draft$/, "");
-    const parts = cleanVer.split(".").map((n) => Number.parseInt(n, 10) || 0);
-    const nextVer = `${parts[0] ?? 1}.${parts[1] ?? 0}.${(parts[2] ?? 0) + 1}`;
-    let remoteWf: WorkflowDefinitionV2_Output | null = null;
-    try {
-      remoteWf = await apiClient.getWorkflowV2(workflow.id);
-    } catch {
-      remoteWf = null;
-    }
-    const basePayload = remoteWf ?? {
-      id: workflow.id,
-      slug: workflow.slug,
-      title: workflow.title,
-      pack_id: workflow.pack_id,
-    };
-    try {
-      await apiClient.saveWorkflowV2(
-        workflow.id,
-        {
-          publish: true,
-          workflow: {
-            ...basePayload,
-            title: workflow.title,
-            version: nextVer,
-            status: "published",
-            execution_mode: workflow.execution_mode,
-            external_tool_label: workflow.external_tool_label ?? null,
-            external_completion_event: workflow.external_completion_event ?? null,
-            guardrails: workflow.guardrails,
-          },
-        },
-        resolvedWorkspaceId,
-      );
-      persistUpdate(
-        { ...workflow, status: "published", version: nextVer },
-        isFr
-          ? `Processus publié et activé (version ${nextVer}).`
-          : `Process published as version ${nextVer}.`,
-      );
-    } catch (err: unknown) {
-      setPublishError(err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  const handleRunWhatIfSimulation = () => {
-    const enabledCount = workflow.sub_steps.filter((s) => s.enabled).length;
-    setWhatIfResult({
-      subStepsEvaluated: enabledCount,
-      deterministicGatesPassed: true,
-      externalWritesExecuted: 0,
-      estimatedCostUsd: Number((enabledCount * 0.015).toFixed(3)),
-    });
-    setViewMode("what_if");
-    setStatusBanner(
-      isFr
-        ? `Simulation à blanc terminée : ${enabledCount} étape(s) vérifiée(s), aucune modification envoyée aux outils externes.`
-        : `Dry-run completed: ${enabledCount} steps verified, 0 external writes executed.`,
-    );
-  };
+  const activeOrchestrationType: UiProcessOrchestrationType =
+    workflow.orchestration_type ?? "deterministic_dbos";
+  const modeBadgeLabel =
+    activeOrchestrationType === "non_deterministic"
+      ? modesCopy.goalDrivenBadge
+      : modesCopy.milestoneDrivenBadge;
 
   return (
     <section
@@ -226,47 +131,32 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
       data-workflow-id={workflow.id}
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
-      <StudioWorkflowHeaderBar
+      <WorkflowStudioHeaderBar
         workflow={workflow}
         viewMode={viewMode}
         isFr={isFr}
-        hasWhatIfResult={whatIfResult !== null}
+        statusBanner={statusBanner}
         hasActiveAutonomyContract={activeContractView !== null}
         autonomyButtonLabel={contractLabels.openModalButton}
         autonomyActiveBadgeLabel={contractLabels.activeBadgeLabel}
         triggersButtonLabel={triggersLabels.openModalButton}
         activeTriggersCount={activeTriggersCount}
-        onNavigateBack={() => navigateToRoute("/processes")}
-        onNavigateVsm={() => navigateToRoute("/processes/vsm/vsm-mon-compte-idea-to-prod")}
-        onSelectViewMode={setViewMode}
-        onRunWhatIf={handleRunWhatIfSimulation}
-        onSaveDraft={handleSaveAsDraft}
-        onPublish={() => void handlePublishWorkflow()}
-        onLaunchRun={() => setShowRunDrawer(true)}
+        onBackToHub={() => navigateToRoute("/processes")}
+        onOpenParentVsm={() => navigateToRoute("/processes/vsm/vsm-mon-compte-idea-to-prod")}
+        onSelectViewMode={(mode) => {
+          if (mode === "what_if" && !whatIfResult) {
+            handleRunWhatIfSimulation();
+          } else {
+            setViewMode(mode);
+          }
+        }}
+        onSaveAsDraft={handleSaveAsDraft}
+        onPublishWorkflow={handlePublishWorkflow}
+        onOpenRunDrawer={() => setShowRunDrawer(true)}
+        onOpenHelpSection={openHelpSection}
         onOpenAutonomyContract={() => setShowContractModal(true)}
         onOpenTriggers={() => setShowTriggersModal(true)}
       />
-
-      {publishError ? (
-        <OrciaAlertBanner tone="crimson" role="alert" testId="studio-publish-error-banner">
-          {publishError}
-        </OrciaAlertBanner>
-      ) : null}
-
-      {statusBanner ? (
-        <div
-          role="status"
-          data-testid="studio-status-banner"
-          className="rounded border px-3 py-2 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-gate-emerald-bg)",
-            borderColor: "var(--color-gate-emerald)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          {statusBanner}
-        </div>
-      ) : null}
 
       {showRunDrawer ? (
         <InteractiveRunDrawer
@@ -308,7 +198,6 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         onResetCircuit={handleResetCircuit}
         onOpenHelpSection={openHelpSection}
       />
-
       <div
         style={{
           display: "grid",
@@ -320,85 +209,77 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         <StudioCopilotSidebar
           isFr={isFr}
           onAttachSkill={(skillUri) => {
-            if (workflow.skills_refs.includes(skillUri)) return;
-            const base = ensureDraftOnEdit(workflow);
+            const nextWf = attachSkillToWorkflow(workflow, skillUri);
+            if (!nextWf) return;
             persistUpdate(
-              { ...base, skills_refs: [...base.skills_refs, skillUri] },
-              isFr ? "Savoir-faire ajouté au processus." : "Business skill attached to the process.",
+              nextWf,
+              isFr
+                ? "Savoir-faire ajouté au processus."
+                : "Business skill attached to the process.",
             );
           }}
           onAttachMcpTool={(toolPerm) => {
-            const base = ensureDraftOnEdit(workflow);
-            const nextSubs = base.sub_steps.map((s, idx) =>
-              idx === 0 && !s.mcp_tools_allowed.includes(toolPerm)
-                ? { ...s, mcp_tools_allowed: [...s.mcp_tools_allowed, toolPerm] }
-                : s,
-            );
             persistUpdate(
-              { ...base, sub_steps: nextSubs },
-              isFr ? "Outil connecté autorisé sur ce processus." : "Connected tool enabled.",
+              attachMcpToolToWorkflow(workflow, toolPerm),
+              isFr
+                ? "Outil connecté autorisé sur ce processus."
+                : "Connected tool enabled for this process.",
             );
           }}
           onAttachDeterministicGate={(gate) => {
-            if (workflow.controls.deterministic_gates.some((g) => g.id === gate.id)) return;
-            const base = ensureDraftOnEdit(workflow);
+            const nextWf = attachDeterministicGateToWorkflow(workflow, gate);
+            if (!nextWf) return;
             persistUpdate(
-              {
-                ...base,
-                controls: {
-                  ...base.controls,
-                  deterministic_gates: [
-                    ...base.controls.deterministic_gates,
-                    {
-                      id: gate.id,
-                      name: gate.name,
-                      runner: gate.runner,
-                      config: { required_headings: ["# "] },
-                      blocking: true,
-                      max_self_heal_retries: 3,
-                    },
-                  ],
-                },
-              },
-              isFr ? `Contrôle qualité « ${gate.name} » ajouté.` : `Quality check "${gate.name}" added.`,
+              nextWf,
+              isFr
+                ? `Contrôle qualité « ${gate.name} » ajouté.`
+                : `Quality check "${gate.name}" added.`,
             );
           }}
         />
 
         {viewMode === "yaml" ? (
-          <div data-testid="studio-yaml-preview-panel" className="orcia-bento-card">
-            <h3 style={{ margin: "0 0 8px 0", fontSize: "15px" }}>
-              {isFr ? "Définition déclarative du processus" : "Declarative Process Definition"}
-            </h3>
-            <pre
-              style={{
-                margin: 0,
-                padding: "12px",
-                borderRadius: "6px",
-                backgroundColor: "var(--color-bg-elevated)",
-                border: "1px solid var(--color-border-subtle)",
-                fontFamily: "var(--font-mono)",
-                fontSize: "12px",
-                overflowX: "auto",
-              }}
-            >
-              {JSON.stringify(workflow, null, 2)}
-            </pre>
-          </div>
-        ) : viewMode === "what_if" ? (
-          <StudioWhatIfPanel
+          <WorkflowDeclarativePreviewPanel
             workflow={workflow}
+            modeBadgeLabel={modeBadgeLabel}
             isFr={isFr}
+          />
+        ) : viewMode === "what_if" ? (
+          <WorkflowWhatIfSandboxPanel
+            workflow={workflow}
             whatIfResult={whatIfResult}
-            onRerunWhatIf={handleRunWhatIfSimulation}
+            isFr={isFr}
+            onRerun={handleRunWhatIfSimulation}
           />
         ) : (
-          <StudioFiveBlocksGrid
-            workflow={workflow}
-            isFr={isFr}
-            onToggleSubStepEnabled={handleToggleSubStepEnabled}
-            onSwitchExecutionMode={handleSwitchExecutionMode}
-          />
+          <div
+            data-testid="studio-five-blocks-canvas"
+            style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+          >
+            <WorkflowOrchestrationModeSelector
+              orchestrationType={activeOrchestrationType}
+              copy={modesCopy}
+              isFr={isFr}
+              onSelectOrchestrationType={handleSelectOrchestrationType}
+              onOpenHelpSection={openHelpSection}
+            />
+
+            <WorkflowBlock1ContractSection workflow={workflow} isFr={isFr} />
+
+            <WorkflowBlock2ExecutionSection
+              workflow={workflow}
+              goalObjectiveDraft={workflow.reflexive_objective ?? ""}
+              goalDelegateAgentsDraft={workflow.allowed_delegate_agents ?? []}
+              copy={modesCopy}
+              isFr={isFr}
+              onChangeGoalObjective={handleChangeGoalObjective}
+              onToggleDelegateAgent={handleToggleDelegateAgent}
+              onToggleSubStepEnabled={handleToggleSubStepEnabled}
+              onSwitchExecutionMode={handleSwitchExecutionMode}
+            />
+
+            <WorkflowBlocks345Sections workflow={workflow} isFr={isFr} />
+          </div>
         )}
       </div>
     </section>

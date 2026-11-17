@@ -1,24 +1,29 @@
 import React from "react";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 
-export interface StudioWhatIfPanelProps {
-  readonly workflow: WorkflowDefinitionV2Item;
-  readonly isFr: boolean;
-  readonly whatIfResult: {
-    readonly subStepsEvaluated: number;
-    readonly deterministicGatesPassed: boolean;
-    readonly externalWritesExecuted: number;
-    readonly estimatedCostUsd: number;
-  } | null;
-  readonly onRerunWhatIf: () => void;
+export interface WhatIfSummaryState {
+  readonly subStepsEvaluated: number;
+  readonly deterministicGatesPassed: boolean;
+  readonly externalWritesExecuted: number;
+  readonly estimatedCostUsd: number;
 }
 
-export function StudioWhatIfPanel({
+export function WorkflowWhatIfSandboxPanel({
   workflow,
-  isFr,
   whatIfResult,
-  onRerunWhatIf,
-}: StudioWhatIfPanelProps): React.ReactElement {
+  isFr,
+  onRerun,
+}: {
+  readonly workflow: WorkflowDefinitionV2Item;
+  readonly whatIfResult: WhatIfSummaryState | null;
+  readonly isFr: boolean;
+  readonly onRerun: () => void;
+}) {
+  const fallbackCount =
+    workflow.orchestration_type === "non_deterministic"
+      ? 1
+      : workflow.sub_steps.filter((s) => s.enabled).length;
+
   return (
     <div
       data-testid="studio-what-if-sandbox-panel"
@@ -34,7 +39,7 @@ export function StudioWhatIfPanel({
         <button
           type="button"
           data-testid="rerun-what-if-simulation-btn"
-          onClick={onRerunWhatIf}
+          onClick={onRerun}
           className="orcia-ds-btn-primary"
         >
           {isFr ? "↻ Relancer le test à blanc" : "↻ Re-run simulation"}
@@ -55,13 +60,13 @@ export function StudioWhatIfPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            Étapes actives testées
+            {isFr ? "Étapes actives testées" : "Active steps verified"}
           </div>
           <div
             data-testid="what-if-substeps-count"
             style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-primary-cobalt)" }}
           >
-            {whatIfResult?.subStepsEvaluated ?? workflow.sub_steps.filter((s) => s.enabled).length}
+            {whatIfResult?.subStepsEvaluated ?? fallbackCount}
           </div>
         </div>
         <div
@@ -72,13 +77,13 @@ export function StudioWhatIfPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            Modifications externes
+            {isFr ? "Modifications externes" : "External writes"}
           </div>
           <div
             data-testid="what-if-external-writes-count"
             style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-gate-emerald)" }}
           >
-            0 (Mode isolé)
+            {isFr ? "0 (Mode isolé)" : "0 (Isolated mode)"}
           </div>
         </div>
         <div
@@ -89,10 +94,10 @@ export function StudioWhatIfPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            Contrôles qualité
+            {isFr ? "Contrôles qualité" : "Quality checks"}
           </div>
           <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-gate-emerald)" }}>
-            Conformes
+            {isFr ? "Conformes" : "Compliant"}
           </div>
         </div>
         <div
@@ -103,13 +108,62 @@ export function StudioWhatIfPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            Coût estimé par dossier
+            {isFr ? "Coût estimé par dossier" : "Estimated cost per dossier"}
           </div>
           <div style={{ fontSize: "18px", fontWeight: 700 }}>
             {whatIfResult?.estimatedCostUsd ?? 0.045} $
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function WorkflowDeclarativePreviewPanel({
+  workflow,
+  modeBadgeLabel,
+  isFr,
+}: {
+  readonly workflow: WorkflowDefinitionV2Item;
+  readonly modeBadgeLabel: string;
+  readonly isFr: boolean;
+}) {
+  const readableSpec = {
+    id: workflow.id,
+    slug: workflow.slug,
+    title: workflow.title,
+    version: workflow.version,
+    status: workflow.status,
+    guidance_mode: modeBadgeLabel,
+    expected_outcome: workflow.reflexive_objective ?? null,
+    mobilizable_agents: workflow.allowed_delegate_agents ?? [],
+    inputs: workflow.contract.inputs,
+    outputs: workflow.contract.outputs,
+    steps_count: workflow.sub_steps.length,
+    guardrails: workflow.guardrails,
+  };
+
+  return (
+    <div data-testid="studio-yaml-preview-panel" className="orcia-bento-card">
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "15px" }}>
+        {isFr
+          ? "Définition déclarative du processus"
+          : "Declarative Process Definition"}
+      </h3>
+      <pre
+        style={{
+          margin: 0,
+          padding: "12px",
+          borderRadius: "6px",
+          backgroundColor: "var(--color-bg-elevated)",
+          border: "1px solid var(--color-border-subtle)",
+          fontFamily: "var(--font-mono)",
+          fontSize: "12px",
+          overflowX: "auto",
+        }}
+      >
+        {JSON.stringify(readableSpec, null, 2)}
+      </pre>
     </div>
   );
 }

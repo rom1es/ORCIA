@@ -57,6 +57,16 @@ from orcia_connectors.protocol import (
     sign_approval_token_payload,
     verify_signed_approval_token,
 )
+from orcia_connectors.reflexive_write_gate import (
+    ConnectorReflexiveWriteGateAdapter,
+    issue_broker_write_approval,
+)
+from orcia_connectors.surgical import (
+    SurgicalContextExplorer,
+    extract_outline_nodes,
+    resolve_file_badge_code,
+    validate_surgical_uri_security,
+)
 
 __version__: str = "0.1.0"
 
@@ -68,6 +78,7 @@ __all__ = [
     "AutonomousRunOutcome",
     "CodegraphMcpConnector",
     "ConnectorHealthStatus",
+    "ConnectorReflexiveWriteGateAdapter",
     "GitProviderConnector",
     "JiraAccessRequestChannelAdapter",
     "JiraTransitionSpec",
@@ -84,6 +95,7 @@ __all__ = [
     "SignedApprovalToken",
     "SqlReadonlyConnector",
     "StagedJiraActionItem",
+    "SurgicalContextExplorer",
     "WritePreviewCard",
     "__version__",
     "activate_sdlc_pack",
@@ -96,13 +108,17 @@ __all__ = [
     "create_sdlc_fr13_policy_plugin",
     "create_sdlc_memlog_marker_plugin",
     "execute_autonomous_contract_run",
+    "extract_outline_nodes",
     "get_bmad_pack_format_adapter",
     "get_default_enterprise_connectors",
     "get_git_code_ast_indexer",
     "get_jira_hybrid_indexer",
     "get_tripartite_graph_indexer",
+    "issue_broker_write_approval",
     "register_all_sdlc_connectors",
     "register_jira_access_request_channel",
+    "resolve_file_badge_code",
     "sign_approval_token_payload",
+    "validate_surgical_uri_security",
     "verify_signed_approval_token",
 ]

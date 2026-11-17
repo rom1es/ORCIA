@@ -5,6 +5,13 @@ version: 2.0.0
 status: published
 pack_id: orcia-pack-docs
 linked_vsm_step_nums: []
+orchestration_type: non_deterministic
+reflexive_objective: >-
+  Explorer chirurgicalement les écrans, contrats et guides existants afin de rédiger et consolider
+  une fiche d'aide contextuelle bilingue (FR/EN) complète, structurée avec les rubriques Objectif
+  et Étapes clés, sans espace réservé ni secret exposé.
+allowed_delegate_agents:
+- redacteur-documentation-orcia
 execution_mode: native_orcia
 model_override: claude-sonnet-4-6
 effort: default

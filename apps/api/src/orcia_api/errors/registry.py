@@ -9,6 +9,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from orcia_core.agents.errors import (
+    ReflexiveInvalidStateError,
+    ReflexiveSessionExpiredError,
+)
 from orcia_core.audit_finops.errors import AuditLedgerImmutableViolationError
 from orcia_core.blackboard.errors import BlackboardAppendOnlyViolationError
 from orcia_core.bootstrap.errors import ModelOrthogonalityViolationError
@@ -89,6 +93,7 @@ from orcia_core.rag.errors import (
 from orcia_kernel.errors import (
     ERROR_CATALOG,
     OrciaDomainError,
+    PolicyDeniedError,
     ResourceNotFoundError,
     SupportedLocale,
     ValidationDomainError,
@@ -120,6 +125,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     IntentionBeforeCodeRequiredError,
     UnknownWorkflowPolicyError,
     PermissionBrokerDeniedError,
+    PolicyDeniedError,
     ConfusedDeputyBlockedError,
     AdminLockoutPreventedError,
     GrantEscalationForbiddenError,
@@ -177,6 +183,8 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     AutonomyContractSignForbiddenError,
     ContractPrivilegeEscalationError,
     ServicePrincipalInvalidForContractError,
+    ReflexiveInvalidStateError,
+    ReflexiveSessionExpiredError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {
@@ -242,8 +250,11 @@ __all__ = [
     "OrgUnitStorageSchemaError",
     "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
+    "PolicyDeniedError",
     "ReadSourceDeniedError",
     "RagReindexInProgressError",
+    "ReflexiveInvalidStateError",
+    "ReflexiveSessionExpiredError",
     "ResourceNotFoundError",
     "RevokedTokenError",
     "ScopeAccessDeniedError",

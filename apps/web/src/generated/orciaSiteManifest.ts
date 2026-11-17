@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 124,
+    "uiPrimitivesCount": 126,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 49,
+    "alembicMigrationsCount": 51,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 153,
-    "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 62,
-    "verifiedCapabilitiesCount": 47
+    "techLeadReportsCount": 158,
+    "capabilitiesCount": 63,
+    "liveCapabilitiesCount": 63,
+    "verifiedCapabilitiesCount": 48
   },
   "activeRoutes": [
     "/",
@@ -56,6 +56,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ActivityLogProvenanceExportBar",
     "ActivityProvenanceModal",
     "AgentDetailAndSandboxModal",
+    "AgentExecutionTrace",
     "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
     "AppShell",
@@ -156,6 +157,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "SecretField",
     "SkillDetailAndSandboxModal",
     "SkillStudioCardItem",
+    "SourceLineInspectorDrawer",
     "SprintContextWidget",
     "StatusBadge",
     "StreamlinedCockpitView",
@@ -214,6 +216,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "0026_story_11_1_waivers_and_external_rebase",
     "0027_story_11_2_dna_chain_and_glossary_lifecycle",
     "20261108_0910_declarative_packs_and_workflows_v2",
+    "20261111_01_reflexive_execution_sessions",
     "20261111_1702_story_17_2_org_units_billing_and_members",
     "20261111_1703_story_17_3_iam_accounts_and_grant_resource_kind",
     "20261111_1704_story_17_4_connectors_passthrough_and_rag_referent",
@@ -234,7 +237,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses",
     "20261117_0702_story_7_2_triggers_outbox_and_optin_help",
     "20261117_0704_story_7_4_post_hoc_audit_and_kill_switch",
-    "20261117_0705_epic7_review_fk_constraints"
+    "20261117_0705_epic7_review_fk_constraints",
+    "20261117_1601_merge_epic7_and_epic16_heads"
   ],
   "architectureDecisions": [
     {
@@ -513,6 +517,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Ajustement Transverse (CAP-160, CAP-200, CAP-201, CAP-202)",
+      "reportFile": "2026-11-17-fusion-branches-epics-6-7-16-et-harmonisation-main-tech-lead-report.md",
+      "domain": "Consolidation Git Locale des Branches Epics 6, 7 & 16 sur main, Merge Alembic (20261117_1601), Intégration CodeGraph + Exécuteur Réflexif, Découpage < 350 L & Harmonisation Full-Stack",
+      "summary": "Résolution des 26 conflits Git et des couplages sémantiques inter-Epics (bounded_workflow_v2.py modulaire + CodeGraph Epic 18, workflows.py + _workflows_helpers.py avec WorkflowPublished Outbox & _enforce_not_observer, workflowsV2.ts rétrocompatible, AssistantSpeedSelectorAndStreamView + verrouillage Embedding Epic 19, ProcessesHubPage + WorkflowFiveBlocksCanvas avec modales Epic 7), révision de merge Alembic 20261117_1601 (1 seule head), régénération OpenAPI 3.1 0-diff et validation complète de la pyramide AD-17."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Correctifs Revue Architecture Epic 7 (CAP-201, CAP-202)",
@@ -820,6 +831,34 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "reportFile": "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration-tech-lead-report.md",
       "domain": "Coquille UI Direction C : Reset CSS <button>, Registre d'Icônes <svg> Filaires Monochromes 16px, Barre de Repli Propre (<kbd>[</kbd>), Entrée Sidebar Mon Compte & 5 Onglets Adaptatifs /settings Gouvernés par Rôle",
       "summary": "Ajout du reset @layer base { button } et des états .orcia-ds-btn-danger (--color-stale-crimson) dans tokens.css ; rendu <svg> filaire 24x24 stroke=\"currentColor\" (strokeWidth=1.75) dans <OrciaIcon /> sur les 106 clés (iconSvgPaths.ts) ; découpage modulaire de FourZoneDirectionCShell.tsx, UserAccountDropdownAndSettingsModal.tsx et ShellContainer.tsx ; création de authSessionStore.ts (resolveSettingsAccess) gouvernant les 5 onglets /settings (organization, iam, models, connectors, packs — suppression des doublons workflows & glossary) et l'accès direct Mon Compte en pied de Sidebar."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.4 (Clôture Epic 16)",
+      "reportFile": "16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout-tech-lead-report.md",
+      "domain": "Trace d'Exécution Vivante <AgentExecutionTrace /> (Groupes Repliables, Délégation @Agent, [Synthétiser maintenant] vs ■ Arrêter, WritePreviewCard), Inspecteur Chirurgical de Lignes <SourceLineInspectorDrawer /> (#Lstart-end & Garde READ_SOURCE 0 ligne exposée) & Intégration Bout-en-Bout sur les 3 Surfaces (CAP-160 live)",
+      "summary": "Création des composants purs @orcia/ui <AgentExecutionTrace /> et <SourceLineInspectorDrawer /> (@radix-ui/react-dialog), dictionnaires bilingues FR/EN zéro jargon, contrôleurs partagés useSourceLineInspector + useReflexiveExecutionController + reflexiveTraceMappers, câblage vertical + survie F5 sur 💬 Mon Assistant (2 modes Standard/Approfondi, zéro double boîte de réflexion), 🤖 Mes Agents (Banc de Test) et ☍ Mes Processus (InteractiveRunDrawer), découpage intégral < 350 lignes/fichier, Vitest 144 passed, couverture Python Epic 16 94.00 %, Playwright E2E réel desktop + mobile (2 passed + 8 passed régression) et promotion CAP-160 status: live."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.3",
+      "reportFile": "16-3-double-mode-processus-objectif-vs-jalons-dispatcher-et-packs-tech-lead-report.md",
+      "domain": "Double Mode de Processus (Piloté par l'objectif vs Piloté par les jalons), ProcessExecutionDispatcher, Encapsulation Principe 7 (ClaimCheckPointer + reflexive_execution_id sans bloat scratchpad), Persistance PG18 SqlWorkflowDefinitionsV2Store & Studio 5-Blocs Bilingue sans Jargon (CAP-160)",
+      "summary": "Enrichissement rétrocompatible de WorkflowDefinitionV2 (orchestration_type, reflexive_objective, allowed_delegate_agents), création de BoundedWorkflowLauncherPort + BoundedWorkflowLauncherAdapter + ProcessExecutionDispatcher + SqlWorkflowDefinitionsV2Store, mise à jour des packs déclaratifs (packs/orcia-docs en non_deterministic et packs/sdlc en deterministic_dbos), routes workflows.py protégées 403 ERR_OBSERVER_MODE_READ_ONLY + SDK OpenAPI 3.1 workflowsV2.ts (0-diff), découpage modulaire du Hub /processes et du Studio 5-Blocs (WorkflowOrchestrationModeSelector, WorkflowBlock2ExecutionSection, survie F5), intégration PG18 + Redis 7.4 et Playwright E2E bi-serveur (2 passed)."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.2",
+      "reportFile": "16-2-moteur-reflexif-non-deterministe-asyncio-sse-et-suspend-resume-tech-lead-report.md",
+      "domain": "Moteur Réflexif Non-Déterministe Pur asyncio (NonDeterministicReflexiveRuntime, 0 DBOS), Streaming SSE Temps Réel (/trace-stream), Délégation Bornée (depth <= 1) & Suspend/Resume sans État sur WritePreviewCard (WAITING_WRITE_PREVIEW, Survie F5, CAP-160)",
+      "summary": "Création des ports reflexive_runtime_ports.py, du moteur orcia_core.agents (Standard 4 tours / 8k tokens vs Approfondi 25 tours / 48k tokens, séparation cancel_execution vs request_synthesize_now, archivage ClaimCheckPointer), de la migration Alembic 20261111_01 (reflexive_execution_sessions UUIDv7), de SqlReflexiveSessionStore (PG18) + ReflexiveEventStreamBroker (Redis 7.4), de ConnectorReflexiveWriteGateAdapter (SignedApprovalToken), des routes executions_trace.py (403 ERR_OBSERVER_MODE_READ_ONLY sur mutations) + SDK OpenAPI 3.1 0-diff, couverture unitaire 93.48 %, intégration PG18 + Redis 7.4 (2 passed) et Playwright E2E (6 passed)."
+    },
+    {
+      "date": "2026-11-11",
+      "phaseOrStory": "Story 16.1",
+      "reportFile": "16-1-quatre-primitives-exploration-chirurgicale-et-ports-hexagonaux-tech-lead-report.md",
+      "domain": "Quatre Primitives d'Exploration Chirurgicale (#Lstart-end), Port Hexagonal SurgicalExplorerPort, Adaptateur Gouverné SurgicalContextExplorer & Routes REST /api/v1/sources/inspect-lines / /surgical-explore (CAP-160)",
+      "summary": "Création du port pur SurgicalExplorerPort (orcia_core.ports), de l'adaptateur asynchrone SurgicalContextExplorer (orcia_connectors.surgical, plafond MAX_SURGICAL_LINES = 250, badges M↓/Y/TS/PY/JSON/SQL/DOC, masquage READ_SOURCE à 0 ligne fuitée, garde-fous Path Traversal & SSRF), des routes FastAPI sources_surgical.py + SDK OpenAPI 3.1 reflexive_execution (0-diff), couverture unitaire 92.44 %, intégration PostgreSQL 18 et validation Playwright E2E 00-stack-smoke.spec.ts."
     },
     {
       "date": "2026-11-08",

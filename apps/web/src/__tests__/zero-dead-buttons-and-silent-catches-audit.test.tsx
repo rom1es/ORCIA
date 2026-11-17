@@ -136,6 +136,13 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onResetCircuit",
         "onOpenHelpSection",
       ],
+      AgentExecutionTrace: [
+        "onInspectLines",
+        "onSynthesizeNow",
+        "onApproveWrite",
+        "onRejectWrite",
+      ],
+      SourceLineInspectorDrawer: ["onOpenChange", "onCopySlice"],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

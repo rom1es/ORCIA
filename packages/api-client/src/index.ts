@@ -13,7 +13,16 @@ import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPer
 import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import { createFinopsDomainClient } from "./domains/finops";
-import { createWorkflowsV2DomainClient } from "./domains/workflowsV2";
+import {
+  createReflexiveExecutionDomainClient,
+  type InspectSourceLinesParams,
+} from "./domains/reflexiveExecution";
+import {
+  createWorkflowsV2DomainClient,
+  type ApiImpactAssessmentResult,
+  type ApiWorkflowDefinitionV2,
+  type SaveWorkflowV2Options,
+} from "./domains/workflowsV2";
 import { createWorkflowTriggersDomainClient } from "./domains/workflowTriggers";
 import type { paths } from "./generated/schema";
 import {
@@ -42,13 +51,18 @@ export {
   createCodegraphMcpDomainClient,
   createEpics1To7OperationsDomainClient,
   createFinopsDomainClient,
+  createReflexiveExecutionDomainClient,
   createWorkflowsV2DomainClient,
   createWorkflowTriggersDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
+  type ApiImpactAssessmentResult,
+  type ApiWorkflowDefinitionV2,
+  type InspectSourceLinesParams,
   type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
+  type SaveWorkflowV2Options,
   type OrciaApiClientOptions,
 };
 
@@ -85,6 +99,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
     ...createFinopsDomainClient(requestJson),
+    ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
     ...createWorkflowsV2DomainClient(requestJson),
     ...createWorkflowTriggersDomainClient(requestJson),
     ...auditFinopsClient,

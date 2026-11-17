@@ -9,7 +9,7 @@ target_app: "apps/web (React 19, TanStack Router, Tailwind CSS, Radix UI)"
 
 Pour éliminer toute surcharge cognitive (Arbitrage n°3), l'interface sépare nettement **deux niveaux d'usage** :
 1. **La gouvernance métier & Chaîne de Valeur (`/processes` & `/processes/vsm/$vsmId`)** : Cartographie de bout en bout, comparaison *Aujourd'hui vs Avec les agents*, boucles de retour et lancement de workflows unitaires.
-2. **L'atelier d'ingénierie d'un Workflow Borné (`/processes/studio/$workflowId`)** : Interface à 5 blocs façon **BMC Control-M** + Co-pilote à gauche + modes `Design | Test What-If | YAML` (sans le popup redondant `COUCHES` de KORE).
+2. **L'atelier d'ingénierie d'un Workflow Borné (`/processes/studio/$workflowId`)** : Interface à 5 blocs façon **BMC Control-M** + Co-pilote à gauche + modes `Design | Test What-If | YAML` (sans le popup redondant `COUCHES` de EXEMPLE).
 
 ---
 
@@ -103,8 +103,8 @@ Lorsqu'un concepteur (`workflows:write`) clique sur `[✏️ Studio WF]` sur le 
 | ← Hub | WF-01 · Qualification, PRD & Création Feature · [v1.1.0-draft]   | [● Design Mode] (▷ Test What-If) (YAML)   |
 | Contrats globaux : [✨ Pré-prompt Système] [📋 Contrat d'Entrée/Sortie]  | [💾 Enregistrer Draft] [🚀 Publier v1.1.0]|
 +-----------------------------------+----------------------------------------------------------------------------------+
-| 🤖 CO-PILOTE STUDIO               |                                                                                  |
-|-----------------------------------|            +--------------------------------------------------------+            |
+| 🤖 CO-PILOTE STUDIO |  |
+| ------------------ |+--------------------------------------------------------+            |
 | J'ai structuré WF-01 en 3         |            | 1. TRIGGERS & CONTRAT D'ENTRÉE                     [+] |            |
 | sous-étapes déterministes DBOS.   |            |--------------------------------------------------------|            |
 | Aucune transition n'est laissée   |            | • Manuel / API : `discovery_notes` (Texte / Document)  |            |
@@ -138,8 +138,8 @@ Lorsqu'un concepteur (`workflows:write`) clique sur `[✏️ Studio WF]` sur le 
 |    au bloc SKILLS.                |   |                                    ▼                                     |   |
 | 2. `write_preview_required: true` |   |  +--------------------------------------------------------------------+  |   |
 |    activé sur la sous-étape 3.    |   |  | [👁️] Sous-étape 2.3 : Détection doublons & Création    [Agent+Tool]|  |   |
-|                                   |   |  |      🔒 WRITE-PREVIEW GATE : Prévisualisation obligatoire avant API|  |   |
-|-----------------------------------|   |  +--------------------------------------------------------------------+  |   |
+|     |  |  | 🔒 WRITE-PREVIEW GATE : Prévisualisation obligatoire avant API |  |  |
+| --- ||  +--------------------------------------------------------------------+  |   |
 | [Décrire une modification...    ] |   +------------------------------------o-------------------------------------+   |
 |                                   |                                        :                                         |
 |                                   |         +------------------------------+------------------------------+          |

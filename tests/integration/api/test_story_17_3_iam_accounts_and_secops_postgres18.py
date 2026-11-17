@@ -296,7 +296,7 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
             # 7. Schema auto-recreation + Day-0 placeholder & platform_settings fallback
             async with engine.begin() as conn:
                 for stmt in (
-                    "DROP TABLE iam_accounts",
+                    "DROP TABLE iam_accounts CASCADE",
                     "DROP TABLE role_permission_grants",
                     "DELETE FROM users",
                     "DELETE FROM platform_settings",

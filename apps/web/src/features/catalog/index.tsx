@@ -1,13 +1,16 @@
-import { createOrciaApiClient } from "@orcia/api-client";
 import {
+  AgentExecutionTrace,
   AgentsAndSkillsManagerView,
   CatalogExplorerPanel,
   RemoteServiceTestBenchAndMcpExposureView,
+  SourceLineInspectorDrawer,
 } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
+import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import {
   AGENTS_AND_SKILLS_STORAGE_KEY,
   ASSISTANT_PREFILL_PROMPT_STORAGE_KEY,
@@ -16,6 +19,7 @@ import {
   resetCachedAgentsAndSkillsForTest,
   writeAssistantPrefillPrompt,
 } from "./packAgentsCatalog";
+import { useCatalogRemoteTestBench } from "./useCatalogRemoteTestBench";
 import { useManagedAgentsAndSkills } from "./useManagedAgentsAndSkills";
 
 export {
@@ -27,175 +31,54 @@ export {
   writeAssistantPrefillPrompt,
 };
 
+export const CATALOG_SANDBOX_REFLEXIVE_STORAGE_KEY =
+  "orcia.reflexive_exec.catalog_sandbox.v1";
+
 export function CatalogFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { catalogItems, datasources, packs } = usePlatformSetup();
+  const { catalogItems, datasources, packs, workspaces } = usePlatformSetup();
   const { navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
-  const [mcpExposed, setMcpExposed] = useState<boolean>(false);
-  const [pinnedAssistantMcpExposed, setPinnedAssistantMcpExposed] = useState<boolean>(false);
-  const [catalogActionFeedback, setCatalogActionFeedback] = useState<string | null>(null);
-  const [testBenchSteps, setTestBenchSteps] = useState<
-    readonly {
-      stepNumber: 1 | 2 | 3 | 4;
-      stepCode:
-        | "1_NETWORK_TLS_ANTI_SSRF"
-        | "2_AUTHENTICATION"
-        | "3_CONTRACT_DISCOVERY"
-        | "4_HOT_DRY_RUN";
-      status: "PASS" | "FAIL" | "WAITING_USER_PASSTHROUGH_TOKEN" | "SKIPPED";
-      detailFr: string;
-    }[]
-  >([]);
-  const [discoveredCapabilities, setDiscoveredCapabilities] = useState<
-    readonly {
-      toolName: string;
-      qualification: "READ_ONLY" | "WRITE_STAGED_REQUIRED";
-      badgeFr: string;
-    }[]
-  >([]);
-  const [canActivateConnector, setCanActivateConnector] = useState<boolean>(
-    datasources.length > 0,
-  );
+  const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
+  const [pinnedAssistantMcpExposed, setPinnedAssistantMcpExposed] =
+    useState<boolean>(false);
+  const [catalogActionFeedback, setCatalogActionFeedback] = useState<
+    string | null
+  >(null);
 
-  const {
-    agents,
-    skills,
-    handleLoadPackTemplates,
-    handleCreateSkill,
-    handleDeleteSkill,
-    handleUpdateSkillVisibility,
-    handleExecuteSkill,
-    handleCreateAgent,
-    handleDuplicateAgent,
-    handleToggleAgentEnabled,
-    handleToggleAgentMcpExposure,
-    handleUpdateAgentDetails,
-    handleToggleAgentSkill,
-    handleUpdateAgentThinkingLevel,
-    handleUpdateAgentVisibility,
-    handleDeleteAgent,
-    handleExecuteAgent,
-  } = useManagedAgentsAndSkills(packs, setCatalogActionFeedback);
+  const remoteBench = useCatalogRemoteTestBench({
+    datasources,
+    isFr,
+    setFeedback: setCatalogActionFeedback,
+  });
 
-  const handleRunRemoteTestBench = () => {
-    const targetUrl = datasources[0]?.uri ?? "https://mcp.entreprise.interne/api";
-    setTestBenchSteps([
-      {
-        stepNumber: 1,
-        stepCode: "1_NETWORK_TLS_ANTI_SSRF",
-        status: "PASS",
-        detailFr: `Vérification réseau et sécurité de l'adresse ${targetUrl} validée.`,
-      },
-      {
-        stepNumber: 2,
-        stepCode: "2_AUTHENTICATION",
-        status: "PASS",
-        detailFr: "Authentification et contrôle des accès validés.",
-      },
-      {
-        stepNumber: 3,
-        stepCode: "3_CONTRACT_DISCOVERY",
-        status: "PASS",
-        detailFr: "Découverte automatique des capacités exposées réussie.",
-      },
-      {
-        stepNumber: 4,
-        stepCode: "4_HOT_DRY_RUN",
-        status: "PASS",
-        detailFr: "Test d'exécution à blanc validé sans écriture externe.",
-      },
-    ]);
-    setDiscoveredCapabilities([
-      {
-        toolName: "search_documents",
-        qualification: "READ_ONLY",
-        badgeFr: "Lecture seule",
-      },
-      {
-        toolName: "propose_draft_update",
-        qualification: "WRITE_STAGED_REQUIRED",
-        badgeFr: "Validation humaine requise",
-      },
-    ]);
-    setCanActivateConnector(true);
-    setCatalogActionFeedback(
-      isFr
-        ? `✅ Banc de test exécuté avec succès sur ${targetUrl}.`
-        : `✅ Test bench completed on ${targetUrl}.`,
-    );
+  const inspector = useSourceLineInspector({
+    locale,
+    workspaceId: activeWorkspaceId,
+    onFeedback: setCatalogActionFeedback,
+  });
 
-    const client = createOrciaApiClient({ baseUrl: "" });
-    void client
-      .runRemoteServiceTestBench({
-        protocol: "MCP_STREAMABLE_HTTP_SSE",
-        endpoint_url: targetUrl,
-        identity_mode: "SECRET_REF",
-        has_user_personal_token: true,
-        secret_ref_valid: true,
-        allow_private_network: true,
-        raw_tool_names: ["search_documents", "propose_draft_update"],
-        simulated_dry_run_elapsed_ms: 42,
-        simulated_dry_run_bytes: 512,
-      })
-      .then((res) => {
-        if (Array.isArray(res.steps) && res.steps.length > 0) {
-          setTestBenchSteps(
-            res.steps.map((s) => ({
-              stepNumber: (s.step_number ?? 1) as 1 | 2 | 3 | 4,
-              stepCode: s.step_code as
-                | "1_NETWORK_TLS_ANTI_SSRF"
-                | "2_AUTHENTICATION"
-                | "3_CONTRACT_DISCOVERY"
-                | "4_HOT_DRY_RUN",
-              status: s.status as
-                | "PASS"
-                | "FAIL"
-                | "WAITING_USER_PASSTHROUGH_TOKEN"
-                | "SKIPPED",
-              detailFr: s.detail_fr,
-            })),
-          );
-        }
-        if (Array.isArray(res.discovered_capabilities) && res.discovered_capabilities.length > 0) {
-          setDiscoveredCapabilities(
-            res.discovered_capabilities.map((c) => ({
-              toolName: c.tool_name,
-              qualification: c.qualification as "READ_ONLY" | "WRITE_STAGED_REQUIRED",
-              badgeFr: c.badge_fr,
-            })),
-          );
-        }
-        if (typeof res.can_activate === "boolean") {
-          setCanActivateConnector(res.can_activate);
-        }
-      })
-      .catch((err: unknown) => {
-        setCatalogActionFeedback(
-          `✅ Banc de test validé localement (${err instanceof Error ? err.message : "mode local"}).`,
-        );
-      });
-  };
+  const sandboxReflexive = useReflexiveExecutionController({
+    storageKey: CATALOG_SANDBOX_REFLEXIVE_STORAGE_KEY,
+    locale,
+    onFeedback: setCatalogActionFeedback,
+  });
 
-  const handleActivateRemoteService = () => {
-    setCatalogActionFeedback(
-      isFr
-        ? "✅ Connecteur externe activé et prêt pour vos agents."
-        : "✅ External connector enabled and ready for your agents.",
-    );
-  };
+  const managed = useManagedAgentsAndSkills(packs, setCatalogActionFeedback);
 
-  const handleToggleMcp = (next: boolean) => {
-    setMcpExposed(next);
-    setCatalogActionFeedback(
-      next
-        ? isFr
-          ? "🔌 Exposition MCP activée pour vos outils."
-          : "🔌 MCP exposure enabled."
-        : isFr
-          ? "🔌 Exposition MCP désactivée."
-          : "🔌 MCP exposure disabled.",
-    );
+  const handleExecuteAgentWithTrace = (agentId: string, prompt: string) => {
+    managed.handleExecuteAgent(agentId, prompt);
+    const targetAgent = managed.agents.find((a) => a.agentId === agentId);
+    const isComplex = targetAgent?.thinkingLevel === "complex";
+    void sandboxReflexive.startExecution({
+      actor_slug: targetAgent?.slug || "assistant",
+      objective: prompt,
+      effort_level: isComplex ? "high" : "medium",
+      effort_mode: isComplex ? "approfondi" : "standard",
+      allow_sub_agent_delegation: true,
+      initial_resources: ["docs/product/capabilities.yaml"],
+      ...(activeWorkspaceId ? { workspace_id: activeWorkspaceId } : {}),
+    });
   };
 
   return (
@@ -211,33 +94,56 @@ export function CatalogFeaturePanel() {
       )}
 
       <AgentsAndSkillsManagerView
-        agents={agents}
-        skills={skills}
+        agents={managed.agents}
+        skills={managed.skills}
         labels={dictionary.agentsAndSkillsManager}
-        onCreateAgent={handleCreateAgent}
-        onDuplicateAgent={handleDuplicateAgent}
-        onToggleAgentEnabled={handleToggleAgentEnabled}
-        onToggleAgentMcpExposure={handleToggleAgentMcpExposure}
-        onUpdateAgentDetails={handleUpdateAgentDetails}
-        onToggleAgentSkill={handleToggleAgentSkill}
-        onUpdateAgentThinkingLevel={handleUpdateAgentThinkingLevel}
-        onUpdateAgentVisibility={handleUpdateAgentVisibility}
-        onDeleteAgent={handleDeleteAgent}
-        onExecuteAgent={handleExecuteAgent}
+        onCreateAgent={managed.handleCreateAgent}
+        onDuplicateAgent={managed.handleDuplicateAgent}
+        onToggleAgentEnabled={managed.handleToggleAgentEnabled}
+        onToggleAgentMcpExposure={managed.handleToggleAgentMcpExposure}
+        onUpdateAgentDetails={managed.handleUpdateAgentDetails}
+        onToggleAgentSkill={managed.handleToggleAgentSkill}
+        onUpdateAgentThinkingLevel={managed.handleUpdateAgentThinkingLevel}
+        onUpdateAgentVisibility={managed.handleUpdateAgentVisibility}
+        onDeleteAgent={managed.handleDeleteAgent}
+        onExecuteAgent={handleExecuteAgentWithTrace}
+        renderAgentSandboxSlot={() =>
+          sandboxReflexive.status &&
+          (sandboxReflexive.events.length > 0 ||
+            sandboxReflexive.pendingWritePreview) ? (
+            <AgentExecutionTrace
+              status={sandboxReflexive.status}
+              events={sandboxReflexive.events}
+              pendingWritePreview={sandboxReflexive.pendingWritePreview}
+              labels={dictionary.executionTrace}
+              defaultCollapsedWhenCompleted={false}
+              onInspectLines={inspector.openInspectTarget}
+              onSynthesizeNow={() => {
+                void sandboxReflexive.synthesizeNow();
+              }}
+              onApproveWrite={(previewId) => {
+                void sandboxReflexive.approveWrite(previewId);
+              }}
+              onRejectWrite={(previewId) => {
+                void sandboxReflexive.rejectWrite(previewId);
+              }}
+            />
+          ) : null
+        }
         onUseAgentInAssistant={(agent) => {
           writeAssistantPrefillPrompt(`${agent.handle} `);
           navigateToRoute("/assistant");
         }}
-        onCreateSkill={handleCreateSkill}
-        onUpdateSkillVisibility={handleUpdateSkillVisibility}
-        onDeleteSkill={handleDeleteSkill}
-        onExecuteSkill={handleExecuteSkill}
+        onCreateSkill={managed.handleCreateSkill}
+        onUpdateSkillVisibility={managed.handleUpdateSkillVisibility}
+        onDeleteSkill={managed.handleDeleteSkill}
+        onExecuteSkill={managed.handleExecuteSkill}
         onUseSkillInAssistant={(skill) => {
           writeAssistantPrefillPrompt(`${skill.commandHandle} `);
           navigateToRoute("/assistant");
         }}
-        onLoadPackTemplates={handleLoadPackTemplates}
-        onOpenMcpTestBench={handleRunRemoteTestBench}
+        onLoadPackTemplates={managed.handleLoadPackTemplates}
+        onOpenMcpTestBench={remoteBench.handleRunRemoteTestBench}
         pinnedAssistantMcpExposed={pinnedAssistantMcpExposed}
         onTogglePinnedAssistantMcp={(next) => {
           setPinnedAssistantMcpExposed(next);
@@ -252,15 +158,17 @@ export function CatalogFeaturePanel() {
         connectionsContent={
           <RemoteServiceTestBenchAndMcpExposureView
             endpointUrl={datasources[0]?.uri ?? ""}
-            steps={testBenchSteps}
-            discoveredCapabilities={discoveredCapabilities}
-            canActivate={canActivateConnector || datasources.length > 0}
-            mcpExposed={mcpExposed}
+            steps={remoteBench.testBenchSteps}
+            discoveredCapabilities={remoteBench.discoveredCapabilities}
+            canActivate={
+              remoteBench.canActivateConnector || datasources.length > 0
+            }
+            mcpExposed={remoteBench.mcpExposed}
             exposedToolNames={catalogItems.map((item) => item.resourceId)}
             labels={dictionary.remoteServiceTestBench}
-            onRunTestBench={handleRunRemoteTestBench}
-            onActivateService={handleActivateRemoteService}
-            onToggleMcpExposure={handleToggleMcp}
+            onRunTestBench={remoteBench.handleRunRemoteTestBench}
+            onActivateService={remoteBench.handleActivateRemoteService}
+            onToggleMcpExposure={remoteBench.handleToggleMcp}
           />
         }
       />
@@ -288,7 +196,10 @@ export function CatalogFeaturePanel() {
         </div>
       )}
 
-      <div data-testid="catalog-explorer-panel-wrapper" style={{ display: "none" }}>
+      <div
+        data-testid="catalog-explorer-panel-wrapper"
+        style={{ display: "none" }}
+      >
         <CatalogExplorerPanel
           activePersona="marc"
           items={[...catalogItems]}
@@ -297,20 +208,45 @@ export function CatalogFeaturePanel() {
         />
       </div>
 
-      <div data-testid="remote-service-test-bench-wrapper" style={{ display: "none" }}>
+      <div
+        data-testid="remote-service-test-bench-wrapper"
+        style={{ display: "none" }}
+      >
         <RemoteServiceTestBenchAndMcpExposureView
           endpointUrl={datasources[0]?.uri ?? ""}
-          steps={testBenchSteps}
-          discoveredCapabilities={discoveredCapabilities}
-          canActivate={canActivateConnector || datasources.length > 0}
-          mcpExposed={mcpExposed}
+          steps={remoteBench.testBenchSteps}
+          discoveredCapabilities={remoteBench.discoveredCapabilities}
+          canActivate={
+            remoteBench.canActivateConnector || datasources.length > 0
+          }
+          mcpExposed={remoteBench.mcpExposed}
           exposedToolNames={catalogItems.map((item) => item.resourceId)}
           labels={dictionary.remoteServiceTestBench}
-          onRunTestBench={handleRunRemoteTestBench}
-          onActivateService={handleActivateRemoteService}
-          onToggleMcpExposure={handleToggleMcp}
+          onRunTestBench={remoteBench.handleRunRemoteTestBench}
+          onActivateService={remoteBench.handleActivateRemoteService}
+          onToggleMcpExposure={remoteBench.handleToggleMcp}
         />
       </div>
+
+      <SourceLineInspectorDrawer
+        open={inspector.inspectorState.open}
+        onOpenChange={inspector.setInspectorOpen}
+        resourceUri={inspector.inspectorState.resourceUri}
+        displayFilename={inspector.inspectorState.displayFilename}
+        fileBadgeCode={inspector.inspectorState.fileBadgeCode}
+        startLine={inspector.inspectorState.startLine}
+        endLine={inspector.inspectorState.endLine}
+        totalLines={inspector.inspectorState.totalLines}
+        lines={inspector.inspectorState.lines}
+        isLoading={inspector.inspectorState.isLoading}
+        redacted={inspector.inspectorState.redacted}
+        redactedReason={inspector.inspectorState.redactedReason}
+        permissionRequestHint={inspector.inspectorState.permissionRequestHint}
+        errorMessage={inspector.inspectorState.errorMessage}
+        copiedFeedback={inspector.inspectorState.copiedFeedback}
+        labels={dictionary.sourceLineInspector}
+        onCopySlice={inspector.copyCurrentSlice}
+      />
     </div>
   );
 }

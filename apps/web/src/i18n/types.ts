@@ -13,6 +13,21 @@ import type {
   UiWorkspaceTopologyLabels,
   UpstreamChallengeModalLabels,
 } from "@orcia/ui";
+import type { ActivityDictionarySection } from "./locales/activity_labels";
+import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
+import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
+import type { AssistantDictionarySection } from "./locales/assistant_labels";
+import type { AuthSettingsDictionarySection } from "./locales/auth_settings_labels";
+import type { AutonomousSupervisionCopy } from "./locales/autonomous_supervision_labels";
+import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
+import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
+import type { FinopsDictionarySection } from "./locales/finops_labels";
+import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
+import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
+import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
+import type { ReflexiveTraceAndInspectorDictionarySection } from "./locales/reflexive_trace_and_inspector_labels";
+import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
+import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
 
 export type SupportedWebLocale = "fr" | "en";
 
@@ -33,20 +48,6 @@ export interface InboxAndClaimsCopy {
   presencePill: PresenceClaimPillLabels;
 }
 
-import type { ActivityDictionarySection } from "./locales/activity_labels";
-import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
-import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
-import type { AssistantDictionarySection } from "./locales/assistant_labels";
-import type { AuthSettingsDictionarySection } from "./locales/auth_settings_labels";
-import type { AutonomousSupervisionCopy } from "./locales/autonomous_supervision_labels";
-import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
-import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
-import type { FinopsDictionarySection } from "./locales/finops_labels";
-import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
-import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
-import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
-import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
-
 export interface TranslationDictionary
   extends InboxAndCockpitDictionarySection,
     AdminAndStudioDictionarySection,
@@ -54,7 +55,9 @@ export interface TranslationDictionary
     AssistantDictionarySection,
     GovernanceAndPacksDictionarySection,
     ActivityDictionarySection,
-    FinopsDictionarySection {
+    FinopsDictionarySection,
+    ProcessOrchestrationModesDictionarySection,
+    ReflexiveTraceAndInspectorDictionarySection {
   locale: SupportedWebLocale;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;

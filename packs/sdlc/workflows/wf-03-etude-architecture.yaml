@@ -6,6 +6,7 @@ status: published
 pack_id: orcia-pack-sdlc
 linked_vsm_step_nums:
 - '03'
+orchestration_type: deterministic_dbos
 execution_mode: native_orcia
 model_override: claude-opus-4-6
 effort: high

@@ -6,6 +6,7 @@ status: published
 pack_id: orcia-pack-sdlc
 linked_vsm_step_nums:
 - 08
+orchestration_type: deterministic_dbos
 execution_mode: external_delegated
 external_tool_label: GitHub Copilot / Claude Code dans l'IDE
 external_completion_event: git:pr_opened

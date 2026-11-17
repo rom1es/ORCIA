@@ -11,6 +11,8 @@ import { FINOPS_EN_LABELS } from "./finops_labels";
 import { GATES_AND_INBOX_EN_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_EN_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_EN_LABELS } from "./inbox_and_cockpit_labels";
+import { PROCESS_ORCHESTRATION_MODES_EN_LABELS } from "./process_orchestration_modes_labels";
+import { REFLEXIVE_TRACE_AND_INSPECTOR_EN_LABELS } from "./reflexive_trace_and_inspector_labels";
 import { SHELL_AND_SEARCH_EN_LABELS } from "./shell_and_search_labels";
 import { WORKFLOW_TRIGGERS_EN_LABELS } from "./workflow_triggers_labels";
 
@@ -23,6 +25,8 @@ export const enDictionary: TranslationDictionary = {
   ...ACTIVITY_EN_LABELS,
   ...FINOPS_EN_LABELS,
   ...GATES_AND_INBOX_EN_LABELS,
+  ...PROCESS_ORCHESTRATION_MODES_EN_LABELS,
+  ...REFLEXIVE_TRACE_AND_INSPECTOR_EN_LABELS,
   locale: "en",
   aiModelsHub: AI_MODELS_HUB_EN,
   authSettings: AUTH_SETTINGS_EN_LABELS,

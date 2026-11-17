@@ -62,7 +62,7 @@ def pg_and_redis_urls() -> Iterator[tuple[str, str]]:
         alembic_cmd = [alembic_bin, "-c", "infra/migrations/alembic.ini"]
         for args in (
             [*alembic_cmd, "upgrade", "head"],
-            [*alembic_cmd, "downgrade", "-1"],
+            [*alembic_cmd, "downgrade", "20261117_0701"],
             [*alembic_cmd, "upgrade", "head"],
         ):
             res = subprocess.run(args, cwd=REPO_ROOT, env=env, capture_output=True, text=True)

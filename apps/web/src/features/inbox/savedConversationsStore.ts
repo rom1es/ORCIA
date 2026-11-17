@@ -1,99 +1,21 @@
 import {
-  DEFAULT_ASSISTANT_AGENT_OPTIONS,
-  DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   sanitizeAssistantDisplayReply,
-  type ControlCenterDatasourceItem,
+  type UiAgentTraceEventItem,
   type UiAssistantAttachedFileItem,
-  type UiAssistantAutocompleteOption,
-  type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
-  type UiAssistantOrciaDocumentOption,
   type UiAssistantRagCitationItem,
-  type UiCatalogExplorerItemView,
   type UiInferenceEffort,
   type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
-import {
-  consumeAssistantPrefillPrompt,
-  readCachedAgentsAndSkills,
-} from "../../components/agentsAndSkillsBridgeStore";
 
-export function filterUsedRagSourcesForTurn(params: {
-  readonly userPrompt: string;
-  readonly assistantReply: string;
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
-}): readonly UiAssistantRagCitationItem[] {
-  const results: UiAssistantRagCitationItem[] = [];
-  const seenUris = new Set<string>();
-
-  for (const file of params.attachedFiles ?? []) {
-    const uri = file.uri ?? `#local-file-${encodeURIComponent(file.name)}`;
-    if (!seenUris.has(uri)) {
-      seenUris.add(uri);
-      results.push({ title: file.name, uri });
-    }
-  }
-
-  const combinedLower = `${params.userPrompt} ${params.assistantReply}`.toLowerCase();
-  for (const ds of params.datasources) {
-    if (seenUris.has(ds.uri)) continue;
-    const aliasLower = ds.alias.toLowerCase();
-    const significantTokens = aliasLower
-      .split(/[^a-zA-Z0-9àâäéèêëîïôöùûüç]+/)
-      .filter((tok) => tok.length > 4);
-    if (
-      combinedLower.includes(aliasLower) ||
-      significantTokens.some((tok) => combinedLower.includes(tok))
-    ) {
-      seenUris.add(ds.uri);
-      results.push({ title: ds.alias, uri: ds.uri });
-    }
-  }
-  return results;
-}
-
-export function buildAssistantAutocompleteAndRagOptions(params: {
-  readonly catalogItems: readonly UiCatalogExplorerItemView[];
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-}): {
-  readonly agentOptions: readonly UiAssistantAutocompleteOption[];
-  readonly skillOptions: readonly UiAssistantAutocompleteOption[];
-  readonly orciaDocuments: readonly UiAssistantOrciaDocumentOption[];
-  readonly ragCitations: readonly UiAssistantRagCitationItem[];
-} {
-  const catalogAgents: readonly UiAssistantAutocompleteOption[] = params.catalogItems
-    .filter((item) => item.resourceType === "agent")
-    .map((item) => ({
-      slug: item.uri.split("/").pop() ?? item.resourceId,
-      label: item.title,
-      description: item.description,
-      kind: "agent" as const,
-    }));
-  const catalogSkills: readonly UiAssistantAutocompleteOption[] = params.catalogItems
-    .filter((item) => item.resourceType === "skill")
-    .map((item) => ({
-      slug: item.uri.split("/").pop() ?? item.resourceId,
-      label: item.title,
-      description: item.description,
-      kind: "skill" as const,
-    }));
-  const agentOptions: readonly UiAssistantAutocompleteOption[] = [
-    ...DEFAULT_ASSISTANT_AGENT_OPTIONS,
-    ...catalogAgents.filter((ca) => !DEFAULT_ASSISTANT_AGENT_OPTIONS.some((d) => d.slug === ca.slug)),
-  ];
-  const skillOptions: readonly UiAssistantAutocompleteOption[] = [
-    ...DEFAULT_ASSISTANT_SKILL_OPTIONS,
-    ...catalogSkills.filter((cs) => !DEFAULT_ASSISTANT_SKILL_OPTIONS.some((d) => d.slug === cs.slug)),
-  ];
-  const orciaDocuments: readonly UiAssistantOrciaDocumentOption[] =
-    params.datasources.length > 0
-      ? params.datasources.map((ds) => ({ id: ds.id, title: ds.alias, uri: ds.uri }))
-      : DEFAULT_ORCIA_DOCUMENT_OPTIONS;
-  return { agentOptions, skillOptions, orciaDocuments, ragCitations: [] };
-}
+export {
+  buildAssistantAutocompleteAndRagOptions,
+  buildAssistantAutocompleteSuggestions,
+  buildAssistantModelOptions,
+  consumeAssistantPrefillFromStorage,
+  filterUsedRagSourcesForTurn,
+} from "./assistantAutocompleteHelpers";
 
 export const SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY =
   "orcia.assistant_saved_conversations.v1";
@@ -115,6 +37,8 @@ export interface SavedConversationTurnItem {
   readonly usedSources?: readonly UiAssistantRagCitationItem[];
   readonly stepProgress?: readonly UiThreeSpeedStepProgress[];
   readonly thinkingElapsedSeconds?: number;
+  readonly reflexiveExecutionId?: string;
+  readonly reflexiveTraceEvents?: readonly UiAgentTraceEventItem[];
 }
 
 export interface SavedAssistantConversation {
@@ -132,7 +56,11 @@ export interface SavedAssistantConversation {
 
 export function clearSavedAssistantConversationsStorage(): void {
   fallbackConversationStorage.clear();
-  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.removeItem === "function") {
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.removeItem === "function"
+  ) {
     try {
       window.localStorage.removeItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY);
     } catch {
@@ -143,15 +71,24 @@ export function clearSavedAssistantConversationsStorage(): void {
 
 export function readSavedAssistantConversations(): readonly SavedAssistantConversation[] {
   let raw: string | null = null;
-  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.getItem === "function") {
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.getItem === "function"
+  ) {
     try {
-      raw = window.localStorage.getItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY);
+      raw = window.localStorage.getItem(
+        SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY,
+      );
     } catch {
       // Fall back to in-memory map
     }
   }
   if (!raw) {
-    raw = fallbackConversationStorage.get(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY) ?? null;
+    raw =
+      fallbackConversationStorage.get(
+        SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY,
+      ) ?? null;
   }
   if (!raw) return [];
   try {
@@ -170,12 +107,24 @@ export function readSavedAssistantConversations(): readonly SavedAssistantConver
   }
 }
 
-export function writeSavedAssistantConversations(conversations: readonly SavedAssistantConversation[]): void {
+export function writeSavedAssistantConversations(
+  conversations: readonly SavedAssistantConversation[],
+): void {
   const serialized = JSON.stringify(conversations);
-  fallbackConversationStorage.set(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY, serialized);
-  if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.setItem === "function") {
+  fallbackConversationStorage.set(
+    SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY,
+    serialized,
+  );
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.setItem === "function"
+  ) {
     try {
-      window.localStorage.setItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY, serialized);
+      window.localStorage.setItem(
+        SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY,
+        serialized,
+      );
     } catch {
       // Ignore storage quota errors
     }
@@ -186,44 +135,6 @@ export function summarizePromptAsConversationTitle(prompt: string): string {
   const clean = prompt.replace(/\s+/g, " ").trim();
   if (!clean) return "Nouvelle conversation";
   return clean.length > 64 ? `${clean.slice(0, 61)}...` : clean;
-}
-
-export function buildAssistantModelOptions(
-  llmTiers: readonly { readonly tier: string; readonly primaryModel?: string }[],
-  isFr: boolean,
-): readonly UiAssistantModelOption[] {
-  const configuredTiers = llmTiers.filter((t) => Boolean(t.primaryModel?.trim()));
-  const distinctModels = new Set(configuredTiers.map((t) => t.primaryModel!.trim()));
-  const singleModelOnly = distinctModels.size === 1 ? [...distinctModels][0] : undefined;
-
-  if (singleModelOnly) {
-    return [
-      { tier: "simple", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly, hiddenDuplicate: true },
-      { tier: "medium", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly },
-      { tier: "complex", title: singleModelOnly, subtitle: isFr ? "Modèle IA configuré" : "Configured AI model", configuredModelName: singleModelOnly, hiddenDuplicate: true },
-    ];
-  }
-
-  const seenModels = new Set<string>();
-  const buildEntry = (tierKey: UiInferenceTier, title: string, subtitle: string): UiAssistantModelOption => {
-    const modelName = configuredTiers.find((t) => t.tier === tierKey)?.primaryModel?.trim();
-    const isDuplicate = configuredTiers.length > 0 && (!modelName || seenModels.has(modelName));
-    if (modelName) seenModels.add(modelName);
-    const enrichedSubtitle = modelName ? `${subtitle} · ${modelName}` : subtitle;
-    return {
-      tier: tierKey,
-      title,
-      subtitle: enrichedSubtitle,
-      ...(modelName ? { configuredModelName: modelName } : {}),
-      ...(isDuplicate ? { hiddenDuplicate: true } : {}),
-    };
-  };
-
-  return [
-    buildEntry("simple", isFr ? "Rapide" : "Fast", isFr ? "Réponses les plus rapides" : "Fastest answers"),
-    buildEntry("medium", isFr ? "Polyvalent" : "Versatile", isFr ? "Aide polyvalente au quotidien" : "Everyday versatile assistance"),
-    buildEntry("complex", isFr ? "Raisonnement avancé" : "Advanced reasoning", isFr ? "Tâches complexes & analyse critique" : "Complex tasks & critical analysis"),
-  ];
 }
 
 export function upsertTurnIntoSavedConversations(params: {
@@ -243,6 +154,8 @@ export function upsertTurnIntoSavedConversations(params: {
   readonly usedSources?: readonly UiAssistantRagCitationItem[];
   readonly stepProgress?: readonly UiThreeSpeedStepProgress[];
   readonly thinkingElapsedSeconds?: number;
+  readonly reflexiveExecutionId?: string;
+  readonly reflexiveTraceEvents?: readonly UiAgentTraceEventItem[];
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly resolvedConversationId: string;
@@ -250,29 +163,56 @@ export function upsertTurnIntoSavedConversations(params: {
   readonly isNewConversation: boolean;
   readonly createdTitle: string;
 } {
-  const modelOpt = params.modelOptions.find((m) => m.tier === params.requestedTier) ?? params.modelOptions[1]!;
+  const modelOpt =
+    params.modelOptions.find((m) => m.tier === params.requestedTier) ??
+    params.modelOptions[1]!;
   const modelLabel =
-    modelOpt.configuredModelName && modelOpt.title !== modelOpt.configuredModelName
+    modelOpt.configuredModelName &&
+    modelOpt.title !== modelOpt.configuredModelName
       ? `${modelOpt.title} (${modelOpt.configuredModelName})`
       : modelOpt.configuredModelName || modelOpt.title;
-  const effortLabel = params.thinkingEffort === "deep" ? (params.isFr ? "Approfondi" : "In-depth") : "Standard";
+  const effortLabel =
+    params.thinkingEffort === "deep"
+      ? params.isFr
+        ? "Approfondi"
+        : "In-depth"
+      : "Standard";
   const nowIso = new Date().toISOString();
   const cleanReply = sanitizeAssistantDisplayReply(params.assistantReply);
-  const normalizedEffort: UiInferenceEffort = params.thinkingEffort === "deep" ? "deep" : "balanced";
+  const normalizedEffort: UiInferenceEffort =
+    params.thinkingEffort === "deep" ? "deep" : "balanced";
   const newTurn: SavedConversationTurnItem = {
-    turnId: params.turnId || `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    turnId:
+      params.turnId ||
+      `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     userPrompt: params.userPrompt,
     assistantReply: cleanReply,
-    ...(params.assembledSystemPrompt ? { assembledSystemPrompt: params.assembledSystemPrompt } : {}),
+    ...(params.assembledSystemPrompt
+      ? { assembledSystemPrompt: params.assembledSystemPrompt }
+      : {}),
     modelTier: params.requestedTier,
     modelLabel,
     thinkingEffort: normalizedEffort,
     effortLabel,
     timestampIso: nowIso,
-    ...(params.attachedFiles && params.attachedFiles.length > 0 ? { attachedFiles: params.attachedFiles } : {}),
-    ...(params.usedSources && params.usedSources.length > 0 ? { usedSources: params.usedSources } : {}),
-    ...(params.stepProgress && params.stepProgress.length > 0 ? { stepProgress: params.stepProgress } : {}),
-    ...(params.thinkingElapsedSeconds !== undefined ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds } : {}),
+    ...(params.attachedFiles && params.attachedFiles.length > 0
+      ? { attachedFiles: params.attachedFiles }
+      : {}),
+    ...(params.usedSources && params.usedSources.length > 0
+      ? { usedSources: params.usedSources }
+      : {}),
+    ...(params.stepProgress && params.stepProgress.length > 0
+      ? { stepProgress: params.stepProgress }
+      : {}),
+    ...(params.thinkingElapsedSeconds !== undefined
+      ? { thinkingElapsedSeconds: params.thinkingElapsedSeconds }
+      : {}),
+    ...(params.reflexiveExecutionId
+      ? { reflexiveExecutionId: params.reflexiveExecutionId }
+      : {}),
+    ...(params.reflexiveTraceEvents && params.reflexiveTraceEvents.length > 0
+      ? { reflexiveTraceEvents: params.reflexiveTraceEvents }
+      : {}),
   };
 
   const existing = params.activeConversationId
@@ -287,9 +227,18 @@ export function upsertTurnIntoSavedConversations(params: {
       thinkingEffort: normalizedEffort,
       turns: [...existing.turns, newTurn],
     };
-    const nextList = [updatedConv, ...params.prevConversations.filter((c) => c.id !== existing.id)];
+    const nextList = [
+      updatedConv,
+      ...params.prevConversations.filter((c) => c.id !== existing.id),
+    ];
     writeSavedAssistantConversations(nextList);
-    return { nextConversations: nextList, resolvedConversationId: existing.id, createdTurn: newTurn, isNewConversation: false, createdTitle: existing.title };
+    return {
+      nextConversations: nextList,
+      resolvedConversationId: existing.id,
+      createdTurn: newTurn,
+      isNewConversation: false,
+      createdTitle: existing.title,
+    };
   }
 
   const convId = `conv-${params.prevConversations.length + 1}-${Date.now()}`;
@@ -308,7 +257,38 @@ export function upsertTurnIntoSavedConversations(params: {
   };
   const nextList = [createdConv, ...params.prevConversations];
   writeSavedAssistantConversations(nextList);
-  return { nextConversations: nextList, resolvedConversationId: convId, createdTurn: newTurn, isNewConversation: true, createdTitle };
+  return {
+    nextConversations: nextList,
+    resolvedConversationId: convId,
+    createdTurn: newTurn,
+    isNewConversation: true,
+    createdTitle,
+  };
+}
+
+export function attachReflexiveTraceToConversationLatestTurn(
+  conversationId: string | null,
+  executionId: string,
+  traceEvents: readonly UiAgentTraceEventItem[],
+): readonly SavedAssistantConversation[] {
+  const current = readSavedAssistantConversations();
+  if (!conversationId || traceEvents.length === 0) return current;
+  const next = current.map((conv) => {
+    if (conv.id !== conversationId || conv.turns.length === 0) return conv;
+    const lastIdx = conv.turns.length - 1;
+    const updatedTurns = conv.turns.map((t, idx) =>
+      idx === lastIdx
+        ? {
+            ...t,
+            reflexiveExecutionId: executionId,
+            reflexiveTraceEvents: traceEvents,
+          }
+        : t,
+    );
+    return { ...conv, turns: updatedTurns };
+  });
+  writeSavedAssistantConversations(next);
+  return next;
 }
 
 export function updateTurnFeedbackInSavedConversations(
@@ -324,57 +304,4 @@ export function updateTurnFeedbackInSavedConversations(
   }));
   writeSavedAssistantConversations(next);
   return next;
-}
-
-export function consumeAssistantPrefillFromStorage(): string | null {
-  return consumeAssistantPrefillPrompt();
-}
-
-export function buildAssistantAutocompleteSuggestions(
-  activePacks: readonly { readonly packKey: string }[] = [],
-): readonly UiAssistantAutocompleteSuggestion[] {
-  const suggestions: UiAssistantAutocompleteSuggestion[] = [];
-  const seenTokens = new Set<string>();
-  const cached = readCachedAgentsAndSkills();
-
-  for (const ag of cached.agents ?? []) {
-    if (seenTokens.has(ag.handle)) continue;
-    seenTokens.add(ag.handle);
-    suggestions.push({
-      id: ag.agentId,
-      kind: "agent",
-      token: ag.handle,
-      name: ag.name,
-      description: ag.roleMission,
-      badge: ag.visibilityScope === "PRIVATE" ? "🔒 Privé" : ag.visibilityScope === "PACK" ? `📦 ${ag.sourcePackKey ?? "Pack"}` : "👥 Équipe",
-    });
-  }
-  for (const sk of cached.skills ?? []) {
-    if (seenTokens.has(sk.commandHandle)) continue;
-    seenTokens.add(sk.commandHandle);
-    suggestions.push({
-      id: sk.skillId,
-      kind: "skill",
-      token: sk.commandHandle,
-      name: sk.name,
-      description: sk.objective,
-      badge: sk.visibilityScope === "PRIVATE" ? "🔒 Privé" : sk.visibilityScope === "PACK" ? `📦 ${sk.sourcePackKey ?? "Pack"}` : "👥 Équipe",
-    });
-  }
-  for (const pack of activePacks) {
-    if (pack.packKey === "orcia-pack-sdlc") {
-      const sdlcDefaults: readonly UiAssistantAutocompleteSuggestion[] = [
-        { id: "agent-architecte-solution", kind: "agent", token: "@architecte-solution", name: "Architecte Solution", description: "Concevoir et vérifier l'architecture cible", badge: "📦 orcia-pack-sdlc" },
-        { id: "agent-analyste-metier", kind: "agent", token: "@analyste-metier", name: "Analyste Métier", description: "Clarifier les besoins et rédiger les exigences", badge: "📦 orcia-pack-sdlc" },
-        { id: "skill-revue-architecture", kind: "skill", token: "/revue-architecture", name: "Revue d'Architecture", description: "Vérifier la cohérence des choix d'architecture", badge: "📦 orcia-pack-sdlc" },
-      ];
-      for (const item of sdlcDefaults) {
-        if (!seenTokens.has(item.token)) {
-          seenTokens.add(item.token);
-          suggestions.push(item);
-        }
-      }
-    }
-  }
-  return suggestions;
 }

@@ -40,6 +40,7 @@ from orcia_api.routers.dna_and_glossary import (
 from orcia_api.routers.enterprise_connectors import (
     router as enterprise_connectors_router,
 )
+from orcia_api.routers.executions_trace import router as executions_trace_router
 from orcia_api.routers.finops import router as finops_router
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import probe_router as health_probe_router
@@ -62,6 +63,7 @@ from orcia_api.routers.permission_broker import router as permission_broker_rout
 from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
+from orcia_api.routers.sources_surgical import router as sources_surgical_router
 from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
 from orcia_api.routers.workflow_triggers import router as workflow_triggers_router
 from orcia_api.routers.workflows import router as workflows_v2_router
@@ -160,6 +162,8 @@ def create_app() -> FastAPI:
     application.include_router(autonomy_contracts_router)
     application.include_router(autonomous_supervision_router)
     application.include_router(workflow_triggers_router)
+    application.include_router(sources_surgical_router)
+    application.include_router(executions_trace_router)
     return application
 
 
