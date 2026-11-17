@@ -7,8 +7,6 @@ Exposes:
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
 import os
 from datetime import UTC, datetime
@@ -47,6 +45,7 @@ from orcia_core.permissions.errors import (
     ResourceNotFoundError,
     WebhookSignatureInvalidError,
 )
+from orcia_core.permissions.webhook_security import verify_webhook_hmac_sha256
 from orcia_core.rag.source_freshness_reconciler import (
     RECONCILE_OUTCOME_NO_OP_UNCHANGED,
     evaluate_24h_freshness_probe,
@@ -70,14 +69,7 @@ def _trace(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
 
 
-def _verify_hmac(raw_body: bytes, secret: str, signature_header: str | None) -> bool:
-    if not signature_header:
-        return False
-    clean = signature_header.strip()
-    if clean.startswith("sha256="):
-        clean = clean[7:].strip()
-    expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected.lower(), clean.lower())
+_verify_hmac = verify_webhook_hmac_sha256
 
 
 @router.post(
@@ -139,7 +131,7 @@ async def ingest_datasource_webhook(
         webhook_secret = os.environ.get("ORCIA_DEFAULT_WEBHOOK_SECRET")
 
     if (webhook_secret or sig_hdr) and (
-        not webhook_secret or not _verify_hmac(raw_body, webhook_secret, sig_hdr)
+        not webhook_secret or not verify_webhook_hmac_sha256(raw_body, webhook_secret, sig_hdr)
     ):
         raise WebhookSignatureInvalidError(instance=str(request.url.path))
 

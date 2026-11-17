@@ -1,0 +1,22 @@
+# Durcissement OpenShift SCC `restricted` pour orcia-web (UID/GID arbitraire, FS read-only).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcia-web
+spec:
+  template:
+    metadata:
+      annotations:
+        orcia.io/openshift-scc: "restricted"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

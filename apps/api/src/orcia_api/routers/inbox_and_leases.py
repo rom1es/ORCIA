@@ -258,7 +258,10 @@ async def stream_workspace_events(
             else (lambda: None)
         )
         try:
-            recent = svc.sse_broker.list_recent_events(workspace_id=workspace_id)
+            if hasattr(svc.sse_broker, "list_recent_events_async"):
+                recent = await svc.sse_broker.list_recent_events_async(workspace_id=workspace_id)
+            else:
+                recent = svc.sse_broker.list_recent_events(workspace_id=workspace_id)
             conn_payload = json.dumps({"channel": f"channel:workspace:{workspace_id}"})
             yield f"event: connected\ndata: {conn_payload}\n\n"
             seen_ids: set[str] = set()

@@ -7,7 +7,6 @@ import {
   LayersInspectorPopover,
   PermissionGuard,
   SecretField,
-  WorkflowTopGovernanceBar,
 } from "../index";
 
 describe("Epic 8 @orcia/ui primitives (Stories 8.1 to 8.6)", () => {
@@ -79,10 +78,10 @@ describe("Epic 8 @orcia/ui primitives (Stories 8.1 to 8.6)", () => {
           configuredBadge: "Configuré",
           unconfiguredBadge: "Non configuré",
           fingerprintPrefix: "Empreinte",
-          replaceSecretCta: "Remplacer",
+          replaceSecretCta: "Remplacer", // pragma: allowlist secret
           cancelReplaceCta: "Annuler",
-          clearSecretCta: "Effacer",
-          saveNewSecretCta: "Enregistrer",
+          clearSecretCta: "Effacer", // pragma: allowlist secret
+          saveNewSecretCta: "Enregistrer", // pragma: allowlist secret
           inputPlaceholder: "Nouveau secret...",
         }}
       />,
@@ -138,47 +137,6 @@ describe("Epic 8 @orcia/ui primitives (Stories 8.1 to 8.6)", () => {
       target: { value: "deep" },
     });
     expect(onEffortChange).toHaveBeenCalledWith("deep");
-  });
-
-  it("WorkflowTopGovernanceBar displays 5 lifecycle tabs, SemVer badge, pre-prompt sha256, contract counts, and Fork button", () => {
-    const onForkDraft = vi.fn();
-    const onSelectTab = vi.fn();
-    render(
-      <WorkflowTopGovernanceBar
-        workflowKey="wf-discovery-audit"
-        version="1.0.0"
-        lifecycleStatus="PUBLISHED"
-        prePromptSha256="abcdef0123456789abcdef"
-        requiredParams={["p_1", "p_2"]}
-        requiredMarkdownSections={["Contexte", "Décisions"]}
-        triggers={["manual", "webhook"]}
-        activeTab="PUBLISHED"
-        tabCounts={[
-          { tab: "PUBLISHED", label: "Publiés", count: 3 },
-          { tab: "DRAFT", label: "Brouillons", count: 1 },
-          { tab: "TRASH", label: "Corbeille", count: 0 },
-          { tab: "ACTIVE_RUNS", label: "En cours", count: 2 },
-          { tab: "PAUSED_ARBITRATION", label: "Arbitrage", count: 1 },
-        ]}
-        onSelectTab={onSelectTab}
-        onForkDraft={onForkDraft}
-        labels={{
-          prePromptButton: "Pré-prompt IA",
-          contractButton: "Contrat du workflow",
-          triggersButton: "Déclencheurs",
-          dryRunButton: "▷ Tester",
-          forkButton: "Modifier (Fork)",
-          publishButton: "Publier",
-          readOnlyPublishedHint: "Version publiée immuable",
-        }}
-      />,
-    );
-
-    expect(screen.getByTestId("workflow-semver-badge").textContent).toContain("v1.0.0");
-    fireEvent.click(screen.getByTestId("workflow-fork-btn"));
-    expect(onForkDraft).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByTestId("studio-tab-DRAFT"));
-    expect(onSelectTab).toHaveBeenCalledWith("DRAFT");
   });
 
   it("LayersInspectorPopover groups sub-workflow layers into 3 zones and toggles enabled/SKIPPED", () => {

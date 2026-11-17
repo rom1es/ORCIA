@@ -13,6 +13,11 @@ from orcia_core.audit_finops.errors import AuditLedgerImmutableViolationError
 from orcia_core.blackboard.errors import BlackboardAppendOnlyViolationError
 from orcia_core.bootstrap.errors import ModelOrthogonalityViolationError
 from orcia_core.catalog.errors import ReadSourceDeniedError
+from orcia_core.observability.errors import (
+    LogSinkQueryFailedError,
+    UnsafeLogSinkUrlError,
+    UnsupportedLogSinkBackendError,
+)
 from orcia_core.ontology.errors import OntologyConflictError
 from orcia_core.orchestration.ai_models_errors import (
     LastTierModelInUseError,
@@ -37,8 +42,11 @@ from orcia_core.orchestration.errors import (
 )
 from orcia_core.permissions.errors import (
     AdminLockoutPreventedError,
+    AutonomyContractNotFoundError,
+    AutonomyContractSignForbiddenError,
     CodegraphWorkspaceLeadRequiredError,
     ConfusedDeputyBlockedError,
+    ContractPrivilegeEscalationError,
     DuplicateIamPrincipalError,
     GrantEscalationForbiddenError,
     InvalidCredentialsError,
@@ -62,6 +70,7 @@ from orcia_core.permissions.errors import (
     RevokedTokenError,
     ScopeAccessDeniedError,
     SecretConfigReadDeniedError,
+    ServicePrincipalInvalidForContractError,
     SmtpConnectorRequiredForEmailOtpError,
     SsoAuthDisabledByPolicyError,
     SsoConfigurationIncompleteError,
@@ -161,6 +170,13 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     EmbeddingProviderUnsupportedError,
     NoActiveEmbeddingModelError,
     RagReindexInProgressError,
+    UnsafeLogSinkUrlError,
+    UnsupportedLogSinkBackendError,
+    LogSinkQueryFailedError,
+    AutonomyContractNotFoundError,
+    AutonomyContractSignForbiddenError,
+    ContractPrivilegeEscalationError,
+    ServicePrincipalInvalidForContractError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {

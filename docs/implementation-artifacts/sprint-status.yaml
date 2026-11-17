@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-16-2026 22:35
+last_updated: 11-17-2026 08:25
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -87,14 +87,13 @@ development_status:
   6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu: done
   epic-6-retrospective: optional
 
-  epic-7: backlog
-  7-0a-socle-de-journalisation-unifie-12-factor-json-stdout: backlog
-  7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel: backlog
-  7-0c-conformite-deploiement-openshift-et-clusterlogforwarder: backlog
-  7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: backlog
-  7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler: backlog
-  7-3-boucle-fermée-d-auto-remédiation-uj-12-diagnostic-0-90-repro: backlog
-  7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: backlog
+  epic-7: done
+  7-0a-socle-de-journalisation-unifie-12-factor-json-stdout: done
+  7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel: done
+  7-0c-conformite-deploiement-openshift-et-clusterlogforwarder: done
+  7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: done
+  7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler: done
+  7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: done
   epic-7-retrospective: optional
 
   # Epic 13 — Évolutions continues & traçabilité des capacités (CAP-ACT-4)
@@ -1188,3 +1187,33 @@ action_items:
       Relevé sur la capture utilisateur du 2026-11-16 (voir docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md) :
       coexistence d'une icône SVG <OrciaIcon /> et d'un glyphe Unicode/emoji en dur sur TemporaryPasswordWarningBanner et dans les entrées
       « Paramètres de mon compte » / « Mes connexions aux outils » du menu déroulant utilisateur.
+  - id: AIOPS-INCIDENT-LOOP-01
+    title: "Boucle fermée de Gouvernance d'Incident sur alerte du puits de logs sans modification de code ni écriture Git (ex-Story 7.3 recadrée)"
+    action: >
+      Implémenter une boucle de gouvernance d'incident strictement bornée au rôle d'ORCIA :
+      (1) Zéro modification du code source de l'application représentée dans l'Espace, zéro écriture Git (branche/PR/MR/Revert),
+      zéro Sandbox TDD applicative et zéro dépendance CI/CD externe (codegraph-mcp reste strictement optionnel et en lecture seule) ;
+      (2) Câblage HTTP asynchrone httpx.AsyncClient réel de AtlassianJiraConnector et AtlassianConfluenceConnector sur enterprise_connectors
+      (validation anti-SSRF, chiffrement PassthroughVaultCipher et cassettes HTTP déterministes 0 $ en CI) ;
+      (3) Workflow déclaratif déclenché par LOG_SINK_ALERT (error_fingerprint_sha256 + cooldown via LogSinkQueryPort) produisant le Diagnostic contextuel
+      en lecture seule (Ontologie, KB Confluence, Jira, codegraph-mcp lecture seule optionnel), le Dossier d'Intention de Remédiation,
+      le Paquet de Contexte MCP (/api/v1/mcp) exploitable depuis l'IDE du développeur et le ticket d'incident Jira qualifié ;
+      (4) Pause durable DBOS.recv jusqu'à confirmation de résolution (webhook Jira ou bouton 1-clic « Marquer comme corrigé & vérifier les journaux »
+      dans /processes pour tourner à 100 % en local DEV sans infrastructure externe), suivie de POST_ACTION_VERIFICATION via LogSinkQueryPort
+      (clôture automatique avec preuve audit_ledger si l'erreur a disparu, ou réouverture/escalade automatique du ticket + suspension CIRCUIT_OPEN +
+      alerte SSE < 500 ms si l'erreur persiste).
+    priority: P2
+    depends_on:
+      - 7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel
+      - 7-1-contrat-d-autonomie-signé-identité-service-principal-scopée
+      - 7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler
+    ad_ref: "AD-18, AD-23"
+    owner: "Winston (Architect) / Karim (SRE) / Amelia (Dev)"
+    status: open
+    epic: epic-7
+    tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-17-epic-7-rebasage-sans-agent-codeur-et-action-item-incident-tech-lead-report.md"
+    description: >
+      L'ancienne Story 7.3 (agent codeur clonant un dépôt, écrivant du code/tests TDD en Sandbox Palier 2 et déployant en production) a été purgée
+      le 2026-11-17 car ORCIA ne gère ni le code source ni le déploiement des applications représentées dans les Espaces (arbitrage Epics 14 & 18).
+      Ce ticket conserve l'intention métier utile (qualification autonome d'incident depuis les logs et vérification post-résolution en boucle fermée)
+      100 % dans le périmètre d'orchestration de contexte et de gouvernance d'ORCIA.

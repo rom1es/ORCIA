@@ -115,6 +115,18 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "A temporary network or infrastructure failure occurred; retry scheduled.",
         ),
     },
+    "ERR_TRANSIENT_CONNECTOR_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur transitoire du connecteur (nouvel essai autorisé)",
+            "Le connecteur externe a rencontré une indisponibilité temporaire ; "
+            "une nouvelle tentative automatique est planifiée.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Transient connector error (retry allowed)",
+            "The external connector encountered a temporary unavailability; "
+            "an automatic retry is scheduled.",
+        ),
+    },
     "ERR_RATE_LIMITED": {
         "fr": LocalizedErrorCopy(
             "Quota d'appels amont atteint (429)",
@@ -166,6 +178,18 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
         "en": LocalizedErrorCopy(
             "Permanent infrastructure error or open circuit breaker",
             "The external connector is persistently unavailable or its circuit breaker is open.",
+        ),
+    },
+    "ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE": {
+        "fr": LocalizedErrorCopy(
+            "Workflow critique incompatible avec l'autonomie totale",
+            "Tout workflow classé HIGH_CRITICAL exige au moins une Gate Humaine et ne peut pas "
+            "être exécuté en régime AUTONOMOUS_CONTRACT.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Critical workflow requires human gate",
+            "Any workflow classified as HIGH_CRITICAL requires at least one Human Gate and "
+            "cannot run under AUTONOMOUS_CONTRACT regime.",
         ),
     },
 }
@@ -274,6 +298,11 @@ class ScopeAccessDeniedError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_SCOPE_ACCESS_DENIED", 403, "scope-access-denied"
 
 
+class CriticalWorkflowRequiresHumanGateError(OrciaDomainError):
+    error_code = "ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE"
+    http_status, type_slug = 422, "critical-workflow-requires-human-gate"
+
+
 class TransientInfraError(OrciaDomainError):
     """Retryable transient infrastructure error with optional `retry_after_s` (`AC-F3`)."""
 
@@ -310,6 +339,13 @@ class UpstreamTimeoutError(TransientInfraError):
     http_status, type_slug = 504, "upstream-timeout"
 
 
+class TransientConnectorError(TransientInfraError):
+    """Retryable external connector error eligible for `ConnectorInvoker` retry (`Story 7.2`)."""
+
+    error_code = "ERR_TRANSIENT_CONNECTOR_ERROR"
+    http_status, type_slug = 503, "transient-connector-error"
+
+
 class FunctionalConnectorError(OrciaDomainError):
     """Non-retryable functional connector error escalating to human arbitration (`AC-F3`)."""
 
@@ -332,6 +368,7 @@ class PermanentInfraError(OrciaDomainError):
 
 
 __all__ = [
+    "CriticalWorkflowRequiresHumanGateError",
     "DEFAULT_LOCALE",
     "ERROR_CATALOG",
     "FunctionalConnectorError",
@@ -347,6 +384,7 @@ __all__ = [
     "ResourceNotFoundError",
     "ScopeAccessDeniedError",
     "SupportedLocale",
+    "TransientConnectorError",
     "TransientInfraError",
     "UpstreamTimeoutError",
     "ValidationDomainError",

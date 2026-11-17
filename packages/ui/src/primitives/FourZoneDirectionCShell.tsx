@@ -51,6 +51,9 @@ export interface UiNotificationCenterItem {
   readonly description: string;
   readonly targetRoute?: string;
   readonly ctaLabel?: string;
+  readonly triggerLabel?: string;
+  readonly isAutonomousNominal?: boolean;
+  readonly isAutonomousPriority?: boolean;
 }
 
 export interface FourZoneDirectionCShellLabels {
@@ -62,6 +65,8 @@ export interface FourZoneDirectionCShellLabels {
   readonly notificationsEmptyText: string;
   readonly notificationsVsActivityHint?: string;
   readonly notificationsOpenActivityCta?: string;
+  readonly autonomousNominalGroupTitle?: string;
+  readonly autonomousDefaultTriggerLabel?: string;
   readonly sidebarAriaLabel: string;
   readonly railCollapseLabel: string;
   readonly railExpandLabel: string;

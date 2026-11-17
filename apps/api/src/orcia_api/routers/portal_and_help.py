@@ -266,7 +266,7 @@ async def resolve_contextual_help(
     lang: Literal["fr", "en"] = Query(default="fr"),
 ) -> ContextualHelpResolveResponse:
     svc = get_contextual_help_service(request)
-    res = svc.resolve_for_route(route=route, pack=pack, lang=lang)
+    res = await svc.resolve_for_route_async(route=route, pack=pack, lang=lang)
     return ContextualHelpResolveResponse(
         route=res.route,
         pack=res.pack,
@@ -277,6 +277,11 @@ async def resolve_contextual_help(
         active_article=_serialize_help_article(res.active_article),
         rollback_available=res.rollback_available,
         ask_assistant_prefill=res.ask_assistant_prefill,
+        is_autonomous_generated=res.is_autonomous_generated,
+        run_id=res.run_id,
+        contract_label=res.contract_label,
+        trigger_label=res.trigger_label,
+        previous_version_available=res.previous_version_available or res.rollback_available,
         trace_id=_trace(request),
     )
 
@@ -294,7 +299,7 @@ async def publish_hot_contextual_help(
 ) -> HelpArticleSchemaItem:
     resolve_request_user(request, persona_key=persona_key)
     svc = get_contextual_help_service(request)
-    updated = svc.publish_hot_version(
+    updated = await svc.publish_hot_version_async(
         resource_id=body.resource_id,
         new_version=body.new_version,
         new_title=body.new_title,
@@ -318,5 +323,5 @@ async def rollback_contextual_help(
 ) -> HelpArticleSchemaItem:
     resolve_request_user(request, persona_key=persona_key)
     svc = get_contextual_help_service(request)
-    restored = svc.rollback_to_previous_version(body.resource_id)
+    restored = await svc.rollback_to_previous_version_async(body.resource_id)
     return _serialize_help_article(restored)

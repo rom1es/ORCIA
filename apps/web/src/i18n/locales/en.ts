@@ -4,12 +4,15 @@ import { ADMIN_AND_STUDIO_EN_LABELS } from "./admin_and_studio_labels";
 import { AI_MODELS_HUB_EN } from "./ai_models_hub_labels";
 import { ASSISTANT_EN_LABELS } from "./assistant_labels";
 import { AUTH_SETTINGS_EN_LABELS } from "./auth_settings_labels";
+import { AUTONOMOUS_SUPERVISION_EN_LABELS } from "./autonomous_supervision_labels";
+import { AUTONOMY_CONTRACT_EN_LABELS } from "./autonomy_contract_labels";
 import { EPIC18_SOURCES_LABELS_EN } from "./epic18_sources_labels";
 import { FINOPS_EN_LABELS } from "./finops_labels";
 import { GATES_AND_INBOX_EN_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_EN_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_EN_LABELS } from "./inbox_and_cockpit_labels";
 import { SHELL_AND_SEARCH_EN_LABELS } from "./shell_and_search_labels";
+import { WORKFLOW_TRIGGERS_EN_LABELS } from "./workflow_triggers_labels";
 
 export const enDictionary: TranslationDictionary = {
   ...INBOX_AND_COCKPIT_EN_LABELS,
@@ -23,7 +26,10 @@ export const enDictionary: TranslationDictionary = {
   locale: "en",
   aiModelsHub: AI_MODELS_HUB_EN,
   authSettings: AUTH_SETTINGS_EN_LABELS,
+  autonomousSupervision: AUTONOMOUS_SUPERVISION_EN_LABELS,
+  autonomyContract: AUTONOMY_CONTRACT_EN_LABELS,
   epic18Sources: EPIC18_SOURCES_LABELS_EN,
+  workflowTriggers: WORKFLOW_TRIGGERS_EN_LABELS,
   shell: {
     brandTitle: "ORCIA",
     brandSubtitle: "",

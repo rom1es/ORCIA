@@ -42,6 +42,14 @@ from orcia_core.audit_finops.outbox_subscriber import (
     AuditLedgerOutboxSubscriber,
     map_domain_event_to_ledger_entry,
 )
+from orcia_core.audit_finops.post_hoc_audit import (
+    AutonomousGovernanceMetrics,
+    PostHocAuditSampleRecord,
+    PostHocAuditService,
+    PostHocReviewStatus,
+    compute_autonomous_governance_metrics,
+    select_post_hoc_sample_deterministic,
+)
 from orcia_core.audit_finops.provenance_exporter import ProvenanceExporterService
 from orcia_core.audit_finops.remote_usage_sanitizer import (
     RemoteUsageSanitizer,
@@ -60,6 +68,7 @@ __all__ = [
     "AuditProvenanceSummary",
     "AuditRunNotFoundError",
     "AuditTimeWindow",
+    "AutonomousGovernanceMetrics",
     "BudgetGuardService",
     "CognitiveImpactService",
     "CognitiveMasteryDashboard",
@@ -77,12 +86,17 @@ __all__ = [
     "FinopsTierEffortItem",
     "FinopsWorkflowBaseline",
     "GatePolicyRecommendation",
+    "PostHocAuditSampleRecord",
+    "PostHocAuditService",
+    "PostHocReviewStatus",
     "ProvenanceExporterService",
     "RemoteUsageSanitizer",
     "ScopeType",
     "SqlAuditLedgerService",
     "SqlConnectorQuotaGuardService",
     "WorkflowCognitiveMetrics",
+    "compute_autonomous_governance_metrics",
     "extract_remote_usage_payload",
     "map_domain_event_to_ledger_entry",
+    "select_post_hoc_sample_deterministic",
 ]

@@ -6,11 +6,15 @@ import {
   type ListAuditLedgerParams,
 } from "./domains/auditFinops";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
+import { createAutonomousSupervisionDomainClient } from "./domains/autonomousSupervision";
+import { createAutonomyContractsDomainClient } from "./domains/autonomyContracts";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
 import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import { createFinopsDomainClient } from "./domains/finops";
+import { createWorkflowsV2DomainClient } from "./domains/workflowsV2";
+import { createWorkflowTriggersDomainClient } from "./domains/workflowTriggers";
 import type { paths } from "./generated/schema";
 import {
   buildKnownOrgUsersQuery,
@@ -31,11 +35,15 @@ export {
   createAiModelsHubDomainClient,
   createAuditFinopsDomainClient,
   createAuthAndShellDomainClient,
+  createAutonomousSupervisionDomainClient,
+  createAutonomyContractsDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
   createCodegraphMcpDomainClient,
   createEpics1To7OperationsDomainClient,
   createFinopsDomainClient,
+  createWorkflowsV2DomainClient,
+  createWorkflowTriggersDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
   type ListAuditLedgerParams,
@@ -69,12 +77,16 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
   return {
     ...createAuthAndShellDomainClient(requestJson),
+    ...createAutonomousSupervisionDomainClient(requestJson),
+    ...createAutonomyContractsDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
     ...createCodegraphMcpDomainClient(requestJson),
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
     ...createFinopsDomainClient(requestJson),
+    ...createWorkflowsV2DomainClient(requestJson),
+    ...createWorkflowTriggersDomainClient(requestJson),
     ...auditFinopsClient,
     ...aiModelsHubClient,
     aiModelsHub: aiModelsHubClient,

@@ -196,3 +196,307 @@ class SettingsChanged(DomainEvent):
             key=key,
             version=version,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class AutonomousContractSigned(DomainEvent):
+    """Published when an autonomy contract is signed on a workflow (`Story 7.1`, `AD-18`)."""
+
+    workflow_id: str = ""
+    service_principal_id: str = ""
+    signed_by_user_id: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        contract_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        workflow_version: str,
+        service_principal_id: str,
+        signed_by_user_id: str,
+        signed_by_role: str,
+        signature_sha256: str,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> AutonomousContractSigned:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="AutonomousContractSigned",
+            aggregate_type="autonomy_contract",
+            aggregate_id=contract_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "contract_id": contract_id,
+                "workflow_id": workflow_id,
+                "workflow_version": workflow_version,
+                "service_principal_id": service_principal_id,
+                "signed_by_user_id": signed_by_user_id,
+                "signed_by_role": signed_by_role,
+                "signature_sha256": signature_sha256,
+                "scope_path": scope_path,
+                "actor_id": signed_by_user_id,
+                "actor_type": "USER",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            service_principal_id=service_principal_id,
+            signed_by_user_id=signed_by_user_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AutonomousContractRevoked(DomainEvent):
+    """Published when an autonomy contract is revoked (`Story 7.1`, `AD-18`)."""
+
+    workflow_id: str = ""
+    revoked_by_user_id: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        contract_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        revoked_by_user_id: str,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> AutonomousContractRevoked:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="AutonomousContractRevoked",
+            aggregate_type="autonomy_contract",
+            aggregate_id=contract_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "contract_id": contract_id,
+                "workflow_id": workflow_id,
+                "revoked_by_user_id": revoked_by_user_id,
+                "scope_path": scope_path,
+                "actor_id": revoked_by_user_id,
+                "actor_type": "USER",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            revoked_by_user_id=revoked_by_user_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AutonomousEscalated(DomainEvent):
+    """Published when an autonomous run suspends to human escalation (`Story 7.1`, `AD-18`)."""
+
+    workflow_id: str = ""
+    reason: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        run_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        reason: str,
+        contract_id: str | None = None,
+        service_principal_id: str | None = None,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> AutonomousEscalated:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="AutonomousEscalated",
+            aggregate_type="workflow_run",
+            aggregate_id=run_id,
+            run_id=run_id,
+            workspace_id=workspace_id,
+            payload={
+                "run_id": run_id,
+                "workflow_id": workflow_id,
+                "reason": reason,
+                "contract_id": contract_id,
+                "service_principal_id": service_principal_id,
+                "scope_path": scope_path,
+                "actor_id": f"sp:{service_principal_id}" if service_principal_id else "system",
+                "actor_type": "SERVICE_PRINCIPAL" if service_principal_id else "SYSTEM",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            reason=reason,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class TriggerFired(DomainEvent):
+    """Published when an autonomous workflow trigger launches a run (`Story 7.2`, `AD-18`)."""
+
+    trigger_id: str = ""
+    trigger_type: str = "WEBHOOK"
+    workflow_id: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        trigger_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        trigger_type: str,
+        run_id: str,
+        idempotency_key: str,
+        service_principal_id: str | None = None,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> TriggerFired:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="TriggerFired",
+            aggregate_type="workflow_trigger",
+            aggregate_id=trigger_id,
+            run_id=run_id,
+            workspace_id=workspace_id,
+            payload={
+                "trigger_id": trigger_id,
+                "trigger_type": trigger_type,
+                "workflow_id": workflow_id,
+                "run_id": run_id,
+                "idempotency_key": idempotency_key,
+                "service_principal_id": service_principal_id,
+                "scope_path": scope_path,
+                "actor_id": f"sp:{service_principal_id}" if service_principal_id else "system",
+                "actor_type": "SERVICE_PRINCIPAL" if service_principal_id else "SYSTEM",
+            },
+            trace_id=trace_id,
+            trigger_id=trigger_id,
+            trigger_type=trigger_type,
+            workflow_id=workflow_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class SelfTriggerBlocked(DomainEvent):
+    """Published when Self-Trigger Guard blocks a recursive trigger event (`Story 7.2`)."""
+
+    trigger_id: str = ""
+    reason: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        trigger_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        reason: str,
+        origin_run_id: str | None = None,
+        service_principal_id: str | None = None,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> SelfTriggerBlocked:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="SelfTriggerBlocked",
+            aggregate_type="workflow_trigger",
+            aggregate_id=trigger_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "trigger_id": trigger_id,
+                "workflow_id": workflow_id,
+                "reason": reason,
+                "origin_run_id": origin_run_id,
+                "service_principal_id": service_principal_id,
+                "scope_path": scope_path,
+                "actor_id": f"sp:{service_principal_id}" if service_principal_id else "system",
+                "actor_type": "SYSTEM",
+            },
+            trace_id=trace_id,
+            trigger_id=trigger_id,
+            reason=reason,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class TriggerCircuitOpened(DomainEvent):
+    """Published when a workflow trigger circuit opens (`CIRCUIT_OPEN`, `Story 7.2`)."""
+
+    trigger_id: str = ""
+    reason: str = ""
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        trigger_id: str,
+        workspace_id: str,
+        workflow_id: str,
+        reason: str,
+        consecutive_failures: int = 0,
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> TriggerCircuitOpened:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="TriggerCircuitOpened",
+            aggregate_type="workflow_trigger",
+            aggregate_id=trigger_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "trigger_id": trigger_id,
+                "workflow_id": workflow_id,
+                "reason": reason,
+                "consecutive_failures": consecutive_failures,
+                "scope_path": scope_path,
+                "actor_id": "system",
+                "actor_type": "SYSTEM",
+            },
+            trace_id=trace_id,
+            trigger_id=trigger_id,
+            reason=reason,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class WorkflowPublished(DomainEvent):
+    """Published when a Studio V2 workflow or pack is published (`Story 7.2`, opt-in help)."""
+
+    workflow_id: str = ""
+    version: str = "1.0.0"
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        workflow_id: str,
+        workspace_id: str,
+        version: str,
+        pack_slug: str = "orcia-docs",
+        title: str = "",
+        actor_id: str = "system",
+        scope_path: str = "GLOBAL",
+        trace_id: str = "00000000000000000000000000000000",
+    ) -> WorkflowPublished:
+        return cls(
+            event_id=new_uuid7_str(),
+            event_type="WorkflowPublished",
+            aggregate_type="workflow_definition",
+            aggregate_id=workflow_id,
+            run_id=None,
+            workspace_id=workspace_id,
+            payload={
+                "workflow_id": workflow_id,
+                "version": version,
+                "pack_slug": pack_slug,
+                "title": title,
+                "scope_path": scope_path,
+                "actor_id": actor_id,
+                "actor_type": "USER",
+            },
+            trace_id=trace_id,
+            workflow_id=workflow_id,
+            version=version,
+        )

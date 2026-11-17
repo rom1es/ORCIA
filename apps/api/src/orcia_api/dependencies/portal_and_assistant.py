@@ -95,12 +95,21 @@ def get_user_preferences_and_mcp_token_service(
 
 def get_contextual_help_service(request: Request) -> ContextualHelpResolutionService:
     """FastAPI `Depends` provider returning `ContextualHelpResolutionService`."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    redis_client = getattr(request.app.state, "redis_client", None)
     svc: ContextualHelpResolutionService | None = getattr(
         request.app.state, "contextual_help_service", None
     )
     if svc is None:
-        svc = ContextualHelpResolutionService()
+        svc = ContextualHelpResolutionService(redis_client=redis_client, engine=engine)
         request.app.state.contextual_help_service = svc
+    else:
+        if getattr(svc, "_engine", None) is None and engine is not None:
+            svc._engine = engine
+        if getattr(svc, "_redis_client", None) is None and redis_client is not None:
+            svc._redis_client = redis_client
     return svc
 
 

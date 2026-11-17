@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 119,
+    "uiPrimitivesCount": 124,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 45,
+    "alembicMigrationsCount": 49,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 145,
+    "techLeadReportsCount": 153,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 60,
-    "verifiedCapabilitiesCount": 45
+    "liveCapabilitiesCount": 62,
+    "verifiedCapabilitiesCount": 47
   },
   "activeRoutes": [
     "/",
@@ -71,6 +71,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AssistantThinkingSliderIndicator",
     "AssistantThinkingSubWindow",
     "AssistantUserQuestionBubble",
+    "AutonomousExecutionBadge",
+    "AutonomyContractModal",
     "BiModeLoginView",
     "BootstrapOnboardingPanel",
     "CatalogExplorerPanel",
@@ -87,6 +89,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "DurableWizardRunnerView",
     "EffortSelector",
     "FederatedUriBadge",
+    "FinopsAutonomousGovernanceSection",
     "FinopsBudgetOverrideModal",
     "FinopsBudgetPolicyModal",
     "FinopsConnectorQuotaModal",
@@ -96,7 +99,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FinopsProcessAndTiersTab",
     "FinopsRemoteMcpServicesTab",
     "FormattedMarkdownContent",
+    "FourZoneAutonomousNotificationsGroup",
     "FourZoneDirectionCShell",
+    "FourZoneNotificationsDrawer",
     "GlobalSidebar",
     "GuidanceDrawer",
     "HUMAN_PARTNER_ROLE_LABELS_FR",
@@ -162,7 +167,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "UserAccountDropdownAndSettingsModal",
     "UserPasswordChangeCard",
     "WorkflowStudioSection",
-    "WorkflowTopGovernanceBar",
+    "WorkflowTriggersModal",
     "WorkspaceAssistantPinnedCard",
     "WorkspaceControlCenter",
     "WorkspaceFiveTabsAndExternalRebaseView",
@@ -225,7 +230,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261116_0601_story_6_1_audit_ledger_append_only",
     "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses",
     "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry",
-    "20261117_0605_epic6_review_adaptive_gate_policy_check"
+    "20261117_0605_epic6_review_adaptive_gate_policy_check",
+    "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses",
+    "20261117_0702_story_7_2_triggers_outbox_and_optin_help",
+    "20261117_0704_story_7_4_post_hoc_audit_and_kill_switch",
+    "20261117_0705_epic7_review_fk_constraints"
   ],
   "architectureDecisions": [
     {
@@ -359,12 +368,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "version": "26.1.0"
     },
     {
-      "name": "opentelemetry-sdk + opentelemetry-exporter-otlp",
-      "version": "1.31.0 / 1.31.0"
+      "name": "opentelemetry-sdk + opentelemetry-exporter-otlp-proto-http",
+      "version": "1.45.2 / 1.45.2"
     },
     {
       "name": "opentelemetry-instrumentation-fastapi + sqlalchemy + httpx",
-      "version": "0.52b0 / 0.52b0 / 0.52b0"
+      "version": "0.66b2 / 0.66b2 / 0.66b2"
     },
     {
       "name": "elasticsearch-py / opensearch-py (Log Sink Client & OpenSearch Compatibility)",
@@ -504,6 +513,62 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Correctifs Revue Architecture Epic 7 (CAP-201, CAP-202)",
+      "reportFile": "2026-11-17-epic-7-correctifs-revue-architecture-tech-lead-report.md",
+      "domain": "Résolution Intégrale des 5 BLOCKING, 5 MAJOR & 3 MINOR de la Revue VALIDATE Epic 7 : Composition Root PG18/Redis, RBAC/IDOR & Confinement SP, Exécution Autonome & Outbox 'PENDING', Redis Pub/Sub SSE, Aide Contextuelle PG18/Redis, OpenShift/Logs & Découpage < 350 L",
+      "summary": "Initialisation automatique db_engine, session_maker, redis_client, secret_provider et RedisSseBrokerAdapter dans l'API et trigger-dispatcher (ORCIA_ENABLE_PG_SESSION_MAKER supprimé) ; gardes resolve_finops_read_scope / enforce_scope_level_mutation et dérivation serveur scope_path ; suppression dispense PLATFORM_ADMIN SP, catalog:write → \"update\" et migration réversible 20261117_0705 (fk_autonomy_contracts_workspace) ; relais Outbox 'PENDING', exécuteur autonome de déclencheurs, double contrôle KILL_SWITCH_STOPPED et suppression x-orcia-origin-run-id sur WorkflowPublished ; ContextualHelpResolutionService async PG18/Redis + pack=\"core\" + isAdmin session ; verrou ECS threading.Lock, rotation manage.py log-pipe, rejet token sandbox vide et retrait secret-template.yaml ; câblage Studio V2 Publier (PUT /api/v1/workflows/v2/{id}) et E2E 13-epic-7 sans branchement conditionnel (2 passed) ; découpage des 6 fichiers < 350 L, epic-7: done, 669 tests unit/contrat/sécu, 4/4 PG18 Composition Root, 9/9 Turbo, db:reset OK et 5/5 contrats lint-imports."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.4 (CAP-201)",
+      "reportFile": "7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u-tech-lead-report.md",
+      "domain": "Supervision UX des Exécutions Autonomes (AutonomousExecutionBadge Cyan/Cobalt), Arrêt d'Urgence (KILL_SWITCH_STOPPED), Rétablissement @v(N-1) + Purge Redis < 10 ms, Échantillonnage Qualité Post-Hoc (10–20 %), Regroupement Notifications & Indicateurs FinOps (SM-A1..A3)",
+      "summary": "Migration réversible 20261117_0704 (autonomous_post_hoc_audits, KILL_SWITCH_STOPPED et 3 événements Outbox + 09_reset_db_first_boot.py) ; services PostHocAuditService & AutonomousSupervisionService, garde @DBOS.step (dbos_engine.py, autonomous_runner.py), isolation SQL SM-C1/C2 vs SM-A1..A3, routeur autonomous_supervision.py + normalisation ws-* partagée (_finops_scope_guards.py), SDK @orcia/api-client 0-diff ; @orcia/ui AutonomousExecutionBadge Cyan/Cobalt (0 violet), FourZoneAutonomousNotificationsGroup, FinopsAutonomousGovernanceSection dans l'onglet existant « Maîtrise humaine & Qualité » (0 nouvel onglet, masqué si 0 run autonome), AutonomousRunsSupervisionPanel (/processes), badge dans ShellContextualHelpColumn, 0 jargon banni FR/EN ; 91 % couv. Story 7.4, 9/9 tâches Turbo (135/135 @orcia/web), PG18 + Redis testcontainers, Playwright E2E Desktop/Mobile (2 passed), CAP-201 passé live, site:sync/check (62/62)."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.2 (CAP-201)",
+      "reportFile": "7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler-tech-lead-report.md",
+      "domain": "Déclencheurs Événementiels Idempotents (WEBHOOK, LOG_SINK_ALERT, CRON, OUTBOX_EVENT Opt-In, MANUAL_AUTONOMOUS), Triple Verrou Redis NX + UNIQUE + DBOS SetWorkflowID, *Self-Trigger Guard*, Coupe-Circuit SSE < 500 ms, Factorisation HMAC (Story 18.2), Démon trigger-dispatcher & Modale Studio V2",
+      "summary": "Migration Alembic 20261117_0702 (workflow_triggers, trigger_webhook_deliveries, domain_events_outbox + 09_reset_db_first_boot.py) ; factorisation DRY verify_webhook_hmac_sha256 dans orcia_core.permissions.webhook_security partagée avec datasource_webhooks.py ; TriggerDispatcherService, evaluate_self_trigger_guard, LogSinkAnomalyScanner, parseur CRON et OptInWorkflowHelp (auto_help_on_publish=FALSE au Jour 0) ; démon --role trigger-dispatcher + abonné triggers_outbox ; routeur /api/v1//triggers, /webhooks/triggers/{id}, /triggers/alerts + SDK OpenAPI 0-diff ; modale WorkflowTriggersModal (OrciaDialog, <SecretField />, 0 #hex, survie F5) ; 90.28 % couv. combinée (95–100 % modules 7.2), 5/5 contrats lint-imports, 9/9 tâches Turbo et concurrence PG18 + Redis validée."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.1 (CAP-201)",
+      "reportFile": "7-1-contrat-d-autonomie-signé-identité-service-principal-scopée-tech-lead-report.md",
+      "domain": "Contrat d'Autonomie Signé (autonomy_contracts), Identité SERVICE_PRINCIPAL Scopée sans Co-Signature SECOPS (AD-3, AD-6, AD-18), SignedApprovalToken.issue_autonomous, Modale Studio V2 & Suppression WorkflowTopGovernanceBar",
+      "summary": "Migration Alembic 20261117_0701 (autonomy_contracts, PAUSED_AUTONOMOUS_ESCALATION, COMMITTED_AUTONOMOUS, 3 événements Outbox) + 09_reset_db_first_boot.py ; domaine pur orcia_core.permissions (_autonomy_confinement.py, autonomy_contracts.py 99 % couv.) avec signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN sans SECOPS, rejet 422 HIGH_CRITICAL et double garde noyau (SERVICE_PRINCIPAL actif scopé + Actions ⊆ Droits(Signataire) ∩ Droits(SP)) ; adaptateur PG18 sql_autonomy_contracts.py + audit_ledger ; SignedApprovalToken.issue_autonomous et runner autonomous_runner.py (96 % couv.) ; routeur FastAPI + SDK OpenAPI 0-diff ; modale AutonomyContractModal (OrciaDialog, Direction C), découpage WorkflowFiveBlocksCanvas.tsx (322 l.) + useWorkflowAutonomyContract.ts et suppression de WorkflowTopGovernanceBar ; 96,58 % couv. Story 7.1, 9/9 tâches Turbo et test d'intégration testcontainers PG18 validés."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.0c (CAP-202)",
+      "reportFile": "7-0c-conformite-deploiement-openshift-et-clusterlogforwarder-tech-lead-report.md",
+      "domain": "Conformité OpenShift SCC restricted (Dockerfile & Dockerfile.web Non-Root, Kustomize base + overlays/openshift, Sidecar sandbox-runner, Sonde /ready & Contrat ClusterLogForwarder)",
+      "summary": "Ajout des sondes < 100 ms sans SQL GET /ready & GET /api/v1/ready + extension HealthProbeLogFilter et SDK OpenAPI 0-diff, démon HTTP async interne sandbox_daemon.py (python -I sous /tmp, zéro Podman-in-Pod, auth constante X-Orcia-Sandbox-Token) + roles.py --serve/--once, Dockerfiles non-root (10001:0 Python & nginx-unprivileged:1.27-alpine 101:0 port 8080), durcissement docker-compose.yml, manifestes Kustomize infra/k8s/base/ + overlays/openshift/ sans runAsUser/fsGroup figé (readOnlyRootFilesystem: true, emptyDir /tmp, NetworkPolicy sandbox-runner egress: [], Route TLS Edge) et contrat docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01), 639 passed (96.91 % couv. observability), 9/9 tâches Turbo, lint-imports 5/5, CAP-202 passé live."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.0b (CAP-202)",
+      "reportFile": "7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel-tech-lead-report.md",
+      "domain": "Puits de Logs Paramétrable (LogSinkQueryPort), Adaptateur OpenSearch/Elasticsearch Prioritaire, Traces OTel OTLP & Profils Compose",
+      "summary": "Création du port pur LogSinkQueryPort (kernel/log_sink_ports.py, ports/log_sink.py, NoopLogSinkAdapter), empreinte déterministe compute_error_fingerprint_sha256, garde SSRF (url_guard.py), adaptateur REST JSON ElasticsearchLogSinkAdapter + factory build_log_sink_from_env câblés au Composition Root API/Worker, tracing OTLP (configure_tracing, instrument_runtime FastAPI/SQLAlchemy/HTTPX sans LoggerProvider ni OTLPLogExporter) avec corrélation TracerProvider → structlog, profils Docker Compose logs-elastic (opensearch:2.19.1 + grafana:11.5.1) et logs-loki (loki:3.4.1 + grafana:11.5.1) + rotation json-file 50m/3, kit LogSinkContractTestKit validé sur Fake et conteneur OpenSearch réel, couverture observability 96.91 % (632 passed), mypy --strict 0 erreur et lint-imports 5/5."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.0a (CAP-202)",
+      "reportFile": "7-0a-socle-de-journalisation-unifie-12-factor-json-stdout-tech-lead-report.md",
+      "domain": "Socle de Journalisation Unifié 12-Factor (JSON stdout ECS), Masquage des Secrets (NFR-SEC-4), LOG_LEVEL Dynamique & Rotation 50 Mo",
+      "summary": "Extraction _internal/ecs_formatter.py, configure_logging / ensure_logging_configured via ProcessorFormatter unifiant structlog et stdlib (uvicorn, dramatiq, dbos, sqlalchemy) sur stdout (0 stderr), HealthProbeLogFilter (/api/v1/health, /ready), masquage récursif renforcé (Bearer, eyJ..., sk-..., pat, ORCIA_BOOTSTRAP_TOKEN, SecretRef, exception), rotation 50 Mo dans scripts/manage.py, suppression de pino dans apps/web/package.json, couverture observability 96.79 %, lint-imports 5/5."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Cadrage & Rebasage Epic 7 (CAP-201, CAP-202)",
+      "reportFile": "2026-11-17-epic-7-rebasage-sans-agent-codeur-et-action-item-incident-tech-lead-report.md",
+      "domain": "Rebasage de l'Epic 7 (7.0a..7.4), Retrait Story 7.3 (Agent Codeur/Git/CI-CD) & Création ACTION_ITEM AIOPS-INCIDENT-LOOP-01 (AD-3, AD-6, AD-18)",
+      "summary": "Audit codebase pré-implémentation de l'Epic 7 (6 fractures identifiées) : amendements AD-3, AD-6 et AD-18 (table autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD sans co-signature SECOPS, SignedApprovalToken sous contrat, OUTBOX_EVENT opt-in), rebasage epics.md (7.0a..7.2, 7.4 sous Studio V2, Kustomize OpenShift sans Podman-in-Pod, Direction C /finops onglet existant sans jargon), retrait de 7-3 de sprint-status.yaml et ouverture de AIOPS-INCIDENT-LOOP-01 (boucle fermée de gouvernance d'incident sans modification de code ni écriture Git), et synchronisation CAP-201 + site:sync/site:check."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Correctifs Revue Architecture & UX Epic 6 (CAP-065, CAP-200)",

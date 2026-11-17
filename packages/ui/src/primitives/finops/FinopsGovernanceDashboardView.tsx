@@ -52,6 +52,10 @@ export interface FinopsGovernanceDashboardViewProps {
   readonly onSubmitOverride?: (runId: string, amountUsd: number, reason: string) => void;
   readonly cognitiveData?: FinopsHumanMasteryTabProps | null;
   readonly onApplyRecommendation?: (recommendationId: string) => void;
+  readonly onReviewPostHocSample?: (
+    runId: string,
+    decision: "VALIDATED" | "INVALIDATED_ROLLED_BACK",
+  ) => void;
   readonly onUpdateConnectorQuota?: (input: UpdateConnectorQuotaInput) => void;
   readonly onResetConnectorCircuit?: (connectorKey: string) => void;
 }
@@ -82,6 +86,7 @@ export function FinopsGovernanceDashboardView({
   onSubmitOverride,
   cognitiveData,
   onApplyRecommendation,
+  onReviewPostHocSample,
   onUpdateConnectorQuota,
   onResetConnectorCircuit,
 }: FinopsGovernanceDashboardViewProps): React.ReactElement {
@@ -242,6 +247,7 @@ export function FinopsGovernanceDashboardView({
               <FinopsHumanMasteryTab
                 {...cognitiveData}
                 onApplyRecommendation={onApplyRecommendation}
+                onReviewPostHocSample={onReviewPostHocSample}
                 onOpenHelpSection={onOpenHelpSection}
               />
             ) : (

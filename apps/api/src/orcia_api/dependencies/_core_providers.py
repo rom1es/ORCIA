@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from typing import TYPE_CHECKING, Any
 
 from fastapi import Request
@@ -28,6 +30,17 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
 
+def should_auto_init_infra(env_var: str) -> bool:
+    """Return True when PG18 or Redis should auto-initialize in Composition Root."""
+    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+        return False
+    if os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1":
+        return True
+    if "pytest" in sys.modules:
+        return bool(os.environ.get(env_var, "").strip())
+    return True
+
+
 def get_or_create_shared_db_engine(request: Request) -> AsyncEngine:
     """Return shared `AsyncEngine` from `request.app.state.db_engine`, creating it if absent."""
     from sqlalchemy.ext.asyncio import create_async_engine
@@ -44,6 +57,18 @@ def get_or_create_shared_db_engine(request: Request) -> AsyncEngine:
         )
         request.app.state.db_engine = engine
     return engine
+
+
+def get_configured_db_engine(request: Request) -> AsyncEngine | None:
+    """Return `db_engine` when auto-init is enabled, creating it lazily if missing."""
+    engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
+    if engine is not None:
+        if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+            return None
+        return engine
+    if should_auto_init_infra("DATABASE_URL"):
+        return get_or_create_shared_db_engine(request)
+    return None
 
 
 def get_auth_service(request: Request) -> AuthAndOrganizationService:

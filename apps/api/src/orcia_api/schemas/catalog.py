@@ -308,6 +308,11 @@ class ContextualHelpResolveResponse(BaseModel):
     active_article: HelpArticleSchemaItem
     rollback_available: bool
     ask_assistant_prefill: str
+    is_autonomous_generated: bool = False
+    run_id: str | None = None
+    contract_label: str | None = None
+    trigger_label: str | None = None
+    previous_version_available: bool = False
     trace_id: str | None = None
 
 

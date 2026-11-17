@@ -31,6 +31,8 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     notificationsVsActivityHint:
       "Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le Journal d'Activité.",
     notificationsOpenActivityCta: "Ouvrir le Journal d'Activité →",
+    autonomousNominalGroupTitle: "Exécutions autonomes nominales",
+    autonomousDefaultTriggerLabel: "Automatisé sous contrat",
     sidebarAriaLabel: "Navigation principale",
     railCollapseLabel: "Replier le menu",
     railExpandLabel: "Déplier le menu",
@@ -199,6 +201,8 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     notificationsVsActivityHint:
       "The Notification Center groups your pending actions and setup prerequisites. To browse the complete audit history of your scope, open the Activity Log.",
     notificationsOpenActivityCta: "Open Activity Log →",
+    autonomousNominalGroupTitle: "Nominal automated executions",
+    autonomousDefaultTriggerLabel: "Automated under contract",
     sidebarAriaLabel: "Main navigation",
     railCollapseLabel: "Collapse menu",
     railExpandLabel: "Expand menu",

@@ -1,6 +1,12 @@
 import React from "react";
 import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTriggerButton";
 import { CognitiveMetricCard } from "./CognitiveMetricCard";
+import {
+  FinopsAutonomousGovernanceSection,
+  type FinopsAutonomousGovernanceData,
+  type FinopsAutonomousGovernanceLabels,
+} from "./FinopsAutonomousGovernanceSection";
+import { FinopsHumanMasteryWorkflowsTable } from "./FinopsHumanMasteryWorkflowsTable";
 
 export interface HumanMasteryWorkflowRow {
   readonly workflowId: string;
@@ -82,7 +88,13 @@ export interface FinopsHumanMasteryTabProps {
   readonly workflows: readonly HumanMasteryWorkflowRow[];
   readonly recommendations: readonly HumanMasteryRecommendationItem[];
   readonly labels: HumanMasteryLabels;
+  readonly autonomousGovernance?: FinopsAutonomousGovernanceData | null;
+  readonly autonomousLabels?: FinopsAutonomousGovernanceLabels;
   readonly onApplyRecommendation?: (recommendationId: string) => void;
+  readonly onReviewPostHocSample?: (
+    runId: string,
+    decision: "VALIDATED" | "INVALIDATED_ROLLED_BACK",
+  ) => void;
   readonly onOpenHelpSection?: (sectionId: string) => void;
 }
 
@@ -97,7 +109,10 @@ export function FinopsHumanMasteryTab({
   workflows,
   recommendations,
   labels,
+  autonomousGovernance = null,
+  autonomousLabels,
   onApplyRecommendation,
+  onReviewPostHocSample,
   onOpenHelpSection,
 }: FinopsHumanMasteryTabProps): React.ReactElement {
   const framingPct = Math.round(activeFramingRatio * 100);
@@ -266,71 +281,18 @@ export function FinopsHumanMasteryTab({
       </div>
 
       {/* 4. Workflow Cognitive Breakdown Table */}
-      {workflows.length > 0 && (
-        <div data-testid="human-mastery-workflows-section" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <h3 style={{ fontSize: "14px", fontWeight: 600, margin: 0, color: "var(--color-text-primary)" }}>
-            {labels.workflowsTable.title}
-          </h3>
+      <FinopsHumanMasteryWorkflowsTable
+        workflows={workflows}
+        labels={labels.workflowsTable}
+      />
 
-          <div
-            className="orcia-ds-table-wrapper"
-            style={{
-              overflowX: "auto",
-              background: "var(--color-surface-card)",
-              border: "1px solid var(--color-border-subtle)",
-              borderRadius: "8px",
-            }}
-          >
-            <table
-              data-testid="human-mastery-workflows-table"
-              style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}
-            >
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--color-border-subtle)", color: "var(--color-text-muted)" }}>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.workflowCol}</th>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.criticalityCol}</th>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.reviewsCol}</th>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.quickPassCol}</th>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.medianDurationCol}</th>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.deviationsCol}</th>
-                  <th style={{ padding: "8px 12px" }}>{labels.workflowsTable.statusCol}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {workflows.map((wf) => (
-                  <tr
-                    key={wf.workflowId}
-                    data-testid={`human-mastery-row-${wf.workflowId}`}
-                    style={{ borderBottom: "1px solid var(--color-border-subtle)" }}
-                  >
-                    <td style={{ padding: "8px 12px", fontWeight: 600 }}>{wf.workflowTitle}</td>
-                    <td style={{ padding: "8px 12px" }}>
-                      {labels.workflowsTable.criticalityLabels?.[wf.criticality] ?? wf.criticality}
-                    </td>
-                    <td style={{ padding: "8px 12px" }}>{wf.humanPassesCount} / {wf.humanGatesCount}</td>
-                    <td style={{ padding: "8px 12px" }}>{Math.round(wf.quickPassRate * 100)} %</td>
-                    <td style={{ padding: "8px 12px" }}>{Math.round(wf.medianReviewDurationMs / 1000)} s</td>
-                    <td style={{ padding: "8px 12px" }}>{wf.uncoveredDriftCount}</td>
-                    <td style={{ padding: "8px 12px" }}>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          color: wf.hasAlert ? "var(--color-arbitration-amber)" : "var(--color-gate-emerald)",
-                          background: "var(--color-surface-muted)",
-                        }}
-                      >
-                        {wf.hasAlert ? labels.workflowsTable.statusAlert : labels.workflowsTable.statusNormal}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {autonomousGovernance && autonomousLabels && (
+        <FinopsAutonomousGovernanceSection
+          data={autonomousGovernance}
+          labels={autonomousLabels}
+          onReviewSample={onReviewPostHocSample}
+          onOpenHelpSection={onOpenHelpSection}
+        />
       )}
     </div>
   );

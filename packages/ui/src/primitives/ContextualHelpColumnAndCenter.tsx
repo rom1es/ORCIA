@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { OrciaIcon } from "../components/icons";
+import {
+  AutonomousExecutionBadge,
+  type AutonomousExecutionBadgeLabels,
+} from "./AutonomousExecutionBadge";
 
 export type UiHelpArticleLayer = "BASE" | "PACK" | "WORKSPACE" | "USER";
 
@@ -27,6 +31,10 @@ export interface UiContextualHelpArticleView {
   readonly casKey: string;
   readonly sha256: string;
   readonly previousVersion?: string | null;
+  readonly isAutonomousGenerated?: boolean;
+  readonly autonomousRunId?: string | null;
+  readonly contractLabel?: string | null;
+  readonly triggerLabel?: string | null;
 }
 
 export interface ContextualHelpColumnAndCenterLabels {
@@ -53,8 +61,10 @@ export interface ContextualHelpColumnAndCenterProps {
   readonly rollbackAvailable?: boolean;
   readonly isAdmin?: boolean;
   readonly labels: ContextualHelpColumnAndCenterLabels;
+  readonly autonomousBadgeLabels?: AutonomousExecutionBadgeLabels;
   readonly onAskAssistantOnScreen?: (route: string, prefillPrompt: string) => void;
   readonly onRollbackVersion?: (resourceId: string) => void;
+  readonly onInvalidateAndRestoreAutonomousHelp?: (runId: string, resourceId: string) => void;
 }
 
 /**
@@ -73,8 +83,10 @@ export function ContextualHelpColumnAndCenter({
   rollbackAvailable = false,
   isAdmin = false,
   labels,
+  autonomousBadgeLabels,
   onAskAssistantOnScreen,
   onRollbackVersion,
+  onInvalidateAndRestoreAutonomousHelp,
 }: ContextualHelpColumnAndCenterProps): React.ReactElement {
   const [openSteps, setOpenSteps] = useState<boolean>(true);
   const [openTerms, setOpenTerms] = useState<boolean>(true);
@@ -178,6 +190,27 @@ export function ContextualHelpColumnAndCenter({
         >
           {labels.mergedLayersPrefix} {mergedLayers.join(" → ")} ({pack})
         </div>
+        {article.isAutonomousGenerated && autonomousBadgeLabels && (
+          <AutonomousExecutionBadge
+            testId="contextual-help-autonomous-badge"
+            runId={article.autonomousRunId}
+            triggerLabel={article.triggerLabel}
+            contractLabel={article.contractLabel}
+            canEmergencyStop={false}
+            canInvalidateAndRestore={Boolean(article.autonomousRunId || rollbackAvailable)}
+            compact
+            labels={autonomousBadgeLabels}
+            onInvalidateAndRestore={(rid) => {
+              const prevVer = article.previousVersion ?? "1.0.0";
+              setRolledBackToVersion(prevVer);
+              if (onInvalidateAndRestoreAutonomousHelp) {
+                onInvalidateAndRestoreAutonomousHelp(rid, article.resourceId);
+              } else {
+                onRollbackVersion?.(article.resourceId);
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Summary: "À quoi sert cet écran ?" */}

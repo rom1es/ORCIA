@@ -266,6 +266,96 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "repeated telemetry anomalies. Manual reset is required in FinOps.",
         ),
     },
+    "ERR_AUTONOMY_CONTRACT_NOT_FOUND": {
+        "fr": LocalizedErrorCopy(
+            "Contrat d'autonomie introuvable",
+            "Aucun contrat d'autonomie actif ou correspondant n'a été trouvé pour ce processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Autonomy contract not found",
+            "No active or matching autonomy contract was found for this process.",
+        ),
+    },
+    "ERR_CONTRACT_SERVICE_PRINCIPAL_INVALID": {
+        "fr": LocalizedErrorCopy(
+            "Compte de service invalide ou non habilité sur cet espace",
+            "Le compte de service sélectionné doit être actif dans l'annuaire IAM et "
+            "habilité sur le périmètre du processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Service account invalid or not authorized on this workspace",
+            "The selected service account must be active in the IAM directory and "
+            "authorized on the workspace scope.",
+        ),
+    },
+    "ERR_CONTRACT_PRIVILEGE_ESCALATION": {
+        "fr": LocalizedErrorCopy(
+            "Confinement du contrat dépassé (élévation de privilèges refusée)",
+            "Les actions autorisées par le contrat doivent rester incluses dans l'intersection "
+            "des droits du signataire et de ceux du compte de service.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Contract confinement exceeded (privilege escalation denied)",
+            "Actions authorized by the contract must remain a subset of the intersection "
+            "of the signer's permissions and the service account's permissions.",
+        ),
+    },
+    "ERR_CONTRACT_SIGNATURE_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Rôle insuffisant pour signer un contrat d'autonomie",
+            "Seul un responsable d'équipe, directeur de pôle ou administrateur de la plateforme "
+            "habilité sur cet espace peut signer ou révoquer un contrat d'autonomie.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Insufficient role to sign an autonomy contract",
+            "Only an authorized team lead, division lead, or platform administrator on this "
+            "workspace can sign or revoke an autonomy contract.",
+        ),
+    },
+    "ERR_AUTONOMY_CONTRACT_REQUIRED": {
+        "fr": LocalizedErrorCopy(
+            "Contrat d'autonomie actif requis pour ce déclencheur",
+            "Tout déclencheur actif ou déclenché doit être rattaché à un contrat d'autonomie "
+            "signé et actif sur ce processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Active autonomy contract required for this trigger",
+            "Every active or fired trigger must be bound to a signed active autonomy contract "
+            "on this workflow.",
+        ),
+    },
+    "ERR_TRIGGER_CIRCUIT_OPEN": {
+        "fr": LocalizedErrorCopy(
+            "Déclencheur suspendu par protection (coupe-circuit ouvert)",
+            "Ce déclencheur a atteint son seuil de sécurité ou d'erreurs consécutives. "
+            "Réactivez-le manuellement après vérification.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Trigger paused by circuit breaker protection",
+            "This trigger reached its safety or consecutive failure threshold. "
+            "Re-enable it manually after inspection.",
+        ),
+    },
+    "ERR_TRIGGER_NOT_FOUND": {
+        "fr": LocalizedErrorCopy(
+            "Déclencheur introuvable",
+            "Le déclencheur demandé n'existe pas sur cet espace ou processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Trigger not found",
+            "The requested workflow trigger does not exist on this workspace or workflow.",
+        ),
+    },
+    "ERR_TRIGGER_DUPLICATE_KEY": {
+        "fr": LocalizedErrorCopy(
+            "Identifiant technique de déclencheur déjà utilisé",
+            "Un déclencheur avec la même clé existe déjà.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Duplicate trigger key",
+            "A workflow trigger with the same key already exists.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]

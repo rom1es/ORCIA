@@ -7,6 +7,10 @@ from `orcia_api.dependencies` as the unified public façade.
 
 from __future__ import annotations
 
+from orcia_api.dependencies.autonomous_supervision import (
+    get_autonomous_supervision_service,
+    get_post_hoc_audit_service,
+)
 from orcia_api.dependencies.core_and_lifespan import (
     app_lifespan,
     get_auth_service,
@@ -20,6 +24,7 @@ from orcia_api.dependencies.core_and_lifespan import (
 from orcia_api.dependencies.orchestration_and_settings import (
     get_ai_models_hub_service,
     get_audit_ledger_service,
+    get_autonomy_contract_service,
     get_cognitive_impact_service,
     get_cognitive_router_service,
     get_connector_hub_service,
@@ -29,6 +34,7 @@ from orcia_api.dependencies.orchestration_and_settings import (
     get_finops_accounting_service,
     get_hierarchical_rbac_service,
     get_iam_accounts_service,
+    get_log_sink_port,
     get_notification_service,
     get_orchestration_service,
     get_platform_settings_service,
@@ -36,6 +42,7 @@ from orcia_api.dependencies.orchestration_and_settings import (
     get_remote_usage_sanitizer,
     get_resource_lease_service,
     get_studio_and_pack_service,
+    get_trigger_dispatcher_service,
 )
 from orcia_api.dependencies.portal_and_assistant import (
     get_accostage_service,
@@ -71,6 +78,8 @@ __all__ = [
     "get_assistant_three_speed_router_service",
     "get_audit_ledger_service",
     "get_auth_service",
+    "get_autonomous_supervision_service",
+    "get_autonomy_contract_service",
     "get_bootstrap_service",
     "get_catalog_service",
     "get_cognitive_impact_service",
@@ -86,6 +95,7 @@ __all__ = [
     "get_help_generation_and_attachment_service",
     "get_hierarchical_rbac_service",
     "get_iam_accounts_service",
+    "get_log_sink_port",
     "get_notification_service",
     "get_ontology_and_rag_services",
     "get_or_create_shared_db_engine",
@@ -93,11 +103,13 @@ __all__ = [
     "get_pack_builder_system_service",
     "get_permission_broker_service",
     "get_platform_settings_service",
+    "get_post_hoc_audit_service",
     "get_provenance_exporter_service",
     "get_remote_test_bench_and_mcp_service",
     "get_remote_usage_sanitizer",
     "get_resource_lease_service",
     "get_studio_and_pack_service",
+    "get_trigger_dispatcher_service",
     "get_two_speed_search_service",
     "get_user_preferences_and_mcp_token_service",
     "get_workspace_governance_and_rebaser_service",

@@ -8,15 +8,20 @@ decoupled subscribers (`audit_finops`, `ontology`, `sse`) without coupling `engi
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+import os
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dramatiq
 from dbos import DBOS
 
 from orcia_core.audit_finops import AuditLedgerOutboxSubscriber, SqlAuditLedgerService
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork, SqlDomainEventsOutboxRepository
 from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort
 from orcia_kernel.events import DomainEvent
@@ -39,15 +44,18 @@ class OutboxEventBus:
     audit_finops_ledger: list[DomainEvent] = field(default_factory=list)
     ontology_extraction_queue: list[DomainEvent] = field(default_factory=list)
     notifications_queue: list[DomainEvent] = field(default_factory=list)
+    workflow_published_queue: list[DomainEvent] = field(default_factory=list)
     sse_published_messages: list[tuple[str, DomainEvent]] = field(default_factory=list)
     audit_sink: AuditLedgerSinkPort | None = None
     audit_subscriber: AuditLedgerOutboxSubscriber | None = None
+    on_workflow_published: Callable[[DomainEvent], Awaitable[Any] | Any] | None = None
 
     def __post_init__(self) -> None:
         if self.audit_sink is not None and self.audit_subscriber is None:
             self.audit_subscriber = AuditLedgerOutboxSubscriber(self.audit_sink)
         self.subscribe("*", "audit_finops", self._on_audit_finops)
         self.subscribe("ArtifactProduced", "ontology", self._on_ontology_l4)
+        self.subscribe("WorkflowPublished", "triggers_outbox", self._on_triggers_outbox)
         self.subscribe("*", "notifications", self._on_notifications)
         self.subscribe("*", "sse", self._on_sse_broadcast)
 
@@ -81,12 +89,19 @@ class OutboxEventBus:
         self.publish_idempotent(event)
         if self.audit_subscriber is not None:
             await self.audit_subscriber.on_domain_event(event)
+        if event.event_type == "WorkflowPublished" and self.on_workflow_published is not None:
+            res = self.on_workflow_published(event)
+            if asyncio.iscoroutine(res):
+                await res
 
     def _on_audit_finops(self, event: DomainEvent) -> None:
         self.audit_finops_ledger.append(event)
 
     def _on_ontology_l4(self, event: DomainEvent) -> None:
         self.ontology_extraction_queue.append(event)
+
+    def _on_triggers_outbox(self, event: DomainEvent) -> None:
+        self.workflow_published_queue.append(event)
 
     def _on_notifications(self, event: DomainEvent) -> None:
         self.notifications_queue.append(event)
@@ -205,6 +220,7 @@ async def relay_sql_outbox_with_engine(engine: AsyncEngine, *, batch_size: int =
 @dramatiq.actor(actor_name="sql_outbox_relay", max_retries=3)
 def sql_outbox_relay_actor(batch_size: int = 50) -> int:
     """Dramatiq actor relaying pending `domain_events_outbox` rows into `audit_ledger`."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     from sqlalchemy.ext.asyncio import create_async_engine
     from sqlalchemy.pool import NullPool
 
@@ -223,6 +239,7 @@ def sql_outbox_relay_actor(batch_size: int = 50) -> int:
 @dramatiq.actor(actor_name="outbox_relay", max_retries=3)
 def outbox_relay_actor(batch_size: int = 100) -> int:
     """Idempotent Dramatiq actor relaying a batch of Outbox events."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     relay = DramatiqOutboxRelay()
     return relay.relay_pending_batch(batch_size=batch_size)
 
@@ -236,6 +253,7 @@ def _dbos_outbox_relay_step(batch_size: int) -> int:
 @DBOS.workflow()
 def dbos_outbox_relay_workflow(batch_size: int = 100) -> int:
     """Idempotent DBOS workflow relaying a batch of Outbox events (`C3`)."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     return _dbos_outbox_relay_step(batch_size)
 
 

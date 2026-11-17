@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from orcia_core.permissions._error_catalog import PERMISSIONS_ERROR_CATALOG
 from orcia_kernel.errors import (
+    CriticalWorkflowRequiresHumanGateError,
     ObserverModeReadOnlyError,
     OrciaDomainError,
     ReadSourceDeniedError,
@@ -243,13 +244,58 @@ class ConnectorCircuitOpenError(OrciaDomainError):
     http_status, type_slug = 503, "connector-circuit-open"
 
 
+class AutonomyContractNotFoundError(ResourceNotFoundError):
+    error_code = "ERR_AUTONOMY_CONTRACT_NOT_FOUND"
+    http_status, type_slug = 404, "autonomy-contract-not-found"
+
+
+class ServicePrincipalInvalidForContractError(OrciaDomainError):
+    error_code = "ERR_CONTRACT_SERVICE_PRINCIPAL_INVALID"
+    http_status, type_slug = 422, "contract-service-principal-invalid"
+
+
+class ContractPrivilegeEscalationError(OrciaDomainError):
+    error_code = "ERR_CONTRACT_PRIVILEGE_ESCALATION"
+    http_status, type_slug = 403, "contract-privilege-escalation"
+
+
+class AutonomyContractSignForbiddenError(OrciaDomainError):
+    error_code = "ERR_CONTRACT_SIGNATURE_FORBIDDEN"
+    http_status, type_slug = 403, "contract-signature-forbidden"
+
+
+class AutonomyContractRequiredForTriggerError(OrciaDomainError):
+    error_code = "ERR_AUTONOMY_CONTRACT_REQUIRED"
+    http_status, type_slug = 422, "autonomy-contract-required"
+
+
+class TriggerCircuitOpenError(OrciaDomainError):
+    error_code = "ERR_TRIGGER_CIRCUIT_OPEN"
+    http_status, type_slug = 503, "trigger-circuit-open"
+
+
+class TriggerNotFoundError(ResourceNotFoundError):
+    error_code = "ERR_TRIGGER_NOT_FOUND"
+    http_status, type_slug = 404, "trigger-not-found"
+
+
+class TriggerDuplicateKeyError(OrciaDomainError):
+    error_code = "ERR_TRIGGER_DUPLICATE_KEY"
+    http_status, type_slug = 409, "trigger-duplicate-key"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "AuthenticationRequiredError",
+    "AutonomyContractNotFoundError",
+    "AutonomyContractRequiredForTriggerError",
+    "AutonomyContractSignForbiddenError",
     "C3WorkspaceRequiredError",
     "CodegraphWorkspaceLeadRequiredError",
     "ConfusedDeputyBlockedError",
     "ConnectorCircuitOpenError",
+    "ContractPrivilegeEscalationError",
+    "CriticalWorkflowRequiresHumanGateError",
     "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
     "InvalidCredentialsError",
@@ -278,10 +324,14 @@ __all__ = [
     "RevokedTokenError",
     "ScopeAccessDeniedError",
     "SecretConfigReadDeniedError",
+    "ServicePrincipalInvalidForContractError",
     "SettingsVersionConflictError",
     "SmtpConnectorRequiredForEmailOtpError",
     "SsoAuthDisabledByPolicyError",
     "SsoConfigurationIncompleteError",
+    "TriggerCircuitOpenError",
+    "TriggerDuplicateKeyError",
+    "TriggerNotFoundError",
     "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
     "WeakPasswordPolicyError",

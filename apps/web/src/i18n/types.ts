@@ -38,11 +38,14 @@ import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio
 import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
 import type { AssistantDictionarySection } from "./locales/assistant_labels";
 import type { AuthSettingsDictionarySection } from "./locales/auth_settings_labels";
+import type { AutonomousSupervisionCopy } from "./locales/autonomous_supervision_labels";
+import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
 import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
 import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
+import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
 
 export interface TranslationDictionary
   extends InboxAndCockpitDictionarySection,
@@ -55,7 +58,10 @@ export interface TranslationDictionary
   locale: SupportedWebLocale;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
+  autonomousSupervision: AutonomousSupervisionCopy;
+  autonomyContract: AutonomyContractStudioCopy;
   epic18Sources: Epic18SourcesLabels;
+  workflowTriggers: WorkflowTriggersStudioCopy;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
     defaultSectionTitle: string;

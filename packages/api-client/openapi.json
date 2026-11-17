@@ -3370,6 +3370,498 @@
         "title": "AuthTokenResponse",
         "type": "object"
       },
+      "AutonomousActionInput": {
+        "description": "External action requested during an `AUTONOMOUS_CONTRACT` execution.",
+        "properties": {
+          "action_key": {
+            "minLength": 1,
+            "title": "Action Key",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "scheme": {
+            "default": "catalog",
+            "title": "Scheme",
+            "type": "string"
+          },
+          "secret_ref_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Ref Uri"
+          }
+        },
+        "required": [
+          "action_key"
+        ],
+        "title": "AutonomousActionInput",
+        "type": "object"
+      },
+      "AutonomousGovernanceMetricsSchema": {
+        "description": "Autonomous execution & post-hoc quality metrics (`SM-A1..A3`, `Story 7.4`).",
+        "properties": {
+          "autonomous_escalation_rate": {
+            "default": 0.0,
+            "title": "Autonomous Escalation Rate",
+            "type": "number"
+          },
+          "avg_autonomous_cost_usd": {
+            "default": 0.0,
+            "title": "Avg Autonomous Cost Usd",
+            "type": "number"
+          },
+          "avg_ttm_gain_minutes": {
+            "default": 0.0,
+            "title": "Avg Ttm Gain Minutes",
+            "type": "number"
+          },
+          "escalated_runs_count": {
+            "default": 0,
+            "title": "Escalated Runs Count",
+            "type": "integer"
+          },
+          "invalidated_samples_count": {
+            "default": 0,
+            "title": "Invalidated Samples Count",
+            "type": "integer"
+          },
+          "invalidation_alert": {
+            "default": false,
+            "title": "Invalidation Alert",
+            "type": "boolean"
+          },
+          "killed_runs_count": {
+            "default": 0,
+            "title": "Killed Runs Count",
+            "type": "integer"
+          },
+          "pending_samples": {
+            "items": {
+              "$ref": "#/components/schemas/PostHocAuditSampleSchema"
+            },
+            "title": "Pending Samples",
+            "type": "array"
+          },
+          "pending_samples_count": {
+            "default": 0,
+            "title": "Pending Samples Count",
+            "type": "integer"
+          },
+          "post_hoc_invalidation_rate": {
+            "default": 0.0,
+            "title": "Post Hoc Invalidation Rate",
+            "type": "number"
+          },
+          "sampled_runs_count": {
+            "default": 0,
+            "title": "Sampled Runs Count",
+            "type": "integer"
+          },
+          "total_autonomous_runs": {
+            "default": 0,
+            "title": "Total Autonomous Runs",
+            "type": "integer"
+          }
+        },
+        "title": "AutonomousGovernanceMetricsSchema",
+        "type": "object"
+      },
+      "AutonomousRunExecutionResponse": {
+        "description": "Result of an autonomous workflow execution under contract.",
+        "properties": {
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "escalation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalation Reason"
+          },
+          "executed_actions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Executed Actions",
+            "type": "array"
+          },
+          "issued_token_preview_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Issued Token Preview Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "COMMITTED_AUTONOMOUS",
+              "PAUSED_AUTONOMOUS_ESCALATION",
+              "KILL_SWITCH_STOPPED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "workflow_id",
+          "contract_id",
+          "status",
+          "trace_id"
+        ],
+        "title": "AutonomousRunExecutionResponse",
+        "type": "object"
+      },
+      "AutonomousRunSupervisionItemSchema": {
+        "additionalProperties": false,
+        "description": "Supervised autonomous workflow run item (`UX-DR17`).",
+        "properties": {
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "created_at_iso": {
+            "title": "Created At Iso",
+            "type": "string"
+          },
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "post_hoc_status": {
+            "title": "Post Hoc Status",
+            "type": "string"
+          },
+          "previous_version_available": {
+            "default": false,
+            "title": "Previous Version Available",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "trigger_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Id"
+          },
+          "trigger_label": {
+            "title": "Trigger Label",
+            "type": "string"
+          },
+          "trigger_status": {
+            "title": "Trigger Status",
+            "type": "string"
+          },
+          "trigger_type": {
+            "title": "Trigger Type",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_title": {
+            "title": "Workflow Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "workflow_id",
+          "workflow_title",
+          "trigger_label",
+          "trigger_type",
+          "trigger_status",
+          "run_status",
+          "post_hoc_status",
+          "contract_id",
+          "cost_usd",
+          "created_at_iso"
+        ],
+        "title": "AutonomousRunSupervisionItemSchema",
+        "type": "object"
+      },
+      "AutonomousRunsListResponse": {
+        "additionalProperties": false,
+        "description": "List of autonomous contract runs in a workspace.",
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/AutonomousRunSupervisionItemSchema"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "AutonomousRunsListResponse",
+        "type": "object"
+      },
+      "AutonomyContractResponse": {
+        "description": "Serialized signed `AutonomyContract` (`autonomy_contracts`).",
+        "properties": {
+          "allowed_read_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Read Sources",
+            "type": "array"
+          },
+          "allowed_write_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Write Actions",
+            "type": "array"
+          },
+          "criticality": {
+            "enum": [
+              "LOW_NON_CRITICAL",
+              "STANDARD"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_cost_per_run_usd": {
+            "title": "Max Cost Per Run Usd",
+            "type": "number"
+          },
+          "post_hoc_sampling_rate": {
+            "title": "Post Hoc Sampling Rate",
+            "type": "number"
+          },
+          "revoked_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At Iso"
+          },
+          "revoked_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By User Id"
+          },
+          "service_principal_id": {
+            "title": "Service Principal Id",
+            "type": "string"
+          },
+          "signature_sha256": {
+            "title": "Signature Sha256",
+            "type": "string"
+          },
+          "signed_at_iso": {
+            "title": "Signed At Iso",
+            "type": "string"
+          },
+          "signed_by_role": {
+            "enum": [
+              "TEAM_LEAD",
+              "BU_LEAD",
+              "PLATFORM_ADMIN"
+            ],
+            "title": "Signed By Role",
+            "type": "string"
+          },
+          "signed_by_user_id": {
+            "title": "Signed By User Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "REVOKED",
+              "SUPERSEDED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tie_break_policy": {
+            "enum": [
+              "ONTOLOGY_AXIOM_FIRST",
+              "DEFER_AND_CONTINUE_WITH_ASSUMPTION",
+              "PAUSE_AND_ESCALATE"
+            ],
+            "title": "Tie Break Policy",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_sha256": {
+            "title": "Workflow Sha256",
+            "type": "string"
+          },
+          "workflow_version": {
+            "title": "Workflow Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "workflow_id",
+          "workflow_version",
+          "workflow_sha256",
+          "criticality",
+          "service_principal_id",
+          "max_cost_per_run_usd",
+          "tie_break_policy",
+          "post_hoc_sampling_rate",
+          "status",
+          "signed_by_user_id",
+          "signed_by_role",
+          "signature_sha256",
+          "signed_at_iso"
+        ],
+        "title": "AutonomyContractResponse",
+        "type": "object"
+      },
+      "AutonomyContractStateResponse": {
+        "description": "Current active contract, signature history & eligible service accounts for a workflow.",
+        "properties": {
+          "active_contract": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutonomyContractResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible_service_principals": {
+            "items": {
+              "$ref": "#/components/schemas/EligibleServicePrincipalItem"
+            },
+            "title": "Eligible Service Principals",
+            "type": "array"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/AutonomyContractResponse"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workflow_id",
+          "trace_id"
+        ],
+        "title": "AutonomyContractStateResponse",
+        "type": "object"
+      },
       "BackgroundAuditReportSchemaItem": {
         "additionalProperties": false,
         "description": "Consolidated report for `BACKGROUND_FAST_PATH` (`UJ-10`, `AD-13`).",
@@ -4978,6 +5470,17 @@
             "title": "Architecture Deviation Target",
             "type": "number"
           },
+          "autonomous_governance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutonomousGovernanceMetricsSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Autonomous execution governance metrics (SM-A1..A3) and post-hoc samples"
+          },
           "pattern_drift_alert": {
             "description": "Compatibility alias for architecture deviation alert",
             "title": "Pattern Drift Alert",
@@ -5922,6 +6425,22 @@
             "title": "Cache Hit",
             "type": "boolean"
           },
+          "contract_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Label"
+          },
+          "is_autonomous_generated": {
+            "default": false,
+            "title": "Is Autonomous Generated",
+            "type": "boolean"
+          },
           "lang": {
             "enum": [
               "fr",
@@ -5947,6 +6466,11 @@
             "title": "Pack",
             "type": "string"
           },
+          "previous_version_available": {
+            "default": false,
+            "title": "Previous Version Available",
+            "type": "boolean"
+          },
           "redis_cache_key": {
             "title": "Redis Cache Key",
             "type": "string"
@@ -5959,6 +6483,17 @@
             "title": "Route",
             "type": "string"
           },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
           "trace_id": {
             "anyOf": [
               {
@@ -5969,6 +6504,17 @@
               }
             ],
             "title": "Trace Id"
+          },
+          "trigger_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Label"
           }
         },
         "required": [
@@ -6485,6 +7031,139 @@
           "title"
         ],
         "title": "CreateOrUpdateAssistantFolderRequest",
+        "type": "object"
+      },
+      "CreateWorkflowTriggerRequest": {
+        "additionalProperties": false,
+        "description": "Create a governed workflow trigger attached to an active autonomy contract.",
+        "properties": {
+          "auto_help_on_publish": {
+            "default": false,
+            "title": "Auto Help On Publish",
+            "type": "boolean"
+          },
+          "cooldown_window_seconds": {
+            "default": 300,
+            "maximum": 86400.0,
+            "minimum": 0.0,
+            "title": "Cooldown Window Seconds",
+            "type": "integer"
+          },
+          "cron_expr": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Expr"
+          },
+          "log_sink_query_text": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Sink Query Text"
+          },
+          "log_sink_service": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Sink Service"
+          },
+          "max_consecutive_failures": {
+            "default": 3,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Consecutive Failures",
+            "type": "integer"
+          },
+          "max_daily_cost_usd": {
+            "default": 25.0,
+            "minimum": 0.0,
+            "title": "Max Daily Cost Usd",
+            "type": "number"
+          },
+          "max_runs_per_hour": {
+            "default": 10,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Max Runs Per Hour",
+            "type": "integer"
+          },
+          "outbox_event_filter": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Filter"
+          },
+          "status": {
+            "default": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "PAUSED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Key"
+          },
+          "trigger_type": {
+            "enum": [
+              "WEBHOOK",
+              "LOG_SINK_ALERT",
+              "CRON",
+              "OUTBOX_EVENT",
+              "MANUAL_AUTONOMOUS"
+            ],
+            "title": "Trigger Type",
+            "type": "string"
+          },
+          "webhook_secret": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretInputPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "trigger_type"
+        ],
+        "title": "CreateWorkflowTriggerRequest",
         "type": "object"
       },
       "CreateWorkspaceDatasourceRequest": {
@@ -7017,6 +7696,26 @@
           "trace_id"
         ],
         "title": "DeleteSkillOrAgentResponse",
+        "type": "object"
+      },
+      "DeleteWorkflowTriggerResponse": {
+        "additionalProperties": false,
+        "description": "Confirmation of deleted workflow trigger.",
+        "properties": {
+          "deleted_id": {
+            "title": "Deleted Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deleted_id",
+          "trace_id"
+        ],
+        "title": "DeleteWorkflowTriggerResponse",
         "type": "object"
       },
       "DemoWorkspaceProvisionResponse": {
@@ -8069,6 +8768,125 @@
         ],
         "title": "EffortLevel",
         "type": "string"
+      },
+      "EligibleServicePrincipalItem": {
+        "description": "Active `SERVICE_PRINCIPAL` account eligible for an autonomy contract in this workspace.",
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "team_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Team Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "principal_id",
+          "display_name",
+          "status"
+        ],
+        "title": "EligibleServicePrincipalItem",
+        "type": "object"
+      },
+      "EmergencyStopRequest": {
+        "additionalProperties": false,
+        "description": "Request to activate an immediate emergency stop (`KILL_SWITCH_STOPPED`).",
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Reason",
+            "type": "string"
+          },
+          "suspend_trigger": {
+            "default": true,
+            "title": "Suspend Trigger",
+            "type": "boolean"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "title": "EmergencyStopRequest",
+        "type": "object"
+      },
+      "EmergencyStopResponse": {
+        "additionalProperties": false,
+        "description": "Response confirming `KILL_SWITCH_STOPPED` and optional trigger suspension.",
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sse_dispatch_latency_ms": {
+            "title": "Sse Dispatch Latency Ms",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "trigger_suspended": {
+            "title": "Trigger Suspended",
+            "type": "boolean"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "status",
+          "trigger_suspended",
+          "sse_dispatch_latency_ms"
+        ],
+        "title": "EmergencyStopResponse",
+        "type": "object"
       },
       "EnterpriseConnectorCreateRequest": {
         "additionalProperties": false,
@@ -9628,6 +10446,31 @@
           "cost_eur"
         ],
         "title": "FinopsTierEffortItemResponse",
+        "type": "object"
+      },
+      "FireManualTriggerRequest": {
+        "additionalProperties": false,
+        "description": "Payload to fire a `MANUAL_AUTONOMOUS` (or test) trigger idempotently.",
+        "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "title": "FireManualTriggerRequest",
         "type": "object"
       },
       "FolderShareGrantSchemaItem": {
@@ -13444,6 +14287,104 @@
           "packs"
         ],
         "title": "InstalledBusinessPackListResponse",
+        "type": "object"
+      },
+      "InvalidateAndRestoreRequest": {
+        "additionalProperties": false,
+        "description": "Request to invalidate an autonomous artifact/help article and restore `@v(N-1)`.",
+        "properties": {
+          "comment": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Comment",
+            "type": "string"
+          },
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "title": "InvalidateAndRestoreRequest",
+        "type": "object"
+      },
+      "InvalidateAndRestoreResponse": {
+        "additionalProperties": false,
+        "description": "Response confirming `@v(N-1)` restoration and Redis cache invalidation.",
+        "properties": {
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "redis_cache_invalidated_ms": {
+            "title": "Redis Cache Invalidated Ms",
+            "type": "number"
+          },
+          "restored_version": {
+            "title": "Restored Version",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sse_dispatch_latency_ms": {
+            "title": "Sse Dispatch Latency Ms",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "status",
+          "restored_version",
+          "redis_cache_invalidated_ms",
+          "sse_dispatch_latency_ms"
+        ],
+        "title": "InvalidateAndRestoreResponse",
         "type": "object"
       },
       "InvalidatePromptCacheRequest": {
@@ -17381,6 +18322,198 @@
         "title": "PlatformSetupStateResponse",
         "type": "object"
       },
+      "PostHocAuditSampleSchema": {
+        "description": "Sampled autonomous execution awaiting or having completed post-hoc quality review.",
+        "properties": {
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "review_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Comment"
+          },
+          "review_status": {
+            "enum": [
+              "PENDING_SAMPLE",
+              "VALIDATED",
+              "INVALIDATED_ROLLED_BACK"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer User Id"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "sampled_at": {
+            "format": "date-time",
+            "title": "Sampled At",
+            "type": "string"
+          },
+          "trigger_label": {
+            "title": "Trigger Label",
+            "type": "string"
+          },
+          "workflow_title": {
+            "title": "Workflow Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_id",
+          "workspace_id",
+          "contract_id",
+          "workflow_title",
+          "trigger_label",
+          "review_status",
+          "run_status",
+          "sampled_at"
+        ],
+        "title": "PostHocAuditSampleSchema",
+        "type": "object"
+      },
+      "PostHocReviewRequest": {
+        "additionalProperties": false,
+        "description": "Request to validate or invalidate a sampled autonomous run.",
+        "properties": {
+          "comment": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Comment",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "VALIDATED",
+              "INVALIDATED_ROLLED_BACK"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "PostHocReviewRequest",
+        "type": "object"
+      },
+      "PostHocReviewResponse": {
+        "additionalProperties": false,
+        "description": "Response after completing a post-hoc sample quality review.",
+        "properties": {
+          "restored_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored Version"
+          },
+          "review_status": {
+            "enum": [
+              "VALIDATED",
+              "INVALIDATED_ROLLED_BACK"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "run_id",
+          "review_status",
+          "run_status"
+        ],
+        "title": "PostHocReviewResponse",
+        "type": "object"
+      },
       "ProbabilisticControlExecutionRecord": {
         "properties": {
           "agent_ref": {
@@ -18038,6 +19171,42 @@
           "summary"
         ],
         "title": "RawToolOutputCandidateSchemaItem",
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "additionalProperties": false,
+        "description": "Readiness check response payload for `/ready` and `/api/v1/ready`.",
+        "properties": {
+          "initialized": {
+            "default": true,
+            "description": "True when FastAPI Composition Root services are initialized.",
+            "title": "Initialized",
+            "type": "boolean"
+          },
+          "status": {
+            "const": "ready",
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "description": "Active 32-hex W3C OpenTelemetry trace identifier.",
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "description": "Semantic version of the ORCIA API.",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "trace_id"
+        ],
+        "title": "ReadinessResponse",
         "type": "object"
       },
       "RebaseExternalArtifactEditsRequest": {
@@ -19342,6 +20511,19 @@
         "title": "ReturnLoopSpec",
         "type": "object"
       },
+      "RevokeAutonomyContractRequest": {
+        "description": "Request payload to revoke an active autonomy contract.",
+        "properties": {
+          "scope_path": {
+            "default": "GLOBAL",
+            "minLength": 1,
+            "title": "Scope Path",
+            "type": "string"
+          }
+        },
+        "title": "RevokeAutonomyContractRequest",
+        "type": "object"
+      },
       "RevokePassthroughTokenResponse": {
         "additionalProperties": false,
         "description": "Response for `DELETE /api/v1/users/me/passthrough-tokens/{connector_id}`.",
@@ -20456,6 +21638,87 @@
         "title": "ShellNavigationResponse",
         "type": "object"
       },
+      "SignAutonomyContractRequest": {
+        "description": "Request payload to sign an `AutonomyContract` (single signature `TEAM_LEAD`/`BU_LEAD`).",
+        "properties": {
+          "allowed_read_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Read Sources",
+            "type": "array"
+          },
+          "allowed_write_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Write Actions",
+            "type": "array"
+          },
+          "criticality": {
+            "default": "STANDARD",
+            "enum": [
+              "LOW_NON_CRITICAL",
+              "STANDARD",
+              "HIGH_CRITICAL"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "max_cost_per_run_usd": {
+            "default": 5.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Cost Per Run Usd",
+            "type": "number"
+          },
+          "post_hoc_sampling_rate": {
+            "default": 0.15,
+            "maximum": 0.2,
+            "minimum": 0.1,
+            "title": "Post Hoc Sampling Rate",
+            "type": "number"
+          },
+          "scope_path": {
+            "default": "GLOBAL",
+            "minLength": 1,
+            "title": "Scope Path",
+            "type": "string"
+          },
+          "service_principal_id": {
+            "minLength": 1,
+            "title": "Service Principal Id",
+            "type": "string"
+          },
+          "tie_break_policy": {
+            "default": "ONTOLOGY_AXIOM_FIRST",
+            "enum": [
+              "ONTOLOGY_AXIOM_FIRST",
+              "DEFER_AND_CONTINUE_WITH_ASSUMPTION",
+              "PAUSE_AND_ESCALATE"
+            ],
+            "title": "Tie Break Policy",
+            "type": "string"
+          },
+          "workflow_sha256": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Workflow Sha256",
+            "type": "string"
+          },
+          "workflow_version": {
+            "default": "1.0.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Workflow Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "service_principal_id"
+        ],
+        "title": "SignAutonomyContractRequest",
+        "type": "object"
+      },
       "SignedApprovalToken": {
         "description": "Token issued by the Permission Broker after human validation of a `WritePreviewCard`.",
         "properties": {
@@ -21041,6 +22304,98 @@
           "message_fr"
         ],
         "title": "StarlarkVerdictSchema",
+        "type": "object"
+      },
+      "StartAutonomousRunRequest": {
+        "description": "Request payload to trigger a workflow run under `AUTONOMOUS_CONTRACT`.",
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/AutonomousActionInput"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "agentic_score": {
+            "default": 0.92,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Agentic Score",
+            "type": "number"
+          },
+          "criticality": {
+            "default": "STANDARD",
+            "enum": [
+              "LOW_NON_CRITICAL",
+              "STANDARD",
+              "HIGH_CRITICAL"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "deterministic_passed": {
+            "default": true,
+            "title": "Deterministic Passed",
+            "type": "boolean"
+          },
+          "estimated_cost_usd": {
+            "default": 0.05,
+            "minimum": 0.0,
+            "title": "Estimated Cost Usd",
+            "type": "number"
+          },
+          "fact_verification_score": {
+            "default": 0.95,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Fact Verification Score",
+            "type": "number"
+          },
+          "force_post_hoc_sample": {
+            "default": false,
+            "title": "Force Post Hoc Sample",
+            "type": "boolean"
+          },
+          "help_article_lang": {
+            "default": "fr",
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Help Article Lang",
+            "type": "string"
+          },
+          "help_article_markdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Article Markdown"
+          },
+          "ontology_conflicts": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Ontology Conflicts",
+            "type": "integer"
+          },
+          "scope_path": {
+            "default": "GLOBAL",
+            "minLength": 1,
+            "title": "Scope Path",
+            "type": "string"
+          },
+          "stale_warnings": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Stale Warnings",
+            "type": "integer"
+          }
+        },
+        "title": "StartAutonomousRunRequest",
         "type": "object"
       },
       "StartWorkflowV2RunRequest": {
@@ -23212,6 +24567,81 @@
         "title": "ToggleAgentGovernanceRequest",
         "type": "object"
       },
+      "TriggerDispatchResponse": {
+        "additionalProperties": false,
+        "description": "Result of firing a trigger via manual action, webhook, or alert fallback.",
+        "properties": {
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "dbos_workflow_id": {
+            "title": "Dbos Workflow Id",
+            "type": "string"
+          },
+          "dispatched": {
+            "title": "Dispatched",
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "DISPATCHED",
+              "DUPLICATE_SUPPRESSED",
+              "SELF_TRIGGER_BLOCKED",
+              "CIRCUIT_OPEN",
+              "PAUSED",
+              "FAILED_FUNCTIONAL"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "trigger_id": {
+            "title": "Trigger Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dispatched",
+          "outcome",
+          "trigger_id",
+          "idempotency_key",
+          "dbos_workflow_id",
+          "trace_id"
+        ],
+        "title": "TriggerDispatchResponse",
+        "type": "object"
+      },
       "TriggerWorkspaceDatasourceSyncResponse": {
         "additionalProperties": false,
         "description": "Response for `POST /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync`.",
@@ -23914,6 +25344,149 @@
           "personal_instructions"
         ],
         "title": "UpdateUserLayerPreferencesRequest",
+        "type": "object"
+      },
+      "UpdateWorkflowTriggerRequest": {
+        "additionalProperties": false,
+        "description": "Update a workflow trigger (status, CRON, opt-in help, or Write-Only secret).",
+        "properties": {
+          "auto_help_on_publish": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Help On Publish"
+          },
+          "cooldown_window_seconds": {
+            "anyOf": [
+              {
+                "maximum": 86400.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Window Seconds"
+          },
+          "cron_expr": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Expr"
+          },
+          "log_sink_query_text": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Sink Query Text"
+          },
+          "log_sink_service": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Sink Service"
+          },
+          "max_consecutive_failures": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Consecutive Failures"
+          },
+          "max_daily_cost_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Daily Cost Usd"
+          },
+          "max_runs_per_hour": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Runs Per Hour"
+          },
+          "outbox_event_filter": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Filter"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "PAUSED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "webhook_secret": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretInputPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UpdateWorkflowTriggerRequest",
         "type": "object"
       },
       "UpdateWorkspaceDatasourceRequest": {
@@ -27855,6 +29428,9 @@
               "PAUSED_CIRCUIT_BREAKER",
               "PAUSED_BUDGET_EXCEEDED",
               "PAUSED_MAX_RETRIES",
+              "PAUSED_AUTONOMOUS_ESCALATION",
+              "COMMITTED_AUTONOMOUS",
+              "KILL_SWITCH_STOPPED",
               "COMPLETED",
               "FAILED",
               "ROLLED_BACK"
@@ -28131,6 +29707,201 @@
           "line_number"
         ],
         "title": "WorkflowStepSpecSchemaItem",
+        "type": "object"
+      },
+      "WorkflowTriggerListResponse": {
+        "additionalProperties": false,
+        "description": "List of workflow triggers for a Studio V2 workflow.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowTriggerResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workflow_id",
+          "trace_id"
+        ],
+        "title": "WorkflowTriggerListResponse",
+        "type": "object"
+      },
+      "WorkflowTriggerResponse": {
+        "additionalProperties": false,
+        "description": "Serialized governed workflow trigger (Write-Only secret metadata only).",
+        "properties": {
+          "auto_help_on_publish": {
+            "default": false,
+            "title": "Auto Help On Publish",
+            "type": "boolean"
+          },
+          "consecutive_failures": {
+            "default": 0,
+            "title": "Consecutive Failures",
+            "type": "integer"
+          },
+          "contract_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Id"
+          },
+          "cooldown_window_seconds": {
+            "title": "Cooldown Window Seconds",
+            "type": "integer"
+          },
+          "cron_expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Expr"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_fired_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Fired At Iso"
+          },
+          "log_sink_query_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Sink Query Text"
+          },
+          "log_sink_service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Sink Service"
+          },
+          "max_consecutive_failures": {
+            "title": "Max Consecutive Failures",
+            "type": "integer"
+          },
+          "max_daily_cost_usd": {
+            "title": "Max Daily Cost Usd",
+            "type": "number"
+          },
+          "max_runs_per_hour": {
+            "title": "Max Runs Per Hour",
+            "type": "integer"
+          },
+          "outbox_event_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Filter"
+          },
+          "service_principal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Principal Id"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "PAUSED",
+              "CIRCUIT_OPEN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger_key": {
+            "title": "Trigger Key",
+            "type": "string"
+          },
+          "trigger_type": {
+            "enum": [
+              "WEBHOOK",
+              "LOG_SINK_ALERT",
+              "CRON",
+              "OUTBOX_EVENT",
+              "MANUAL_AUTONOMOUS"
+            ],
+            "title": "Trigger Type",
+            "type": "string"
+          },
+          "webhook_secret_status": {
+            "$ref": "#/components/schemas/SecretStatusResponse"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "trigger_key",
+          "workspace_id",
+          "workflow_id",
+          "trigger_type",
+          "cooldown_window_seconds",
+          "max_runs_per_hour",
+          "max_daily_cost_usd",
+          "max_consecutive_failures",
+          "status",
+          "webhook_secret_status"
+        ],
+        "title": "WorkflowTriggerResponse",
         "type": "object"
       },
       "WorkflowV2RunResponse": {
@@ -41362,7 +43133,7 @@
     },
     "/api/v1/health": {
       "get": {
-        "description": "Return platform health status and active 32-hex W3C `trace_id`.",
+        "description": "Return platform liveness status and active 32-hex W3C `trace_id`.",
         "operationId": "get_health_api_v1_health_get",
         "responses": {
           "200": {
@@ -41464,7 +43235,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Check ORCIA API health and propagate W3C trace_id",
+        "summary": "Check ORCIA API liveness and propagate W3C trace_id",
         "tags": [
           "system"
         ]
@@ -48793,6 +50564,127 @@
         ]
       }
     },
+    "/api/v1/ready": {
+      "get": {
+        "description": "Return lightweight readiness status (`< 100 ms`) under `/api/v1/ready`.",
+        "operationId": "get_api_v1_ready_api_v1_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Check ORCIA API readiness without heavy SQL queries",
+        "tags": [
+          "system"
+        ]
+      }
+    },
     "/api/v1/resource-leases/acquire": {
       "post": {
         "operationId": "acquire_resource_leases_api_v1_resource_leases_acquire_post",
@@ -49296,6 +51188,149 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/emergency-stop": {
+      "post": {
+        "operationId": "emergency_stop_autonomous_run_api_v1_runs__run_id__emergency_stop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EmergencyStopRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyStopResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Trigger immediate emergency stop (`KILL_SWITCH_STOPPED`, `Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/hitl-signal": {
       "post": {
         "description": "Deliver a human checkpoint, WritePreview approval, or 4-action Anchor Card signal.",
@@ -49413,6 +51448,285 @@
         "summary": "Send Hitl Signal To Workflow V2 Run",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/invalidate-and-restore": {
+      "post": {
+        "operationId": "invalidate_and_restore_autonomous_run_api_v1_runs__run_id__invalidate_and_restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/InvalidateAndRestoreRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidateAndRestoreResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Invalidate autonomous artifact/help article and restore `@v(N-1)` (`Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/post-hoc-review": {
+      "post": {
+        "operationId": "review_post_hoc_autonomous_run_api_v1_runs__run_id__post_hoc_review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostHocReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostHocReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Validate or invalidate a sampled autonomous execution (`Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
         ]
       }
     },
@@ -54625,6 +56939,166 @@
         ]
       }
     },
+    "/api/v1/triggers/alerts": {
+      "post": {
+        "description": "Platform log-sink alert fallback webhook (`AD-23.5`) protected by HMAC or alert secret.",
+        "operationId": "ingest_platform_log_alert_fallback_api_v1_triggers_alerts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-orcia-webhook-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Orcia-Webhook-Signature"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-hub-signature-256",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Hub-Signature-256"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-orcia-alert-secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Orcia-Alert-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerDispatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ingest Platform Log Alert Fallback",
+        "tags": [
+          "workflow-triggers"
+        ]
+      }
+    },
     "/api/v1/users/me/account-profile": {
       "get": {
         "operationId": "get_user_account_profile_api_v1_users_me_account_profile_get",
@@ -56263,6 +58737,176 @@
         ]
       }
     },
+    "/api/v1/webhooks/triggers/{trigger_id}": {
+      "post": {
+        "description": "Ingest external webhook with shared HMAC verification, deduplication & Self-Trigger Guard.",
+        "operationId": "ingest_workflow_trigger_webhook_api_v1_webhooks_triggers__trigger_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "trigger_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Trigger Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-orcia-webhook-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Orcia-Webhook-Signature"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-hub-signature-256",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Hub-Signature-256"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-webhook-delivery-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Webhook-Delivery-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerDispatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ingest Workflow Trigger Webhook",
+        "tags": [
+          "workflow-triggers"
+        ]
+      }
+    },
     "/api/v1/wizards/demo-workspace": {
       "post": {
         "description": "Provision the Zero Empty-State Demo Workspace (`0` plaintext secrets, `Story 8.6`).",
@@ -57619,6 +60263,132 @@
         "summary": "Resolve 4-level artifact destination cascade with local:// path confinement",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/autonomous-runs": {
+      "get": {
+        "operationId": "list_workspace_autonomous_runs_api_v1_workspaces__workspace_id__autonomous_runs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutonomousRunsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List supervised autonomous contract runs in a workspace (`Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
         ]
       }
     },
@@ -59945,6 +62715,1654 @@
         "summary": "Run pilot workflow orcia://pack-sdlc/workflows/ticket-to-tech-spec (Verrou V3)",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/autonomy-contract": {
+      "get": {
+        "operationId": "get_autonomy_contract_state_api_v1_workspaces__workspace_id__workflows__workflow_id__autonomy_contract_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutonomyContractStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Autonomy Contract State",
+        "tags": [
+          "autonomy-contracts"
+        ]
+      },
+      "post": {
+        "operationId": "sign_autonomy_contract_api_v1_workspaces__workspace_id__workflows__workflow_id__autonomy_contract_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignAutonomyContractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutonomyContractResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Sign Autonomy Contract",
+        "tags": [
+          "autonomy-contracts"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/autonomy-contract/revoke": {
+      "post": {
+        "operationId": "revoke_autonomy_contract_api_v1_workspaces__workspace_id__workflows__workflow_id__autonomy_contract_revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RevokeAutonomyContractRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutonomyContractResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Revoke Autonomy Contract",
+        "tags": [
+          "autonomy-contracts"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/runs/autonomous": {
+      "post": {
+        "operationId": "start_autonomous_run_api_v1_workspaces__workspace_id__workflows__workflow_id__runs_autonomous_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartAutonomousRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutonomousRunExecutionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Start Autonomous Run",
+        "tags": [
+          "autonomy-contracts"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers": {
+      "get": {
+        "operationId": "list_workflow_triggers_api_v1_workspaces__workspace_id__workflows__workflow_id__triggers_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTriggerListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "List Workflow Triggers",
+        "tags": [
+          "workflow-triggers"
+        ]
+      },
+      "post": {
+        "operationId": "create_workflow_trigger_api_v1_workspaces__workspace_id__workflows__workflow_id__triggers_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkflowTriggerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTriggerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create Workflow Trigger",
+        "tags": [
+          "workflow-triggers"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers/{trigger_id}": {
+      "delete": {
+        "operationId": "delete_workflow_trigger_api_v1_workspaces__workspace_id__workflows__workflow_id__triggers__trigger_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trigger_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Trigger Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteWorkflowTriggerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Delete Workflow Trigger",
+        "tags": [
+          "workflow-triggers"
+        ]
+      },
+      "patch": {
+        "operationId": "update_workflow_trigger_api_v1_workspaces__workspace_id__workflows__workflow_id__triggers__trigger_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trigger_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Trigger Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkflowTriggerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTriggerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Update Workflow Trigger",
+        "tags": [
+          "workflow-triggers"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers/{trigger_id}/fire": {
+      "post": {
+        "operationId": "fire_manual_workflow_trigger_api_v1_workspaces__workspace_id__workflows__workflow_id__triggers__trigger_id__fire_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trigger_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Trigger Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FireManualTriggerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerDispatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Fire Manual Workflow Trigger",
+        "tags": [
+          "workflow-triggers"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers/{trigger_id}/reset-circuit": {
+      "post": {
+        "operationId": "reset_workflow_trigger_circuit_api_v1_workspaces__workspace_id__workflows__workflow_id__triggers__trigger_id__reset_circuit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trigger_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Trigger Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTriggerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Reset Workflow Trigger Circuit",
+        "tags": [
+          "workflow-triggers"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Return lightweight readiness status (`< 100 ms`) under `/ready`.",
+        "operationId": "get_root_ready_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Root OpenShift readinessProbe endpoint",
+        "tags": [
+          "system"
         ]
       }
     }

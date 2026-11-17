@@ -32,6 +32,7 @@ from orcia_core.audit_finops.cognitive_impact_models import (
     WorkflowCognitiveMetrics,
 )
 from orcia_core.audit_finops.finops_models import ScopeType
+from orcia_core.audit_finops.post_hoc_audit import PostHocAuditService
 from orcia_core.observability.logging import get_logger
 from orcia_kernel.errors import ResourceNotFoundError
 
@@ -51,8 +52,13 @@ __all__ = [
 class CognitiveImpactService:
     """Domain service orchestrating cognitive governance and gate policy recommendations."""
 
-    def __init__(self, engine: AsyncEngine | None = None) -> None:
+    def __init__(
+        self,
+        engine: AsyncEngine | None = None,
+        post_hoc_service: PostHocAuditService | None = None,
+    ) -> None:
         self._engine = engine
+        self._post_hoc = post_hoc_service or PostHocAuditService(engine=engine)
         self._fallback_applied: dict[str, GatePolicyRecommendation] = {}
 
     async def get_dashboard(
@@ -241,6 +247,15 @@ class CognitiveImpactService:
                     )
                 )
 
+        if self._engine is not None and self._post_hoc._engine is None:
+            self._post_hoc._engine = self._engine
+        auto_metrics = await self._post_hoc.get_autonomous_governance_metrics(
+            scope_type=scope_type,
+            scope_id=scope_id,
+            time_window=time_window,
+            allowed_workspace_ids=allowed_workspace_ids,
+        )
+
         return CognitiveMasteryDashboard(
             active_framing_ratio=active_framing_ratio,
             active_framing_target=0.40,
@@ -257,6 +272,7 @@ class CognitiveImpactService:
             uncovered_deviations_count=uncovered_deviations,
             workflow_breakdowns=breakdowns,
             recommendations=recommendations,
+            autonomous_governance=auto_metrics,
         )
 
     async def resolve_recommendation_workspace_id(self, recommendation_id: str) -> str | None:

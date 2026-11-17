@@ -11,6 +11,13 @@ from orcia_core.ports.llm_port import (
     assert_model_orthogonality,
     compute_prompt_sha256,
 )
+from orcia_core.ports.log_sink import (
+    MAX_LOG_QUERY_LIMIT,
+    LogEntry,
+    LogQuery,
+    LogSinkQueryPort,
+    NoopLogSinkAdapter,
+)
 
 __all__ = [
     "EMBEDDING_FIXED_DIMENSION",
@@ -18,6 +25,11 @@ __all__ = [
     "LlmCompletionResponse",
     "LlmGatewayPort",
     "LlmPromptRequest",
+    "LogEntry",
+    "LogQuery",
+    "LogSinkQueryPort",
+    "MAX_LOG_QUERY_LIMIT",
+    "NoopLogSinkAdapter",
     "assert_model_orthogonality",
     "compute_prompt_sha256",
 ]

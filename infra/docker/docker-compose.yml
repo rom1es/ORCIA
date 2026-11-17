@@ -1,5 +1,11 @@
 name: orcia-dev
 
+x-default-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "3"
+
 services:
   postgres:
     image: pgvector/pgvector:pg18
@@ -63,6 +69,13 @@ services:
     image: orcia-backend:latest
     container_name: orcia-api
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    logging: *default-logging
     env_file:
       - ../../.env
     networks:
@@ -74,7 +87,7 @@ services:
       CODEGRAPH_MCP_ENDPOINT: http://gitnexus-mcp:8095/mcp
       CODEGRAPH_PROVIDER: ${CODEGRAPH_PROVIDER:-gitnexus}
       ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
-    command: ["uvicorn", "orcia_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "orcia_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     depends_on:
       - postgres
       - redis
@@ -84,6 +97,13 @@ services:
     image: orcia-backend:latest
     container_name: orcia-worker-orchestration
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    logging: *default-logging
     env_file:
       - ../../.env
     networks:
@@ -95,7 +115,7 @@ services:
       CODEGRAPH_MCP_ENDPOINT: http://gitnexus-mcp:8095/mcp
       CODEGRAPH_PROVIDER: ${CODEGRAPH_PROVIDER:-gitnexus}
       ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
-    command: ["python", "-m", "orcia_worker.roles", "--role", "worker-orchestration"]
+    command: ["python", "-m", "orcia_worker.roles", "--role", "worker-orchestration", "--serve"]
     depends_on:
       - postgres
       - redis
@@ -105,6 +125,13 @@ services:
     image: orcia-backend:latest
     container_name: orcia-worker-indexing
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    logging: *default-logging
     env_file:
       - ../../.env
     environment:
@@ -149,12 +176,19 @@ services:
     image: orcia-backend:latest
     container_name: orcia-trigger-dispatcher
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    logging: *default-logging
     env_file:
       - ../../.env
     environment:
       ORCIA_DEPLOYMENT_ROLE: "trigger-dispatcher"
       ORCIA_DOCLING_ENABLED: "false"
-    command: ["python", "-m", "orcia_worker.roles", "--role", "trigger-dispatcher"]
+    command: ["python", "-m", "orcia_worker.roles", "--role", "trigger-dispatcher", "--serve"]
     depends_on:
       - postgres
       - redis
@@ -163,24 +197,82 @@ services:
     image: orcia-backend:latest
     container_name: orcia-sandbox-runner
     profiles: ["app-roles"]
+    user: "10001:0"
+    logging: *default-logging
     env_file:
       - ../../.env
     environment:
       ORCIA_DEPLOYMENT_ROLE: "sandbox-runner"
       ORCIA_DOCLING_ENABLED: "false"
       ORCIA_SANDBOX_TIERS: "TIER_1_WASM,TIER_2_CONTAINER"
-    command: ["python", "-m", "orcia_worker.roles", "--role", "sandbox-runner"]
+      ORCIA_SANDBOX_HOST: "0.0.0.0"
+      ORCIA_SANDBOX_PORT: "8096"
+    command: ["python", "-m", "orcia_worker.roles", "--role", "sandbox-runner", "--serve"]
     security_opt:
       - no-new-privileges:true
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=256m
 
+  opensearch:
+    image: opensearchproject/opensearch:2.19.1
+    container_name: orcia-opensearch
+    profiles: ["logs-elastic"]
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms256m -Xmx256m"
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+    volumes:
+      - orcia_opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  loki:
+    image: grafana/loki:3.4.1
+    container_name: orcia-loki
+    profiles: ["logs-loki"]
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "${LOKI_PORT:-3101}:3100"
+    volumes:
+      - orcia_loki_data:/loki
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    container_name: orcia-grafana
+    profiles: ["logs-elastic", "logs-loki"]
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-orcia_dev_grafana}
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - orcia_grafana_data:/var/lib/grafana
+
 volumes:
   orcia_pg_data:
   orcia_redis_data:
   orcia_seaweedfs_data:
   gitnexus_graphs:
+  orcia_opensearch_data:
+  orcia_loki_data:
+  orcia_grafana_data:
 
 networks:
   default:

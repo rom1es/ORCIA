@@ -1,0 +1,38 @@
+# Politique d'egress contrôlée pour l'API et les workers vers le data plane et l'observabilité.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orcia-runtime-controlled-egress
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values: ["api", "worker-orchestration", "worker-indexing", "trigger-dispatcher"]
+  policyTypes:
+    - Egress
+  egress:
+    # Résolution DNS interne cluster
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Data plane interne : PostgreSQL 18 (5432), Redis (6379), SeaweedFS S3 (9000), sandbox-runner (8096)
+    - ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 8096
+    # Observabilité entreprise (OPS-OPENSHIFT-LOGGING-01) : Elasticsearch/OpenSearch (9200) & OTel Collector (4317/4318)
+    - ports:
+        - protocol: TCP
+          port: 9200
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318

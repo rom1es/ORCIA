@@ -21,7 +21,12 @@ from orcia_core.orchestration._internal.sql_agents_and_skills import (
     persist_skill_to_postgres18,
 )
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
+from orcia_core.orchestration._internal.sql_workflow_triggers import (
+    SqlWorkflowTriggerRepository,
+    WorkflowTriggerRepositoryPort,
+)
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
+from orcia_core.orchestration._redis_sse_broker import RedisSseBrokerAdapter
 from orcia_core.orchestration.agents_and_skills_manager import (
     AgentExecutionOutcome,
     AgentKindType,
@@ -88,6 +93,12 @@ from orcia_core.orchestration.assistant_harness import (
     ProfileAdaptationSpec,
     PromptLayerBlock,
     resolve_profile_adaptation,
+)
+from orcia_core.orchestration.autonomous_supervision import (
+    AutonomousRunSupervisionItem,
+    AutonomousSupervisionService,
+    EmergencyStopOutcome,
+    InvalidateAndRestoreOutcome,
 )
 from orcia_core.orchestration.challenge_and_replay import (
     ChallengeStatus,
@@ -225,6 +236,13 @@ from orcia_core.orchestration.studio_and_packs import (
     compute_text_sha256,
 )
 from orcia_core.orchestration.template_compiler import MultiAudienceTemplateCompiler
+from orcia_core.orchestration.triggers_dispatcher import (
+    CreateTriggerCommand,
+    DispatchResultKind,
+    TriggerDispatcherService,
+    TriggerDispatchOutcome,
+    UpdateTriggerCommand,
+)
 from orcia_core.orchestration.yaml_loader import (
     WorkflowPolicyPluginProtocol,
     register_workflow_policy_plugin,
@@ -266,6 +284,7 @@ __all__ = [
     "DbosDurableWorkflowEngine",
     "DbosSqlAlchemyUnitOfWork",
     "DurableWorkflowRunSummary",
+    "EmergencyStopOutcome",
     "GOVERNED_MCP_TOOLS",
     "InvokedSkillTraceItem",
     "LIFECYCLE_SUGGESTED_WORKFLOWS",
@@ -286,6 +305,8 @@ __all__ = [
     "AssistantNodeTrace",
     "AssistantTurnResult",
     "AssistantWorkflowProposal",
+    "AutonomousRunSupervisionItem",
+    "AutonomousSupervisionService",
     "AuthorIdentityType",
     "CONSTITUTIONAL_LAYER_1_TEXT",
     "ChallengeStatus",
@@ -332,6 +353,7 @@ __all__ = [
     "ProfileAdaptationSpec",
     "PromptLayerBlock",
     "RecursiveRunLockManifest",
+    "RedisSseBrokerAdapter",
     "ResourceLeasePort",
     "ResourceLeaseRecord",
     "ResourceLeaseService",
@@ -340,6 +362,13 @@ __all__ = [
     "SkillStepExecutor",
     "SqlDomainEventsOutboxRepository",
     "SqlOrchestrationRepository",
+    "SqlWorkflowTriggerRepository",
+    "CreateTriggerCommand",
+    "DispatchResultKind",
+    "TriggerDispatchOutcome",
+    "TriggerDispatcherService",
+    "UpdateTriggerCommand",
+    "WorkflowTriggerRepositoryPort",
     "SseBroadcastPort",
     "SseEventEnvelope",
     "StepPresenceLockPort",
@@ -401,6 +430,7 @@ __all__ = [
     "InferenceAttemptRecord",
     "InferenceEffort",
     "InferenceTier",
+    "InvalidateAndRestoreOutcome",
     "PackLifecycleStatus",
     "PinRemovalMode",
     "ResolvedInferenceTier",

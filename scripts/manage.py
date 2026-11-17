@@ -27,7 +27,9 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -66,6 +68,64 @@ DOCKER_SERVICES: tuple[str, ...] = ("postgres", "redis", "minio")
 PROCESS_SERVICES: tuple[str, ...] = ("api", "worker", "web")
 ALL_COMPONENTS: tuple[str, ...] = (*DOCKER_SERVICES, *PROCESS_SERVICES)
 VALID_TARGETS: tuple[str, ...] = ("all", "infra", *ALL_COMPONENTS)
+MAX_LOCAL_LOG_BYTES: int = 50 * 1024 * 1024
+LOCAL_LOG_BACKUP_COUNT: int = 3
+
+
+def create_bounded_log_handler(
+    log_path: Path,
+    *,
+    max_bytes: int = MAX_LOCAL_LOG_BYTES,
+    backup_count: int = LOCAL_LOG_BACKUP_COUNT,
+) -> RotatingFileHandler:
+    """Create a 50 MiB bounded `RotatingFileHandler` and roll over oversized local logs."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(
+        filename=str(log_path),
+        mode="a",
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+        encoding="utf-8",
+    )
+    if log_path.is_file() and log_path.stat().st_size >= max_bytes:
+        handler.doRollover()
+    return handler
+
+
+def pipe_stream_to_rotating_log(
+    stream: Any,
+    log_path: Path,
+    *,
+    max_bytes: int = MAX_LOCAL_LOG_BYTES,
+    backup_count: int = LOCAL_LOG_BACKUP_COUNT,
+) -> int:
+    """Stream subprocess output lines into a size-bounded `RotatingFileHandler`."""
+    handler = create_bounded_log_handler(log_path, max_bytes=max_bytes, backup_count=backup_count)
+    bytes_written = 0
+    try:
+        while True:
+            raw_chunk = stream.readline()
+            if not raw_chunk:
+                break
+            text = (
+                raw_chunk.decode("utf-8", errors="replace")
+                if isinstance(raw_chunk, (bytes, bytearray))
+                else str(raw_chunk)
+            )
+            handler.acquire()
+            try:
+                if handler.stream is None:
+                    handler.stream = handler._open()
+                handler.stream.write(text)
+                handler.stream.flush()
+                bytes_written += len(text.encode("utf-8"))
+                if handler.stream.tell() >= max_bytes:
+                    handler.doRollover()
+            finally:
+                handler.release()
+    finally:
+        handler.close()
+    return bytes_written
 
 
 @dataclass(frozen=True, slots=True)
@@ -361,16 +421,45 @@ def start_component(component: str) -> bool:
     else:  # pragma: no cover
         raise ValueError(f"Unsupported process component: {component}")
 
-    print(f"▶ Démarrage de [{component}] (logs: {log_path.relative_to(REPO_ROOT)})...")
-    with log_path.open("ab") as log_file:
+    if env.get("ORCIA_MANAGE_LOG_STDOUT") == "1":
+        print(f"▶ Démarrage de [{component}] (logs: stdout)...")
         proc = subprocess.Popen(
             cmd,
             cwd=cwd,
             env=env,
-            stdout=log_file,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT,
             start_new_session=True,
         )
+    else:
+        rel_log = log_path.relative_to(REPO_ROOT)
+        print(f"▶ Démarrage de [{component}] (logs: {rel_log}, max 50 Mo)...")
+        create_bounded_log_handler(log_path).close()
+        proc = subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+        if proc.stdout is not None:
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve()),
+                    "log-pipe",
+                    "--log-file",
+                    str(log_path),
+                ],
+                cwd=REPO_ROOT,
+                env=env,
+                stdin=proc.stdout,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            proc.stdout.close()
 
     write_pid_file(component, proc.pid)
 
@@ -492,6 +581,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "restart",
             "status",
             "logs",
+            "log-pipe",
             "init-secrets",
             "seed-uat",
             "reset-db",
@@ -504,6 +594,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default="all",
         choices=VALID_TARGETS,
         help="Composant cible (défaut: all).",
+    )
+    parser.add_argument(
+        "--log-file",
+        default="",
+        help="Chemin du fichier log cible (pour l'action interne 'log-pipe').",
     )
     parser.add_argument(
         "--lines",
@@ -535,6 +630,13 @@ def main(argv: list[str] | None = None) -> int:
     load_orcia_env()
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+
+    if args.action == "log-pipe":
+        if not args.log_file:
+            print("✖ --log-file est requis pour log-pipe.", file=sys.stderr)
+            return 2
+        pipe_stream_to_rotating_log(sys.stdin.buffer, Path(args.log_file))
+        return 0
 
     if args.action == "init-secrets":
         updated = init_or_rotate_env_secrets(force_rotate=bool(args.rotate))

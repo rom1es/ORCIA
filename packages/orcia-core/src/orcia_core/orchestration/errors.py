@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from orcia_kernel.enums import SupportedLocale
 from orcia_kernel.errors import (
+    CriticalWorkflowRequiresHumanGateError,
     HumanAnchorRequiredError,
     LocalizedErrorCopy,
     ObserverModeReadOnlyError,
@@ -248,11 +249,6 @@ ORCHESTRATION_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]
 }
 
 register_domain_error_catalog(ORCHESTRATION_ERROR_CATALOG)
-
-
-class CriticalWorkflowRequiresHumanGateError(OrciaDomainError):
-    error_code = "ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE"
-    http_status, type_slug = 422, "critical-workflow-requires-human-gate"
 
 
 class IntentionBeforeCodeRequiredError(OrciaDomainError):

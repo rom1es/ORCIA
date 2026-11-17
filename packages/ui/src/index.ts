@@ -170,11 +170,14 @@ export {
   type UiInferenceTier,
 } from "./primitives/InferenceTierAndEffortSelector";
 export {
-  WorkflowTopGovernanceBar,
-  type StudioLifecycleTabCount,
-  type StudioLifecycleTabKey,
-  type WorkflowTopGovernanceBarProps,
-} from "./primitives/WorkflowTopGovernanceBar";
+  AutonomyContractModal,
+  type AutonomyContractModalLabels,
+  type AutonomyContractModalProps,
+  type SignAutonomyContractDraft,
+  type UiActiveAutonomyContractView,
+  type UiAutonomyTieBreakPolicy,
+  type UiEligibleServiceAccountOption,
+} from "./primitives/AutonomyContractModal";
 export {
   LayersInspectorPopover,
   type LayersInspectorPopoverProps,
@@ -612,6 +615,33 @@ export {
   type OrciaSearchableSelectOption,
   type OrciaSearchableSelectProps,
 } from "./primitives/OrciaSearchableSelect";
+export {
+  WorkflowTriggersModal,
+  type CreateWorkflowTriggerDraft,
+  type UiWorkflowTriggerItem,
+  type UiWorkflowTriggerStatus,
+  type UiWorkflowTriggerType,
+  type UpdateWorkflowTriggerDraft,
+  type WorkflowTriggersModalLabels,
+  type WorkflowTriggersModalProps,
+} from "./primitives/WorkflowTriggersModal";
+export {
+  AutonomousExecutionBadge,
+  type AutonomousExecutionBadgeLabels,
+  type AutonomousExecutionBadgeProps,
+} from "./primitives/AutonomousExecutionBadge";
+export {
+  FinopsAutonomousGovernanceSection,
+  type FinopsAutonomousGovernanceData,
+  type FinopsAutonomousGovernanceLabels,
+  type FinopsAutonomousGovernanceSectionProps,
+  type FinopsPostHocSampleRow,
+} from "./primitives/finops/FinopsAutonomousGovernanceSection";
+export {
+  FourZoneAutonomousNotificationsGroup,
+  type FourZoneAutonomousNotificationsGroupProps,
+} from "./primitives/FourZoneAutonomousNotificationsGroup";
+export { FourZoneNotificationsDrawer } from "./primitives/FourZoneNotificationsDrawer";
 export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,

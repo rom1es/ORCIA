@@ -12,6 +12,10 @@ export type BudgetOverrideRequest = components["schemas"]["BudgetOverrideRequest
 export type BudgetOverrideResponse = components["schemas"]["BudgetOverrideResponse"];
 export type CognitiveImpactDashboardResponse =
   components["schemas"]["CognitiveImpactDashboardResponse"];
+export type AutonomousGovernanceMetricsSchema =
+  components["schemas"]["AutonomousGovernanceMetricsSchema"];
+export type PostHocAuditSampleSchema =
+  components["schemas"]["PostHocAuditSampleSchema"];
 export type ApplyRecommendationResponse =
   components["schemas"]["ApplyRecommendationResponse"];
 export type RemoteServicesListResponse = components["schemas"]["RemoteServicesListResponse"];

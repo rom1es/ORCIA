@@ -23,6 +23,8 @@ from orcia_api.routers.audit_ledger import router as audit_ledger_router
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.auth_settings import router as auth_settings_router
+from orcia_api.routers.autonomous_supervision import router as autonomous_supervision_router
+from orcia_api.routers.autonomy_contracts import router as autonomy_contracts_router
 from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
 from orcia_api.routers.bootstrap import router as bootstrap_router
 from orcia_api.routers.catalog import router as catalog_router
@@ -40,6 +42,7 @@ from orcia_api.routers.enterprise_connectors import (
 )
 from orcia_api.routers.finops import router as finops_router
 from orcia_api.routers.gates import router as gates_router
+from orcia_api.routers.health import probe_router as health_probe_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
 from orcia_api.routers.iam_accounts import router as iam_accounts_router
@@ -60,6 +63,7 @@ from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
 from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
+from orcia_api.routers.workflow_triggers import router as workflow_triggers_router
 from orcia_api.routers.workflows import router as workflows_v2_router
 from orcia_api.routers.workspace_datasources import (
     router as workspace_datasources_router,
@@ -69,13 +73,13 @@ from orcia_api.routers.workspace_governance import (
 )
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
-from orcia_core.observability.logging import configure_structlog
+from orcia_core.observability.logging import configure_logging
 
 
 def create_app() -> FastAPI:
     """Create and configure the ORCIA FastAPI application (OpenAPI 3.1.0, Composition Root)."""
     load_orcia_env()
-    configure_structlog()
+    configure_logging(service="api")
     application = FastAPI(
         title="ORCIA Platform API",
         version=__version__,
@@ -116,6 +120,7 @@ def create_app() -> FastAPI:
     application.add_middleware(TraceContextMiddleware)
     register_exception_handlers(application)
     application.include_router(health_router)
+    application.include_router(health_probe_router)
     application.include_router(shell_router)
     application.include_router(auth_router)
     application.include_router(org_and_workspaces_router)
@@ -152,6 +157,9 @@ def create_app() -> FastAPI:
     application.include_router(workflows_v2_router)
     application.include_router(audit_ledger_router)
     application.include_router(finops_router)
+    application.include_router(autonomy_contracts_router)
+    application.include_router(autonomous_supervision_router)
+    application.include_router(workflow_triggers_router)
     return application
 
 

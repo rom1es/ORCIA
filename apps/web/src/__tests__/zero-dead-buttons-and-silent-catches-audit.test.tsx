@@ -114,8 +114,27 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onSubmitOverride",
         "onOpenHelpSection",
         "onApplyRecommendation",
+        "onReviewPostHocSample",
         "onUpdateConnectorQuota",
         "onResetConnectorCircuit",
+      ],
+      AutonomousExecutionBadge: [
+        "onEmergencyStop",
+        "onInvalidateAndRestore",
+        "onOpenHelpSection",
+      ],
+      AutonomyContractModal: [
+        "onSignContract",
+        "onRevokeContract",
+        "onOpenHelpSection",
+      ],
+      WorkflowTriggersModal: [
+        "onCreateTrigger",
+        "onUpdateTrigger",
+        "onDeleteTrigger",
+        "onFireTrigger",
+        "onResetCircuit",
+        "onOpenHelpSection",
       ],
     };
 

@@ -6,6 +6,11 @@ All event classes are re-exported here for public backward-compatible use.
 
 from __future__ import annotations
 
+from orcia_core.kernel._autonomous_supervision_events import (
+    AutonomousArtifactRolledBack,
+    KillSwitchActivated,
+    PostHocSampleSelected,
+)
 from orcia_core.kernel._datasource_rag_events import (
     DatasourceFreshnessEvaluated,
     DatasourceSyncRequested,
@@ -23,9 +28,16 @@ from orcia_core.kernel._finops_audit_events import (
 )
 from orcia_core.kernel._governance_events import (
     AccessRequested,
+    AutonomousContractRevoked,
+    AutonomousContractSigned,
+    AutonomousEscalated,
     PermissionGranted,
     PermissionRevoked,
+    SelfTriggerBlocked,
     SettingsChanged,
+    TriggerCircuitOpened,
+    TriggerFired,
+    WorkflowPublished,
 )
 from orcia_core.kernel._orchestration_events import (
     ArtifactProduced,
@@ -39,6 +51,10 @@ __all__ = [
     "AccessRequested",
     "AdminConnectionTested",
     "ArtifactProduced",
+    "AutonomousArtifactRolledBack",
+    "AutonomousContractRevoked",
+    "AutonomousContractSigned",
+    "AutonomousEscalated",
     "BudgetCircuitTripped",
     "BudgetOverrideApproved",
     "ConnectorCircuitTripped",
@@ -50,10 +66,16 @@ __all__ = [
     "EmbeddingReindexStarted",
     "GateEvaluated",
     "HumanArbitrationRequested",
+    "KillSwitchActivated",
     "PermissionGranted",
     "PermissionRevoked",
+    "PostHocSampleSelected",
     "RemoteUsageAnomalyCapped",
     "RunTerminated",
+    "SelfTriggerBlocked",
     "SettingsChanged",
     "StepCompleted",
+    "TriggerCircuitOpened",
+    "TriggerFired",
+    "WorkflowPublished",
 ]

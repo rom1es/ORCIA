@@ -94,6 +94,39 @@ class SignedApprovalToken(BaseModel):
             broker_signature=sig,
         )
 
+    @classmethod
+    def issue_autonomous(
+        cls,
+        *,
+        contract_id: str,
+        service_principal_id: str,
+        action_key: str,
+        payload_sha256: str,
+        run_id: str,
+        approved_at_utc: str | None = None,
+    ) -> SignedApprovalToken:
+        """Issue a scoped autonomous `SignedApprovalToken` under an active `AutonomyContract`."""
+        if not contract_id.strip() or not service_principal_id.strip() or not action_key.strip():
+            raise ValidationDomainError(
+                detail_override="contract_id, service_principal_id, and action_key are required."
+            )
+        preview_id = f"autonomous:{contract_id.strip()}:{run_id.strip()}:{action_key.strip()}"
+        approver_user_id = f"sp:{service_principal_id.strip()}"
+        ts = approved_at_utc or datetime.now(UTC).isoformat()
+        sig = sign_approval_token_payload(
+            preview_id=preview_id,
+            approver_user_id=approver_user_id,
+            approved_at_utc=ts,
+            payload_sha256=payload_sha256,
+        )
+        return cls(
+            preview_id=preview_id,
+            approver_user_id=approver_user_id,
+            approved_at_utc=ts,
+            payload_sha256=payload_sha256,
+            broker_signature=sig,
+        )
+
 
 def verify_signed_approval_token(
     approval_token: SignedApprovalToken | None,

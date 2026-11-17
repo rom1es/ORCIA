@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  app.kubernetes.io/part-of: orcia
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - configmap.yaml
+  - deployment-api.yaml
+  - deployment-worker-orchestration.yaml
+  - deployment-worker-indexing.yaml
+  - deployment-trigger-dispatcher.yaml
+  - deployment-sandbox-runner.yaml
+  - deployment-web.yaml
+  - service-api.yaml
+  - service-web.yaml
+  - service-sandbox-runner.yaml
+  - networkpolicy-sandbox-runner.yaml
+  - networkpolicy-runtime-egress.yaml

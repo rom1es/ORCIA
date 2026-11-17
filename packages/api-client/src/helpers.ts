@@ -89,8 +89,9 @@ export function createRequestJson(options: OrciaApiClientOptions) {
     path: string,
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     body?: unknown,
+    extraHeaders?: Record<string, string>,
   ): Promise<T> {
-    const headers: Record<string, string> = { ...baseHeaders };
+    const headers: Record<string, string> = { ...baseHeaders, ...(extraHeaders ?? {}) };
     const resolvedAccessToken =
       options.accessToken !== undefined
         ? options.accessToken

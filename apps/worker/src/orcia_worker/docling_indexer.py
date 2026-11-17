@@ -8,11 +8,16 @@ Story 2.3 AC:
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass
 
 import dramatiq
 
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag import (
     CodeGraphEdgeEntity,
@@ -208,6 +213,7 @@ def docling_indexer_actor(
     trace_id: str,
 ) -> None:
     """Idempotent Dramatiq actor `docling_indexer` for background KB indexing."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     execute_docling_index_job(
         workspace_id=workspace_id,
         datasource_id=datasource_id,

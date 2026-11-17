@@ -251,12 +251,46 @@ export function FinopsFeaturePanel() {
     ],
   );
 
+  const handleReviewPostHocSample = useCallback(
+    async (runId: string, decision: "VALIDATED" | "INVALIDATED_ROLLED_BACK") => {
+      try {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        await apiClient.reviewPostHocAutonomousRun(runId, {
+          decision,
+          comment: "",
+          workspace_id: resolvedScopeIdsByLevel.WORKSPACE ?? undefined,
+        });
+        setSuccessMessage(
+          decision === "VALIDATED"
+            ? dictionary.autonomousSupervision.reviewValidatedBanner
+            : dictionary.autonomousSupervision.restoreSuccessBanner,
+        );
+        setReloadTrigger((prev) => prev + 1);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setErrorMessage(msg);
+      }
+    },
+    [
+      apiClient,
+      dictionary.autonomousSupervision.restoreSuccessBanner,
+      dictionary.autonomousSupervision.reviewValidatedBanner,
+      resolvedScopeIdsByLevel.WORKSPACE,
+    ],
+  );
+
   const mappedProcesses = useMemo(() => mapProcessesRows(dashboardData), [dashboardData]);
   const mappedTiers = useMemo(() => mapTiersRows(dashboardData), [dashboardData]);
   const mappedRemoteServices = useMemo(() => mapRemoteServicesRows(remoteData), [remoteData]);
   const mappedCognitiveProps = useMemo(
-    () => mapCognitiveTabProps(cognitiveData, dictionary.finops.humanMastery),
-    [cognitiveData, dictionary.finops.humanMastery],
+    () =>
+      mapCognitiveTabProps(
+        cognitiveData,
+        dictionary.finops.humanMastery,
+        dictionary.autonomousSupervision.finops,
+      ),
+    [cognitiveData, dictionary.autonomousSupervision.finops, dictionary.finops.humanMastery],
   );
 
   const overview = dashboardData?.overview;
@@ -305,6 +339,7 @@ export function FinopsFeaturePanel() {
         onSaveBudget={handleSaveBudget}
         onSubmitOverride={handleSubmitOverride}
         onApplyRecommendation={handleApplyRecommendation}
+        onReviewPostHocSample={handleReviewPostHocSample}
         onUpdateConnectorQuota={handleUpdateConnectorQuota}
         onResetConnectorCircuit={handleResetConnectorCircuit}
       />

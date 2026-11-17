@@ -53,6 +53,11 @@
   --color-accent-primary: var(--color-primary-cobalt);
   --color-brand-primary: var(--color-primary-cobalt);
 
+  /* AutonomousExecutionBadge Cyan/Cobalt Tokens (UX-DR17 — never Violet) */
+  --color-autonomous-badge-bg: #F0F9FF;
+  --color-autonomous-badge-fg: #0284C7;
+  --color-autonomous-badge-border: #BAE6FD;
+
   /* StatusBadge Cobalt Tokens (Direction C: pastel blue badge) */
   --color-badge-cobalt-bg: #EFF6FF;
   --color-badge-cobalt-fg: #1D4ED8;
@@ -191,6 +196,11 @@
   --color-badge-cobalt-bg: rgba(37, 99, 235, 0.18);
   --color-badge-cobalt-fg: #93C5FD;
   --color-badge-cobalt-border: rgba(96, 165, 250, 0.35);
+
+  /* AutonomousExecutionBadge Cyan/Cobalt Tokens (Dark mode) */
+  --color-autonomous-badge-bg: rgba(2, 132, 199, 0.18);
+  --color-autonomous-badge-fg: #38BDF8;
+  --color-autonomous-badge-border: rgba(56, 189, 248, 0.38);
 }
 
 *,

@@ -19,6 +19,10 @@ from orcia_core.bootstrap._internal.sql_auth_policy import (
     load_platform_auth_policy_from_postgres18,
     update_platform_auth_policy_on_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_autonomy_contracts import (
+    SqlAutonomyContractRepository,
+    persist_autonomous_run_outcome_on_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_enterprise_connectors import (
     UserAccountOrgUnitSummary,
     UserAccountProfileRecord,
@@ -252,6 +256,8 @@ __all__ = [
     "WizardStepDescriptor",
     "WizardType",
     "WorkspaceBootstrapInput",
+    "SqlAutonomyContractRepository",
+    "persist_autonomous_run_outcome_on_postgres18",
     "build_default_system_bootstrap_service",
     "build_litellm_gateway_plugin",
     "build_postgres_upsert_sql",

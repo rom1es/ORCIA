@@ -28,6 +28,7 @@ from orcia_core.permissions.errors import (
     ScopeAccessDeniedError,
 )
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.permissions.service import AuthAndOrganizationService
 from orcia_kernel.errors import ValidationDomainError
 
 
@@ -94,6 +95,57 @@ async def enforce_scope_level_mutation(
         raise ScopeAccessDeniedError(instance=path)
     if not user_governs_org_unit(auth_svc, user, scope_id):
         raise ScopeAccessDeniedError(instance=path)
+
+
+def resolve_workspace_canonical_scope_path(
+    auth_svc: AuthAndOrganizationService,
+    workspace_id: str,
+) -> str:
+    """Derive canonical hierarchical `scope_path` from workspace `org_unit` topology."""
+    ws = auth_svc.evaluator.get_workspace(workspace_id)
+    if ws is None:
+        return f"org/workspace/{workspace_id}"
+    slugs: list[str] = []
+    curr_ou_id: str | None = ws.owner_org_unit_id
+    visited: set[str] = set()
+    while curr_ou_id and curr_ou_id not in visited:
+        visited.add(curr_ou_id)
+        node = auth_svc.evaluator.get_org_unit(curr_ou_id)
+        if node is None:
+            break
+        slugs.append(node.slug)
+        curr_ou_id = node.parent_id
+    slugs.reverse()
+    chain = "/".join(slugs) if slugs else ws.owner_org_unit_id
+    return f"org/{chain}/{ws.slug}"
+
+
+async def enforce_workspace_governed_mutation(
+    request: Request,
+    user: UserIdentity,
+    workspace_id: str,
+    *,
+    allowed_roles: tuple[str, ...] = (
+        "PLATFORM_ADMIN",
+        "BU_DIRECTOR",
+        "BU_LEAD",
+        "TEAM_LEAD",
+        "ARCHITECT",
+    ),
+) -> str:
+    """Enforce observer, workspace existence, scope mutation & governor role checks."""
+    path = str(request.url.path)
+    await enforce_scope_level_mutation(
+        request,
+        user,
+        scope_type="WORKSPACE",
+        scope_id=workspace_id,
+    )
+    user_roles = {str(user.platform_role).upper(), *(str(r).upper() for r in user.roles)}
+    if not (user_roles & set(allowed_roles)):
+        raise ScopeAccessDeniedError(instance=path)
+    auth_svc = get_auth_service(request)
+    return resolve_workspace_canonical_scope_path(auth_svc, workspace_id)
 
 
 async def enforce_audit_read_access(
@@ -172,8 +224,10 @@ __all__ = [
     "enforce_audit_read_access",
     "enforce_observer_headers_guard",
     "enforce_scope_level_mutation",
+    "enforce_workspace_governed_mutation",
     "resolve_finops_read_scope",
     "resolve_run_workspace_server_side",
+    "resolve_workspace_canonical_scope_path",
     "resolve_workflow_def_workspace_server_side",
     "sync_evaluator_topology_from_pg",
     "validate_uuid",

@@ -1,3 +1,4 @@
+import type { AutonomousRunSupervisionItemSchema } from "@orcia/api-client";
 import {
   getOrciaIconGlyph,
   type ControlCenterRunItem,
@@ -142,6 +143,7 @@ export function buildShellNotificationItems(params: {
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly llmTiers: readonly ConfiguredLlmTierMapping[];
   readonly runs: readonly ControlCenterRunItem[];
+  readonly autonomousRuns?: readonly AutonomousRunSupervisionItemSchema[];
   readonly lastClaimEvent: WorkspaceSseClaimEvent | null;
   readonly mustChangePassword?: boolean;
 }): readonly UiNotificationCenterItem[] {
@@ -152,6 +154,7 @@ export function buildShellNotificationItems(params: {
     workspaces,
     llmTiers,
     runs,
+    autonomousRuns = [],
     lastClaimEvent,
     mustChangePassword,
   } = params;
@@ -255,6 +258,51 @@ export function buildShellNotificationItems(params: {
       targetRoute: "/cockpit",
       ctaLabel: isFr ? "Ouvrir →" : "Open →",
     })),
+    ...autonomousRuns.map((autoRun): UiNotificationCenterItem => {
+      const isEscalation = autoRun.run_status === "PAUSED_AUTONOMOUS_ESCALATION";
+      const isTriggerSuspended = autoRun.trigger_status === "CIRCUIT_OPEN";
+      const isPostHocSample = autoRun.post_hoc_status === "PENDING_SAMPLE";
+      if (isEscalation || isTriggerSuspended || isPostHocSample) {
+        return {
+          id: `auto-priority-${autoRun.run_id}`,
+          kind: "ACTION_REQUIRED",
+          isAutonomousPriority: true,
+          triggerLabel: autoRun.trigger_label,
+          badgeLabel: isEscalation
+            ? isFr
+              ? "Escalade autonome"
+              : "Autonomous escalation"
+            : isTriggerSuspended
+              ? isFr
+                ? "Déclencheur suspendu"
+                : "Trigger paused"
+              : isFr
+                ? "Contrôle qualité"
+                : "Quality sample",
+          title: autoRun.workflow_title,
+          description: isPostHocSample
+            ? isFr
+              ? `Dossier tiré au sort pour contrôle qualité (${autoRun.trigger_label}).`
+              : `Run selected for quality sampling review (${autoRun.trigger_label}).`
+            : isFr
+              ? `Exécution automatisée nécessitant une attention (${autoRun.trigger_label}).`
+              : `Automated run requiring attention (${autoRun.trigger_label}).`,
+          targetRoute: isPostHocSample ? "/finops" : "/processes",
+          ctaLabel: isFr ? "Examiner →" : "Review →",
+        };
+      }
+      return {
+        id: `auto-nominal-${autoRun.run_id}`,
+        kind: "INFO",
+        isAutonomousNominal: true,
+        triggerLabel: autoRun.trigger_label,
+        badgeLabel: isFr ? "Automatisé sous contrat" : "Automated under contract",
+        title: autoRun.workflow_title,
+        description: `${autoRun.trigger_label}`,
+        targetRoute: "/processes",
+        ctaLabel: isFr ? "Superviser →" : "Inspect →",
+      };
+    }),
     ...(lastClaimEvent
       ? [
           {

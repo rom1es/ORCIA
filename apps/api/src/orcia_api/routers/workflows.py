@@ -15,6 +15,11 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
 
+from orcia_api.dependencies import (
+    get_help_generation_and_attachment_service,
+    get_trigger_dispatcher_service,
+)
+from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
 from orcia_api.routers.packs import load_declarative_pack_bundles
 from orcia_api.schemas.process_studio_v2 import (
     HitlSignalRequest,
@@ -31,7 +36,9 @@ from orcia_connectors.bounded_workflow_v2 import (
     apply_hitl_signal_to_run,
     run_bounded_workflow_v2,
 )
+from orcia_core.kernel.events import WorkflowPublished
 from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.workflows.gates.pipeline import GatePipelineExecutor
 from orcia_core.workflows.schemas_v2 import (
     ImpactAssessmentResult,
@@ -40,8 +47,10 @@ from orcia_core.workflows.schemas_v2 import (
     WorkflowLifecycleStatus,
     fork_workflow_as_draft,
 )
+from orcia_kernel.errors import OrciaDomainError
 
 router = APIRouter(tags=["Process Studio v2 & VSM (Epic 14)"])
+logger = get_logger("orcia.api.workflows")
 
 
 def _get_workflows_store(request: Request) -> dict[str, WorkflowDefinitionV2]:
@@ -156,6 +165,39 @@ async def save_or_fork_workflow_v2(
         saved = incoming.model_copy(update={"status": status, "version": ver})
         store[saved.id] = saved
         store[saved.slug] = saved
+
+    if payload.publish:
+        raw_ws = request.headers.get("X-Orcia-Workspace-Id", "").strip()
+        ws_id = (
+            resolve_workspace_uuid_or_setup_key(raw_ws, "workspace_id")
+            if raw_ws
+            else "0192c4e0-0000-7000-8000-000000000201"
+        )
+        trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+        pub_event = WorkflowPublished.create(
+            workflow_id=saved.id,
+            workspace_id=ws_id,
+            version=saved.version,
+            pack_slug=saved.pack_id or "orcia-docs",
+            title=saved.title,
+            trace_id=trace_id,
+        )
+        try:
+            dispatcher = get_trigger_dispatcher_service(request)
+            if dispatcher._repo is not None:
+                await dispatcher._repo.publish_outbox_event(pub_event)
+            else:
+                dispatcher._outbox_events.append(pub_event)
+            help_svc = get_help_generation_and_attachment_service(request)
+            await dispatcher.handle_workflow_published(pub_event, help_service=help_svc)
+        except OrciaDomainError:
+            raise
+        except Exception as exc:
+            logger.warning(
+                "workflow_published_trigger_hook_failed",
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
 
     return SaveWorkflowV2Response(workflow=saved, forked_as_draft=forked_as_draft)
 
