@@ -42,6 +42,8 @@ async def fetch_dashboard_overview_sql(
         "internal_tokens": 0,
         "remote_tokens": 0,
         "total_external_calls": 0,
+        "external_units_breakdown": {},
+        "active_circuit_breakers_count": 0,
         "accounted_runs_count": 0,
         "paused_runs_count": 0,
     }
@@ -97,6 +99,35 @@ async def fetch_dashboard_overview_sql(
             ledger_res = (await conn.execute(ledger_stmt, params)).mappings().one()
             runs_res = (await conn.execute(runs_stmt, params)).mappings().one()
 
+            units_where = (
+                "WHERE l.reported_by_remote = TRUE AND l.native_metric_type IS NOT NULL "
+                "AND l.native_metric_type NOT IN ('direct_cost', 'remote_tokens', 'calls')"
+            )
+            if uuid_val is not None:
+                units_where += " AND l.workspace_id = :scope_id"
+            units_stmt = sa.text(
+                f"""
+                SELECT l.native_metric_type, COALESCE(SUM(l.native_metric_value), 0) as total_units
+                FROM audit_ledger l
+                {units_where}
+                GROUP BY l.native_metric_type;
+                """
+            )
+            units_rows = (await conn.execute(units_stmt, params)).mappings().all()
+            units_breakdown: dict[str, float] = {
+                str(r["native_metric_type"]): float(r["total_units"]) for r in units_rows
+            }
+
+            open_circuits = 0
+            try:
+                cb_stmt = sa.text(
+                    "SELECT COUNT(*) FROM finops_connector_quotas "
+                    "WHERE circuit_state = 'CIRCUIT_OPEN';"
+                )
+                open_circuits = int((await conn.execute(cb_stmt)).scalar() or 0)
+            except Exception as cb_exc:
+                logger.warning("FinOps connector circuit count skipped: %s", cb_exc)
+
             return {
                 "total_cost_usd": Decimal(str(ledger_res["total_cost_usd"])),
                 "verified_internal_cost_usd": Decimal(str(ledger_res["verified_internal_usd"])),
@@ -106,6 +137,8 @@ async def fetch_dashboard_overview_sql(
                 "internal_tokens": int(ledger_res["internal_tokens"]),
                 "remote_tokens": int(ledger_res["remote_tokens"]),
                 "total_external_calls": int(ledger_res["total_external_calls"]),
+                "external_units_breakdown": units_breakdown,
+                "active_circuit_breakers_count": open_circuits,
                 "accounted_runs_count": int(runs_res["accounted_runs"]),
                 "paused_runs_count": int(runs_res["paused_runs"]),
             }

@@ -136,10 +136,10 @@ class FinopsAccountingService:
             internal_tokens=data["internal_tokens"],
             remote_tokens=data["remote_tokens"],
             total_external_calls=data["total_external_calls"],
-            external_units_breakdown={},
+            external_units_breakdown=data.get("external_units_breakdown", {}),
             cache_savings_usd=Decimal("0.000000"),
             cache_savings_eur=Decimal("0.00"),
-            active_circuit_breakers_count=0,
+            active_circuit_breakers_count=data.get("active_circuit_breakers_count", 0),
             paused_runs_count=data["paused_runs_count"],
             accounted_runs_count=data["accounted_runs_count"],
         )

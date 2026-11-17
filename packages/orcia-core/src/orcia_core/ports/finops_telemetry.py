@@ -124,6 +124,8 @@ class ConnectorQuotaGuardPort(Protocol):
         self,
         connector_id: str,
         usage: SanitizedRemoteUsage,
+        *,
+        latency_ms: int = 0,
     ) -> None: ...
 
 

@@ -8,7 +8,9 @@ from fastapi import APIRouter, Depends
 
 from orcia_api.dependencies import (
     get_audit_ledger_service,
+    get_connector_quota_guard_service,
     get_remote_test_bench_and_mcp_service,
+    get_remote_usage_sanitizer,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.mcp_test_bench import (
@@ -22,13 +24,17 @@ from orcia_api.schemas.mcp_test_bench import (
     TestBenchStepResultSchema,
 )
 from orcia_core.audit_finops import (
+    RemoteUsageSanitizer,
     SqlAuditLedgerService,
+    SqlConnectorQuotaGuardService,
+    extract_remote_usage_payload,
     map_domain_event_to_ledger_entry,
 )
 from orcia_core.kernel.events import AdminConnectionTested
 from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
     RemoteServiceTestBenchAndGovernedMcpService,
 )
+from orcia_core.permissions.errors import ConnectorCircuitOpenError
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(
@@ -44,6 +50,14 @@ TestBenchMcpServiceDep = Annotated[
 AuditLedgerServiceDep = Annotated[
     SqlAuditLedgerService,
     Depends(get_audit_ledger_service),
+]
+QuotaGuardDep = Annotated[
+    SqlConnectorQuotaGuardService,
+    Depends(get_connector_quota_guard_service),
+]
+UsageSanitizerDep = Annotated[
+    RemoteUsageSanitizer,
+    Depends(get_remote_usage_sanitizer),
 ]
 
 
@@ -168,13 +182,20 @@ def configure_mcp_exposure(
     response_model=GovernedMcpInvokeResponse,
     summary="Invoke an exposed MCP agent/assistant under the 7 Hardware Security Locks (M.4)",
 )
-def invoke_governed_mcp_agent(
+async def invoke_governed_mcp_agent(
     workspace_slug: str,
     body: GovernedMcpInvokeRequest,
     user: CurrentUserDep,
     svc: TestBenchMcpServiceDep,
+    quota_guard: QuotaGuardDep,
+    sanitizer: UsageSanitizerDep,
 ) -> GovernedMcpInvokeResponse:
     """Invoke an exposed MCP agent enforcing the 7 hardware locks (`execute != read`, `AD-3`)."""
+    connector_key = f"mcp:{workspace_slug}:{body.agent_slug}".lower()
+    decision = await quota_guard.evaluate_call_allowed(connector_key, "WORKSPACE", None)
+    if not decision.is_allowed or decision.circuit_state == "CIRCUIT_OPEN":
+        raise ConnectorCircuitOpenError(detail_override=decision.reason)
+
     res = svc.invoke_governed_mcp_tool(
         raw_pat_token=body.raw_pat_token,
         workspace_slug=workspace_slug,
@@ -185,6 +206,17 @@ def invoke_governed_mcp_agent(
         prompt_text=body.prompt_text,
         requested_write_target_uri=body.requested_write_target_uri,
     )
+    raw_usage = extract_remote_usage_payload({"_meta": {"usage": dict(res.meta_usage)}})
+    sanitized = sanitizer.sanitize(
+        raw_usage,
+        valuation_mode="NATIVE_TELEMETRY",
+        fixed_cost_per_call_eur=0.0,
+        fixed_cost_per_unit_eur=0.0,
+        max_reported_cost_per_call_eur=5.0,
+        connector_id=connector_key,
+    )
+    await quota_guard.record_call_usage(connector_key, sanitized)
+
     return GovernedMcpInvokeResponse(
         invocation_id=res.invocation_id,
         tool_name=res.tool_name,
@@ -194,7 +226,11 @@ def invoke_governed_mcp_agent(
         system_prompt_exposed=res.system_prompt_exposed,
         secret_refs_exposed=list(res.secret_refs_exposed),
         staged_actions=list(res.staged_actions),
-        meta_usage=res.meta_usage,
+        meta_usage={
+            "prompt_tokens": sanitized.input_tokens,
+            "completion_tokens": sanitized.output_tokens,
+            "cost_eur": sanitized.cost_eur,
+        },
         history_badge_fr=res.history_badge_fr,
         audit_actor_type=res.audit_actor_type,
     )

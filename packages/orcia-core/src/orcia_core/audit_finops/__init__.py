@@ -10,6 +10,7 @@ from orcia_core.audit_finops.cognitive_impact_service import (
     GatePolicyRecommendation,
     WorkflowCognitiveMetrics,
 )
+from orcia_core.audit_finops.connector_quota_service import SqlConnectorQuotaGuardService
 from orcia_core.audit_finops.errors import (
     AuditLedgerImmutableViolationError,
     AuditRunNotFoundError,
@@ -19,6 +20,7 @@ from orcia_core.audit_finops.finops_models import (
     DEFAULT_AMORTIZATION_RUNS,
     DEFAULT_EUR_USD_RATE,
     DEFAULT_HOURLY_RATE_USD,
+    ConnectorQuotaRecord,
     FinopsBreakdown,
     FinopsBudgetOverride,
     FinopsOverview,
@@ -41,6 +43,10 @@ from orcia_core.audit_finops.outbox_subscriber import (
     map_domain_event_to_ledger_entry,
 )
 from orcia_core.audit_finops.provenance_exporter import ProvenanceExporterService
+from orcia_core.audit_finops.remote_usage_sanitizer import (
+    RemoteUsageSanitizer,
+    extract_remote_usage_payload,
+)
 
 DOMAIN_NAME: str = "audit_finops"
 
@@ -57,6 +63,7 @@ __all__ = [
     "BudgetGuardService",
     "CognitiveImpactService",
     "CognitiveMasteryDashboard",
+    "ConnectorQuotaRecord",
     "DEFAULT_AMORTIZATION_RUNS",
     "DEFAULT_EUR_USD_RATE",
     "DEFAULT_HOURLY_RATE_USD",
@@ -71,8 +78,11 @@ __all__ = [
     "FinopsWorkflowBaseline",
     "GatePolicyRecommendation",
     "ProvenanceExporterService",
+    "RemoteUsageSanitizer",
     "ScopeType",
     "SqlAuditLedgerService",
+    "SqlConnectorQuotaGuardService",
     "WorkflowCognitiveMetrics",
+    "extract_remote_usage_payload",
     "map_domain_event_to_ledger_entry",
 ]

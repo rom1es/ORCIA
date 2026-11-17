@@ -6,18 +6,18 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-16",
+  "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 116,
+    "uiPrimitivesCount": 118,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 43,
+    "alembicMigrationsCount": 44,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
     "techLeadReportsCount": 144,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 59,
-    "verifiedCapabilitiesCount": 44
+    "liveCapabilitiesCount": 60,
+    "verifiedCapabilitiesCount": 45
   },
   "activeRoutes": [
     "/",
@@ -88,10 +88,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FederatedUriBadge",
     "FinopsBudgetOverrideModal",
     "FinopsBudgetPolicyModal",
+    "FinopsConnectorQuotaModal",
     "FinopsGovernanceDashboardView",
     "FinopsHumanMasteryTab",
     "FinopsKpiStrip",
     "FinopsProcessAndTiersTab",
+    "FinopsRemoteMcpServicesTab",
     "FormattedMarkdownContent",
     "FourZoneDirectionCShell",
     "GlobalSidebar",
@@ -220,7 +222,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261115_2307_story_19_7_rag_reindexing_jobs_and_queue",
     "20261115_2359_merge_iam_multi_lead_and_epic_19_heads",
     "20261116_0601_story_6_1_audit_ledger_append_only",
-    "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses"
+    "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses",
+    "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry"
   ],
   "architectureDecisions": [
     {
@@ -500,11 +503,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   ],
   "techLeadReports": [
     {
-      "date": "2026-11-16",
+      "date": "2026-11-17",
       "phaseOrStory": "Story 6.4 (CAP-200)",
       "reportFile": "6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu-tech-lead-report.md",
       "domain": "Télémétrie FinOps Multi-Métriques des Services MCP & Agents Distants (_meta.usage / X-Orcia-Usage), RemoteUsageSanitizer, Onglet Services & Agents externes & Coupe-Circuit Isolé par Connecteur",
-      "summary": "Sections 1 & 2 pré-implémentation cadrées par Winston & Sally (Section 3 à compléter après implémentation Story 6.4)."
+      "summary": "Implémentation terminée : migration Alembic 20261116_0604 (finops_connector_quotas + 09_reset_db_first_boot.py), ports hexagonaux ConnectorQuotaGuardPort/RemoteUsageSanitizerPort dans ConnectorInvoker (5 contrats lint-imports conservés), RemoteUsageSanitizer (_meta.usage / usage / X-Orcia-Usage, rejet < 0/NaN/Infinity, écrêtage 5,00 EUR + RemoteUsageAnomalyCapped, pivot USD Decimal), SqlConnectorQuotaGuardService + finops_remote.py (/remote-services, /quota, /reset-circuit sous garde observateur 403), SDK OpenAPI 0-diff, onglet @orcia/ui FinopsRemoteMcpServicesTab + FinopsConnectorQuotaModal anti-LastPass & KPIs séparés (0 #hex, 0 jargon), 95,15 % couv. Story 6.4 (93,54 % audit_finops), 108 tests Python (hypothesis, testcontainers PG18 + Redis, Schemathesis, sécurité), 29 suites Vitest (F5 & 0 bouton muet) et Playwright E2E Bureau/Mobile validés."
     },
     {
       "date": "2026-11-17",

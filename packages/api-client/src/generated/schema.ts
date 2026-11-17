@@ -2821,6 +2821,31 @@ export interface components {
     ReleaseTaskClaimRequest: {
       force?: boolean;
     };
+    RemoteServiceTelemetryItemResponse: {
+      anomaly_count?: number;
+      avg_latency_ms?: number;
+      circuit_state?: "CLOSED" | "CIRCUIT_OPEN" | "HALF_OPEN";
+      connector_key: string;
+      consolidated_cost_eur?: number;
+      consolidated_cost_usd?: number;
+      daily_calls_count?: number;
+      default_unit_name?: string | null;
+      display_name: string;
+      fixed_cost_per_call_eur: number;
+      last_invoked_at?: string | null;
+      last_tripped_reason?: string | null;
+      max_daily_calls?: number | null;
+      max_monthly_cost_eur?: number | null;
+      max_reported_cost_per_call_eur: number;
+      quota_used_pct?: number;
+      scope_id?: string | null;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      service_kind: string;
+      total_business_units?: number;
+      total_remote_tokens?: number;
+      unit_tariff_eur: number;
+      valuation_mode: "NATIVE_TELEMETRY" | "FIXED_SCALE" | "VOLUMETRIC_ONLY";
+    };
     RemoteServiceTestAndDiscoverRequest: {
       allow_private_network?: boolean;
       endpoint_url: string;
@@ -2843,6 +2868,14 @@ export interface components {
       protocol: "MCP_STREAMABLE_HTTP_SSE" | "OPENAPI_3_1_REST" | "A2A_REMOTE_AGENT" | "WASM_SANDBOX";
       steps: (components["schemas"]["TestBenchStepResultSchema"])[];
     };
+    RemoteServicesListResponse: {
+      open_circuits_count?: number;
+      services?: (components["schemas"]["RemoteServiceTelemetryItemResponse"])[];
+      total_external_calls?: number;
+      total_remote_tokens?: number;
+      total_reported_cost_eur?: number;
+      units_breakdown?: Record<string, number>;
+    };
     RequiredConnectorSpec: {
       connector_type: string;
       required_scopes?: (string)[];
@@ -2860,6 +2893,17 @@ export interface components {
     ResetAssistantStudioGraphRequest: {
       scope_id: string;
       scope_level?: "TEAM" | "WORKSPACE";
+    };
+    ResetCircuitBreakerRequest: {
+      scope_id?: string | null;
+      target_state?: "CLOSED" | "HALF_OPEN";
+    };
+    ResetCircuitBreakerResponse: {
+      anomaly_count: number;
+      circuit_state: "CLOSED" | "CIRCUIT_OPEN" | "HALF_OPEN";
+      connector_key: string;
+      reset_at: string;
+      reset_by: string;
     };
     ResolveArtifactDestinationRequest: {
       artifact_slug: string;
@@ -3539,6 +3583,19 @@ export interface components {
     };
     UpdateAgentSkillsRequest: {
       skill_ids?: (string)[];
+    };
+    UpdateConnectorQuotaRequest: {
+      default_unit_name?: string | null;
+      display_name?: string | null;
+      fixed_cost_per_call_eur?: number;
+      max_daily_calls?: number | null;
+      max_monthly_cost_eur?: number | null;
+      max_reported_cost_per_call_eur?: number;
+      scope_id?: string | null;
+      scope_type?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      service_kind?: string | null;
+      unit_tariff_eur?: number;
+      valuation_mode?: "NATIVE_TELEMETRY" | "FIXED_SCALE" | "VOLUMETRIC_ONLY";
     };
     UpdatePlatformAuthSettingsRequest: {
       auth_mode: "LOCAL" | "SSO";
@@ -4869,6 +4926,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/finops/connectors/{connector_key}/quota": {
+    put: {
+      responses: {
+        200: components["schemas"]["RemoteServiceTelemetryItemResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/connectors/{connector_key}/reset-circuit": {
+    post: {
+      responses: {
+        200: components["schemas"]["ResetCircuitBreakerResponse"];
+      };
+    };
+  };
   "/api/v1/finops/dashboard": {
     get: {
       responses: {
@@ -4880,6 +4951,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["ApplyRecommendationResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/remote-services": {
+    get: {
+      responses: {
+        200: components["schemas"]["RemoteServicesListResponse"];
       };
     };
   };
@@ -6226,12 +6304,16 @@ export type RecordAssistantTurnFeedbackRequest = components["schemas"]["RecordAs
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
+export type RemoteServiceTelemetryItemResponse = components["schemas"]["RemoteServiceTelemetryItemResponse"];
 export type RemoteServiceTestAndDiscoverRequest = components["schemas"]["RemoteServiceTestAndDiscoverRequest"];
 export type RemoteServiceTestAndDiscoverResponse = components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
+export type RemoteServicesListResponse = components["schemas"]["RemoteServicesListResponse"];
 export type RequiredConnectorSpec = components["schemas"]["RequiredConnectorSpec"];
 export type ResendLoginTwoFactorRequest = components["schemas"]["ResendLoginTwoFactorRequest"];
 export type ResendLoginTwoFactorResponse = components["schemas"]["ResendLoginTwoFactorResponse"];
 export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
+export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];
+export type ResetCircuitBreakerResponse = components["schemas"]["ResetCircuitBreakerResponse"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
 export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
@@ -6309,6 +6391,7 @@ export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtraction
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
+export type UpdateConnectorQuotaRequest = components["schemas"]["UpdateConnectorQuotaRequest"];
 export type UpdatePlatformAuthSettingsRequest = components["schemas"]["UpdatePlatformAuthSettingsRequest"];
 export type UpdateScopeBudgetRequest = components["schemas"]["UpdateScopeBudgetRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];

@@ -113,6 +113,8 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onSubmitOverride",
         "onOpenHelpSection",
         "onApplyRecommendation",
+        "onUpdateConnectorQuota",
+        "onResetConnectorCircuit",
       ],
     };
 

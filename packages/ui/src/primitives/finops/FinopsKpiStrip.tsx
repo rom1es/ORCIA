@@ -24,6 +24,7 @@ export interface FinopsKpiStripProps {
   readonly internalTokens: number;
   readonly remoteTokens: number;
   readonly totalExternalCalls: number;
+  readonly externalUnitsBreakdown?: Record<string, number>;
   readonly cacheSavingsEur?: number;
   readonly activeCircuitBreakersCount?: number;
   readonly pausedRunsCount?: number;
@@ -54,13 +55,19 @@ export function FinopsKpiStrip({
   internalTokens,
   remoteTokens,
   totalExternalCalls,
+  externalUnitsBreakdown,
   cacheSavingsEur = 0,
   activeCircuitBreakersCount = 0,
   pausedRunsCount = 0,
   emptyStateText,
   labels,
 }: FinopsKpiStripProps): React.ReactElement {
-  const isEmpty = totalRuns === 0 && totalCostEur === 0;
+  const isEmpty =
+    totalRuns === 0 &&
+    totalCostEur === 0 &&
+    totalExternalCalls === 0 &&
+    activeCircuitBreakersCount === 0;
+  const unitEntries = Object.entries(externalUnitsBreakdown ?? {}).filter(([, val]) => val > 0);
 
   if (isEmpty) {
     return (
@@ -105,9 +112,13 @@ export function FinopsKpiStrip({
           {formatCurrency(totalCostEur)}
         </div>
         <div style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
-          <span>{formatCurrency(verifiedInternalCostEur)} {labels.verifiedInternalSubtitle}</span>
+          <span data-testid="finops-kpi-verified-internal-cost">
+            {formatCurrency(verifiedInternalCostEur)} {labels.verifiedInternalSubtitle}
+          </span>
           {" · "}
-          <span>{formatCurrency(reportedExternalCostEur)} {labels.reportedExternalSubtitle}</span>
+          <span data-testid="finops-kpi-reported-external-cost">
+            {formatCurrency(reportedExternalCostEur)} {labels.reportedExternalSubtitle}
+          </span>
         </div>
       </div>
 
@@ -142,8 +153,13 @@ export function FinopsKpiStrip({
         <div style={{ fontSize: "24px", fontWeight: 700, margin: "6px 0", color: "var(--color-text-primary)" }}>
           {totalExternalCalls}
         </div>
-        <div style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
-          {labels.externalUnitsSubtitle}
+        <div
+          data-testid="finops-kpi-external-units-summary"
+          style={{ fontSize: "12px", color: "var(--color-text-muted)" }}
+        >
+          {unitEntries.length > 0
+            ? unitEntries.map(([unitName, val]) => `${val} ${unitName}`).join(" · ")
+            : labels.externalUnitsSubtitle}
         </div>
       </div>
 

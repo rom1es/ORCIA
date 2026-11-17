@@ -544,10 +544,26 @@ export {
 } from "./primitives/OrciaUserPillsSelect";
 export {
   FinopsGovernanceDashboardView,
-  type FinopsDashboardLabels,
   type FinopsGovernanceDashboardViewProps,
-  type FinopsTabKey,
 } from "./primitives/finops/FinopsGovernanceDashboardView";
+export type {
+  FinopsDashboardLabels,
+  FinopsTabKey,
+  RemoteServiceRowData,
+  RemoteServicesModalLabels,
+  RemoteServicesTabLabels,
+  UiCircuitState,
+  UiValuationMode,
+  UpdateConnectorQuotaInput,
+} from "./primitives/finops/FinopsDashboardTypes";
+export {
+  FinopsConnectorQuotaModal,
+  type FinopsConnectorQuotaModalProps,
+} from "./primitives/finops/FinopsConnectorQuotaModal";
+export {
+  FinopsRemoteMcpServicesTab,
+  type FinopsRemoteMcpServicesTabProps,
+} from "./primitives/finops/FinopsRemoteMcpServicesTab";
 export {
   FinopsKpiStrip,
   type FinopsKpiStripLabels,

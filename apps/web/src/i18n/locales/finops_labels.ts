@@ -11,11 +11,15 @@
  * - No raw latency or database names in user-facing French text
  */
 
-import type { HumanMasteryLabels } from "@orcia/ui";
+import type { HumanMasteryLabels, RemoteServicesTabLabels } from "@orcia/ui";
 import {
   HUMAN_MASTERY_EN_LABELS,
   HUMAN_MASTERY_FR_LABELS,
 } from "./finops_human_mastery_labels";
+import {
+  REMOTE_SERVICES_EN_LABELS,
+  REMOTE_SERVICES_FR_LABELS,
+} from "./finops_remote_labels";
 
 export interface FinopsDictionarySection {
   finops: {
@@ -93,6 +97,7 @@ export interface FinopsDictionarySection {
       overrideReasonLabel: string;
       overrideSubmitButton: string;
     };
+    remoteServices: RemoteServicesTabLabels;
     humanMastery: HumanMasteryLabels;
   };
 }
@@ -113,8 +118,8 @@ export const FINOPS_FR_LABELS: FinopsDictionarySection = {
       "Aucune consommation n'a encore été enregistrée sur ce périmètre. Les coûts et métriques apparaîtront dès la première exécution d'un processus ou du banc de test.",
     kpis: {
       consolidatedCostTitle: "COÛT CONSOLIDÉ",
-      verifiedInternalSubtitle: "interne vérifié",
-      reportedExternalSubtitle: "déclaré externe",
+      verifiedInternalSubtitle: "Coût interne vérifié",
+      reportedExternalSubtitle: "Coût externe déclaré",
       tokensTitle: "TOKENS LLM",
       internalTokensSubtitle: "modèles internes",
       remoteTokensSubtitle: "agents distants",
@@ -177,6 +182,7 @@ export const FINOPS_FR_LABELS: FinopsDictionarySection = {
       overrideReasonLabel: "Justification de la rallonge",
       overrideSubmitButton: "Valider la reprise",
     },
+    remoteServices: REMOTE_SERVICES_FR_LABELS,
     humanMastery: HUMAN_MASTERY_FR_LABELS,
   },
 };
@@ -197,8 +203,8 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       "No usage has been recorded in this scope yet. Costs and metrics will appear upon the first workflow execution or test bench run.",
     kpis: {
       consolidatedCostTitle: "CONSOLIDATED COST",
-      verifiedInternalSubtitle: "verified internal",
-      reportedExternalSubtitle: "reported external",
+      verifiedInternalSubtitle: "Verified internal cost",
+      reportedExternalSubtitle: "Reported external cost",
       tokensTitle: "LLM TOKENS",
       internalTokensSubtitle: "internal models",
       remoteTokensSubtitle: "remote agents",
@@ -261,6 +267,7 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       overrideReasonLabel: "Business justification",
       overrideSubmitButton: "Approve and Resume",
     },
+    remoteServices: REMOTE_SERVICES_EN_LABELS,
     humanMastery: HUMAN_MASTERY_EN_LABELS,
   },
 };

@@ -14,6 +14,12 @@ export type CognitiveImpactDashboardResponse =
   components["schemas"]["CognitiveImpactDashboardResponse"];
 export type ApplyRecommendationResponse =
   components["schemas"]["ApplyRecommendationResponse"];
+export type RemoteServicesListResponse = components["schemas"]["RemoteServicesListResponse"];
+export type RemoteServiceTelemetryItemResponse =
+  components["schemas"]["RemoteServiceTelemetryItemResponse"];
+export type UpdateConnectorQuotaRequest = components["schemas"]["UpdateConnectorQuotaRequest"];
+export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];
+export type ResetCircuitBreakerResponse = components["schemas"]["ResetCircuitBreakerResponse"];
 
 export function createFinopsDomainClient(requestJson: RequestJsonFn) {
   return {
@@ -90,6 +96,45 @@ export function createFinopsDomainClient(requestJson: RequestJsonFn) {
       return requestJson<ApplyRecommendationResponse>(
         `/api/v1/finops/gates/policy-recommendation/${encodeURIComponent(recommendationId)}/apply${buildPersonaQuery(personaKey)}`,
         "POST",
+      );
+    },
+
+    getFinopsRemoteServices(options?: {
+      scopeType?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      scopeId?: string | null;
+      personaKey?: string;
+    }): Promise<RemoteServicesListResponse> {
+      const params = new URLSearchParams();
+      if (options?.scopeType) params.set("scope_type", options.scopeType);
+      if (options?.scopeId) params.set("scope_id", options.scopeId);
+      if (options?.personaKey) params.set("persona_key", options.personaKey);
+      const qs = params.toString();
+      return requestJson<RemoteServicesListResponse>(
+        `/api/v1/finops/remote-services${qs ? `?${qs}` : ""}`,
+      );
+    },
+
+    updateConnectorQuota(
+      connectorKey: string,
+      payload: UpdateConnectorQuotaRequest,
+      personaKey?: string,
+    ): Promise<RemoteServiceTelemetryItemResponse> {
+      return requestJson<RemoteServiceTelemetryItemResponse>(
+        `/api/v1/finops/connectors/${encodeURIComponent(connectorKey)}/quota${buildPersonaQuery(personaKey)}`,
+        "PUT",
+        payload,
+      );
+    },
+
+    resetConnectorCircuit(
+      connectorKey: string,
+      payload?: ResetCircuitBreakerRequest,
+      personaKey?: string,
+    ): Promise<ResetCircuitBreakerResponse> {
+      return requestJson<ResetCircuitBreakerResponse>(
+        `/api/v1/finops/connectors/${encodeURIComponent(connectorKey)}/reset-circuit${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload ?? { target_state: "CLOSED" },
       );
     },
   };

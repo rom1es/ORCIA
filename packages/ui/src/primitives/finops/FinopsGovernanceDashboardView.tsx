@@ -3,80 +3,22 @@ import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTrig
 import { OrciaTabBar, type OrciaTabItem } from "../RadixDesignSystemPrimitives";
 import { FinopsBudgetOverrideModal } from "./FinopsBudgetOverrideModal";
 import { FinopsBudgetPolicyModal } from "./FinopsBudgetPolicyModal";
+import type {
+  FinopsDashboardLabels,
+  FinopsTabKey,
+  RemoteServiceRowData,
+  UpdateConnectorQuotaInput,
+} from "./FinopsDashboardTypes";
 import { FinopsHumanMasteryTab, type FinopsHumanMasteryTabProps } from "./FinopsHumanMasteryTab";
-import { FinopsKpiStrip, type FinopsKpiStripLabels } from "./FinopsKpiStrip";
+import { FinopsKpiStrip } from "./FinopsKpiStrip";
 import {
   FinopsProcessAndTiersTab,
   type FinopsProcessRowData,
   type FinopsTierRowData,
 } from "./FinopsProcessAndTiersTab";
+import { FinopsRemoteMcpServicesTab } from "./FinopsRemoteMcpServicesTab";
 
-export type FinopsTabKey = "processes" | "tiers" | "externalServices" | "cognitiveGovernance";
-
-export interface FinopsDashboardLabels {
-  pageTitle: string;
-  pageSubtitle: string;
-  infoButtonAriaLabel: string;
-  scopeSelector: {
-    currentWorkspace: string;
-    currentTeam: string;
-    entirePlatform: string;
-  };
-  configureBudgetButton: string;
-  emptyStateText: string;
-  kpis: FinopsKpiStripLabels;
-  tabs: {
-    processes: string;
-    tiers: string;
-    externalServices: string;
-    cognitiveGovernance: string;
-  };
-  processesTable: {
-    title: string;
-    workflowCol: string;
-    runsCol: string;
-    setupCostCol: string;
-    runCostCol: string;
-    humanTimeCol: string;
-    totalCostCol: string;
-    ttmCol: string;
-    statusCol: string;
-    actionsCol: string;
-    pausedBadgeBudget: string;
-    pausedBadgeRetries: string;
-    activeBadge: string;
-    overrideButton: string;
-  };
-  tiersTable: {
-    title: string;
-    tierCol: string;
-    effortCol: string;
-    invocationsCol: string;
-    inputTokensCol: string;
-    outputTokensCol: string;
-    totalTokensCol: string;
-    costCol: string;
-  };
-  modals: {
-    budgetTitle: string;
-    budgetDescription: string;
-    monthlyLimitLabel: string;
-    warningThresholdLabel: string;
-    hardStopLabel: string;
-    scopeLabel: string;
-    scopeGlobalLabel?: string;
-    scopeBuLabel?: string;
-    scopeTeamLabel?: string;
-    scopeWorkspaceLabel?: string;
-    saveButton: string;
-    cancelButton: string;
-    overrideTitle: string;
-    overrideDescription: string;
-    overrideAmountLabel: string;
-    overrideReasonLabel: string;
-    overrideSubmitButton: string;
-  };
-}
+export type { FinopsDashboardLabels, FinopsTabKey };
 
 export interface FinopsGovernanceDashboardViewProps {
   readonly scopeType: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
@@ -89,11 +31,13 @@ export interface FinopsGovernanceDashboardViewProps {
   readonly internalTokens: number;
   readonly remoteTokens: number;
   readonly totalExternalCalls: number;
+  readonly externalUnitsBreakdown?: Record<string, number>;
   readonly cacheSavingsEur?: number;
   readonly activeCircuitBreakersCount?: number;
   readonly pausedRunsCount?: number;
   readonly processes: readonly FinopsProcessRowData[];
   readonly tiers: readonly FinopsTierRowData[];
+  readonly remoteServices?: readonly RemoteServiceRowData[];
   readonly labels: FinopsDashboardLabels;
   readonly onOpenHelpSection?: (sectionId: string) => void;
   readonly onSaveBudget?: (
@@ -106,6 +50,8 @@ export interface FinopsGovernanceDashboardViewProps {
   readonly onSubmitOverride?: (runId: string, amountUsd: number, reason: string) => void;
   readonly cognitiveData?: FinopsHumanMasteryTabProps | null;
   readonly onApplyRecommendation?: (recommendationId: string) => void;
+  readonly onUpdateConnectorQuota?: (input: UpdateConnectorQuotaInput) => void;
+  readonly onResetConnectorCircuit?: (connectorKey: string) => void;
 }
 
 export function FinopsGovernanceDashboardView({
@@ -119,17 +65,21 @@ export function FinopsGovernanceDashboardView({
   internalTokens,
   remoteTokens,
   totalExternalCalls,
+  externalUnitsBreakdown,
   cacheSavingsEur = 0,
   activeCircuitBreakersCount = 0,
   pausedRunsCount = 0,
   processes,
   tiers,
+  remoteServices = [],
   labels,
   onOpenHelpSection,
   onSaveBudget,
   onSubmitOverride,
   cognitiveData,
   onApplyRecommendation,
+  onUpdateConnectorQuota,
+  onResetConnectorCircuit,
 }: FinopsGovernanceDashboardViewProps): React.ReactElement {
   const [activeTab, setActiveTab] = useState<FinopsTabKey>("processes");
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -148,7 +98,6 @@ export function FinopsGovernanceDashboardView({
       data-testid="finops-governance-dashboard"
       style={{ display: "flex", flexDirection: "column", gap: "20px" }}
     >
-      {/* 1. En-tête sobre Direction C */}
       <div
         className="finops-dashboard-header"
         style={{
@@ -186,7 +135,6 @@ export function FinopsGovernanceDashboardView({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          {/* Sélecteur de portée en 3 pilules */}
           <div
             className="finops-scope-pills"
             data-testid="finops-scope-pills"
@@ -217,7 +165,6 @@ export function FinopsGovernanceDashboardView({
             ))}
           </div>
 
-          {/* Bouton de configuration de plafond */}
           <button
             type="button"
             data-testid="finops-configure-budget-btn"
@@ -229,7 +176,6 @@ export function FinopsGovernanceDashboardView({
         </div>
       </div>
 
-      {/* 2. Barre KPI ou État vide */}
       <FinopsKpiStrip
         totalRuns={totalRuns}
         totalCostEur={totalCostEur}
@@ -239,6 +185,7 @@ export function FinopsGovernanceDashboardView({
         internalTokens={internalTokens}
         remoteTokens={remoteTokens}
         totalExternalCalls={totalExternalCalls}
+        externalUnitsBreakdown={externalUnitsBreakdown}
         cacheSavingsEur={cacheSavingsEur}
         activeCircuitBreakersCount={activeCircuitBreakersCount}
         pausedRunsCount={pausedRunsCount}
@@ -246,7 +193,6 @@ export function FinopsGovernanceDashboardView({
         labels={labels.kpis}
       />
 
-      {/* 3. Onglets de gouvernance */}
       <div className="finops-tabs-container">
         <OrciaTabBar<FinopsTabKey>
           tabs={tabs}
@@ -271,15 +217,21 @@ export function FinopsGovernanceDashboardView({
                 labels={labels}
               />
             ),
-            externalServices: (
+            externalServices: labels.remoteServices ? (
+              <FinopsRemoteMcpServicesTab
+                services={remoteServices}
+                labels={labels.remoteServices}
+                onUpdateConnectorQuota={onUpdateConnectorQuota}
+                onResetConnectorCircuit={onResetConnectorCircuit}
+                onOpenHelpSection={onOpenHelpSection}
+              />
+            ) : (
               <div
                 className="orcia-bento-card"
                 data-testid="finops-services-placeholder"
                 style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}
               >
-                <p style={{ margin: 0 }}>
-                  La télémétrie multi-métriques des services et serveurs distants sera activée lors de la prochaine étape de livraison.
-                </p>
+                <p style={{ margin: 0 }}>{labels.emptyStateText}</p>
               </div>
             ),
             cognitiveGovernance: cognitiveData ? (
@@ -294,16 +246,13 @@ export function FinopsGovernanceDashboardView({
                 data-testid="finops-governance-placeholder"
                 style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}
               >
-                <p style={{ margin: 0 }}>
-                  Le tableau de bord d'impact cognitif et de réversibilité humaine sera connecté lors de la prochaine étape de livraison.
-                </p>
+                <p style={{ margin: 0 }}>{labels.emptyStateText}</p>
               </div>
             ),
           }}
         />
       </div>
 
-      {/* Modale de réglage des plafonds */}
       <FinopsBudgetPolicyModal
         open={isBudgetModalOpen}
         onOpenChange={setIsBudgetModalOpen}
@@ -312,7 +261,6 @@ export function FinopsGovernanceDashboardView({
         onSaveBudget={onSaveBudget}
       />
 
-      {/* Modale de rallonge budgétaire */}
       <FinopsBudgetOverrideModal
         open={overrideModalRun !== null}
         onOpenChange={(open) => {

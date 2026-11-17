@@ -11,7 +11,9 @@ if TYPE_CHECKING:
         CognitiveImpactService,
         FinopsAccountingService,
         ProvenanceExporterService,
+        RemoteUsageSanitizer,
         SqlAuditLedgerService,
+        SqlConnectorQuotaGuardService,
     )
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
@@ -230,4 +232,29 @@ def get_cognitive_impact_service(request: Request) -> CognitiveImpactService:
         svc = CognitiveImpactService(engine=engine)
         request.app.state.cognitive_impact_service = svc
     assert svc is not None
+    return svc
+
+
+def get_remote_usage_sanitizer(request: Request) -> RemoteUsageSanitizer:
+    """FastAPI `Depends` provider returning `RemoteUsageSanitizer` (`Story 6.4`)."""
+    from orcia_core.audit_finops import RemoteUsageSanitizer
+
+    svc: RemoteUsageSanitizer | None = getattr(request.app.state, "finops_sanitizer", None)
+    if svc is None:
+        svc = RemoteUsageSanitizer()
+        request.app.state.finops_sanitizer = svc
+    return svc
+
+
+def get_connector_quota_guard_service(request: Request) -> SqlConnectorQuotaGuardService:
+    """FastAPI `Depends` provider returning `SqlConnectorQuotaGuardService` (`Story 6.4`)."""
+    from orcia_core.audit_finops import SqlConnectorQuotaGuardService
+
+    svc: SqlConnectorQuotaGuardService | None = getattr(
+        request.app.state, "connector_quota_guard_service", None
+    )
+    engine = getattr(request.app.state, "db_engine", None)
+    if svc is None or (getattr(svc, "_engine", None) is None and engine is not None):
+        svc = SqlConnectorQuotaGuardService(engine=engine)
+        request.app.state.connector_quota_guard_service = svc
     return svc

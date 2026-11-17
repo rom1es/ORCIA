@@ -44,6 +44,7 @@ PROTECTED_TABLES: frozenset[str] = frozenset(
 )
 
 ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
+    "finops_connector_quotas",
     "finops_budget_overrides",
     "finops_workflow_baselines",
     "finops_scope_budgets",

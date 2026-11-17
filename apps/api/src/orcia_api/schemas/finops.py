@@ -10,6 +10,16 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from orcia_api.schemas.finops_remote import (
+    CircuitBreakerStateLiteral,
+    RemoteServicesListResponse,
+    RemoteServiceTelemetryItemResponse,
+    ResetCircuitBreakerRequest,
+    ResetCircuitBreakerResponse,
+    UpdateConnectorQuotaRequest,
+    ValuationModeLiteral,
+)
+
 ScopeType = Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
 
 
@@ -306,15 +316,22 @@ __all__ = [
     "ApplyRecommendationResponse",
     "BudgetOverrideRequest",
     "BudgetOverrideResponse",
+    "CircuitBreakerStateLiteral",
     "CognitiveImpactDashboardResponse",
     "FinopsBreakdownResponse",
     "FinopsOverviewResponse",
     "FinopsProcessItemResponse",
     "FinopsTierEffortItemResponse",
     "GatePolicyRecommendationSchema",
+    "RemoteServiceTelemetryItemResponse",
+    "RemoteServicesListResponse",
+    "ResetCircuitBreakerRequest",
+    "ResetCircuitBreakerResponse",
     "ScopeBudgetResponse",
     "SetWorkflowBaselineRequest",
+    "UpdateConnectorQuotaRequest",
     "UpdateScopeBudgetRequest",
+    "ValuationModeLiteral",
     "WorkflowBaselineResponse",
     "WorkflowCognitiveMetricsSchema",
 ]

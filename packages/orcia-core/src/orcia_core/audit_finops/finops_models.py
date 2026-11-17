@@ -10,6 +10,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
+from orcia_core.ports.finops_telemetry import CircuitBreakerState, ValuationMode
+
 ScopeType = Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
 DEFAULT_HOURLY_RATE_USD = Decimal("75.000000")
 DEFAULT_EUR_USD_RATE = Decimal("0.920000")
@@ -127,7 +129,40 @@ class FinopsBreakdown:
     baselines: list[FinopsWorkflowBaseline] = field(default_factory=list)
 
 
+@dataclass(frozen=True, slots=True)
+class ConnectorQuotaRecord:
+    """Configured quota, valuation mode, consumption & circuit state for a remote connector."""
+
+    id: str
+    connector_key: str
+    display_name: str
+    service_kind: str
+    scope_type: ScopeType
+    scope_id: str | None
+    valuation_mode: ValuationMode
+    max_reported_cost_per_call_eur: Decimal
+    fixed_cost_per_call_eur: Decimal
+    unit_tariff_eur: Decimal
+    default_unit_name: str | None
+    max_daily_calls: int | None
+    max_monthly_cost_eur: Decimal | None
+    daily_calls_count: int
+    monthly_cost_usd: Decimal
+    monthly_cost_eur: Decimal
+    total_remote_tokens: int
+    total_business_units: Decimal
+    circuit_state: CircuitBreakerState
+    anomaly_count: int
+    consecutive_anomalies: int
+    last_latency_ms: int
+    last_tripped_reason: str | None = None
+    last_tripped_at: datetime | None = None
+    last_invoked_at: datetime | None = None
+    quota_used_pct: Decimal = field(default_factory=lambda: Decimal("0.00"))
+
+
 __all__ = [
+    "ConnectorQuotaRecord",
     "DEFAULT_AMORTIZATION_RUNS",
     "DEFAULT_EUR_USD_RATE",
     "DEFAULT_HOURLY_RATE_USD",

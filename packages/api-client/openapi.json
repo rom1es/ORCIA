@@ -18399,6 +18399,206 @@
         "title": "ReleaseTaskClaimRequest",
         "type": "object"
       },
+      "RemoteServiceTelemetryItemResponse": {
+        "description": "Consolidated FinOps telemetry, quota and circuit breaker state for a remote service.",
+        "properties": {
+          "anomaly_count": {
+            "default": 0,
+            "description": "Total capped or rejected telemetry alerts",
+            "title": "Anomaly Count",
+            "type": "integer"
+          },
+          "avg_latency_ms": {
+            "default": 0,
+            "description": "Latest or average latency in ms",
+            "title": "Avg Latency Ms",
+            "type": "integer"
+          },
+          "circuit_state": {
+            "default": "CLOSED",
+            "description": "Isolated circuit breaker state",
+            "enum": [
+              "CLOSED",
+              "CIRCUIT_OPEN",
+              "HALF_OPEN"
+            ],
+            "title": "Circuit State",
+            "type": "string"
+          },
+          "connector_key": {
+            "description": "Unique connector or remote service identifier",
+            "title": "Connector Key",
+            "type": "string"
+          },
+          "consolidated_cost_eur": {
+            "default": 0.0,
+            "description": "Consolidated cost in EUR",
+            "title": "Consolidated Cost Eur",
+            "type": "number"
+          },
+          "consolidated_cost_usd": {
+            "default": 0.0,
+            "description": "Consolidated cost in USD",
+            "title": "Consolidated Cost Usd",
+            "type": "number"
+          },
+          "daily_calls_count": {
+            "default": 0,
+            "description": "Number of calls recorded today",
+            "title": "Daily Calls Count",
+            "type": "integer"
+          },
+          "default_unit_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Business unit name (e.g. pages_ocr)",
+            "title": "Default Unit Name"
+          },
+          "display_name": {
+            "description": "Display name of the external service or agent",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "fixed_cost_per_call_eur": {
+            "description": "Reference fixed cost per call in EUR",
+            "title": "Fixed Cost Per Call Eur",
+            "type": "number"
+          },
+          "last_invoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Timestamp of last invocation",
+            "title": "Last Invoked At"
+          },
+          "last_tripped_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest circuit open reason if suspended",
+            "title": "Last Tripped Reason"
+          },
+          "max_daily_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum daily calls ceiling",
+            "title": "Max Daily Calls"
+          },
+          "max_monthly_cost_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum monthly cost ceiling in EUR",
+            "title": "Max Monthly Cost Eur"
+          },
+          "max_reported_cost_per_call_eur": {
+            "description": "Safety cap per call in EUR (default 5.00)",
+            "title": "Max Reported Cost Per Call Eur",
+            "type": "number"
+          },
+          "quota_used_pct": {
+            "default": 0.0,
+            "description": "Percentage of configured ceiling used",
+            "title": "Quota Used Pct",
+            "type": "number"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Target scope UUID or None",
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "description": "Configured scope level",
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "service_kind": {
+            "description": "Service kind (MCP_SERVER, A2A_AGENT, etc.)",
+            "title": "Service Kind",
+            "type": "string"
+          },
+          "total_business_units": {
+            "default": 0.0,
+            "description": "Accumulated business units",
+            "title": "Total Business Units",
+            "type": "number"
+          },
+          "total_remote_tokens": {
+            "default": 0,
+            "description": "Remote LLM tokens reported",
+            "title": "Total Remote Tokens",
+            "type": "integer"
+          },
+          "unit_tariff_eur": {
+            "description": "Reference unit tariff in EUR",
+            "title": "Unit Tariff Eur",
+            "type": "number"
+          },
+          "valuation_mode": {
+            "description": "Cost valuation mode (NATIVE_TELEMETRY, FIXED_SCALE, VOLUMETRIC_ONLY)",
+            "enum": [
+              "NATIVE_TELEMETRY",
+              "FIXED_SCALE",
+              "VOLUMETRIC_ONLY"
+            ],
+            "title": "Valuation Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_key",
+          "display_name",
+          "service_kind",
+          "scope_type",
+          "valuation_mode",
+          "max_reported_cost_per_call_eur",
+          "fixed_cost_per_call_eur",
+          "unit_tariff_eur"
+        ],
+        "title": "RemoteServiceTelemetryItemResponse",
+        "type": "object"
+      },
       "RemoteServiceTestAndDiscoverRequest": {
         "additionalProperties": false,
         "description": "Request for `POST /api/v1/settings/connectors/test-and-discover` (`Story 11.3`).",
@@ -18553,6 +18753,53 @@
         "title": "RemoteServiceTestAndDiscoverResponse",
         "type": "object"
       },
+      "RemoteServicesListResponse": {
+        "description": "Aggregated response for `/api/v1/finops/remote-services`.",
+        "properties": {
+          "open_circuits_count": {
+            "default": 0,
+            "description": "Count of open connector circuits",
+            "title": "Open Circuits Count",
+            "type": "integer"
+          },
+          "services": {
+            "description": "Registered remote MCP and A2A connectors",
+            "items": {
+              "$ref": "#/components/schemas/RemoteServiceTelemetryItemResponse"
+            },
+            "title": "Services",
+            "type": "array"
+          },
+          "total_external_calls": {
+            "default": 0,
+            "description": "Sum of remote service calls",
+            "title": "Total External Calls",
+            "type": "integer"
+          },
+          "total_remote_tokens": {
+            "default": 0,
+            "description": "Sum of remote LLM tokens",
+            "title": "Total Remote Tokens",
+            "type": "integer"
+          },
+          "total_reported_cost_eur": {
+            "default": 0.0,
+            "description": "Consolidated external cost in EUR",
+            "title": "Total Reported Cost Eur",
+            "type": "number"
+          },
+          "units_breakdown": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Totals per distinct business unit name",
+            "title": "Units Breakdown",
+            "type": "object"
+          }
+        },
+        "title": "RemoteServicesListResponse",
+        "type": "object"
+      },
       "RequiredConnectorSpec": {
         "properties": {
           "connector_type": {
@@ -18659,6 +18906,78 @@
           "scope_id"
         ],
         "title": "ResetAssistantStudioGraphRequest",
+        "type": "object"
+      },
+      "ResetCircuitBreakerRequest": {
+        "description": "Request payload to reset a suspended connector circuit breaker.",
+        "properties": {
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "target_state": {
+            "default": "CLOSED",
+            "enum": [
+              "CLOSED",
+              "HALF_OPEN"
+            ],
+            "title": "Target State",
+            "type": "string"
+          }
+        },
+        "title": "ResetCircuitBreakerRequest",
+        "type": "object"
+      },
+      "ResetCircuitBreakerResponse": {
+        "description": "Response returned after resetting a connector circuit breaker.",
+        "properties": {
+          "anomaly_count": {
+            "description": "Total historical anomaly count",
+            "title": "Anomaly Count",
+            "type": "integer"
+          },
+          "circuit_state": {
+            "description": "New circuit state",
+            "enum": [
+              "CLOSED",
+              "CIRCUIT_OPEN",
+              "HALF_OPEN"
+            ],
+            "title": "Circuit State",
+            "type": "string"
+          },
+          "connector_key": {
+            "description": "Reset connector key",
+            "title": "Connector Key",
+            "type": "string"
+          },
+          "reset_at": {
+            "description": "Timestamp of reset",
+            "format": "date-time",
+            "title": "Reset At",
+            "type": "string"
+          },
+          "reset_by": {
+            "description": "Actor user identifier",
+            "title": "Reset By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector_key",
+          "circuit_state",
+          "anomaly_count",
+          "reset_at",
+          "reset_by"
+        ],
+        "title": "ResetCircuitBreakerResponse",
         "type": "object"
       },
       "ResolveArtifactDestinationRequest": {
@@ -23234,6 +23553,128 @@
           }
         },
         "title": "UpdateAgentSkillsRequest",
+        "type": "object"
+      },
+      "UpdateConnectorQuotaRequest": {
+        "description": "Request payload to configure quota ceilings and valuation mode for a connector.",
+        "properties": {
+          "default_unit_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Unit Name"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "fixed_cost_per_call_eur": {
+            "default": 0.0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Fixed Cost Per Call Eur",
+            "type": "number"
+          },
+          "max_daily_calls": {
+            "anyOf": [
+              {
+                "maximum": 10000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Daily Calls"
+          },
+          "max_monthly_cost_eur": {
+            "anyOf": [
+              {
+                "maximum": 1000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Monthly Cost Eur"
+          },
+          "max_reported_cost_per_call_eur": {
+            "default": 5.0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Max Reported Cost Per Call Eur",
+            "type": "number"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "default": "GLOBAL",
+            "enum": [
+              "GLOBAL",
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "service_kind": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Kind"
+          },
+          "unit_tariff_eur": {
+            "default": 0.0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Unit Tariff Eur",
+            "type": "number"
+          },
+          "valuation_mode": {
+            "default": "NATIVE_TELEMETRY",
+            "enum": [
+              "NATIVE_TELEMETRY",
+              "FIXED_SCALE",
+              "VOLUMETRIC_ONLY"
+            ],
+            "title": "Valuation Mode",
+            "type": "string"
+          }
+        },
+        "title": "UpdateConnectorQuotaRequest",
         "type": "object"
       },
       "UpdatePlatformAuthSettingsRequest": {
@@ -38857,6 +39298,289 @@
         ]
       }
     },
+    "/api/v1/finops/connectors/{connector_key}/quota": {
+      "put": {
+        "operationId": "update_connector_quota_api_v1_finops_connectors__connector_key__quota_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connector_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Connector Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConnectorQuotaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoteServiceTelemetryItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Configure valuation mode, safety cap and quota ceilings for a remote connector",
+        "tags": [
+          "finops",
+          "finops"
+        ]
+      }
+    },
+    "/api/v1/finops/connectors/{connector_key}/reset-circuit": {
+      "post": {
+        "operationId": "reset_connector_circuit_api_v1_finops_connectors__connector_key__reset_circuit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connector_key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Connector Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ResetCircuitBreakerRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetCircuitBreakerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Manually reset a suspended external connector circuit breaker",
+        "tags": [
+          "finops",
+          "finops"
+        ]
+      }
+    },
     "/api/v1/finops/dashboard": {
       "get": {
         "operationId": "get_finops_dashboard_api_v1_finops_dashboard_get",
@@ -39131,6 +39855,159 @@
           }
         },
         "summary": "Apply actionable gate policy adjustment under scope guard protection",
+        "tags": [
+          "finops",
+          "finops"
+        ]
+      }
+    },
+    "/api/v1/finops/remote-services": {
+      "get": {
+        "operationId": "list_remote_services_telemetry_api_v1_finops_remote_services_get",
+        "parameters": [
+          {
+            "description": "Scope filter: GLOBAL, BU, TEAM, WORKSPACE",
+            "in": "query",
+            "name": "scope_type",
+            "required": false,
+            "schema": {
+              "default": "GLOBAL",
+              "description": "Scope filter: GLOBAL, BU, TEAM, WORKSPACE",
+              "enum": [
+                "GLOBAL",
+                "BU",
+                "TEAM",
+                "WORKSPACE"
+              ],
+              "title": "Scope Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Target scope UUID",
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Target scope UUID",
+              "title": "Scope Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoteServicesListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List remote MCP and A2A services FinOps telemetry and circuit breaker states",
         "tags": [
           "finops",
           "finops"

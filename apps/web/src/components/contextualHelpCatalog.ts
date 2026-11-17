@@ -97,6 +97,12 @@ const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Préservez le discernement de vos experts et la conformité aux décisions verrouillées. Les trois indicateurs mesurent l'équilibre entre cadrage amont et relecture, préviennent les validations trop rapides et signalent tout écart structurel non couvert par une dérogation.",
     category: "whatFor",
   },
+  {
+    sectionId: "finops-remote-services",
+    title: "Télémétrie des services et agents externes",
+    body: "Suivez séparément les coûts déclarés par les serveurs d'outils et agents distants, leurs unités métiers propres et l'état de leur coupe-circuit isolé. Chaque connecteur suspendu peut être réarmé indépendamment sans perturber vos modèles internes.",
+    category: "terms",
+  },
 ];
 
 const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -184,6 +190,12 @@ const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     body: "Preserve active expert critical thinking and compliance with locked architectural decisions. The three indicators balance upstream framing against review time, prevent quick approvals, and report any architectural deviation not covered by an approved exception.",
     category: "whatFor",
   },
+  {
+    sectionId: "finops-remote-services",
+    title: "External services & agents telemetry",
+    body: "Track reported external tool and agent costs, distinct business units, and isolated connector circuit breaker states separately from internal models. Any suspended connector can be reset independently without impacting internal AI models.",
+    category: "terms",
+  },
 ];
 
 const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
@@ -259,6 +271,12 @@ const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Préservez le discernement de vos experts et la conformité aux décisions verrouillées. Les trois indicateurs mesurent l'équilibre entre cadrage amont et relecture, préviennent les validations trop rapides et signalent tout écart structurel non couvert par une dérogation.",
     category: "whatFor",
   },
+  {
+    sectionId: "finops-remote-services",
+    title: "Télémétrie des services et agents externes",
+    body: "Suivez séparément les coûts déclarés par les serveurs d'outils et agents distants, leurs unités métiers propres et l'état de leur coupe-circuit isolé. Chaque connecteur suspendu peut être réarmé indépendamment sans perturber vos modèles internes.",
+    category: "terms",
+  },
 ];
 
 const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -333,6 +351,12 @@ const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
     title: "Human mastery, quality, and architecture reversibility",
     body: "Preserve active expert critical thinking and compliance with locked architectural decisions. The three indicators balance upstream framing against review time, prevent quick approvals, and report any architectural deviation not covered by an approved exception.",
     category: "whatFor",
+  },
+  {
+    sectionId: "finops-remote-services",
+    title: "External services & agents telemetry",
+    body: "Track reported external tool and agent costs, distinct business units, and isolated connector circuit breaker states separately from internal models. Any suspended connector can be reset independently without impacting internal AI models.",
+    category: "terms",
   },
 ];
 

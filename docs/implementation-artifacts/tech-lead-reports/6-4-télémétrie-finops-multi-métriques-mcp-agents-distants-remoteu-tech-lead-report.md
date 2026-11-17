@@ -113,40 +113,41 @@ L'intégration des outils externes via Model Context Protocol (MCP) et le dialog
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *Section réservée à l'implémentation par le dev worker (`bmad-dev-worker` ⚡).*
-
 ### 3.1 Fichiers Développés & Modifiés
-| Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
-| :--- | :--- | :--- |
-| `infra/migrations/versions/20261116_0604_story_6_4_remote_connector_quotas_and_telemetry.py` | Création | Migration Alembic créant la table `finops_connector_quotas` |
-| `infra/scripts/maintenance/09_reset_db_first_boot.py` | Modification | Ajout de `finops_connector_quotas` dans `ORDERED_MUTABLE_TABLES_TO_CLEAR` |
-| `packages/orcia-core/src/orcia_core/ports/finops_telemetry.py` | Modification | Harmonisation `CircuitBreakerState` et protocoles |
-| `packages/orcia-core/src/orcia_core/permissions/connector_invoker.py` | Modification | Intégration de `CIRCUIT_OPEN` et du port `ConnectorQuotaGuardPort` |
-| `packages/orcia-core/src/orcia_core/audit_finops/remote_usage_sanitizer.py` | Création | Validateur de sécurité anti-anomalies et convertisseur de métriques |
-| `packages/orcia-core/src/orcia_core/audit_finops/connector_quota_service.py` | Création | Implémentation du garde de quota et de coupe-circuit |
-| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_connector_quotas.py` | Création | Requêtes SQL de gestion des quotas |
-| `packages/ui/src/primitives/finops/FinopsRemoteMcpServicesTab.tsx` | Création | Onglet Services & Agents externes |
-| `packages/ui/src/primitives/finops/FinopsKpiStrip.tsx` | Modification | Distinction visuelle coût interne vs externe et séparation tokens/unités |
-| `apps/api/src/orcia_api/schemas/finops.py` | Modification | Schémas RFC 9457 pour les services distants |
-| `apps/api/src/orcia_api/routers/finops.py` | Modification | Endpoints `/api/v1/finops/remote-services` et réarmement |
-| `apps/web/src/features/finops/index.tsx` | Modification | Montage de l'onglet services distants |
-| `tests/unit/test_story_6_4_remote_usage_sanitizer.py` | Création | Tests unitaires `hypothesis` sur valeurs aberrantes |
-| `tests/unit/test_story_6_4_connector_quota_isolation.py` | Création | Validation de l'étanchéité du coupe-circuit |
-| `tests/integration/test_story_6_4_connector_quotas_postgres18.py` | Création | Tests d'intégration testcontainers PostgreSQL 18 + Redis |
+| Fichier | Nature (Création / Modification / Refactoring) | Volumétrie | Description synthétique |
+| :--- | :--- | :--- | :--- |
+| `infra/migrations/versions/20261116_0604_story_6_4_remote_connector_quotas_and_telemetry.py` | Création | 100 l. | Migration Alembic linéaire (`down_revision = "20261116_0602"`) créant la table `finops_connector_quotas` (`valuation_mode`, `circuit_state`, compteurs d'appels/coûts/jetons/unités) |
+| `infra/scripts/maintenance/09_reset_db_first_boot.py` | Modification | 277 l. | Ajout de `"finops_connector_quotas"` en tête de `ORDERED_MUTABLE_TABLES_TO_CLEAR` |
+| `packages/orcia-core/src/orcia_core/ports/finops_telemetry.py` | Modification | 147 l. | Harmonisation `CircuitBreakerState`, `RemoteUsageRawPayload`, `SanitizedRemoteUsage`, `RemoteUsageSanitizerPort`, `ConnectorQuotaGuardPort` (avec `latency_ms`) |
+| `packages/orcia-core/src/orcia_core/permissions/_error_catalog.py` & `errors.py` | Modification | 271 / 289 l. | Ajout de `ERR_CONNECTOR_CIRCUIT_OPEN` / `ConnectorCircuitOpenError` (`HTTP 503`) |
+| `packages/orcia-core/src/orcia_core/permissions/_connector_breaker.py` & `connector_invoker.py` | Refactoring / Modification | 127 / 335 l. | Extraction du coupe-circuit & intégration `invoke_async` avec `ConnectorQuotaGuardPort` et `RemoteUsageSanitizerPort` (isolation totale des LLM internes et des autres connecteurs) |
+| `packages/orcia-core/src/orcia_core/audit_finops/_remote_usage_parser.py` & `remote_usage_sanitizer.py` | Création | 136 / 216 l. | Extraction `_meta.usage` / `usage` / `X-Orcia-Usage`, rejet strict `< 0`/`NaN`/`Infinity`, écrêtage `max_reported_cost_per_call_eur` (5,00 €), conversion `Decimal` pivot USD |
+| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_connector_quotas_helpers.py`, `sql_connector_circuit.py`, `sql_connector_quotas.py` & `connector_quota_service.py` | Création | 182 / 202 / 253 / 244 l. | Adaptateurs SQL PostgreSQL 18 + `SqlConnectorQuotaGuardService` (quotas journaliers/mensuels, `CIRCUIT_OPEN` isolé, réarmement, Outbox `RemoteUsageAnomalyCapped` & `ConnectorCircuitTripped`, `audit_ledger`) |
+| `packages/orcia-core/src/orcia_core/audit_finops/_internal/sql_finops_dashboard.py`, `finops_accounting_service.py`, `finops_models.py` & `__init__.py` | Modification | 273 / 326 / 177 / 88 l. | Agrégation `external_units_breakdown` & `active_circuit_breakers_count` depuis PostgreSQL 18 + `ConnectorQuotaRecord` |
+| `apps/api/src/orcia_api/schemas/finops_remote.py` & `schemas/finops.py` | Création / Modification | 115 / 337 l. | Schémas OpenAPI pour services distants, mise à jour de quota et réarmement |
+| `apps/api/src/orcia_api/routers/finops_remote.py` & `routers/finops.py` | Création / Modification | 230 / 302 l. | Endpoints `GET /api/v1/finops/remote-services`, `PUT /api/v1/finops/connectors/{connector_key}/quota`, `POST /api/v1/finops/connectors/{connector_key}/reset-circuit` (sous `enforce_scope_mutation_guard` -> `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY`) |
+| `apps/api/src/orcia_api/routers/mcp_and_test_bench.py`, `dependencies/*` & `packages/api-client/src/domains/finops.ts` | Modification | 236 / <= 260 (core 436) / 141 l. | Câblage MCP/A2A sur `QuotaGuardDep`/`UsageSanitizerDep`, Composition Root & régénération SDK OpenAPI `0-diff` |
+| `packages/ui/src/primitives/finops/` (`FinopsRemoteMcpServicesTab.tsx`, `FinopsConnectorQuotaModal.tsx`, `FinopsDashboardTypes.ts`, `FinopsKpiStrip.tsx`, `FinopsGovernanceDashboardView.tsx`) & `packages/ui/src/index.ts` | Création / Modification | 222 / 267 / 163 / 200 / 276 / 649 l. | Onglet *Services et agents externes*, modale quota anti-LastPass, séparation KPI interne vs externe & jetons LLM vs unités distantes (zéro `#hex`) |
+| `apps/web/src/i18n/locales/finops_remote_labels.ts`, `finops_labels.ts`, `contextualHelpCatalog.ts`, `features/finops/finopsMappers.ts`, `features/finops/index.tsx` | Création / Modification | 119 / 273 / 487 / 117 / 253 l. | Dictionnaires FR/EN sans jargon, aide `finops-remote-services`, câblage `@orcia/api-client` & survie au `F5` |
+| Tests C1a/C1b/C2/C5 (`tests/unit/fakes/fake_connector_quota_guard.py`, `test_story_6_4_*.py`, `story-6-4-finops-connector-quotas-and-circuit.test.tsx`, `zero-dead-buttons-and-silent-catches-audit.test.tsx`, `e2e/12-finops-and-audit-provenance.spec.ts`) | Création / Modification | 102 / 182-292 / 349 / 288 / 70 l. | Couverture complète des 5 couches `AD-17` (dont `hypothesis` & `testcontainers` PG18 + Redis + Playwright) |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : Requis $\ge 90\%$.
-- **Performances mesurées** : Assainissement télémétrique `RemoteUsageSanitizer` $< 1$ ms, Évaluation de quota $< 5$ ms.
+- **Couverture de tests** :
+  - **95,15 %** sur les 6 modules Story 6.4 (`tests/unit/test_story_6_4_*.py` : `22 passed in 6.31s`, seuil >= 90 %).
+  - **93,54 %** sur l'ensemble du domaine `packages/orcia-core/src/orcia_core/audit_finops` (`108 passed in 271.25s`, seuil >= 90 %).
 - **Qualité statique & Architecture** :
-  - `ruff check` & `ruff format --check` : `0 warning`
-  - `mypy --strict` & `pnpm typecheck` : `0 error`
-  - `lint-imports` : `5 contracts kept, 0 broken`
-  - `lint_spine.py` : `ok: true, 0 findings`
-  - `gitnexus_detect_changes()` : Périmètre conforme.
+  - `.venv/bin/ruff check .` & `.venv/bin/ruff format --check .` : `0 warning`, `919 files already formatted`.
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : `Success: no issues found in 398 source files`.
+  - `.venv/bin/lint-imports` : `5 contracts kept, 0 broken` (`AD-19 Contract 1..5`).
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py` : `ok: true, total_findings: 0`.
+  - Audit `#hex` hors `tokens.css` & jargon interdit FR/EN : `0` occurrence.
+  - `pnpm site:sync && pnpm site:check` : `60/60` capacités live référencent au moins un test, `Manifest (144 reports, 26 routes, 118 UI primitives) is in sync`.
+  - `npx gitnexus analyze` + `gitnexus_detect_changes()` : `109 changed_symbols`, `678 affected_count`, `30 changed_files`; `gitnexus_impact` upstream sur les 5 fonctions SQL Story 6.4 : `impactedCount >= 1` (zéro adaptateur SQL orphelin).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- **Couche 1a & 1b** : Robustesse du sanitizer face aux injections malveillantes et rendu de l'onglet MCP.
-- **Couche 2** : Isolation effective du coupe-circuit `CIRCUIT_OPEN` sur PostgreSQL 18 et Redis réels.
-- **Couche 3** : Conformité du contrat OpenAPI et vérification `0-diff`.
-- **Couche Sécurité / Red-Team** : Rejet systématique en `HTTP 403` pour toute action sous profil observateur.
-- **Couche 5** : Vérification dans l'interface web de la dissociation des coûts et de l'action de réarmement.
+- **Couche 1a (Unitaires Python & Property-Based)** : `.venv/bin/pytest tests/unit/test_story_6_4_*.py` (`22 passed`) incluant tests `hypothesis` sur charges négatives/NaN/Infinity/overflow, isolation du coupe-circuit vis-à-vis des LLM internes et des autres connecteurs, et réversibilité Alembic `20261116_0604`.
+- **Couche 1b (Composants TS `Vitest` & Audits Frontend)** : `pnpm turbo run lint typecheck test` (`9/9 tasks successful`, `@orcia/web`: `29 files / 128 tests passed`, incluant `story-6-4-finops-connector-quotas-and-circuit.test.tsx` avec survie `F5` `unmount()`/`render()`, `zero-dead-buttons-and-silent-catches-audit.test.tsx`, `i18n-and-shell.test.tsx`).
+- **Couche 2 (Intégration `testcontainers` PostgreSQL 18 + Redis 7.4)** : `.venv/bin/pytest tests/integration/api/test_story_6_4_connector_quotas_postgres18.py` et suite complète `tests/unit/test_story_6_*.py tests/contract/test_openapi_contract.py tests/security/* tests/integration/api/test_story_6_*.py` (`108 passed`).
+- **Couche 3 (Contrat OpenAPI `0-diff` & `Schemathesis`)** : `test_openapi_client_zero_diff_gate` et `test_schemathesis_openapi_contract_compliance` validés (`2 passed`).
+- **Couche Sécurité / Red-Team** : `test_api_security_baseline.py` (`27 passed`), `test_story_6_1_canary_leak_and_scope_guard.py` (`2 passed`), rejet systématique `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` sur `PUT /quota` et `POST /reset-circuit`.
+- **Couche 5 (Playwright E2E Bureau & Mobile)** : `pnpm --filter @orcia/web exec playwright test e2e/11-screens-smoke-without-server-errors.spec.ts e2e/12-finops-and-audit-provenance.spec.ts` (`4 passed, 4 project-filtered skipped in 52.4s`) et `09_reset_db_first_boot.py --dry-run` (`cleared_tables=66`).

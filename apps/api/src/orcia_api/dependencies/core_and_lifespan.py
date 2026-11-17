@@ -114,8 +114,21 @@ def initialize_app_services(app: FastAPI) -> None:
     activate_sdlc_pack()
     if getattr(app.state, "llm_gateway", None) is None:
         app.state.llm_gateway = _resolve_default_llm_gateway()
+    if getattr(app.state, "finops_sanitizer", None) is None:
+        from orcia_core.audit_finops import RemoteUsageSanitizer
+
+        app.state.finops_sanitizer = RemoteUsageSanitizer()
+    if getattr(app.state, "connector_quota_guard_service", None) is None:
+        from orcia_core.audit_finops import SqlConnectorQuotaGuardService
+
+        app.state.connector_quota_guard_service = SqlConnectorQuotaGuardService(
+            engine=getattr(app.state, "db_engine", None)
+        )
     if getattr(app.state, "connector_invoker", None) is None:
-        app.state.connector_invoker = ConnectorInvoker()
+        app.state.connector_invoker = ConnectorInvoker(
+            quota_guard=app.state.connector_quota_guard_service,
+            usage_sanitizer=app.state.finops_sanitizer,
+        )
     if not hasattr(app.state, "otp_email_sink"):
         app.state.otp_email_sink = None
     register_default_step_executors(
@@ -288,6 +301,9 @@ def initialize_app_services(app: FastAPI) -> None:
             audit_svc = getattr(app.state, "audit_ledger_service", None)
             if audit_svc is not None and getattr(audit_svc, "_engine", None) is None:
                 audit_svc._engine = db_engine
+            quota_svc = getattr(app.state, "connector_quota_guard_service", None)
+            if quota_svc is not None and getattr(quota_svc, "_engine", None) is None:
+                quota_svc._engine = db_engine
         except Exception as exc:
             from orcia_core.observability.logging import get_logger
 
