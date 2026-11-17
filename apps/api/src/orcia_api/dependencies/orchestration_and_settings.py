@@ -308,7 +308,8 @@ def get_log_sink_port(request: Request) -> LogSinkQueryPort:
         sink = getattr(request.app.state, "log_sink", None)
         if sink is None:
             sink = build_log_sink_from_env(
-                http_client=getattr(request.app.state, "http_client", None)
+                http_client=getattr(request.app.state, "http_client", None),
+                secret_provider=getattr(request.app.state, "secret_provider", None),
             )
             request.app.state.log_sink = sink
     return sink
@@ -316,26 +317,24 @@ def get_log_sink_port(request: Request) -> LogSinkQueryPort:
 
 def get_autonomy_contract_service(request: Request) -> AutonomyContractService:
     """FastAPI `Depends` provider returning `AutonomyContractService` (`Story 7.1`)."""
-    import os
-
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
     from orcia_core.bootstrap import SqlAutonomyContractRepository
 
-    engine = getattr(request.app.state, "db_engine", None)
-    use_pg = engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    engine = get_configured_db_engine(request)
     svc: AutonomyContractService | None = getattr(
         request.app.state, "autonomy_contract_service", None
     )
     if svc is None:
         rbac_svc = get_hierarchical_rbac_service(request)
         audit_sink = get_audit_ledger_service(request)
-        repo: SqlAutonomyContractRepository | None = None
-        if use_pg:
-            assert engine is not None
-            repo = SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
+        repo: SqlAutonomyContractRepository | None = (
+            SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
+            if engine is not None
+            else None
+        )
         svc = AutonomyContractService(rbac_service=rbac_svc, repository=repo)
         request.app.state.autonomy_contract_service = svc
-    elif use_pg and getattr(svc, "_repo", None) is None:
-        assert engine is not None
+    elif engine is not None and getattr(svc, "_repo", None) is None:
         audit_sink = get_audit_ledger_service(request)
         svc._repo = SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
     return svc
@@ -343,27 +342,40 @@ def get_autonomy_contract_service(request: Request) -> AutonomyContractService:
 
 def get_trigger_dispatcher_service(request: Request) -> TriggerDispatcherService:
     """FastAPI `Depends` provider returning `TriggerDispatcherService` (`Story 7.2`)."""
-    import os
-
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+    from orcia_api.dependencies.autonomous_supervision import get_autonomous_supervision_service
     from orcia_api.dependencies.core_and_lifespan import get_auth_service
+    from orcia_api.dependencies.workspace_and_packs import (
+        get_help_generation_and_attachment_service,
+    )
+    from orcia_connectors._autonomous_trigger_bridge import build_autonomous_trigger_executor
     from orcia_core.orchestration._triggers_runtime_ports import RedisTriggerIdempotencyLockAdapter
 
-    engine = getattr(request.app.state, "db_engine", None)
-    use_pg = engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    engine = get_configured_db_engine(request)
+    contract_svc = get_autonomy_contract_service(request)
+    supervision_svc = get_autonomous_supervision_service(request)
+    help_gen_svc = get_help_generation_and_attachment_service(request)
+    secret_provider = getattr(request.app.state, "secret_provider", None)
+    executor = build_autonomous_trigger_executor(
+        contract_service=contract_svc,
+        supervision_service=supervision_svc,
+        help_generator=help_gen_svc,
+        secret_provider=secret_provider,
+    )
     svc: TriggerDispatcherService | None = getattr(
         request.app.state, "trigger_dispatcher_service", None
     )
     if svc is None:
-        contract_svc = get_autonomy_contract_service(request)
         audit_sink = get_audit_ledger_service(request)
         notif_svc = get_notification_service(request)
         auth_svc = get_auth_service(request)
         log_sink = get_log_sink_port(request)
         redis_client = getattr(request.app.state, "redis_client", None)
-        repo: SqlWorkflowTriggerRepository | None = None
-        if use_pg:
-            assert engine is not None
-            repo = SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
+        repo: SqlWorkflowTriggerRepository | None = (
+            SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
+            if engine is not None
+            else None
+        )
         svc = TriggerDispatcherService(
             contract_service=contract_svc,
             repository=repo,
@@ -371,10 +383,13 @@ def get_trigger_dispatcher_service(request: Request) -> TriggerDispatcherService
             sse_broker=notif_svc.sse_broker,
             vault_cipher=auth_svc.vault_cipher,
             log_sink=log_sink,
+            autonomous_executor=executor,
         )
         request.app.state.trigger_dispatcher_service = svc
-    elif use_pg and getattr(svc, "_repo", None) is None:
-        assert engine is not None
-        audit_sink = get_audit_ledger_service(request)
-        svc._repo = SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
+    else:
+        if engine is not None and getattr(svc, "_repo", None) is None:
+            audit_sink = get_audit_ledger_service(request)
+            svc._repo = SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
+        if getattr(svc, "_autonomous_executor", None) is None:
+            svc.set_autonomous_executor(executor)
     return svc

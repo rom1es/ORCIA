@@ -3421,6 +3421,7 @@ export interface components {
       deterministic_passed?: boolean;
       estimated_cost_usd?: number;
       fact_verification_score?: number;
+      force_post_hoc_sample?: boolean;
       help_article_lang?: "fr" | "en";
       help_article_markdown?: string | null;
       ontology_conflicts?: number;

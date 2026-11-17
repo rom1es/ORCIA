@@ -7,10 +7,6 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from orcia_core.catalog.contextual_help import (
-    ContextualHelpResolutionService,
-    build_help_redis_cache_key,
-)
 from orcia_core.kernel.errors import ResourceNotFoundError
 from orcia_core.kernel.ids import new_uuid7_str
 from orcia_core.orchestration.presence_and_sse import TaskNotificationEntity
@@ -100,49 +96,28 @@ def build_autonomous_notification(
     )
 
 
-def restore_help_in_memory_and_flush_redis(
-    *,
-    help_service: ContextualHelpResolutionService | None,
-    redis_client: Any | None,
-    help_resource_id: str | None,
-) -> str:
-    """Restore `@v(N-1)` in `ContextualHelpResolutionService` and delete Redis `help:route:*`."""
-    restored_ver = "1.0.0"
-    if not help_resource_id or help_service is None:
-        return restored_ver
-    try:
-        restored_art = help_service.rollback_to_previous_version(help_resource_id)
-        restored_ver = restored_art.version
-        if redis_client is not None:
-            pack = restored_art.pack_name or "core"
-            for rt in restored_art.bound_routes:
-                redis_client.delete(build_help_redis_cache_key(rt, pack, restored_art.lang))
-    except ResourceNotFoundError:
-        pass
-    return restored_ver
-
-
 def resolve_run_context(
     run_id: str,
     mem: AutonomousRunSupervisionItem | None,
     pg_row: dict[str, Any] | None,
 ) -> tuple[str, str, str, str | None]:
     """Extract `(workspace_id, workflow_id, contract_id, trigger_id)` or raise 404."""
+    if pg_row is not None:
+        return (
+            str(pg_row["workspace_id"]),
+            str(pg_row["workflow_uri"]),
+            str(pg_row["contract_id"] or ""),
+            str(pg_row["trigger_id"]) if pg_row.get("trigger_id") else None,
+        )
     if mem is not None:
         return mem.workspace_id, mem.workflow_id, mem.contract_id, mem.trigger_id
-    if pg_row is None:
-        raise ResourceNotFoundError(detail_override=f"Exécution introuvable : {run_id}")
-    return (
-        str(pg_row["workspace_id"]),
-        str(pg_row["workflow_uri"]),
-        str(pg_row["contract_id"] or ""),
-        str(pg_row["trigger_id"]) if pg_row.get("trigger_id") else None,
-    )
+    raise ResourceNotFoundError(detail_override=f"Exécution introuvable : {run_id}")
 
 
 def map_pg_row_to_supervision_item(row: dict[str, Any]) -> AutonomousRunSupervisionItem:
     """Project a PostgreSQL row dictionary onto `AutonomousRunSupervisionItem`."""
     uri = str(row["workflow_uri"])
+    help_res = row.get("help_resource_id")
     return AutonomousRunSupervisionItem(
         run_id=str(row["run_id"]),
         workspace_id=str(row["workspace_id"]),
@@ -157,6 +132,8 @@ def map_pg_row_to_supervision_item(row: dict[str, Any]) -> AutonomousRunSupervis
         contract_id=str(row["contract_id"]),
         cost_usd=float(row["cost_usd"]),
         created_at_iso=str(row["created_at_iso"]),
+        help_resource_id=str(help_res) if help_res else None,
+        previous_version_available=bool(row.get("previous_version_available", False)),
     )
 
 
@@ -193,3 +170,16 @@ def make_registered_supervision_item(
         help_resource_id=help_resource_id,
         previous_version_available=help_resource_id is not None,
     )
+
+
+def resolve_help_id_from_context(
+    explicit_help_id: str | None,
+    mem: AutonomousRunSupervisionItem | None,
+    pg_row: dict[str, Any] | None,
+) -> str | None:
+    """Pick explicit help resource ID, else PG18 row value, else in-memory state."""
+    if explicit_help_id:
+        return explicit_help_id
+    if pg_row is not None and pg_row.get("help_resource_id"):
+        return str(pg_row["help_resource_id"])
+    return mem.help_resource_id if mem is not None else None

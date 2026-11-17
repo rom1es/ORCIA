@@ -6,15 +6,11 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path, Request
 
-from orcia_api.dependencies import (
-    get_auth_service,
-    get_autonomous_supervision_service,
-)
+from orcia_api.dependencies import get_autonomous_supervision_service
 from orcia_api.routers._finops_auth_guards import (
-    enforce_observer_headers_guard,
+    enforce_workspace_governed_mutation,
     resolve_finops_read_scope,
     resolve_run_workspace_server_side,
-    sync_evaluator_topology_from_pg,
     validate_uuid,
 )
 from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
@@ -32,7 +28,7 @@ from orcia_api.schemas.autonomous_supervision import (
 from orcia_api.schemas.problem_details import ProblemDetails
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.orchestration.autonomous_supervision import AutonomousSupervisionService
-from orcia_core.permissions.errors import ScopeAccessDeniedError
+from orcia_core.permissions.errors import ResourceNotFoundError, ScopeAccessDeniedError
 from orcia_core.permissions.models import UserIdentity
 
 PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
@@ -62,30 +58,20 @@ async def _enforce_run_mutation_guard(
     requested_workspace_id: str | None = None,
 ) -> None:
     path = str(request.url.path)
-    enforce_observer_headers_guard(request, user)
-    auth_svc = get_auth_service(request)
-    await sync_evaluator_topology_from_pg(request, auth_svc)
-
-    mem_run = svc._runs.get(run_id)
     pg_ws_id = await resolve_run_workspace_server_side(request, run_id)
-    resolved_ws_id = mem_run.workspace_id if mem_run is not None else pg_ws_id
+    if svc._engine is not None:
+        resolved_ws_id = pg_ws_id
+    else:
+        mem_run = svc._runs.get(run_id)
+        resolved_ws_id = mem_run.workspace_id if mem_run is not None else pg_ws_id
 
-    if (
-        requested_workspace_id is not None
-        and resolved_ws_id is not None
-        and requested_workspace_id != resolved_ws_id
-    ):
+    if resolved_ws_id is None:
+        raise ResourceNotFoundError(instance=path)
+
+    if requested_workspace_id is not None and requested_workspace_id != resolved_ws_id:
         raise ScopeAccessDeniedError(instance=path)
 
-    effective_ws_id = resolved_ws_id or requested_workspace_id
-    if effective_ws_id is not None:
-        ws = auth_svc.evaluator.get_workspace(effective_ws_id)
-        if ws is not None:
-            is_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
-            if not (is_admin and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED"):
-                auth_svc.evaluator.enforce_scope_mutation_guard(
-                    user, effective_ws_id, instance=path
-                )
+    await enforce_workspace_governed_mutation(request, user, resolved_ws_id)
 
 
 @router.get(
@@ -100,10 +86,7 @@ async def list_workspace_autonomous_runs(
     svc: SupervisionDep,
 ) -> AutonomousRunsListResponse:
     resolved_ws_id = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    auth_svc = get_auth_service(request)
-    await sync_evaluator_topology_from_pg(request, auth_svc)
-    if auth_svc.evaluator.get_workspace(resolved_ws_id) is not None:
-        await resolve_finops_read_scope(request, user, "WORKSPACE", resolved_ws_id)
+    await resolve_finops_read_scope(request, user, "WORKSPACE", resolved_ws_id)
     runs = await svc.list_autonomous_runs(workspace_id=resolved_ws_id)
     return AutonomousRunsListResponse(
         workspace_id=resolved_ws_id,

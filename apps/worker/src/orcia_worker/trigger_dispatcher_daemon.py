@@ -8,20 +8,27 @@ import os
 import signal
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+import httpx
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from orcia_core.audit_finops import SqlAuditLedgerService
+from orcia_connectors._autonomous_trigger_bridge import build_autonomous_trigger_executor
+from orcia_core.audit_finops import PostHocAuditService, SqlAuditLedgerService
 from orcia_core.bootstrap import SqlAutonomyContractRepository
+from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
 from orcia_core.config import resolve_database_url
 from orcia_core.observability import build_log_sink_from_env
 from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration import (
+    AutonomousSupervisionService,
     DbosSqlAlchemyUnitOfWork,
+    RedisSseBrokerAdapter,
     SqlWorkflowTriggerRepository,
     TriggerDispatcherService,
 )
+from orcia_core.orchestration._triggers_runtime_ports import RedisTriggerIdempotencyLockAdapter
 from orcia_core.orchestration.help_generator_and_validator import (
     HelpGenerationAndHotAttachmentService,
 )
@@ -30,6 +37,7 @@ from orcia_core.permissions import (
     HierarchicalRbacService,
     PassthroughVaultCipher,
 )
+from orcia_core.permissions.secret_manager import EnvelopeVaultSecretProvider
 from orcia_worker.outbox_relay import DramatiqOutboxRelay, OutboxEventBus
 
 logger = get_logger("orcia.worker.trigger_dispatcher")
@@ -79,41 +87,73 @@ async def serve_trigger_dispatcher_daemon(
     once: bool = False,
     poll_interval_seconds: float = 5.0,
     database_url: str | None = None,
+    redis_url: str | None = None,
 ) -> int:
     """Run the `trigger-dispatcher` operational daemon until `SIGINT`/`SIGTERM` or `once`."""
     db_url = database_url or resolve_database_url()
     engine: AsyncEngine | None = None
-    if db_url and not once or db_url and os.environ.get("ORCIA_TRIGGER_DAEMON_USE_DB", "") == "1":
+    if db_url and (not once or os.environ.get("ORCIA_TRIGGER_DAEMON_USE_DB", "") == "1"):
         engine = create_async_engine(db_url, poolclass=NullPool)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False) if engine else None
 
+    redis_client: Any | None = None
+    resolved_redis = (redis_url or os.environ.get("REDIS_URL", "")).strip()
+    if resolved_redis:
+        import redis.asyncio as aioredis
+
+        redis_client = aioredis.from_url(resolved_redis, decode_responses=False)
+
+    http_client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0))
     try:
-        log_sink = build_log_sink_from_env()
+        secret_provider = EnvelopeVaultSecretProvider()
+        log_sink = build_log_sink_from_env(http_client=http_client, secret_provider=secret_provider)
+        audit_sink = SqlAuditLedgerService(engine=engine) if engine is not None else None
         rbac = HierarchicalRbacService()
         contract_repo = (
-            SqlAutonomyContractRepository(
-                engine=engine, audit_ledger_sink=SqlAuditLedgerService(engine=engine)
-            )
+            SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
             if engine is not None
             else None
         )
         contract_svc = AutonomyContractService(rbac_service=rbac, repository=contract_repo)
         trigger_repo = (
-            SqlWorkflowTriggerRepository(
-                engine=engine, audit_ledger_sink=SqlAuditLedgerService(engine=engine)
-            )
+            SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
             if engine is not None
             else None
+        )
+        sse_broker = RedisSseBrokerAdapter(redis_client=redis_client)
+        help_gen_svc = HelpGenerationAndHotAttachmentService(
+            session_factory=session_factory, redis_client=redis_client
+        )
+        help_res_svc = ContextualHelpResolutionService(redis_client=redis_client, engine=engine)
+        supervision_svc = AutonomousSupervisionService(
+            engine=engine,
+            redis_client=redis_client,
+            post_hoc_service=PostHocAuditService(engine=engine, audit_sink=audit_sink),
+            help_service=help_res_svc,
+            sse_broker=sse_broker,
+            audit_sink=audit_sink,
+        )
+        executor = build_autonomous_trigger_executor(
+            contract_service=contract_svc,
+            supervision_service=supervision_svc,
+            help_generator=help_gen_svc,
+            secret_provider=secret_provider,
         )
         dispatcher = TriggerDispatcherService(
             contract_service=contract_svc,
             repository=trigger_repo,
+            idempotency_lock=RedisTriggerIdempotencyLockAdapter(redis_client=redis_client),
+            sse_broker=sse_broker,
             vault_cipher=PassthroughVaultCipher(
                 os.environ.get("ORCIA_PASSTHROUGH_MASTER_KEY", "0" * 32)
             ),
             log_sink=log_sink,
+            autonomous_executor=executor,
         )
         logger.info("worker.trigger_dispatcher.started", once=once)
-        summary = await run_trigger_dispatcher_cycle(dispatcher, engine=engine)
+        summary = await run_trigger_dispatcher_cycle(
+            dispatcher, engine=engine, help_service=help_gen_svc
+        )
         logger.info(
             "worker.trigger_dispatcher.cycle",
             log_sink_dispatched=summary.log_sink_dispatched,
@@ -136,10 +176,15 @@ async def serve_trigger_dispatcher_daemon(
                 await asyncio.wait_for(stop_event.wait(), timeout=interval)
             if stop_event.is_set():
                 break
-            await run_trigger_dispatcher_cycle(dispatcher, engine=engine)
+            await run_trigger_dispatcher_cycle(dispatcher, engine=engine, help_service=help_gen_svc)
         logger.info("worker.trigger_dispatcher.stopped", reason="signal")
         return 0
     finally:
+        with contextlib.suppress(Exception):
+            await http_client.aclose()
+        if redis_client is not None:
+            with contextlib.suppress(Exception):
+                await redis_client.aclose()
         if engine is not None:
             await engine.dispose()
 

@@ -22351,6 +22351,11 @@
             "title": "Fact Verification Score",
             "type": "number"
           },
+          "force_post_hoc_sample": {
+            "default": false,
+            "title": "Force Post Hoc Sample",
+            "type": "boolean"
+          },
           "help_article_lang": {
             "default": "fr",
             "enum": [

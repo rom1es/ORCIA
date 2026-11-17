@@ -135,8 +135,9 @@ async def test_story_7_4_supervision_kill_switch_rollback_redis_and_finops_pg18(
         async with engine.begin() as conn:
             await conn.execute(
                 sa.text(
-                    "INSERT INTO org_units (id, slug, name, unit_type) "
-                    "VALUES (CAST(:oid AS uuid), 'org-7-4', 'Org 7.4', 'ENTERPRISE')"
+                    "INSERT INTO org_units (id, slug, name, unit_type, lead_user_id) "
+                    "VALUES (CAST(:oid AS uuid), 'org-7-4', 'Org 7.4', 'ENTERPRISE', "
+                    "CAST('0192c4e0-0000-7000-8000-000000000603' AS uuid))"
                 ),
                 {"oid": org_id},
             )

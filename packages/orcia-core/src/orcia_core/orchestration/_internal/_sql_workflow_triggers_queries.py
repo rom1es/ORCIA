@@ -93,7 +93,7 @@ async def insert_outbox_and_audit(
                 ) VALUES (
                     CAST(:event_id AS uuid), :event_type, :aggregate_type, :aggregate_id,
                     CAST(:run_id AS uuid), CAST(:workspace_id AS uuid),
-                    CAST(:payload_jsonb AS jsonb), :trace_id, 'PUBLISHED', 1
+                    CAST(:payload_jsonb AS jsonb), :trace_id, :status, :attempts
                 )
                 ON CONFLICT (event_id) DO NOTHING
                 """
@@ -107,6 +107,8 @@ async def insert_outbox_and_audit(
                 "workspace_id": event.workspace_id,
                 "payload_jsonb": json.dumps(event.payload, sort_keys=True),
                 "trace_id": event.trace_id,
+                "status": event.status,
+                "attempts": event.attempts,
             },
         )
     if audit_sink is not None:

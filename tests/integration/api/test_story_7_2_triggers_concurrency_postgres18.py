@@ -121,9 +121,10 @@ async def test_story_7_2_concurrent_webhook_dedup_self_trigger_and_reset_boot(
         async with engine.begin() as conn:
             await conn.execute(
                 sa.text(
-                    "INSERT INTO org_units (id, slug, name, unit_type) "
-                    "VALUES (CAST(:oid AS uuid), 'org-7-2', 'Org 7.2', 'ENTERPRISE') "
-                    "ON CONFLICT (id) DO NOTHING"
+                    "INSERT INTO org_units (id, slug, name, unit_type, lead_user_id) "
+                    "VALUES (CAST(:oid AS uuid), 'org-7-2', 'Org 7.2', 'ENTERPRISE', "
+                    "CAST('0192c4e0-0000-7000-8000-000000000603' AS uuid)) "
+                    "ON CONFLICT (id) DO UPDATE SET lead_user_id = EXCLUDED.lead_user_id"
                 ),
                 {"oid": org_id},
             )

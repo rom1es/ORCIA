@@ -7,7 +7,6 @@ commonLabels:
 
 resources:
   - configmap.yaml
-  - secret-template.yaml
   - deployment-api.yaml
   - deployment-worker-orchestration.yaml
   - deployment-worker-indexing.yaml

@@ -268,6 +268,8 @@ async def _execute_durable_step(
     parent_snapshot_id: str | None,
 ) -> str:
     engine = _require_bound_runtime()
+    if await engine.repository.get_run_status(run_id) == "KILL_SWITCH_STOPPED":
+        raise RuntimeError(f"KILL_SWITCH_STOPPED:{run_id}")
     snap = await engine.persist_step_and_commit_snapshot(
         run_id=run_id,
         step_key=step_key,

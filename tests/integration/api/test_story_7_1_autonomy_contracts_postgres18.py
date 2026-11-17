@@ -113,9 +113,12 @@ async def test_story_7_1_vertical_http_to_postgres18_and_reset_first_boot(
             await conn.execute(
                 sa.text(
                     """
-                    INSERT INTO org_units (id, slug, name, unit_type)
-                    VALUES (CAST(:oid AS uuid), 'org-7-1', 'Org 7.1', 'ENTERPRISE')
-                    ON CONFLICT (id) DO NOTHING
+                    INSERT INTO org_units (id, slug, name, unit_type, lead_user_id)
+                    VALUES (
+                        CAST(:oid AS uuid), 'org-7-1', 'Org 7.1', 'ENTERPRISE',
+                        CAST('0192c4e0-0000-7000-8000-000000000603' AS uuid)
+                    )
+                    ON CONFLICT (id) DO UPDATE SET lead_user_id = EXCLUDED.lead_user_id
                     """
                 ),
                 {"oid": org_id},

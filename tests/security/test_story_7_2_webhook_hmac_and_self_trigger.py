@@ -19,7 +19,8 @@ async def test_story_7_2_hmac_rejection_observer_guard_and_zero_secret_leak(
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     app = create_app()
-    ws_id = "0195f000-0000-7000-8000-000000000301"
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
+    other_ws_id = "0192c4e0-0000-7000-8000-000000000203"
     wf_id = "wf-sec-triggers"
     sp = app.state.iam_accounts_service.create_account(
         principal_id="sp-triggers-sec",
@@ -90,13 +91,31 @@ async def test_story_7_2_hmac_rejection_observer_guard_and_zero_secret_leak(
         assert r_bad_sig.status_code == 401
         assert r_bad_sig.json()["error_code"] == "ERR_WEBHOOK_SIGNATURE_INVALID"
 
-        # 4. Unsigned / bad signature on /api/v1/triggers/alerts rejected 401
+        # 4. Unsigned / bad signature on /api/v1/triggers/alerts rejected 401 (no 404 oracle)
         r_bad_alert = await client.post(
             "/api/v1/triggers/alerts",
             json={"trigger_id": trig_id, "service": "api", "message": "err"},
         )
         assert r_bad_alert.status_code == 401
         assert r_bad_alert.json()["error_code"] == "ERR_WEBHOOK_SIGNATURE_INVALID"
+
+        r_probe_alert = await client.post(
+            "/api/v1/triggers/alerts",
+            json={
+                "trigger_id": "0192c4e0-0000-7000-8000-000000009999",
+                "service": "api",
+                "message": "probe",
+            },
+        )
+        assert r_probe_alert.status_code == 401
+        assert r_probe_alert.json()["error_code"] == "ERR_WEBHOOK_SIGNATURE_INVALID"
+
+        # 4b. Cross-team / confidential IDOR on GET triggers denied (403)
+        r_idor_get = await client.get(
+            f"/api/v1/workspaces/{other_ws_id}/workflows/{wf_id}/triggers",
+            params={"persona_key": "partenaire"},
+        )
+        assert r_idor_get.status_code == 403
 
         # 5. Valid HMAC signature succeeds and leaks zero canary
         good_sig = compute_webhook_hmac_sha256(raw_body, canary_secret)

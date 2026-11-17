@@ -153,6 +153,11 @@ class SandboxDaemonServer:
             else os.environ.get("ORCIA_SANDBOX_INTERNAL_TOKEN", "")
         )
         self.internal_token = tok.strip()
+        env_name = os.environ.get("ORCIA_ENV", "local").strip().lower() or "local"
+        if not self.internal_token and env_name not in ("local", "test"):
+            raise ValueError(
+                "ORCIA_SANDBOX_INTERNAL_TOKEN must be configured outside local/test environments."
+            )
         self.runner_script = runner_script
         self._server: asyncio.Server | None = None
 

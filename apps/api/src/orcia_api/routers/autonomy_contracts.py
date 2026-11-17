@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import os
+from decimal import Decimal
 from typing import Annotated, Any
 
-import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Path, Request
 
 from orcia_api.dependencies import (
@@ -17,9 +17,19 @@ from orcia_api.dependencies import (
     get_hierarchical_rbac_service,
     get_iam_accounts_service,
 )
+from orcia_api.routers._autonomy_contracts_helpers import (
+    InternalCatalogActionAdapter,
+    load_iam_accounts_merged,
+    resolve_workspace_scope_ids,
+    serialize_autonomy_contract,
+    trace_id_from_request,
+)
+from orcia_api.routers._finops_auth_guards import (
+    enforce_workspace_governed_mutation,
+    resolve_finops_read_scope,
+)
 from orcia_api.routers._finops_scope_guards import (
     resolve_workspace_uuid_or_setup_key,
-    sync_evaluator_topology_from_pg,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.autonomy_contracts import (
@@ -37,38 +47,19 @@ from orcia_connectors.autonomous_runner import (
     AutonomousGateInput,
     execute_autonomous_contract_run,
 )
-from orcia_connectors.protocol import (
-    ConnectorHealthStatus,
-    OrciaConnectorProtocol,
-    SignedApprovalToken,
-    WritePreviewCard,
-    compute_payload_sha256,
-    verify_signed_approval_token,
-)
 from orcia_core.audit_finops import SqlAuditLedgerService
-from orcia_core.bootstrap import (
-    persist_autonomous_run_outcome_on_postgres18,
-    sync_and_list_iam_accounts_from_postgres18,
-)
-from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.bootstrap import persist_autonomous_run_outcome_on_postgres18
 from orcia_core.orchestration.autonomous_supervision import AutonomousSupervisionService
 from orcia_core.permissions import (
     AuthAndOrganizationService,
-    AutonomyContract,
     AutonomyContractService,
     HierarchicalRbacService,
-    IamAccountRecord,
     IamAccountsGovernanceService,
     SignAutonomyContractCommand,
     is_service_principal_scoped_to_workspace,
 )
-from orcia_core.permissions.errors import (
-    AutonomyContractNotFoundError,
-    ObserverModeReadOnlyError,
-)
+from orcia_core.permissions.errors import AutonomyContractNotFoundError
 from orcia_core.permissions.models import UserIdentity
-
-logger = get_logger("orcia.api.autonomy_contracts")
 
 PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     401: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
@@ -83,129 +74,7 @@ router = APIRouter(
     responses=PROBLEM_RESPONSES,
 )
 
-
-class _InternalCatalogActionAdapter(OrciaConnectorProtocol):
-    connector_type = "catalog"
-
-    async def healthcheck(self) -> ConnectorHealthStatus:
-        return ConnectorHealthStatus(connector_type=self.connector_type, ok=True, latency_ms=1)
-
-    async def read(self, resource_uri: str, query: dict[str, Any] | None = None) -> dict[str, Any]:
-        del query
-        return {"resource_uri": resource_uri, "status": "ok"}
-
-    async def preview_write(self, action: str, payload: dict[str, Any]) -> WritePreviewCard:
-        return WritePreviewCard(
-            connector_type=self.connector_type,
-            target_resource_uri=f"catalog://{action}",
-            action_summary=action,
-            diff_or_payload_preview=payload,
-            payload_sha256=compute_payload_sha256(action, payload),
-        )
-
-    async def execute_write(
-        self, approval_token: SignedApprovalToken, action: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
-        verify_signed_approval_token(approval_token, action=action, payload=payload)
-        return {"committed": True, "action": action, "preview_id": approval_token.preview_id}
-
-
-def _trace(request: Request) -> str:
-    return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def _serialize_contract(c: AutonomyContract) -> AutonomyContractResponse:
-    return AutonomyContractResponse(
-        id=c.id,
-        workspace_id=c.workspace_id,
-        workflow_id=c.workflow_id,
-        workflow_version=c.workflow_version,
-        workflow_sha256=c.workflow_sha256,
-        criticality=c.criticality,
-        service_principal_id=c.service_principal_id,
-        allowed_read_sources=list(c.allowed_read_sources),
-        allowed_write_actions=list(c.allowed_write_actions),
-        max_cost_per_run_usd=c.max_cost_per_run_usd,
-        tie_break_policy=c.tie_break_policy,
-        post_hoc_sampling_rate=c.post_hoc_sampling_rate,
-        status=c.status,
-        signed_by_user_id=c.signed_by_user_id,
-        signed_by_role=c.signed_by_role,
-        signature_sha256=c.signature_sha256,
-        signed_at_iso=c.signed_at_iso,
-        revoked_at_iso=c.revoked_at_iso,
-        revoked_by_user_id=c.revoked_by_user_id,
-    )
-
-
-async def _resolve_workspace_scope_ids(
-    request: Request,
-    auth_svc: AuthAndOrganizationService,
-    workspace_id: str,
-    raw_workspace_id: str | None = None,
-) -> list[str]:
-    scope_ids: list[str] = [workspace_id]
-    if raw_workspace_id and raw_workspace_id != workspace_id:
-        scope_ids.append(raw_workspace_id)
-    ws = auth_svc.evaluator.get_workspace(workspace_id)
-    if ws is not None and ws.owner_org_unit_id:
-        scope_ids.append(ws.owner_org_unit_id)
-        scope_ids.extend(auth_svc.evaluator.get_ancestor_org_unit_ids(ws.owner_org_unit_id))
-    engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        try:
-            async with engine.connect() as conn:
-                row = (
-                    await conn.execute(
-                        sa.text(
-                            "SELECT owner_org_unit_id::text FROM workspaces "
-                            "WHERE id = CAST(:ws_id AS uuid)"
-                        ),
-                        {"ws_id": workspace_id},
-                    )
-                ).fetchone()
-                if row and row[0]:
-                    scope_ids.append(str(row[0]))
-        except Exception as exc:
-            logger.warning("resolve_workspace_scope_ids_pg_fallback", error=str(exc))
-    return list(dict.fromkeys(scope_ids))
-
-
-async def _load_iam_accounts(
-    request: Request, iam_svc: IamAccountsGovernanceService
-) -> list[IamAccountRecord]:
-    by_id: dict[str, IamAccountRecord] = {acc.id: acc for acc in iam_svc.list_accounts()}
-    engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        try:
-            pg_accounts = await sync_and_list_iam_accounts_from_postgres18(engine)
-            for acc in pg_accounts:
-                by_id[acc.id] = acc
-        except Exception as exc:
-            logger.warning("load_iam_accounts_pg_fallback", error=str(exc))
-    return list(by_id.values())
-
-
-async def _enforce_not_observer(
-    request: Request,
-    user: UserIdentity,
-    auth_svc: AuthAndOrganizationService,
-    workspace_id: str,
-) -> None:
-    instance = str(request.url.path)
-    if (
-        request.headers.get("X-Orcia-Access-Mode", "").strip().upper() == "READ_ONLY_OBSERVER"
-        or user.platform_role == "OBSERVER"
-    ):
-        raise ObserverModeReadOnlyError(instance=instance)
-    await sync_evaluator_topology_from_pg(request, auth_svc)
-    ws = auth_svc.evaluator.get_workspace(workspace_id)
-    is_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
-    if ws is not None and is_admin and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED":
-        return
-    ws_access = auth_svc.evaluator.resolve_workspace_access(user, workspace_id)
-    if ws_access is not None and ws_access.access_mode == "READ_ONLY_OBSERVER":
-        raise ObserverModeReadOnlyError(instance=instance)
+_CONTRACT_GOVERNOR_ROLES = ("PLATFORM_ADMIN", "BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD")
 
 
 @router.get("/{workflow_id:path}/autonomy-contract", response_model=AutonomyContractStateResponse)
@@ -219,13 +88,14 @@ async def get_autonomy_contract_state(
     iam_svc: Annotated[IamAccountsGovernanceService, Depends(get_iam_accounts_service)],
     rbac_svc: Annotated[HierarchicalRbacService, Depends(get_hierarchical_rbac_service)],
 ) -> AutonomyContractStateResponse:
-    del user
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await sync_evaluator_topology_from_pg(request, auth_svc)
+    await resolve_finops_read_scope(request, user, "WORKSPACE", ws_uuid)
     active = await svc.get_active_contract(workspace_id=ws_uuid, workflow_id=workflow_id)
     history = await svc.list_contracts(workspace_id=ws_uuid, workflow_id=workflow_id)
-    scope_ids = await _resolve_workspace_scope_ids(request, auth_svc, ws_uuid, workspace_id)
-    accounts = await _load_iam_accounts(request, iam_svc)
+    scope_ids = await resolve_workspace_scope_ids(
+        request, auth_svc, ws_uuid, raw_workspace_id=workspace_id
+    )
+    accounts = await load_iam_accounts_merged(request, iam_svc)
     eligible = [
         EligibleServicePrincipalItem(
             id=acc.id,
@@ -243,10 +113,10 @@ async def get_autonomy_contract_state(
     return AutonomyContractStateResponse(
         workspace_id=ws_uuid,
         workflow_id=workflow_id,
-        active_contract=_serialize_contract(active) if active is not None else None,
-        history=[_serialize_contract(c) for c in history],
+        active_contract=serialize_autonomy_contract(active) if active is not None else None,
+        history=[serialize_autonomy_contract(c) for c in history],
         eligible_service_principals=eligible,
-        trace_id=_trace(request),
+        trace_id=trace_id_from_request(request),
     )
 
 
@@ -266,9 +136,13 @@ async def sign_autonomy_contract(
     iam_svc: Annotated[IamAccountsGovernanceService, Depends(get_iam_accounts_service)],
 ) -> AutonomyContractResponse:
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
-    scope_ids = await _resolve_workspace_scope_ids(request, auth_svc, ws_uuid, workspace_id)
-    accounts = await _load_iam_accounts(request, iam_svc)
+    derived_scope = await enforce_workspace_governed_mutation(
+        request, user, ws_uuid, allowed_roles=_CONTRACT_GOVERNOR_ROLES
+    )
+    scope_ids = await resolve_workspace_scope_ids(
+        request, auth_svc, ws_uuid, raw_workspace_id=workspace_id
+    )
+    accounts = await load_iam_accounts_merged(request, iam_svc)
     sp = next((a for a in accounts if a.id == body.service_principal_id), None)
     wf_sha = (
         body.workflow_sha256.strip()
@@ -287,15 +161,15 @@ async def sign_autonomy_contract(
             max_cost_per_run_usd=body.max_cost_per_run_usd,
             tie_break_policy=body.tie_break_policy,
             post_hoc_sampling_rate=body.post_hoc_sampling_rate,
-            scope_path=body.scope_path,
+            scope_path=derived_scope,
         ),
         signer=user,
         service_principal=sp,
         allowed_scope_ids=scope_ids,
-        trace_id=_trace(request),
+        trace_id=trace_id_from_request(request),
         instance=str(request.url.path),
     )
-    return _serialize_contract(contract)
+    return serialize_autonomy_contract(contract)
 
 
 @router.post(
@@ -308,20 +182,22 @@ async def revoke_autonomy_contract(
     workflow_id: Annotated[str, Path(min_length=1)],
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[AutonomyContractService, Depends(get_autonomy_contract_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     body: RevokeAutonomyContractRequest | None = None,
 ) -> AutonomyContractResponse:
+    del body
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    derived_scope = await enforce_workspace_governed_mutation(
+        request, user, ws_uuid, allowed_roles=_CONTRACT_GOVERNOR_ROLES
+    )
     revoked = await svc.revoke_contract(
         workspace_id=ws_uuid,
         workflow_id=workflow_id,
         actor=user,
-        scope_path=body.scope_path if body is not None else "GLOBAL",
-        trace_id=_trace(request),
+        scope_path=derived_scope,
+        trace_id=trace_id_from_request(request),
         instance=str(request.url.path),
     )
-    return _serialize_contract(revoked)
+    return serialize_autonomy_contract(revoked)
 
 
 @router.post(
@@ -336,19 +212,19 @@ async def start_autonomous_run(
     body: StartAutonomousRunRequest,
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[AutonomyContractService, Depends(get_autonomy_contract_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     audit_sink: Annotated[SqlAuditLedgerService, Depends(get_audit_ledger_service)],
     supervision_svc: Annotated[
         AutonomousSupervisionService, Depends(get_autonomous_supervision_service)
     ],
 ) -> AutonomousRunExecutionResponse:
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    derived_scope = await enforce_workspace_governed_mutation(request, user, ws_uuid)
     contract = await svc.get_active_contract(workspace_id=ws_uuid, workflow_id=workflow_id)
     if contract is None:
         raise AutonomyContractNotFoundError(instance=str(request.url.path))
 
-    catalog_adapter = _InternalCatalogActionAdapter()
+    catalog_adapter = InternalCatalogActionAdapter()
+    trace_id = trace_id_from_request(request)
     outcome, events = await execute_autonomous_contract_run(
         contract=contract,
         criticality=body.criticality,
@@ -372,20 +248,21 @@ async def start_autonomous_run(
             help_article_lang=body.help_article_lang,
         ),
         contract_refresh_fn=lambda: svc.get_active_contract(
-            workspace_id=workspace_id, workflow_id=workflow_id
+            workspace_id=ws_uuid, workflow_id=workflow_id
         ),
         kill_switch_check_fn=supervision_svc.is_run_stopped,
         connector_invoker=getattr(request.app.state, "connector_invoker", None),
         connectors_by_scheme={"catalog": catalog_adapter, "orcia": catalog_adapter},
-        trace_id=_trace(request),
-        scope_path=body.scope_path,
+        secret_provider=getattr(request.app.state, "secret_provider", None),
+        trace_id=trace_id,
+        scope_path=derived_scope,
     )
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
         await persist_autonomous_run_outcome_on_postgres18(
             engine,
             run_id=outcome.run_id,
-            workspace_id=workspace_id,
+            workspace_id=ws_uuid,
             workflow_id=workflow_id,
             workflow_version=contract.workflow_version,
             status=outcome.status,
@@ -394,11 +271,13 @@ async def start_autonomous_run(
         )
     await supervision_svc.register_autonomous_run(
         run_id=outcome.run_id,
-        workspace_id=workspace_id,
+        workspace_id=ws_uuid,
         workflow_id=workflow_id,
         contract_id=contract.id,
         status=outcome.status,
-        trace_id=_trace(request),
+        cost_usd=Decimal(str(body.estimated_cost_usd)),
+        force_post_hoc_sample=body.force_post_hoc_sample,
+        trace_id=trace_id,
     )
     return AutonomousRunExecutionResponse(
         run_id=outcome.run_id,
@@ -409,5 +288,5 @@ async def start_autonomous_run(
         escalation_reason=outcome.escalation_reason,
         issued_token_preview_ids=[t.preview_id for t in outcome.issued_tokens],
         executed_actions=outcome.executed_actions,
-        trace_id=_trace(request),
+        trace_id=trace_id,
     )

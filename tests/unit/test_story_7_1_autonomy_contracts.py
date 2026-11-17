@@ -602,7 +602,7 @@ async def test_confinement_helpers_repository_port_and_runner_edge_cases() -> No
     assert is_service_principal_scoped_to_workspace(
         sp_grant, workspace_id=ws_id, rbac_service=rbac, scope_path="GLOBAL"
     )
-    assert is_service_principal_scoped_to_workspace(sp_admin, workspace_id=ws_id)
+    assert not is_service_principal_scoped_to_workspace(sp_admin, workspace_id=ws_id)
     assert not is_service_principal_scoped_to_workspace(sp_human, workspace_id=ws_id)
 
     with pytest.raises(ContractPrivilegeEscalationError):

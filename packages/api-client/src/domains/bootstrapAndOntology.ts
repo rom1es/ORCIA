@@ -43,6 +43,8 @@ export type FederatedSearchResponse = components["schemas"]["TwoSpeedSearchRespo
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
 export type UserPreferencesPatchRequest = components["schemas"]["UserPreferencesUpdateRequest"];
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
+export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
+export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
 export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
 export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
 export type ActiveBackgroundTurnStatusResponse =
@@ -288,9 +290,20 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
       lang: "fr" | "en" = "fr",
       pack = "core",
     ): Promise<ContextualHelpResolveResponse> {
-      const params = new URLSearchParams({ route, lang, pack });
+      const normalizedPack = pack === "orcia-core" ? "core" : pack;
+      const params = new URLSearchParams({ route, lang, pack: normalizedPack });
       return requestJson<ContextualHelpResolveResponse>(
         `/api/v1/help/resolve?${params.toString()}`,
+      );
+    },
+    rollbackContextualHelp(
+      payload: ContextualHelpRollbackRequest,
+      personaKey?: string,
+    ): Promise<HelpArticleSchemaItem> {
+      return requestJson<HelpArticleSchemaItem>(
+        `/api/v1/help/rollback${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
       );
     },
     executeAssistantTurn(payload: ThreeSpeedTurnRequest): Promise<ThreeSpeedTurnResponse> {

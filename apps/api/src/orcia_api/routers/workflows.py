@@ -19,6 +19,7 @@ from orcia_api.dependencies import (
     get_help_generation_and_attachment_service,
     get_trigger_dispatcher_service,
 )
+from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
 from orcia_api.routers.packs import load_declarative_pack_bundles
 from orcia_api.schemas.process_studio_v2 import (
     HitlSignalRequest,
@@ -46,6 +47,7 @@ from orcia_core.workflows.schemas_v2 import (
     WorkflowLifecycleStatus,
     fork_workflow_as_draft,
 )
+from orcia_kernel.errors import OrciaDomainError
 
 router = APIRouter(tags=["Process Studio v2 & VSM (Epic 14)"])
 logger = get_logger("orcia.api.workflows")
@@ -165,8 +167,11 @@ async def save_or_fork_workflow_v2(
         store[saved.slug] = saved
 
     if payload.publish:
-        ws_id = request.headers.get("X-Orcia-Workspace-Id", "").strip() or (
-            "0195f000-0000-7000-8000-000000000301"
+        raw_ws = request.headers.get("X-Orcia-Workspace-Id", "").strip()
+        ws_id = (
+            resolve_workspace_uuid_or_setup_key(raw_ws, "workspace_id")
+            if raw_ws
+            else "0192c4e0-0000-7000-8000-000000000201"
         )
         trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
         pub_event = WorkflowPublished.create(
@@ -185,8 +190,14 @@ async def save_or_fork_workflow_v2(
                 dispatcher._outbox_events.append(pub_event)
             help_svc = get_help_generation_and_attachment_service(request)
             await dispatcher.handle_workflow_published(pub_event, help_service=help_svc)
+        except OrciaDomainError:
+            raise
         except Exception as exc:
-            logger.warning("workflow_published_trigger_hook_failed", error=str(exc))
+            logger.warning(
+                "workflow_published_trigger_hook_failed",
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
 
     return SaveWorkflowV2Response(workflow=saved, forked_as_draft=forked_as_draft)
 

@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 26,
     "uiPrimitivesCount": 124,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 48,
+    "alembicMigrationsCount": 49,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 152,
+    "techLeadReportsCount": 153,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 62,
     "verifiedCapabilitiesCount": 47
@@ -233,7 +233,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_0605_epic6_review_adaptive_gate_policy_check",
     "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses",
     "20261117_0702_story_7_2_triggers_outbox_and_optin_help",
-    "20261117_0704_story_7_4_post_hoc_audit_and_kill_switch"
+    "20261117_0704_story_7_4_post_hoc_audit_and_kill_switch",
+    "20261117_0705_epic7_review_fk_constraints"
   ],
   "architectureDecisions": [
     {
@@ -512,6 +513,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Correctifs Revue Architecture Epic 7 (CAP-201, CAP-202)",
+      "reportFile": "2026-11-17-epic-7-correctifs-revue-architecture-tech-lead-report.md",
+      "domain": "Résolution Intégrale des 5 BLOCKING, 5 MAJOR & 3 MINOR de la Revue VALIDATE Epic 7 : Composition Root PG18/Redis, RBAC/IDOR & Confinement SP, Exécution Autonome & Outbox 'PENDING', Redis Pub/Sub SSE, Aide Contextuelle PG18/Redis, OpenShift/Logs & Découpage < 350 L",
+      "summary": "Initialisation automatique db_engine, session_maker, redis_client, secret_provider et RedisSseBrokerAdapter dans l'API et trigger-dispatcher (ORCIA_ENABLE_PG_SESSION_MAKER supprimé) ; gardes resolve_finops_read_scope / enforce_scope_level_mutation et dérivation serveur scope_path ; suppression dispense PLATFORM_ADMIN SP, catalog:write → \"update\" et migration réversible 20261117_0705 (fk_autonomy_contracts_workspace) ; relais Outbox 'PENDING', exécuteur autonome de déclencheurs, double contrôle KILL_SWITCH_STOPPED et suppression x-orcia-origin-run-id sur WorkflowPublished ; ContextualHelpResolutionService async PG18/Redis + pack=\"core\" + isAdmin session ; verrou ECS threading.Lock, rotation manage.py log-pipe, rejet token sandbox vide et retrait secret-template.yaml ; câblage Studio V2 Publier (PUT /api/v1/workflows/v2/{id}) et E2E 13-epic-7 sans branchement conditionnel (2 passed) ; découpage des 6 fichiers < 350 L, epic-7: done, 669 tests unit/contrat/sécu, 4/4 PG18 Composition Root, 9/9 Turbo, db:reset OK et 5/5 contrats lint-imports."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 7.4 (CAP-201)",

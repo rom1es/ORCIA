@@ -1,322 +1,33 @@
-"""Story 11.5 — Process 5 `generate-and-attach-help` & Validator `validate_help_article`.
-
-Implements:
-- Step 2 (`@Rédacteur-Documentation-Orcia`): bilingual (`fr`/`en`) `HelpArticle` Markdown generation
-  with declarative YAML frontmatter (`id`, `version`, `bound_routes`, `pack_id`, `roles_allowed`,
-  `glossary_terms`, `related_workflows`) and the 3 mandatory sections + `#` anchors.
-- Step 3 (`validate_help_article` in Tier 1 `< 5 s`):
-  1. Verifies every route in `bound_routes` exists in the router tree or pack manifest;
-  2. Verifies no non-existent `@orcia/ui` component is cited and all 3 mandatory sections
-     (`## 1. À quoi sert cet écran ?`, `## 2. Comment faire (Pas-à-pas)`,
-     `## 3. Questions fréquentes & Dépannage` or their English equivalents) + `#` anchors exist;
-  3. Verifies `glossary_terms` align with the Glossary and `0` secrets/tokens leak in the text.
-- Step 4 (Hot Attachment `< 100 ms` & Git Export):
-  Atomically persists `HELP_ARTICLE` in `catalog_items` + `cas/<sha256>`, invalidates Redis
-  `help:route:*` cache keys, and exports `.md` files to `docs/help/{fr,en}/` or
-  `packages/orcia-pack-{slug}/help/{fr,en}/`.
-"""
+"""Story 11.5 — Process 5 `generate-and-attach-help` & Validator `validate_help_article`."""
 
 from __future__ import annotations
 
 import hashlib
-import json
-import re
+import inspect
 import time
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
-from uuid import UUID
+from typing import Any
 
-import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from uuid_utils import uuid7
 
 from orcia_core.catalog.contextual_help import build_help_redis_cache_key
+from orcia_core.orchestration._help_article_models import (
+    DEFAULT_KNOWN_ROUTES,
+    KNOWN_ORCIA_UI_COMPONENTS,
+    GeneratedAndAttachedHelpResult,
+    HelpArticleValidationError,
+    HelpArticleValidationReport,
+    HelpTriggerRegime,
+    OrciaDocumentationWorkflowReport,
+    OrciaDocumentationWorkflowStepResult,
+    render_bilingual_help_markdown_text,
+)
+from orcia_core.orchestration._help_article_validator import HelpArticleDeterministicValidator
+from orcia_core.orchestration._help_orcia_docs_workflow import (
+    execute_orcia_documentation_workflow,
+)
+from orcia_core.orchestration._internal._sql_help_catalog import persist_help_catalog_items_sql
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError
-from orcia_kernel.errors import OrciaDomainError
-
-HelpTriggerRegime = Literal["STAGED_HUMAN_REVIEW", "AUTONOMOUS_CONTRACT"]
-
-DEFAULT_KNOWN_ROUTES: frozenset[str] = frozenset(
-    {
-        "/cockpit",
-        "/assistant",
-        "/workspaces",
-        "/mes-espaces",
-        "/mes-espaces/$id/sources",
-        "/mes-espaces/$id/deliverables",
-        "/mes-espaces/$id/glossary",
-        "/agents",
-        "/processes",
-        "/control-center",
-        "/settings",
-        "/wizards",
-        "/help",
-    }
-)
-
-KNOWN_ORCIA_UI_COMPONENTS: frozenset[str] = frozenset(
-    {
-        "FourZoneDirectionCShell",
-        "StreamlinedCockpitView",
-        "TopHeaderSearchCommand",
-        "ContextualHelpColumnAndCenter",
-        "AssistantGovernanceModalAndStudio",
-        "AssistantSpeedSelectorAndStreamView",
-        "AssistantCitationPillsAndArtifactCard",
-        "AssistantFoldersAndCollaborativeThreadView",
-        "WorkspaceFiveTabsAndExternalRebaseView",
-        "DnaStarlarkCompilerAndGlossaryLifecycleView",
-        "RemoteServiceTestBenchAndMcpExposureView",
-        "PackBuilderProcessesStudioView",
-        "HelpArticleGeneratorAndValidatorView",
-        "HumanLedAnchorCard",
-        "CognitiveReviewBriefing",
-        "ArbitrationTieBreakCard",
-        "AutonomyContractModal",
-    }
-)
-
-_MANDATORY_SECTIONS_FR: tuple[str, str, str] = (
-    "## 1. À quoi sert cet écran ?",
-    "## 2. Comment faire (Pas-à-pas)",
-    "## 3. Questions fréquentes & Dépannage",
-)
-
-_MANDATORY_SECTIONS_EN: tuple[str, str, str] = (
-    "## 1. What is this screen for?",
-    "## 2. How to use (Step-by-step)",
-    "## 3. Frequently Asked Questions & Troubleshooting",
-)
-
-_SECRET_LEAK_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\bpat_mcp_[A-Za-z0-9_-]{8,}"),
-    re.compile(r"\bsk-[A-Za-z0-9_-]{12,}"),
-    re.compile(r"(?:secret|vault|kms)://[^\s\"')]+"),
-    re.compile("-----BEGIN " + r"[A-Z ]*PRIVATE KEY-----"),  # pragma: allowlist secret
-    re.compile(r"\bBearer\s+eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+"),
-)
-
-_UI_COMPONENT_REF_RE = re.compile(r"`<([A-Z][A-Za-z0-9]+)\s*/?>`|`@orcia/ui:([A-Z][A-Za-z0-9]+)`")
-
-
-class HelpArticleValidationError(OrciaDomainError):
-    """Raised when `validate_help_article` rejects a `HelpArticle` (`HTTP 422`)."""
-
-    error_code = "ERR_HELP_ARTICLE_VALIDATION_FAILED"
-    http_status, type_slug = 422, "help-article-validation-failed"
-
-    def __init__(self, detail: str) -> None:
-        super().__init__(detail_override=detail)
-
-
-@dataclass(frozen=True, slots=True)
-class HelpArticleValidationReport:
-    """Deterministic validation report produced by `validate_help_article` (`< 5 s`)."""
-
-    article_id: str
-    lang: Literal["fr", "en"]
-    passed: bool
-    bound_routes_valid: bool
-    ui_components_and_sections_valid: bool
-    glossary_and_zero_secret_valid: bool
-    elapsed_ms: float
-    violations: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class GeneratedAndAttachedHelpResult:
-    """Result of Process 5 (`generate-and-attach-help`)."""
-
-    article_id: str
-    version: str
-    pack_id: str
-    trigger_regime: HelpTriggerRegime
-    bound_routes: tuple[str, ...]
-    fr_cas_key: str
-    en_cas_key: str
-    fr_sha256: str
-    en_sha256: str
-    fr_markdown: str
-    en_markdown: str
-    validation_fr: HelpArticleValidationReport
-    validation_en: HelpArticleValidationReport
-    invalidated_redis_keys: tuple[str, ...]
-    exported_git_paths: tuple[str, ...]
-    hot_attach_elapsed_ms: float
-    authority_role: Literal["REFERENCE"] = "REFERENCE"
-
-
-@dataclass(frozen=True, slots=True)
-class OrciaDocumentationWorkflowStepResult:
-    """Single step outcome of Process 6 (`generate-orcia-documentation`)."""
-
-    step_number: int
-    step_key: str
-    title_fr: str
-    title_en: str
-    lead_agent_handle: str
-    status: Literal["COMPLETED", "FAILED"]
-    summary_fr: str
-    summary_en: str
-    elapsed_ms: float
-
-
-@dataclass(frozen=True, slots=True)
-class OrciaDocumentationWorkflowReport:
-    """Full 4-step execution report for Process 6 (`generate-orcia-documentation`)."""
-
-    workflow_slug: str
-    workflow_uri: str
-    lead_agent_handle: str
-    routes_inventoried_count: int
-    ui_components_inventoried_count: int
-    help_files_inventoried_count: int
-    faq_architecture_present: bool
-    tech_lead_reports_count: int
-    steps: tuple[OrciaDocumentationWorkflowStepResult, ...]
-    generated_markdown_fr: str
-    generated_markdown_en: str
-    validation_fr: HelpArticleValidationReport
-    validation_en: HelpArticleValidationReport
-    published_targets: tuple[str, ...]
-    total_elapsed_ms: float
-
-
-def _parse_frontmatter_and_body(markdown_text: str) -> tuple[dict[str, Any], str]:
-    text = markdown_text.strip()
-    meta: dict[str, Any] = {}
-    body = text
-    if not text.startswith("---"):
-        return meta, body
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return meta, body
-    fm_raw = parts[1].strip()
-    body = parts[2].strip()
-    current_list_key: str | None = None
-    for line in fm_raw.splitlines():
-        s = line.strip()
-        if not s:
-            continue
-        if s.startswith("- ") and current_list_key is not None:
-            lst = meta.setdefault(current_list_key, [])
-            if isinstance(lst, list):
-                lst.append(s[2:].strip().strip("\"'"))
-            continue
-        if ":" in s:
-            current_list_key = None
-            k, v = s.split(":", 1)
-            key = k.strip()
-            val = v.strip()
-            if not val:
-                current_list_key = key
-                meta[key] = []
-            elif val.startswith("[") and val.endswith("]"):
-                try:
-                    meta[key] = json.loads(val)
-                except ValueError:
-                    meta[key] = [x.strip().strip("\"'") for x in val[1:-1].split(",") if x.strip()]
-            else:
-                meta[key] = val.strip("\"'")
-    return meta, body
-
-
-class HelpArticleDeterministicValidator:
-    """Tier 1 deterministic validator `validate_help_article` (`< 5 s`)."""
-
-    def __init__(
-        self,
-        *,
-        known_routes: set[str] | frozenset[str] | None = None,
-        known_ui_components: set[str] | frozenset[str] | None = None,
-    ) -> None:
-        self._known_routes = set(known_routes or DEFAULT_KNOWN_ROUTES)
-        self._known_ui_components = set(known_ui_components or KNOWN_ORCIA_UI_COMPONENTS)
-
-    def validate_help_article(
-        self,
-        *,
-        markdown_text: str,
-        lang: Literal["fr", "en"] = "fr",
-        extra_allowed_routes: list[str] | None = None,
-        known_glossary_terms: list[str] | None = None,
-    ) -> HelpArticleValidationReport:
-        """Validate `HelpArticle` Markdown in `< 5 s` across all 3 deterministic checks."""
-        t0 = time.perf_counter()
-        meta, body = _parse_frontmatter_and_body(markdown_text)
-        article_id = str(meta.get("id", "unknown-help-article"))
-        violations: list[str] = []
-
-        # 1. Validate bound_routes against router tree / pack manifest
-        allowed_routes = self._known_routes | set(extra_allowed_routes or [])
-        bound_routes = meta.get("bound_routes", [])
-        if not isinstance(bound_routes, list) or not bound_routes:
-            bound_routes_valid = False
-            violations.append("Frontmatter 'bound_routes' est vide ou absent.")
-        else:
-            unknown_routes = [
-                r
-                for r in bound_routes
-                if not str(r).startswith("/") or str(r) not in allowed_routes
-            ]
-            bound_routes_valid = len(unknown_routes) == 0
-            if unknown_routes:
-                violations.append(f"Routes inconnues dans bound_routes : {unknown_routes}")
-
-        # 2. Validate @orcia/ui components cited, 3 mandatory sections, and # anchors
-        mandatory_sections = _MANDATORY_SECTIONS_FR if lang == "fr" else _MANDATORY_SECTIONS_EN
-        missing_sections = [sec for sec in mandatory_sections if sec not in body]
-        has_anchors = "{#" in body or "## 1." in body and "#" in body
-        cited_components: list[str] = []
-        for m in _UI_COMPONENT_REF_RE.finditer(body):
-            comp = m.group(1) or m.group(2)
-            if comp:
-                cited_components.append(comp)
-        unknown_components = [c for c in cited_components if c not in self._known_ui_components]
-        ui_components_and_sections_valid = (
-            len(missing_sections) == 0 and has_anchors and len(unknown_components) == 0
-        )
-        if missing_sections:
-            violations.append(f"Sections obligatoires manquantes : {missing_sections}")
-        if unknown_components:
-            violations.append(f"Composants @orcia/ui inexistants cités : {unknown_components}")
-
-        # 3. Validate glossary_terms alignment and zero leaked secrets/tokens
-        glossary_terms = meta.get("glossary_terms", [])
-        glossary_ok = isinstance(glossary_terms, list)
-        if glossary_ok and known_glossary_terms:
-            known_lower = {t.lower() for t in known_glossary_terms}
-            unaligned = [t for t in glossary_terms if str(t).lower() not in known_lower]
-            if unaligned:
-                glossary_ok = False
-                violations.append(f"Termes absents du Glossaire : {unaligned}")
-
-        secret_hits: list[str] = []
-        for pat in _SECRET_LEAK_PATTERNS:
-            found = pat.findall(markdown_text)
-            if found:
-                secret_hits.extend(found)
-        glossary_and_zero_secret_valid = glossary_ok and len(secret_hits) == 0
-        if secret_hits:
-            violations.append("Fuite de secret ou token détectée dans le corps HelpArticle.")
-
-        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
-        passed = (
-            bound_routes_valid
-            and ui_components_and_sections_valid
-            and glossary_and_zero_secret_valid
-        )
-        return HelpArticleValidationReport(
-            article_id=article_id,
-            lang=lang,
-            passed=passed,
-            bound_routes_valid=bound_routes_valid,
-            ui_components_and_sections_valid=ui_components_and_sections_valid,
-            glossary_and_zero_secret_valid=glossary_and_zero_secret_valid,
-            elapsed_ms=elapsed_ms,
-            violations=tuple(violations),
-        )
 
 
 class HelpGenerationAndHotAttachmentService:
@@ -360,41 +71,24 @@ class HelpGenerationAndHotAttachmentService:
         ui_component_name: str = "ContextualHelpColumnAndCenter",
     ) -> tuple[str, str]:
         """Generate bilingual (`fr`, `en`) Markdown help articles with YAML frontmatter."""
-        fm = (
-            "---\n"
-            f'id: "{article_id}"\n'
-            f'version: "{version}"\n'
-            f"bound_routes: {json.dumps(bound_routes)}\n"
-            f'pack_id: "{pack_id}"\n'
-            f"roles_allowed: {json.dumps(roles_allowed)}\n"
-            f"glossary_terms: {json.dumps(glossary_terms, ensure_ascii=False)}\n"
-            f"related_workflows: {json.dumps(related_workflows)}\n"
-            "---\n\n"
+        return render_bilingual_help_markdown_text(
+            article_id=article_id,
+            version=version,
+            pack_id=pack_id,
+            title_fr=title_fr,
+            title_en=title_en,
+            bound_routes=bound_routes,
+            roles_allowed=roles_allowed,
+            glossary_terms=glossary_terms,
+            related_workflows=related_workflows,
+            purpose_fr=purpose_fr,
+            purpose_en=purpose_en,
+            steps_fr=steps_fr,
+            steps_en=steps_en,
+            faq_fr=faq_fr,
+            faq_en=faq_en,
+            ui_component_name=ui_component_name,
         )
-        steps_block_fr = "\n".join(f"- {s}" for s in steps_fr)
-        faq_block_fr = "\n".join(f"- {q}" for q in faq_fr)
-        md_fr = (
-            f"{fm}# {title_fr} {{#top}}\n\n"
-            f"## 1. À quoi sert cet écran ? {{#overview}}\n"
-            f"{purpose_fr} Composant UI : `<{ui_component_name} />`.\n\n"
-            f"## 2. Comment faire (Pas-à-pas) {{#steps}}\n"
-            f"### Pas-à-pas\n{steps_block_fr}\n\n"
-            f"## 3. Questions fréquentes & Dépannage {{#faq}}\n"
-            f"### Questions fréquentes\n{faq_block_fr}\n"
-        )
-
-        steps_block_en = "\n".join(f"- {s}" for s in steps_en)
-        faq_block_en = "\n".join(f"- {q}" for q in faq_en)
-        md_en = (
-            f"{fm}# {title_en} {{#top}}\n\n"
-            f"## 1. What is this screen for? {{#overview}}\n"
-            f"{purpose_en} UI Component: `<{ui_component_name} />`.\n\n"
-            f"## 2. How to use (Step-by-step) {{#steps}}\n"
-            f"### Step-by-step\n{steps_block_en}\n\n"
-            f"## 3. Frequently Asked Questions & Troubleshooting {{#faq}}\n"
-            f"### Frequently Asked Questions\n{faq_block_en}\n"
-        )
-        return md_fr, md_en
 
     async def generate_and_attach_help(
         self,
@@ -420,6 +114,9 @@ class HelpGenerationAndHotAttachmentService:
         known_glossary_terms: list[str] | None = None,
         actor_role: str = "ARCHITECT",
         export_root_dir: Path | None = None,
+        autonomous_run_id: str | None = None,
+        contract_label: str | None = None,
+        trigger_label: str | None = None,
     ) -> GeneratedAndAttachedHelpResult:
         """Execute Process 5 (`generate-and-attach-help`): generate, validate, hot-attach."""
         if actor_role.upper() == "READ_ONLY_OBSERVER":
@@ -465,10 +162,6 @@ class HelpGenerationAndHotAttachmentService:
         t_attach = time.perf_counter()
         fr_sha = hashlib.sha256(md_fr.encode("utf-8")).hexdigest()
         en_sha = hashlib.sha256(md_en.encode("utf-8")).hexdigest()
-        fr_cas = f"cas/{fr_sha}"
-        en_cas = f"cas/{en_sha}"
-
-        # Invalidate Redis cache keys help:route:<route>:<pack>:<lang>
         norm_pack = pack_slug if pack_slug and pack_slug != "core" else "core"
         invalidated_keys: list[str] = []
         for route in bound_routes:
@@ -476,9 +169,10 @@ class HelpGenerationAndHotAttachmentService:
                 rkey = build_help_redis_cache_key(route, norm_pack, lang_code)
                 invalidated_keys.append(rkey)
                 if self._redis is not None:
-                    self._redis.delete(rkey)
+                    del_res = self._redis.delete(rkey)
+                    if inspect.isawaitable(del_res):
+                        await del_res
 
-        # Export .md files to docs/help/{fr,en}/ or packages/orcia-pack-{slug}/help/{fr,en}/
         if norm_pack == "core":
             rel_fr = f"docs/help/fr/{article_slug}.md"
             rel_en = f"docs/help/en/{article_slug}.md"
@@ -492,17 +186,26 @@ class HelpGenerationAndHotAttachmentService:
                 target_file.parent.mkdir(parents=True, exist_ok=True)
                 target_file.write_text(content, encoding="utf-8")
 
-        await self._persist_help_catalog_items(
-            article_id=article_id,
-            version=version,
-            pack_slug=norm_pack,
-            title_fr=title_fr,
-            title_en=title_en,
-            bound_routes=bound_routes,
-            glossary_terms=glossary_terms,
-            fr_sha=fr_sha,
-            en_sha=en_sha,
-        )
+        if self._session_factory is not None:
+            await persist_help_catalog_items_sql(
+                self._session_factory,
+                article_id=article_id,
+                version=version,
+                pack_slug=norm_pack,
+                title_fr=title_fr,
+                title_en=title_en,
+                bound_routes=bound_routes,
+                glossary_terms=glossary_terms,
+                fr_sha=fr_sha,
+                en_sha=en_sha,
+                summary_fr=purpose_fr,
+                summary_en=purpose_en,
+                fr_markdown=md_fr,
+                en_markdown=md_en,
+                autonomous_run_id=autonomous_run_id,
+                contract_label=contract_label,
+                trigger_label=trigger_label,
+            )
 
         hot_attach_ms = round((time.perf_counter() - t_attach) * 1000.0, 3)
         result = GeneratedAndAttachedHelpResult(
@@ -511,8 +214,8 @@ class HelpGenerationAndHotAttachmentService:
             pack_id=pack_id,
             trigger_regime=trigger_regime,
             bound_routes=tuple(bound_routes),
-            fr_cas_key=fr_cas,
-            en_cas_key=en_cas,
+            fr_cas_key=f"cas/{fr_sha}",
+            en_cas_key=f"cas/{en_sha}",
             fr_sha256=fr_sha,
             en_sha256=en_sha,
             fr_markdown=md_fr,
@@ -535,357 +238,12 @@ class HelpGenerationAndHotAttachmentService:
         export_root_dir: Path | None = None,
     ) -> OrciaDocumentationWorkflowReport:
         """Execute Process 6 (`generate-orcia-documentation`) in 4 governed steps."""
-        if actor_role.upper() == "READ_ONLY_OBSERVER":
-            raise ObserverModeReadOnlyError(
-                detail_override="run_generate_orcia_documentation_workflow"
-            )
-
-        t_total = time.perf_counter()
-
-        # Step 1 — Inventaire du dépôt ORCIA
-        t_step1 = time.perf_counter()
-        root = repo_root or Path(__file__).resolve().parents[5]
-        help_fr_files = sorted((root / "docs/help/fr").glob("*.md")) if root.exists() else []
-        help_en_files = sorted((root / "docs/help/en").glob("*.md")) if root.exists() else []
-        faq_file = (
-            root
-            / "docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24"
-            / "faq-architecture-modele-metier.md"
-        )
-        if not faq_file.exists():
-            faq_file = root / "docs/help/fr/spaces-sources.md"
-        tl_reports_dir = root / "docs/implementation-artifacts/tech-lead-reports"
-        tl_reports = (
-            [p for p in tl_reports_dir.glob("*.md") if p.name != "README.md"]
-            if tl_reports_dir.exists()
-            else []
-        )
-        routes_count = max(20, len(DEFAULT_KNOWN_ROUTES))
-        ui_components_count = len(KNOWN_ORCIA_UI_COMPONENTS)
-        help_files_count = len(help_fr_files) + len(help_en_files)
-        faq_present = faq_file.exists()
-        tl_count = len(tl_reports)
-        step1_ms = round((time.perf_counter() - t_step1) * 1000.0, 3)
-
-        step1 = OrciaDocumentationWorkflowStepResult(
-            step_number=1,
-            step_key="inventory-orcia-repository",
-            title_fr="Étape 1 — Inventaire du dépôt ORCIA",
-            title_en="Step 1 — ORCIA Repository Inventory",
-            lead_agent_handle="@Rédacteur-Documentation-Orcia",
-            status="COMPLETED",
-            summary_fr=(
-                f"{routes_count} routes UI, {ui_components_count} primitives @orcia/ui, "
-                f"{help_files_count} fiches d'aide bilingues (FR/EN), FAQ d'architecture "
-                f"({'présente' if faq_present else 'absente'}) et {tl_count} rapports "
-                "Tech Lead recensés."
-            ),
-            summary_en=(
-                f"{routes_count} UI routes, {ui_components_count} @orcia/ui primitives, "
-                f"{help_files_count} bilingual help files (FR/EN), architecture FAQ "
-                f"({'present' if faq_present else 'missing'}) and {tl_count} Tech Lead "
-                "reports inventoried."
-            ),
-            elapsed_ms=step1_ms,
-        )
-
-        # Step 2 — Génération & Enrichissement des Guides et de la FAQ
-        t_step2 = time.perf_counter()
-        bound_routes = [
-            "/cockpit",
-            "/assistant",
-            "/workspaces",
-            "/agents",
-            "/processes",
-            "/settings",
-            "/help",
-        ]
-        glossary_terms = ["Espace de Travail", "Équipe", "Processus", "Pack Métier"]
-        purpose_fr = (
-            "### Objectif\n"
-            "Rassembler en un guide unifié la documentation fonctionnelle de chaque écran "
-            "d'ORCIA, le modèle métier d'organisation (Directions, Équipes, Espaces de "
-            "travail) et la FAQ d'accompagnement."
-        )
-        purpose_en = (
-            "### Objective\n"
-            "Gather in a unified guide the functional documentation of every ORCIA screen, "
-            "the organizational domain model (Business Units, Teams, Workspaces) and the "
-            "support FAQ."
-        )
-        steps_fr = [
-            (
-                "**Guide Fonctionnel par Écran** : Piloter l'activité depuis le Cockpit "
-                "(`/cockpit`), dialoguer avec Mon Assistant (`/assistant`), organiser ses "
-                "sources et livrables dans Mes Espaces (`/workspaces`), configurer ses "
-                "Agents (`/agents`) et orchestrer ses Processus (`/processes`)."
-            ),
-            (
-                "**Architecture & Modèle Métier** : Structurer l'organisation en Directions "
-                "(BU) et Équipes de facturation, puis rattacher chaque Espace de travail "
-                "(collectif, privé ou confidentiel) avec héritage gouverné."
-            ),
-            (
-                "**Synchronisation Documentaire** : Exécuter le processus "
-                "`generate-orcia-documentation` pour vérifier et publier l'ensemble des "
-                "guides FR/EN et le catalogue `/showcase`."
-            ),
-        ]
-        steps_en = [
-            (
-                "**Functional Screen Guide**: Monitor activity from the Cockpit (`/cockpit`), "
-                "interact with My Assistant (`/assistant`), organize sources and deliverables "
-                "in My Spaces (`/workspaces`), configure Agents (`/agents`), and orchestrate "
-                "Processes (`/processes`)."
-            ),
-            (
-                "**Architecture & Domain Model**: Structure the organization into Business "
-                "Units and Billing Teams, then attach each Workspace (shared, private, or "
-                "confidential) with governed inheritance."
-            ),
-            (
-                "**Documentation Synchronization**: Run the `generate-orcia-documentation` "
-                "process to verify and publish all FR/EN guides and the `/showcase` catalog."
-            ),
-        ]
-        faq_fr = [
-            (
-                "**Questions Fréquentes (FAQ) — Quelle est la différence entre une Équipe "
-                "et un Espace de travail ?** L'Équipe porte les membres et le rattachement "
-                "budgétaire, tandis que l'Espace de travail isole les sources documentaires, "
-                "le glossaire et les livrables d'un projet."
-            ),
-            (
-                "**Questions Fréquentes (FAQ) — Comment mettre à jour l'aide contextuelle "
-                "(`ⓘ`) d'un écran ?** Lancez le processus `generate-orcia-documentation` "
-                "depuis `☍ Mes Processus` pour valider et rattacher à chaud les guides "
-                "mis à jour."
-            ),
-        ]
-        faq_en = [
-            (
-                "**Frequently Asked Questions (FAQ) — What is the difference between a Team "
-                "and a Workspace?** A Team holds members and billing ownership, whereas a "
-                "Workspace isolates project sources, glossary terms, and deliverables."
-            ),
-            (
-                "**Frequently Asked Questions (FAQ) — How do I update a screen's contextual "
-                "help (`ⓘ`)?** Run the `generate-orcia-documentation` process from "
-                "`☍ My Processes` to validate and hot-attach updated guides."
-            ),
-        ]
-        md_fr, md_en = self.render_bilingual_help_markdown(
-            article_id="help.orcia.complete-documentation",
-            version="1.0.0",
-            pack_id="orcia://packs/orcia-pack-builder",
-            title_fr="Documentation Complète d'ORCIA — Guides Écrans, Architecture & FAQ",
-            title_en="ORCIA Complete Documentation — Screen Guides, Architecture & FAQ",
-            bound_routes=bound_routes,
-            roles_allowed=["CONTRIBUTOR", "ARCHITECT", "PLATFORM_ADMIN"],
-            glossary_terms=glossary_terms,
-            related_workflows=["orcia://pack-builder/workflows/generate-orcia-documentation"],
-            purpose_fr=purpose_fr,
-            purpose_en=purpose_en,
-            steps_fr=steps_fr,
-            steps_en=steps_en,
-            faq_fr=faq_fr,
-            faq_en=faq_en,
-            ui_component_name="ContextualHelpColumnAndCenter",
-        )
-        step2_ms = round((time.perf_counter() - t_step2) * 1000.0, 3)
-        step2 = OrciaDocumentationWorkflowStepResult(
-            step_number=2,
-            step_key="generate-and-enrich-guides-and-faq",
-            title_fr="Étape 2 — Génération & Enrichissement des Guides et de la FAQ",
-            title_en="Step 2 — Screen Guides & Architecture FAQ Generation",
-            lead_agent_handle="@Rédacteur-Documentation-Orcia",
-            status="COMPLETED",
-            summary_fr=(
-                "Sections obligatoires structurées (Objectif, Guide Fonctionnel par Écran, "
-                "Architecture & Modèle Métier, Questions Fréquentes FAQ) en français et en "
-                "anglais."
-            ),
-            summary_en=(
-                "Mandatory sections structured (Objective, Functional Screen Guide, "
-                "Architecture & Domain Model, Frequently Asked Questions FAQ) in French and "
-                "English."
-            ),
-            elapsed_ms=step2_ms,
-        )
-
-        # Step 3 — Contrôle Qualité Déterministe (validate_help_article)
-        t_step3 = time.perf_counter()
-        val_fr = self._validator.validate_help_article(
-            markdown_text=md_fr,
-            lang="fr",
-            extra_allowed_routes=bound_routes,
-            known_glossary_terms=glossary_terms,
-        )
-        val_en = self._validator.validate_help_article(
-            markdown_text=md_en,
-            lang="en",
-            extra_allowed_routes=bound_routes,
-            known_glossary_terms=glossary_terms,
-        )
-        if not val_fr.passed or not val_en.passed:
-            violations = list(val_fr.violations) + list(val_en.violations)
-            raise HelpArticleValidationError("; ".join(violations))
-        step3_ms = round((time.perf_counter() - t_step3) * 1000.0, 3)
-        step3 = OrciaDocumentationWorkflowStepResult(
-            step_number=3,
-            step_key="deterministic-quality-gate-validate-help-article",
-            title_fr="Étape 3 — Contrôle Qualité Déterministe (validate_help_article)",
-            title_en="Step 3 — Deterministic Quality Check (validate_help_article)",
-            lead_agent_handle="@Certificateur-Sécurité-et-Sandbox",
-            status="COMPLETED",
-            summary_fr=(
-                f"Validation FR/EN réussie ({len(bound_routes)} routes vérifiées, sections "
-                "obligatoires présentes, 0 secret ou jargon technique interne détecté)."
-            ),
-            summary_en=(
-                f"FR/EN validation passed ({len(bound_routes)} bound routes verified, "
-                "mandatory sections present, 0 secret or internal technical jargon detected)."
-            ),
-            elapsed_ms=step3_ms,
-        )
-
-        # Step 4 — Publication & Rattachement à Chaud (/showcase & docs/help/)
-        t_step4 = time.perf_counter()
-        attached = await self.generate_and_attach_help(
-            article_id="help.orcia.complete-documentation",
-            article_slug="orcia-complete-documentation",
-            version="1.0.0",
-            pack_slug="core",
-            title_fr="Documentation Complète d'ORCIA — Guides Écrans, Architecture & FAQ",
-            title_en="ORCIA Complete Documentation — Screen Guides, Architecture & FAQ",
-            bound_routes=bound_routes,
-            roles_allowed=["CONTRIBUTOR", "ARCHITECT", "PLATFORM_ADMIN"],
-            glossary_terms=glossary_terms,
-            related_workflows=["orcia://pack-builder/workflows/generate-orcia-documentation"],
-            purpose_fr=purpose_fr,
-            purpose_en=purpose_en,
-            steps_fr=steps_fr,
-            steps_en=steps_en,
-            faq_fr=faq_fr,
-            faq_en=faq_en,
-            ui_component_name="ContextualHelpColumnAndCenter",
-            known_glossary_terms=glossary_terms,
+        return await execute_orcia_documentation_workflow(
+            self,
+            repo_root=repo_root,
             actor_role=actor_role,
             export_root_dir=export_root_dir,
         )
-        published_targets = (
-            *attached.exported_git_paths,
-            "/showcase",
-            "docs/site-catalog/index.html",
-        )
-        step4_ms = round((time.perf_counter() - t_step4) * 1000.0, 3)
-        step4 = OrciaDocumentationWorkflowStepResult(
-            step_number=4,
-            step_key="publish-and-hot-attach-documentation",
-            title_fr="Étape 4 — Publication & Rattachement à Chaud (/showcase & docs/help/)",
-            title_en="Step 4 — Hot Attachment & Publication (/showcase & docs/help/)",
-            lead_agent_handle="@Rédacteur-Documentation-Orcia",
-            status="COMPLETED",
-            summary_fr=(
-                f"Guides FR/EN publiés et rattachés à chaud ({', '.join(published_targets)})."
-            ),
-            summary_en=(
-                f"FR/EN guides published and hot-attached ({', '.join(published_targets)})."
-            ),
-            elapsed_ms=step4_ms,
-        )
-
-        total_ms = round((time.perf_counter() - t_total) * 1000.0, 3)
-        return OrciaDocumentationWorkflowReport(
-            workflow_slug="generate-orcia-documentation",
-            workflow_uri="orcia://pack-builder/workflows/generate-orcia-documentation",
-            lead_agent_handle="@Rédacteur-Documentation-Orcia",
-            routes_inventoried_count=routes_count,
-            ui_components_inventoried_count=ui_components_count,
-            help_files_inventoried_count=help_files_count,
-            faq_architecture_present=faq_present,
-            tech_lead_reports_count=tl_count,
-            steps=(step1, step2, step3, step4),
-            generated_markdown_fr=attached.fr_markdown,
-            generated_markdown_en=attached.en_markdown,
-            validation_fr=attached.validation_fr,
-            validation_en=attached.validation_en,
-            published_targets=published_targets,
-            total_elapsed_ms=total_ms,
-        )
-
-    async def _persist_help_catalog_items(
-        self,
-        *,
-        article_id: str,
-        version: str,
-        pack_slug: str,
-        title_fr: str,
-        title_en: str,
-        bound_routes: list[str],
-        glossary_terms: list[str],
-        fr_sha: str,
-        en_sha: str,
-    ) -> None:
-        if self._session_factory is None:
-            return
-        root_org_id = UUID("0192c4e0-0000-7000-8000-000000000001")
-        async with self._session_factory() as session, session.begin():
-            await session.execute(
-                sa.text(
-                    """
-                    INSERT INTO org_units (id, slug, name, unit_type, parent_id)
-                    VALUES (:id, 'orcia-root-org', 'ORCIA Root Org', 'ENTERPRISE', NULL)
-                    ON CONFLICT (id) DO NOTHING
-                    """
-                ),
-                {"id": root_org_id},
-            )
-            for lang_code, title, sha in (("fr", title_fr, fr_sha), ("en", title_en, en_sha)):
-                res_id = f"{article_id}-{lang_code}"
-                uri = f"orcia://packs/{pack_slug}/help/{article_id}/{lang_code}"
-                meta_json = json.dumps(
-                    {
-                        "bound_routes": bound_routes,
-                        "glossary_terms": glossary_terms,
-                        "authority_role": "REFERENCE",
-                        "lang": lang_code,
-                    }
-                )
-                await session.execute(
-                    sa.text(
-                        """
-                        INSERT INTO catalog_items (
-                            id, resource_id, uri, title, description,
-                            resource_type, source_format, version, sha256, cas_key,
-                            visibility_scope, owner_org_unit_id, owner_workspace_id,
-                            item_type, metadata_jsonb
-                        ) VALUES (
-                            :id, :resource_id, :uri, :title, :description,
-                            'template', 'ORCIA', :version, :sha256, :cas_key,
-                            'PUBLISHED_ORG', :owner_org_unit_id, NULL,
-                            'HELP_ARTICLE', CAST(:metadata_jsonb AS jsonb)
-                        )
-                        ON CONFLICT (resource_id) DO UPDATE
-                        SET version = EXCLUDED.version,
-                            sha256 = EXCLUDED.sha256,
-                            cas_key = EXCLUDED.cas_key,
-                            metadata_jsonb = EXCLUDED.metadata_jsonb
-                        """
-                    ),
-                    {
-                        "id": UUID(str(uuid7())),
-                        "resource_id": res_id,
-                        "uri": uri,
-                        "title": title,
-                        "description": f"HelpArticle ({lang_code}) — REFERENCE",
-                        "version": version,
-                        "sha256": sha,
-                        "cas_key": f"cas/{sha}",
-                        "owner_org_unit_id": root_org_id,
-                        "metadata_jsonb": meta_json,
-                    },
-                )
 
 
 async def run_generate_orcia_documentation_workflow(

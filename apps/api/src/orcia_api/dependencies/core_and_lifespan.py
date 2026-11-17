@@ -31,6 +31,7 @@ from orcia_api.dependencies._core_providers import (
 from orcia_api.dependencies._core_providers import (
     get_permission_broker_service as get_permission_broker_service,
 )
+from orcia_api.dependencies._core_providers import should_auto_init_infra
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
     LiteLLMAdapter,
@@ -45,6 +46,7 @@ from orcia_core.orchestration import (
     CognitiveModelRouterService,
     ConnectorInvoker,
     ControlCenterOverviewService,
+    RedisSseBrokerAdapter,
     ResourceLeaseService,
     UnifiedNotificationAndClaimService,
     WorkflowStudioAndPackService,
@@ -186,8 +188,36 @@ def initialize_app_services(app: FastAPI) -> None:
             evaluator=auth_service.evaluator,
         )
 
+    if getattr(app.state, "secret_provider", None) is None:
+        from orcia_core.permissions.secret_manager import EnvelopeVaultSecretProvider
+
+        app.state.secret_provider = EnvelopeVaultSecretProvider()
+
+    if getattr(app.state, "redis_client", None) is None and should_auto_init_infra("REDIS_URL"):
+        try:
+            import redis.asyncio as aioredis
+
+            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0").strip()
+            if redis_url:
+                app.state.redis_client = aioredis.from_url(redis_url, decode_responses=False)
+        except Exception as exc:
+            from orcia_core.observability.logging import get_logger
+
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_redis_init_skipped", error_type=type(exc).__name__
+            )
+
+    if getattr(app.state, "sse_broker", None) is None:
+        app.state.sse_broker = RedisSseBrokerAdapter(
+            redis_client=getattr(app.state, "redis_client", None)
+        )
+    elif getattr(app.state, "redis_client", None) is not None and hasattr(
+        app.state.sse_broker, "set_redis_client"
+    ):
+        app.state.sse_broker.set_redis_client(app.state.redis_client)
+
     if getattr(app.state, "notification_service", None) is None:
-        notif_svc = UnifiedNotificationAndClaimService()
+        notif_svc = UnifiedNotificationAndClaimService(sse_broker=app.state.sse_broker)
         # Zéro donnée fictive : les notifications d'amorce ne sont semées que pour la pile E2E
         # isolée (ORCIA_E2E_SEED_FIXTURES=1, posé uniquement par infra/scripts/e2e/).
         if _e2e_fixtures_enabled():
@@ -300,19 +330,25 @@ def initialize_app_services(app: FastAPI) -> None:
     if getattr(app.state, "log_sink", None) is None:
         from orcia_core.observability import build_log_sink_from_env
 
-        app.state.log_sink = build_log_sink_from_env(http_client=app.state.http_client)
+        app.state.log_sink = build_log_sink_from_env(
+            http_client=app.state.http_client,
+            secret_provider=getattr(app.state, "secret_provider", None),
+        )
 
-    if (
-        getattr(app.state, "session_maker", None) is None
-        and os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
-    ):
+    if getattr(app.state, "session_maker", None) is None and should_auto_init_infra("DATABASE_URL"):
         try:
             from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+            from sqlalchemy.pool import NullPool
 
             from orcia_core.config import resolve_database_url
 
-            db_engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
-            app.state.db_engine = db_engine
+            engine_kwargs: dict[str, object] = {"connect_args": {"timeout": 1.5}}
+            if "pytest" in sys.modules:
+                engine_kwargs["poolclass"] = NullPool
+            db_engine = getattr(app.state, "db_engine", None)
+            if db_engine is None:
+                db_engine = create_async_engine(resolve_database_url(), **engine_kwargs)
+                app.state.db_engine = db_engine
             app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
             from orcia_core.audit_finops import BudgetGuardService
 
@@ -326,6 +362,9 @@ def initialize_app_services(app: FastAPI) -> None:
                 "connector_quota_guard_service",
                 "finops_accounting_service",
                 "cognitive_impact_service",
+                "post_hoc_audit_service",
+                "autonomous_supervision_service",
+                "contextual_help_service",
             ):
                 svc_inst = getattr(app.state, attr_name, None)
                 if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
@@ -346,14 +385,24 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     initialize_app_services(app)
     tracer_provider = configure_tracing(service_name="api")
     instrument_runtime(app=app, engine=getattr(app.state, "db_engine", None))
+    sse_broker = getattr(app.state, "sse_broker", None)
+    if sse_broker is not None and hasattr(sse_broker, "start_pubsub_listener"):
+        await sse_broker.start_pubsub_listener()
     try:
         yield
     finally:
+        if sse_broker is not None and hasattr(sse_broker, "stop_pubsub_listener"):
+            with suppress(Exception):
+                await sse_broker.stop_pubsub_listener()
         shutdown_tracing(tracer_provider)
         http_client = getattr(app.state, "http_client", None)
         if http_client is not None:
             with suppress(Exception):
                 await http_client.aclose()
+        redis_client = getattr(app.state, "redis_client", None)
+        if redis_client is not None:
+            with suppress(Exception):
+                await redis_client.aclose()
         db_engine = getattr(app.state, "db_engine", None)
         if db_engine is not None:
             with suppress(Exception):

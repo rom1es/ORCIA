@@ -9,108 +9,26 @@ import {
   OrciaSelect,
 } from "./DesignSystemControls";
 import { SecretField, type UiSecretInputValue, type UiSecretStatus } from "./SecretField";
+import { WorkflowTriggerCard } from "./WorkflowTriggerCard";
+import type {
+  CreateWorkflowTriggerDraft,
+  UiWorkflowTriggerItem,
+  UiWorkflowTriggerStatus,
+  UiWorkflowTriggerType,
+  UpdateWorkflowTriggerDraft,
+  WorkflowTriggersModalLabels,
+  WorkflowTriggersModalProps,
+} from "./WorkflowTriggersTypes";
 
-export type UiWorkflowTriggerType =
-  | "MANUAL_AUTONOMOUS"
-  | "WEBHOOK"
-  | "CRON"
-  | "LOG_SINK_ALERT"
-  | "OUTBOX_EVENT";
-
-export type UiWorkflowTriggerStatus = "ACTIVE" | "PAUSED" | "CIRCUIT_OPEN";
-
-export interface UiWorkflowTriggerItem {
-  readonly id: string;
-  readonly triggerKey: string;
-  readonly triggerType: UiWorkflowTriggerType;
-  readonly status: UiWorkflowTriggerStatus;
-  readonly cronExpr: string | null;
-  readonly cooldownWindowSeconds: number;
-  readonly maxRunsPerHour: number;
-  readonly maxDailyCostUsd: number;
-  readonly maxConsecutiveFailures: number;
-  readonly consecutiveFailures: number;
-  readonly autoHelpOnPublish: boolean;
-  readonly lastFiredAtIso: string | null;
-  readonly logSinkService: string | null;
-  readonly logSinkQueryText: string | null;
-  readonly webhookSecretStatus: UiSecretStatus;
-}
-
-export interface CreateWorkflowTriggerDraft {
-  readonly triggerType: UiWorkflowTriggerType;
-  readonly cronExpr: string;
-  readonly cooldownWindowSeconds: number;
-  readonly maxRunsPerHour: number;
-  readonly maxDailyCostUsd: number;
-  readonly autoHelpOnPublish: boolean;
-  readonly logSinkService: string;
-  readonly logSinkQueryText: string;
-  readonly webhookSecret?: UiSecretInputValue;
-}
-
-export interface UpdateWorkflowTriggerDraft {
-  readonly status?: "ACTIVE" | "PAUSED";
-  readonly autoHelpOnPublish?: boolean;
-  readonly webhookSecret?: UiSecretInputValue;
-}
-
-export interface WorkflowTriggersModalLabels {
-  readonly title: string;
-  readonly description: string;
-  readonly helpButtonLabel: string;
-  readonly missingContractNotice: string;
-  readonly emptyListHint: string;
-  readonly typeLabel: string;
-  readonly typeOptions: Readonly<Record<UiWorkflowTriggerType, string>>;
-  readonly statusLabels: Readonly<Record<UiWorkflowTriggerStatus, string>>;
-  readonly cronLabel: string;
-  readonly cronPlaceholder: string;
-  readonly logServiceLabel: string;
-  readonly logServicePlaceholder: string;
-  readonly cooldownLabel: string;
-  readonly maxRunsPerHourLabel: string;
-  readonly maxDailyCostLabel: string;
-  readonly autoHelpCheckboxLabel: string;
-  readonly webhookSecretFieldLabel: string;
-  readonly secretConfiguredBadge: string;
-  readonly secretUnconfiguredBadge: string;
-  readonly secretFingerprintPrefix: string;
-  readonly secretReplaceCta: string;
-  readonly secretCancelCta: string;
-  readonly secretClearCta: string;
-  readonly secretSaveCta: string;
-  readonly secretInputPlaceholder: string;
-  readonly createButton: string;
-  readonly creatingButton: string;
-  readonly fireNowButton: string;
-  readonly resetCircuitButton: string;
-  readonly pauseButton: string;
-  readonly activateButton: string;
-  readonly deleteButton: string;
-  readonly closeButton: string;
-  readonly failuresPrefix: string;
-}
-
-export interface WorkflowTriggersModalProps {
-  readonly open: boolean;
-  readonly onOpenChange: (open: boolean) => void;
-  readonly workflowTitle: string;
-  readonly hasActiveContract: boolean;
-  readonly triggers: readonly UiWorkflowTriggerItem[];
-  readonly submitting?: boolean;
-  readonly errorMessage?: string | null;
-  readonly labels: WorkflowTriggersModalLabels;
-  readonly onCreateTrigger: (draft: CreateWorkflowTriggerDraft) => Promise<void> | void;
-  readonly onUpdateTrigger: (
-    triggerId: string,
-    draft: UpdateWorkflowTriggerDraft,
-  ) => Promise<void> | void;
-  readonly onDeleteTrigger: (triggerId: string) => Promise<void> | void;
-  readonly onFireTrigger: (triggerId: string) => Promise<void> | void;
-  readonly onResetCircuit: (triggerId: string) => Promise<void> | void;
-  readonly onOpenHelpSection: (sectionId: string) => void;
-}
+export type {
+  CreateWorkflowTriggerDraft,
+  UiWorkflowTriggerItem,
+  UiWorkflowTriggerStatus,
+  UiWorkflowTriggerType,
+  UpdateWorkflowTriggerDraft,
+  WorkflowTriggersModalLabels,
+  WorkflowTriggersModalProps,
+};
 
 const EMPTY_SECRET_STATUS: UiSecretStatus = {
   configured: false,
@@ -239,157 +157,18 @@ export function WorkflowTriggersModal({
             style={{ display: "flex", flexDirection: "column", gap: "10px" }}
           >
             {triggers.map((trig) => (
-              <div
+              <WorkflowTriggerCard
                 key={trig.id}
-                data-testid={`workflow-trigger-card-${trig.id}`}
-                style={{
-                  border: "1px solid var(--color-border-subtle)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "10px 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  backgroundColor: "var(--color-surface-elevated)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <OrciaIcon
-                      name={trig.triggerType === "CRON" ? "clock" : "lightning"}
-                      size={14}
-                    />
-                    <strong style={{ fontSize: "13px" }}>
-                      {labels.typeOptions[trig.triggerType]}
-                    </strong>
-                    <span
-                      data-testid={`trigger-status-badge-${trig.id}`}
-                      className="rounded px-2 py-0.5 text-xs font-semibold"
-                      style={{
-                        backgroundColor:
-                          trig.status === "ACTIVE"
-                            ? "var(--color-gate-emerald-bg)"
-                            : trig.status === "CIRCUIT_OPEN"
-                              ? "var(--color-arbitration-bg)"
-                              : "var(--color-surface-canvas)",
-                        color:
-                          trig.status === "ACTIVE"
-                            ? "var(--color-gate-emerald)"
-                            : trig.status === "CIRCUIT_OPEN"
-                              ? "var(--color-arbitration-amber)"
-                              : "var(--color-text-secondary)",
-                      }}
-                    >
-                      {labels.statusLabels[trig.status]}
-                    </span>
-                    {trig.consecutiveFailures > 0 ? (
-                      <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                        {labels.failuresPrefix} {trig.consecutiveFailures}/
-                        {trig.maxConsecutiveFailures}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <OrciaButton
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      testId={`trigger-fire-btn-${trig.id}`}
-                      disabled={submitting || trig.status !== "ACTIVE" || !hasActiveContract}
-                      onClick={() => void onFireTrigger(trig.id)}
-                    >
-                      <OrciaIcon name="play" size={12} />
-                      <span>{labels.fireNowButton}</span>
-                    </OrciaButton>
-                    {trig.status === "CIRCUIT_OPEN" ? (
-                      <OrciaButton
-                        type="button"
-                        size="sm"
-                        variant="primary"
-                        testId={`trigger-reset-circuit-btn-${trig.id}`}
-                        disabled={submitting || !hasActiveContract}
-                        onClick={() => void onResetCircuit(trig.id)}
-                      >
-                        <OrciaIcon name="regenerate" size={12} />
-                        <span>{labels.resetCircuitButton}</span>
-                      </OrciaButton>
-                    ) : (
-                      <OrciaButton
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        testId={`trigger-toggle-status-btn-${trig.id}`}
-                        disabled={submitting}
-                        onClick={() =>
-                          void onUpdateTrigger(trig.id, {
-                            status: trig.status === "ACTIVE" ? "PAUSED" : "ACTIVE",
-                          })
-                        }
-                      >
-                        <span>
-                          {trig.status === "ACTIVE" ? labels.pauseButton : labels.activateButton}
-                        </span>
-                      </OrciaButton>
-                    )}
-                    <OrciaButton
-                      type="button"
-                      size="sm"
-                      variant="danger"
-                      testId={`trigger-delete-btn-${trig.id}`}
-                      disabled={submitting}
-                      onClick={() => void onDeleteTrigger(trig.id)}
-                    >
-                      <OrciaIcon name="cross" size={12} />
-                      <span>{labels.deleteButton}</span>
-                    </OrciaButton>
-                  </div>
-                </div>
-
-                {trig.triggerType === "OUTBOX_EVENT" ? (
-                  <label
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      fontSize: "12px",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      data-protonpass-ignore="true"
-                      data-form-type="other"
-                      data-testid={`trigger-auto-help-toggle-${trig.id}`}
-                      checked={trig.autoHelpOnPublish}
-                      onChange={(e) =>
-                        void onUpdateTrigger(trig.id, { autoHelpOnPublish: e.target.checked })
-                      }
-                    />
-                    <span>{labels.autoHelpCheckboxLabel}</span>
-                  </label>
-                ) : null}
-
-                {trig.triggerType === "WEBHOOK" ? (
-                  <SecretField
-                    status={trig.webhookSecretStatus}
-                    labels={secretFieldLabels}
-                    readOnly={submitting}
-                    onSecretAction={(input) =>
-                      void onUpdateTrigger(trig.id, { webhookSecret: input })
-                    }
-                  />
-                ) : null}
-              </div>
+                trigger={trig}
+                hasActiveContract={hasActiveContract}
+                submitting={submitting}
+                labels={labels}
+                secretFieldLabels={secretFieldLabels}
+                onUpdateTrigger={onUpdateTrigger}
+                onDeleteTrigger={onDeleteTrigger}
+                onFireTrigger={onFireTrigger}
+                onResetCircuit={onResetCircuit}
+              />
             ))}
           </div>
         )}
@@ -484,14 +263,7 @@ export function WorkflowTriggersModal({
           ) : null}
 
           {triggerType === "OUTBOX_EVENT" ? (
-            <label
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "12px",
-              }}
-            >
+            <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
               <input
                 type="checkbox"
                 autoComplete="off"

@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -58,6 +59,7 @@ _INLINE_KV_SECRET_RE = re.compile(
 )
 
 _REGISTERED_SECRET_VALUES: set[str] = set()
+_SECRET_VALUES_LOCK = threading.Lock()
 
 _ECS_RESERVED_KEYS: frozenset[str] = frozenset(
     {
@@ -109,19 +111,23 @@ def register_sensitive_secret_value(secret_value: str) -> None:
     """Register a resolved secret value so `structlog` and scrubbers redact it (`DEC-SEC-01`)."""
     cleaned = secret_value.strip()
     if len(cleaned) >= 4:
-        _REGISTERED_SECRET_VALUES.add(cleaned)
+        with _SECRET_VALUES_LOCK:
+            _REGISTERED_SECRET_VALUES.add(cleaned)
 
 
 def clear_sensitive_secret_values() -> None:
     """Clear registered sensitive secret values (used in isolated tests)."""
-    _REGISTERED_SECRET_VALUES.clear()
+    with _SECRET_VALUES_LOCK:
+        _REGISTERED_SECRET_VALUES.clear()
 
 
 def scrub_sensitive_text(text: str) -> str:
     """Replace inline credentials, JWTs, PATs, SecretRef, or registered secrets."""
     redacted = _INLINE_SECRET_RE.sub(REDACTED_PLACEHOLDER, text)
     redacted = _INLINE_KV_SECRET_RE.sub(rf"\1\2{REDACTED_PLACEHOLDER}", redacted)
-    for secret_val in tuple(_REGISTERED_SECRET_VALUES):
+    with _SECRET_VALUES_LOCK:
+        registered_snapshot = tuple(_REGISTERED_SECRET_VALUES)
+    for secret_val in registered_snapshot:
         if secret_val and secret_val in redacted:
             redacted = redacted.replace(secret_val, REDACTED_PLACEHOLDER)
     return redacted

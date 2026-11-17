@@ -688,7 +688,7 @@ capabilities:
       route: "/processes, /processes/studio/$workflowId, /finops"
       api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); autonomous_supervision.py (GET autonomous-runs, POST emergency-stop, POST invalidate-and-restore, POST post-hoc-review); finops_cognitive.py (autonomous_governance); portal_and_help.py (autonomous metadata); workflows.py (WorkflowPublished)"
       ui: "AutonomyContractModal + WorkflowTriggersModal + StudioWorkflowHeaderBar + StudioFiveBlocksGrid + WorkflowFiveBlocksCanvas + AutonomousExecutionBadge + AutonomousRunsSupervisionPanel + FinopsAutonomousGovernanceSection + FourZoneAutonomousNotificationsGroup + ShellContextualHelpColumn"
-      migration: "20261117_0701, 20261117_0702, 20261117_0704"
+      migration: "20261117_0701, 20261117_0702, 20261117_0704, 20261117_0705"
     tests:
       - tests/unit/test_story_7_1_autonomy_contracts.py
       - tests/security/test_story_7_1_contract_confinement_and_secrets.py
@@ -702,6 +702,8 @@ capabilities:
       - tests/unit/test_story_7_4_post_hoc_audit_and_autonomous_metrics.py
       - tests/security/test_story_7_4_observer_and_rbac_guards.py
       - tests/integration/api/test_story_7_4_supervision_rollback_postgres18.py
+      - tests/unit/test_epic_7_review_fixes.py
+      - tests/integration/api/test_epic_7_composition_root_postgres18.py
       - apps/web/src/__tests__/story-7-4-autonomous-supervision-and-f5.test.tsx
       - apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts
     notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), et Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique)."
@@ -719,6 +721,7 @@ capabilities:
       - tests/security/test_story_7_0b_log_sink_security.py
       - tests/integration/test_story_7_0b_opensearch_log_sink_container.py
       - tests/unit/test_story_7_0c_openshift_scc_kustomize_and_ready.py
+      - tests/unit/test_epic_7_review_fixes.py
     verification: runtime
     surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py, routers/health.py /ready & /api/v1/ready)", worker: "configure_logging() / configure_tracing() / instrument_runtime() + roles.py (--serve/--once) + sandbox_daemon.py (sidecar Tier 1 sous /tmp)", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3 + services app-roles durcis (10001:0, read_only, tmpfs /tmp)", docker: "infra/docker/Dockerfile (python:3.12-slim non-root 10001:0) + infra/docker/Dockerfile.web (nginx-unprivileged 101:0 port 8080) + infra/docker/nginx.conf", k8s: "infra/k8s/base/ + infra/k8s/overlays/openshift/ (SCC restricted sans runAsUser figé, readOnlyRootFilesystem, emptyDir /tmp, NetworkPolicy sandbox-runner egress:[], Routes TLS edge)", operations: "docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01)" }
     notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et livré intégralement via Stories 7.0a, 7.0b et 7.0c (done). Socle complet débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."

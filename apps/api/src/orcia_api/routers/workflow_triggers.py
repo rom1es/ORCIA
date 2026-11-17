@@ -2,29 +2,30 @@
 
 from __future__ import annotations
 
-import hmac
 import json
-import os
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Path, Request
 
-from orcia_api.dependencies import (
-    get_auth_service,
-    get_trigger_dispatcher_service,
+from orcia_api.dependencies import get_trigger_dispatcher_service
+from orcia_api.routers._finops_auth_guards import (
+    enforce_workspace_governed_mutation,
+    resolve_finops_read_scope,
 )
-from orcia_api.routers._finops_scope_guards import (
-    resolve_workspace_uuid_or_setup_key,
-    sync_evaluator_topology_from_pg,
+from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
+from orcia_api.routers._workflow_triggers_helpers import (
+    TRIGGER_PROBLEM_RESPONSES,
+    authenticate_platform_alert_webhook,
+    parse_secret_input_spec,
+    serialize_dispatch_outcome,
+    serialize_trigger,
+    trace_id_from_request,
 )
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.schemas.problem_details import ProblemDetails
-from orcia_api.schemas.settings_and_studio import SecretStatusResponse
 from orcia_api.schemas.workflow_triggers import (
     CreateWorkflowTriggerRequest,
     DeleteWorkflowTriggerResponse,
     FireManualTriggerRequest,
-    LogSinkAlertWebhookRequest,
     TriggerDispatchResponse,
     UpdateWorkflowTriggerRequest,
     WorkflowTriggerListResponse,
@@ -36,107 +37,18 @@ from orcia_core.observability.fingerprint import (
     compute_error_fingerprint_sha256,
     extract_top_frame,
 )
-from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration import (
     CreateTriggerCommand,
     TriggerDispatcherService,
-    TriggerDispatchOutcome,
     UpdateTriggerCommand,
-    WorkflowTriggerEntity,
 )
-from orcia_core.permissions import AuthAndOrganizationService, UserIdentity
-from orcia_core.permissions.enterprise_connectors_crypto import unpack_encrypted_secret
-from orcia_core.permissions.errors import (
-    ObserverModeReadOnlyError,
-    ValidationDomainError,
-    WebhookSignatureInvalidError,
-)
-from orcia_core.permissions.secret_hint import SecretInputSpec
-from orcia_core.permissions.webhook_security import verify_webhook_hmac_sha256
+from orcia_core.permissions import UserIdentity
+from orcia_core.permissions.errors import TriggerNotFoundError
 
 logger = get_logger("orcia.api.workflow_triggers")
 
-TRIGGER_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
-    401: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    403: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    404: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    409: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    422: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-    503: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
-}
-
 router = APIRouter(tags=["workflow-triggers"], responses=TRIGGER_PROBLEM_RESPONSES)
-
-
-def _trace(request: Request) -> str:
-    return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-async def _enforce_not_observer(
-    request: Request,
-    user: UserIdentity,
-    auth_svc: AuthAndOrganizationService,
-    workspace_id: str,
-) -> None:
-    instance = str(request.url.path)
-    if (
-        request.headers.get("X-Orcia-Access-Mode", "").strip().upper() == "READ_ONLY_OBSERVER"
-        or user.platform_role == "OBSERVER"
-    ):
-        raise ObserverModeReadOnlyError(instance=instance)
-    await sync_evaluator_topology_from_pg(request, auth_svc)
-    ws = auth_svc.evaluator.get_workspace(workspace_id)
-    is_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
-    if ws is not None and is_admin and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED":
-        return
-    ws_access = auth_svc.evaluator.resolve_workspace_access(user, workspace_id)
-    if ws_access is not None and ws_access.access_mode == "READ_ONLY_OBSERVER":
-        raise ObserverModeReadOnlyError(instance=instance)
-
-
-def _serialize_trigger(t: WorkflowTriggerEntity) -> WorkflowTriggerResponse:
-    return WorkflowTriggerResponse(
-        id=t.id,
-        trigger_key=t.trigger_key,
-        workspace_id=t.workspace_id,
-        workflow_id=t.workflow_id,
-        trigger_type=t.trigger_type,
-        contract_id=t.contract_id,
-        cron_expr=t.cron_expr,
-        cooldown_window_seconds=t.cooldown_window_seconds,
-        service_principal_id=t.service_principal_id,
-        max_runs_per_hour=t.max_runs_per_hour,
-        max_daily_cost_usd=t.max_daily_cost_usd,
-        max_consecutive_failures=t.max_consecutive_failures,
-        consecutive_failures=t.consecutive_failures,
-        status=t.status,
-        auto_help_on_publish=t.auto_help_on_publish,
-        last_fired_at_iso=t.last_fired_at_iso,
-        log_sink_service=t.log_sink_service,
-        log_sink_query_text=t.log_sink_query_text,
-        outbox_event_filter=t.outbox_event_filter,
-        webhook_secret_status=SecretStatusResponse(
-            configured=t.webhook_secret_configured,
-            fingerprint=t.webhook_secret_fingerprint,
-            masked_hint=t.webhook_secret_masked_hint,
-            updated_at=t.webhook_secret_updated_at or "",
-            updated_by=t.webhook_secret_updated_by or "",
-        ),
-    )
-
-
-def _serialize_dispatch(res: TriggerDispatchOutcome, trace_id: str) -> TriggerDispatchResponse:
-    return TriggerDispatchResponse(
-        dispatched=res.dispatched,
-        outcome=res.outcome,
-        trigger_id=res.trigger_id,
-        idempotency_key=res.idempotency_key,
-        dbos_workflow_id=res.dbos_workflow_id,
-        run_id=res.run_id,
-        attempts=res.attempts,
-        reason=res.reason,
-        trace_id=trace_id,
-    )
 
 
 @router.get(
@@ -150,14 +62,14 @@ async def list_workflow_triggers(
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> WorkflowTriggerListResponse:
-    del user
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    await resolve_finops_read_scope(request, user, "WORKSPACE", ws_uuid)
     items = await svc.list_triggers(workspace_id=ws_uuid, workflow_id=workflow_id)
     return WorkflowTriggerListResponse(
         workspace_id=ws_uuid,
         workflow_id=workflow_id,
-        items=[_serialize_trigger(t) for t in items],
-        trace_id=_trace(request),
+        items=[serialize_trigger(t) for t in items],
+        trace_id=trace_id_from_request(request),
     )
 
 
@@ -173,18 +85,9 @@ async def create_workflow_trigger(
     body: CreateWorkflowTriggerRequest,
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> WorkflowTriggerResponse:
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
-    secret_spec = (
-        SecretInputSpec(
-            action=body.webhook_secret.action,
-            plaintext_value=body.webhook_secret.plaintext_value,
-        )
-        if body.webhook_secret is not None
-        else None
-    )
+    await enforce_workspace_governed_mutation(request, user, ws_uuid)
     created = await svc.create_trigger(
         CreateTriggerCommand(
             workspace_id=ws_uuid,
@@ -197,7 +100,7 @@ async def create_workflow_trigger(
             max_daily_cost_usd=body.max_daily_cost_usd,
             max_consecutive_failures=body.max_consecutive_failures,
             auto_help_on_publish=body.auto_help_on_publish,
-            webhook_secret=secret_spec,
+            webhook_secret=parse_secret_input_spec(body.webhook_secret),
             log_sink_service=body.log_sink_service,
             log_sink_query_text=body.log_sink_query_text,
             outbox_event_filter=body.outbox_event_filter,
@@ -205,7 +108,7 @@ async def create_workflow_trigger(
             actor_id=user.id,
         )
     )
-    return _serialize_trigger(created)
+    return serialize_trigger(created)
 
 
 @router.patch(
@@ -220,19 +123,10 @@ async def update_workflow_trigger(
     body: UpdateWorkflowTriggerRequest,
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> WorkflowTriggerResponse:
     del workflow_id
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
-    secret_spec = (
-        SecretInputSpec(
-            action=body.webhook_secret.action,
-            plaintext_value=body.webhook_secret.plaintext_value,
-        )
-        if body.webhook_secret is not None
-        else None
-    )
+    await enforce_workspace_governed_mutation(request, user, ws_uuid)
     updated = await svc.update_trigger(
         workspace_id=ws_uuid,
         trigger_id=trigger_id,
@@ -244,14 +138,14 @@ async def update_workflow_trigger(
             max_daily_cost_usd=body.max_daily_cost_usd,
             max_consecutive_failures=body.max_consecutive_failures,
             auto_help_on_publish=body.auto_help_on_publish,
-            webhook_secret=secret_spec,
+            webhook_secret=parse_secret_input_spec(body.webhook_secret),
             log_sink_service=body.log_sink_service,
             log_sink_query_text=body.log_sink_query_text,
             outbox_event_filter=body.outbox_event_filter,
             actor_id=user.id,
         ),
     )
-    return _serialize_trigger(updated)
+    return serialize_trigger(updated)
 
 
 @router.delete(
@@ -265,13 +159,14 @@ async def delete_workflow_trigger(
     trigger_id: Annotated[str, Path(min_length=1)],
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> DeleteWorkflowTriggerResponse:
     del workflow_id
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    await enforce_workspace_governed_mutation(request, user, ws_uuid)
     await svc.delete_trigger(workspace_id=ws_uuid, trigger_id=trigger_id)
-    return DeleteWorkflowTriggerResponse(deleted_id=trigger_id, trace_id=_trace(request))
+    return DeleteWorkflowTriggerResponse(
+        deleted_id=trigger_id, trace_id=trace_id_from_request(request)
+    )
 
 
 @router.post(
@@ -287,20 +182,23 @@ async def fire_manual_workflow_trigger(
     body: FireManualTriggerRequest,
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> TriggerDispatchResponse:
     del workflow_id
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    await enforce_workspace_governed_mutation(request, user, ws_uuid)
+    entity, _ = await svc.get_trigger(trigger_id)
+    if entity.workspace_id != ws_uuid:
+        raise TriggerNotFoundError(instance=str(request.url.path))
     idem_key = (body.idempotency_key or "").strip() or f"manual:{new_uuid7_str()}"
+    trace_id = trace_id_from_request(request)
     outcome = await svc.dispatch_trigger(
         trigger_id=trigger_id,
         idempotency_key=idem_key,
         headers=dict(request.headers),
         payload=body.payload,
-        trace_id=_trace(request),
+        trace_id=trace_id,
     )
-    return _serialize_dispatch(outcome, _trace(request))
+    return serialize_dispatch_outcome(outcome, trace_id)
 
 
 @router.post(
@@ -314,13 +212,12 @@ async def reset_workflow_trigger_circuit(
     trigger_id: Annotated[str, Path(min_length=1)],
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
-    auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> WorkflowTriggerResponse:
     del workflow_id
     ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
-    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    await enforce_workspace_governed_mutation(request, user, ws_uuid)
     reset = await svc.reset_circuit(workspace_id=ws_uuid, trigger_id=trigger_id)
-    return _serialize_trigger(reset)
+    return serialize_trigger(reset)
 
 
 @router.post("/api/v1/webhooks/triggers/{trigger_id}", response_model=TriggerDispatchResponse)
@@ -335,7 +232,7 @@ async def ingest_workflow_trigger_webhook(
     x_webhook_delivery_id: Annotated[str | None, Header(alias="x-webhook-delivery-id")] = None,
 ) -> TriggerDispatchResponse:
     """Ingest external webhook with shared HMAC verification, deduplication & Self-Trigger Guard."""
-    trace_id = _trace(request)
+    trace_id = trace_id_from_request(request)
     raw_body = await request.body()
     try:
         decoded = json.loads(raw_body.decode("utf-8")) if raw_body else {}
@@ -370,7 +267,7 @@ async def ingest_workflow_trigger_webhook(
         payload=req_payload.model_dump(),
         trace_id=trace_id,
     )
-    return _serialize_dispatch(outcome, trace_id)
+    return serialize_dispatch_outcome(outcome, trace_id)
 
 
 @router.post("/api/v1/triggers/alerts", response_model=TriggerDispatchResponse)
@@ -384,35 +281,16 @@ async def ingest_platform_log_alert_fallback(
     x_orcia_alert_secret: Annotated[str | None, Header(alias="x-orcia-alert-secret")] = None,
 ) -> TriggerDispatchResponse:
     """Platform log-sink alert fallback webhook (`AD-23.5`) protected by HMAC or alert secret."""
-    trace_id = _trace(request)
+    trace_id = trace_id_from_request(request)
     raw_body = await request.body()
-    try:
-        decoded = json.loads(raw_body.decode("utf-8")) if raw_body else {}
-        body = LogSinkAlertWebhookRequest.model_validate(decoded)
-    except Exception as exc:
-        logger.warning("invalid_platform_alert_webhook_json", error=str(exc))
-        raise ValidationDomainError(
-            detail_override="Invalid alert webhook payload.",
-            instance=str(request.url.path),
-        ) from exc
-    entity, enc_secret = await svc.get_trigger(body.trigger_id)
-    expected_secret: str | None = None
-    if enc_secret:
-        expected_secret = unpack_encrypted_secret(
-            svc._cipher, owner_id=entity.id, packed=enc_secret, scheme="webhook", host="trigger"
-        )
-    if not expected_secret:
-        expected_secret = os.environ.get("ORCIA_ALERTS_WEBHOOK_SECRET", "").strip() or None
-    sig_hdr = x_orcia_webhook_signature or x_hub_signature_256
-    secret_ok = bool(
-        expected_secret
-        and (
-            verify_webhook_hmac_sha256(raw_body, expected_secret, sig_hdr)
-            or (x_orcia_alert_secret and hmac.compare_digest(x_orcia_alert_secret, expected_secret))
-        )
+    entity, body = await authenticate_platform_alert_webhook(
+        request=request,
+        svc=svc,
+        raw_body=raw_body,
+        x_orcia_webhook_signature=x_orcia_webhook_signature,
+        x_hub_signature_256=x_hub_signature_256,
+        x_orcia_alert_secret=x_orcia_alert_secret,
     )
-    if not secret_ok:
-        raise WebhookSignatureInvalidError(instance=str(request.url.path))
     fp = compute_error_fingerprint_sha256(
         body.service, body.exception_type, extract_top_frame(body.traceback or body.message)
     )
@@ -424,4 +302,4 @@ async def ingest_platform_log_alert_fallback(
         payload=body.model_dump(),
         trace_id=trace_id,
     )
-    return _serialize_dispatch(outcome, trace_id)
+    return serialize_dispatch_outcome(outcome, trace_id)

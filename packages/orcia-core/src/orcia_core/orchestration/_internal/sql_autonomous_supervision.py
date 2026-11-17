@@ -54,6 +54,8 @@ async def list_autonomous_runs_sql(
             COALESCE(pa.review_status, 'NONE') AS post_hoc_status,
             COALESCE(ac.id::text, '') AS contract_id,
             COALESCE(rc.cost_usd, 0.000000) AS cost_usd,
+            help_art.help_resource_id,
+            COALESCE(help_art.previous_version_available, FALSE) AS previous_version_available,
             wr.created_at
         FROM workflow_runs wr
         JOIN workflow_definitions wd ON wd.id = wr.workflow_def_id
@@ -63,10 +65,29 @@ async def list_autonomous_runs_sql(
             SELECT id
             FROM autonomy_contracts c
             WHERE c.workspace_id = wr.workspace_id
-              AND (c.workflow_id = wd.uri OR wd.uri LIKE '%' || c.workflow_id)
+              AND (
+                  c.workflow_id = wd.uri
+                  OR wd.uri = 'orcia://workflows/' || c.workflow_id
+                  OR wd.uri LIKE '%/' || c.workflow_id
+              )
             ORDER BY (c.status = 'ACTIVE') DESC, c.signed_at DESC
             LIMIT 1
         ) ac ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT
+                ci.resource_id AS help_resource_id,
+                ((ci.metadata_jsonb ? 'previous_version') AND wr.status <> 'ROLLED_BACK')
+                    AS previous_version_available
+            FROM catalog_items ci
+            WHERE ci.item_type = 'HELP_ARTICLE'
+              AND (
+                  ci.metadata_jsonb->>'autonomous_run_id' = wr.id::text
+                  OR ci.metadata_jsonb->>'workflow_uri' = wd.uri
+              )
+            ORDER BY (ci.metadata_jsonb->>'autonomous_run_id' = wr.id::text) DESC,
+                     ci.id DESC
+            LIMIT 1
+        ) help_art ON TRUE
         LEFT JOIN run_costs rc ON rc.run_id = wr.id
         WHERE wr.workspace_id = :ws_id
           AND wr.execution_regime = 'AUTONOMOUS_CONTRACT'
@@ -107,6 +128,7 @@ async def get_autonomous_run_sql(engine: AsyncEngine, *, run_id: str) -> dict[st
             COALESCE(wt.status, 'ACTIVE') AS trigger_status,
             COALESCE(pa.review_status, 'NONE') AS post_hoc_status,
             COALESCE(ac.id::text, '') AS contract_id,
+            help_art.help_resource_id,
             wr.created_at
         FROM workflow_runs wr
         JOIN workflow_definitions wd ON wd.id = wr.workflow_def_id
@@ -116,10 +138,26 @@ async def get_autonomous_run_sql(engine: AsyncEngine, *, run_id: str) -> dict[st
             SELECT id
             FROM autonomy_contracts c
             WHERE c.workspace_id = wr.workspace_id
-              AND (c.workflow_id = wd.uri OR wd.uri LIKE '%' || c.workflow_id)
+              AND (
+                  c.workflow_id = wd.uri
+                  OR wd.uri = 'orcia://workflows/' || c.workflow_id
+                  OR wd.uri LIKE '%/' || c.workflow_id
+              )
             ORDER BY (c.status = 'ACTIVE') DESC, c.signed_at DESC
             LIMIT 1
         ) ac ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT ci.resource_id AS help_resource_id
+            FROM catalog_items ci
+            WHERE ci.item_type = 'HELP_ARTICLE'
+              AND (
+                  ci.metadata_jsonb->>'autonomous_run_id' = wr.id::text
+                  OR ci.metadata_jsonb->>'workflow_uri' = wd.uri
+              )
+            ORDER BY (ci.metadata_jsonb->>'autonomous_run_id' = wr.id::text) DESC,
+                     ci.id DESC
+            LIMIT 1
+        ) help_art ON TRUE
         WHERE wr.id = :run_id;
         """
     )
@@ -141,6 +179,36 @@ async def is_run_kill_switch_stopped_sql(engine: AsyncEngine, *, run_id: str) ->
             )
         ).scalar_one_or_none()
         return str(status or "") == "KILL_SWITCH_STOPPED"
+
+
+async def update_autonomous_run_status_sql(
+    engine: AsyncEngine,
+    *,
+    run_id: str,
+    status: str,
+) -> None:
+    """Update `workflow_runs.status` unless emergency stop (`KILL_SWITCH_STOPPED`) fired."""
+    run_uuid = safe_uuid(run_id)
+    if run_uuid is None:
+        return
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(
+                sa.text(
+                    """
+                    UPDATE workflow_runs
+                    SET status = :status
+                    WHERE id = :run_id
+                      AND status <> 'KILL_SWITCH_STOPPED';
+                    """
+                ),
+                {"run_id": run_uuid, "status": status},
+            )
+    except Exception as exc:
+        if is_missing_table_error(exc):
+            logger.warning("update_autonomous_run_status_sql_skipped", error=str(exc))
+            return
+        raise
 
 
 async def apply_emergency_stop_sql(
@@ -199,4 +267,5 @@ __all__ = [
     "is_run_kill_switch_stopped_sql",
     "list_autonomous_runs_sql",
     "restore_help_article_and_rollback_run_sql",
+    "update_autonomous_run_status_sql",
 ]

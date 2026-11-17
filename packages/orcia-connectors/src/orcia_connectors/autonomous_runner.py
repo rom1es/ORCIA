@@ -268,6 +268,20 @@ async def execute_autonomous_contract_run(
             )
             del _resolved
 
+        if kill_switch_check_fn is not None and await kill_switch_check_fn(resolved_run_id):
+            return (
+                AutonomousRunOutcome(
+                    run_id=resolved_run_id,
+                    workspace_id=current_contract.workspace_id,
+                    workflow_id=current_contract.workflow_id,
+                    contract_id=current_contract.id,
+                    status="KILL_SWITCH_STOPPED",
+                    escalation_reason="KILL_SWITCH_STOPPED",
+                    issued_tokens=issued_tokens,
+                    executed_actions=executed_actions,
+                ),
+                [],
+            )
         payload_sha = compute_payload_sha256(req.action_key, clean_payload)
         token = SignedApprovalToken.issue_autonomous(
             contract_id=current_contract.id,
@@ -279,6 +293,20 @@ async def execute_autonomous_contract_run(
         verify_signed_approval_token(token, action=req.action_key, payload=clean_payload)
         issued_tokens.append(token)
 
+        if kill_switch_check_fn is not None and await kill_switch_check_fn(resolved_run_id):
+            return (
+                AutonomousRunOutcome(
+                    run_id=resolved_run_id,
+                    workspace_id=current_contract.workspace_id,
+                    workflow_id=current_contract.workflow_id,
+                    contract_id=current_contract.id,
+                    status="KILL_SWITCH_STOPPED",
+                    escalation_reason="KILL_SWITCH_STOPPED",
+                    issued_tokens=issued_tokens,
+                    executed_actions=executed_actions,
+                ),
+                [],
+            )
         adapter = (connectors_by_scheme or {}).get(req.scheme.strip().lower())
         if adapter is not None:
             result = await adapter.execute_write(token, req.action_key, clean_payload)

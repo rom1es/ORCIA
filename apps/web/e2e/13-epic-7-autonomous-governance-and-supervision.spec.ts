@@ -8,7 +8,7 @@ import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 
 test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécutions Autonomes", () => {
-  test("bureau : contrat d'autonomie + déclencheur + supervision /processes + arrêt d'urgence F5 + /finops Maîtrise humaine sans erreur 4xx/5xx", async ({
+  test("bureau : Publication V2 + contrat + déclencheur + supervision /processes + arrêt d'urgence F5 + /finops échantillon & rollback F5", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop-cockpit", "parcours bureau");
@@ -25,8 +25,17 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     await expect(page.getByTestId("finops-human-mastery-tab")).toBeVisible();
     await expect(page.getByTestId("finops-autonomous-governance-section")).toHaveCount(0);
 
-    // 2. Récupérer le workspace réel et créer un compte applicatif éligible
-    const stateRes = await page.request.get("/api/v1/bootstrap/platform-setup-state");
+    // 2. Récupérer le JWT admin (cookie refresh) + le workspace réel et créer un SP éligible
+    const refreshRes = await page.request.post("/api/v1/auth/refresh");
+    expect(refreshRes.status()).toBe(200);
+    const refreshJson = (await refreshRes.json()) as { access_token?: string };
+    const adminToken = refreshJson.access_token ?? "";
+    expect(adminToken).not.toBe("");
+    const authHeaders = { Authorization: `Bearer ${adminToken}` };
+
+    const stateRes = await page.request.get("/api/v1/bootstrap/platform-setup-state", {
+      headers: authHeaders,
+    });
     expect(stateRes.status()).toBe(200);
     const setupState = (await stateRes.json()) as {
       workspaces?: Array<{ workspaceId?: string; workspace_id?: string; id?: string }>;
@@ -39,6 +48,7 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     expect(wsId).not.toBe("");
 
     const spRes = await page.request.post("/api/v1/settings/iam/accounts", {
+      headers: authHeaders,
       data: {
         principal_id: "sp-e2e-auto-docs",
         display_name: "Robot Documentation E2E",
@@ -49,9 +59,21 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     });
     expect([200, 201]).toContain(spRes.status());
 
-    // 3. Ouvrir le Studio V2 -> signer un contrat d'autonomie + créer un déclencheur manuel et l'exécuter
+    // 3. Ouvrir le Studio V2 -> publier via API PUT /api/v1/workflows/v2/{id}
     await page.goto("/processes/studio/wf-01-qualification-prd");
-    await expect(page.getByTestId("studio-autonomy-contract-btn")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId("studio-publish-workflow-btn")).toBeVisible({ timeout: 30000 });
+    const [pubResp] = await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/workflows/v2/wf-01-qualification-prd") &&
+          res.request().method() === "PUT",
+      ),
+      page.getByTestId("studio-publish-workflow-btn").click(),
+    ]);
+    expect(pubResp.status()).toBe(200);
+    await expect(page.getByTestId("studio-status-banner")).toBeVisible({ timeout: 10000 });
+
+    // Signer le contrat d'autonomie + créer un déclencheur manuel et l'exécuter
     await page.getByTestId("studio-autonomy-contract-btn").click();
     await expect(page.getByTestId("autonomy-contract-modal")).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId("autonomy-contract-sp-select")).toBeVisible();
@@ -67,40 +89,78 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
 
     const fireBtn = page.locator("[data-testid^='trigger-fire-btn-']").first();
     await expect(fireBtn).toBeVisible({ timeout: 15000 });
-    await fireBtn.click();
+    const [fireResp] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes("/fire") && res.request().method() === "POST",
+      ),
+      fireBtn.click(),
+    ]);
+    expect(fireResp.status()).toBe(201);
+    const fireJson = (await fireResp.json()) as { dispatched?: boolean; run_id?: string };
+    expect(fireJson.dispatched).toBe(true);
+    expect(fireJson.run_id).toBeTruthy();
 
-    // Fermer la modale déclencheurs (Escape RGAA)
     await page.keyboard.press("Escape");
 
-    // 4. Ouvrir /processes : vérifier la section de supervision autonome
+    // Créer un second run échantillonné post-hoc pour valider de façon déterministe /finops
+    const sampledRunRes = await page.request.post(
+      `/api/v1/workspaces/${wsId}/workflows/wf-01-qualification-prd/runs/autonomous`,
+      {
+        headers: authHeaders,
+        data: {
+          criticality: "STANDARD",
+          actions: [],
+          estimated_cost_usd: 0.05,
+          force_post_hoc_sample: true,
+        },
+      },
+    );
+    expect(sampledRunRes.status()).toBe(201);
+
+    // 4. Ouvrir /processes : vérifier sans condition la supervision, arrêt d'urgence & survie F5
     await page.goto("/processes");
     await expect(page.getByTestId("processes-autonomous-supervision-panel")).toBeVisible({
       timeout: 30000,
     });
 
-    // Ouvrir le tiroir de notifications TopHeader et vérifier l'absence d'erreur
     await page.getByTestId("topbar-notifications-toggle").click();
     await expect(page.getByTestId("topbar-notifications-drawer")).toBeVisible({ timeout: 10000 });
     await page.getByTestId("topbar-notifications-close").click();
 
-    // Si des exécutions autonomes sont listées, tester l'arrêt d'urgence + survie F5
     const stopBtns = page.locator("[data-testid$='-emergency-stop-btn']");
-    if ((await stopBtns.count()) > 0) {
-      await stopBtns.first().click();
-      await expect(page.getByTestId("autonomous-supervision-success-banner")).toBeVisible({
-        timeout: 15000,
-      });
-      await page.reload();
-      await expect(page.getByTestId("processes-autonomous-supervision-panel")).toBeVisible({
-        timeout: 30000,
-      });
-    }
+    await expect(stopBtns.first()).toBeVisible({ timeout: 15000 });
+    await stopBtns.first().click();
+    await expect(page.getByTestId("autonomous-supervision-success-banner")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.reload();
+    await expect(page.getByTestId("processes-autonomous-supervision-panel")).toBeVisible({
+      timeout: 30000,
+    });
 
-    // 5. Retour sur /finops -> Maîtrise humaine & Qualité : vérifier section autonome si runs > 0
+    // 5. Retour sur /finops -> Maîtrise humaine : section autonome + invalidation @v(N-1) + F5
     await page.goto("/finops");
     await expect(page.getByTestId("finops-governance-dashboard")).toBeVisible({ timeout: 30000 });
     await page.getByTestId("finops-tab-cognitive-governance").click();
     await expect(page.getByTestId("finops-human-mastery-tab")).toBeVisible();
+    await expect(page.getByTestId("finops-autonomous-governance-section")).toBeVisible({
+      timeout: 15000,
+    });
+
+    const restoreBtn = page.locator("[data-testid^='finops-sample-restore-btn-']").first();
+    await expect(restoreBtn).toBeVisible({ timeout: 15000 });
+    await restoreBtn.click();
+    await expect(page.getByTestId("finops-autonomous-invalidation-alert")).toBeVisible({
+      timeout: 15000,
+    });
+
+    await page.reload();
+    await expect(page.getByTestId("finops-governance-dashboard")).toBeVisible({ timeout: 30000 });
+    await page.getByTestId("finops-tab-cognitive-governance").click();
+    await expect(page.getByTestId("finops-autonomous-invalidation-alert")).toBeVisible({
+      timeout: 15000,
+    });
+
     await expectZeroVisibleErrorBanners(page);
     expect(errors, errors.join("\n")).toEqual([]);
   });

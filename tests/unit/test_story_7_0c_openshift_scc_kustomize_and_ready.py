@@ -231,9 +231,9 @@ def test_kustomize_base_openshift_overlay_and_clusterlogforwarder_contract() -> 
         assert isinstance(loaded, dict), f"Expected single YAML mapping in {yaml_path}"
 
     base_kustomize = yaml.safe_load((base_dir / "kustomization.yaml").read_text(encoding="utf-8"))
+    assert "secret-template.yaml" not in base_kustomize["resources"]
     assert set(base_kustomize["resources"]) >= {
         "configmap.yaml",
-        "secret-template.yaml",
         "deployment-api.yaml",
         "deployment-worker-orchestration.yaml",
         "deployment-worker-indexing.yaml",

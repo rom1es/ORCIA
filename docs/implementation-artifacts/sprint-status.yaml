@@ -87,7 +87,7 @@ development_status:
   6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu: done
   epic-6-retrospective: optional
 
-  epic-7: in-progress
+  epic-7: done
   7-0a-socle-de-journalisation-unifie-12-factor-json-stdout: done
   7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel: done
   7-0c-conformite-deploiement-openshift-et-clusterlogforwarder: done

@@ -8,6 +8,7 @@ import {
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { TranslationDictionary } from "../i18n/types";
+import { useAuthSessionStore } from "../stores/authSessionStore";
 
 export interface ShellContextualHelpColumnProps {
   readonly pathname?: string;
@@ -29,6 +30,15 @@ export function ShellContextualHelpColumn({
   onAskAssistant,
 }: ShellContextualHelpColumnProps): React.ReactElement {
   const effectiveRoute = pathname ?? "/cockpit";
+  const roles = useAuthSessionStore((s) => s.roles);
+  const activeHat = useAuthSessionStore((s) => s.activeHat);
+  const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
+  const isAdmin =
+    !readOnlyObserver &&
+    (roles.some((r) => r === "PLATFORM_ADMIN" || r === "ARCHITECT" || r === "TEAM_LEAD") ||
+      activeHat === "PLATFORM_ADMIN" ||
+      activeHat === "ARCHITECT");
+
   const [resolvedArticle, setResolvedArticle] = useState<UiContextualHelpArticleView | null>(null);
   const [resolvedLayers, setResolvedLayers] = useState<readonly UiHelpArticleLayer[]>([
     "BASE",
@@ -45,7 +55,7 @@ export function ShellContextualHelpColumn({
 
   const refreshResolvedHelp = useCallback(async () => {
     try {
-      const res = await apiClient.resolveContextualHelp(effectiveRoute, locale, "orcia-core");
+      const res = await apiClient.resolveContextualHelp(effectiveRoute, locale, "core");
       if (res && res.active_article) {
         const art = res.active_article;
         setResolvedArticle({
@@ -102,6 +112,19 @@ export function ShellContextualHelpColumn({
     [apiClient, refreshResolvedHelp],
   );
 
+  const handleRollbackVersion = useCallback(
+    async (resourceId: string) => {
+      try {
+        setActionError(null);
+        await apiClient.rollbackContextualHelp({ resource_id: resourceId });
+        await refreshResolvedHelp();
+      } catch (err: unknown) {
+        setActionError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [apiClient, refreshResolvedHelp],
+  );
+
   const displayedArticle = resolvedArticle ?? contextualHelpArticle;
 
   return (
@@ -114,15 +137,16 @@ export function ShellContextualHelpColumn({
       <ContextualHelpColumnAndCenter
         mode="COLUMN_340PX"
         route={effectiveRoute}
-        pack="orcia-core"
+        pack="core"
         redisCacheKey={resolvedCacheKey}
         mergedLayers={resolvedLayers}
         article={displayedArticle}
         activeSectionId={activeHelpSectionId}
         rollbackAvailable={rollbackAvailable}
-        isAdmin={true}
+        isAdmin={isAdmin}
         labels={labels}
         autonomousBadgeLabels={autonomousBadgeLabels}
+        onRollbackVersion={(resId) => void handleRollbackVersion(resId)}
         onInvalidateAndRestoreAutonomousHelp={(rid, resId) =>
           void handleInvalidateAndRestoreAutonomousHelp(rid, resId)
         }

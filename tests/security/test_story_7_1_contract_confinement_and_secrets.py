@@ -18,7 +18,8 @@ async def test_story_7_1_observer_blocked_escalation_rejected_and_zero_secret_le
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     app = create_app()
-    ws_id = "0195f000-0000-7000-8000-000000000301"
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
+    other_ws_id = "0192c4e0-0000-7000-8000-000000000203"
     wf_id = "wf-sec-autonomy"
     sp_obs = app.state.iam_accounts_service.create_account(
         principal_id="sp-readonly",
@@ -116,3 +117,23 @@ async def test_story_7_1_observer_blocked_escalation_rejected_and_zero_secret_le
         assert r_run.status_code == 201
         assert r_run.json()["status"] == "COMMITTED_AUTONOMOUS"
         assert canary not in r_run.text
+
+        # 5. Cross-team / confidential IDOR & non-governor contributor denied (403)
+        r_idor = await client.get(
+            f"/api/v1/workspaces/{other_ws_id}/workflows/{wf_id}/autonomy-contract",
+            params={"persona_key": "partenaire"},
+        )
+        assert r_idor.status_code == 403
+
+        r_contrib = await client.post(
+            f"/api/v1/workspaces/{ws_id}/workflows/{wf_id}/autonomy-contract",
+            params={"persona_key": "nadia"},
+            json={
+                "workflow_version": "1.0.0",
+                "criticality": "STANDARD",
+                "service_principal_id": sp_lead.id,
+                "allowed_write_actions": ["catalog:write"],
+                "max_cost_per_run_usd": 5.0,
+            },
+        )
+        assert r_contrib.status_code == 403

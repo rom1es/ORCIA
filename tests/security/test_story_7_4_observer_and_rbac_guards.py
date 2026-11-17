@@ -18,8 +18,8 @@ async def test_story_7_4_observer_mode_and_rbac_guards(
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     app = create_app()
     initialize_app_services(app)
-    ws_id = "0195f000-0000-7000-8000-000000000301"
-    other_ws_id = "0195f000-0000-7000-8000-000000000399"
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
+    other_ws_id = "0192c4e0-0000-7000-8000-000000000203"
     run_id = "0195f000-0000-7000-8000-000000007450"
 
     from starlette.requests import Request

@@ -107,6 +107,7 @@ class StartAutonomousRunRequest(BaseModel):
     help_article_markdown: str | None = None
     help_article_lang: Literal["fr", "en"] = "fr"
     scope_path: str = Field(default="GLOBAL", min_length=1)
+    force_post_hoc_sample: bool = False
 
 
 class AutonomousRunExecutionResponse(BaseModel):

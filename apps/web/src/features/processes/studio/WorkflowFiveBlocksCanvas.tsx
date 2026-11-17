@@ -1,4 +1,5 @@
-import { AutonomyContractModal, WorkflowTriggersModal } from "@orcia/ui";
+import { createOrciaApiClient, type WorkflowDefinitionV2_Output } from "@orcia/api-client";
+import { AutonomyContractModal, OrciaAlertBanner, WorkflowTriggersModal } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
 import { useShellNavigation } from "../../../components/ShellContainer";
 import { usePlatformSetup } from "../../../components/platformSetupStore";
@@ -19,12 +20,13 @@ import { useWorkflowTriggers } from "./useWorkflowTriggers";
 
 export type { StudioViewMode };
 
-const DEFAULT_FALLBACK_WORKSPACE_ID = "0195f000-0000-7000-8000-000000000301";
+const DEFAULT_FALLBACK_WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201";
 
 export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }) {
   const { locale, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const { workspaces } = usePlatformSetup();
+  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
   const isFr = locale === "fr";
   const contractLabels = dictionary.autonomyContract;
   const triggersLabels = dictionary.workflowTriggers;
@@ -52,6 +54,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   const [viewMode, setViewMode] = useState<StudioViewMode>("design");
   const [showRunDrawer, setShowRunDrawer] = useState<boolean>(false);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [whatIfResult, setWhatIfResult] = useState<{
     subStepsEvaluated: number;
     deterministicGatesPassed: boolean;
@@ -155,16 +158,50 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     );
   };
 
-  const handlePublishWorkflow = () => {
+  const handlePublishWorkflow = async () => {
+    setPublishError(null);
     const cleanVer = workflow.version.replace(/-draft$/, "");
     const parts = cleanVer.split(".").map((n) => Number.parseInt(n, 10) || 0);
     const nextVer = `${parts[0] ?? 1}.${parts[1] ?? 0}.${(parts[2] ?? 0) + 1}`;
-    persistUpdate(
-      { ...workflow, status: "published", version: nextVer },
-      isFr
-        ? `Processus publié et activé (version ${nextVer}).`
-        : `Process published as version ${nextVer}.`,
-    );
+    let remoteWf: WorkflowDefinitionV2_Output | null = null;
+    try {
+      remoteWf = await apiClient.getWorkflowV2(workflow.id);
+    } catch {
+      remoteWf = null;
+    }
+    const basePayload = remoteWf ?? {
+      id: workflow.id,
+      slug: workflow.slug,
+      title: workflow.title,
+      pack_id: workflow.pack_id,
+    };
+    try {
+      await apiClient.saveWorkflowV2(
+        workflow.id,
+        {
+          publish: true,
+          workflow: {
+            ...basePayload,
+            title: workflow.title,
+            version: nextVer,
+            status: "published",
+            execution_mode: workflow.execution_mode,
+            external_tool_label: workflow.external_tool_label ?? null,
+            external_completion_event: workflow.external_completion_event ?? null,
+            guardrails: workflow.guardrails,
+          },
+        },
+        resolvedWorkspaceId,
+      );
+      persistUpdate(
+        { ...workflow, status: "published", version: nextVer },
+        isFr
+          ? `Processus publié et activé (version ${nextVer}).`
+          : `Process published as version ${nextVer}.`,
+      );
+    } catch (err: unknown) {
+      setPublishError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handleRunWhatIfSimulation = () => {
@@ -204,11 +241,17 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         onSelectViewMode={setViewMode}
         onRunWhatIf={handleRunWhatIfSimulation}
         onSaveDraft={handleSaveAsDraft}
-        onPublish={handlePublishWorkflow}
+        onPublish={() => void handlePublishWorkflow()}
         onLaunchRun={() => setShowRunDrawer(true)}
         onOpenAutonomyContract={() => setShowContractModal(true)}
         onOpenTriggers={() => setShowTriggersModal(true)}
       />
+
+      {publishError ? (
+        <OrciaAlertBanner tone="crimson" role="alert" testId="studio-publish-error-banner">
+          {publishError}
+        </OrciaAlertBanner>
+      ) : null}
 
       {statusBanner ? (
         <div

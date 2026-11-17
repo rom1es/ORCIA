@@ -200,5 +200,36 @@ export function handleVitestAutonomousSupervisionRoute(
     }
   }
 
+  if (path === "/api/v1/help/rollback" && method === "POST") {
+    const resourceId = String(body.resource_id ?? "");
+    const restoredVersion = restoreHelpRecordsForRunOrResource("", resourceId || null);
+    return jsonResponse({
+      resource_id: resourceId,
+      uri: `orcia://system/help/${resourceId}`,
+      title: "Aide restaurée",
+      version: restoredVersion,
+      lang: "fr",
+      layer: "WORKSPACE",
+      pack_name: "core",
+      bound_routes: ["/cockpit"],
+      summary_what_for: "Restored",
+      step_by_step_items: [],
+      key_terms_items: [],
+      faq_items: [],
+      cas_key: "cas/restored",
+      sha256: "a".repeat(64),
+      previous_version: null,
+      is_autonomous_generated: false,
+    });
+  }
+
+  const wfV2Match = /^\/api\/v1\/workflows\/v2\/([^/]+)$/.exec(path);
+  if (wfV2Match && method === "PUT") {
+    return jsonResponse({
+      workflow: body.workflow ?? { id: decodeURIComponent(wfV2Match[1] ?? ""), status: "published" },
+      forked_as_draft: false,
+    });
+  }
+
   return null;
 }

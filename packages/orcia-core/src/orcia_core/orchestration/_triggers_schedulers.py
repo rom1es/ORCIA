@@ -134,7 +134,7 @@ async def run_workflow_published_optin_help(
             await dispatcher.dispatch_trigger(
                 trigger_id=trig.id,
                 idempotency_key=f"publish:{wf_id}:{version}",
-                headers={"x-orcia-origin-run-id": str(event.run_id)} if event.run_id else None,
+                headers=None,
                 payload=dict(event.payload),
                 execution_fn=_run_help,
                 trace_id=event.trace_id,

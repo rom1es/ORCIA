@@ -26,6 +26,7 @@ from orcia_core.orchestration._internal.sql_workflow_triggers import (
     WorkflowTriggerRepositoryPort,
 )
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
+from orcia_core.orchestration._redis_sse_broker import RedisSseBrokerAdapter
 from orcia_core.orchestration.agents_and_skills_manager import (
     AgentExecutionOutcome,
     AgentKindType,
@@ -352,6 +353,7 @@ __all__ = [
     "ProfileAdaptationSpec",
     "PromptLayerBlock",
     "RecursiveRunLockManifest",
+    "RedisSseBrokerAdapter",
     "ResourceLeasePort",
     "ResourceLeaseRecord",
     "ResourceLeaseService",

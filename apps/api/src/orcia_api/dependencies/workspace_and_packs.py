@@ -80,14 +80,22 @@ def get_pack_builder_system_service(
 def get_help_generation_and_attachment_service(
     request: Request,
 ) -> HelpGenerationAndHotAttachmentService:
-    """Return `HelpGenerationAndHotAttachmentService` wired to `request.app.state.session_maker`."""
+    """Return `HelpGenerationAndHotAttachmentService` wired to `session_maker` & Redis."""
+    session_maker = getattr(request.app.state, "session_maker", None)
+    redis_client = getattr(request.app.state, "redis_client", None)
     svc: HelpGenerationAndHotAttachmentService | None = getattr(
         request.app.state, "help_generation_and_attachment_service", None
     )
     if svc is None:
-        session_maker = getattr(request.app.state, "session_maker", None)
-        svc = HelpGenerationAndHotAttachmentService(session_factory=session_maker)
+        svc = HelpGenerationAndHotAttachmentService(
+            session_factory=session_maker, redis_client=redis_client
+        )
         request.app.state.help_generation_and_attachment_service = svc
+    else:
+        if getattr(svc, "_session_factory", None) is None and session_maker is not None:
+            svc._session_factory = session_maker
+        if getattr(svc, "_redis", None) is None and redis_client is not None:
+            svc._redis = redis_client
     return svc
 
 

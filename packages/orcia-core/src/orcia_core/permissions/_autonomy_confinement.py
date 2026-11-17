@@ -62,7 +62,19 @@ def map_action_to_required_verb(action_key: str) -> PermissionVerb:
         return "create"
     if any(tok in norm for tok in (":delete", ":remove", ".delete", "delete_")):
         return "delete"
-    if any(tok in norm for tok in (":update", ":edit", ":patch", ".update", "update_")):
+    if any(
+        tok in norm
+        for tok in (
+            ":update",
+            ":edit",
+            ":patch",
+            ":write",
+            ".update",
+            ".write",
+            "update_",
+            "write_",
+        )
+    ):
         return "update"
     if any(tok in norm for tok in (":grant", ".grant")):
         return "grant"
@@ -146,8 +158,6 @@ def is_service_principal_scoped_to_workspace(
         if t.strip()
     }
     if accepted_ids & sp_teams:
-        return True
-    if "PLATFORM_ADMIN" in account.roles:
         return True
     if rbac_service is not None:
         for grant in rbac_service.list_grants(scope_path):
