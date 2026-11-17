@@ -13,6 +13,10 @@ from orcia_api.dependencies import (
     get_auth_service,
     get_trigger_dispatcher_service,
 )
+from orcia_api.routers._finops_scope_guards import (
+    resolve_workspace_uuid_or_setup_key,
+    sync_evaluator_topology_from_pg,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.problem_details import ProblemDetails
 from orcia_api.schemas.settings_and_studio import SecretStatusResponse
@@ -68,7 +72,7 @@ def _trace(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
 
 
-def _enforce_not_observer(
+async def _enforce_not_observer(
     request: Request,
     user: UserIdentity,
     auth_svc: AuthAndOrganizationService,
@@ -80,6 +84,11 @@ def _enforce_not_observer(
         or user.platform_role == "OBSERVER"
     ):
         raise ObserverModeReadOnlyError(instance=instance)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    ws = auth_svc.evaluator.get_workspace(workspace_id)
+    is_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
+    if ws is not None and is_admin and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED":
+        return
     ws_access = auth_svc.evaluator.resolve_workspace_access(user, workspace_id)
     if ws_access is not None and ws_access.access_mode == "READ_ONLY_OBSERVER":
         raise ObserverModeReadOnlyError(instance=instance)
@@ -142,9 +151,10 @@ async def list_workflow_triggers(
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> WorkflowTriggerListResponse:
     del user
-    items = await svc.list_triggers(workspace_id=workspace_id, workflow_id=workflow_id)
+    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    items = await svc.list_triggers(workspace_id=ws_uuid, workflow_id=workflow_id)
     return WorkflowTriggerListResponse(
-        workspace_id=workspace_id,
+        workspace_id=ws_uuid,
         workflow_id=workflow_id,
         items=[_serialize_trigger(t) for t in items],
         trace_id=_trace(request),
@@ -165,7 +175,8 @@ async def create_workflow_trigger(
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> WorkflowTriggerResponse:
-    _enforce_not_observer(request, user, auth_svc, workspace_id)
+    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
     secret_spec = (
         SecretInputSpec(
             action=body.webhook_secret.action,
@@ -176,7 +187,7 @@ async def create_workflow_trigger(
     )
     created = await svc.create_trigger(
         CreateTriggerCommand(
-            workspace_id=workspace_id,
+            workspace_id=ws_uuid,
             workflow_id=workflow_id,
             trigger_type=body.trigger_type,
             trigger_key=body.trigger_key,
@@ -212,7 +223,8 @@ async def update_workflow_trigger(
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> WorkflowTriggerResponse:
     del workflow_id
-    _enforce_not_observer(request, user, auth_svc, workspace_id)
+    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
     secret_spec = (
         SecretInputSpec(
             action=body.webhook_secret.action,
@@ -222,7 +234,7 @@ async def update_workflow_trigger(
         else None
     )
     updated = await svc.update_trigger(
-        workspace_id=workspace_id,
+        workspace_id=ws_uuid,
         trigger_id=trigger_id,
         cmd=UpdateTriggerCommand(
             status=body.status,
@@ -256,8 +268,9 @@ async def delete_workflow_trigger(
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> DeleteWorkflowTriggerResponse:
     del workflow_id
-    _enforce_not_observer(request, user, auth_svc, workspace_id)
-    await svc.delete_trigger(workspace_id=workspace_id, trigger_id=trigger_id)
+    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    await svc.delete_trigger(workspace_id=ws_uuid, trigger_id=trigger_id)
     return DeleteWorkflowTriggerResponse(deleted_id=trigger_id, trace_id=_trace(request))
 
 
@@ -277,7 +290,8 @@ async def fire_manual_workflow_trigger(
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> TriggerDispatchResponse:
     del workflow_id
-    _enforce_not_observer(request, user, auth_svc, workspace_id)
+    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
     idem_key = (body.idempotency_key or "").strip() or f"manual:{new_uuid7_str()}"
     outcome = await svc.dispatch_trigger(
         trigger_id=trigger_id,
@@ -303,8 +317,9 @@ async def reset_workflow_trigger_circuit(
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
 ) -> WorkflowTriggerResponse:
     del workflow_id
-    _enforce_not_observer(request, user, auth_svc, workspace_id)
-    reset = await svc.reset_circuit(workspace_id=workspace_id, trigger_id=trigger_id)
+    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    await _enforce_not_observer(request, user, auth_svc, ws_uuid)
+    reset = await svc.reset_circuit(workspace_id=ws_uuid, trigger_id=trigger_id)
     return _serialize_trigger(reset)
 
 

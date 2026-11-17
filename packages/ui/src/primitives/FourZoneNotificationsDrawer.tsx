@@ -1,5 +1,6 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
+import { FourZoneAutonomousNotificationsGroup } from "./FourZoneAutonomousNotificationsGroup";
 import type {
   EightFixedMenuKey,
   FourZoneDirectionCShellLabels,
@@ -23,6 +24,11 @@ export function FourZoneNotificationsDrawer({
   onSelectActivityMenu,
   onSelectMenu,
 }: FourZoneNotificationsDrawerProps): React.ReactElement {
+  const nominalAutonomousItems = notifications.filter((n) => Boolean(n.isAutonomousNominal));
+  const standardAndPriorityItems = notifications
+    .filter((n) => !n.isAutonomousNominal)
+    .sort((a, b) => Number(Boolean(b.isAutonomousPriority)) - Number(Boolean(a.isAutonomousPriority)));
+
   return (
     <aside
       data-testid="topbar-notifications-drawer"
@@ -49,7 +55,7 @@ export function FourZoneNotificationsDrawer({
         </button>
       </div>
 
-      {notifications.length === 0 ? (
+      {standardAndPriorityItems.length === 0 && nominalAutonomousItems.length === 0 ? (
         <p
           data-testid="topbar-notifications-empty-text"
           className="mt-2 text-xs"
@@ -58,78 +64,98 @@ export function FourZoneNotificationsDrawer({
           {labels.notificationsEmptyText}
         </p>
       ) : (
-        <ul
-          data-testid="topbar-notifications-list"
-          className="mt-3 flex flex-col gap-2"
-          style={{ listStyle: "none", margin: 0, padding: 0 }}
-        >
-          {notifications.map((item) => {
-            const isAlert =
-              item.kind === "SETUP_PREREQUISITE" || item.kind === "ACTION_REQUIRED";
-            return (
-              <li
-                key={item.id}
-                data-testid={`notification-center-item-${item.id}`}
-                className="rounded-lg border p-2.5 text-xs"
-                style={{
-                  backgroundColor: isAlert
-                    ? "var(--color-stale-bg)"
-                    : "var(--color-bg-elevated)",
-                  borderColor: isAlert
-                    ? "var(--color-status-error)"
-                    : "var(--color-border-subtle)",
-                }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span
-                    className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+        <>
+          {standardAndPriorityItems.length > 0 && (
+            <ul
+              data-testid="topbar-notifications-list"
+              className="mt-3 flex flex-col gap-2"
+              style={{ listStyle: "none", margin: 0, padding: 0 }}
+            >
+              {standardAndPriorityItems.map((item) => {
+                const isAlert =
+                  item.kind === "SETUP_PREREQUISITE" || item.kind === "ACTION_REQUIRED";
+                const isAutonomousPriority = Boolean(item.isAutonomousPriority);
+                return (
+                  <li
+                    key={item.id}
+                    data-testid={`notification-center-item-${item.id}`}
+                    className="rounded-lg border p-2.5 text-xs"
                     style={{
                       backgroundColor: isAlert
+                        ? "var(--color-stale-bg)"
+                        : isAutonomousPriority
+                          ? "var(--color-autonomous-badge-bg)"
+                          : "var(--color-bg-elevated)",
+                      borderColor: isAlert
                         ? "var(--color-status-error)"
-                        : "var(--color-action-primary-subtle)",
-                      color: isAlert
-                        ? "var(--color-surface-card)"
-                        : "var(--color-action-primary)",
+                        : isAutonomousPriority
+                          ? "var(--color-autonomous-badge-border)"
+                          : "var(--color-border-subtle)",
                     }}
                   >
-                    {item.badgeLabel}
-                  </span>
-                  {item.targetRoute && item.ctaLabel && (
-                    <button
-                      type="button"
-                      data-testid={`notification-center-cta-${item.id}`}
-                      onClick={() => {
-                        onSelectNotification?.(item);
-                        onClose();
-                      }}
-                      className="rounded px-2 py-0.5 text-[11px] font-semibold"
-                      style={{
-                        backgroundColor: "var(--color-action-primary)",
-                        color: "var(--color-primary-foreground)",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: isAlert
+                            ? "var(--color-status-error)"
+                            : isAutonomousPriority
+                              ? "var(--color-surface-card)"
+                              : "var(--color-action-primary-subtle)",
+                          color: isAlert
+                            ? "var(--color-surface-card)"
+                            : isAutonomousPriority
+                              ? "var(--color-autonomous-badge-fg)"
+                              : "var(--color-action-primary)",
+                        }}
+                      >
+                        {item.badgeLabel}
+                      </span>
+                      {item.targetRoute && item.ctaLabel && (
+                        <button
+                          type="button"
+                          data-testid={`notification-center-cta-${item.id}`}
+                          onClick={() => {
+                            onSelectNotification?.(item);
+                            onClose();
+                          }}
+                          className="rounded px-2 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "var(--color-action-primary)",
+                            color: "var(--color-primary-foreground)",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {item.ctaLabel}
+                        </button>
+                      )}
+                    </div>
+                    <strong
+                      className="mt-1.5 block font-semibold"
+                      style={{ color: "var(--color-text-primary)" }}
                     >
-                      {item.ctaLabel}
-                    </button>
-                  )}
-                </div>
-                <strong
-                  className="mt-1.5 block font-semibold"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
-                  {item.title}
-                </strong>
-                <p
-                  className="mt-0.5 text-[11px]"
-                  style={{ color: "var(--color-text-secondary)", margin: 0 }}
-                >
-                  {item.description}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
+                      {item.title}
+                    </strong>
+                    <p
+                      className="mt-0.5 text-[11px]"
+                      style={{ color: "var(--color-text-secondary)", margin: 0 }}
+                    >
+                      {item.description}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <FourZoneAutonomousNotificationsGroup
+            items={nominalAutonomousItems}
+            labels={labels}
+            onSelectNotification={onSelectNotification}
+            onCloseDrawer={onClose}
+          />
+        </>
       )}
 
       <div

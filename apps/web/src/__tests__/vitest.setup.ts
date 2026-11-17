@@ -95,6 +95,10 @@ import {
   handleVitestConnectorsRoute,
   resetVitestConnectorsMockState,
 } from "./vitestConnectorsMockHandlers";
+import {
+  handleVitestAutonomousSupervisionRoute,
+  resetVitestAutonomousSupervisionMockState,
+} from "./vitestAutonomousSupervisionMockHandlers";
 
 function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit[] {
   if (!Array.isArray(rawUnits)) return [];
@@ -236,6 +240,7 @@ export function resetVitestApiBackend(): void {
   backendState.recordedCalls = [];
   resetVitestIamMockState();
   resetVitestConnectorsMockState();
+  resetVitestAutonomousSupervisionMockState();
   resetVitestAuthPolicyMockState();
   resetAuthSessionStore();
 }
@@ -2061,6 +2066,17 @@ async function vitestFetchTransport(
       target.consecutive_failures = 0;
       return jsonResponse(target);
     }
+  }
+
+  const supervisionResponse = handleVitestAutonomousSupervisionRoute(
+    path,
+    method,
+    body,
+    jsonResponse,
+    parsedUrl.searchParams,
+  );
+  if (supervisionResponse) {
+    return supervisionResponse;
   }
 
   return jsonResponse({});

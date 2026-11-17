@@ -3406,6 +3406,75 @@
         "title": "AutonomousActionInput",
         "type": "object"
       },
+      "AutonomousGovernanceMetricsSchema": {
+        "description": "Autonomous execution & post-hoc quality metrics (`SM-A1..A3`, `Story 7.4`).",
+        "properties": {
+          "autonomous_escalation_rate": {
+            "default": 0.0,
+            "title": "Autonomous Escalation Rate",
+            "type": "number"
+          },
+          "avg_autonomous_cost_usd": {
+            "default": 0.0,
+            "title": "Avg Autonomous Cost Usd",
+            "type": "number"
+          },
+          "avg_ttm_gain_minutes": {
+            "default": 0.0,
+            "title": "Avg Ttm Gain Minutes",
+            "type": "number"
+          },
+          "escalated_runs_count": {
+            "default": 0,
+            "title": "Escalated Runs Count",
+            "type": "integer"
+          },
+          "invalidated_samples_count": {
+            "default": 0,
+            "title": "Invalidated Samples Count",
+            "type": "integer"
+          },
+          "invalidation_alert": {
+            "default": false,
+            "title": "Invalidation Alert",
+            "type": "boolean"
+          },
+          "killed_runs_count": {
+            "default": 0,
+            "title": "Killed Runs Count",
+            "type": "integer"
+          },
+          "pending_samples": {
+            "items": {
+              "$ref": "#/components/schemas/PostHocAuditSampleSchema"
+            },
+            "title": "Pending Samples",
+            "type": "array"
+          },
+          "pending_samples_count": {
+            "default": 0,
+            "title": "Pending Samples Count",
+            "type": "integer"
+          },
+          "post_hoc_invalidation_rate": {
+            "default": 0.0,
+            "title": "Post Hoc Invalidation Rate",
+            "type": "number"
+          },
+          "sampled_runs_count": {
+            "default": 0,
+            "title": "Sampled Runs Count",
+            "type": "integer"
+          },
+          "total_autonomous_runs": {
+            "default": 0,
+            "title": "Total Autonomous Runs",
+            "type": "integer"
+          }
+        },
+        "title": "AutonomousGovernanceMetricsSchema",
+        "type": "object"
+      },
       "AutonomousRunExecutionResponse": {
         "description": "Result of an autonomous workflow execution under contract.",
         "properties": {
@@ -3446,7 +3515,8 @@
           "status": {
             "enum": [
               "COMMITTED_AUTONOMOUS",
-              "PAUSED_AUTONOMOUS_ESCALATION"
+              "PAUSED_AUTONOMOUS_ESCALATION",
+              "KILL_SWITCH_STOPPED"
             ],
             "title": "Status",
             "type": "string"
@@ -3473,6 +3543,136 @@
           "trace_id"
         ],
         "title": "AutonomousRunExecutionResponse",
+        "type": "object"
+      },
+      "AutonomousRunSupervisionItemSchema": {
+        "additionalProperties": false,
+        "description": "Supervised autonomous workflow run item (`UX-DR17`).",
+        "properties": {
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "created_at_iso": {
+            "title": "Created At Iso",
+            "type": "string"
+          },
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "post_hoc_status": {
+            "title": "Post Hoc Status",
+            "type": "string"
+          },
+          "previous_version_available": {
+            "default": false,
+            "title": "Previous Version Available",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "trigger_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Id"
+          },
+          "trigger_label": {
+            "title": "Trigger Label",
+            "type": "string"
+          },
+          "trigger_status": {
+            "title": "Trigger Status",
+            "type": "string"
+          },
+          "trigger_type": {
+            "title": "Trigger Type",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_title": {
+            "title": "Workflow Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "workflow_id",
+          "workflow_title",
+          "trigger_label",
+          "trigger_type",
+          "trigger_status",
+          "run_status",
+          "post_hoc_status",
+          "contract_id",
+          "cost_usd",
+          "created_at_iso"
+        ],
+        "title": "AutonomousRunSupervisionItemSchema",
+        "type": "object"
+      },
+      "AutonomousRunsListResponse": {
+        "additionalProperties": false,
+        "description": "List of autonomous contract runs in a workspace.",
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/AutonomousRunSupervisionItemSchema"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "AutonomousRunsListResponse",
         "type": "object"
       },
       "AutonomyContractResponse": {
@@ -5270,6 +5470,17 @@
             "title": "Architecture Deviation Target",
             "type": "number"
           },
+          "autonomous_governance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutonomousGovernanceMetricsSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Autonomous execution governance metrics (SM-A1..A3) and post-hoc samples"
+          },
           "pattern_drift_alert": {
             "description": "Compatibility alias for architecture deviation alert",
             "title": "Pattern Drift Alert",
@@ -6214,6 +6425,22 @@
             "title": "Cache Hit",
             "type": "boolean"
           },
+          "contract_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Label"
+          },
+          "is_autonomous_generated": {
+            "default": false,
+            "title": "Is Autonomous Generated",
+            "type": "boolean"
+          },
           "lang": {
             "enum": [
               "fr",
@@ -6239,6 +6466,11 @@
             "title": "Pack",
             "type": "string"
           },
+          "previous_version_available": {
+            "default": false,
+            "title": "Previous Version Available",
+            "type": "boolean"
+          },
           "redis_cache_key": {
             "title": "Redis Cache Key",
             "type": "string"
@@ -6251,6 +6483,17 @@
             "title": "Route",
             "type": "string"
           },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
           "trace_id": {
             "anyOf": [
               {
@@ -6261,6 +6504,17 @@
               }
             ],
             "title": "Trace Id"
+          },
+          "trigger_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Label"
           }
         },
         "required": [
@@ -8556,6 +8810,82 @@
           "status"
         ],
         "title": "EligibleServicePrincipalItem",
+        "type": "object"
+      },
+      "EmergencyStopRequest": {
+        "additionalProperties": false,
+        "description": "Request to activate an immediate emergency stop (`KILL_SWITCH_STOPPED`).",
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Reason",
+            "type": "string"
+          },
+          "suspend_trigger": {
+            "default": true,
+            "title": "Suspend Trigger",
+            "type": "boolean"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "title": "EmergencyStopRequest",
+        "type": "object"
+      },
+      "EmergencyStopResponse": {
+        "additionalProperties": false,
+        "description": "Response confirming `KILL_SWITCH_STOPPED` and optional trigger suspension.",
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sse_dispatch_latency_ms": {
+            "title": "Sse Dispatch Latency Ms",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "trigger_suspended": {
+            "title": "Trigger Suspended",
+            "type": "boolean"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "status",
+          "trigger_suspended",
+          "sse_dispatch_latency_ms"
+        ],
+        "title": "EmergencyStopResponse",
         "type": "object"
       },
       "EnterpriseConnectorCreateRequest": {
@@ -13959,6 +14289,104 @@
         "title": "InstalledBusinessPackListResponse",
         "type": "object"
       },
+      "InvalidateAndRestoreRequest": {
+        "additionalProperties": false,
+        "description": "Request to invalidate an autonomous artifact/help article and restore `@v(N-1)`.",
+        "properties": {
+          "comment": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Comment",
+            "type": "string"
+          },
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "title": "InvalidateAndRestoreRequest",
+        "type": "object"
+      },
+      "InvalidateAndRestoreResponse": {
+        "additionalProperties": false,
+        "description": "Response confirming `@v(N-1)` restoration and Redis cache invalidation.",
+        "properties": {
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "redis_cache_invalidated_ms": {
+            "title": "Redis Cache Invalidated Ms",
+            "type": "number"
+          },
+          "restored_version": {
+            "title": "Restored Version",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sse_dispatch_latency_ms": {
+            "title": "Sse Dispatch Latency Ms",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "status",
+          "restored_version",
+          "redis_cache_invalidated_ms",
+          "sse_dispatch_latency_ms"
+        ],
+        "title": "InvalidateAndRestoreResponse",
+        "type": "object"
+      },
       "InvalidatePromptCacheRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`).",
@@ -17892,6 +18320,198 @@
           "trace_id"
         ],
         "title": "PlatformSetupStateResponse",
+        "type": "object"
+      },
+      "PostHocAuditSampleSchema": {
+        "description": "Sampled autonomous execution awaiting or having completed post-hoc quality review.",
+        "properties": {
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "review_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Comment"
+          },
+          "review_status": {
+            "enum": [
+              "PENDING_SAMPLE",
+              "VALIDATED",
+              "INVALIDATED_ROLLED_BACK"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer User Id"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "sampled_at": {
+            "format": "date-time",
+            "title": "Sampled At",
+            "type": "string"
+          },
+          "trigger_label": {
+            "title": "Trigger Label",
+            "type": "string"
+          },
+          "workflow_title": {
+            "title": "Workflow Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_id",
+          "workspace_id",
+          "contract_id",
+          "workflow_title",
+          "trigger_label",
+          "review_status",
+          "run_status",
+          "sampled_at"
+        ],
+        "title": "PostHocAuditSampleSchema",
+        "type": "object"
+      },
+      "PostHocReviewRequest": {
+        "additionalProperties": false,
+        "description": "Request to validate or invalidate a sampled autonomous run.",
+        "properties": {
+          "comment": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Comment",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "VALIDATED",
+              "INVALIDATED_ROLLED_BACK"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "help_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Resource Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "PostHocReviewRequest",
+        "type": "object"
+      },
+      "PostHocReviewResponse": {
+        "additionalProperties": false,
+        "description": "Response after completing a post-hoc sample quality review.",
+        "properties": {
+          "restored_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored Version"
+          },
+          "review_status": {
+            "enum": [
+              "VALIDATED",
+              "INVALIDATED_ROLLED_BACK"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "title": "Run Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "run_id",
+          "review_status",
+          "run_status"
+        ],
+        "title": "PostHocReviewResponse",
         "type": "object"
       },
       "ProbabilisticControlExecutionRecord": {
@@ -28805,6 +29425,7 @@
               "PAUSED_MAX_RETRIES",
               "PAUSED_AUTONOMOUS_ESCALATION",
               "COMMITTED_AUTONOMOUS",
+              "KILL_SWITCH_STOPPED",
               "COMPLETED",
               "FAILED",
               "ROLLED_BACK"
@@ -50562,6 +51183,149 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/emergency-stop": {
+      "post": {
+        "operationId": "emergency_stop_autonomous_run_api_v1_runs__run_id__emergency_stop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EmergencyStopRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyStopResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Trigger immediate emergency stop (`KILL_SWITCH_STOPPED`, `Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/hitl-signal": {
       "post": {
         "description": "Deliver a human checkpoint, WritePreview approval, or 4-action Anchor Card signal.",
@@ -50679,6 +51443,285 @@
         "summary": "Send Hitl Signal To Workflow V2 Run",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/invalidate-and-restore": {
+      "post": {
+        "operationId": "invalidate_and_restore_autonomous_run_api_v1_runs__run_id__invalidate_and_restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/InvalidateAndRestoreRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidateAndRestoreResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Invalidate autonomous artifact/help article and restore `@v(N-1)` (`Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/post-hoc-review": {
+      "post": {
+        "operationId": "review_post_hoc_autonomous_run_api_v1_runs__run_id__post_hoc_review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostHocReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostHocReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Validate or invalidate a sampled autonomous execution (`Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
         ]
       }
     },
@@ -59215,6 +60258,132 @@
         "summary": "Resolve 4-level artifact destination cascade with local:// path confinement",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/autonomous-runs": {
+      "get": {
+        "operationId": "list_workspace_autonomous_runs_api_v1_workspaces__workspace_id__autonomous_runs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutonomousRunsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List supervised autonomous contract runs in a workspace (`Story 7.4`)",
+        "tags": [
+          "autonomous-supervision"
         ]
       }
     },

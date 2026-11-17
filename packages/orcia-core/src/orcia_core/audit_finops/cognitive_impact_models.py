@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from orcia_core.audit_finops.post_hoc_audit import AutonomousGovernanceMetrics
 
 PolicyRecommendationType = Literal["SWITCH_TO_RISK_OR_SAMPLING", "STRENGTHEN_HUMAN_ANCHORS"]
 RecommendationStatus = Literal["PROPOSED", "APPLIED", "DISMISSED"]
@@ -62,6 +65,7 @@ class CognitiveMasteryDashboard:
     uncovered_deviations_count: int
     workflow_breakdowns: list[WorkflowCognitiveMetrics]
     recommendations: list[GatePolicyRecommendation] = field(default_factory=list)
+    autonomous_governance: AutonomousGovernanceMetrics | None = None
 
     @property
     def rubber_stamping_rate(self) -> float:

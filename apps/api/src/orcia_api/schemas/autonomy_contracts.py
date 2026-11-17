@@ -116,7 +116,11 @@ class AutonomousRunExecutionResponse(BaseModel):
     workspace_id: str
     workflow_id: str
     contract_id: str
-    status: Literal["COMMITTED_AUTONOMOUS", "PAUSED_AUTONOMOUS_ESCALATION"]
+    status: Literal[
+        "COMMITTED_AUTONOMOUS",
+        "PAUSED_AUTONOMOUS_ESCALATION",
+        "KILL_SWITCH_STOPPED",
+    ]
     escalation_reason: str | None = None
     issued_token_preview_ids: list[str] = Field(default_factory=list)
     executed_actions: list[dict[str, Any]] = Field(default_factory=list)

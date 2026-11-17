@@ -35,6 +35,9 @@ AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
         "SelfTriggerBlocked",
         "TriggerCircuitOpened",
         "WorkflowPublished",
+        "PostHocSampleSelected",
+        "KillSwitchActivated",
+        "AutonomousArtifactRolledBack",
     }
 )
 
@@ -107,6 +110,17 @@ def _build_event_summary(event: DomainEvent) -> str:
         wf_id = payload.get("workflow_id", "")
         ver = payload.get("version", "")
         return f"Processus publié : {wf_id} (v{ver})"
+    if etype == "PostHocSampleSelected":
+        wf_id = payload.get("workflow_id", "")
+        return f"Exécution sélectionnée pour contrôle qualité par échantillonnage : {wf_id}"
+    if etype == "KillSwitchActivated":
+        wf_id = payload.get("workflow_id", "")
+        reason = payload.get("reason", "")
+        return f"Arrêt d'urgence activé sur {wf_id}" + (f" : {reason}" if reason else "")
+    if etype == "AutonomousArtifactRolledBack":
+        wf_id = payload.get("workflow_id", "")
+        ver = payload.get("restored_version", "")
+        return f"Livrable automatisé annulé et version {ver} rétablie sur {wf_id}"
     return f"Événement enregistré : {etype}"
 
 

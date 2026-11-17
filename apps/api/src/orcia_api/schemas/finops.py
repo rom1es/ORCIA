@@ -256,6 +256,40 @@ class WorkflowCognitiveMetricsSchema(BaseModel):
     has_alert: bool = Field(..., description="Whether workflow triggers a warning")
 
 
+class PostHocAuditSampleSchema(BaseModel):
+    """Sampled autonomous execution awaiting or having completed post-hoc quality review."""
+
+    id: str
+    run_id: str
+    workspace_id: str
+    contract_id: str
+    workflow_title: str
+    trigger_label: str
+    review_status: Literal["PENDING_SAMPLE", "VALIDATED", "INVALIDATED_ROLLED_BACK"]
+    run_status: str
+    sampled_at: datetime
+    reviewer_user_id: str | None = None
+    review_comment: str | None = None
+    reviewed_at: datetime | None = None
+
+
+class AutonomousGovernanceMetricsSchema(BaseModel):
+    """Autonomous execution & post-hoc quality metrics (`SM-A1..A3`, `Story 7.4`)."""
+
+    total_autonomous_runs: int = 0
+    escalated_runs_count: int = 0
+    killed_runs_count: int = 0
+    sampled_runs_count: int = 0
+    pending_samples_count: int = 0
+    invalidated_samples_count: int = 0
+    autonomous_escalation_rate: float = 0.0
+    post_hoc_invalidation_rate: float = 0.0
+    invalidation_alert: bool = False
+    avg_autonomous_cost_usd: float = 0.0
+    avg_ttm_gain_minutes: float = 0.0
+    pending_samples: list[PostHocAuditSampleSchema] = Field(default_factory=list)
+
+
 class CognitiveImpactDashboardResponse(BaseModel):
     """Executive Cognitive Impact, Human Mastery & Reversibility response (`Story 6.3`, `FR-27`)."""
 
@@ -308,6 +342,10 @@ class CognitiveImpactDashboardResponse(BaseModel):
     recommendations: list[GatePolicyRecommendationSchema] = Field(
         default_factory=list, description="Actionable gate policy recommendations"
     )
+    autonomous_governance: AutonomousGovernanceMetricsSchema | None = Field(
+        default=None,
+        description="Autonomous execution governance metrics (SM-A1..A3) and post-hoc samples",
+    )
 
 
 class ApplyRecommendationResponse(BaseModel):
@@ -323,6 +361,7 @@ class ApplyRecommendationResponse(BaseModel):
 
 __all__ = [
     "ApplyRecommendationResponse",
+    "AutonomousGovernanceMetricsSchema",
     "BudgetOverrideRequest",
     "BudgetOverrideResponse",
     "CircuitBreakerStateLiteral",
@@ -332,6 +371,7 @@ __all__ = [
     "FinopsProcessItemResponse",
     "FinopsTierEffortItemResponse",
     "GatePolicyRecommendationSchema",
+    "PostHocAuditSampleSchema",
     "RemoteServiceTelemetryItemResponse",
     "RemoteServicesListResponse",
     "ResetCircuitBreakerRequest",

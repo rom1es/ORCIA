@@ -32,6 +32,12 @@ const SHARED_WORKFLOW_FINOPS_FR: readonly UiContextualHelpSectionItem[] = [
     category: "terms",
   },
   {
+    sectionId: "autonomous-supervision",
+    title: "Supervision, arrêt d'urgence & rétablissement",
+    body: "Toute exécution automatisée sous contrat est signalée par un badge bleu distinctif. En cas d'anomalie, vous pouvez déclencher un arrêt d'urgence immédiat ou annuler et rétablir la version précédente du livrable ou de la fiche d'aide en un clic.",
+    category: "terms",
+  },
+  {
     sectionId: "audit-overview",
     title: "Journal d'activité : auteurs, horodatage et filtres d'observation",
     body: "Le Journal d'Activité (accessible depuis le menu de gauche 📜 Journal d'Activité) trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Vous pouvez filtrer par utilisateur, sur les 50 / 100 / 200 / 500 derniers événements ou sur une fenêtre temporelle. Le suivi des coûts et des budgets par espace est quant à lui géré séparément dans l'écran 📊 Coûts & Activité.",
@@ -86,6 +92,12 @@ const SHARED_WORKFLOW_FINOPS_EN: readonly UiContextualHelpSectionItem[] = [
     sectionId: "autonomy-contract",
     title: "Governed autonomy contract",
     body: "An autonomy contract authorizes a non-critical process to run end-to-end through a workspace-scoped service account, bounded by a budget ceiling and automatic team escalation whenever any quality check or ambiguity arises.",
+    category: "terms",
+  },
+  {
+    sectionId: "autonomous-supervision",
+    title: "Supervision, emergency stop & restore",
+    body: "Every automated execution under contract is marked by a distinct cyan badge. If needed, you can trigger an immediate emergency stop or cancel and restore the previous version of a deliverable or help guide in one click.",
     category: "terms",
   },
   {

@@ -69,11 +69,14 @@ async def fetch_cognitive_mastery_overview_sql(
     tw_har = build_time_interval_clause(time_window, "har.created_at")
 
     # 1. Active framing from human anchor signatures (~200ms per char, min 30s)
+    # Story 7.4: strictly exclude AUTONOMOUS_CONTRACT runs from SM-C1 / SM-C2
     anchors_sql = sa.text(
         f"""
         SELECT COALESCE(SUM(GREATEST(has.char_length * 200, 30000)), 0) AS anchors_ms
         FROM human_anchor_signatures has
-        WHERE 1=1 {scope_clause_has} {tw_has};
+        LEFT JOIN workflow_runs wr ON wr.id = has.run_id
+        WHERE (wr.execution_regime IS NULL OR wr.execution_regime <> 'AUTONOMOUS_CONTRACT')
+            {scope_clause_has} {tw_has};
         """
     )
 
@@ -91,7 +94,10 @@ async def fetch_cognitive_mastery_overview_sql(
             END
         ), 0) AS arbitrations_ms
         FROM human_arbitration_requests har
-        WHERE har.status = 'RESOLVED_BY_HUMAN' {scope_clause_har} {tw_har};
+        LEFT JOIN workflow_runs wr ON wr.id = har.run_id
+        WHERE har.status = 'RESOLVED_BY_HUMAN'
+          AND (wr.execution_regime IS NULL OR wr.execution_regime <> 'AUTONOMOUS_CONTRACT')
+          {scope_clause_har} {tw_har};
         """
     )
 
@@ -139,7 +145,9 @@ async def fetch_cognitive_mastery_overview_sql(
                 END
             ), 0) AS uncovered_deviations_count
         FROM gate_evaluations ge
-        WHERE 1=1 {scope_clause_ge} {tw_ge};
+        LEFT JOIN workflow_runs wr ON wr.id = ge.run_id
+        WHERE (wr.execution_regime IS NULL OR wr.execution_regime <> 'AUTONOMOUS_CONTRACT')
+            {scope_clause_ge} {tw_ge};
         """
     )
 
@@ -264,7 +272,7 @@ async def fetch_workflow_cognitive_breakdown_sql(
         FROM workflow_definitions wd
         JOIN workflow_runs wr ON wr.workflow_def_id = wd.id
         LEFT JOIN gate_evaluations ge ON ge.run_id = wr.id
-        WHERE 1=1 {scope_clause} {tw_clause}
+        WHERE wr.execution_regime <> 'AUTONOMOUS_CONTRACT' {scope_clause} {tw_clause}
         GROUP BY wd.id, wd.uri, wr.criticality
         ORDER BY wd.uri ASC;
         """

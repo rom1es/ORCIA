@@ -6,6 +6,7 @@ import {
   type ListAuditLedgerParams,
 } from "./domains/auditFinops";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
+import { createAutonomousSupervisionDomainClient } from "./domains/autonomousSupervision";
 import { createAutonomyContractsDomainClient } from "./domains/autonomyContracts";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
@@ -33,6 +34,7 @@ export {
   createAiModelsHubDomainClient,
   createAuditFinopsDomainClient,
   createAuthAndShellDomainClient,
+  createAutonomousSupervisionDomainClient,
   createAutonomyContractsDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
@@ -73,6 +75,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
   return {
     ...createAuthAndShellDomainClient(requestJson),
+    ...createAutonomousSupervisionDomainClient(requestJson),
     ...createAutonomyContractsDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
     ...createCodegraphMcpDomainClient(requestJson),

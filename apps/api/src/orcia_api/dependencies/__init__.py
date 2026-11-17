@@ -7,6 +7,10 @@ from `orcia_api.dependencies` as the unified public façade.
 
 from __future__ import annotations
 
+from orcia_api.dependencies.autonomous_supervision import (
+    get_autonomous_supervision_service,
+    get_post_hoc_audit_service,
+)
 from orcia_api.dependencies.core_and_lifespan import (
     app_lifespan,
     get_auth_service,
@@ -74,6 +78,7 @@ __all__ = [
     "get_assistant_three_speed_router_service",
     "get_audit_ledger_service",
     "get_auth_service",
+    "get_autonomous_supervision_service",
     "get_autonomy_contract_service",
     "get_bootstrap_service",
     "get_catalog_service",
@@ -98,6 +103,7 @@ __all__ = [
     "get_pack_builder_system_service",
     "get_permission_broker_service",
     "get_platform_settings_service",
+    "get_post_hoc_audit_service",
     "get_provenance_exporter_service",
     "get_remote_test_bench_and_mcp_service",
     "get_remote_usage_sanitizer",

@@ -6,6 +6,7 @@
 import type { components } from "./schema";
 
 export type ApplyRecommendationResponse = components["schemas"]["ApplyRecommendationResponse"];
+export type AutonomousGovernanceMetricsSchema = components["schemas"]["AutonomousGovernanceMetricsSchema"];
 export type BudgetOverrideRequest = components["schemas"]["BudgetOverrideRequest"];
 export type BudgetOverrideResponse = components["schemas"]["BudgetOverrideResponse"];
 export type CognitiveImpactDashboardResponse = components["schemas"]["CognitiveImpactDashboardResponse"];
@@ -14,6 +15,7 @@ export type FinopsOverviewResponse = components["schemas"]["FinopsOverviewRespon
 export type FinopsProcessItemResponse = components["schemas"]["FinopsProcessItemResponse"];
 export type FinopsTierEffortItemResponse = components["schemas"]["FinopsTierEffortItemResponse"];
 export type GatePolicyRecommendationSchema = components["schemas"]["GatePolicyRecommendationSchema"];
+export type PostHocAuditSampleSchema = components["schemas"]["PostHocAuditSampleSchema"];
 export type RemoteServiceTelemetryItemResponse = components["schemas"]["RemoteServiceTelemetryItemResponse"];
 export type RemoteServicesListResponse = components["schemas"]["RemoteServicesListResponse"];
 export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];

@@ -35,7 +35,11 @@ from orcia_core.workflows.gates.pipeline import GatePipelineExecutor
 from orcia_core.workflows.schemas_v2 import StepControlsPipeline
 
 logger = get_logger("orcia.connectors.autonomous_runner")
-AutonomousRunStatus = Literal["COMMITTED_AUTONOMOUS", "PAUSED_AUTONOMOUS_ESCALATION"]
+AutonomousRunStatus = Literal[
+    "COMMITTED_AUTONOMOUS",
+    "PAUSED_AUTONOMOUS_ESCALATION",
+    "KILL_SWITCH_STOPPED",
+]
 
 
 class AutonomousActionRequest(BaseModel):
@@ -155,6 +159,7 @@ async def execute_autonomous_contract_run(
     controls_pipeline: StepControlsPipeline | None = None,
     artifact_text: str = "# Livrable\n\nContenu validé.\n",
     contract_refresh_fn: Callable[[], Awaitable[AutonomyContract | None]] | None = None,
+    kill_switch_check_fn: Callable[[str], Awaitable[bool]] | None = None,
     connector_invoker: ConnectorInvoker | None = None,
     connectors_by_scheme: dict[str, OrciaConnectorProtocol] | None = None,
     secret_provider: SecretProviderPort | None = None,
@@ -168,7 +173,19 @@ async def execute_autonomous_contract_run(
     resolved_run_id = run_id or new_uuid7_str()
     gate_input = gates or AutonomousGateInput()
 
-    # Step boundary 1: verify active non-revoked contract
+    # Step boundary 1: verify active non-revoked contract & emergency stop guard (`AD-21.5`)
+    if kill_switch_check_fn is not None and await kill_switch_check_fn(resolved_run_id):
+        return (
+            AutonomousRunOutcome(
+                run_id=resolved_run_id,
+                workspace_id=contract.workspace_id,
+                workflow_id=contract.workflow_id,
+                contract_id=contract.id,
+                status="KILL_SWITCH_STOPPED",
+                escalation_reason="KILL_SWITCH_STOPPED",
+            ),
+            [],
+        )
     current_contract = await contract_refresh_fn() if contract_refresh_fn else contract
     if current_contract is None or current_contract.status != "ACTIVE":
         outcome, esc_event = _escalate_outcome(
@@ -216,7 +233,21 @@ async def execute_autonomous_contract_run(
     invoker = connector_invoker or ConnectorInvoker()
 
     for idx, req in enumerate(actions):
-        # Re-check revocation at each step boundary (AD-21.5)
+        # Re-check emergency stop & revocation at each step boundary (AD-21.5)
+        if kill_switch_check_fn is not None and await kill_switch_check_fn(resolved_run_id):
+            return (
+                AutonomousRunOutcome(
+                    run_id=resolved_run_id,
+                    workspace_id=current_contract.workspace_id,
+                    workflow_id=current_contract.workflow_id,
+                    contract_id=current_contract.id,
+                    status="KILL_SWITCH_STOPPED",
+                    escalation_reason="KILL_SWITCH_STOPPED",
+                    issued_tokens=issued_tokens,
+                    executed_actions=executed_actions,
+                ),
+                [],
+            )
         if contract_refresh_fn is not None:
             latest = await contract_refresh_fn()
             if latest is None or latest.status != "ACTIVE":

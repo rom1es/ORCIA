@@ -57,6 +57,7 @@ ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
     "inference_attempts",
     "step_executions",
     "run_lock_manifests",
+    "autonomous_post_hoc_audits",
     "workflow_runs",
     "trigger_webhook_deliveries",
     "workflow_triggers",

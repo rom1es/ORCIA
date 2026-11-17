@@ -11,10 +11,11 @@ Implements:
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from orcia_kernel.errors import ResourceNotFoundError
 
@@ -52,6 +53,10 @@ class HelpArticleCatalogItem:
     item_type: str = HELP_ITEM_TYPE
     previous_version: str | None = None
     previous_cas_key: str | None = None
+    is_autonomous_generated: bool = False
+    autonomous_run_id: str | None = None
+    contract_label: str | None = None
+    trigger_label: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +72,11 @@ class ContextualHelpResolutionResult:
     active_article: HelpArticleCatalogItem
     rollback_available: bool
     ask_assistant_prefill: str
+    is_autonomous_generated: bool = False
+    run_id: str | None = None
+    contract_label: str | None = None
+    trigger_label: str | None = None
+    previous_version_available: bool = False
 
 
 def build_help_redis_cache_key(route: str, pack: str, lang: str) -> str:
@@ -178,14 +188,25 @@ def parse_declarative_help_markdown(raw_markdown: str) -> HelpArticleCatalogItem
 class ContextualHelpResolutionService:
     """Service managing Git-seeded `HELP_ARTICLE` items, CAS blobs, Redis cache, and Rollback."""
 
-    def __init__(self, *, repo_root: Path | None = None) -> None:
+    def __init__(self, *, repo_root: Path | None = None, redis_client: Any | None = None) -> None:
         self._articles_by_id: dict[str, HelpArticleCatalogItem] = {}
         self._cas_blobs: dict[str, str] = {}
         self._redis_cache: dict[str, HelpArticleCatalogItem] = {}
         self._history_by_id: dict[str, list[HelpArticleCatalogItem]] = {}
+        self._redis_client = redis_client
         root = repo_root or self._detect_repo_root()
         if root is not None:
             self.seed_from_git_directories(root)
+
+    def _invalidate_redis_keys(self, article: HelpArticleCatalogItem) -> None:
+        self._redis_cache.clear()
+        if self._redis_client is None:
+            return
+        pack = article.pack_name or "core"
+        for rt in article.bound_routes:
+            rkey = build_help_redis_cache_key(rt, pack, article.lang)
+            with contextlib.suppress(Exception):  # pragma: no cover - defensive teardown
+                self._redis_client.delete(rkey)
 
     @staticmethod
     def _detect_repo_root() -> Path | None:
@@ -244,6 +265,10 @@ class ContextualHelpResolutionService:
         new_summary_what_for: str,
         new_markdown_body: str,
         layer: HelpArticleLayer | None = None,
+        is_autonomous_generated: bool = False,
+        autonomous_run_id: str | None = None,
+        contract_label: str | None = None,
+        trigger_label: str | None = None,
     ) -> HelpArticleCatalogItem:
         """Publish a hot `@v(N+1)` help article in `cas/<sha256>` and preserve `@v(N-1)`."""
         existing = self._articles_by_id.get(resource_id)
@@ -273,9 +298,13 @@ class ContextualHelpResolutionService:
             markdown_body=new_markdown_body,
             previous_version=existing.version,
             previous_cas_key=existing.cas_key,
+            is_autonomous_generated=is_autonomous_generated,
+            autonomous_run_id=autonomous_run_id,
+            contract_label=contract_label,
+            trigger_label=trigger_label,
         )
         self._articles_by_id[resource_id] = updated
-        self._redis_cache.clear()
+        self._invalidate_redis_keys(updated)
         return updated
 
     def rollback_to_previous_version(self, resource_id: str) -> HelpArticleCatalogItem:
@@ -287,7 +316,7 @@ class ContextualHelpResolutionService:
             )
         restored = history.pop()
         self._articles_by_id[resource_id] = restored
-        self._redis_cache.clear()
+        self._invalidate_redis_keys(restored)
         return restored
 
     def resolve_for_route(
@@ -315,6 +344,11 @@ class ContextualHelpResolutionService:
                 active_article=cached,
                 rollback_available=has_rollback,
                 ask_assistant_prefill=self._build_assistant_prefill(route, cached.title, lang),
+                is_autonomous_generated=cached.is_autonomous_generated,
+                run_id=cached.autonomous_run_id,
+                contract_label=cached.contract_label,
+                trigger_label=cached.trigger_label,
+                previous_version_available=has_rollback,
             )
 
         if not matching_layers:
@@ -357,6 +391,10 @@ class ContextualHelpResolutionService:
             markdown_body=winner.markdown_body,
             previous_version=winner.previous_version,
             previous_cas_key=winner.previous_cas_key,
+            is_autonomous_generated=winner.is_autonomous_generated,
+            autonomous_run_id=winner.autonomous_run_id,
+            contract_label=winner.contract_label,
+            trigger_label=winner.trigger_label,
         )
         self._redis_cache[cache_key] = resolved_article
         has_rollback = bool(self._history_by_id.get(resolved_article.resource_id))
@@ -372,6 +410,11 @@ class ContextualHelpResolutionService:
             ask_assistant_prefill=self._build_assistant_prefill(
                 route, resolved_article.title, lang
             ),
+            is_autonomous_generated=resolved_article.is_autonomous_generated,
+            run_id=resolved_article.autonomous_run_id,
+            contract_label=resolved_article.contract_label,
+            trigger_label=resolved_article.trigger_label,
+            previous_version_available=has_rollback,
         )
 
     def _collect_matching_articles(

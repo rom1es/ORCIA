@@ -61,6 +61,12 @@ export function useWorkspaceEventsSse(workspaceId: string | undefined): {
     source.addEventListener("connected", () => setConnected(true));
     source.addEventListener("task.claim.locked", handleClaimFrame as EventListener);
     source.addEventListener("task.claim.released", handleClaimFrame as EventListener);
+    source.addEventListener("autonomous.run.killed", handleClaimFrame as EventListener);
+    source.addEventListener("autonomous.artifact.rolled_back", handleClaimFrame as EventListener);
+    source.addEventListener("TriggerFired", handleClaimFrame as EventListener);
+    source.addEventListener("TriggerCircuitOpened", handleClaimFrame as EventListener);
+    source.addEventListener("AutonomousEscalated", handleClaimFrame as EventListener);
+    source.addEventListener("PostHocSampleSelected", handleClaimFrame as EventListener);
     source.onerror = () => setConnected(false);
 
     return () => {

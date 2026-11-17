@@ -4,6 +4,7 @@ import type {
   RemoteServicesListResponse,
 } from "@orcia/api-client";
 import type {
+  FinopsAutonomousGovernanceLabels,
   FinopsHumanMasteryTabProps,
   FinopsProcessRowData,
   FinopsTierRowData,
@@ -50,8 +51,10 @@ export function mapTiersRows(
 export function mapCognitiveTabProps(
   cognitiveData: CognitiveImpactDashboardResponse | null,
   labels: HumanMasteryLabels,
+  autonomousLabels?: FinopsAutonomousGovernanceLabels,
 ): FinopsHumanMasteryTabProps | null {
   if (!cognitiveData) return null;
+  const autoGov = cognitiveData.autonomous_governance;
   return {
     activeFramingRatio: cognitiveData.active_framing_ratio,
     activeFramingAlert: cognitiveData.active_framing_alert,
@@ -85,6 +88,31 @@ export function mapCognitiveTabProps(
       appliedAt: r.applied_at,
     })),
     labels,
+    autonomousGovernance: autoGov
+      ? {
+          totalAutonomousRuns: autoGov.total_autonomous_runs ?? 0,
+          escalatedRunsCount: autoGov.escalated_runs_count ?? 0,
+          killedRunsCount: autoGov.killed_runs_count ?? 0,
+          sampledRunsCount: autoGov.sampled_runs_count ?? 0,
+          pendingSamplesCount: autoGov.pending_samples_count ?? 0,
+          invalidatedSamplesCount: autoGov.invalidated_samples_count ?? 0,
+          autonomousEscalationRate: autoGov.autonomous_escalation_rate ?? 0,
+          postHocInvalidationRate: autoGov.post_hoc_invalidation_rate ?? 0,
+          invalidationAlert: Boolean(autoGov.invalidation_alert),
+          avgAutonomousCostUsd: autoGov.avg_autonomous_cost_usd ?? 0,
+          avgTtmGainMinutes: autoGov.avg_ttm_gain_minutes ?? 0,
+          pendingSamples: (autoGov.pending_samples ?? []).map((s) => ({
+            id: s.id,
+            runId: s.run_id,
+            workflowTitle: s.workflow_title,
+            triggerLabel: s.trigger_label,
+            reviewStatus: s.review_status,
+            runStatus: s.run_status,
+            sampledAt: s.sampled_at,
+          })),
+        }
+      : null,
+    autonomousLabels,
   };
 }
 

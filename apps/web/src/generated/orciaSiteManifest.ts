@@ -9,15 +9,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 120,
+    "uiPrimitivesCount": 124,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 47,
+    "alembicMigrationsCount": 48,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 151,
+    "techLeadReportsCount": 152,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 61,
-    "verifiedCapabilitiesCount": 46
+    "liveCapabilitiesCount": 62,
+    "verifiedCapabilitiesCount": 47
   },
   "activeRoutes": [
     "/",
@@ -71,6 +71,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AssistantThinkingSliderIndicator",
     "AssistantThinkingSubWindow",
     "AssistantUserQuestionBubble",
+    "AutonomousExecutionBadge",
     "AutonomyContractModal",
     "BiModeLoginView",
     "BootstrapOnboardingPanel",
@@ -88,6 +89,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "DurableWizardRunnerView",
     "EffortSelector",
     "FederatedUriBadge",
+    "FinopsAutonomousGovernanceSection",
     "FinopsBudgetOverrideModal",
     "FinopsBudgetPolicyModal",
     "FinopsConnectorQuotaModal",
@@ -97,7 +99,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FinopsProcessAndTiersTab",
     "FinopsRemoteMcpServicesTab",
     "FormattedMarkdownContent",
+    "FourZoneAutonomousNotificationsGroup",
     "FourZoneDirectionCShell",
+    "FourZoneNotificationsDrawer",
     "GlobalSidebar",
     "GuidanceDrawer",
     "HUMAN_PARTNER_ROLE_LABELS_FR",
@@ -228,7 +232,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry",
     "20261117_0605_epic6_review_adaptive_gate_policy_check",
     "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses",
-    "20261117_0702_story_7_2_triggers_outbox_and_optin_help"
+    "20261117_0702_story_7_2_triggers_outbox_and_optin_help",
+    "20261117_0704_story_7_4_post_hoc_audit_and_kill_switch"
   ],
   "architectureDecisions": [
     {
@@ -507,6 +512,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.4 (CAP-201)",
+      "reportFile": "7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u-tech-lead-report.md",
+      "domain": "Supervision UX des Exécutions Autonomes (AutonomousExecutionBadge Cyan/Cobalt), Arrêt d'Urgence (KILL_SWITCH_STOPPED), Rétablissement @v(N-1) + Purge Redis < 10 ms, Échantillonnage Qualité Post-Hoc (10–20 %), Regroupement Notifications & Indicateurs FinOps (SM-A1..A3)",
+      "summary": "Migration réversible 20261117_0704 (autonomous_post_hoc_audits, KILL_SWITCH_STOPPED et 3 événements Outbox + 09_reset_db_first_boot.py) ; services PostHocAuditService & AutonomousSupervisionService, garde @DBOS.step (dbos_engine.py, autonomous_runner.py), isolation SQL SM-C1/C2 vs SM-A1..A3, routeur autonomous_supervision.py + normalisation ws-* partagée (_finops_scope_guards.py), SDK @orcia/api-client 0-diff ; @orcia/ui AutonomousExecutionBadge Cyan/Cobalt (0 violet), FourZoneAutonomousNotificationsGroup, FinopsAutonomousGovernanceSection dans l'onglet existant « Maîtrise humaine & Qualité » (0 nouvel onglet, masqué si 0 run autonome), AutonomousRunsSupervisionPanel (/processes), badge dans ShellContextualHelpColumn, 0 jargon banni FR/EN ; 91 % couv. Story 7.4, 9/9 tâches Turbo (135/135 @orcia/web), PG18 + Redis testcontainers, Playwright E2E Desktop/Mobile (2 passed), CAP-201 passé live, site:sync/check (62/62)."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 7.2 (CAP-201)",

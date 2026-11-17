@@ -4,7 +4,7 @@ import {
   type UiHumanProfileBadge,
   type UiModuleKey,
 } from "@orcia/ui";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useI18n } from "../i18n";
 import {
   isPlatformAdministratorSession,
@@ -12,6 +12,7 @@ import {
   useAuthSessionStore,
 } from "../stores/authSessionStore";
 import { buildContextualHelpArticle } from "./contextualHelpCatalog";
+import { useShellAutonomousSupervision } from "./useShellAutonomousSupervision";
 import {
   ShellHydratingLoaderView,
   ShellUnauthenticatedView,
@@ -43,7 +44,6 @@ import {
 import { ShellSidebarFooter } from "./ShellSidebarFooter";
 import { TemporaryPasswordWarningBanner } from "./TemporaryPasswordWarningBanner";
 import { useShellContainerState } from "./useShellContainerState";
-import { useWorkspaceEventsSse } from "./useWorkspaceEventsSse";
 
 export {
   DEFAULT_HUMAN_PROFILE,
@@ -166,7 +166,11 @@ function InnerShellContainer({
 
   const activeWorkspaceName =
     selectedScope.name ?? workspaces[0]?.name ?? "Plateforme Globale ORCIA";
-  const { lastClaimEvent } = useWorkspaceEventsSse(workspaces[0]?.workspaceId);
+  const { lastClaimEvent, autonomousRuns } = useShellAutonomousSupervision({
+    isAuthenticated,
+    selectedScope,
+    workspaces,
+  });
 
   const workspaceOptions = buildWorkspaceSwitcherOptions({
     isFr,
@@ -188,6 +192,7 @@ function InnerShellContainer({
     workspaces,
     llmTiers,
     runs,
+    autonomousRuns,
     lastClaimEvent,
     mustChangePassword,
   });
@@ -303,6 +308,7 @@ function InnerShellContainer({
             contextualHelpArticle={contextualHelpArticle}
             activeHelpSectionId={state.activeHelpSectionId}
             labels={dictionary.contextualHelpHybrid}
+            autonomousBadgeLabels={dictionary.autonomousSupervision.badge}
             onAskAssistant={() => {
               if (!disabledMenuKeys.assistant) {
                 state.setSelectedMenuKeyOverride("assistant");

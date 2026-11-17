@@ -626,6 +626,23 @@ export {
   type WorkflowTriggersModalProps,
 } from "./primitives/WorkflowTriggersModal";
 export {
+  AutonomousExecutionBadge,
+  type AutonomousExecutionBadgeLabels,
+  type AutonomousExecutionBadgeProps,
+} from "./primitives/AutonomousExecutionBadge";
+export {
+  FinopsAutonomousGovernanceSection,
+  type FinopsAutonomousGovernanceData,
+  type FinopsAutonomousGovernanceLabels,
+  type FinopsAutonomousGovernanceSectionProps,
+  type FinopsPostHocSampleRow,
+} from "./primitives/finops/FinopsAutonomousGovernanceSection";
+export {
+  FourZoneAutonomousNotificationsGroup,
+  type FourZoneAutonomousNotificationsGroupProps,
+} from "./primitives/FourZoneAutonomousNotificationsGroup";
+export { FourZoneNotificationsDrawer } from "./primitives/FourZoneNotificationsDrawer";
+export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,
 } from "./shell/WorkspaceTopologyPanel";

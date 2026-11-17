@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import cast
-from uuid import UUID
+from uuid import UUID, uuid5
 
 import sqlalchemy as sa
 from fastapi import Request
@@ -27,6 +28,10 @@ from orcia_kernel.errors import ValidationDomainError
 logger = get_logger("orcia.api.finops.guards")
 
 
+_NAMESPACE_ORCIA_SETUP = UUID("0192c4e0-0000-7000-8000-000000000099")
+_SETUP_WS_KEY_RE = re.compile(r"^ws-\d+$")
+
+
 def validate_uuid(val: str, field_name: str) -> str:
     """Validate UUID syntax and raise `ValidationDomainError` (RFC 9457 422) on failure."""
     try:
@@ -36,6 +41,14 @@ def validate_uuid(val: str, field_name: str) -> str:
         raise ValidationDomainError(
             detail_override=f"Invalid UUID format for '{field_name}': {val!r}"
         ) from err
+
+
+def resolve_workspace_uuid_or_setup_key(raw_ws_id: str, field_name: str = "workspace_id") -> str:
+    """Map UI setup workspace key (`ws-1` -> deterministic UUIDv5) or validate UUID."""
+    trimmed = raw_ws_id.strip()
+    if _SETUP_WS_KEY_RE.match(trimmed):
+        return str(uuid5(_NAMESPACE_ORCIA_SETUP, f"ws:{trimmed}"))
+    return validate_uuid(trimmed, field_name)
 
 
 async def sync_evaluator_topology_from_pg(

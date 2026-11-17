@@ -277,6 +277,11 @@ async def resolve_contextual_help(
         active_article=_serialize_help_article(res.active_article),
         rollback_available=res.rollback_available,
         ask_assistant_prefill=res.ask_assistant_prefill,
+        is_autonomous_generated=res.is_autonomous_generated,
+        run_id=res.run_id,
+        contract_label=res.contract_label,
+        trigger_label=res.trigger_label,
+        previous_version_available=res.previous_version_available or res.rollback_available,
         trace_id=_trace(request),
     )
 

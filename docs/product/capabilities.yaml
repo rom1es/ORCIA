@@ -681,14 +681,14 @@ capabilities:
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
     fr: [FR-29, FR-30]
     origin: epic
-    origin_ref: epic-7 (7-1, 7-2 done; 7-4 backlog)
-    status: partial
+    origin_ref: epic-7 (7-1, 7-2, 7-4 done)
+    status: live
     verification: runtime
     surfaces:
-      route: /processes/studio/$workflowId
-      api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); workflows.py (WorkflowPublished)"
-      ui: "AutonomyContractModal + WorkflowTriggersModal + StudioWorkflowHeaderBar + StudioFiveBlocksGrid + WorkflowFiveBlocksCanvas"
-      migration: "20261117_0701, 20261117_0702"
+      route: "/processes, /processes/studio/$workflowId, /finops"
+      api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); autonomous_supervision.py (GET autonomous-runs, POST emergency-stop, POST invalidate-and-restore, POST post-hoc-review); finops_cognitive.py (autonomous_governance); portal_and_help.py (autonomous metadata); workflows.py (WorkflowPublished)"
+      ui: "AutonomyContractModal + WorkflowTriggersModal + StudioWorkflowHeaderBar + StudioFiveBlocksGrid + WorkflowFiveBlocksCanvas + AutonomousExecutionBadge + AutonomousRunsSupervisionPanel + FinopsAutonomousGovernanceSection + FourZoneAutonomousNotificationsGroup + ShellContextualHelpColumn"
+      migration: "20261117_0701, 20261117_0702, 20261117_0704"
     tests:
       - tests/unit/test_story_7_1_autonomy_contracts.py
       - tests/security/test_story_7_1_contract_confinement_and_secrets.py
@@ -699,7 +699,12 @@ capabilities:
       - tests/security/test_story_7_2_webhook_hmac_and_self_trigger.py
       - tests/integration/api/test_story_7_2_triggers_concurrency_postgres18.py
       - apps/web/src/__tests__/story-7-2-studio-triggers-modal-and-f5.test.tsx
-    notes: "Story 7.1 livrée (2026-11-17, AD-3, AD-6, AD-18) : table autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN sans co-signature SECOPS, double garde noyau, SignedApprovalToken.issue_autonomous et modale AutonomyContractModal. Story 7.2 livrée (2026-11-17, AD-18, AD-23) : déclencheurs idempotents (WEBHOOK, LOG_SINK_ALERT, CRON, OUTBOX_EVENT opt-in auto_help_on_publish=FALSE, MANUAL_AUTONOMOUS), triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, taxonomie d'erreurs Transient vs Fonctionnel, démon trigger-dispatcher, HMAC factorisé webhook_security.py et modale WorkflowTriggersModal Direction C. Story 7.4 reste en backlog."
+      - tests/unit/test_story_7_4_post_hoc_audit_and_autonomous_metrics.py
+      - tests/security/test_story_7_4_observer_and_rbac_guards.py
+      - tests/integration/api/test_story_7_4_supervision_rollback_postgres18.py
+      - apps/web/src/__tests__/story-7-4-autonomous-supervision-and-f5.test.tsx
+      - apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts
+    notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), et Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique)."
   - id: CAP-202
     title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki), traces distribuées OpenTelemetry OTLP et conformité OpenShift SCC restricted
     fr: [] # NFR-OBS-1, NFR-SEC-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift

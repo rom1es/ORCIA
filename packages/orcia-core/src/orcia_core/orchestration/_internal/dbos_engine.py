@@ -293,6 +293,16 @@ async def _orcia_durable_run_workflow(
     arbitration_decision: str | None = None
 
     for idx, step_key in enumerate(steps):
+        current_status = await engine.repository.get_run_status(run_id)
+        if current_status == "KILL_SWITCH_STOPPED":
+            return DurableWorkflowRunSummary(
+                workflow_id=workflow_id,
+                run_id=run_id,
+                final_status="KILL_SWITCH_STOPPED",
+                committed_snapshot_ids=tuple(committed_ids),
+                arbitration_decision=arbitration_decision,
+            )
+
         snap_id = await _execute_durable_step(
             run_id,
             step_key,

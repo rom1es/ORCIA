@@ -6,6 +6,11 @@ All event classes are re-exported here for public backward-compatible use.
 
 from __future__ import annotations
 
+from orcia_core.kernel._autonomous_supervision_events import (
+    AutonomousArtifactRolledBack,
+    KillSwitchActivated,
+    PostHocSampleSelected,
+)
 from orcia_core.kernel._datasource_rag_events import (
     DatasourceFreshnessEvaluated,
     DatasourceSyncRequested,
@@ -46,6 +51,7 @@ __all__ = [
     "AccessRequested",
     "AdminConnectionTested",
     "ArtifactProduced",
+    "AutonomousArtifactRolledBack",
     "AutonomousContractRevoked",
     "AutonomousContractSigned",
     "AutonomousEscalated",
@@ -60,8 +66,10 @@ __all__ = [
     "EmbeddingReindexStarted",
     "GateEvaluated",
     "HumanArbitrationRequested",
+    "KillSwitchActivated",
     "PermissionGranted",
     "PermissionRevoked",
+    "PostHocSampleSelected",
     "RemoteUsageAnomalyCapped",
     "RunTerminated",
     "SelfTriggerBlocked",

@@ -93,6 +93,12 @@ from orcia_core.orchestration.assistant_harness import (
     PromptLayerBlock,
     resolve_profile_adaptation,
 )
+from orcia_core.orchestration.autonomous_supervision import (
+    AutonomousRunSupervisionItem,
+    AutonomousSupervisionService,
+    EmergencyStopOutcome,
+    InvalidateAndRestoreOutcome,
+)
 from orcia_core.orchestration.challenge_and_replay import (
     ChallengeStatus,
     StepReplayResult,
@@ -277,6 +283,7 @@ __all__ = [
     "DbosDurableWorkflowEngine",
     "DbosSqlAlchemyUnitOfWork",
     "DurableWorkflowRunSummary",
+    "EmergencyStopOutcome",
     "GOVERNED_MCP_TOOLS",
     "InvokedSkillTraceItem",
     "LIFECYCLE_SUGGESTED_WORKFLOWS",
@@ -297,6 +304,8 @@ __all__ = [
     "AssistantNodeTrace",
     "AssistantTurnResult",
     "AssistantWorkflowProposal",
+    "AutonomousRunSupervisionItem",
+    "AutonomousSupervisionService",
     "AuthorIdentityType",
     "CONSTITUTIONAL_LAYER_1_TEXT",
     "ChallengeStatus",
@@ -419,6 +428,7 @@ __all__ = [
     "InferenceAttemptRecord",
     "InferenceEffort",
     "InferenceTier",
+    "InvalidateAndRestoreOutcome",
     "PackLifecycleStatus",
     "PinRemovalMode",
     "ResolvedInferenceTier",

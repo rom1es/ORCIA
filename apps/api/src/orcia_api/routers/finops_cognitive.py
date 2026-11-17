@@ -16,8 +16,10 @@ from orcia_api.routers._finops_auth_guards import (
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.finops import (
     ApplyRecommendationResponse,
+    AutonomousGovernanceMetricsSchema,
     CognitiveImpactDashboardResponse,
     GatePolicyRecommendationSchema,
+    PostHocAuditSampleSchema,
     ScopeType,
     WorkflowCognitiveMetricsSchema,
 )
@@ -107,6 +109,44 @@ async def get_cognitive_impact(
             )
             for r in dash.recommendations
         ],
+        autonomous_governance=(
+            AutonomousGovernanceMetricsSchema(
+                total_autonomous_runs=dash.autonomous_governance.total_autonomous_runs,
+                escalated_runs_count=dash.autonomous_governance.escalated_runs_count,
+                killed_runs_count=dash.autonomous_governance.killed_runs_count,
+                sampled_runs_count=dash.autonomous_governance.sampled_runs_count,
+                pending_samples_count=dash.autonomous_governance.pending_samples_count,
+                invalidated_samples_count=dash.autonomous_governance.invalidated_samples_count,
+                autonomous_escalation_rate=float(
+                    dash.autonomous_governance.autonomous_escalation_rate
+                ),
+                post_hoc_invalidation_rate=float(
+                    dash.autonomous_governance.post_hoc_invalidation_rate
+                ),
+                invalidation_alert=dash.autonomous_governance.invalidation_alert,
+                avg_autonomous_cost_usd=float(dash.autonomous_governance.avg_autonomous_cost_usd),
+                avg_ttm_gain_minutes=float(dash.autonomous_governance.avg_ttm_gain_minutes),
+                pending_samples=[
+                    PostHocAuditSampleSchema(
+                        id=s.id,
+                        run_id=s.run_id,
+                        workspace_id=s.workspace_id,
+                        contract_id=s.contract_id,
+                        workflow_title=s.workflow_title,
+                        trigger_label=s.trigger_label,
+                        review_status=s.review_status,
+                        run_status=s.run_status,
+                        sampled_at=s.sampled_at,
+                        reviewer_user_id=s.reviewer_user_id,
+                        review_comment=s.review_comment,
+                        reviewed_at=s.reviewed_at,
+                    )
+                    for s in dash.autonomous_governance.pending_samples
+                ],
+            )
+            if dash.autonomous_governance is not None
+            else None
+        ),
     )
 
 

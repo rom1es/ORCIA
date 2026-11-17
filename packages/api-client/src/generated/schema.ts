@@ -497,15 +497,51 @@ export interface components {
       scheme?: string;
       secret_ref_uri?: string | null;
     };
+    AutonomousGovernanceMetricsSchema: {
+      autonomous_escalation_rate?: number;
+      avg_autonomous_cost_usd?: number;
+      avg_ttm_gain_minutes?: number;
+      escalated_runs_count?: number;
+      invalidated_samples_count?: number;
+      invalidation_alert?: boolean;
+      killed_runs_count?: number;
+      pending_samples?: (components["schemas"]["PostHocAuditSampleSchema"])[];
+      pending_samples_count?: number;
+      post_hoc_invalidation_rate?: number;
+      sampled_runs_count?: number;
+      total_autonomous_runs?: number;
+    };
     AutonomousRunExecutionResponse: {
       contract_id: string;
       escalation_reason?: string | null;
       executed_actions?: (Record<string, unknown>)[];
       issued_token_preview_ids?: (string)[];
       run_id: string;
-      status: "COMMITTED_AUTONOMOUS" | "PAUSED_AUTONOMOUS_ESCALATION";
+      status: "COMMITTED_AUTONOMOUS" | "PAUSED_AUTONOMOUS_ESCALATION" | "KILL_SWITCH_STOPPED";
       trace_id: string;
       workflow_id: string;
+      workspace_id: string;
+    };
+    AutonomousRunSupervisionItemSchema: {
+      contract_id: string;
+      cost_usd: number;
+      created_at_iso: string;
+      help_resource_id?: string | null;
+      post_hoc_status: string;
+      previous_version_available?: boolean;
+      run_id: string;
+      run_status: string;
+      trigger_id?: string | null;
+      trigger_label: string;
+      trigger_status: string;
+      trigger_type: string;
+      workflow_id: string;
+      workflow_title: string;
+      workspace_id: string;
+    };
+    AutonomousRunsListResponse: {
+      runs?: (components["schemas"]["AutonomousRunSupervisionItemSchema"])[];
+      trace_id?: string | null;
       workspace_id: string;
     };
     AutonomyContractResponse: {
@@ -788,6 +824,7 @@ export interface components {
       architecture_deviation_alert: boolean;
       architecture_deviation_index: number;
       architecture_deviation_target?: number;
+      autonomous_governance?: components["schemas"]["AutonomousGovernanceMetricsSchema"] | null;
       pattern_drift_alert: boolean;
       pattern_drift_index: number;
       quick_pass_alert: boolean;
@@ -936,13 +973,18 @@ export interface components {
       active_article: components["schemas"]["HelpArticleSchemaItem"];
       ask_assistant_prefill: string;
       cache_hit: boolean;
+      contract_label?: string | null;
+      is_autonomous_generated?: boolean;
       lang: "fr" | "en";
       merged_layers: ("BASE" | "PACK" | "WORKSPACE" | "USER")[];
       pack: string;
+      previous_version_available?: boolean;
       redis_cache_key: string;
       rollback_available: boolean;
       route: string;
+      run_id?: string | null;
       trace_id?: string | null;
+      trigger_label?: string | null;
     };
     ContextualHelpRollbackRequest: {
       resource_id: string;
@@ -1298,6 +1340,19 @@ export interface components {
       roles?: (string)[];
       status: string;
       team_ids?: (string)[];
+    };
+    EmergencyStopRequest: {
+      reason?: string;
+      suspend_trigger?: boolean;
+      workspace_id?: string | null;
+    };
+    EmergencyStopResponse: {
+      run_id: string;
+      sse_dispatch_latency_ms: number;
+      status: string;
+      trace_id?: string | null;
+      trigger_suspended: boolean;
+      workspace_id: string;
     };
     EnterpriseConnectorCreateRequest: {
       admin_secret_value?: string | null;
@@ -2136,6 +2191,21 @@ export interface components {
     InstalledBusinessPackListResponse: {
       packs: (components["schemas"]["InstalledBusinessPackItemResponse"])[];
     };
+    InvalidateAndRestoreRequest: {
+      comment?: string;
+      help_resource_id?: string | null;
+      workspace_id?: string | null;
+    };
+    InvalidateAndRestoreResponse: {
+      help_resource_id?: string | null;
+      redis_cache_invalidated_ms: number;
+      restored_version: string;
+      run_id: string;
+      sse_dispatch_latency_ms: number;
+      status: string;
+      trace_id?: string | null;
+      workspace_id: string;
+    };
     InvalidatePromptCacheRequest: {
       reason?: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       user_id?: string | null;
@@ -2733,6 +2803,33 @@ export interface components {
       trace_id: string;
       workflows?: (Record<string, unknown>)[];
       workspaces?: (Record<string, unknown>)[];
+    };
+    PostHocAuditSampleSchema: {
+      contract_id: string;
+      id: string;
+      review_comment?: string | null;
+      review_status: "PENDING_SAMPLE" | "VALIDATED" | "INVALIDATED_ROLLED_BACK";
+      reviewed_at?: string | null;
+      reviewer_user_id?: string | null;
+      run_id: string;
+      run_status: string;
+      sampled_at: string;
+      trigger_label: string;
+      workflow_title: string;
+      workspace_id: string;
+    };
+    PostHocReviewRequest: {
+      comment?: string;
+      decision: "VALIDATED" | "INVALIDATED_ROLLED_BACK";
+      help_resource_id?: string | null;
+      workspace_id?: string | null;
+    };
+    PostHocReviewResponse: {
+      restored_version?: string | null;
+      review_status: "VALIDATED" | "INVALIDATED_ROLLED_BACK";
+      run_id: string;
+      run_status: string;
+      trace_id?: string | null;
     };
     ProbabilisticControlExecutionRecord: {
       agent_ref: string;
@@ -4307,7 +4404,7 @@ export interface components {
       root_run_id: string;
       run_key: string;
       run_lock: components["schemas"]["RecursiveRunLockManifestSchemaItem"];
-      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "PAUSED_AUTONOMOUS_ESCALATION" | "COMMITTED_AUTONOMOUS" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
+      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "PAUSED_AUTONOMOUS_ESCALATION" | "COMMITTED_AUTONOMOUS" | "KILL_SWITCH_STOPPED" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
       trigger_id?: string | null;
       trigger_idempotency_key?: string | null;
       workflow_def_id: string;
@@ -5627,10 +5724,31 @@ export interface paths {
       };
     };
   };
+  "/api/v1/runs/{run_id}/emergency-stop": {
+    post: {
+      responses: {
+        200: components["schemas"]["EmergencyStopResponse"];
+      };
+    };
+  };
   "/api/v1/runs/{run_id}/hitl-signal": {
     post: {
       responses: {
         200: components["schemas"]["WorkflowV2RunResponse"];
+      };
+    };
+  };
+  "/api/v1/runs/{run_id}/invalidate-and-restore": {
+    post: {
+      responses: {
+        200: components["schemas"]["InvalidateAndRestoreResponse"];
+      };
+    };
+  };
+  "/api/v1/runs/{run_id}/post-hoc-review": {
+    post: {
+      responses: {
+        200: components["schemas"]["PostHocReviewResponse"];
       };
     };
   };
@@ -6061,6 +6179,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/autonomous-runs": {
+    get: {
+      responses: {
+        200: components["schemas"]["AutonomousRunsListResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/codegraph/invoke": {
     post: {
       responses: {
@@ -6292,7 +6417,10 @@ export type AuditProvenanceSummaryResponse = components["schemas"]["AuditProvena
 export type AuthSessionBootstrapResponse = components["schemas"]["AuthSessionBootstrapResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type AutonomousActionInput = components["schemas"]["AutonomousActionInput"];
+export type AutonomousGovernanceMetricsSchema = components["schemas"]["AutonomousGovernanceMetricsSchema"];
 export type AutonomousRunExecutionResponse = components["schemas"]["AutonomousRunExecutionResponse"];
+export type AutonomousRunSupervisionItemSchema = components["schemas"]["AutonomousRunSupervisionItemSchema"];
+export type AutonomousRunsListResponse = components["schemas"]["AutonomousRunsListResponse"];
 export type AutonomyContractResponse = components["schemas"]["AutonomyContractResponse"];
 export type AutonomyContractStateResponse = components["schemas"]["AutonomyContractStateResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
@@ -6384,6 +6512,8 @@ export type EffectiveWorkflowResolveRequest = components["schemas"]["EffectiveWo
 export type EffectiveWorkflowResolveResponse = components["schemas"]["EffectiveWorkflowResolveResponse"];
 export type EffortLevel = components["schemas"]["EffortLevel"];
 export type EligibleServicePrincipalItem = components["schemas"]["EligibleServicePrincipalItem"];
+export type EmergencyStopRequest = components["schemas"]["EmergencyStopRequest"];
+export type EmergencyStopResponse = components["schemas"]["EmergencyStopResponse"];
 export type EnterpriseConnectorCreateRequest = components["schemas"]["EnterpriseConnectorCreateRequest"];
 export type EnterpriseConnectorDeleteResponse = components["schemas"]["EnterpriseConnectorDeleteResponse"];
 export type EnterpriseConnectorItemResponse = components["schemas"]["EnterpriseConnectorItemResponse"];
@@ -6476,6 +6606,8 @@ export type InitWorkspaceRequest = components["schemas"]["InitWorkspaceRequest"]
 export type InitWorkspaceResponse = components["schemas"]["InitWorkspaceResponse"];
 export type InstalledBusinessPackItemResponse = components["schemas"]["InstalledBusinessPackItemResponse"];
 export type InstalledBusinessPackListResponse = components["schemas"]["InstalledBusinessPackListResponse"];
+export type InvalidateAndRestoreRequest = components["schemas"]["InvalidateAndRestoreRequest"];
+export type InvalidateAndRestoreResponse = components["schemas"]["InvalidateAndRestoreResponse"];
 export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
 export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
 export type InvokeCodegraphToolRequest = components["schemas"]["InvokeCodegraphToolRequest"];
@@ -6549,6 +6681,9 @@ export type PlatformAuthSettingsResponse = components["schemas"]["PlatformAuthSe
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type PlatformSetupStatePutRequest = components["schemas"]["PlatformSetupStatePutRequest"];
 export type PlatformSetupStateResponse = components["schemas"]["PlatformSetupStateResponse"];
+export type PostHocAuditSampleSchema = components["schemas"]["PostHocAuditSampleSchema"];
+export type PostHocReviewRequest = components["schemas"]["PostHocReviewRequest"];
+export type PostHocReviewResponse = components["schemas"]["PostHocReviewResponse"];
 export type ProbabilisticControlExecutionRecord = components["schemas"]["ProbabilisticControlExecutionRecord"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];

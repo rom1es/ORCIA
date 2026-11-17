@@ -254,18 +254,22 @@ def get_finops_accounting_service(request: Request) -> FinopsAccountingService:
 
 
 def get_cognitive_impact_service(request: Request) -> CognitiveImpactService:
-    """FastAPI `Depends` provider returning `CognitiveImpactService` (`Story 6.3`)."""
+    """FastAPI `Depends` provider returning `CognitiveImpactService` (`Story 6.3`, `Story 7.4`)."""
+    from orcia_api.dependencies.autonomous_supervision import get_post_hoc_audit_service
     from orcia_core.audit_finops import CognitiveImpactService
 
     engine = getattr(request.app.state, "db_engine", None)
+    post_hoc = get_post_hoc_audit_service(request)
     svc: CognitiveImpactService | None = getattr(
         request.app.state, "cognitive_impact_service", None
     )
     if svc is None:
-        svc = CognitiveImpactService(engine=engine)
+        svc = CognitiveImpactService(engine=engine, post_hoc_service=post_hoc)
         request.app.state.cognitive_impact_service = svc
-    elif getattr(svc, "_engine", None) is None and engine is not None:
-        svc._engine = engine
+    else:
+        if getattr(svc, "_engine", None) is None and engine is not None:
+            svc._engine = engine
+        svc._post_hoc = post_hoc
     return svc
 
 
