@@ -115,6 +115,18 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "A temporary network or infrastructure failure occurred; retry scheduled.",
         ),
     },
+    "ERR_TRANSIENT_CONNECTOR_ERROR": {
+        "fr": LocalizedErrorCopy(
+            "Erreur transitoire du connecteur (nouvel essai autorisé)",
+            "Le connecteur externe a rencontré une indisponibilité temporaire ; "
+            "une nouvelle tentative automatique est planifiée.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Transient connector error (retry allowed)",
+            "The external connector encountered a temporary unavailability; "
+            "an automatic retry is scheduled.",
+        ),
+    },
     "ERR_RATE_LIMITED": {
         "fr": LocalizedErrorCopy(
             "Quota d'appels amont atteint (429)",
@@ -327,6 +339,13 @@ class UpstreamTimeoutError(TransientInfraError):
     http_status, type_slug = 504, "upstream-timeout"
 
 
+class TransientConnectorError(TransientInfraError):
+    """Retryable external connector error eligible for `ConnectorInvoker` retry (`Story 7.2`)."""
+
+    error_code = "ERR_TRANSIENT_CONNECTOR_ERROR"
+    http_status, type_slug = 503, "transient-connector-error"
+
+
 class FunctionalConnectorError(OrciaDomainError):
     """Non-retryable functional connector error escalating to human arbitration (`AC-F3`)."""
 
@@ -365,6 +384,7 @@ __all__ = [
     "ResourceNotFoundError",
     "ScopeAccessDeniedError",
     "SupportedLocale",
+    "TransientConnectorError",
     "TransientInfraError",
     "UpstreamTimeoutError",
     "ValidationDomainError",

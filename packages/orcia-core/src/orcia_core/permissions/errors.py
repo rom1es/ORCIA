@@ -264,10 +264,31 @@ class AutonomyContractSignForbiddenError(OrciaDomainError):
     http_status, type_slug = 403, "contract-signature-forbidden"
 
 
+class AutonomyContractRequiredForTriggerError(OrciaDomainError):
+    error_code = "ERR_AUTONOMY_CONTRACT_REQUIRED"
+    http_status, type_slug = 422, "autonomy-contract-required"
+
+
+class TriggerCircuitOpenError(OrciaDomainError):
+    error_code = "ERR_TRIGGER_CIRCUIT_OPEN"
+    http_status, type_slug = 503, "trigger-circuit-open"
+
+
+class TriggerNotFoundError(ResourceNotFoundError):
+    error_code = "ERR_TRIGGER_NOT_FOUND"
+    http_status, type_slug = 404, "trigger-not-found"
+
+
+class TriggerDuplicateKeyError(OrciaDomainError):
+    error_code = "ERR_TRIGGER_DUPLICATE_KEY"
+    http_status, type_slug = 409, "trigger-duplicate-key"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "AuthenticationRequiredError",
     "AutonomyContractNotFoundError",
+    "AutonomyContractRequiredForTriggerError",
     "AutonomyContractSignForbiddenError",
     "C3WorkspaceRequiredError",
     "CodegraphWorkspaceLeadRequiredError",
@@ -308,6 +329,9 @@ __all__ = [
     "SmtpConnectorRequiredForEmailOtpError",
     "SsoAuthDisabledByPolicyError",
     "SsoConfigurationIncompleteError",
+    "TriggerCircuitOpenError",
+    "TriggerDuplicateKeyError",
+    "TriggerNotFoundError",
     "UnsafeConnectorEndpointUrlError",
     "ValidationDomainError",
     "WeakPasswordPolicyError",

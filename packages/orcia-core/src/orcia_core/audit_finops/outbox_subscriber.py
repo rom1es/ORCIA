@@ -31,6 +31,10 @@ AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
         "AutonomousContractSigned",
         "AutonomousContractRevoked",
         "AutonomousEscalated",
+        "TriggerFired",
+        "SelfTriggerBlocked",
+        "TriggerCircuitOpened",
+        "WorkflowPublished",
     }
 )
 
@@ -87,6 +91,22 @@ def _build_event_summary(event: DomainEvent) -> str:
         wf_id = payload.get("workflow_id", "")
         reason = payload.get("reason", "")
         return f"Escalade d'exécution autonome sur {wf_id} : {reason}"
+    if etype == "TriggerFired":
+        trig_id = payload.get("trigger_id", "")
+        trig_type = payload.get("trigger_type", "")
+        return f"Déclencheur exécuté ({trig_type}) : {trig_id}"
+    if etype == "SelfTriggerBlocked":
+        trig_id = payload.get("trigger_id", "")
+        reason = payload.get("reason", "")
+        return f"Auto-déclenchement bloqué sur {trig_id} : {reason}"
+    if etype == "TriggerCircuitOpened":
+        trig_id = payload.get("trigger_id", "")
+        reason = payload.get("reason", "")
+        return f"Coupe-circuit ouvert sur déclencheur {trig_id} : {reason}"
+    if etype == "WorkflowPublished":
+        wf_id = payload.get("workflow_id", "")
+        ver = payload.get("version", "")
+        return f"Processus publié : {wf_id} (v{ver})"
     return f"Événement enregistré : {etype}"
 
 

@@ -24,6 +24,8 @@ from orcia_core.orchestration import (
     CognitiveModelRouterService,
     ControlCenterOverviewService,
     ResourceLeaseService,
+    SqlWorkflowTriggerRepository,
+    TriggerDispatcherService,
     UnifiedNotificationAndClaimService,
     WorkflowOrchestrationSetupService,
     WorkflowStudioAndPackService,
@@ -332,4 +334,43 @@ def get_autonomy_contract_service(request: Request) -> AutonomyContractService:
         assert engine is not None
         audit_sink = get_audit_ledger_service(request)
         svc._repo = SqlAutonomyContractRepository(engine=engine, audit_ledger_sink=audit_sink)
+    return svc
+
+
+def get_trigger_dispatcher_service(request: Request) -> TriggerDispatcherService:
+    """FastAPI `Depends` provider returning `TriggerDispatcherService` (`Story 7.2`)."""
+    import os
+
+    from orcia_api.dependencies.core_and_lifespan import get_auth_service
+    from orcia_core.orchestration._triggers_runtime_ports import RedisTriggerIdempotencyLockAdapter
+
+    engine = getattr(request.app.state, "db_engine", None)
+    use_pg = engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    svc: TriggerDispatcherService | None = getattr(
+        request.app.state, "trigger_dispatcher_service", None
+    )
+    if svc is None:
+        contract_svc = get_autonomy_contract_service(request)
+        audit_sink = get_audit_ledger_service(request)
+        notif_svc = get_notification_service(request)
+        auth_svc = get_auth_service(request)
+        log_sink = get_log_sink_port(request)
+        redis_client = getattr(request.app.state, "redis_client", None)
+        repo: SqlWorkflowTriggerRepository | None = None
+        if use_pg:
+            assert engine is not None
+            repo = SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
+        svc = TriggerDispatcherService(
+            contract_service=contract_svc,
+            repository=repo,
+            idempotency_lock=RedisTriggerIdempotencyLockAdapter(redis_client=redis_client),
+            sse_broker=notif_svc.sse_broker,
+            vault_cipher=auth_svc.vault_cipher,
+            log_sink=log_sink,
+        )
+        request.app.state.trigger_dispatcher_service = svc
+    elif use_pg and getattr(svc, "_repo", None) is None:
+        assert engine is not None
+        audit_sink = get_audit_ledger_service(request)
+        svc._repo = SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)
     return svc

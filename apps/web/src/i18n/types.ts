@@ -44,6 +44,7 @@ import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
+import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
 
 export interface TranslationDictionary
   extends InboxAndCockpitDictionarySection,
@@ -58,6 +59,7 @@ export interface TranslationDictionary
   authSettings: AuthSettingsDictionarySection;
   autonomyContract: AutonomyContractStudioCopy;
   epic18Sources: Epic18SourcesLabels;
+  workflowTriggers: WorkflowTriggersStudioCopy;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
     defaultSectionTitle: string;

@@ -54,6 +54,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "permission_broker",
     "problem_details",
     "shell",
+    "workflow_triggers",
 )
 
 

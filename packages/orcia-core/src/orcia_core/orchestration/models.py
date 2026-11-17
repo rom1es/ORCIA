@@ -25,7 +25,9 @@ WorkflowEngineeringMode = str
 WorkflowStepType = Literal[
     "AGENT", "SKILL", "SUB_WORKFLOW", "HUMAN_TASK", "HTTP_ACTION", "POST_ACTION_VERIFICATION"
 ]
-WorkflowTriggerType = Literal["WEBHOOK", "LOG_SINK_ALERT", "CRON", "MANUAL_AUTONOMOUS"]
+WorkflowTriggerType = Literal[
+    "WEBHOOK", "LOG_SINK_ALERT", "CRON", "OUTBOX_EVENT", "MANUAL_AUTONOMOUS"
+]
 WorkflowTriggerStatus = Literal["ACTIVE", "PAUSED", "CIRCUIT_OPEN"]
 WorkflowRunStatus = Literal[
     "INITIALIZED",
@@ -35,6 +37,8 @@ WorkflowRunStatus = Literal[
     "PAUSED_CIRCUIT_BREAKER",
     "PAUSED_BUDGET_EXCEEDED",
     "PAUSED_MAX_RETRIES",
+    "PAUSED_AUTONOMOUS_ESCALATION",
+    "COMMITTED_AUTONOMOUS",
     "COMPLETED",
     "FAILED",
     "ROLLED_BACK",
@@ -260,13 +264,15 @@ class RecursiveRunLockManifest:
 
 @dataclass(frozen=True, slots=True)
 class WorkflowTriggerEntity:
-    """Governed autonomous workflow trigger (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON`, `AD-18`)."""
+    """Governed autonomous workflow trigger (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON`, `OUTBOX`)."""
 
     id: str
     trigger_key: str
     workspace_id: str
     workflow_def_id: str
     trigger_type: WorkflowTriggerType
+    workflow_id: str = ""
+    contract_id: str | None = None
     cron_expr: str | None = None
     webhook_secret_vault_ref: str | None = None
     cooldown_window_seconds: int = 300
@@ -277,6 +283,17 @@ class WorkflowTriggerEntity:
     post_hoc_sampling_rate: float = 0.10
     contract_signature_id: str | None = None
     status: WorkflowTriggerStatus = "ACTIVE"
+    auto_help_on_publish: bool = False
+    consecutive_failures: int = 0
+    last_fired_at_iso: str | None = None
+    webhook_secret_configured: bool = False
+    webhook_secret_fingerprint: str | None = None
+    webhook_secret_masked_hint: str | None = None
+    webhook_secret_updated_at: str | None = None
+    webhook_secret_updated_by: str | None = None
+    log_sink_service: str | None = None
+    log_sink_query_text: str | None = None
+    outbox_event_filter: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

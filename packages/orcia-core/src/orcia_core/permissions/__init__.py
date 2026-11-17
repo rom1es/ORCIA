@@ -73,6 +73,7 @@ from orcia_core.permissions.enterprise_connectors import (
 )
 from orcia_core.permissions.errors import (
     AutonomyContractNotFoundError,
+    AutonomyContractRequiredForTriggerError,
     AutonomyContractSignForbiddenError,
     CodegraphWorkspaceLeadRequiredError,
     ContractPrivilegeEscalationError,
@@ -89,6 +90,9 @@ from orcia_core.permissions.errors import (
     SmtpConnectorRequiredForEmailOtpError,
     SsoAuthDisabledByPolicyError,
     SsoConfigurationIncompleteError,
+    TriggerCircuitOpenError,
+    TriggerDuplicateKeyError,
+    TriggerNotFoundError,
     WeakPasswordPolicyError,
     WebhookSignatureInvalidError,
 )
@@ -191,6 +195,10 @@ from orcia_core.permissions.temporary_password import (
     generate_temporary_password,
     validate_password_policy,
 )
+from orcia_core.permissions.webhook_security import (
+    compute_webhook_hmac_sha256,
+    verify_webhook_hmac_sha256,
+)
 from orcia_core.permissions.workspace_sources_governance import (
     CodegraphAuthMode,
     CodegraphStatus,
@@ -287,9 +295,15 @@ __all__ = [
     "ALLOWED_TIE_BREAK_POLICIES",
     "AutonomyContract",
     "AutonomyContractNotFoundError",
+    "AutonomyContractRequiredForTriggerError",
     "AutonomyContractRepositoryPort",
     "AutonomyContractService",
     "AutonomyContractSignForbiddenError",
+    "TriggerCircuitOpenError",
+    "TriggerDuplicateKeyError",
+    "TriggerNotFoundError",
+    "compute_webhook_hmac_sha256",
+    "verify_webhook_hmac_sha256",
     "AutonomyContractStatus",
     "AutonomySignerRole",
     "ContractCriticality",

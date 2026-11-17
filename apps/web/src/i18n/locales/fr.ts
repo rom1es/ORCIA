@@ -11,6 +11,7 @@ import { GATES_AND_INBOX_FR_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
+import { WORKFLOW_TRIGGERS_FR_LABELS } from "./workflow_triggers_labels";
 
 export const frDictionary: TranslationDictionary = {
   ...INBOX_AND_COCKPIT_FR_LABELS,
@@ -26,6 +27,7 @@ export const frDictionary: TranslationDictionary = {
   authSettings: AUTH_SETTINGS_FR_LABELS,
   autonomyContract: AUTONOMY_CONTRACT_FR_LABELS,
   epic18Sources: EPIC18_SOURCES_LABELS_FR,
+  workflowTriggers: WORKFLOW_TRIGGERS_FR_LABELS,
   shell: {
     brandTitle: "ORCIA",
     brandSubtitle: "",

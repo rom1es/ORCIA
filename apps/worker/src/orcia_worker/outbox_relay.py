@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import os
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dramatiq
 from dbos import DBOS
@@ -44,15 +44,18 @@ class OutboxEventBus:
     audit_finops_ledger: list[DomainEvent] = field(default_factory=list)
     ontology_extraction_queue: list[DomainEvent] = field(default_factory=list)
     notifications_queue: list[DomainEvent] = field(default_factory=list)
+    workflow_published_queue: list[DomainEvent] = field(default_factory=list)
     sse_published_messages: list[tuple[str, DomainEvent]] = field(default_factory=list)
     audit_sink: AuditLedgerSinkPort | None = None
     audit_subscriber: AuditLedgerOutboxSubscriber | None = None
+    on_workflow_published: Callable[[DomainEvent], Awaitable[Any] | Any] | None = None
 
     def __post_init__(self) -> None:
         if self.audit_sink is not None and self.audit_subscriber is None:
             self.audit_subscriber = AuditLedgerOutboxSubscriber(self.audit_sink)
         self.subscribe("*", "audit_finops", self._on_audit_finops)
         self.subscribe("ArtifactProduced", "ontology", self._on_ontology_l4)
+        self.subscribe("WorkflowPublished", "triggers_outbox", self._on_triggers_outbox)
         self.subscribe("*", "notifications", self._on_notifications)
         self.subscribe("*", "sse", self._on_sse_broadcast)
 
@@ -86,12 +89,19 @@ class OutboxEventBus:
         self.publish_idempotent(event)
         if self.audit_subscriber is not None:
             await self.audit_subscriber.on_domain_event(event)
+        if event.event_type == "WorkflowPublished" and self.on_workflow_published is not None:
+            res = self.on_workflow_published(event)
+            if asyncio.iscoroutine(res):
+                await res
 
     def _on_audit_finops(self, event: DomainEvent) -> None:
         self.audit_finops_ledger.append(event)
 
     def _on_ontology_l4(self, event: DomainEvent) -> None:
         self.ontology_extraction_queue.append(event)
+
+    def _on_triggers_outbox(self, event: DomainEvent) -> None:
+        self.workflow_published_queue.append(event)
 
     def _on_notifications(self, event: DomainEvent) -> None:
         self.notifications_queue.append(event)

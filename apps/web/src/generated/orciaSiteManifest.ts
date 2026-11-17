@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 119,
+    "uiPrimitivesCount": 120,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 46,
+    "alembicMigrationsCount": 47,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 150,
+    "techLeadReportsCount": 151,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 61,
     "verifiedCapabilitiesCount": 46
@@ -163,6 +163,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "UserAccountDropdownAndSettingsModal",
     "UserPasswordChangeCard",
     "WorkflowStudioSection",
+    "WorkflowTriggersModal",
     "WorkspaceAssistantPinnedCard",
     "WorkspaceControlCenter",
     "WorkspaceFiveTabsAndExternalRebaseView",
@@ -226,7 +227,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses",
     "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry",
     "20261117_0605_epic6_review_adaptive_gate_policy_check",
-    "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses"
+    "20261117_0701_story_7_1_autonomy_contracts_and_run_statuses",
+    "20261117_0702_story_7_2_triggers_outbox_and_optin_help"
   ],
   "architectureDecisions": [
     {
@@ -505,6 +507,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.2 (CAP-201)",
+      "reportFile": "7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler-tech-lead-report.md",
+      "domain": "Déclencheurs Événementiels Idempotents (WEBHOOK, LOG_SINK_ALERT, CRON, OUTBOX_EVENT Opt-In, MANUAL_AUTONOMOUS), Triple Verrou Redis NX + UNIQUE + DBOS SetWorkflowID, *Self-Trigger Guard*, Coupe-Circuit SSE < 500 ms, Factorisation HMAC (Story 18.2), Démon trigger-dispatcher & Modale Studio V2",
+      "summary": "Migration Alembic 20261117_0702 (workflow_triggers, trigger_webhook_deliveries, domain_events_outbox + 09_reset_db_first_boot.py) ; factorisation DRY verify_webhook_hmac_sha256 dans orcia_core.permissions.webhook_security partagée avec datasource_webhooks.py ; TriggerDispatcherService, evaluate_self_trigger_guard, LogSinkAnomalyScanner, parseur CRON et OptInWorkflowHelp (auto_help_on_publish=FALSE au Jour 0) ; démon --role trigger-dispatcher + abonné triggers_outbox ; routeur /api/v1//triggers, /webhooks/triggers/{id}, /triggers/alerts + SDK OpenAPI 0-diff ; modale WorkflowTriggersModal (OrciaDialog, <SecretField />, 0 #hex, survie F5) ; 90.28 % couv. combinée (95–100 % modules 7.2), 5/5 contrats lint-imports, 9/9 tâches Turbo et concurrence PG18 + Redis validée."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 7.1 (CAP-201)",

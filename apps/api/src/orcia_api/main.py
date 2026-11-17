@@ -62,6 +62,7 @@ from orcia_api.routers.portal_and_help import router as portal_and_help_router
 from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
 from orcia_api.routers.shell import router as shell_router
 from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
+from orcia_api.routers.workflow_triggers import router as workflow_triggers_router
 from orcia_api.routers.workflows import router as workflows_v2_router
 from orcia_api.routers.workspace_datasources import (
     router as workspace_datasources_router,
@@ -156,6 +157,7 @@ def create_app() -> FastAPI:
     application.include_router(audit_ledger_router)
     application.include_router(finops_router)
     application.include_router(autonomy_contracts_router)
+    application.include_router(workflow_triggers_router)
     return application
 
 

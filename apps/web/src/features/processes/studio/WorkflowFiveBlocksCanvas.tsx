@@ -1,4 +1,4 @@
-import { AutonomyContractModal } from "@orcia/ui";
+import { AutonomyContractModal, WorkflowTriggersModal } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
 import { useShellNavigation } from "../../../components/ShellContainer";
 import { usePlatformSetup } from "../../../components/platformSetupStore";
@@ -15,6 +15,7 @@ import { StudioFiveBlocksGrid } from "./StudioFiveBlocksGrid";
 import { StudioWhatIfPanel } from "./StudioWhatIfPanel";
 import { StudioWorkflowHeaderBar, type StudioViewMode } from "./StudioWorkflowHeaderBar";
 import { useWorkflowAutonomyContract } from "./useWorkflowAutonomyContract";
+import { useWorkflowTriggers } from "./useWorkflowTriggers";
 
 export type { StudioViewMode };
 
@@ -26,6 +27,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   const { workspaces } = usePlatformSetup();
   const isFr = locale === "fr";
   const contractLabels = dictionary.autonomyContract;
+  const triggersLabels = dictionary.workflowTriggers;
 
   const initialWf = useMemo(() => {
     const list = loadPersistedWorkflowsV2();
@@ -74,6 +76,25 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
     workflowVersion: workflow.version,
     knowledgeBaseRefs: workflow.knowledge_base_refs,
     contractLabels,
+    onBanner: setStatusBanner,
+  });
+
+  const {
+    showTriggersModal,
+    setShowTriggersModal,
+    triggers,
+    activeTriggersCount,
+    triggersError,
+    triggersSubmitting,
+    handleCreateTrigger,
+    handleUpdateTrigger,
+    handleDeleteTrigger,
+    handleFireTrigger,
+    handleResetCircuit,
+  } = useWorkflowTriggers({
+    workspaceId: resolvedWorkspaceId,
+    workflowId: workflow.id,
+    triggersLabels,
     onBanner: setStatusBanner,
   });
 
@@ -176,6 +197,8 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         hasActiveAutonomyContract={activeContractView !== null}
         autonomyButtonLabel={contractLabels.openModalButton}
         autonomyActiveBadgeLabel={contractLabels.activeBadgeLabel}
+        triggersButtonLabel={triggersLabels.openModalButton}
+        activeTriggersCount={activeTriggersCount}
         onNavigateBack={() => navigateToRoute("/processes")}
         onNavigateVsm={() => navigateToRoute("/processes/vsm/vsm-mon-compte-idea-to-prod")}
         onSelectViewMode={setViewMode}
@@ -184,6 +207,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         onPublish={handlePublishWorkflow}
         onLaunchRun={() => setShowRunDrawer(true)}
         onOpenAutonomyContract={() => setShowContractModal(true)}
+        onOpenTriggers={() => setShowTriggersModal(true)}
       />
 
       {statusBanner ? (
@@ -222,6 +246,23 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         labels={contractLabels.modal}
         onSignContract={handleSignAutonomyContract}
         onRevokeContract={handleRevokeAutonomyContract}
+        onOpenHelpSection={openHelpSection}
+      />
+
+      <WorkflowTriggersModal
+        open={showTriggersModal}
+        onOpenChange={setShowTriggersModal}
+        workflowTitle={workflow.title}
+        hasActiveContract={activeContractView !== null}
+        triggers={triggers}
+        submitting={triggersSubmitting}
+        errorMessage={triggersError}
+        labels={triggersLabels.modal}
+        onCreateTrigger={handleCreateTrigger}
+        onUpdateTrigger={handleUpdateTrigger}
+        onDeleteTrigger={handleDeleteTrigger}
+        onFireTrigger={handleFireTrigger}
+        onResetCircuit={handleResetCircuit}
         onOpenHelpSection={openHelpSection}
       />
 

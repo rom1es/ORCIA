@@ -28,7 +28,11 @@ from orcia_core.kernel._governance_events import (
     AutonomousEscalated,
     PermissionGranted,
     PermissionRevoked,
+    SelfTriggerBlocked,
     SettingsChanged,
+    TriggerCircuitOpened,
+    TriggerFired,
+    WorkflowPublished,
 )
 from orcia_core.kernel._orchestration_events import (
     ArtifactProduced,
@@ -60,6 +64,10 @@ __all__ = [
     "PermissionRevoked",
     "RemoteUsageAnomalyCapped",
     "RunTerminated",
+    "SelfTriggerBlocked",
     "SettingsChanged",
     "StepCompleted",
+    "TriggerCircuitOpened",
+    "TriggerFired",
+    "WorkflowPublished",
 ]

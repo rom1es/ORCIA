@@ -122,6 +122,14 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onRevokeContract",
         "onOpenHelpSection",
       ],
+      WorkflowTriggersModal: [
+        "onCreateTrigger",
+        "onUpdateTrigger",
+        "onDeleteTrigger",
+        "onFireTrigger",
+        "onResetCircuit",
+        "onOpenHelpSection",
+      ],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

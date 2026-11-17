@@ -12,6 +12,8 @@ export interface StudioWorkflowHeaderBarProps {
   readonly hasActiveAutonomyContract: boolean;
   readonly autonomyButtonLabel: string;
   readonly autonomyActiveBadgeLabel: string;
+  readonly triggersButtonLabel: string;
+  readonly activeTriggersCount: number;
   readonly onNavigateBack: () => void;
   readonly onNavigateVsm: () => void;
   readonly onSelectViewMode: (mode: StudioViewMode) => void;
@@ -20,6 +22,7 @@ export interface StudioWorkflowHeaderBarProps {
   readonly onPublish: () => void;
   readonly onLaunchRun: () => void;
   readonly onOpenAutonomyContract: () => void;
+  readonly onOpenTriggers: () => void;
 }
 
 export function StudioWorkflowHeaderBar({
@@ -30,6 +33,8 @@ export function StudioWorkflowHeaderBar({
   hasActiveAutonomyContract,
   autonomyButtonLabel,
   autonomyActiveBadgeLabel,
+  triggersButtonLabel,
+  activeTriggersCount,
   onNavigateBack,
   onNavigateVsm,
   onSelectViewMode,
@@ -38,6 +43,7 @@ export function StudioWorkflowHeaderBar({
   onPublish,
   onLaunchRun,
   onOpenAutonomyContract,
+  onOpenTriggers,
 }: StudioWorkflowHeaderBarProps): React.ReactElement {
   return (
     <header
@@ -151,6 +157,20 @@ export function StudioWorkflowHeaderBar({
         >
           <OrciaIcon name="shield" size={14} />
           <span>{autonomyButtonLabel}</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="studio-triggers-btn"
+          onClick={onOpenTriggers}
+          className="orcia-ds-btn-secondary inline-flex items-center gap-1.5"
+        >
+          <OrciaIcon name="lightning" size={14} />
+          <span>
+            {activeTriggersCount > 0
+              ? `${triggersButtonLabel} (${activeTriggersCount})`
+              : triggersButtonLabel}
+          </span>
         </button>
 
         <button

@@ -19,6 +19,7 @@ from orcia_core.gates.tier2_sandbox import (
 from orcia_core.observability import configure_tracing, instrument_runtime
 from orcia_core.observability.logging import configure_logging, get_logger
 from orcia_worker.sandbox_daemon import serve_sandbox_daemon
+from orcia_worker.trigger_dispatcher_daemon import serve_trigger_dispatcher_daemon
 
 logger = get_logger("orcia.worker.roles")
 
@@ -89,6 +90,9 @@ def main(argv: list[str] | None = None) -> int:
                 once=bool(args.once),
             )
         )
+
+    if role_name == "trigger-dispatcher":
+        return asyncio.run(serve_trigger_dispatcher_daemon(once=bool(args.once)))
 
     return asyncio.run(_serve_signal_loop(role_name, once=bool(args.once)))
 

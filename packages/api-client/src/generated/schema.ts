@@ -1020,6 +1020,21 @@ export interface components {
       working_attachments_uris?: (string)[];
       workspace_id: string;
     };
+    CreateWorkflowTriggerRequest: {
+      auto_help_on_publish?: boolean;
+      cooldown_window_seconds?: number;
+      cron_expr?: string | null;
+      log_sink_query_text?: string | null;
+      log_sink_service?: string | null;
+      max_consecutive_failures?: number;
+      max_daily_cost_usd?: number;
+      max_runs_per_hour?: number;
+      outbox_event_filter?: string | null;
+      status?: "ACTIVE" | "PAUSED";
+      trigger_key?: string | null;
+      trigger_type: "WEBHOOK" | "LOG_SINK_ALERT" | "CRON" | "OUTBOX_EVENT" | "MANUAL_AUTONOMOUS";
+      webhook_secret?: components["schemas"]["SecretInputPayload"] | null;
+    };
     CreateWorkspaceDatasourceRequest: {
       alias: string;
       codegraph_auth_mode?: "SERVICE_ACCOUNT" | "WORKSPACE_LEAD_TOKEN";
@@ -1101,6 +1116,10 @@ export interface components {
     DeleteSkillOrAgentResponse: {
       deleted_id: string;
       detached_from_agent_ids?: (string)[];
+      trace_id: string;
+    };
+    DeleteWorkflowTriggerResponse: {
+      deleted_id: string;
       trace_id: string;
     };
     DemoWorkspaceProvisionResponse: {
@@ -1534,6 +1553,10 @@ export interface components {
       invocations_count: number;
       output_tokens: number;
       total_tokens: number;
+    };
+    FireManualTriggerRequest: {
+      idempotency_key?: string | null;
+      payload?: Record<string, unknown>;
     };
     FolderShareGrantSchemaItem: {
       access_role?: "READ_ONLY" | "CO_CONTRIBUTOR";
@@ -3617,6 +3640,17 @@ export interface components {
       thinking_level?: "simple" | "medium" | "complex" | "auto" | null;
       visibility_scope?: "PRIVATE" | "TEAM" | null;
     };
+    TriggerDispatchResponse: {
+      attempts?: number;
+      dbos_workflow_id: string;
+      dispatched: boolean;
+      idempotency_key: string;
+      outcome: "DISPATCHED" | "DUPLICATE_SUPPRESSED" | "SELF_TRIGGER_BLOCKED" | "CIRCUIT_OPEN" | "PAUSED" | "FAILED_FUNCTIONAL";
+      reason?: string | null;
+      run_id?: string | null;
+      trace_id: string;
+      trigger_id: string;
+    };
     TriggerWorkspaceDatasourceSyncResponse: {
       datasource: components["schemas"]["WorkspaceDatasourceItemResponse"];
       trace_id: string;
@@ -3712,6 +3746,19 @@ export interface components {
       personal_instructions: string;
       response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE";
       workspace_id: string;
+    };
+    UpdateWorkflowTriggerRequest: {
+      auto_help_on_publish?: boolean | null;
+      cooldown_window_seconds?: number | null;
+      cron_expr?: string | null;
+      log_sink_query_text?: string | null;
+      log_sink_service?: string | null;
+      max_consecutive_failures?: number | null;
+      max_daily_cost_usd?: number | null;
+      max_runs_per_hour?: number | null;
+      outbox_event_filter?: string | null;
+      status?: "ACTIVE" | "PAUSED" | null;
+      webhook_secret?: components["schemas"]["SecretInputPayload"] | null;
     };
     UpdateWorkspaceDatasourceRequest: {
       alias?: string | null;
@@ -4260,7 +4307,7 @@ export interface components {
       root_run_id: string;
       run_key: string;
       run_lock: components["schemas"]["RecursiveRunLockManifestSchemaItem"];
-      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
+      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "PAUSED_AUTONOMOUS_ESCALATION" | "COMMITTED_AUTONOMOUS" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
       trigger_id?: string | null;
       trigger_idempotency_key?: string | null;
       workflow_def_id: string;
@@ -4297,6 +4344,34 @@ export interface components {
       title: string;
       verification_window_seconds?: number | null;
       writes_code: boolean;
+    };
+    WorkflowTriggerListResponse: {
+      items?: (components["schemas"]["WorkflowTriggerResponse"])[];
+      trace_id: string;
+      workflow_id: string;
+      workspace_id: string;
+    };
+    WorkflowTriggerResponse: {
+      auto_help_on_publish?: boolean;
+      consecutive_failures?: number;
+      contract_id?: string | null;
+      cooldown_window_seconds: number;
+      cron_expr?: string | null;
+      id: string;
+      last_fired_at_iso?: string | null;
+      log_sink_query_text?: string | null;
+      log_sink_service?: string | null;
+      max_consecutive_failures: number;
+      max_daily_cost_usd: number;
+      max_runs_per_hour: number;
+      outbox_event_filter?: string | null;
+      service_principal_id?: string | null;
+      status: "ACTIVE" | "PAUSED" | "CIRCUIT_OPEN";
+      trigger_key: string;
+      trigger_type: "WEBHOOK" | "LOG_SINK_ALERT" | "CRON" | "OUTBOX_EVENT" | "MANUAL_AUTONOMOUS";
+      webhook_secret_status: components["schemas"]["SecretStatusResponse"];
+      workflow_id: string;
+      workspace_id: string;
     };
     WorkflowV2RunResponse: {
       run: components["schemas"]["BoundedWorkflowRunState"];
@@ -5812,6 +5887,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/triggers/alerts": {
+    post: {
+      responses: {
+        200: components["schemas"]["TriggerDispatchResponse"];
+      };
+    };
+  };
   "/api/v1/users/me/account-profile": {
     get: {
       responses: {
@@ -5894,6 +5976,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["JiraIssueUpdatedWebhookResponse"];
+      };
+    };
+  };
+  "/api/v1/webhooks/triggers/{trigger_id}": {
+    post: {
+      responses: {
+        200: components["schemas"]["TriggerDispatchResponse"];
       };
     };
   };
@@ -6111,6 +6200,44 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers": {
+    get: {
+      responses: {
+        200: components["schemas"]["WorkflowTriggerListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers/{trigger_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["DeleteWorkflowTriggerResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["WorkflowTriggerResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers/{trigger_id}/fire": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/workflows/{workflow_id}/triggers/{trigger_id}/reset-circuit": {
+    post: {
+      responses: {
+        200: components["schemas"]["WorkflowTriggerResponse"];
+      };
+    };
+  };
   "/ready": {
     get: {
       responses: {
@@ -6226,6 +6353,7 @@ export type CreateAssistantThreadRequest = components["schemas"]["CreateAssistan
 export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPackRequest"];
 export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];
 export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
+export type CreateWorkflowTriggerRequest = components["schemas"]["CreateWorkflowTriggerRequest"];
 export type CreateWorkspaceDatasourceRequest = components["schemas"]["CreateWorkspaceDatasourceRequest"];
 export type DatasourceWebhookIngressResponse = components["schemas"]["DatasourceWebhookIngressResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
@@ -6234,6 +6362,7 @@ export type DeclarativePackSummaryResponse = components["schemas"]["DeclarativeP
 export type DeclarativePacksListResponse = components["schemas"]["DeclarativePacksListResponse"];
 export type DelegateGrantRequest = components["schemas"]["DelegateGrantRequest"];
 export type DeleteSkillOrAgentResponse = components["schemas"]["DeleteSkillOrAgentResponse"];
+export type DeleteWorkflowTriggerResponse = components["schemas"]["DeleteWorkflowTriggerResponse"];
 export type DemoWorkspaceProvisionResponse = components["schemas"]["DemoWorkspaceProvisionResponse"];
 export type DeploymentRoleSchemaItem = components["schemas"]["DeploymentRoleSchemaItem"];
 export type DeploymentRolesListResponse = components["schemas"]["DeploymentRolesListResponse"];
@@ -6283,6 +6412,7 @@ export type FinopsBreakdownResponse = components["schemas"]["FinopsBreakdownResp
 export type FinopsOverviewResponse = components["schemas"]["FinopsOverviewResponse"];
 export type FinopsProcessItemResponse = components["schemas"]["FinopsProcessItemResponse"];
 export type FinopsTierEffortItemResponse = components["schemas"]["FinopsTierEffortItemResponse"];
+export type FireManualTriggerRequest = components["schemas"]["FireManualTriggerRequest"];
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
@@ -6524,6 +6654,7 @@ export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnRespon
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type ToggleAgentGovernanceRequest = components["schemas"]["ToggleAgentGovernanceRequest"];
+export type TriggerDispatchResponse = components["schemas"]["TriggerDispatchResponse"];
 export type TriggerWorkspaceDatasourceSyncResponse = components["schemas"]["TriggerWorkspaceDatasourceSyncResponse"];
 export type TripartiteTraceEdgeSchemaItem = components["schemas"]["TripartiteTraceEdgeSchemaItem"];
 export type TwoPassExtractionRequest = components["schemas"]["TwoPassExtractionRequest"];
@@ -6535,6 +6666,7 @@ export type UpdateConnectorQuotaRequest = components["schemas"]["UpdateConnector
 export type UpdatePlatformAuthSettingsRequest = components["schemas"]["UpdatePlatformAuthSettingsRequest"];
 export type UpdateScopeBudgetRequest = components["schemas"]["UpdateScopeBudgetRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
+export type UpdateWorkflowTriggerRequest = components["schemas"]["UpdateWorkflowTriggerRequest"];
 export type UpdateWorkspaceDatasourceRequest = components["schemas"]["UpdateWorkspaceDatasourceRequest"];
 export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
 export type UpdateWorkspaceLifecycleRequest = components["schemas"]["UpdateWorkspaceLifecycleRequest"];
@@ -6591,6 +6723,8 @@ export type WorkflowRunInstantiateResponse = components["schemas"]["WorkflowRunI
 export type WorkflowRunSchemaItem = components["schemas"]["WorkflowRunSchemaItem"];
 export type WorkflowStepItem = components["schemas"]["WorkflowStepItem"];
 export type WorkflowStepSpecSchemaItem = components["schemas"]["WorkflowStepSpecSchemaItem"];
+export type WorkflowTriggerListResponse = components["schemas"]["WorkflowTriggerListResponse"];
+export type WorkflowTriggerResponse = components["schemas"]["WorkflowTriggerResponse"];
 export type WorkflowV2RunResponse = components["schemas"]["WorkflowV2RunResponse"];
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkflowsV2ListResponse = components["schemas"]["WorkflowsV2ListResponse"];

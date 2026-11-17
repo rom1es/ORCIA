@@ -616,6 +616,16 @@ export {
   type OrciaSearchableSelectProps,
 } from "./primitives/OrciaSearchableSelect";
 export {
+  WorkflowTriggersModal,
+  type CreateWorkflowTriggerDraft,
+  type UiWorkflowTriggerItem,
+  type UiWorkflowTriggerStatus,
+  type UiWorkflowTriggerType,
+  type UpdateWorkflowTriggerDraft,
+  type WorkflowTriggersModalLabels,
+  type WorkflowTriggersModalProps,
+} from "./primitives/WorkflowTriggersModal";
+export {
   WorkspaceTopologyPanel,
   type WorkspaceTopologyPanelProps,
 } from "./shell/WorkspaceTopologyPanel";

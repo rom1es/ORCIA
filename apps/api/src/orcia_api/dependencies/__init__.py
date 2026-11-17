@@ -38,6 +38,7 @@ from orcia_api.dependencies.orchestration_and_settings import (
     get_remote_usage_sanitizer,
     get_resource_lease_service,
     get_studio_and_pack_service,
+    get_trigger_dispatcher_service,
 )
 from orcia_api.dependencies.portal_and_assistant import (
     get_accostage_service,
@@ -102,6 +103,7 @@ __all__ = [
     "get_remote_usage_sanitizer",
     "get_resource_lease_service",
     "get_studio_and_pack_service",
+    "get_trigger_dispatcher_service",
     "get_two_speed_search_service",
     "get_user_preferences_and_mcp_token_service",
     "get_workspace_governance_and_rebaser_service",

@@ -312,6 +312,50 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "workspace can sign or revoke an autonomy contract.",
         ),
     },
+    "ERR_AUTONOMY_CONTRACT_REQUIRED": {
+        "fr": LocalizedErrorCopy(
+            "Contrat d'autonomie actif requis pour ce déclencheur",
+            "Tout déclencheur actif ou déclenché doit être rattaché à un contrat d'autonomie "
+            "signé et actif sur ce processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Active autonomy contract required for this trigger",
+            "Every active or fired trigger must be bound to a signed active autonomy contract "
+            "on this workflow.",
+        ),
+    },
+    "ERR_TRIGGER_CIRCUIT_OPEN": {
+        "fr": LocalizedErrorCopy(
+            "Déclencheur suspendu par protection (coupe-circuit ouvert)",
+            "Ce déclencheur a atteint son seuil de sécurité ou d'erreurs consécutives. "
+            "Réactivez-le manuellement après vérification.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Trigger paused by circuit breaker protection",
+            "This trigger reached its safety or consecutive failure threshold. "
+            "Re-enable it manually after inspection.",
+        ),
+    },
+    "ERR_TRIGGER_NOT_FOUND": {
+        "fr": LocalizedErrorCopy(
+            "Déclencheur introuvable",
+            "Le déclencheur demandé n'existe pas sur cet espace ou processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Trigger not found",
+            "The requested workflow trigger does not exist on this workspace or workflow.",
+        ),
+    },
+    "ERR_TRIGGER_DUPLICATE_KEY": {
+        "fr": LocalizedErrorCopy(
+            "Identifiant technique de déclencheur déjà utilisé",
+            "Un déclencheur avec la même clé existe déjà.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Duplicate trigger key",
+            "A workflow trigger with the same key already exists.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]
