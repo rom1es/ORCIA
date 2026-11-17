@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcia-worker-indexing
+  labels:
+    app.kubernetes.io/name: orcia-worker-indexing
+    app.kubernetes.io/component: worker-indexing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker-indexing
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: orcia-worker-indexing
+        app.kubernetes.io/component: worker-indexing
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker-indexing
+          image: orcia-backend:latest
+          args: ["dramatiq", "orcia_worker.docling_indexer", "--queues", "indexing"]
+          envFrom:
+            - configMapRef:
+                name: orcia-platform-config
+            - secretRef:
+                name: orcia-runtime-secrets-template
+                optional: true
+          env:
+            - name: ORCIA_DEPLOYMENT_ROLE
+              value: "worker-indexing"
+            - name: ORCIA_WORKER_ROLE
+              value: "worker-indexing"
+            - name: ORCIA_DOCLING_ENABLED
+              value: "true"
+            - name: GITNEXUS_STORAGE_ROOT
+              value: "/tmp/graphs"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

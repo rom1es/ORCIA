@@ -69,6 +69,12 @@ services:
     image: orcia-backend:latest
     container_name: orcia-api
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     logging: *default-logging
     env_file:
       - ../../.env
@@ -81,7 +87,7 @@ services:
       CODEGRAPH_MCP_ENDPOINT: http://gitnexus-mcp:8095/mcp
       CODEGRAPH_PROVIDER: ${CODEGRAPH_PROVIDER:-gitnexus}
       ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
-    command: ["uvicorn", "orcia_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "orcia_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     depends_on:
       - postgres
       - redis
@@ -91,6 +97,12 @@ services:
     image: orcia-backend:latest
     container_name: orcia-worker-orchestration
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     logging: *default-logging
     env_file:
       - ../../.env
@@ -103,7 +115,7 @@ services:
       CODEGRAPH_MCP_ENDPOINT: http://gitnexus-mcp:8095/mcp
       CODEGRAPH_PROVIDER: ${CODEGRAPH_PROVIDER:-gitnexus}
       ORCIA_CODEGRAPH_INTERNAL_TOKEN: ${ORCIA_CODEGRAPH_INTERNAL_TOKEN:-orcia-internal-codegraph-token}
-    command: ["python", "-m", "orcia_worker.roles", "--role", "worker-orchestration"]
+    command: ["python", "-m", "orcia_worker.roles", "--role", "worker-orchestration", "--serve"]
     depends_on:
       - postgres
       - redis
@@ -113,6 +125,12 @@ services:
     image: orcia-backend:latest
     container_name: orcia-worker-indexing
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     logging: *default-logging
     env_file:
       - ../../.env
@@ -158,13 +176,19 @@ services:
     image: orcia-backend:latest
     container_name: orcia-trigger-dispatcher
     profiles: ["app-roles"]
+    user: "10001:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     logging: *default-logging
     env_file:
       - ../../.env
     environment:
       ORCIA_DEPLOYMENT_ROLE: "trigger-dispatcher"
       ORCIA_DOCLING_ENABLED: "false"
-    command: ["python", "-m", "orcia_worker.roles", "--role", "trigger-dispatcher"]
+    command: ["python", "-m", "orcia_worker.roles", "--role", "trigger-dispatcher", "--serve"]
     depends_on:
       - postgres
       - redis
@@ -173,6 +197,7 @@ services:
     image: orcia-backend:latest
     container_name: orcia-sandbox-runner
     profiles: ["app-roles"]
+    user: "10001:0"
     logging: *default-logging
     env_file:
       - ../../.env
@@ -180,7 +205,9 @@ services:
       ORCIA_DEPLOYMENT_ROLE: "sandbox-runner"
       ORCIA_DOCLING_ENABLED: "false"
       ORCIA_SANDBOX_TIERS: "TIER_1_WASM,TIER_2_CONTAINER"
-    command: ["python", "-m", "orcia_worker.roles", "--role", "sandbox-runner"]
+      ORCIA_SANDBOX_HOST: "0.0.0.0"
+      ORCIA_SANDBOX_PORT: "8096"
+    command: ["python", "-m", "orcia_worker.roles", "--role", "sandbox-runner", "--serve"]
     security_opt:
       - no-new-privileges:true
     read_only: true

@@ -2758,6 +2758,12 @@ export interface components {
       summary: string;
       tool_name: string;
     };
+    ReadinessResponse: {
+      initialized?: boolean;
+      status?: "ready";
+      trace_id: string;
+      version: string;
+    };
     RebaseExternalArtifactEditsRequest: {
       artifact_uri: string;
       current_version?: number;
@@ -5429,6 +5435,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/ready": {
+    get: {
+      responses: {
+        200: components["schemas"]["ReadinessResponse"];
+      };
+    };
+  };
   "/api/v1/resource-leases/acquire": {
     post: {
       responses: {
@@ -5990,6 +6003,13 @@ export interface paths {
       };
     };
   };
+  "/ready": {
+    get: {
+      responses: {
+        200: components["schemas"]["ReadinessResponse"];
+      };
+    };
+  };
 }
 
 export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
@@ -6299,6 +6319,7 @@ export type RawGlossaryCandidateInput = components["schemas"]["RawGlossaryCandid
 export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
 export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];
 export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
+export type ReadinessResponse = components["schemas"]["ReadinessResponse"];
 export type RebaseExternalArtifactEditsRequest = components["schemas"]["RebaseExternalArtifactEditsRequest"];
 export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChunkSchema"];
 export type ReconcileWorkspaceStalenessItem = components["schemas"]["ReconcileWorkspaceStalenessItem"];

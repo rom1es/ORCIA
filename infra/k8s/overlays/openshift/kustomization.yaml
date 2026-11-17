@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - route-web.yaml
+  - route-api.yaml
+
+commonLabels:
+  app.kubernetes.io/platform: openshift
+  orcia.io/scc-profile: restricted
+
+commonAnnotations:
+  orcia.io/log-contract: "OPS-OPENSHIFT-LOGGING-01"
+  orcia.io/log-format: "ecs-json-stdout"
+
+patches:
+  - path: patch-scc-api.yaml
+  - path: patch-scc-worker-orchestration.yaml
+  - path: patch-scc-worker-indexing.yaml
+  - path: patch-scc-trigger-dispatcher.yaml
+  - path: patch-scc-sandbox-runner.yaml
+  - path: patch-scc-web.yaml

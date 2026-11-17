@@ -27,7 +27,7 @@ _LOG_LEVEL_MAP: dict[str, int] = {
 }
 
 _HEALTH_PROBE_PATH_RE = re.compile(
-    r"(?:^|[\s\"']|https?://[^/\s]+)(?:/api/v1/health|/ready)(?:[?\"\s']|$)"
+    r"(?:^|[\s\"']|https?://[^/\s]+)(?:/api/v1/health|/api/v1/ready|/ready)(?:[?\"\s']|$)"
 )
 _HTTP_STATUS_RE = re.compile(r'(?:"HTTP/[0-9.]+"\s+|status[=:]\s*|\s)([1-5]\d{2})(?:\s|$|"|\))')
 

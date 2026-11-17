@@ -161,6 +161,7 @@ def test_health_probe_filter_drops_200_and_keeps_500_and_other_routes(
 
     access_logger.info('127.0.0.1:42000 - "GET /api/v1/health HTTP/1.1" 200')
     access_logger.info('%s - "%s %s HTTP/%s" %d', "127.0.0.1:42000", "GET", "/ready", "1.1", 200)
+    access_logger.info('127.0.0.1:42000 - "GET /api/v1/ready HTTP/1.1" 200')
     access_logger.info('127.0.0.1:42000 - "GET /api/v1/health HTTP/1.1" 500')
     access_logger.info('%s - "%s %s HTTP/%s" %d', "127.0.0.1:42000", "GET", "/ready", "1.1", 503)
     access_logger.info('127.0.0.1:42000 - "GET /api/v1/workspaces HTTP/1.1" 200')

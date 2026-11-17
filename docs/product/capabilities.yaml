@@ -28,7 +28,7 @@ proposed_fr:
 # Surfaces volontairement sans capacité métier propre (le contrôle `pnpm site:check` les ignore).
 coverage_exemptions:
   - { surface: "/", reason: "Redirection d'accueil vers le cockpit, aucune capacité propre" }
-  - { surface: health, reason: "Sonde technique /api/v1/health (infrastructure, pas une fonctionnalité)" }
+  - { surface: health, reason: "Sondes techniques /api/v1/health, /ready, /api/v1/ready (infrastructure, pas une fonctionnalité)" }
 
 capabilities:
   # ───────────── Fondations (Epic 1, 3.2x) ─────────────
@@ -685,11 +685,11 @@ capabilities:
     status: planned
     notes: "Rebasé le 2026-11-17 (AD-3, AD-6, AD-18) : table dédiée autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD sans co-signature SECOPS, Studio V2 (/processes/studio/$workflowId), opt-in explicite pour generate-and-attach-help, et exclusion de toute écriture code/Git (la boucle fermée de gouvernance d'incident sans code ni écriture Git est reportée dans AIOPS-INCIDENT-LOOP-01)."
   - id: CAP-202
-    title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki) et traces distribuées OpenTelemetry OTLP
-    fr: [] # NFR-OBS-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift
+    title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki), traces distribuées OpenTelemetry OTLP et conformité OpenShift SCC restricted
+    fr: [] # NFR-OBS-1, NFR-SEC-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift
     origin: adhoc
-    origin_ref: 2026-11-15-adr-journalisation-puits-de-logs + 7-0a-socle-de-journalisation-unifie-12-factor-json-stdout + 7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel
-    status: partial
+    origin_ref: 2026-11-15-adr-journalisation-puits-de-logs + 7-0a-socle-de-journalisation-unifie-12-factor-json-stdout + 7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel + 7-0c-conformite-deploiement-openshift-et-clusterlogforwarder
+    status: live
     tests:
       - tests/unit/test_story_7_0a_unified_ecs_logging_and_masking.py
       - tests/security/test_story_7_0a_log_secret_masking.py
@@ -697,6 +697,7 @@ capabilities:
       - tests/conformance/test_log_sink_conformance.py
       - tests/security/test_story_7_0b_log_sink_security.py
       - tests/integration/test_story_7_0b_opensearch_log_sink_container.py
+      - tests/unit/test_story_7_0c_openshift_scc_kustomize_and_ready.py
     verification: runtime
-    surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py)", worker: "configure_logging() / configure_tracing() / instrument_runtime()", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3" }
-    notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et découpé en Stories 7.0a (done), 7.0b (done), 7.0c (backlog). Prérequis débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."
+    surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py, routers/health.py /ready & /api/v1/ready)", worker: "configure_logging() / configure_tracing() / instrument_runtime() + roles.py (--serve/--once) + sandbox_daemon.py (sidecar Tier 1 sous /tmp)", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3 + services app-roles durcis (10001:0, read_only, tmpfs /tmp)", docker: "infra/docker/Dockerfile (python:3.12-slim non-root 10001:0) + infra/docker/Dockerfile.web (nginx-unprivileged 101:0 port 8080) + infra/docker/nginx.conf", k8s: "infra/k8s/base/ + infra/k8s/overlays/openshift/ (SCC restricted sans runAsUser figé, readOnlyRootFilesystem, emptyDir /tmp, NetworkPolicy sandbox-runner egress:[], Routes TLS edge)", operations: "docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01)" }
+    notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et livré intégralement via Stories 7.0a, 7.0b et 7.0c (done). Socle complet débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."

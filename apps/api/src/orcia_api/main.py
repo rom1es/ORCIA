@@ -40,6 +40,7 @@ from orcia_api.routers.enterprise_connectors import (
 )
 from orcia_api.routers.finops import router as finops_router
 from orcia_api.routers.gates import router as gates_router
+from orcia_api.routers.health import probe_router as health_probe_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
 from orcia_api.routers.iam_accounts import router as iam_accounts_router
@@ -116,6 +117,7 @@ def create_app() -> FastAPI:
     application.add_middleware(TraceContextMiddleware)
     register_exception_handlers(application)
     application.include_router(health_router)
+    application.include_router(health_probe_router)
     application.include_router(shell_router)
     application.include_router(auth_router)
     application.include_router(org_and_workspaces_router)

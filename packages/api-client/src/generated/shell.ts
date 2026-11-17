@@ -7,6 +7,7 @@ import type { components } from "./schema";
 
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HumanProfileBadge = components["schemas"]["HumanProfileBadge"];
+export type ReadinessResponse = components["schemas"]["ReadinessResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];

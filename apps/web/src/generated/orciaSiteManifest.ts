@@ -14,10 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 45,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 148,
+    "techLeadReportsCount": 149,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 60,
-    "verifiedCapabilitiesCount": 45
+    "liveCapabilitiesCount": 61,
+    "verifiedCapabilitiesCount": 46
   },
   "activeRoutes": [
     "/",
@@ -504,6 +504,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.0c (CAP-202)",
+      "reportFile": "7-0c-conformite-deploiement-openshift-et-clusterlogforwarder-tech-lead-report.md",
+      "domain": "Conformité OpenShift SCC restricted (Dockerfile & Dockerfile.web Non-Root, Kustomize base + overlays/openshift, Sidecar sandbox-runner, Sonde /ready & Contrat ClusterLogForwarder)",
+      "summary": "Ajout des sondes < 100 ms sans SQL GET /ready & GET /api/v1/ready + extension HealthProbeLogFilter et SDK OpenAPI 0-diff, démon HTTP async interne sandbox_daemon.py (python -I sous /tmp, zéro Podman-in-Pod, auth constante X-Orcia-Sandbox-Token) + roles.py --serve/--once, Dockerfiles non-root (10001:0 Python & nginx-unprivileged:1.27-alpine 101:0 port 8080), durcissement docker-compose.yml, manifestes Kustomize infra/k8s/base/ + overlays/openshift/ sans runAsUser/fsGroup figé (readOnlyRootFilesystem: true, emptyDir /tmp, NetworkPolicy sandbox-runner egress: [], Route TLS Edge) et contrat docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01), 639 passed (96.91 % couv. observability), 9/9 tâches Turbo, lint-imports 5/5, CAP-202 passé live."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 7.0b (CAP-202)",

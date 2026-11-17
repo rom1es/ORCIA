@@ -37,6 +37,25 @@ class HealthResponse(BaseModel):
     )
 
 
+class ReadinessResponse(BaseModel):
+    """Readiness check response payload for `/ready` and `/api/v1/ready`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    status: Literal["ready"] = "ready"
+    version: str = Field(..., description="Semantic version of the ORCIA API.")
+    trace_id: str = Field(
+        ...,
+        min_length=32,
+        max_length=32,
+        description="Active 32-hex W3C OpenTelemetry trace identifier.",
+    )
+    initialized: bool = Field(
+        default=True,
+        description="True when FastAPI Composition Root services are initialized.",
+    )
+
+
 class ShellModuleItem(BaseModel):
     """Descriptor for one of the Global Sidebar Navigation modules (Direction C)."""
 

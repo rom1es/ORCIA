@@ -18040,6 +18040,42 @@
         "title": "RawToolOutputCandidateSchemaItem",
         "type": "object"
       },
+      "ReadinessResponse": {
+        "additionalProperties": false,
+        "description": "Readiness check response payload for `/ready` and `/api/v1/ready`.",
+        "properties": {
+          "initialized": {
+            "default": true,
+            "description": "True when FastAPI Composition Root services are initialized.",
+            "title": "Initialized",
+            "type": "boolean"
+          },
+          "status": {
+            "const": "ready",
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "description": "Active 32-hex W3C OpenTelemetry trace identifier.",
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "description": "Semantic version of the ORCIA API.",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "trace_id"
+        ],
+        "title": "ReadinessResponse",
+        "type": "object"
+      },
       "RebaseExternalArtifactEditsRequest": {
         "additionalProperties": false,
         "description": "Request to run `ExternalEditRebaser` on an externally edited artifact (`Verrou V2`).",
@@ -41362,7 +41398,7 @@
     },
     "/api/v1/health": {
       "get": {
-        "description": "Return platform health status and active 32-hex W3C `trace_id`.",
+        "description": "Return platform liveness status and active 32-hex W3C `trace_id`.",
         "operationId": "get_health_api_v1_health_get",
         "responses": {
           "200": {
@@ -41464,7 +41500,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Check ORCIA API health and propagate W3C trace_id",
+        "summary": "Check ORCIA API liveness and propagate W3C trace_id",
         "tags": [
           "system"
         ]
@@ -48790,6 +48826,127 @@
         "summary": "Pause or replay a blocked Permission Broker step (`Replay Step N`, FR-22)",
         "tags": [
           "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/ready": {
+      "get": {
+        "description": "Return lightweight readiness status (`< 100 ms`) under `/api/v1/ready`.",
+        "operationId": "get_api_v1_ready_api_v1_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Check ORCIA API readiness without heavy SQL queries",
+        "tags": [
+          "system"
         ]
       }
     },
@@ -59945,6 +60102,127 @@
         "summary": "Run pilot workflow orcia://pack-sdlc/workflows/ticket-to-tech-spec (Verrou V3)",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Return lightweight readiness status (`< 100 ms`) under `/ready`.",
+        "operationId": "get_root_ready_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Root OpenShift readinessProbe endpoint",
+        "tags": [
+          "system"
         ]
       }
     }

@@ -1,0 +1,23 @@
+# Durcissement OpenShift SCC `restricted` pour orcia-worker-orchestration (UID/GID arbitraire, FS read-only).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcia-worker-orchestration
+spec:
+  template:
+    metadata:
+      annotations:
+        orcia.io/openshift-scc: "restricted"
+        orcia.io/stdout-structured-logging: "true"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker-orchestration
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

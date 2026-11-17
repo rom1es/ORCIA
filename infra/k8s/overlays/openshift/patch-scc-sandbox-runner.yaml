@@ -1,0 +1,24 @@
+# Durcissement OpenShift SCC `restricted` pour orcia-sandbox-runner (UID/GID arbitraire, zéro Podman-in-Pod).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcia-sandbox-runner
+spec:
+  template:
+    metadata:
+      annotations:
+        orcia.io/openshift-scc: "restricted"
+        orcia.io/stdout-structured-logging: "true"
+        orcia.io/sandbox-isolation: "no-podman-in-pod-egress-none"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sandbox-runner
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
