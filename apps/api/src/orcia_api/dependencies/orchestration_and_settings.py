@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         SqlAuditLedgerService,
         SqlConnectorQuotaGuardService,
     )
+    from orcia_core.ports.log_sink import LogSinkQueryPort
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import DurableOnboardingWizardService
@@ -288,3 +289,19 @@ def get_connector_quota_guard_service(request: Request) -> SqlConnectorQuotaGuar
         svc = SqlConnectorQuotaGuardService(engine=engine)
         request.app.state.connector_quota_guard_service = svc
     return svc
+
+
+def get_log_sink_port(request: Request) -> LogSinkQueryPort:
+    """FastAPI `Depends` provider returning the configured `LogSinkQueryPort` (`AD-23`)."""
+    from orcia_core.observability import build_log_sink_from_env
+
+    sink: LogSinkQueryPort | None = getattr(request.app.state, "log_sink", None)
+    if sink is None:
+        initialize_app_services(request.app)
+        sink = getattr(request.app.state, "log_sink", None)
+        if sink is None:
+            sink = build_log_sink_from_env(
+                http_client=getattr(request.app.state, "http_client", None)
+            )
+            request.app.state.log_sink = sink
+    return sink

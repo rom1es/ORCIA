@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 45,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 147,
+    "techLeadReportsCount": 148,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 60,
     "verifiedCapabilitiesCount": 45
@@ -359,12 +359,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "version": "26.1.0"
     },
     {
-      "name": "opentelemetry-sdk + opentelemetry-exporter-otlp",
-      "version": "1.31.0 / 1.31.0"
+      "name": "opentelemetry-sdk + opentelemetry-exporter-otlp-proto-http",
+      "version": "1.45.2 / 1.45.2"
     },
     {
       "name": "opentelemetry-instrumentation-fastapi + sqlalchemy + httpx",
-      "version": "0.52b0 / 0.52b0 / 0.52b0"
+      "version": "0.66b2 / 0.66b2 / 0.66b2"
     },
     {
       "name": "elasticsearch-py / opensearch-py (Log Sink Client & OpenSearch Compatibility)",
@@ -504,6 +504,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.0b (CAP-202)",
+      "reportFile": "7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel-tech-lead-report.md",
+      "domain": "Puits de Logs Paramétrable (LogSinkQueryPort), Adaptateur OpenSearch/Elasticsearch Prioritaire, Traces OTel OTLP & Profils Compose",
+      "summary": "Création du port pur LogSinkQueryPort (kernel/log_sink_ports.py, ports/log_sink.py, NoopLogSinkAdapter), empreinte déterministe compute_error_fingerprint_sha256, garde SSRF (url_guard.py), adaptateur REST JSON ElasticsearchLogSinkAdapter + factory build_log_sink_from_env câblés au Composition Root API/Worker, tracing OTLP (configure_tracing, instrument_runtime FastAPI/SQLAlchemy/HTTPX sans LoggerProvider ni OTLPLogExporter) avec corrélation TracerProvider → structlog, profils Docker Compose logs-elastic (opensearch:2.19.1 + grafana:11.5.1) et logs-loki (loki:3.4.1 + grafana:11.5.1) + rotation json-file 50m/3, kit LogSinkContractTestKit validé sur Fake et conteneur OpenSearch réel, couverture observability 96.91 % (632 passed), mypy --strict 0 erreur et lint-imports 5/5."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 7.0a (CAP-202)",

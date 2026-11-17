@@ -112,8 +112,26 @@ def bind_trace_context(
     span_id: str | None = None,
 ) -> TraceContext:
     """Bind `trace_id`, `workspace_id`, `run_id`, and `step_id` to contextvars, structlog & OTel."""
-    normalized = resolve_or_create_trace_id(x_trace_id=trace_id)
-    resolved_span_id = span_id or generate_span_id()
+    active_otel_span = otel_trace.get_current_span()
+    active_otel_ctx = active_otel_span.get_span_context() if active_otel_span else None
+    has_recording_otel_span = bool(
+        active_otel_span is not None
+        and active_otel_span.is_recording()
+        and active_otel_ctx is not None
+        and active_otel_ctx.is_valid
+    )
+
+    if has_recording_otel_span and active_otel_ctx is not None and trace_id is None:
+        normalized = f"{active_otel_ctx.trace_id:032x}"
+        resolved_span_id = span_id or f"{active_otel_ctx.span_id:016x}"
+    else:
+        normalized = resolve_or_create_trace_id(x_trace_id=trace_id)
+        resolved_span_id = span_id or (
+            f"{active_otel_ctx.span_id:016x}"
+            if has_recording_otel_span and active_otel_ctx is not None
+            else generate_span_id()
+        )
+
     ctx = TraceContext(
         trace_id=normalized,
         workspace_id=workspace_id,
@@ -123,18 +141,26 @@ def bind_trace_context(
     )
     _trace_ctx_var.set(ctx)
 
-    prev_token = _otel_token_var.get()
-    if prev_token is not None:
-        with contextlib.suppress(Exception):
-            otel_context.detach(prev_token)
-    otel_span_ctx = SpanContext(
-        trace_id=int(normalized, 16),
-        span_id=int(resolved_span_id, 16),
-        is_remote=False,
-        trace_flags=TraceFlags(TraceFlags.SAMPLED),
-    )
-    token = otel_context.attach(set_span_in_context(NonRecordingSpan(otel_span_ctx)))
-    _otel_token_var.set(token)
+    if has_recording_otel_span and active_otel_span is not None:
+        if workspace_id:
+            active_otel_span.set_attribute("orcia.workspace_id", workspace_id)
+        if run_id:
+            active_otel_span.set_attribute("orcia.run_id", run_id)
+        if step_id:
+            active_otel_span.set_attribute("orcia.step_id", step_id)
+    else:
+        prev_token = _otel_token_var.get()
+        if prev_token is not None:
+            with contextlib.suppress(Exception):
+                otel_context.detach(prev_token)
+        otel_span_ctx = SpanContext(
+            trace_id=int(normalized, 16),
+            span_id=int(resolved_span_id, 16),
+            is_remote=False,
+            trace_flags=TraceFlags(TraceFlags.SAMPLED),
+        )
+        token = otel_context.attach(set_span_in_context(NonRecordingSpan(otel_span_ctx)))
+        _otel_token_var.set(token)
 
     structlog.contextvars.clear_contextvars()
     bound_fields: dict[str, str] = {"trace_id": ctx.trace_id, "span_id": ctx.span_id}

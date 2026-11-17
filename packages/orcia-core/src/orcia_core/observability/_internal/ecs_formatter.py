@@ -219,8 +219,25 @@ class HealthProbeLogFilter(logging.Filter):
 
 def _resolve_active_trace_fields(
     trace_ctx_getter: Callable[[], Any],
-) -> tuple[str | None, str | None, str | None, str | None, str | None]:
+) -> tuple[str | None, str | None, str | None, str | None, str | None, bool]:
     active_ctx = trace_ctx_getter()
+    active_otel_span = otel_trace.get_current_span()
+    otel_ctx = active_otel_span.get_span_context() if active_otel_span else None
+    is_recording_otel = bool(
+        active_otel_span is not None
+        and active_otel_span.is_recording()
+        and otel_ctx is not None
+        and otel_ctx.is_valid
+    )
+    if is_recording_otel and otel_ctx is not None:
+        return (
+            f"{otel_ctx.trace_id:032x}",
+            f"{otel_ctx.span_id:016x}",
+            active_ctx.workspace_id if active_ctx is not None else None,
+            active_ctx.run_id if active_ctx is not None else None,
+            active_ctx.step_id if active_ctx is not None else None,
+            True,
+        )
     if active_ctx is not None:
         return (
             active_ctx.trace_id,
@@ -228,12 +245,11 @@ def _resolve_active_trace_fields(
             active_ctx.workspace_id,
             active_ctx.run_id,
             active_ctx.step_id,
+            False,
         )
-    active_otel_span = otel_trace.get_current_span()
-    otel_ctx = active_otel_span.get_span_context() if active_otel_span else None
     if otel_ctx is not None and otel_ctx.is_valid:
-        return (f"{otel_ctx.trace_id:032x}", f"{otel_ctx.span_id:016x}", None, None, None)
-    return (None, None, None, None, None)
+        return (f"{otel_ctx.trace_id:032x}", f"{otel_ctx.span_id:016x}", None, None, None, False)
+    return (None, None, None, None, None, False)
 
 
 def build_ecs_normalizer(
@@ -269,11 +285,17 @@ def build_ecs_normalizer(
         env_val = str(event_dict.pop("env", env))
         ver = str(event_dict.pop("version", version))
 
-        ctx_trace, ctx_span, ctx_ws, ctx_run, ctx_step = _resolve_active_trace_fields(
-            trace_ctx_getter
+        ctx_trace, ctx_span, ctx_ws, ctx_run, ctx_step, is_recording_otel = (
+            _resolve_active_trace_fields(trace_ctx_getter)
         )
-        trace_id = event_dict.pop("trace_id", ctx_trace)
-        span_id = event_dict.pop("span_id", ctx_span)
+        popped_trace = event_dict.pop("trace_id", None)
+        popped_span = event_dict.pop("span_id", None)
+        if is_recording_otel:
+            trace_id = ctx_trace
+            span_id = ctx_span
+        else:
+            trace_id = popped_trace if popped_trace is not None else ctx_trace
+            span_id = popped_span if popped_span is not None else ctx_span
         workspace_id = event_dict.pop("workspace_id", ctx_ws)
         run_id = event_dict.pop("run_id", ctx_run)
         step_id = event_dict.pop("step_id", ctx_step)

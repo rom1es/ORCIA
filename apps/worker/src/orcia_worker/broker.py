@@ -15,6 +15,7 @@ from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 
 from orcia_core.config import get_env, load_orcia_env, resolve_redis_url
+from orcia_core.observability import configure_tracing, instrument_runtime
 from orcia_core.observability.logging import (
     bind_trace_context,
     ensure_logging_configured,
@@ -22,7 +23,10 @@ from orcia_core.observability.logging import (
 )
 
 load_orcia_env()
-ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
+_worker_service_name = os.environ.get("ORCIA_WORKER_ROLE", "worker")
+ensure_logging_configured(service=_worker_service_name)
+configure_tracing(service_name=_worker_service_name)
+instrument_runtime(instrument_httpx=True)
 
 logger = get_logger("orcia.worker")
 

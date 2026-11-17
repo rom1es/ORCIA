@@ -688,9 +688,15 @@ capabilities:
     title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki) et traces distribuées OpenTelemetry OTLP
     fr: [] # NFR-OBS-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift
     origin: adhoc
-    origin_ref: 2026-11-15-adr-journalisation-puits-de-logs + 7-0a-socle-de-journalisation-unifie-12-factor-json-stdout
+    origin_ref: 2026-11-15-adr-journalisation-puits-de-logs + 7-0a-socle-de-journalisation-unifie-12-factor-json-stdout + 7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel
     status: partial
-    tests: [tests/unit/test_story_7_0a_unified_ecs_logging_and_masking.py, tests/security/test_story_7_0a_log_secret_masking.py]
+    tests:
+      - tests/unit/test_story_7_0a_unified_ecs_logging_and_masking.py
+      - tests/security/test_story_7_0a_log_secret_masking.py
+      - tests/unit/test_story_7_0b_log_sink_and_otel_tracing.py
+      - tests/conformance/test_log_sink_conformance.py
+      - tests/security/test_story_7_0b_log_sink_security.py
+      - tests/integration/test_story_7_0b_opensearch_log_sink_container.py
     verification: runtime
-    surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, main.py)", worker: "ensure_logging_configured() / configure_logging()", compose: "profiles logs-loki / logs-elastic" }
-    notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et découpé en Stories 7.0a (done), 7.0b, 7.0c. Prérequis bloquant pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et la vérification post-action POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."
+    surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py)", worker: "configure_logging() / configure_tracing() / instrument_runtime()", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3" }
+    notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et découpé en Stories 7.0a (done), 7.0b (done), 7.0c (backlog). Prérequis débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."

@@ -13,6 +13,7 @@ from orcia_core.gates.tier2_sandbox import (
     list_deployment_role_specs,
     verify_role_process_isolation,
 )
+from orcia_core.observability import configure_tracing, instrument_runtime
 from orcia_core.observability.logging import configure_logging
 
 
@@ -27,7 +28,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     role_name: DeploymentRoleName = args.role
-    configure_logging(service=os.environ.get("ORCIA_WORKER_ROLE", role_name))
+    service_name = os.environ.get("ORCIA_WORKER_ROLE", role_name)
+    configure_logging(service=service_name)
+    configure_tracing(service_name=service_name)
+    instrument_runtime(instrument_httpx=True)
     verify_role_process_isolation(role_name)
     return 0
 

@@ -354,8 +354,8 @@ flowchart TD
 | **orjson (Fast JSON Serialization)** | `3.13.0` |
 | **uuid-utils (UUIDv7 Generation Python)** | `1.1.0` |
 | **structlog (Structured JSON Logging Python)** | `26.1.0` |
-| **opentelemetry-sdk + opentelemetry-exporter-otlp** | `1.31.0 / 1.31.0` |
-| **opentelemetry-instrumentation-fastapi + sqlalchemy + httpx** | `0.52b0 / 0.52b0 / 0.52b0` |
+| **opentelemetry-sdk + opentelemetry-exporter-otlp-proto-http** | `1.45.2 / 1.45.2` |
+| **opentelemetry-instrumentation-fastapi + sqlalchemy + httpx** | `0.66b2 / 0.66b2 / 0.66b2` |
 | **elasticsearch-py / opensearch-py (Log Sink Client & OpenSearch Compatibility)** | `8.17.1 / 2.8.0` |
 | **Grafana / Loki / OpenTelemetry Collector (Dev Observability Stack & Profiles)** | `11.5.1 / 3.4.1 / 0.120.0` |
 | **OpenShift Logging / ClusterLogForwarder (Target Prod Platform Sink)** | `5.9+ / 6.0` |

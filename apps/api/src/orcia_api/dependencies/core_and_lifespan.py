@@ -297,6 +297,11 @@ def initialize_app_services(app: FastAPI) -> None:
             limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
         )
 
+    if getattr(app.state, "log_sink", None) is None:
+        from orcia_core.observability import build_log_sink_from_env
+
+        app.state.log_sink = build_log_sink_from_env(http_client=app.state.http_client)
+
     if (
         getattr(app.state, "session_maker", None) is None
         and os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
@@ -336,10 +341,15 @@ def initialize_app_services(app: FastAPI) -> None:
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     """FastAPI lifespan context manager initializing Composition Root services (`AD-19`)."""
+    from orcia_core.observability import configure_tracing, instrument_runtime, shutdown_tracing
+
     initialize_app_services(app)
+    tracer_provider = configure_tracing(service_name="api")
+    instrument_runtime(app=app, engine=getattr(app.state, "db_engine", None))
     try:
         yield
     finally:
+        shutdown_tracing(tracer_provider)
         http_client = getattr(app.state, "http_client", None)
         if http_client is not None:
             with suppress(Exception):
