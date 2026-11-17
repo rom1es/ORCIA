@@ -8,6 +8,7 @@ decoupled subscribers (`audit_finops`, `ontology`, `sse`) without coupling `engi
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -16,7 +17,11 @@ import dramatiq
 from dbos import DBOS
 
 from orcia_core.audit_finops import AuditLedgerOutboxSubscriber, SqlAuditLedgerService
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork, SqlDomainEventsOutboxRepository
 from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort
 from orcia_kernel.events import DomainEvent
@@ -205,6 +210,7 @@ async def relay_sql_outbox_with_engine(engine: AsyncEngine, *, batch_size: int =
 @dramatiq.actor(actor_name="sql_outbox_relay", max_retries=3)
 def sql_outbox_relay_actor(batch_size: int = 50) -> int:
     """Dramatiq actor relaying pending `domain_events_outbox` rows into `audit_ledger`."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     from sqlalchemy.ext.asyncio import create_async_engine
     from sqlalchemy.pool import NullPool
 
@@ -223,6 +229,7 @@ def sql_outbox_relay_actor(batch_size: int = 50) -> int:
 @dramatiq.actor(actor_name="outbox_relay", max_retries=3)
 def outbox_relay_actor(batch_size: int = 100) -> int:
     """Idempotent Dramatiq actor relaying a batch of Outbox events."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     relay = DramatiqOutboxRelay()
     return relay.relay_pending_batch(batch_size=batch_size)
 
@@ -236,6 +243,7 @@ def _dbos_outbox_relay_step(batch_size: int) -> int:
 @DBOS.workflow()
 def dbos_outbox_relay_workflow(batch_size: int = 100) -> int:
     """Idempotent DBOS workflow relaying a batch of Outbox events (`C3`)."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     return _dbos_outbox_relay_step(batch_size)
 
 

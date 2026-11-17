@@ -7,11 +7,16 @@ singleton with an idempotent DBOS Transact durable workflow runner (`@DBOS.workf
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from dbos import DBOS, SetWorkflowID
 
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 from orcia_core.orchestration import (
     DbosDurableWorkflowEngine,
     DbosSqlAlchemyUnitOfWork,
@@ -194,6 +199,7 @@ def dbos_step_runner_workflow(
     commit_immediately: bool = True,
 ) -> StepRunnerExecutionResult:
     """Durable DBOS workflow executing a single step with checkpointing (`AD-2`, `C4`)."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     return _dbos_step_execution(run_id, step_key, trace_id, commit_immediately)
 
 

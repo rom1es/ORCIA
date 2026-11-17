@@ -27,6 +27,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +67,28 @@ DOCKER_SERVICES: tuple[str, ...] = ("postgres", "redis", "minio")
 PROCESS_SERVICES: tuple[str, ...] = ("api", "worker", "web")
 ALL_COMPONENTS: tuple[str, ...] = (*DOCKER_SERVICES, *PROCESS_SERVICES)
 VALID_TARGETS: tuple[str, ...] = ("all", "infra", *ALL_COMPONENTS)
+MAX_LOCAL_LOG_BYTES: int = 50 * 1024 * 1024
+LOCAL_LOG_BACKUP_COUNT: int = 3
+
+
+def create_bounded_log_handler(
+    log_path: Path,
+    *,
+    max_bytes: int = MAX_LOCAL_LOG_BYTES,
+    backup_count: int = LOCAL_LOG_BACKUP_COUNT,
+) -> RotatingFileHandler:
+    """Create a 50 MiB bounded `RotatingFileHandler` and roll over oversized local logs."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(
+        filename=str(log_path),
+        mode="a",
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+        encoding="utf-8",
+    )
+    if log_path.is_file() and log_path.stat().st_size >= max_bytes:
+        handler.doRollover()
+    return handler
 
 
 @dataclass(frozen=True, slots=True)
@@ -361,16 +384,31 @@ def start_component(component: str) -> bool:
     else:  # pragma: no cover
         raise ValueError(f"Unsupported process component: {component}")
 
-    print(f"▶ Démarrage de [{component}] (logs: {log_path.relative_to(REPO_ROOT)})...")
-    with log_path.open("ab") as log_file:
+    if env.get("ORCIA_MANAGE_LOG_STDOUT") == "1":
+        print(f"▶ Démarrage de [{component}] (logs: stdout)...")
         proc = subprocess.Popen(
             cmd,
             cwd=cwd,
             env=env,
-            stdout=log_file,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT,
             start_new_session=True,
         )
+    else:
+        rel_log = log_path.relative_to(REPO_ROOT)
+        print(f"▶ Démarrage de [{component}] (logs: {rel_log}, max 50 Mo)...")
+        log_handler = create_bounded_log_handler(log_path)
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=cwd,
+                env=env,
+                stdout=log_handler.stream,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        finally:
+            log_handler.close()
 
     write_pid_file(component, proc.pid)
 

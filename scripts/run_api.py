@@ -25,13 +25,15 @@ for rel_src in ("packages/orcia-core/src", "apps/api/src", "apps/worker/src"):
 import uvicorn  # noqa: E402
 
 from orcia_core.config import load_orcia_env, resolve_api_host_and_port  # noqa: E402
+from orcia_core.observability.logging import configure_logging  # noqa: E402
 
 
 def main() -> None:
     """Launch uvicorn with `ORCIA_API_HOST` and `ORCIA_API_PORT` from `.env`."""
     load_orcia_env()
+    configure_logging(service="api")
     host, port = resolve_api_host_and_port()
-    uvicorn.run("orcia_api.main:app", host=host, port=port, reload=True)
+    uvicorn.run("orcia_api.main:app", host=host, port=port, reload=True, log_config=None)
 
 
 if __name__ == "__main__":  # pragma: no cover

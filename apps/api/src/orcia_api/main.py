@@ -69,13 +69,13 @@ from orcia_api.routers.workspace_governance import (
 )
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
-from orcia_core.observability.logging import configure_structlog
+from orcia_core.observability.logging import configure_logging
 
 
 def create_app() -> FastAPI:
     """Create and configure the ORCIA FastAPI application (OpenAPI 3.1.0, Composition Root)."""
     load_orcia_env()
-    configure_structlog()
+    configure_logging(service="api")
     application = FastAPI(
         title="ORCIA Platform API",
         version=__version__,

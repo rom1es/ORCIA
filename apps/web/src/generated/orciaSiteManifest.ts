@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 45,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 146,
+    "techLeadReportsCount": 147,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 60,
     "verifiedCapabilitiesCount": 45
@@ -504,6 +504,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 7.0a (CAP-202)",
+      "reportFile": "7-0a-socle-de-journalisation-unifie-12-factor-json-stdout-tech-lead-report.md",
+      "domain": "Socle de Journalisation Unifié 12-Factor (JSON stdout ECS), Masquage des Secrets (NFR-SEC-4), LOG_LEVEL Dynamique & Rotation 50 Mo",
+      "summary": "Extraction _internal/ecs_formatter.py, configure_logging / ensure_logging_configured via ProcessorFormatter unifiant structlog et stdlib (uvicorn, dramatiq, dbos, sqlalchemy) sur stdout (0 stderr), HealthProbeLogFilter (/api/v1/health, /ready), masquage récursif renforcé (Bearer, eyJ..., sk-..., pat, ORCIA_BOOTSTRAP_TOKEN, SecretRef, exception), rotation 50 Mo dans scripts/manage.py, suppression de pino dans apps/web/package.json, couverture observability 96.79 %, lint-imports 5/5."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Cadrage & Rebasage Epic 7 (CAP-201, CAP-202)",

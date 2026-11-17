@@ -15,9 +15,14 @@ from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 
 from orcia_core.config import get_env, load_orcia_env, resolve_redis_url
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 
 load_orcia_env()
+ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
 
 logger = get_logger("orcia.worker")
 
@@ -95,4 +100,5 @@ def execute_system_ping(
 @dramatiq.actor(max_retries=3)
 def system_ping_actor(idempotency_key: str, trace_id: str) -> None:
     """Idempotent Dramatiq actor verifying worker queue liveness."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     execute_system_ping(idempotency_key=idempotency_key, trace_id=trace_id)

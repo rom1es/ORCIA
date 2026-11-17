@@ -26,7 +26,11 @@ from orcia_core.bootstrap._internal.sql_datasource_freshness import (
     resolve_codegraph_indexer_token,
     update_datasource_freshness_state,
 )
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_core.permissions.enterprise_connectors_crypto import (
     validate_safe_connector_base_url,
@@ -235,6 +239,7 @@ def codegraph_indexer_actor(
     storage_root: str | None = None,
 ) -> None:
     """Idempotent Dramatiq actor for background GitNexus graph maintenance."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     execute_codegraph_index_job(
         workspace_id=workspace_id,
         datasource_id=datasource_id,

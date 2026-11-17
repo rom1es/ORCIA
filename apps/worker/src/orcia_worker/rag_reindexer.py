@@ -8,6 +8,7 @@ Conventions (AGENTS.md, ARCHITECTURE-SPINE.md):
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -16,7 +17,11 @@ import httpx
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from orcia_core.config import get_env, resolve_database_url
-from orcia_core.observability.logging import bind_trace_context, get_logger
+from orcia_core.observability.logging import (
+    bind_trace_context,
+    ensure_logging_configured,
+    get_logger,
+)
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     get_ai_model_mapping_pg18,
 )
@@ -145,6 +150,7 @@ def execute_rag_reindex_worker_job(
 @dramatiq.actor(actor_name="rag_reindexer", max_retries=2)
 def rag_reindex_actor(job_id: str, target_model_id: str, trace_id: str) -> None:
     """Idempotent Dramatiq actor executing background vector corpus reindexing."""
+    ensure_logging_configured(service=os.environ.get("ORCIA_WORKER_ROLE", "worker"))
     execute_rag_reindex_worker_job(
         job_id=job_id,
         target_model_id=target_model_id,
