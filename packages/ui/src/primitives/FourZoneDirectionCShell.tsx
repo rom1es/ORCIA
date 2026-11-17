@@ -116,6 +116,9 @@ export function computeDefaultHelpColumnOpen(
   viewportWidth: number,
   pendingDecisionsTotal: number,
 ): boolean {
+  if (viewportWidth < 1024) {
+    return false;
+  }
   if (viewportWidth < 1440 && pendingDecisionsTotal >= 1) {
     return false;
   }
@@ -154,7 +157,7 @@ export function FourZoneDirectionCShell({
   onHelpColumnOpenChange,
   children,
 }: FourZoneDirectionCShellProps): React.ReactElement {
-  const [railCollapsed, setRailCollapsed] = useState<boolean>(false);
+  const [railCollapsed, setRailCollapsed] = useState<boolean>(() => viewportWidth < 768);
   const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState<boolean>(false);
   const [internalHelpColumnOpen, setInternalHelpColumnOpen] = useState<boolean>(() =>

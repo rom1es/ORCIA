@@ -238,12 +238,18 @@ class InvalidOrExpiredLoginChallengeError(OrciaDomainError):
     http_status, type_slug = 401, "auth-challenge-invalid"
 
 
+class ConnectorCircuitOpenError(OrciaDomainError):
+    error_code = "ERR_CONNECTOR_CIRCUIT_OPEN"
+    http_status, type_slug = 503, "connector-circuit-open"
+
+
 __all__ = [
     "AdminLockoutPreventedError",
     "AuthenticationRequiredError",
     "C3WorkspaceRequiredError",
     "CodegraphWorkspaceLeadRequiredError",
     "ConfusedDeputyBlockedError",
+    "ConnectorCircuitOpenError",
     "DuplicateIamPrincipalError",
     "GrantEscalationForbiddenError",
     "InvalidCredentialsError",

@@ -7,16 +7,23 @@ decoupled subscribers (`audit_finops`, `ontology`, `sse`) without coupling `engi
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import dramatiq
 from dbos import DBOS
 
+from orcia_core.audit_finops import AuditLedgerOutboxSubscriber, SqlAuditLedgerService
 from orcia_core.observability.logging import bind_trace_context, get_logger
 from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork, SqlDomainEventsOutboxRepository
+from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort
 from orcia_kernel.events import DomainEvent
 from orcia_kernel.ports import OutboxRelayPort
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = get_logger("orcia.worker.outbox_relay")
 
@@ -33,8 +40,12 @@ class OutboxEventBus:
     ontology_extraction_queue: list[DomainEvent] = field(default_factory=list)
     notifications_queue: list[DomainEvent] = field(default_factory=list)
     sse_published_messages: list[tuple[str, DomainEvent]] = field(default_factory=list)
+    audit_sink: AuditLedgerSinkPort | None = None
+    audit_subscriber: AuditLedgerOutboxSubscriber | None = None
 
     def __post_init__(self) -> None:
+        if self.audit_sink is not None and self.audit_subscriber is None:
+            self.audit_subscriber = AuditLedgerOutboxSubscriber(self.audit_sink)
         self.subscribe("*", "audit_finops", self._on_audit_finops)
         self.subscribe("ArtifactProduced", "ontology", self._on_ontology_l4)
         self.subscribe("*", "notifications", self._on_notifications)
@@ -68,6 +79,8 @@ class OutboxEventBus:
     async def publish_idempotent_async(self, event: DomainEvent) -> None:
         """Async callback for `SqlDomainEventsOutboxRepository.claim_and_relay_pending_batch`."""
         self.publish_idempotent(event)
+        if self.audit_subscriber is not None:
+            await self.audit_subscriber.on_domain_event(event)
 
     def _on_audit_finops(self, event: DomainEvent) -> None:
         self.audit_finops_ledger.append(event)
@@ -84,11 +97,22 @@ class OutboxEventBus:
         self.sse_published_messages.append((topic, event))
 
 
+def build_default_outbox_event_bus(engine: AsyncEngine | None = None) -> OutboxEventBus:
+    """Construct an `OutboxEventBus` wired to `SqlAuditLedgerService(engine)` when available."""
+    sink = SqlAuditLedgerService(engine=engine) if engine is not None else None
+    return OutboxEventBus(audit_sink=sink)
+
+
 class DramatiqOutboxRelay(OutboxRelayPort):
     """`OutboxRelayPort` implementation backed by Dramatiq (`C3`, `Q2: 2A`)."""
 
-    def __init__(self, event_bus: OutboxEventBus | None = None) -> None:
-        self.event_bus = event_bus or OutboxEventBus()
+    def __init__(
+        self,
+        event_bus: OutboxEventBus | None = None,
+        *,
+        engine: AsyncEngine | None = None,
+    ) -> None:
+        self.event_bus = event_bus or build_default_outbox_event_bus(engine)
         self._pending: dict[str, DomainEvent] = {}
         self._published_ids: set[str] = set()
 
@@ -112,6 +136,10 @@ class DramatiqOutboxRelay(OutboxRelayPort):
         batch_size: int = 50,
     ) -> int:
         """Claim and relay `PENDING` rows from `domain_events_outbox` (`SKIP LOCKED`)."""
+        if self.event_bus.audit_subscriber is None and getattr(uow, "engine", None) is not None:
+            sink = SqlAuditLedgerService(engine=uow.engine)
+            self.event_bus.audit_sink = sink
+            self.event_bus.audit_subscriber = AuditLedgerOutboxSubscriber(sink)
         repo = SqlDomainEventsOutboxRepository(uow)
         return await repo.claim_and_relay_pending_batch(
             batch_size=batch_size,
@@ -122,8 +150,13 @@ class DramatiqOutboxRelay(OutboxRelayPort):
 class DbosOutboxRelay(OutboxRelayPort):
     """`OutboxRelayPort` implementation backed by a DBOS workflow/step (`C3`, `Q2: 2A`)."""
 
-    def __init__(self, event_bus: OutboxEventBus | None = None) -> None:
-        self.event_bus = event_bus or OutboxEventBus()
+    def __init__(
+        self,
+        event_bus: OutboxEventBus | None = None,
+        *,
+        engine: AsyncEngine | None = None,
+    ) -> None:
+        self.event_bus = event_bus or build_default_outbox_event_bus(engine)
         self._pending: dict[str, DomainEvent] = {}
         self._published_ids: set[str] = set()
 
@@ -147,11 +180,44 @@ class DbosOutboxRelay(OutboxRelayPort):
         batch_size: int = 50,
     ) -> int:
         """Claim and relay `PENDING` rows from `domain_events_outbox` (`SKIP LOCKED`)."""
+        if self.event_bus.audit_subscriber is None and getattr(uow, "engine", None) is not None:
+            sink = SqlAuditLedgerService(engine=uow.engine)
+            self.event_bus.audit_sink = sink
+            self.event_bus.audit_subscriber = AuditLedgerOutboxSubscriber(sink)
         repo = SqlDomainEventsOutboxRepository(uow)
         return await repo.claim_and_relay_pending_batch(
             batch_size=batch_size,
             subscriber_fn=self.event_bus.publish_idempotent_async,
         )
+
+
+async def relay_sql_outbox_with_engine(engine: AsyncEngine, *, batch_size: int = 50) -> int:
+    """Relay one SQL Outbox batch into `audit_ledger` using a shared `AsyncEngine`."""
+    uow = await DbosSqlAlchemyUnitOfWork.create(
+        "",
+        engine=engine,
+        run_migrations=False,
+    )
+    relay = DramatiqOutboxRelay(engine=engine)
+    return await relay.relay_sql_pending_batch(uow, batch_size=batch_size)
+
+
+@dramatiq.actor(actor_name="sql_outbox_relay", max_retries=3)
+def sql_outbox_relay_actor(batch_size: int = 50) -> int:
+    """Dramatiq actor relaying pending `domain_events_outbox` rows into `audit_ledger`."""
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    from orcia_core.config import resolve_database_url
+
+    async def _run() -> int:
+        engine = create_async_engine(resolve_database_url(), poolclass=NullPool)
+        try:
+            return await relay_sql_outbox_with_engine(engine, batch_size=batch_size)
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(_run())
 
 
 @dramatiq.actor(actor_name="outbox_relay", max_retries=3)
@@ -177,6 +243,9 @@ __all__ = [
     "DbosOutboxRelay",
     "DramatiqOutboxRelay",
     "OutboxEventBus",
+    "build_default_outbox_event_bus",
     "dbos_outbox_relay_workflow",
     "outbox_relay_actor",
+    "relay_sql_outbox_with_engine",
+    "sql_outbox_relay_actor",
 ]

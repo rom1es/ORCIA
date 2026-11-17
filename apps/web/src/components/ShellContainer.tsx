@@ -246,6 +246,7 @@ function InnerShellContainer({
           }
         }}
         labels={dictionary.fourZoneShell}
+        viewportWidth={state.viewportWidth}
         disabledMenuKeys={disabledMenuKeys}
         hiddenMenuKeys={isPlatformAdmin ? [] : ["configuration"]}
         helpColumnOpen={state.helpColumnOpen}

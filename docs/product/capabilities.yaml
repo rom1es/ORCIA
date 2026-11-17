@@ -319,7 +319,7 @@ capabilities:
     status: live
     tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx]
     verification: runtime
-    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: /api/v1/navigation }
+    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: "/api/v1/navigation (shell.py)" }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
@@ -357,14 +357,27 @@ capabilities:
     verification: runtime
     surfaces: { route: /help, api: portal_and_help.py }
   - id: CAP-065
-    title: Journal d'activité (auteurs, horodatage, filtres)
-    fr: [FR-25, FR-32]   # chevauche Story 6.1 (backlog) — à réconcilier (CAP-ACT-3)
-    origin: adhoc
-    origin_ref: 2026-11-05-journal-activite-menu-dedie-auteurs-horodatage-et-filtres
-    status: partial
-    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts]
-    surfaces: { route: /activity, ui: ActivityLogExplorerView }
-    notes: "Lit auditEvents du snapshot d'accostage (bootstrap_accostage.py), pas un audit_ledger append-only. Story 6.1 doit remplacer cette source (réconciliation CAP-ACT-3, 2026-11-08)."
+    title: Registre de provenance auditable immuable (`audit_ledger` append-only) & journal d'activité (/activity)
+    fr: [FR-25, FR-32]
+    origin: epic
+    origin_ref: 6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen
+    status: live
+    verification: runtime
+    tests:
+      - tests/unit/test_story_6_1_audit_ledger_core.py
+      - tests/unit/test_story_6_1_outbox_subscriber.py
+      - tests/unit/test_story_6_1_sql_audit_ledger.py
+      - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
+      - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
+      - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
+      - apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx
+      - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
+    surfaces:
+      route: /activity
+      api: audit_ledger.py
+      migration: "20261116_0601"
+      ui: "ActivityLogExplorerView + ActivityProvenanceModal"
+    notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée contre toute modification ou suppression, traçabilité des tests de connexion à chaud, contrôle anti-IDOR par périmètre et export JSON/Markdown certifié conforme au manifeste d'exécution et aux pièces SeaweedFS."
   - id: CAP-066
     title: Site de présentation /showcase et site statique autonome (sync auto)
     fr: []
@@ -623,20 +636,47 @@ capabilities:
     verification: runtime
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
-      api: "ai_models_hub.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
       ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
 
-  # ───────────── Planifié (non livré) ─────────────
+  # ───────────── Epic 6 : Provenance Immuable, FinOps Consolidé & Impact Cognitif ─────────────
   - id: CAP-200
-    title: Provenance auditable immuable (audit_ledger append-only) et comptabilité FinOps
+    title: Provenance auditable immuable (audit_ledger append-only), comptabilité FinOps consolidée, impact cognitif et télémétrie multi-métriques MCP
     fr: [FR-25, FR-26, FR-27]
     origin: epic
-    origin_ref: epic-6 (6-1..6-4, backlog)
-    status: planned
-    surfaces: { route: /finops (shell existant), "orcia_core/audit_finops": "errors.py seul" }
-    notes: "Constat 2026-11-08 : aucune migration audit_ledger, audit_finops = errors.py, /finops = coquille. SEC-03 (DEK/KEK) livré via 4.2. Story 6.1 réutilise ActivityLogExplorerView (CAP-065)."
+    origin_ref: epic-6 (6-1..6-4)
+    status: live
+    verification: runtime
+    surfaces:
+      route: /finops
+      api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py"
+      ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + FinopsBudgetOverrideModal + FinopsRemoteMcpServicesTab + FinopsConnectorQuotaModal + ActivityLogExplorerView + ActivityProvenanceModal + FinopsHumanMasteryTab + CognitiveMetricCard"
+      migration: "20261116_0601, 20261116_0602, 20261116_0604, 20261117_0605"
+    tests:
+      - tests/unit/test_story_6_1_audit_ledger_core.py
+      - tests/unit/test_story_6_1_sql_audit_ledger.py
+      - tests/unit/test_story_6_1_outbox_subscriber.py
+      - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
+      - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
+      - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
+      - tests/unit/test_story_6_2_finops_accounting_decimal.py
+      - tests/unit/test_story_6_2_budget_circuit_guards.py
+      - tests/evals/test_story_6_2_cognitive_escalation_finops.py
+      - tests/integration/api/test_story_6_2_finops_postgres18.py
+      - apps/web/src/__tests__/story-6-2-finops-dashboard-kpis-and-modals.test.tsx
+      - tests/unit/test_story_6_3_cognitive_governance_and_drift.py
+      - tests/evals/test_story_6_3_cognitive_governance_evals.py
+      - tests/integration/api/test_story_6_3_cognitive_impact_postgres18.py
+      - apps/web/src/__tests__/story-6-3-finops-cognitive-impact-and-f5.test.tsx
+      - tests/unit/test_story_6_4_remote_usage_sanitizer.py
+      - tests/unit/test_story_6_4_connector_quota_isolation.py
+      - tests/unit/test_story_6_4_sql_connector_quotas_unit.py
+      - tests/integration/api/test_story_6_4_connector_quotas_postgres18.py
+      - apps/web/src/__tests__/story-6-4-finops-connector-quotas-and-circuit.test.tsx
+      - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
+    notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives) et Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs idempotents, auto-remédiation (UJ-12)
     fr: [FR-29, FR-30]

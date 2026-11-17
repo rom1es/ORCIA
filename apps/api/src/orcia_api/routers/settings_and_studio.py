@@ -11,6 +11,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 
 from orcia_api.dependencies import (
+    get_audit_ledger_service,
     get_auth_service,
     get_connector_hub_service,
     get_hierarchical_rbac_service,
@@ -40,11 +41,16 @@ from orcia_api.schemas.settings_and_studio import (
     ResourceDiscoveryResponse,
     RolePermissionGrantResponse,
 )
+from orcia_core.audit_finops import (
+    SqlAuditLedgerService,
+    map_domain_event_to_ledger_entry,
+)
 from orcia_core.bootstrap import (
     create_iam_grants_on_postgres18,
     delete_iam_grant_on_postgres18,
     list_iam_grants_from_postgres18,
 )
+from orcia_core.kernel.events import SettingsChanged
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.permissions import (
     AuthAndOrganizationService,
@@ -189,12 +195,13 @@ def list_platform_settings(
 
 
 @router.patch("/settings/entries", response_model=PlatformSettingResponse)
-def patch_platform_setting(
+async def patch_platform_setting(
     payload: PatchPlatformSettingRequest,
     request: Request,
     response: Response,
     auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     settings_svc: Annotated[PlatformSettingsService, Depends(get_platform_settings_service)],
+    audit_svc: Annotated[SqlAuditLedgerService, Depends(get_audit_ledger_service)],
     if_match: Annotated[str | None, Header(alias="If-Match")] = None,
 ) -> PlatformSettingResponse:
     """Mutate a versioned platform setting enforcing `If-Match` (`428`/`412`, `Story 8.3`)."""
@@ -219,6 +226,14 @@ def patch_platform_setting(
         instance=str(request.url.path),
     )
     response.headers["ETag"] = updated.etag
+
+    # Trace SettingsChanged immediately in audit_ledger
+    if settings_svc._outbox_events:
+        last_evt = settings_svc._outbox_events[-1]
+        if isinstance(last_evt, SettingsChanged):
+            entry = map_domain_event_to_ledger_entry(last_evt)
+            await audit_svc.record_entry(entry)
+
     return to_setting_response(updated)
 
 

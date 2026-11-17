@@ -19,6 +19,7 @@ from orcia_api.routers.agents_and_skills import router as agents_and_skills_rout
 from orcia_api.routers.ai_models_hub import router as ai_models_hub_router
 from orcia_api.routers.assistant import router as assistant_router
 from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
+from orcia_api.routers.audit_ledger import router as audit_ledger_router
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.routers.auth import router as auth_router
 from orcia_api.routers.auth_settings import router as auth_settings_router
@@ -37,6 +38,7 @@ from orcia_api.routers.dna_and_glossary import (
 from orcia_api.routers.enterprise_connectors import (
     router as enterprise_connectors_router,
 )
+from orcia_api.routers.finops import router as finops_router
 from orcia_api.routers.gates import router as gates_router
 from orcia_api.routers.health import router as health_router
 from orcia_api.routers.human_gates import router as human_gates_router
@@ -148,6 +150,8 @@ def create_app() -> FastAPI:
     application.include_router(agents_and_skills_router)
     application.include_router(packs_router)
     application.include_router(workflows_v2_router)
+    application.include_router(audit_ledger_router)
+    application.include_router(finops_router)
     return application
 
 

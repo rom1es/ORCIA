@@ -49,6 +49,8 @@ StepExecutionStatus = Literal[
     "WAITING_FOR_HUMAN_GATE",
     "COMMITTED",
     "CHALLENGED_REWIND",
+    "PAUSED_BUDGET_EXCEEDED",
+    "PAUSED_MAX_RETRIES",
     "FAILED",
 ]
 

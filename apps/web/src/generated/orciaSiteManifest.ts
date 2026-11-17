@@ -6,18 +6,18 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-15",
+  "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 107,
+    "uiPrimitivesCount": 119,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 41,
+    "alembicMigrationsCount": 45,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 138,
+    "techLeadReportsCount": 145,
     "capabilitiesCount": 62,
-    "liveCapabilitiesCount": 58,
-    "verifiedCapabilitiesCount": 43
+    "liveCapabilitiesCount": 60,
+    "verifiedCapabilitiesCount": 45
   },
   "activeRoutes": [
     "/",
@@ -52,6 +52,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
+    "ActivityLogFiltersBar",
+    "ActivityLogProvenanceExportBar",
+    "ActivityProvenanceModal",
     "AgentDetailAndSandboxModal",
     "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
@@ -72,6 +75,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "BootstrapOnboardingPanel",
     "CatalogExplorerPanel",
     "ChunkValidationCard",
+    "CognitiveMetricCard",
     "CognitiveReviewBriefingGrid",
     "CollapsibleAppRail",
     "CommandPaletteModal",
@@ -83,6 +87,14 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "DurableWizardRunnerView",
     "EffortSelector",
     "FederatedUriBadge",
+    "FinopsBudgetOverrideModal",
+    "FinopsBudgetPolicyModal",
+    "FinopsConnectorQuotaModal",
+    "FinopsGovernanceDashboardView",
+    "FinopsHumanMasteryTab",
+    "FinopsKpiStrip",
+    "FinopsProcessAndTiersTab",
+    "FinopsRemoteMcpServicesTab",
     "FormattedMarkdownContent",
     "FourZoneDirectionCShell",
     "GlobalSidebar",
@@ -209,7 +221,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261115_2105_story_19_5_ai_models_usage_and_embedding_unique_idx",
     "20261115_2206_story_19_6_kb_chunks_embedding_model_id_and_cleanup",
     "20261115_2307_story_19_7_rag_reindexing_jobs_and_queue",
-    "20261115_2359_merge_iam_multi_lead_and_epic_19_heads"
+    "20261115_2359_merge_iam_multi_lead_and_epic_19_heads",
+    "20261116_0601_story_6_1_audit_ledger_append_only",
+    "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses",
+    "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry",
+    "20261117_0605_epic6_review_adaptive_gate_policy_check"
   ],
   "architectureDecisions": [
     {
@@ -488,6 +504,55 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Correctifs Revue Architecture & UX Epic 6 (CAP-065, CAP-200)",
+      "reportFile": "2026-11-17-epic-6-correctifs-revue-architecture-tech-lead-report.md",
+      "domain": "Traitement des 5 BLOCKING, 5 MAJOR & 3 MINOR de la revue VALIDATE Epic 6",
+      "summary": "Implémentation terminée et validée : correction SQL wd.title / CTE anti-produit-cartésien / BU/TEAM, dérogation budgétaire sample_paused_run_id, pont @orcia/api-client auditFinops & garde \"scope-global\", câblage Outbox worker & BudgetGuardService, fermeture IDOR & garde mutations enforce_scope_mutation_guard, migration 20261117_0605 adaptive_gate_policy, ConnectorInvoker.invoke_async non-bloquant, AdminConnectionTested.actor_id, ActivityProvenanceModal via OrciaDialog, E2E mobile/desktop & découpage < 350 lignes."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 6.4 (CAP-200)",
+      "reportFile": "6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu-tech-lead-report.md",
+      "domain": "Télémétrie FinOps Multi-Métriques des Services MCP & Agents Distants (_meta.usage / X-Orcia-Usage), RemoteUsageSanitizer, Onglet Services & Agents externes & Coupe-Circuit Isolé par Connecteur",
+      "summary": "Implémentation terminée : migration Alembic 20261116_0604 (finops_connector_quotas + 09_reset_db_first_boot.py), ports hexagonaux ConnectorQuotaGuardPort/RemoteUsageSanitizerPort dans ConnectorInvoker (5 contrats lint-imports conservés), RemoteUsageSanitizer (_meta.usage / usage / X-Orcia-Usage, rejet < 0/NaN/Infinity, écrêtage 5,00 EUR + RemoteUsageAnomalyCapped, pivot USD Decimal), SqlConnectorQuotaGuardService + finops_remote.py (/remote-services, /quota, /reset-circuit sous garde observateur 403), SDK OpenAPI 0-diff, onglet @orcia/ui FinopsRemoteMcpServicesTab + FinopsConnectorQuotaModal anti-LastPass & KPIs séparés (0 #hex, 0 jargon), 95,15 % couv. Story 6.4 (93,54 % audit_finops), 108 tests Python (hypothesis, testcontainers PG18 + Redis, Schemathesis, sécurité), 29 suites Vitest (F5 & 0 bouton muet) et Playwright E2E Bureau/Mobile validés."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 6.3 (CAP-200)",
+      "reportFile": "6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp-tech-lead-report.md",
+      "domain": "Tableau de Bord Exécutif d'Impact Cognitif, Détection des Validations Expéditives, Indice de Réversibilité Humaine & Recommandations de Gates",
+      "summary": "Implémentation terminée : 3 contre-métriques FR-27 calculées en SQL pur (sql_cognitive_impact.py), moteur de recommandations d'ajustement des Gates (cognitive_impact_service.py, 99 % couverture), routeur FastAPI /api/v1/finops/cognitive-impact avec garde observateur, SDK typé @orcia/api-client, 4e onglet « Maîtrise humaine & Qualité » sous Direction C (0 hex, 0 jargon banni), survie F5 validée et intégration testcontainers PostgreSQL 18."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Story 6.2 (CAP-200)",
+      "reportFile": "6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt-tech-lead-report.md",
+      "domain": "Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM), Coupe-Circuits Budgétaires / Anti-Boucles (PAUSED_BUDGET_EXCEEDED, PAUSED_MAX_RETRIES), Rallonge Budgétaire & Tableau de Bord /finops",
+      "summary": "Implémentation terminée : migration Alembic 20261116_0602 (finops_scope_budgets, finops_workflow_baselines, finops_budget_overrides, statuts PAUSED_*), découpage modulaire de cognitive_router.py ramené à 254 lignes avec _cognitive_budget_guard.py et _cognitive_router_execution.py, domaine audit_finops (couverture 90.40% avec finops_accounting_service.py 100% strict Decimal), routeur FastAPI /api/v1/finops/* avec garde observateur 403, SDK OpenAPI 3.1 0-diff + Schemathesis fuzzing validé, tableau de bord @orcia/ui Direction C avec masquage strict à l'état vide (total == 0), modale de budget anti-LastPass, protocole de rallonge budgétaire et réactivation en RUNNING, survie F5 prouvée."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Story 6.1 (CAP-065, CAP-200)",
+      "reportFile": "6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen-tech-lead-report.md",
+      "domain": "Registre de Provenance Auditable Immuable (audit_ledger Append-Only), Traçabilité des Tests à Chaud (ADMIN_CONNECTION_TEST), Export JSON/Markdown & Rebasage /activity",
+      "summary": "Implémentation terminée : migration Alembic 20261116_0601 (audit_ledger, trigger d'immutabilité PostgreSQL 18 ERR_AUDIT_LEDGER_IMMUTABLE, élargissement domain_events_outbox), domaine hexagonal audit_finops (93 % couverture), traceur direct & Outbox AdminConnectionTested, routeur FastAPI /api/v1/audit/ledger, pont typé @orcia/api-client, refonte découpage Direction C (ActivityLogFiltersBar, ActivityLogProvenanceExportBar), modale d'inspection de provenance, export scellé JSON/MD, 0 bouton muet et survie prouvée au F5 unmount/render."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Epic 6 — Phase 1 Analyse Préalable Winston & Sally (CAP-065, CAP-200)",
+      "reportFile": "2026-11-16-epic-6-analyse-architecture-et-ux-winston-sally-tech-lead-report.md",
+      "domain": "Analyse Préalable d'Architecture Système Winston (🏗️) et de Design UX Sally (🎨) de l'Epic 6 : Provenance Auditable Immuable (audit_ledger), FinOps Consolidé, Coupe-Circuits Hiérarchiques, RemoteUsageSanitizer MCP & Réversibilité Humaine",
+      "summary": "Analyse d'impact GitNexus (7 symboles dont enforce_scope_mutation_guard critique), arbitrage frontière lint-imports sous AD-19 Contract 2 & 3 via port hexagonal pur ports/finops_telemetry.py, chaîne linéaire des 3 migrations Alembic (6.1, 6.2, 6.4) depuis head = 20261115_2359, trigger PostgreSQL 18 append-only, réconciliation CAP-ACT-3 (/activity CAP-065 vs /finops CAP-200), architecture Direction C de 📊 FinOps (masquage à vide total == 0, 4 KPIs sobres, 4 onglets, modale plafond anti-LastPass), glossaire strict anti-jargon FR/EN et rédaction du document socle epic-6-context.md débloquant la Phase 2 (spécifications 6.1..6.4)."
+    },
+    {
+      "date": "2026-11-16",
+      "phaseOrStory": "Cadrage IAM & Org (IAM-ORG-DELEGATION-01, UX-AUTH-DOUBLE-ICON-01 — CAP-050, CAP-051, CAP-058, CAP-067)",
+      "reportFile": "2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md",
+      "domain": "Cadrage de la Délégation Hiérarchique d'Organisation (BU_LEAD / TEAM_LEAD), Invitation/Création Déléguée de Comptes sur Périmètre, Garde Anti-Auto-Éviction & Ticket UX-AUTH-DOUBLE-ICON-01",
+      "summary": "Diagnostic complet des 3 verrous (UI settingsRbacResolver.ts / shellPresets.ts, domaine evaluator.py, API _org_units_helpers.py / iam_accounts.py) avec capture archivée (Rouge Gorge), formalisation des décisions D1 (création/invitation de comptes HUMAN par BU_LEAD en CONTRIBUTOR/TEAM_LEAD/BU_LEAD sur sous-arbre et par TEAM_LEAD en CONTRIBUTOR/TEAM_LEAD sur ses équipes, anti-escalade stricte), D2 (gestion descendante sous-BUs/équipes + garde 422 dernier responsable) et D3 (doubles icônes UX), et création des tickets IAM-ORG-DELEGATION-01 (P1) et UX-AUTH-DOUBLE-ICON-01 (P3) dans sprint-status.yaml."
+    },
     {
       "date": "2026-11-15",
       "phaseOrStory": "Non-Régression & Couverture Epic 19 (CAP-190..194)",

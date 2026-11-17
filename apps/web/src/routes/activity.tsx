@@ -1,12 +1,12 @@
 import {
   ActivityLogExplorerView,
-  type ActivityLogExplorerLabels,
-  type StatusBadgeTone,
+  ActivityProvenanceModal,
+  OrciaAlertBanner,
   type UiActivityLogEventItem,
   type UiActivityScopeFilterOption,
 } from "@orcia/ui";
 import { createRoute } from "@tanstack/react-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   cleanAuditSummaryJargon,
   formatHumanReadableScopePath,
@@ -14,250 +14,155 @@ import {
 } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
+import {
+  exportRunProvenanceFromApi,
+  fetchAuditLedgerFromApi,
+  fetchRunProvenanceFromApi,
+  type AuditProvenanceSummaryResponse,
+} from "./activityApiBridge";
+import {
+  buildActivityScopeOptions,
+  EVENT_TYPE_EN_LABELS,
+  EVENT_TYPE_FR_LABELS,
+  formatActivityTimestamp,
+} from "./activityFormatters";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 
-const EVENT_TYPE_FR_LABELS: Record<string, { label: string; tone: StatusBadgeTone }> = {
-  PlatformAdminInitialized: { label: "Administrateur initialisé", tone: "emerald" },
-  OrgUnitCreated: { label: "Unité d'organisation créée", tone: "cobalt" },
-  OrgUnitDeleted: { label: "Unité d'organisation supprimée", tone: "amber" },
-  PermissionGranted: { label: "Habilitation attribuée", tone: "emerald" },
-  PermissionRevoked: { label: "Habilitation révoquée", tone: "amber" },
-  RbacGrantCreated: { label: "Habilitation attribuée", tone: "emerald" },
-  SettingsChanged: { label: "Modèle IA configuré", tone: "cobalt" },
-  LlmTierConfigured: { label: "Modèle IA configuré", tone: "cobalt" },
-  WorkspaceCreated: { label: "Espace créé", tone: "emerald" },
-  WorkspacePhaseUpdated: { label: "Phase d'Espace mise à jour", tone: "cobalt" },
-  ConnectorConfigured: { label: "Connecteur enregistré", tone: "cobalt" },
-  PackRegistered: { label: "Pack activé", tone: "emerald" },
-  PackDeactivated: { label: "Pack désactivé", tone: "amber" },
-  WorkflowSaved: { label: "Processus enregistré", tone: "cobalt" },
-  RunLaunched: { label: "Exécution démarrée", tone: "emerald" },
-  OntologyConceptCreated: { label: "Terme métier créé", tone: "cobalt" },
-};
-
-const EVENT_TYPE_EN_LABELS: Record<string, { label: string; tone: StatusBadgeTone }> = {
-  PlatformAdminInitialized: { label: "Administrator initialized", tone: "emerald" },
-  OrgUnitCreated: { label: "Organization unit created", tone: "cobalt" },
-  OrgUnitDeleted: { label: "Organization unit deleted", tone: "amber" },
-  PermissionGranted: { label: "Permission granted", tone: "emerald" },
-  PermissionRevoked: { label: "Permission revoked", tone: "amber" },
-  RbacGrantCreated: { label: "Permission granted", tone: "emerald" },
-  SettingsChanged: { label: "AI model configured", tone: "cobalt" },
-  LlmTierConfigured: { label: "AI model configured", tone: "cobalt" },
-  WorkspaceCreated: { label: "Workspace created", tone: "emerald" },
-  WorkspacePhaseUpdated: { label: "Workspace phase updated", tone: "cobalt" },
-  ConnectorConfigured: { label: "Connector registered", tone: "cobalt" },
-  PackRegistered: { label: "Pack enabled", tone: "emerald" },
-  PackDeactivated: { label: "Pack disabled", tone: "amber" },
-  WorkflowSaved: { label: "Process saved", tone: "cobalt" },
-  RunLaunched: { label: "Run started", tone: "emerald" },
-  OntologyConceptCreated: { label: "Glossary term created", tone: "cobalt" },
-};
-
-export function formatActivityTimestamp(timestampIso: string, isFr: boolean): string {
-  const parsed = new Date(timestampIso);
-  if (Number.isNaN(parsed.getTime())) {
-    return timestampIso;
-  }
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const day = pad(parsed.getUTCDate());
-  const month = pad(parsed.getUTCMonth() + 1);
-  const year = parsed.getUTCFullYear();
-  const hours = pad(parsed.getUTCHours());
-  const minutes = pad(parsed.getUTCMinutes());
-  const seconds = pad(parsed.getUTCSeconds());
-  return isFr
-    ? `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
-    : `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
 export function ActivityLogRouteView(): React.ReactElement {
-  const { locale } = useI18n();
+  const { locale, dictionary } = useI18n();
+  const activityDict = dictionary.activity;
   const isFr = locale === "fr";
   const { activeScopeId, openHelpSection } = useShellNavigation();
-  const { platformAdmin, orgUnits, workspaces, scopes, auditEvents } = usePlatformSetup();
+  const { platformAdmin, orgUnits, workspaces, scopes } = usePlatformSetup();
 
-  const connectedUserName =
-    platformAdmin?.displayName ??
-    (isFr ? "Administrateur de la plateforme" : "Platform Administrator");
+  const [apiEvents, setApiEvents] = useState<readonly UiActivityLogEventItem[]>([]);
+  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined);
+  const [provenanceSummary, setProvenanceSummary] = useState<AuditProvenanceSummaryResponse | null>(null);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
 
-  const scopeOptions: UiActivityScopeFilterOption[] = [
+  // Fetch immutable events from PostgreSQL 18 audit_ledger via @orcia/api-client
+  useEffect(() => {
+    let isCancelled = false;
+    void (async () => {
+      const res = await fetchAuditLedgerFromApi(isFr ? "fr" : "en", { limit: 500 });
+      if (isCancelled) return;
+      if (res.ok && Array.isArray(res.entries)) {
+        const typeMap = isFr ? EVENT_TYPE_FR_LABELS : EVENT_TYPE_EN_LABELS;
+        const mapped = res.entries.map((e) => {
+          const resolvedType = typeMap[e.event_type] ?? {
+            label: activityDict.recordedAction,
+            tone: "cobalt" as const,
+          };
+          const rawScope = e.scope_path || "GLOBAL";
+          const resolvedScopeLabel = formatHumanReadableScopePath(rawScope);
+          const createdAtIso = e.created_at || new Date().toISOString();
+          return {
+            id: e.id,
+            timestampIso: createdAtIso,
+            formattedTimestamp: formatActivityTimestamp(createdAtIso, isFr),
+            eventType: e.event_type,
+            eventTypeLabel: resolvedType.label,
+            badgeTone: resolvedType.tone,
+            summary: cleanAuditSummaryJargon(e.summary),
+            actorName: e.actor_display_name || e.actor_id,
+            actorEmail: e.actor_email || undefined,
+            scopeId: e.workspace_id || undefined,
+            scopePath: rawScope,
+            scopeLabel: resolvedScopeLabel,
+            runId: e.run_id || undefined,
+          };
+        });
+        setApiEvents(mapped);
+        setApiErrorMessage(null);
+      } else if (!res.ok) {
+        setApiErrorMessage(res.errorMessage);
+      }
+    })();
+    return () => {
+      isCancelled = true;
+    };
+  }, [isFr, activityDict.recordedAction]);
+
+  const connectedUserName = platformAdmin?.displayName ?? activityDict.connectedAdminFallback;
+
+  const scopeOptions: UiActivityScopeFilterOption[] = buildActivityScopeOptions(
+    orgUnits,
+    workspaces,
     {
-      id: "scope-global",
-      label: isFr ? "Plateforme entière" : "Entire Platform",
-      scopePath: "GLOBAL",
-      level: "GLOBAL",
-      childScopeIds: [
-        ...orgUnits.map((u) => u.id),
-        ...workspaces.map((w) => w.workspaceId),
-      ],
-      childScopePaths: [
-        "GLOBAL",
-        "Plateforme entière",
-        ...orgUnits.flatMap((u) => [u.slug, u.name]),
-        ...workspaces.map((w) => w.name),
-      ],
+      entirePlatform: activityDict.entirePlatform,
+      divisionPrefix: activityDict.divisionPrefix,
+      teamPrefix: activityDict.teamPrefix,
+      privateSpacePrefix: activityDict.privateSpacePrefix,
+      spacePrefix: activityDict.spacePrefix,
     },
-    ...orgUnits.map((u): UiActivityScopeFilterOption => {
-      const childUnits = orgUnits.filter((c) => c.parentId === u.id);
-      const childTeamIds = new Set([u.id, ...childUnits.map((c) => c.id)]);
-      const childWorkspaces = workspaces.filter(
-        (w) => w.ownerOrgUnitId && childTeamIds.has(w.ownerOrgUnitId),
-      );
-      const prefix = u.level === "BU" ? (isFr ? "Direction · " : "Division · ") : (isFr ? "Équipe · " : "Team · ");
-      return {
-        id: u.id,
-        label: `${prefix}${u.name}`,
-        scopePath: u.slug,
-        level: u.level,
-        childScopeIds: [
-          ...childUnits.map((c) => c.id),
-          ...childWorkspaces.map((w) => w.workspaceId),
-        ],
-        childScopePaths: [
-          u.slug,
-          u.name,
-          `${prefix}${u.name}`,
-          ...childUnits.flatMap((c) => [c.slug, c.name]),
-          ...childWorkspaces.flatMap((w) => [w.workspaceId, w.name]),
-        ],
-      };
-    }),
-    ...workspaces.map((ws): UiActivityScopeFilterOption => {
-      const prefix =
-        ws.visibilityMode === "PRIVATE_USER"
-          ? isFr
-            ? "Espace privé · "
-            : "Private space · "
-          : isFr
-            ? "Espace · "
-            : "Space · ";
-      return {
-        id: ws.workspaceId,
-        label: `${prefix}${ws.name}`,
-        scopePath: ws.name,
-        level: "WORKSPACE",
-        childScopeIds: [],
-        childScopePaths: [ws.workspaceId, ws.name, `${prefix}${ws.name}`],
-      };
-    }),
-  ];
+  );
 
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
   const activeObservationOption = scopeOptions.find((o) => o.id === activeScopeId);
   const activeObservationScopeLabel =
     activeObservationOption?.label ??
     (activeScopeNode?.level === "GLOBAL"
-      ? isFr
-        ? "Plateforme entière"
-        : "Entire Platform"
-      : (activeScopeNode?.name ?? (isFr ? "Plateforme entière" : "Entire Platform")));
+      ? activityDict.entirePlatform
+      : (activeScopeNode?.name ?? activityDict.entirePlatform));
 
-  const mappedEvents: UiActivityLogEventItem[] = auditEvents.map((ev) => {
-    const typeMap = isFr ? EVENT_TYPE_FR_LABELS : EVENT_TYPE_EN_LABELS;
-    const resolvedType = typeMap[ev.eventType] ?? {
-      label: isFr ? "Action enregistrée" : "Recorded action",
-      tone: "cobalt" as const,
-    };
-    const rawScopePath = ev.scopePath ?? "GLOBAL";
-    const resolvedScopeLabel =
-      ev.scopeLabel && ev.scopeLabel !== "GLOBAL"
-        ? ev.scopeLabel
-        : formatHumanReadableScopePath(rawScopePath);
+  // Pure source of truth: PostgreSQL 18 audit_ledger via apiEvents (zero local store fallback)
+  const effectiveEvents: readonly UiActivityLogEventItem[] = apiEvents;
 
-    return {
-      id: ev.id,
-      timestampIso: ev.timestampIso,
-      formattedTimestamp: formatActivityTimestamp(ev.timestampIso, isFr),
-      eventType: ev.eventType,
-      eventTypeLabel: resolvedType.label,
-      badgeTone: resolvedType.tone,
-      summary: cleanAuditSummaryJargon(ev.summary),
-      actorName: ev.actorName?.trim() || connectedUserName,
-      actorEmail: ev.actorEmail ?? platformAdmin?.email,
-      scopeId: ev.scopeId,
-      scopePath: rawScopePath,
-      scopeLabel: resolvedScopeLabel,
-    };
-  });
+  const handleInspectProvenance = async (runId: string) => {
+    const res = await fetchRunProvenanceFromApi(runId, isFr ? "fr" : "en");
+    if (res.ok) {
+      setProvenanceSummary(res.summary);
+      setApiErrorMessage(null);
+    } else {
+      setApiErrorMessage(res.errorMessage);
+    }
+  };
 
-  const labels: ActivityLogExplorerLabels = isFr
-    ? {
-        pageTitle: "Journal d'Activité",
-        pageSubtitle:
-          "Consultez l'historique horodaté des actions réalisées sur la plateforme, filtré par défaut sur votre niveau d'observation actif.",
-        infoButtonLabel:
-          "Comprendre le journal d'activité, ses filtres et le filtrage sur votre niveau d'observation",
-        observationScopeBannerPrefix: "Filtré sur votre niveau d'observation :",
-        resetToObservationScopeCta: "Revenir à mon niveau d'observation",
-        scopeFilterLabel: "Périmètre observé",
-        allScopesOptionLabel: "Tous les périmètres",
-        userFilterLabel: "Utilisateur (Auteur)",
-        allUsersOptionLabel: "Tous les utilisateurs",
-        userSearchPlaceholder: "Filtrer par nom d'utilisateur...",
-        maxLimitFilterLabel: "Nombre maximum d'événements",
-        limit50Label: "50 derniers",
-        limit100Label: "100 derniers",
-        limit200Label: "200 derniers",
-        limit500Label: "500 derniers",
-        timeWindowFilterLabel: "Fenêtre temporelle",
-        windowAllLabel: "Toute la période",
-        window1hLabel: "Dernière heure",
-        window24hLabel: "Dernières 24 heures",
-        window7dLabel: "7 derniers jours",
-        window30dLabel: "30 derniers jours",
-        customDateFromLabel: "Du :",
-        customDateToLabel: "Au :",
-        resultsCounterPrefix: "Événements affichés :",
-        emptyStateMessage: "Aucun événement enregistré sur ce périmètre.",
-        actorPrefix: "Auteur",
-        scopePrefix: "Périmètre",
-        timestampPrefix: "Horodatage",
-      }
-    : {
-        pageTitle: "Activity Log",
-        pageSubtitle:
-          "Review the timestamped history of actions performed across the platform, filtered by default to your active observation scope.",
-        infoButtonLabel:
-          "Understand the activity log, its filters, and observation scope filtering",
-        observationScopeBannerPrefix: "Filtered to your observation scope:",
-        resetToObservationScopeCta: "Reset to my observation scope",
-        scopeFilterLabel: "Observed scope",
-        allScopesOptionLabel: "All scopes",
-        userFilterLabel: "User (Author)",
-        allUsersOptionLabel: "All users",
-        userSearchPlaceholder: "Filter by user name...",
-        maxLimitFilterLabel: "Maximum recent events",
-        limit50Label: "Last 50",
-        limit100Label: "Last 100",
-        limit200Label: "Last 200",
-        limit500Label: "Last 500",
-        timeWindowFilterLabel: "Time window",
-        windowAllLabel: "All time",
-        window1hLabel: "Last hour",
-        window24hLabel: "Last 24 hours",
-        window7dLabel: "Last 7 days",
-        window30dLabel: "Last 30 days",
-        customDateFromLabel: "From:",
-        customDateToLabel: "To:",
-        resultsCounterPrefix: "Displayed events:",
-        emptyStateMessage: "No activity event recorded on this scope.",
-        actorPrefix: "Author",
-        scopePrefix: "Scope",
-        timestampPrefix: "Timestamp",
-      };
+  const handleExportProvenance = async (runId: string, format: "json" | "md") => {
+    setIsExporting(true);
+    const res = await exportRunProvenanceFromApi(runId, format, isFr ? "fr" : "en");
+    setIsExporting(false);
+    if (!res.ok) {
+      setApiErrorMessage(res.errorMessage);
+    }
+  };
 
   return (
-    <ActivityLogExplorerView
-      events={mappedEvents}
-      scopeOptions={scopeOptions}
-      activeObservationScopeId={activeScopeId}
-      activeObservationScopeLabel={activeObservationScopeLabel}
-      connectedUserName={connectedUserName}
-      labels={labels}
-      onOpenHelpSection={openHelpSection}
-    />
+    <>
+      {apiErrorMessage && (
+        <div style={{ marginBottom: "12px" }}>
+          <OrciaAlertBanner tone="amber" title={activityDict.ledgerNoticeTitle}>
+            {apiErrorMessage}
+          </OrciaAlertBanner>
+        </div>
+      )}
+
+      {provenanceSummary && (
+        <ActivityProvenanceModal
+          summary={provenanceSummary}
+          labels={activityDict.provenanceModal}
+          onClose={() => setProvenanceSummary(null)}
+        />
+      )}
+
+      <ActivityLogExplorerView
+        events={effectiveEvents}
+        scopeOptions={scopeOptions}
+        activeObservationScopeId={activeScopeId}
+        activeObservationScopeLabel={activeObservationScopeLabel}
+        connectedUserName={connectedUserName}
+        labels={activityDict.explorer}
+        provenanceLabels={activityDict.provenanceExport}
+        onOpenHelpSection={openHelpSection}
+        selectedRunId={selectedRunId}
+        onSelectRunId={setSelectedRunId}
+        onInspectProvenance={handleInspectProvenance}
+        onExportProvenance={handleExportProvenance}
+        isExporting={isExporting}
+      />
+    </>
   );
 }
 

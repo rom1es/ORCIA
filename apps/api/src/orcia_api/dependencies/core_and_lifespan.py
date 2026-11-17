@@ -6,28 +6,39 @@ import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncEngine
+    pass
 
+from orcia_api.dependencies._core_providers import (
+    get_auth_service as get_auth_service,
+)
+from orcia_api.dependencies._core_providers import (
+    get_bootstrap_service as get_bootstrap_service,
+)
+from orcia_api.dependencies._core_providers import (
+    get_catalog_service as get_catalog_service,
+)
+from orcia_api.dependencies._core_providers import (
+    get_ontology_and_rag_services as get_ontology_and_rag_services,
+)
+from orcia_api.dependencies._core_providers import (
+    get_or_create_shared_db_engine as get_or_create_shared_db_engine,
+)
+from orcia_api.dependencies._core_providers import (
+    get_permission_broker_service as get_permission_broker_service,
+)
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
     LiteLLMAdapter,
-    SystemBootstrapWorkflowService,
     build_default_system_bootstrap_service,
     build_litellm_gateway_plugin,
 )
 from orcia_core.catalog import (
-    FederatedCatalogService,
     build_default_federated_catalog_service,
-)
-from orcia_core.ontology import (
-    OntologyGovernanceService,
-    build_empty_ontology_service,
-    build_seeded_ontology_service,
 )
 from orcia_core.orchestration import (
     AssistantAgentService,
@@ -41,11 +52,9 @@ from orcia_core.orchestration import (
     register_default_step_executors,
 )
 from orcia_core.permissions import (
-    AuthAndOrganizationService,
     HierarchicalRbacService,
     IamAccountsGovernanceService,
     InMemoryPlatformAuthPolicyStore,
-    PermissionBrokerService,
     PlatformSettingsService,
     RolePermissionGrant,
     build_default_auth_and_org_service,
@@ -55,10 +64,7 @@ from orcia_core.permissions import (
 from orcia_core.rag import (
     CatalogAndBlackboardContextSourceAdapter,
     ConnectorHubAndIngestionService,
-    HybridRagService,
     HybridRagVectorStoreAdapter,
-    TripartiteGraphAndFreshnessService,
-    build_empty_rag_service,
     build_seeded_rag_service,
 )
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
@@ -114,8 +120,21 @@ def initialize_app_services(app: FastAPI) -> None:
     activate_sdlc_pack()
     if getattr(app.state, "llm_gateway", None) is None:
         app.state.llm_gateway = _resolve_default_llm_gateway()
+    if getattr(app.state, "finops_sanitizer", None) is None:
+        from orcia_core.audit_finops import RemoteUsageSanitizer
+
+        app.state.finops_sanitizer = RemoteUsageSanitizer()
+    if getattr(app.state, "connector_quota_guard_service", None) is None:
+        from orcia_core.audit_finops import SqlConnectorQuotaGuardService
+
+        app.state.connector_quota_guard_service = SqlConnectorQuotaGuardService(
+            engine=getattr(app.state, "db_engine", None)
+        )
     if getattr(app.state, "connector_invoker", None) is None:
-        app.state.connector_invoker = ConnectorInvoker()
+        app.state.connector_invoker = ConnectorInvoker(
+            quota_guard=app.state.connector_quota_guard_service,
+            usage_sanitizer=app.state.finops_sanitizer,
+        )
     if not hasattr(app.state, "otp_email_sink"):
         app.state.otp_email_sink = None
     register_default_step_executors(
@@ -226,8 +245,13 @@ def initialize_app_services(app: FastAPI) -> None:
         app.state.platform_settings_service = settings_svc
 
     if getattr(app.state, "cognitive_router_service", None) is None:
+        from orcia_core.audit_finops import BudgetGuardService
+
+        db_engine = getattr(app.state, "db_engine", None)
+        budget_guard_port = BudgetGuardService(engine=db_engine) if db_engine is not None else None
         app.state.cognitive_router_service = CognitiveModelRouterService(
-            llm_gateway=app.state.llm_gateway
+            llm_gateway=app.state.llm_gateway,
+            external_budget_guard_port=budget_guard_port,
         )
 
     if getattr(app.state, "connector_hub_service", None) is None:
@@ -238,6 +262,12 @@ def initialize_app_services(app: FastAPI) -> None:
 
     if getattr(app.state, "durable_wizard_service", None) is None:
         app.state.durable_wizard_service = DurableOnboardingWizardService()
+
+    if getattr(app.state, "audit_ledger_service", None) is None:
+        from orcia_core.audit_finops import SqlAuditLedgerService
+
+        db_engine = getattr(app.state, "db_engine", None)
+        app.state.audit_ledger_service = SqlAuditLedgerService(engine=db_engine)
 
     if getattr(app.state, "assistant_service", None) is None:
         seeded_rag, _ = build_seeded_rag_service()
@@ -279,30 +309,28 @@ def initialize_app_services(app: FastAPI) -> None:
             db_engine = create_async_engine(resolve_database_url(), connect_args={"timeout": 1.5})
             app.state.db_engine = db_engine
             app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+            from orcia_core.audit_finops import BudgetGuardService
+
+            cog_router = getattr(app.state, "cognitive_router_service", None)
+            if cog_router is not None:
+                cog_router.budget_guard.set_external_guard_port(
+                    BudgetGuardService(engine=db_engine)
+                )
+            for attr_name in (
+                "audit_ledger_service",
+                "connector_quota_guard_service",
+                "finops_accounting_service",
+                "cognitive_impact_service",
+            ):
+                svc_inst = getattr(app.state, attr_name, None)
+                if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
+                    svc_inst._engine = db_engine
         except Exception as exc:
             from orcia_core.observability.logging import get_logger
 
             get_logger("orcia.api.lifespan").warning(
                 "lifespan_pg_session_maker_init_skipped", error_type=type(exc).__name__
             )
-
-
-def get_or_create_shared_db_engine(request: Request) -> AsyncEngine:
-    """Return shared `AsyncEngine` from `request.app.state.db_engine`, creating it if absent."""
-    from sqlalchemy.ext.asyncio import create_async_engine
-    from sqlalchemy.pool import NullPool
-
-    from orcia_core.config import resolve_database_url
-
-    engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
-    if engine is None:
-        engine = create_async_engine(
-            resolve_database_url(),
-            poolclass=NullPool,
-            connect_args={"timeout": 1.5},
-        )
-        request.app.state.db_engine = engine
-    return engine
 
 
 @asynccontextmanager
@@ -320,92 +348,3 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
         if db_engine is not None:
             with suppress(Exception):
                 await db_engine.dispose()
-
-
-def get_auth_service(request: Request) -> AuthAndOrganizationService:
-    """FastAPI `Depends` provider returning `AuthAndOrganizationService` from `app.state`."""
-    svc: AuthAndOrganizationService | None = getattr(request.app.state, "auth_service", None)
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.auth_service
-    assert svc is not None
-    return svc
-
-
-def get_catalog_service(request: Request) -> FederatedCatalogService:
-    """FastAPI `Depends` provider returning `FederatedCatalogService` from `app.state`."""
-    svc: FederatedCatalogService | None = getattr(request.app.state, "catalog_service", None)
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.catalog_service
-    assert svc is not None
-    return svc
-
-
-def get_permission_broker_service(request: Request) -> PermissionBrokerService:
-    """FastAPI `Depends` provider returning `PermissionBrokerService` from `app.state`."""
-    svc: PermissionBrokerService | None = getattr(
-        request.app.state, "permission_broker_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.permission_broker_service
-    assert svc is not None
-    return svc
-
-
-def get_bootstrap_service(request: Request) -> SystemBootstrapWorkflowService:
-    """FastAPI `Depends` provider returning `SystemBootstrapWorkflowService` from `app.state`."""
-    svc: SystemBootstrapWorkflowService | None = getattr(
-        request.app.state, "bootstrap_service", None
-    )
-    if svc is None:
-        initialize_app_services(request.app)
-        svc = request.app.state.bootstrap_service
-    assert svc is not None
-    return svc
-
-
-_OntologyRagBundle = tuple[
-    OntologyGovernanceService, HybridRagService, TripartiteGraphAndFreshnessService
-]
-
-
-def get_ontology_and_rag_services(
-    request: Request, *, fixture: bool = False, embedding_port: Any = None
-) -> _OntologyRagBundle:
-    """Return either the empty runtime Ontology/RAG bundle or the deterministic test fixture."""
-    if fixture:
-        seeded: _OntologyRagBundle | None = getattr(
-            request.app.state, "ontology_rag_seeded_bundle", None
-        )
-        if seeded is None:
-            gov = build_seeded_ontology_service()
-            emb_port = embedding_port
-            if emb_port is None:
-                from orcia_api.dependencies.portal_and_assistant import get_embedding_port
-
-                override = request.app.dependency_overrides.get(get_embedding_port)
-                if override is not None:
-                    emb_port = override()
-            rag, trip = build_seeded_rag_service(embedding_port=emb_port)
-            seeded = (gov, rag, trip)
-            request.app.state.ontology_rag_seeded_bundle = seeded
-        return seeded
-
-    runtime: _OntologyRagBundle | None = getattr(
-        request.app.state, "ontology_rag_runtime_bundle", None
-    )
-    if runtime is None:
-        gov = build_empty_ontology_service()
-        emb_port = embedding_port
-        if emb_port is None:
-            from orcia_api.dependencies.portal_and_assistant import get_embedding_port
-
-            override = request.app.dependency_overrides.get(get_embedding_port)
-            if override is not None:
-                emb_port = override()
-        rag, trip = build_empty_rag_service(embedding_port=emb_port)
-        runtime = (gov, rag, trip)
-        request.app.state.ontology_rag_runtime_bundle = runtime
-    return runtime

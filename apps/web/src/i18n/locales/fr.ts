@@ -1,9 +1,12 @@
 import type { TranslationDictionary } from "../types";
+import { ACTIVITY_FR_LABELS } from "./activity_labels";
 import { ADMIN_AND_STUDIO_FR_LABELS } from "./admin_and_studio_labels";
 import { AI_MODELS_HUB_FR } from "./ai_models_hub_labels";
 import { ASSISTANT_FR_LABELS } from "./assistant_labels";
 import { AUTH_SETTINGS_FR_LABELS } from "./auth_settings_labels";
 import { EPIC18_SOURCES_LABELS_FR } from "./epic18_sources_labels";
+import { FINOPS_FR_LABELS } from "./finops_labels";
+import { GATES_AND_INBOX_FR_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
@@ -14,6 +17,9 @@ export const frDictionary: TranslationDictionary = {
   ...SHELL_AND_SEARCH_FR_LABELS,
   ...ASSISTANT_FR_LABELS,
   ...GOVERNANCE_AND_PACKS_FR_LABELS,
+  ...ACTIVITY_FR_LABELS,
+  ...FINOPS_FR_LABELS,
+  ...GATES_AND_INBOX_FR_LABELS,
   locale: "fr",
   aiModelsHub: AI_MODELS_HUB_FR,
   authSettings: AUTH_SETTINGS_FR_LABELS,
@@ -310,74 +316,6 @@ export const frDictionary: TranslationDictionary = {
       description:
         "Configurez pas à pas votre organisation, vos premiers espaces de travail et vos connexions aux outils.",
       uriBadgeExample: "Configuration",
-    },
-  },
-  upstreamChallengeModal: {
-    modalTitle: "Signaler une Correction sur une Étape Précédente",
-    modalSubtitle:
-      "Indiquez l'élément à ajuster dans une étape précédente, visualisez les étapes suivantes concernées et relancez uniquement ce qui doit être mis à jour.",
-    targetStepLabel: "Étape précédente concernée",
-    sectionKeyLabel: "Section ou règle à ajuster",
-    reasonLabel: "Motif de la demande de correction (minimum 10 caractères)",
-    reasonPlaceholder: "Expliquez l'écart ou la précision à apporter sur l'étape précédente...",
-    whatIfTitle: "Aperçu des éléments qui seront mis à jour",
-    invalidatedStepsLabel: "Étapes suivantes à recalculer",
-    invalidatedSectionsLabel: "Sections de livrables impactées",
-    invalidatedAxiomsLabel: "Règles métier concernées",
-    preservedStepsLabel: "Étapes antérieures conservées sans retraitement",
-    translatedSummaryLabel: "Explication adaptée pour le responsable de l'étape précédente",
-    submitChallengeCta: "Envoyer la demande de correction",
-    replayStepCta: "Relancer à partir de cette étape",
-    closeCta: "Fermer",
-    challengeSubmittedFeedback: "Demande de correction transmise au responsable de l'étape ✓",
-    replayTriggeredFeedback: "Relance effectuée à partir de l'étape sélectionnée ✓",
-  },
-  humanGates: {
-    briefing: {
-      gridTitle: "Synthèse de Relecture avant Validation (4 Points Clés)",
-      block1Title: "1. Résumé Exécutif",
-      block2Title: "2. Points Clés & Vérifications Croisées",
-      block3Title: "3. Décisions Proposées",
-      block4Title: "4. Hypothèses Retenues",
-      inspectHypothesesButtonLabel: "Confirmer la lecture des hypothèses",
-      hypothesesInspectedBadgeLabel: "Hypothèses relues",
-      hypothesesPendingBadgeLabel: "Relecture requise (Point 4)",
-    },
-    chunkValidation: {
-      sectionListTitle: "Validation Section par Section",
-      keyboardNavHint: "Raccourci clavier : Alt + ↑ / ↓",
-      approveSectionLabel: "Valider la section",
-      coEditSectionLabel: "Modifier la section",
-      challengeSectionLabel: "Demander une correction en amont",
-      finalizeGateButtonLabel: "Confirmer la validation finale",
-      pendingSectionsNotice:
-        "Chaque section obligatoire ainsi que le Point 4 (Hypothèses Retenues) doivent être vérifiés avant la validation finale.",
-      guardModalTitle: "Confirmation de Relecture Attentive",
-      guardModalDescription:
-        "Vous avez validé ce document très rapidement. Merci de confirmer que vous avez bien pris connaissance des hypothèses retenues.",
-      guardConfirmCheckboxLabel:
-        "Je confirme avoir vérifié les hypothèses retenues et les sections importantes",
-      guardConfirmButtonLabel: "Confirmer et enregistrer ma validation",
-      guardCancelButtonLabel: "Reprendre la lecture",
-    },
-  },
-  inboxAndClaims: {
-    filterAllLabel: "Toutes les demandes",
-    filterPersonalLabel: "Qui me sont destinées",
-    filterTeamLabel: "Pour mon équipe",
-    amberCounterPrefix: "Actions en attente :",
-    contributorSectionTitle: "Actions Requises de Votre Part",
-    observerSectionTitle: "En Suivi — Consultation Seule",
-    observerBannerText:
-      "👁️ Mode Consultation Seule — Vous suivez cette exécution sans pouvoir la modifier",
-    presencePill: {
-      claimActionLabel: "Prendre en charge",
-      claimedByMeBadge: "🔒 Pris en charge par vous",
-      claimedByPeerPrefix: "🔒 Pris en charge par :",
-      releaseActionLabel: "Libérer",
-      forceUnclaimActionLabel: "Reprendre la main (après 15 min)",
-      readOnlyObserverNotice: "Consultation seule",
-      sseLatencyPrefix: "Synchronisation :",
     },
   },
 };

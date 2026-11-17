@@ -254,6 +254,18 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "The specified identifier does not match any active known human user on the platform.",
         ),
     },
+    "ERR_CONNECTOR_CIRCUIT_OPEN": {
+        "fr": LocalizedErrorCopy(
+            "Connecteur externe temporairement suspendu",
+            "Le coupe-circuit de ce service externe est ouvert suite à un dépassement "
+            "de plafond ou à des anomalies répétées. Réarmement requis dans FinOps.",
+        ),
+        "en": LocalizedErrorCopy(
+            "External connector temporarily suspended",
+            "This external service circuit breaker is open due to a quota ceiling or "
+            "repeated telemetry anomalies. Manual reset is required in FinOps.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]

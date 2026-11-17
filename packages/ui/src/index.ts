@@ -321,11 +321,20 @@ export {
   ActivityLogExplorerView,
   type ActivityLogExplorerLabels,
   type ActivityLogExplorerViewProps,
+  type ActivityLogProvenanceLabels,
   type ActivityMaxLimitOption,
   type ActivityTimeWindowOption,
   type UiActivityLogEventItem,
   type UiActivityScopeFilterOption,
 } from "./primitives/ActivityLogExplorerView";
+export {
+  ActivityLogFiltersBar,
+  type ActivityLogFiltersBarProps,
+} from "./primitives/ActivityLogFiltersBar";
+export {
+  ActivityLogProvenanceExportBar,
+  type ActivityLogProvenanceExportBarProps,
+} from "./primitives/ActivityLogProvenanceExportBar";
 export {
   ASSISTANT_DEFAULT_HAT_OPTIONS,
   AssistantGovernanceModalAndStudio,
@@ -533,6 +542,65 @@ export {
   resolvePendingKnownUserId,
   type OrciaUserPillsSelectProps,
 } from "./primitives/OrciaUserPillsSelect";
+export {
+  FinopsGovernanceDashboardView,
+  type FinopsGovernanceDashboardViewProps,
+} from "./primitives/finops/FinopsGovernanceDashboardView";
+export type {
+  FinopsDashboardLabels,
+  FinopsTabKey,
+  RemoteServiceRowData,
+  RemoteServicesModalLabels,
+  RemoteServicesTabLabels,
+  UiCircuitState,
+  UiValuationMode,
+  UpdateConnectorQuotaInput,
+} from "./primitives/finops/FinopsDashboardTypes";
+export {
+  FinopsConnectorQuotaModal,
+  type FinopsConnectorQuotaModalProps,
+} from "./primitives/finops/FinopsConnectorQuotaModal";
+export {
+  FinopsRemoteMcpServicesTab,
+  type FinopsRemoteMcpServicesTabProps,
+} from "./primitives/finops/FinopsRemoteMcpServicesTab";
+export {
+  FinopsKpiStrip,
+  type FinopsKpiStripLabels,
+  type FinopsKpiStripProps,
+} from "./primitives/finops/FinopsKpiStrip";
+export {
+  FinopsProcessAndTiersTab,
+  type FinopsProcessAndTiersTabProps,
+  type FinopsProcessRowData,
+  type FinopsTierRowData,
+} from "./primitives/finops/FinopsProcessAndTiersTab";
+export {
+  FinopsBudgetPolicyModal,
+  type FinopsBudgetPolicyModalProps,
+} from "./primitives/finops/FinopsBudgetPolicyModal";
+export {
+  FinopsBudgetOverrideModal,
+  type FinopsBudgetOverrideModalProps,
+} from "./primitives/finops/FinopsBudgetOverrideModal";
+export {
+  CognitiveMetricCard,
+  type CognitiveMetricCardProps,
+  type MetricTone,
+} from "./primitives/finops/CognitiveMetricCard";
+export {
+  FinopsHumanMasteryTab,
+  type FinopsHumanMasteryTabProps,
+  type HumanMasteryLabels,
+  type HumanMasteryRecommendationItem,
+  type HumanMasteryWorkflowRow,
+} from "./primitives/finops/FinopsHumanMasteryTab";
+export {
+  ActivityProvenanceModal,
+  type ActivityProvenanceModalLabels,
+  type ActivityProvenanceModalProps,
+  type ActivityProvenanceSummaryView,
+} from "./primitives/ActivityProvenanceModal";
 export {
   OrciaModelCombobox,
   type DiscoveredModelOption,

@@ -1,11 +1,16 @@
 import createClient from "openapi-fetch";
 import { createAgentsAndSkillsDomainClient } from "./domains/agentsAndSkills";
 import { createAiModelsHubDomainClient } from "./domains/aiModelsHub";
+import {
+  createAuditFinopsDomainClient,
+  type ListAuditLedgerParams,
+} from "./domains/auditFinops";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
 import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
+import { createFinopsDomainClient } from "./domains/finops";
 import type { paths } from "./generated/schema";
 import {
   buildKnownOrgUsersQuery,
@@ -24,13 +29,16 @@ export {
   buildOrgUnitsQuery,
   createAgentsAndSkillsDomainClient,
   createAiModelsHubDomainClient,
+  createAuditFinopsDomainClient,
   createAuthAndShellDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
   createCodegraphMcpDomainClient,
   createEpics1To7OperationsDomainClient,
+  createFinopsDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
+  type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
   type OrciaApiClientOptions,
@@ -58,6 +66,7 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const requestJson = createRequestJson(options);
   const aiModelsHubClient = createAiModelsHubDomainClient(requestJson);
+  const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
   return {
     ...createAuthAndShellDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
@@ -65,7 +74,10 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createBootstrapAndOntologyDomainClient(requestJson),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
+    ...createFinopsDomainClient(requestJson),
+    ...auditFinopsClient,
     ...aiModelsHubClient,
     aiModelsHub: aiModelsHubClient,
+    auditFinops: auditFinopsClient,
   };
 }

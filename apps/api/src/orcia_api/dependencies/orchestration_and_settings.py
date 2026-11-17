@@ -2,7 +2,19 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from fastapi import Request
+
+if TYPE_CHECKING:
+    from orcia_core.audit_finops import (
+        CognitiveImpactService,
+        FinopsAccountingService,
+        ProvenanceExporterService,
+        RemoteUsageSanitizer,
+        SqlAuditLedgerService,
+        SqlConnectorQuotaGuardService,
+    )
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import DurableOnboardingWizardService
@@ -161,4 +173,118 @@ def get_ai_models_hub_service(request: Request) -> AiModelsHubService:
         auth = request.app.state.auth_service
         svc = AiModelsHubService(vault_cipher=auth.vault_cipher)
         request.app.state.ai_models_hub_service = svc
+    return svc
+
+
+def get_audit_ledger_service(request: Request) -> SqlAuditLedgerService:
+    """FastAPI `Depends` provider returning `SqlAuditLedgerService` (`Story 6.1`)."""
+    from orcia_core.audit_finops import SqlAuditLedgerService
+
+    svc: SqlAuditLedgerService | None = getattr(request.app.state, "audit_ledger_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = getattr(request.app.state, "audit_ledger_service", None)
+        if svc is None:
+            engine = getattr(request.app.state, "db_engine", None)
+            svc = SqlAuditLedgerService(engine=engine)
+            request.app.state.audit_ledger_service = svc
+    assert svc is not None
+    return svc
+
+
+def get_provenance_exporter_service(request: Request) -> ProvenanceExporterService:
+    """FastAPI `Depends` provider returning `ProvenanceExporterService` (`Story 6.1`)."""
+    from orcia_core.audit_finops import ProvenanceExporterService
+
+    ledger_svc = get_audit_ledger_service(request)
+    return ProvenanceExporterService(ledger_svc)
+
+
+def get_finops_accounting_service(request: Request) -> FinopsAccountingService:
+    """FastAPI `Depends` provider returning `FinopsAccountingService` (`Story 6.2`)."""
+    import os
+
+    from orcia_api.dependencies._core_providers import get_or_create_shared_db_engine
+    from orcia_core.audit_finops import FinopsAccountingService
+    from orcia_core.observability.logging import get_logger
+
+    engine = getattr(request.app.state, "db_engine", None)
+    if engine is None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+        engine = get_or_create_shared_db_engine(request)
+
+    async def _resume_dbos_run(run_id: str) -> None:
+        from dbos import DBOS
+
+        from orcia_core.orchestration._internal.dbos_engine import _RUNTIME_BINDINGS
+
+        if _RUNTIME_BINDINGS:
+            await DBOS.send_async(
+                run_id,
+                "BUDGET_OVERRIDE_APPROVED",
+                topic="orcia.budget.override",
+            )
+        else:
+            get_logger("orcia.api.finops").info(
+                "finops_budget_override_run_marked_pending_dbos_idle",
+                run_id=run_id,
+            )
+
+    svc: FinopsAccountingService | None = getattr(
+        request.app.state, "finops_accounting_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = getattr(request.app.state, "finops_accounting_service", None)
+        if svc is None:
+            engine = getattr(request.app.state, "db_engine", None) or engine
+            sse_broker = getattr(request.app.state, "sse_broker", None)
+            svc = FinopsAccountingService(
+                engine=engine,
+                sse_broker=sse_broker,
+                run_resumer=_resume_dbos_run,
+            )
+            request.app.state.finops_accounting_service = svc
+    if getattr(svc, "_engine", None) is None and engine is not None:
+        svc._engine = engine
+    return svc
+
+
+def get_cognitive_impact_service(request: Request) -> CognitiveImpactService:
+    """FastAPI `Depends` provider returning `CognitiveImpactService` (`Story 6.3`)."""
+    from orcia_core.audit_finops import CognitiveImpactService
+
+    engine = getattr(request.app.state, "db_engine", None)
+    svc: CognitiveImpactService | None = getattr(
+        request.app.state, "cognitive_impact_service", None
+    )
+    if svc is None:
+        svc = CognitiveImpactService(engine=engine)
+        request.app.state.cognitive_impact_service = svc
+    elif getattr(svc, "_engine", None) is None and engine is not None:
+        svc._engine = engine
+    return svc
+
+
+def get_remote_usage_sanitizer(request: Request) -> RemoteUsageSanitizer:
+    """FastAPI `Depends` provider returning `RemoteUsageSanitizer` (`Story 6.4`)."""
+    from orcia_core.audit_finops import RemoteUsageSanitizer
+
+    svc: RemoteUsageSanitizer | None = getattr(request.app.state, "finops_sanitizer", None)
+    if svc is None:
+        svc = RemoteUsageSanitizer()
+        request.app.state.finops_sanitizer = svc
+    return svc
+
+
+def get_connector_quota_guard_service(request: Request) -> SqlConnectorQuotaGuardService:
+    """FastAPI `Depends` provider returning `SqlConnectorQuotaGuardService` (`Story 6.4`)."""
+    from orcia_core.audit_finops import SqlConnectorQuotaGuardService
+
+    svc: SqlConnectorQuotaGuardService | None = getattr(
+        request.app.state, "connector_quota_guard_service", None
+    )
+    engine = getattr(request.app.state, "db_engine", None)
+    if svc is None or (getattr(svc, "_engine", None) is None and engine is not None):
+        svc = SqlConnectorQuotaGuardService(engine=engine)
+        request.app.state.connector_quota_guard_service = svc
     return svc

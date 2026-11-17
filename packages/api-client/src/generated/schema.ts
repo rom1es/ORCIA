@@ -218,6 +218,14 @@ export interface components {
       message: string;
       tested_at: string;
     };
+    ApplyRecommendationResponse: {
+      applied_at: string;
+      applied_by: string;
+      recommendation_id: string;
+      status?: string;
+      suggested_policy: string;
+      workflow_id: string;
+    };
     ArbitrationOptionSchemaItem: {
       cons?: (string)[];
       finops_impact: string;
@@ -393,6 +401,71 @@ export interface components {
       name: string;
       slug: string;
     };
+    AuditExportResponse: {
+      content: string;
+      entries_count: number;
+      exported_at: string;
+      format: "json" | "md";
+      manifest_sha256?: string | null;
+      run_id: string;
+    };
+    AuditLedgerEntrySchema: {
+      actor_display_name?: string | null;
+      actor_email?: string | null;
+      actor_id: string;
+      actor_type: string;
+      cas_references?: (string)[];
+      cost_source?: string;
+      cost_usd?: number;
+      created_at?: string | null;
+      effort?: string | null;
+      event_type: string;
+      id: string;
+      inference_tier?: string | null;
+      input_tokens?: number;
+      latency_ms?: number;
+      metadata?: Record<string, unknown>;
+      model_id?: string | null;
+      native_currency?: string | null;
+      native_metric_type?: string | null;
+      native_metric_value?: number | null;
+      org_unit_id?: string | null;
+      output_tokens?: number;
+      pre_prompt_sha256?: string | null;
+      reported_by_remote?: boolean;
+      root_run_id?: string | null;
+      run_id?: string | null;
+      run_lock_sha256?: string | null;
+      scope_path?: string;
+      source_event_id: string;
+      step_execution_id?: string | null;
+      summary: string;
+      trace_id: string;
+      workflow_contract_sha256?: string | null;
+      workspace_id?: string | null;
+    };
+    AuditLedgerPageResponse: {
+      entries: (components["schemas"]["AuditLedgerEntrySchema"])[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+    AuditProvenanceSummaryResponse: {
+      actors_involved: (string)[];
+      cas_references: (string)[];
+      first_event_at?: string | null;
+      is_run_lock_aligned: boolean;
+      last_event_at?: string | null;
+      models_invoked: (string)[];
+      root_run_id?: string | null;
+      run_id: string;
+      run_lock_sha256?: string | null;
+      total_cost_usd: number;
+      total_events: number;
+      total_input_tokens: number;
+      total_output_tokens: number;
+      workflow_contract_sha256?: string | null;
+    };
     AuthSessionBootstrapResponse: {
       authenticated: boolean;
       session?: components["schemas"]["AuthTokenResponse"] | null;
@@ -484,6 +557,21 @@ export interface components {
       workflow_id: string;
       workflow_slug: string;
       workflow_version: string;
+    };
+    BudgetOverrideRequest: {
+      override_amount_usd: number;
+      reason: string;
+      workspace_id?: string | null;
+    };
+    BudgetOverrideResponse: {
+      approved_by: string;
+      created_at?: string | null;
+      id: string;
+      new_run_status?: string;
+      override_amount_usd: number;
+      reason: string;
+      requested_by: string;
+      run_id: string;
     };
     CasObjectResponse: {
       cas_key: string;
@@ -645,6 +733,27 @@ export interface components {
       tools?: (components["schemas"]["CodegraphToolItemResponse"])[];
       trace_id: string;
       workspace_id: string;
+    };
+    CognitiveImpactDashboardResponse: {
+      active_framing_alert: boolean;
+      active_framing_hours: number;
+      active_framing_ratio: number;
+      active_framing_target?: number;
+      architecture_deviation_alert: boolean;
+      architecture_deviation_index: number;
+      architecture_deviation_target?: number;
+      pattern_drift_alert: boolean;
+      pattern_drift_index: number;
+      quick_pass_alert: boolean;
+      quick_pass_rate: number;
+      quick_pass_threshold?: number;
+      recommendations?: (components["schemas"]["GatePolicyRecommendationSchema"])[];
+      review_hours: number;
+      rubber_stamping_alert: boolean;
+      rubber_stamping_rate: number;
+      total_human_hours: number;
+      uncovered_deviations_count: number;
+      workflow_breakdowns?: (components["schemas"]["WorkflowCognitiveMetricsSchema"])[];
     };
     CognitiveRoutingOutcomeResponse: {
       attempts: (components["schemas"]["InferenceAttemptResponse"])[];
@@ -1315,6 +1424,63 @@ export interface components {
       previous_version: number;
       step_memlog_annotations: (string)[];
     };
+    FinopsBreakdownResponse: {
+      baselines?: (components["schemas"]["WorkflowBaselineResponse"])[];
+      overview: components["schemas"]["FinopsOverviewResponse"];
+      processes?: (components["schemas"]["FinopsProcessItemResponse"])[];
+      scope_budgets?: (components["schemas"]["ScopeBudgetResponse"])[];
+      tiers?: (components["schemas"]["FinopsTierEffortItemResponse"])[];
+    };
+    FinopsOverviewResponse: {
+      accounted_runs_count?: number;
+      active_circuit_breakers_count?: number;
+      cache_savings_eur?: number;
+      cache_savings_usd?: number;
+      external_units_breakdown?: Record<string, number>;
+      internal_tokens: number;
+      paused_runs_count?: number;
+      remote_tokens: number;
+      reported_external_cost_eur: number;
+      reported_external_cost_usd: number;
+      total_cost_eur: number;
+      total_cost_usd: number;
+      total_external_calls: number;
+      total_llm_tokens: number;
+      verified_internal_cost_eur: number;
+      verified_internal_cost_usd: number;
+    };
+    FinopsProcessItemResponse: {
+      active_budget_override?: boolean;
+      amortized_setup_cost_eur: number;
+      amortized_setup_cost_usd: number;
+      baseline_manual_cost_eur: number;
+      baseline_manual_cost_usd: number;
+      has_declared_baseline?: boolean;
+      human_time_cost_eur: number;
+      human_time_cost_usd: number;
+      paused_reason?: "BUDGET" | "RETRIES" | null;
+      paused_runs_count?: number;
+      run_cost_eur: number;
+      run_cost_usd: number;
+      runs_count: number;
+      sample_paused_run_id?: string | null;
+      total_cost_eur: number;
+      total_cost_usd: number;
+      ttm_reduction_pct: number;
+      workflow_id: string;
+      workflow_title: string;
+    };
+    FinopsTierEffortItemResponse: {
+      cost_eur: number;
+      cost_usd: number;
+      effort: string;
+      escalated_from_auto_count?: number;
+      inference_tier: string;
+      input_tokens: number;
+      invocations_count: number;
+      output_tokens: number;
+      total_tokens: number;
+    };
     FolderShareGrantSchemaItem: {
       access_role?: "READ_ONLY" | "CO_CONTRIBUTOR";
       grantee_user_id: string;
@@ -1354,6 +1520,19 @@ export interface components {
       probabilistic_invoked: boolean;
       probabilistic_records?: (components["schemas"]["ProbabilisticControlExecutionRecord"])[];
       total_self_heal_retries_used?: number;
+    };
+    GatePolicyRecommendationSchema: {
+      action_label: string;
+      applied_at?: string | null;
+      applied_by?: string | null;
+      description: string;
+      id: string;
+      recommendation_type: string;
+      status?: string;
+      suggested_policy: string;
+      title: string;
+      workflow_id: string;
+      workflow_title: string;
     };
     GenerateAndAttachHelpRequest: {
       actor_role?: string;
@@ -2645,6 +2824,31 @@ export interface components {
     ReleaseTaskClaimRequest: {
       force?: boolean;
     };
+    RemoteServiceTelemetryItemResponse: {
+      anomaly_count?: number;
+      avg_latency_ms?: number;
+      circuit_state?: "CLOSED" | "CIRCUIT_OPEN" | "HALF_OPEN";
+      connector_key: string;
+      consolidated_cost_eur?: number;
+      consolidated_cost_usd?: number;
+      daily_calls_count?: number;
+      default_unit_name?: string | null;
+      display_name: string;
+      fixed_cost_per_call_eur: number;
+      last_invoked_at?: string | null;
+      last_tripped_reason?: string | null;
+      max_daily_calls?: number | null;
+      max_monthly_cost_eur?: number | null;
+      max_reported_cost_per_call_eur: number;
+      quota_used_pct?: number;
+      scope_id?: string | null;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      service_kind: string;
+      total_business_units?: number;
+      total_remote_tokens?: number;
+      unit_tariff_eur: number;
+      valuation_mode: "NATIVE_TELEMETRY" | "FIXED_SCALE" | "VOLUMETRIC_ONLY";
+    };
     RemoteServiceTestAndDiscoverRequest: {
       allow_private_network?: boolean;
       endpoint_url: string;
@@ -2667,6 +2871,14 @@ export interface components {
       protocol: "MCP_STREAMABLE_HTTP_SSE" | "OPENAPI_3_1_REST" | "A2A_REMOTE_AGENT" | "WASM_SANDBOX";
       steps: (components["schemas"]["TestBenchStepResultSchema"])[];
     };
+    RemoteServicesListResponse: {
+      open_circuits_count?: number;
+      services?: (components["schemas"]["RemoteServiceTelemetryItemResponse"])[];
+      total_external_calls?: number;
+      total_remote_tokens?: number;
+      total_reported_cost_eur?: number;
+      units_breakdown?: Record<string, number>;
+    };
     RequiredConnectorSpec: {
       connector_type: string;
       required_scopes?: (string)[];
@@ -2684,6 +2896,17 @@ export interface components {
     ResetAssistantStudioGraphRequest: {
       scope_id: string;
       scope_level?: "TEAM" | "WORKSPACE";
+    };
+    ResetCircuitBreakerRequest: {
+      scope_id?: string | null;
+      target_state?: "CLOSED" | "HALF_OPEN";
+    };
+    ResetCircuitBreakerResponse: {
+      anomaly_count: number;
+      circuit_state: "CLOSED" | "CIRCUIT_OPEN" | "HALF_OPEN";
+      connector_key: string;
+      reset_at: string;
+      reset_by: string;
     };
     ResolveArtifactDestinationRequest: {
       artifact_slug: string;
@@ -2826,6 +3049,16 @@ export interface components {
       forked_as_draft: boolean;
       workflow: components["schemas"]["WorkflowDefinitionV2-Output"];
     };
+    ScopeBudgetResponse: {
+      created_at?: string | null;
+      hard_stop_pct?: number;
+      id: string;
+      monthly_budget_usd: number;
+      scope_id?: string | null;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      updated_at?: string | null;
+      warning_threshold_pct?: number;
+    };
     ScopeMutationCheckResponse: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       allowed?: boolean;
@@ -2870,6 +3103,13 @@ export interface components {
       sse_presence_banner: string;
       thread_id: string;
       workspace_id: string;
+    };
+    SetWorkflowBaselineRequest: {
+      manual_cost_usd: number;
+      manual_time_minutes: number;
+      scope_id?: string | null;
+      target_ttm_reduction_pct?: number;
+      workflow_definition_id: string;
     };
     ShellModuleItem: {
       contributor_badge_count?: number;
@@ -3030,7 +3270,7 @@ export interface components {
       id: string;
       max_agent_retries: number;
       run_id: string;
-      status: "PENDING" | "WAITING_FOR_HUMAN_ANCHOR" | "EXECUTING_AGENT" | "WAITING_FOR_HUMAN_ARBITRATION" | "EVALUATING_GATES" | "WAITING_FOR_HUMAN_GATE" | "COMMITTED" | "CHALLENGED_REWIND" | "FAILED";
+      status: "PENDING" | "WAITING_FOR_HUMAN_ANCHOR" | "EXECUTING_AGENT" | "WAITING_FOR_HUMAN_ARBITRATION" | "EVALUATING_GATES" | "WAITING_FOR_HUMAN_GATE" | "COMMITTED" | "CHALLENGED_REWIND" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "FAILED";
       step_execution_key: string;
       step_index: number;
       step_key: string;
@@ -3347,6 +3587,19 @@ export interface components {
     UpdateAgentSkillsRequest: {
       skill_ids?: (string)[];
     };
+    UpdateConnectorQuotaRequest: {
+      default_unit_name?: string | null;
+      display_name?: string | null;
+      fixed_cost_per_call_eur?: number;
+      max_daily_calls?: number | null;
+      max_monthly_cost_eur?: number | null;
+      max_reported_cost_per_call_eur?: number;
+      scope_id?: string | null;
+      scope_type?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      service_kind?: string | null;
+      unit_tariff_eur?: number;
+      valuation_mode?: "NATIVE_TELEMETRY" | "FIXED_SCALE" | "VOLUMETRIC_ONLY";
+    };
     UpdatePlatformAuthSettingsRequest: {
       auth_mode: "LOCAL" | "SSO";
       clear_oidc_client_secret?: boolean;
@@ -3357,6 +3610,13 @@ export interface components {
       oidc_scopes?: string;
       sso_button_label?: string | null;
       two_factor_mode?: "NONE" | "EMAIL_OTP" | "TOTP";
+    };
+    UpdateScopeBudgetRequest: {
+      hard_stop_pct?: number;
+      monthly_budget_usd: number;
+      scope_id?: string | null;
+      scope_type: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+      warning_threshold_pct?: number;
     };
     UpdateUserLayerPreferencesRequest: {
       default_hat?: string;
@@ -3782,6 +4042,27 @@ export interface components {
       version: string;
       workspace_id?: string | null;
     };
+    WorkflowBaselineResponse: {
+      created_at?: string | null;
+      id: string;
+      manual_cost_usd: number;
+      manual_time_minutes: number;
+      scope_id?: string | null;
+      target_ttm_reduction_pct?: number;
+      workflow_definition_id: string;
+    };
+    WorkflowCognitiveMetricsSchema: {
+      criticality: string;
+      has_alert: boolean;
+      human_gates_count: number;
+      human_passes_count: number;
+      median_review_duration_ms: number;
+      quick_pass_rate: number;
+      quick_passes_count: number;
+      uncovered_drift_count: number;
+      workflow_id: string;
+      workflow_title: string;
+    };
     WorkflowContract: {
       output_schema_uri?: string | null;
       parameters?: (components["schemas"]["ContractParameter"])[];
@@ -3891,7 +4172,7 @@ export interface components {
       root_run_id: string;
       run_key: string;
       run_lock: components["schemas"]["RecursiveRunLockManifestSchemaItem"];
-      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
+      status: "INITIALIZED" | "RUNNING" | "WAITING_FOR_HUMAN_ARBITRATION" | "WAITING_FOR_HUMAN_GATE" | "PAUSED_CIRCUIT_BREAKER" | "PAUSED_BUDGET_EXCEEDED" | "PAUSED_MAX_RETRIES" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
       trigger_id?: string | null;
       trigger_idempotency_key?: string | null;
       workflow_def_id: string;
@@ -4335,6 +4616,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/audit/ledger": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuditLedgerPageResponse"];
+      };
+    };
+  };
+  "/api/v1/audit/ledger/{run_id}/export": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuditExportResponse"];
+      };
+    };
+  };
+  "/api/v1/audit/ledger/{run_id}/provenance": {
+    get: {
+      responses: {
+        200: components["schemas"]["AuditProvenanceSummaryResponse"];
+      };
+    };
+  };
   "/api/v1/auth/change-password": {
     post: {
       responses: {
@@ -4603,6 +4905,62 @@ export interface paths {
     get: {
       responses: {
         200: unknown;
+      };
+    };
+  };
+  "/api/v1/finops/baselines": {
+    put: {
+      responses: {
+        200: components["schemas"]["WorkflowBaselineResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/budgets": {
+    put: {
+      responses: {
+        200: components["schemas"]["ScopeBudgetResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/cognitive-impact": {
+    get: {
+      responses: {
+        200: components["schemas"]["CognitiveImpactDashboardResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/connectors/{connector_key}/quota": {
+    put: {
+      responses: {
+        200: components["schemas"]["RemoteServiceTelemetryItemResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/connectors/{connector_key}/reset-circuit": {
+    post: {
+      responses: {
+        200: components["schemas"]["ResetCircuitBreakerResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/dashboard": {
+    get: {
+      responses: {
+        200: components["schemas"]["FinopsBreakdownResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/gates/policy-recommendation/{recommendation_id}/apply": {
+    post: {
+      responses: {
+        200: components["schemas"]["ApplyRecommendationResponse"];
+      };
+    };
+  };
+  "/api/v1/finops/remote-services": {
+    get: {
+      responses: {
+        200: components["schemas"]["RemoteServicesListResponse"];
       };
     };
   };
@@ -5089,6 +5447,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["WorkflowV2RunResponse"];
+      };
+    };
+  };
+  "/api/v1/runs/{run_id}/budget-override": {
+    post: {
+      responses: {
+        200: components["schemas"]["BudgetOverrideResponse"];
       };
     };
   };
@@ -5644,6 +6009,7 @@ export type AiModelMappingItemResponse = components["schemas"]["AiModelMappingIt
 export type AiModelMappingsListResponse = components["schemas"]["AiModelMappingsListResponse"];
 export type AiModelPatchRequest = components["schemas"]["AiModelPatchRequest"];
 export type AiModelTestResponse = components["schemas"]["AiModelTestResponse"];
+export type ApplyRecommendationResponse = components["schemas"]["ApplyRecommendationResponse"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
 export type ArtifactCardActionRequest = components["schemas"]["ArtifactCardActionRequest"];
 export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActionResponse"];
@@ -5664,6 +6030,10 @@ export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSc
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
+export type AuditExportResponse = components["schemas"]["AuditExportResponse"];
+export type AuditLedgerEntrySchema = components["schemas"]["AuditLedgerEntrySchema"];
+export type AuditLedgerPageResponse = components["schemas"]["AuditLedgerPageResponse"];
+export type AuditProvenanceSummaryResponse = components["schemas"]["AuditProvenanceSummaryResponse"];
 export type AuthSessionBootstrapResponse = components["schemas"]["AuthSessionBootstrapResponse"];
 export type AuthTokenResponse = components["schemas"]["AuthTokenResponse"];
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
@@ -5674,6 +6044,8 @@ export type BmadSkillPackImportRequest = components["schemas"]["BmadSkillPackImp
 export type BmadSkillPackImportResponse = components["schemas"]["BmadSkillPackImportResponse"];
 export type BmadSkillStepInputItem = components["schemas"]["BmadSkillStepInputItem"];
 export type BoundedWorkflowRunState = components["schemas"]["BoundedWorkflowRunState"];
+export type BudgetOverrideRequest = components["schemas"]["BudgetOverrideRequest"];
+export type BudgetOverrideResponse = components["schemas"]["BudgetOverrideResponse"];
 export type CasObjectResponse = components["schemas"]["CasObjectResponse"];
 export type CatalogItemResponse = components["schemas"]["CatalogItemResponse"];
 export type CatalogItemsListResponse = components["schemas"]["CatalogItemsListResponse"];
@@ -5694,6 +6066,7 @@ export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
 export type CodegraphActiveRepoResponse = components["schemas"]["CodegraphActiveRepoResponse"];
 export type CodegraphToolItemResponse = components["schemas"]["CodegraphToolItemResponse"];
 export type CodegraphToolsListResponse = components["schemas"]["CodegraphToolsListResponse"];
+export type CognitiveImpactDashboardResponse = components["schemas"]["CognitiveImpactDashboardResponse"];
 export type CognitiveRoutingOutcomeResponse = components["schemas"]["CognitiveRoutingOutcomeResponse"];
 export type CommandPaletteEntryResponse = components["schemas"]["CommandPaletteEntryResponse"];
 export type CommandPaletteSearchResponse = components["schemas"]["CommandPaletteSearchResponse"];
@@ -5773,11 +6146,16 @@ export type ExportFromWorkspaceToPackRequest = components["schemas"]["ExportFrom
 export type ExportFromWorkspaceToPackResponse = components["schemas"]["ExportFromWorkspaceToPackResponse"];
 export type ExposedMcpAgentResponse = components["schemas"]["ExposedMcpAgentResponse"];
 export type ExternalRebaseResponse = components["schemas"]["ExternalRebaseResponse"];
+export type FinopsBreakdownResponse = components["schemas"]["FinopsBreakdownResponse"];
+export type FinopsOverviewResponse = components["schemas"]["FinopsOverviewResponse"];
+export type FinopsProcessItemResponse = components["schemas"]["FinopsProcessItemResponse"];
+export type FinopsTierEffortItemResponse = components["schemas"]["FinopsTierEffortItemResponse"];
 export type FolderShareGrantSchemaItem = components["schemas"]["FolderShareGrantSchemaItem"];
 export type GateEvaluationSchemaItem = components["schemas"]["GateEvaluationSchemaItem"];
 export type GateEvaluationsListResponse = components["schemas"]["GateEvaluationsListResponse"];
 export type GateExecutionStrategy = components["schemas"]["GateExecutionStrategy"];
 export type GatePipelineExecutionReport = components["schemas"]["GatePipelineExecutionReport"];
+export type GatePolicyRecommendationSchema = components["schemas"]["GatePolicyRecommendationSchema"];
 export type GenerateAndAttachHelpRequest = components["schemas"]["GenerateAndAttachHelpRequest"];
 export type GenerateAndAttachHelpResponse = components["schemas"]["GenerateAndAttachHelpResponse"];
 export type GeneratedStarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
@@ -5929,12 +6307,16 @@ export type RecordAssistantTurnFeedbackRequest = components["schemas"]["RecordAs
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type RegisterExceptionWaiverRequest = components["schemas"]["RegisterExceptionWaiverRequest"];
 export type ReleaseTaskClaimRequest = components["schemas"]["ReleaseTaskClaimRequest"];
+export type RemoteServiceTelemetryItemResponse = components["schemas"]["RemoteServiceTelemetryItemResponse"];
 export type RemoteServiceTestAndDiscoverRequest = components["schemas"]["RemoteServiceTestAndDiscoverRequest"];
 export type RemoteServiceTestAndDiscoverResponse = components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
+export type RemoteServicesListResponse = components["schemas"]["RemoteServicesListResponse"];
 export type RequiredConnectorSpec = components["schemas"]["RequiredConnectorSpec"];
 export type ResendLoginTwoFactorRequest = components["schemas"]["ResendLoginTwoFactorRequest"];
 export type ResendLoginTwoFactorResponse = components["schemas"]["ResendLoginTwoFactorResponse"];
 export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
+export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];
+export type ResetCircuitBreakerResponse = components["schemas"]["ResetCircuitBreakerResponse"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
 export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
@@ -5953,12 +6335,14 @@ export type RunPilotTicketToTechSpecRequest = components["schemas"]["RunPilotTic
 export type SaveAssistantStudioGraphRequest = components["schemas"]["SaveAssistantStudioGraphRequest"];
 export type SaveWorkflowV2Request = components["schemas"]["SaveWorkflowV2Request"];
 export type SaveWorkflowV2Response = components["schemas"]["SaveWorkflowV2Response"];
+export type ScopeBudgetResponse = components["schemas"]["ScopeBudgetResponse"];
 export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationCheckResponse"];
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
 export type SecretStatusResponse = components["schemas"]["SecretStatusResponse"];
 export type SendCollaborativeThreadTurnRequest = components["schemas"]["SendCollaborativeThreadTurnRequest"];
 export type SendCollaborativeThreadTurnResponse = components["schemas"]["SendCollaborativeThreadTurnResponse"];
+export type SetWorkflowBaselineRequest = components["schemas"]["SetWorkflowBaselineRequest"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
 export type SignedApprovalToken = components["schemas"]["SignedApprovalToken"];
@@ -6010,7 +6394,9 @@ export type TwoPassExtractionResponse = components["schemas"]["TwoPassExtraction
 export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchHitSchemaItem"];
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
+export type UpdateConnectorQuotaRequest = components["schemas"]["UpdateConnectorQuotaRequest"];
 export type UpdatePlatformAuthSettingsRequest = components["schemas"]["UpdatePlatformAuthSettingsRequest"];
+export type UpdateScopeBudgetRequest = components["schemas"]["UpdateScopeBudgetRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
 export type UpdateWorkspaceDatasourceRequest = components["schemas"]["UpdateWorkspaceDatasourceRequest"];
 export type UpdateWorkspaceLayerSettingsRequest = components["schemas"]["UpdateWorkspaceLayerSettingsRequest"];
@@ -6052,6 +6438,8 @@ export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepR
 export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"];
 export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];
 export type WorkflowAsCodeDefinitionSchemaItem = components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"];
+export type WorkflowBaselineResponse = components["schemas"]["WorkflowBaselineResponse"];
+export type WorkflowCognitiveMetricsSchema = components["schemas"]["WorkflowCognitiveMetricsSchema"];
 export type WorkflowContract = components["schemas"]["WorkflowContract"];
 export type WorkflowDefinitionResponseItem = components["schemas"]["WorkflowDefinitionResponseItem"];
 export type WorkflowDefinitionV2_Input = components["schemas"]["WorkflowDefinitionV2-Input"];
