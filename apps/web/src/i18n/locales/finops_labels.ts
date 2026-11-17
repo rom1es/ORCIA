@@ -67,6 +67,7 @@ export interface FinopsDictionarySection {
       pausedBadgeRetries: string;
       activeBadge: string;
       overrideButton: string;
+      emptyProcessesText: string;
     };
     tiersTable: {
       title: string;
@@ -77,6 +78,9 @@ export interface FinopsDictionarySection {
       outputTokensCol: string;
       totalTokensCol: string;
       costCol: string;
+      emptyTiersText: string;
+      tierLabels: Record<string, string>;
+      effortLabels: Record<string, string>;
     };
     modals: {
       budgetTitle: string;
@@ -150,6 +154,7 @@ export const FINOPS_FR_LABELS: FinopsDictionarySection = {
       pausedBadgeRetries: "En pause · Tentatives max atteintes",
       activeBadge: "Opérationnel",
       overrideButton: "Accorder une rallonge budgétaire",
+      emptyProcessesText: "Aucun processus actif sur ce périmètre.",
     },
     tiersTable: {
       title: "Consommation par Tier Cognitif et Effort",
@@ -160,6 +165,19 @@ export const FINOPS_FR_LABELS: FinopsDictionarySection = {
       outputTokensCol: "Tokens en sortie",
       totalTokensCol: "Tokens totaux",
       costCol: "Coût consolidé",
+      emptyTiersText: "Aucune donnée de modèle ou niveau d'effort enregistrée.",
+      tierLabels: {
+        simple: "Rapide",
+        standard: "Standard",
+        reasoning: "Raisonnement approfondi",
+        embedding: "Indexation vectorielle",
+      },
+      effortLabels: {
+        low: "Léger",
+        medium: "Modéré",
+        high: "Approfondi",
+        max: "Maximum",
+      },
     },
     modals: {
       budgetTitle: "Configurer un plafond budgétaire",
@@ -235,6 +253,7 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       pausedBadgeRetries: "Paused · Max retries reached",
       activeBadge: "Operational",
       overrideButton: "Grant budget extension",
+      emptyProcessesText: "No active process recorded in this scope.",
     },
     tiersTable: {
       title: "Usage by Cognitive Tier and Effort",
@@ -245,6 +264,19 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       outputTokensCol: "Output Tokens",
       totalTokensCol: "Total Tokens",
       costCol: "Consolidated Cost",
+      emptyTiersText: "No model or effort level consumption recorded yet.",
+      tierLabels: {
+        simple: "Fast",
+        standard: "Standard",
+        reasoning: "Deep reasoning",
+        embedding: "Vector indexing",
+      },
+      effortLabels: {
+        low: "Low",
+        medium: "Medium",
+        high: "High",
+        max: "Maximum",
+      },
     },
     modals: {
       budgetTitle: "Configure Budget Ceiling",

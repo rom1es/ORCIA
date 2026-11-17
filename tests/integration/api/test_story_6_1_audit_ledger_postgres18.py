@@ -35,6 +35,7 @@ try:
 except ImportError:
     from testcontainers.postgres import PostgresContainer
 
+from orcia_api.dependencies import initialize_app_services
 from orcia_api.main import create_app
 from orcia_core.audit_finops._internal.sql_audit_ledger import SqlAuditLedgerService
 from orcia_core.ports.finops_telemetry import FinopsCostLedgerEntry
@@ -81,12 +82,16 @@ async def app_client(
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
     app = create_app()
+    initialize_app_services(app)
+    auth_svc = app.state.auth_service
+    admin_user = auth_svc.get_user_by_id("0192c4e0-0000-7000-8000-000000000601")
+    admin_token = auth_svc._issue_for_user(admin_user, "LOCAL", None).access_token
     transport = ASGITransport(app=app)
     async with AsyncClient(
         transport=transport,
         base_url="http://testserver",
         headers={
-            "X-Orcia-Active-Hat": "PLATFORM_ADMIN",
+            "Authorization": f"Bearer {admin_token}",
             "Accept-Language": "fr",
         },
     ) as client:

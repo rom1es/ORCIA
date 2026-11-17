@@ -34,6 +34,7 @@ try:
 except ImportError:
     from testcontainers.postgres import PostgresContainer
 
+from orcia_api.dependencies import initialize_app_services
 from orcia_api.main import create_app
 from orcia_kernel.ids import new_uuid7_str
 
@@ -88,12 +89,16 @@ async def app_client(
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
     app = create_app()
+    initialize_app_services(app)
+    auth_svc = app.state.auth_service
+    admin_user = auth_svc.get_user_by_id("0192c4e0-0000-7000-8000-000000000601")
+    admin_token = auth_svc._issue_for_user(admin_user, "LOCAL", None).access_token
     transport = ASGITransport(app=app)
     async with AsyncClient(
         transport=transport,
         base_url="http://testserver",
         headers={
-            "X-Orcia-Active-Hat": "PLATFORM_ADMIN",
+            "Authorization": f"Bearer {admin_token}",
             "Accept-Language": "fr",
         },
     ) as client:
@@ -195,16 +200,18 @@ async def test_finops_run_pause_and_budget_override_postgres18(
     database_url: str,
     app_client: AsyncClient,
 ) -> None:
-    """Verify run budget override unpauses run and step_execution in PostgreSQL 18."""
+    """Verify processes CTE anti-Cartesian, BU recursive filter, and override + outbox on PG18."""
     engine = create_async_engine(database_url)
 
     run_id = new_uuid7_str()
     step_id = new_uuid7_str()
+    karim_id = "0192c4e0-0000-7000-8000-000000000601"
     user_id = "0192c4e0-0000-7000-8000-000000000603"
     ws_id = new_uuid7_str()
     wf_id = new_uuid7_str()
+    bu_id = new_uuid7_str()
 
-    # 1. Insert root_ou, user, workspace, and a paused run + step execution in PostgreSQL 18
+    # 1. Insert org tree (ENTERPRISE -> BU), karim/marc users, workspace, paused run & ledger rows
     async with engine.begin() as conn:
         root_ou = (
             await conn.execute(
@@ -222,31 +229,43 @@ async def test_finops_run_pause_and_budget_override_postgres18(
             )
         await conn.execute(
             sa.text(
-                "INSERT INTO users ("
-                "  id, email, display_name, auth_mode, human_profile_archetype, "
-                "  platform_role, primary_org_unit_id, is_active"
-                ") VALUES ("
-                "  CAST(:id AS uuid), 'marc.lead@orcia.io', 'Marc Lead', 'LOCAL', 'TECH_LEAD', "
-                "  'PLATFORM_ADMIN', CAST(:ou_id AS uuid), TRUE"
-                ") ON CONFLICT (id) DO NOTHING"
+                "INSERT INTO org_units (id, slug, name, unit_type, parent_id) "
+                "VALUES (CAST(:id AS uuid), 'bu-finops-test', 'Direction FinOps', 'BU', :parent)"
             ),
-            {"id": user_id, "ou_id": str(root_ou)},
+            {"id": bu_id, "parent": root_ou},
         )
+        for uid, email, name, role in (
+            (karim_id, "karim.benali@orcia.io", "Karim Benali", "PLATFORM_ADMIN"),
+            (user_id, "marc.lead@orcia.io", "Marc Lead", "TEAM_LEAD"),
+        ):
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO users ("
+                    "  id, email, display_name, auth_mode, human_profile_archetype, "
+                    "  platform_role, primary_org_unit_id, is_active"
+                    ") VALUES ("
+                    "  CAST(:id AS uuid), :email, :name, 'LOCAL', 'TECH_LEAD', "
+                    "  :role, CAST(:ou_id AS uuid), TRUE"
+                    ") ON CONFLICT (id) DO NOTHING"
+                ),
+                {"id": uid, "email": email, "name": name, "role": role, "ou_id": str(root_ou)},
+            )
         await conn.execute(
             sa.text(
                 "INSERT INTO workspaces (id, name, slug, owner_org_unit_id) "
                 "VALUES (CAST(:id AS uuid), 'FinOps Workspace', 'ws-finops', CAST(:ou_id AS uuid)) "
                 "ON CONFLICT DO NOTHING"
             ),
-            {"id": ws_id, "ou_id": str(root_ou)},
+            {"id": ws_id, "ou_id": bu_id},
         )
         await conn.execute(
             sa.text(
-                "INSERT INTO workflow_definitions (id, uri, version, sha256) "
-                "VALUES (CAST(:id AS uuid), 'orcia://wf/paused@v1', '1.0.0', 'sha-002') "
+                "INSERT INTO workflow_definitions (id, uri, version, sha256, workspace_id) "
+                "VALUES (CAST(:id AS uuid), 'orcia://wf/paused-review@v1', '1.0.0', 'sha-002', "
+                "        CAST(:ws_id AS uuid)) "
                 "ON CONFLICT DO NOTHING"
             ),
-            {"id": wf_id},
+            {"id": wf_id, "ws_id": ws_id},
         )
         await conn.execute(
             sa.text(
@@ -271,6 +290,63 @@ async def test_finops_run_pause_and_budget_override_postgres18(
             ),
             {"step_id": step_id, "run_id": run_id},
         )
+        # Seed 2 audit_ledger entries + 2 gate_evaluations on same run (ZERO Cartesian check)
+        for idx, cost in ((1, "2.500000"), (2, "1.500000")):
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO audit_ledger ("
+                    "  id, source_event_id, workspace_id, scope_path, run_id, actor_type, "
+                    "  actor_id, event_type, summary, cost_usd, cost_source, trace_id"
+                    ") VALUES ("
+                    "  CAST(:id AS uuid), CAST(:src AS uuid), CAST(:ws_id AS uuid), "
+                    "  :scope_path, CAST(:run_id AS uuid), 'AGENT', 'orcia-agent', "
+                    "  'StepCompleted', :summary, :cost, 'INTERNAL_VERIFIED', :trace"
+                    ")"
+                ),
+                {
+                    "id": new_uuid7_str(),
+                    "src": new_uuid7_str(),
+                    "ws_id": ws_id,
+                    "scope_path": f"WORKSPACE:{ws_id}",
+                    "run_id": run_id,
+                    "summary": f"Step {idx}",
+                    "cost": Decimal(cost),
+                    "trace": f"trace-6-2-{idx}",
+                },
+            )
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO gate_evaluations ("
+                    "  id, workspace_id, run_id, step_execution_id, step_key, gate_type, "
+                    "  status, score, pattern_drift_passed, review_duration_ms"
+                    ") VALUES ("
+                    "  CAST(:id AS uuid), CAST(:ws_id AS uuid), CAST(:run_id AS uuid), "
+                    "  CAST(:step_id AS uuid), :sk, 'HUMAN', 'PASS', 1.0, TRUE, 30000"
+                    ")"
+                ),
+                {
+                    "id": new_uuid7_str(),
+                    "ws_id": ws_id,
+                    "run_id": run_id,
+                    "step_id": step_id,
+                    "sk": f"gate-{idx}",
+                },
+            )
+
+    # 1b. BLOCKING-01: GET /finops/dashboard?scope_type=BU returns exact non-Cartesian sums
+    bu_dash_resp = await app_client.get(f"/api/v1/finops/dashboard?scope_type=BU&scope_id={bu_id}")
+    assert bu_dash_resp.status_code == 200, bu_dash_resp.text
+    bu_dash = bu_dash_resp.json()
+    assert len(bu_dash["processes"]) >= 1
+    proc = next(p for p in bu_dash["processes"] if p["workflow_id"] == wf_id)
+    assert proc["workflow_title"] == "paused-review@v1"
+    assert proc["runs_count"] == 1
+    assert proc["paused_runs_count"] == 1
+    assert proc["sample_paused_run_id"] == run_id
+    assert proc["paused_reason"] == "BUDGET"
+    assert proc["has_declared_baseline"] is False
+    # Exact sum (2.50 + 1.50 = 4.00 USD * 0.92 = 3.68 EUR), NOT multiplied by 2 gate evaluations!
+    assert abs(proc["run_cost_eur"] - round(4.0 * 0.92, 4)) < 0.01
 
     # 2. Call POST /api/v1/runs/{run_id}/budget-override to grant an extension
     override_payload = {
@@ -291,6 +367,7 @@ async def test_finops_run_pause_and_budget_override_postgres18(
     # - finops_budget_overrides audit record created
     # - workflow_runs.status updated to RUNNING
     # - step_executions.status updated to PENDING
+    # - domain_events_outbox + audit_ledger BudgetOverrideApproved created (BLOCKING-04)
     async with engine.connect() as conn:
         res_ov = await conn.execute(
             sa.text(
@@ -316,14 +393,37 @@ async def test_finops_run_pause_and_budget_override_postgres18(
         )
         assert res_step.scalar_one() == "PENDING"
 
+        outbox_count = (
+            await conn.execute(
+                sa.text(
+                    "SELECT COUNT(*) FROM domain_events_outbox "
+                    "WHERE event_type = 'BudgetOverrideApproved' AND run_id = CAST(:run_id AS uuid)"
+                ),
+                {"run_id": run_id},
+            )
+        ).scalar_one()
+        assert outbox_count >= 1
+
+        ledger_ov_count = (
+            await conn.execute(
+                sa.text(
+                    "SELECT COUNT(*) FROM audit_ledger "
+                    "WHERE event_type = 'BudgetOverrideApproved' AND run_id = CAST(:run_id AS uuid)"
+                ),
+                {"run_id": run_id},
+            )
+        ).scalar_one()
+        assert ledger_ov_count >= 1
+
     await engine.dispose()
 
 
 @pytest.mark.asyncio
-async def test_finops_observer_mode_mutation_forbidden_403(
+async def test_finops_observer_mode_and_idor_forbidden_403(
+    database_url: str,
     app_client: AsyncClient,
 ) -> None:
-    """Verify that READ_ONLY_OBSERVER is rejected with HTTP 403 ERR_OBSERVER_MODE_READ_ONLY."""
+    """Verify READ_ONLY_OBSERVER -> 403 and unauthorized contributor IDOR -> 403 (`BLOCKING-05`)."""
     budget_payload = {
         "scope_type": "GLOBAL",
         "scope_id": None,
@@ -331,7 +431,6 @@ async def test_finops_observer_mode_mutation_forbidden_403(
         "warning_threshold_pct": 80,
         "hard_stop_pct": 100,
     }
-    # Mutating with READ_ONLY_OBSERVER role
     resp = await app_client.put(
         "/api/v1/finops/budgets",
         json=budget_payload,
@@ -340,3 +439,122 @@ async def test_finops_observer_mode_mutation_forbidden_403(
     assert resp.status_code == 403
     problem = resp.json()
     assert problem["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
+
+    # Non-admin contributor token cannot mutate GLOBAL budget (BLOCKING-05)
+    from orcia_api.dependencies import initialize_app_services
+    from orcia_api.main import create_app
+
+    app = create_app()
+    initialize_app_services(app)
+    auth_svc = app.state.auth_service
+    contrib = auth_svc.get_user_by_id("0192c4e0-0000-7000-8000-000000000605")
+    contrib_token = auth_svc._issue_for_user(contrib, "LOCAL", None).access_token
+    resp_idor = await app_client.put(
+        "/api/v1/finops/budgets",
+        json=budget_payload,
+        headers={"Authorization": f"Bearer {contrib_token}"},
+    )
+    assert resp_idor.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_finops_global_baselines_workspace_isolation_postgres18(
+    database_url: str,
+    app_client: AsyncClient,
+) -> None:
+    """Verify restricted caller on ?scope_type=GLOBAL only sees own baselines (RES-02)."""
+    import json
+
+    from orcia_core.permissions.models import UserIdentity
+
+    engine = create_async_engine(database_url)
+    org_a = new_uuid7_str()
+    org_b = new_uuid7_str()
+    ws_a = new_uuid7_str()
+    ws_b = new_uuid7_str()
+    user_a_id = new_uuid7_str()
+    wf_a = new_uuid7_str()
+    wf_b = new_uuid7_str()
+
+    async with engine.begin() as conn:
+        await conn.execute(
+            sa.text(
+                "INSERT INTO org_units (id, slug, name, unit_type, member_user_ids_jsonb) VALUES "
+                "(CAST(:oa AS uuid), 'team-fin-a', 'Team Fin A', 'TEAM', CAST(:ma AS jsonb)), "
+                "(CAST(:ob AS uuid), 'team-fin-b', 'Team Fin B', 'TEAM', '[]'::jsonb)"
+            ),
+            {"oa": org_a, "ob": org_b, "ma": json.dumps([user_a_id])},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO users ("
+                "  id, email, display_name, auth_mode, human_profile_archetype, "
+                "  platform_role, primary_org_unit_id, is_active"
+                ") VALUES ("
+                "  CAST(:uid AS uuid), 'alice.fin@orcia.fr', 'Alice A', 'LOCAL', 'TECH_LEAD', "
+                "  'CONTRIBUTOR', CAST(:oa AS uuid), TRUE"
+                ")"
+            ),
+            {"uid": user_a_id, "oa": org_a},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO workspaces (id, slug, name, owner_org_unit_id) VALUES "
+                "(CAST(:wa AS uuid), 'ws-fin-a', 'WS Fin A', CAST(:oa AS uuid)), "
+                "(CAST(:wb AS uuid), 'ws-fin-b', 'WS Fin B', CAST(:ob AS uuid))"
+            ),
+            {"wa": ws_a, "oa": org_a, "wb": ws_b, "ob": org_b},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO workflow_definitions (id, uri, version, sha256, workspace_id) VALUES "
+                "(CAST(:wfa AS uuid), 'orcia://wf/fin-a', '1.0.0', 'sha-fa', CAST(:wa AS uuid)), "
+                "(CAST(:wfb AS uuid), 'orcia://wf/fin-b', '1.0.0', 'sha-fb', CAST(:wb AS uuid))"
+            ),
+            {"wfa": wf_a, "wa": ws_a, "wfb": wf_b, "wb": ws_b},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO finops_workflow_baselines ("
+                "  id, workflow_definition_id, scope_id, manual_time_minutes, "
+                "  manual_cost_usd, target_ttm_reduction_pct"
+                ") VALUES "
+                "(CAST(:ba AS uuid), CAST(:wfa AS uuid), CAST(:wa AS uuid), 100, 120.0, 20), "
+                "(CAST(:bb AS uuid), CAST(:wfb AS uuid), CAST(:wb AS uuid), 200, 240.0, 30)"
+            ),
+            {
+                "ba": new_uuid7_str(),
+                "wfa": wf_a,
+                "wa": ws_a,
+                "bb": new_uuid7_str(),
+                "wfb": wf_b,
+                "wb": ws_b,
+            },
+        )
+
+    app = app_client._transport.app  # type: ignore[attr-defined]
+    auth_svc = app.state.auth_service
+    user_a = UserIdentity(
+        id=user_a_id,
+        email="alice.fin@orcia.fr",
+        display_name="Alice A",
+        auth_mode="LOCAL",
+        platform_role="CONTRIBUTOR",
+        roles=("CONTRIBUTOR",),
+        primary_org_unit_id=org_a,
+        human_profile_archetype="TECH_LEAD",
+    )
+    auth_svc.register_user(user_a)
+    token_a = auth_svc._issue_for_user(user_a, "LOCAL", None).access_token
+
+    resp = await app_client.get(
+        "/api/v1/finops/dashboard?scope_type=GLOBAL",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert resp.status_code == 200, resp.text
+    baselines = resp.json()["baselines"]
+    baseline_wf_ids = {b["workflow_definition_id"] for b in baselines}
+    assert wf_a in baseline_wf_ids
+    assert wf_b not in baseline_wf_ids, f"Cross-workspace baseline leaked: {baselines}"
+
+    await engine.dispose()

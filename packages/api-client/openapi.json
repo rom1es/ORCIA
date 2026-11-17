@@ -9457,6 +9457,12 @@
             "title": "Baseline Manual Cost Usd",
             "type": "number"
           },
+          "has_declared_baseline": {
+            "default": false,
+            "description": "Whether a manual reference baseline was explicitly declared",
+            "title": "Has Declared Baseline",
+            "type": "boolean"
+          },
           "human_time_cost_eur": {
             "description": "Valorized human review and arbitration time (EUR)",
             "title": "Human Time Cost Eur",
@@ -9466,6 +9472,22 @@
             "description": "Valorized human review and arbitration time (USD)",
             "title": "Human Time Cost Usd",
             "type": "number"
+          },
+          "paused_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "BUDGET",
+                  "RETRIES"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reason for paused state (BUDGET or RETRIES)",
+            "title": "Paused Reason"
           },
           "paused_runs_count": {
             "default": 0,
@@ -9487,6 +9509,18 @@
             "description": "Total executions of this workflow",
             "title": "Runs Count",
             "type": "integer"
+          },
+          "sample_paused_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of a sample paused run eligible for budget override",
+            "title": "Sample Paused Run Id"
           },
           "total_cost_eur": {
             "description": "Complete 3-component economic cost (EUR)",
@@ -33549,7 +33583,7 @@
     },
     "/api/v1/audit/ledger": {
       "get": {
-        "description": "Query the append-only audit ledger with rich multi-criteria filters.",
+        "description": "Query the append-only audit ledger with strict anti-IDOR scope filtering.",
         "operationId": "list_audit_ledger_entries_api_v1_audit_ledger_get",
         "parameters": [
           {
@@ -34020,7 +34054,7 @@
     },
     "/api/v1/audit/ledger/{run_id}/provenance": {
       "get": {
-        "description": "Retrieve verified provenance summary verifying run-lock alignment.",
+        "description": "Retrieve verified provenance summary verifying run-lock alignment & scope permissions.",
         "operationId": "get_run_provenance_summary_api_v1_audit_ledger__run_id__provenance_get",
         "parameters": [
           {
@@ -50747,6 +50781,22 @@
               "minLength": 1,
               "title": "Mapping Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],

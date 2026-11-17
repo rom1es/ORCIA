@@ -38,6 +38,7 @@ except ImportError:
     from testcontainers.postgres import PostgresContainer
 from testcontainers.redis import RedisContainer
 
+from orcia_api.dependencies import initialize_app_services
 from orcia_api.main import create_app
 from orcia_core.audit_finops.connector_quota_service import SqlConnectorQuotaGuardService
 from orcia_core.audit_finops.remote_usage_sanitizer import RemoteUsageSanitizer
@@ -137,12 +138,16 @@ async def app_client(
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
     app = create_app()
+    initialize_app_services(app)
+    auth_svc = app.state.auth_service
+    admin_user = auth_svc.get_user_by_id("0192c4e0-0000-7000-8000-000000000601")
+    admin_token = auth_svc._issue_for_user(admin_user, "LOCAL", None).access_token
     transport = ASGITransport(app=app)
     async with AsyncClient(
         transport=transport,
         base_url="http://testserver",
         headers={
-            "X-Orcia-Active-Hat": "PLATFORM_ADMIN",
+            "Authorization": f"Bearer {admin_token}",
             "Accept-Language": "fr",
         },
     ) as client:
@@ -329,6 +334,21 @@ async def test_connector_quotas_isolation_and_reset_postgres18(
         )
         assert obs_resp.status_code == 403
         assert "ERR_OBSERVER_MODE_READ_ONLY" in obs_resp.text
+
+        # 4b. Non-admin contributor rejected on GLOBAL quota mutation (BLOCKING-05)
+        from orcia_api.main import create_app as _create_app
+
+        helper_app = _create_app()
+        initialize_app_services(helper_app)
+        helper_auth = helper_app.state.auth_service
+        contrib = helper_auth.get_user_by_id("0192c4e0-0000-7000-8000-000000000605")
+        contrib_token = helper_auth._issue_for_user(contrib, "LOCAL", None).access_token
+        idor_resp = await app_client.put(
+            "/api/v1/finops/connectors/mcp-ocr/quota",
+            json={"display_name": "OCR", "service_kind": "MCP_SERVER", "scope_type": "GLOBAL"},
+            headers={"Authorization": f"Bearer {contrib_token}"},
+        )
+        assert idor_resp.status_code == 403
 
         # 5. Reset circuit as PLATFORM_ADMIN
         reset_resp = await app_client.post("/api/v1/finops/connectors/mcp-ocr/reset-circuit")

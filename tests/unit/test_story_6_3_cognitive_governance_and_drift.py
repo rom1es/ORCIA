@@ -19,6 +19,7 @@ import pytest
 from orcia_core.audit_finops.cognitive_impact_service import (
     CognitiveImpactService,
 )
+from orcia_kernel.errors import ResourceNotFoundError
 
 
 @pytest.mark.asyncio
@@ -265,17 +266,14 @@ async def test_governance_analyzer_generates_recommendations() -> None:
 
 @pytest.mark.asyncio
 async def test_apply_policy_recommendation() -> None:
-    """Applying a recommendation updates its status to APPLIED."""
+    """Unknown recommendation ID strictly raises 404 ResourceNotFoundError (`MAJOR-01`)."""
     service = CognitiveImpactService(engine=None)
 
-    applied = await service.apply_policy_recommendation(
-        "rec-wf-std-1",
-        applied_by="018f-user-manager",
-    )
-    assert applied.id == "rec-wf-std-1"
-    assert applied.status == "APPLIED"
-    assert applied.applied_by == "018f-user-manager"
-    assert applied.applied_at is not None
+    with pytest.raises(ResourceNotFoundError):
+        await service.apply_policy_recommendation(
+            "rec-unknown-id",
+            applied_by="018f-user-manager",
+        )
 
 
 @pytest.mark.asyncio

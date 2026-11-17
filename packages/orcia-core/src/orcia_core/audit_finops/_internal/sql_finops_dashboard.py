@@ -1,30 +1,29 @@
 """Async SQL aggregation queries for FinOps dashboard and breakdowns (`Story 6.2`).
 
-Pure SQLAlchemy asyncpg queries (< 300 lines).
+Pure SQLAlchemy asyncpg queries — zero N+1, zero Cartesian products, recursive scope filtering.
 """
 
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 from typing import Any
-from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._internal._sql_scope_filter import (
+    build_connector_scope_clause,
+    build_ledger_scope_clause,
+    build_scoped_cte_with_acl,
+    is_missing_table_error,
+)
+from orcia_core.audit_finops._internal.sql_finops_dashboard_processes import (
+    fetch_dashboard_processes_sql,
+)
 from orcia_core.audit_finops.finops_models import ScopeType
+from orcia_core.observability.logging import get_logger
 
-logger = logging.getLogger(__name__)
-
-
-def _safe_uuid(val: str | None) -> UUID | None:
-    if not val:
-        return None
-    try:
-        return UUID(val)
-    except (ValueError, TypeError, AttributeError):
-        return None
+logger = get_logger("orcia.core.audit_finops.dashboard")
 
 
 async def fetch_dashboard_overview_sql(
@@ -32,7 +31,9 @@ async def fetch_dashboard_overview_sql(
     *,
     scope_type: ScopeType = "GLOBAL",
     scope_id: str | None = None,
+    allowed_workspace_ids: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
+    """Fetch consolidated KPI totals for the given hierarchical scope."""
     default_overview: dict[str, Any] = {
         "total_cost_usd": Decimal("0.000000"),
         "verified_internal_cost_usd": Decimal("0.000000"),
@@ -43,54 +44,96 @@ async def fetch_dashboard_overview_sql(
         "remote_tokens": 0,
         "total_external_calls": 0,
         "external_units_breakdown": {},
+        "cache_savings_usd": Decimal("0.000000"),
         "active_circuit_breakers_count": 0,
         "accounted_runs_count": 0,
         "paused_runs_count": 0,
     }
     if engine is None:
         return default_overview
+    if allowed_workspace_ids is not None and len(allowed_workspace_ids) == 0:
+        return default_overview
 
-    uuid_val = _safe_uuid(scope_id)
-    scope_filter = ""
-    params: dict[str, Any] = {}
-    if uuid_val is not None:
-        scope_filter = "WHERE l.workspace_id = :scope_id"
-        params["scope_id"] = uuid_val
+    uuid_val, cte_sql, params = build_scoped_cte_with_acl(
+        scope_type, scope_id, allowed_workspace_ids
+    )
+    ledger_where = build_ledger_scope_clause(scope_type, uuid_val, alias="l")
+    if allowed_workspace_ids is not None:
+        ledger_where = f"({ledger_where}) AND l.workspace_id IN (SELECT id FROM scoped_workspaces)"
 
     ledger_stmt = sa.text(
         f"""
+        {cte_sql}
         SELECT
-            COALESCE(SUM(cost_usd), 0.000000) as total_cost_usd,
-            COALESCE(SUM(CASE WHEN cost_source = 'INTERNAL_VERIFIED'
-                              THEN cost_usd ELSE 0.000000 END), 0.000000) as verified_internal_usd,
-            COALESCE(SUM(CASE WHEN cost_source != 'INTERNAL_VERIFIED'
-                              THEN cost_usd ELSE 0.000000 END), 0.000000) as reported_external_usd,
-            COALESCE(SUM(input_tokens), 0) as total_input_tokens,
-            COALESCE(SUM(output_tokens), 0) as total_output_tokens,
-            COALESCE(SUM(CASE WHEN reported_by_remote
-                              THEN input_tokens + output_tokens ELSE 0 END), 0) as remote_tokens,
-            COALESCE(SUM(CASE WHEN NOT reported_by_remote
-                              THEN input_tokens + output_tokens ELSE 0 END), 0) as internal_tokens,
-            COALESCE(SUM(CASE WHEN reported_by_remote
-                              THEN 1 ELSE 0 END), 0) as total_external_calls
+            COALESCE(SUM(l.cost_usd), 0.000000) AS total_cost_usd,
+            COALESCE(SUM(CASE WHEN l.cost_source = 'INTERNAL_VERIFIED'
+                              THEN l.cost_usd ELSE 0.000000 END),
+                     0.000000) AS verified_internal_usd,
+            COALESCE(SUM(CASE WHEN l.cost_source != 'INTERNAL_VERIFIED'
+                              THEN l.cost_usd ELSE 0.000000 END),
+                     0.000000) AS reported_external_usd,
+            COALESCE(SUM(l.input_tokens), 0) AS total_input_tokens,
+            COALESCE(SUM(l.output_tokens), 0) AS total_output_tokens,
+            COALESCE(SUM(CASE WHEN l.reported_by_remote
+                              THEN l.input_tokens + l.output_tokens ELSE 0 END),
+                     0) AS remote_tokens,
+            COALESCE(SUM(CASE WHEN NOT l.reported_by_remote
+                              THEN l.input_tokens + l.output_tokens ELSE 0 END),
+                     0) AS internal_tokens,
+            COALESCE(SUM(CASE WHEN l.reported_by_remote
+                              THEN 1 ELSE 0 END), 0) AS total_external_calls,
+            COALESCE(SUM(
+                CASE
+                    WHEN (l.metadata_jsonb->>'cache_savings_usd') ~ '^[0-9]+(\\.[0-9]+)?$'
+                    THEN (l.metadata_jsonb->>'cache_savings_usd')::numeric(12, 6)
+                    ELSE 0.000000
+                END
+            ), 0.000000) AS cache_savings_usd
         FROM audit_ledger l
-        {scope_filter};
+        WHERE {ledger_where};
         """
     )
 
-    runs_filter = ""
-    if uuid_val is not None:
-        runs_filter = "WHERE workspace_id = :scope_id"
+    runs_where = (
+        "TRUE"
+        if (scope_type == "GLOBAL" and uuid_val is None and allowed_workspace_ids is None)
+        else "r.workspace_id IN (SELECT id FROM scoped_workspaces)"
+    )
     runs_stmt = sa.text(
         f"""
+        {cte_sql}
         SELECT
-            COUNT(*) as accounted_runs,
+            COUNT(*) AS accounted_runs,
             COALESCE(SUM(
-                CASE WHEN status IN ('PAUSED_BUDGET_EXCEEDED', 'PAUSED_MAX_RETRIES')
+                CASE WHEN r.status IN ('PAUSED_BUDGET_EXCEEDED', 'PAUSED_MAX_RETRIES')
                      THEN 1 ELSE 0 END
-            ), 0) as paused_runs
-        FROM workflow_runs
-        {runs_filter};
+            ), 0) AS paused_runs
+        FROM workflow_runs r
+        WHERE {runs_where};
+        """
+    )
+
+    units_stmt = sa.text(
+        f"""
+        {cte_sql}
+        SELECT l.native_metric_type, COALESCE(SUM(l.native_metric_value), 0) AS total_units
+        FROM audit_ledger l
+        WHERE l.reported_by_remote = TRUE
+          AND l.native_metric_type IS NOT NULL
+          AND l.native_metric_type NOT IN ('direct_cost', 'remote_tokens', 'calls')
+          AND {ledger_where}
+        GROUP BY l.native_metric_type;
+        """
+    )
+
+    conn_scope_where = build_connector_scope_clause(scope_type, uuid_val)
+    cb_stmt = sa.text(
+        f"""
+        {cte_sql}
+        SELECT COUNT(*)
+        FROM finops_connector_quotas
+        WHERE circuit_state = 'CIRCUIT_OPEN'
+          AND {conn_scope_where};
         """
     )
 
@@ -98,21 +141,6 @@ async def fetch_dashboard_overview_sql(
         async with engine.connect() as conn:
             ledger_res = (await conn.execute(ledger_stmt, params)).mappings().one()
             runs_res = (await conn.execute(runs_stmt, params)).mappings().one()
-
-            units_where = (
-                "WHERE l.reported_by_remote = TRUE AND l.native_metric_type IS NOT NULL "
-                "AND l.native_metric_type NOT IN ('direct_cost', 'remote_tokens', 'calls')"
-            )
-            if uuid_val is not None:
-                units_where += " AND l.workspace_id = :scope_id"
-            units_stmt = sa.text(
-                f"""
-                SELECT l.native_metric_type, COALESCE(SUM(l.native_metric_value), 0) as total_units
-                FROM audit_ledger l
-                {units_where}
-                GROUP BY l.native_metric_type;
-                """
-            )
             units_rows = (await conn.execute(units_stmt, params)).mappings().all()
             units_breakdown: dict[str, float] = {
                 str(r["native_metric_type"]): float(r["total_units"]) for r in units_rows
@@ -120,13 +148,15 @@ async def fetch_dashboard_overview_sql(
 
             open_circuits = 0
             try:
-                cb_stmt = sa.text(
-                    "SELECT COUNT(*) FROM finops_connector_quotas "
-                    "WHERE circuit_state = 'CIRCUIT_OPEN';"
-                )
-                open_circuits = int((await conn.execute(cb_stmt)).scalar() or 0)
+                open_circuits = int((await conn.execute(cb_stmt, params)).scalar() or 0)
             except Exception as cb_exc:
-                logger.warning("FinOps connector circuit count skipped: %s", cb_exc)
+                if is_missing_table_error(cb_exc):
+                    logger.warning(
+                        "finops_connector_circuit_count_table_missing",
+                        error_type=type(cb_exc).__name__,
+                    )
+                else:
+                    raise
 
             return {
                 "total_cost_usd": Decimal(str(ledger_res["total_cost_usd"])),
@@ -138,82 +168,25 @@ async def fetch_dashboard_overview_sql(
                 "remote_tokens": int(ledger_res["remote_tokens"]),
                 "total_external_calls": int(ledger_res["total_external_calls"]),
                 "external_units_breakdown": units_breakdown,
+                "cache_savings_usd": Decimal(str(ledger_res["cache_savings_usd"])),
                 "active_circuit_breakers_count": open_circuits,
                 "accounted_runs_count": int(runs_res["accounted_runs"]),
                 "paused_runs_count": int(runs_res["paused_runs"]),
             }
     except Exception as exc:
-        logger.warning(
-            "FinOps dashboard overview query skipped (uninitialized DB or test fixture): %s", exc
+        if is_missing_table_error(exc):
+            logger.warning(
+                "finops_dashboard_overview_skipped_missing_table",
+                error_type=type(exc).__name__,
+                detail=str(exc),
+            )
+            return default_overview
+        logger.error(
+            "finops_dashboard_overview_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
         )
-        return default_overview
-
-
-async def fetch_dashboard_processes_sql(
-    engine: AsyncEngine | None,
-    *,
-    scope_type: ScopeType = "GLOBAL",
-    scope_id: str | None = None,
-) -> list[dict[str, Any]]:
-    if engine is None:
-        return []
-    uuid_val = _safe_uuid(scope_id)
-    scope_clause = ""
-    params: dict[str, Any] = {}
-    if uuid_val is not None:
-        scope_clause = "WHERE r.workspace_id = :scope_id"
-        params["scope_id"] = uuid_val
-
-    stmt = sa.text(
-        f"""
-        SELECT
-            wd.id as workflow_id,
-            wd.title as workflow_title,
-            COUNT(DISTINCT r.id) as runs_count,
-            COALESCE(SUM(DISTINCT ovr.override_amount_usd), 0.000000) as overrides_usd,
-            COALESCE(SUM(l.cost_usd), 0.000000) as run_cost_usd,
-            COALESCE(SUM(
-                CASE WHEN r.status IN ('PAUSED_BUDGET_EXCEEDED', 'PAUSED_MAX_RETRIES')
-                     THEN 1 ELSE 0 END
-            ), 0) as paused_runs,
-            wb.manual_time_minutes,
-            wb.manual_cost_usd,
-            wb.target_ttm_reduction_pct
-        FROM workflow_definitions wd
-        LEFT JOIN workflow_runs r ON r.workflow_def_id = wd.id
-        LEFT JOIN audit_ledger l ON l.run_id = r.id
-        LEFT JOIN finops_budget_overrides ovr ON ovr.run_id = r.id
-        LEFT JOIN finops_workflow_baselines wb ON wb.workflow_definition_id = wd.id
-        {scope_clause}
-        GROUP BY
-            wd.id, wd.title, wb.manual_time_minutes,
-            wb.manual_cost_usd, wb.target_ttm_reduction_pct
-        ORDER BY runs_count DESC, wd.title ASC;
-        """
-    )
-    try:
-        async with engine.connect() as conn:
-            res = await conn.execute(stmt, params)
-            rows = res.mappings().all()
-            return [
-                {
-                    "workflow_id": str(r["workflow_id"]),
-                    "workflow_title": str(r["workflow_title"]),
-                    "runs_count": int(r["runs_count"]),
-                    "run_cost_usd": Decimal(str(r["run_cost_usd"])),
-                    "overrides_usd": Decimal(str(r["overrides_usd"])),
-                    "paused_runs": int(r["paused_runs"]),
-                    "manual_time_minutes": r["manual_time_minutes"],
-                    "manual_cost_usd": Decimal(str(r["manual_cost_usd"]))
-                    if r["manual_cost_usd"] is not None
-                    else None,
-                    "target_ttm_reduction_pct": r["target_ttm_reduction_pct"],
-                }
-                for r in rows
-            ]
-    except Exception as exc:
-        logger.warning("FinOps dashboard processes query skipped: %s", exc)
-        return []
+        raise
 
 
 async def fetch_dashboard_tiers_sql(
@@ -221,27 +194,34 @@ async def fetch_dashboard_tiers_sql(
     *,
     scope_type: ScopeType = "GLOBAL",
     scope_id: str | None = None,
+    allowed_workspace_ids: tuple[str, ...] | None = None,
 ) -> list[dict[str, Any]]:
+    """Aggregate inference costs and tokens by cognitive tier and effort."""
     if engine is None:
         return []
-    uuid_val = _safe_uuid(scope_id)
-    scope_clause = "WHERE l.inference_tier IS NOT NULL"
-    params: dict[str, Any] = {}
-    if uuid_val is not None:
-        scope_clause += " AND l.workspace_id = :scope_id"
-        params["scope_id"] = uuid_val
+    if allowed_workspace_ids is not None and len(allowed_workspace_ids) == 0:
+        return []
+
+    uuid_val, cte_sql, params = build_scoped_cte_with_acl(
+        scope_type, scope_id, allowed_workspace_ids
+    )
+    ledger_where = build_ledger_scope_clause(scope_type, uuid_val, alias="l")
+    if allowed_workspace_ids is not None:
+        ledger_where = f"({ledger_where}) AND l.workspace_id IN (SELECT id FROM scoped_workspaces)"
 
     stmt = sa.text(
         f"""
+        {cte_sql}
         SELECT
             l.inference_tier,
-            COALESCE(l.effort, 'default') as effort,
-            COUNT(*) as invocations_count,
-            COALESCE(SUM(l.input_tokens), 0) as input_tokens,
-            COALESCE(SUM(l.output_tokens), 0) as output_tokens,
-            COALESCE(SUM(l.cost_usd), 0.000000) as cost_usd
+            COALESCE(l.effort, 'default') AS effort,
+            COUNT(*) AS invocations_count,
+            COALESCE(SUM(l.input_tokens), 0) AS input_tokens,
+            COALESCE(SUM(l.output_tokens), 0) AS output_tokens,
+            COALESCE(SUM(l.cost_usd), 0.000000) AS cost_usd
         FROM audit_ledger l
-        {scope_clause}
+        WHERE l.inference_tier IS NOT NULL
+          AND {ledger_where}
         GROUP BY l.inference_tier, COALESCE(l.effort, 'default')
         ORDER BY l.inference_tier, effort;
         """
@@ -262,8 +242,19 @@ async def fetch_dashboard_tiers_sql(
                 for r in rows
             ]
     except Exception as exc:
-        logger.warning("FinOps dashboard tiers query skipped: %s", exc)
-        return []
+        if is_missing_table_error(exc):
+            logger.warning(
+                "finops_dashboard_tiers_skipped_missing_table",
+                error_type=type(exc).__name__,
+                detail=str(exc),
+            )
+            return []
+        logger.error(
+            "finops_dashboard_tiers_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
+        )
+        raise
 
 
 __all__ = [

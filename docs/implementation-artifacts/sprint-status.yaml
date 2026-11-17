@@ -80,7 +80,7 @@ development_status:
   5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
   epic-5-retrospective: optional
 
-  epic-6: in-progress
+  epic-6: done
   6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: done
   6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: done
   6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: done

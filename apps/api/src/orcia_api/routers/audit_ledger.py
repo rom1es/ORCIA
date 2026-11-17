@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Request
 
 from orcia_api.dependencies import (
     get_audit_ledger_service,
     get_provenance_exporter_service,
 )
+from orcia_api.routers._finops_auth_guards import enforce_audit_read_access
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.audit_finops import (
     AuditExportResponse,
@@ -44,6 +45,7 @@ ProvenanceExporterDep = Annotated[
     summary="List paginated immutable audit ledger entries (Story 6.1)",
 )
 async def list_audit_ledger_entries(
+    request: Request,
     user: CurrentUserDep,
     svc: AuditLedgerServiceDep,
     scope_path: Annotated[str | None, Query(description="Observation scope path")] = None,
@@ -65,7 +67,14 @@ async def list_audit_ledger_entries(
     limit: Annotated[int, Query(ge=1, le=500, description="Max entries to return")] = 100,
     offset: Annotated[int, Query(ge=0, description="Offset for pagination")] = 0,
 ) -> AuditLedgerPageResponse:
-    """Query the append-only audit ledger with rich multi-criteria filters."""
+    """Query the append-only audit ledger with strict anti-IDOR scope filtering."""
+    allowed_ws = await enforce_audit_read_access(
+        request,
+        user,
+        requested_workspace_id=workspace_id,
+        requested_run_id=run_id,
+    )
+    is_platform_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
     params = AuditLedgerFilterParams(
         scope_path=scope_path,
         workspace_id=workspace_id,
@@ -79,6 +88,8 @@ async def list_audit_ledger_entries(
         date_to=date_to,
         limit=limit,
         offset=offset,
+        allowed_workspace_ids=allowed_ws,
+        include_null_workspace=(is_platform_admin and workspace_id is None and run_id is None),
     )
     entries, total = await svc.list_entries(params)
     schemas = [
@@ -133,11 +144,13 @@ async def list_audit_ledger_entries(
     summary="Get consolidated provenance summary for a workflow run (Story 6.1)",
 )
 async def get_run_provenance_summary(
+    request: Request,
     run_id: Annotated[str, Path(min_length=1, max_length=128, description="Target run UUID")],
     user: CurrentUserDep,
     exporter: ProvenanceExporterDep,
 ) -> AuditProvenanceSummaryResponse:
-    """Retrieve verified provenance summary verifying run-lock alignment."""
+    """Retrieve verified provenance summary verifying run-lock alignment & scope permissions."""
+    await enforce_audit_read_access(request, user, requested_run_id=run_id)
     summary = await exporter.get_provenance_summary(run_id)
     return AuditProvenanceSummaryResponse(
         run_id=summary.run_id,
@@ -163,12 +176,14 @@ async def get_run_provenance_summary(
     summary="Export sealed provenance dossier in JSON or Markdown format (Story 6.1)",
 )
 async def export_run_provenance_dossier(
+    request: Request,
     run_id: Annotated[str, Path(min_length=1, max_length=128, description="Target run UUID")],
     user: CurrentUserDep,
     exporter: ProvenanceExporterDep,
     format: Annotated[Literal["json", "md"], Query(description="Export format")] = "json",
 ) -> AuditExportResponse:
     """Generate a tamper-evident compliance dossier sealed with SHA-256 fingerprints."""
+    await enforce_audit_read_access(request, user, requested_run_id=run_id)
     dossier = await exporter.export_dossier(run_id, export_format=format)
     return AuditExportResponse(
         run_id=dossier.run_id,

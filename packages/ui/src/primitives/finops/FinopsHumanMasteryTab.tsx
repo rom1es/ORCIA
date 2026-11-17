@@ -66,6 +66,7 @@ export interface HumanMasteryLabels {
     readonly statusCol: string;
     readonly statusNormal: string;
     readonly statusAlert: string;
+    readonly criticalityLabels?: Readonly<Record<string, string>>;
   };
   readonly appliedBadge: string;
 }
@@ -303,7 +304,9 @@ export function FinopsHumanMasteryTab({
                     style={{ borderBottom: "1px solid var(--color-border-subtle)" }}
                   >
                     <td style={{ padding: "8px 12px", fontWeight: 600 }}>{wf.workflowTitle}</td>
-                    <td style={{ padding: "8px 12px" }}>{wf.criticality}</td>
+                    <td style={{ padding: "8px 12px" }}>
+                      {labels.workflowsTable.criticalityLabels?.[wf.criticality] ?? wf.criticality}
+                    </td>
                     <td style={{ padding: "8px 12px" }}>{wf.humanPassesCount} / {wf.humanGatesCount}</td>
                     <td style={{ padding: "8px 12px" }}>{Math.round(wf.quickPassRate * 100)} %</td>
                     <td style={{ padding: "8px 12px" }}>{Math.round(wf.medianReviewDurationMs / 1000)} s</td>

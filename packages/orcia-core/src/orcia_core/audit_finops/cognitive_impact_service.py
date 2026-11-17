@@ -10,12 +10,12 @@ Strict Hexagonal Boundary (`AD-19 Contract 2`):
 
 from __future__ import annotations
 
-import logging
 from datetime import UTC, datetime
-from uuid import uuid4
 
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._internal._sql_scope_filter import safe_uuid
 from orcia_core.audit_finops._internal.sql_cognitive_impact import (
     fetch_cognitive_mastery_overview_sql,
     fetch_workflow_cognitive_breakdown_sql,
@@ -32,8 +32,10 @@ from orcia_core.audit_finops.cognitive_impact_models import (
     WorkflowCognitiveMetrics,
 )
 from orcia_core.audit_finops.finops_models import ScopeType
+from orcia_core.observability.logging import get_logger
+from orcia_kernel.errors import ResourceNotFoundError
 
-logger = logging.getLogger(__name__)
+logger = get_logger("orcia.core.audit_finops.cognitive")
 
 # Re-export models for backward compatibility
 __all__ = [
@@ -59,6 +61,7 @@ class CognitiveImpactService:
         scope_type: ScopeType = "GLOBAL",
         scope_id: str | None = None,
         time_window: str = "30D",
+        allowed_workspace_ids: tuple[str, ...] | None = None,
     ) -> CognitiveMasteryDashboard:
         """Calculate the 3 counter-metrics and generate gate recommendations."""
         ov = await fetch_cognitive_mastery_overview_sql(
@@ -66,14 +69,21 @@ class CognitiveImpactService:
             scope_type=scope_type,
             scope_id=scope_id,
             time_window=time_window,
+            allowed_workspace_ids=allowed_workspace_ids,
         )
         wf_rows = await fetch_workflow_cognitive_breakdown_sql(
             self._engine,
             scope_type=scope_type,
             scope_id=scope_id,
             time_window=time_window,
+            allowed_workspace_ids=allowed_workspace_ids,
         )
-        applied_map = await fetch_applied_recommendations_sql(self._engine)
+        applied_map = await fetch_applied_recommendations_sql(
+            self._engine,
+            scope_type=scope_type,
+            scope_id=scope_id,
+            allowed_workspace_ids=allowed_workspace_ids,
+        )
         for k, v in self._fallback_applied.items():
             if k not in applied_map:
                 applied_map[k] = {
@@ -249,14 +259,43 @@ class CognitiveImpactService:
             recommendations=recommendations,
         )
 
+    async def resolve_recommendation_workspace_id(self, recommendation_id: str) -> str | None:
+        """Resolve the workspace UUID owning the workflow referenced by `recommendation_id`."""
+        if self._engine is None:
+            return None
+        candidate_wf = recommendation_id.removeprefix("rec-")
+        wf_uuid = safe_uuid(candidate_wf)
+        if wf_uuid is None:
+            return None
+        async with self._engine.connect() as conn:
+            ws_id = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT COALESCE(
+                            wd.workspace_id::text,
+                            (SELECT wr.workspace_id::text FROM workflow_runs wr
+                             WHERE wr.workflow_def_id = wd.id
+                             ORDER BY wr.created_at DESC LIMIT 1)
+                        )
+                        FROM workflow_definitions wd
+                        WHERE wd.id = :wf_id;
+                        """
+                    ),
+                    {"wf_id": wf_uuid},
+                )
+            ).scalar()
+            return str(ws_id) if ws_id else None
+
     async def apply_policy_recommendation(
         self,
         recommendation_id: str,
         *,
         applied_by: str,
+        allowed_workspace_ids: tuple[str, ...] | None = None,
     ) -> GatePolicyRecommendation:
         """Apply an actionable gate policy recommendation and persist into audit_ledger."""
-        dashboard = await self.get_dashboard()
+        dashboard = await self.get_dashboard(allowed_workspace_ids=allowed_workspace_ids)
         target_rec: GatePolicyRecommendation | None = None
         for rec in dashboard.recommendations:
             if rec.id == recommendation_id:
@@ -264,18 +303,8 @@ class CognitiveImpactService:
                 break
 
         if target_rec is None:
-            target_rec = GatePolicyRecommendation(
-                id=recommendation_id,
-                workflow_id=str(uuid4()),
-                workflow_title="Processus appliqué",
-                recommendation_type="SWITCH_TO_RISK_OR_SAMPLING",
-                title="Politique ciblée par risque ou par échantillonnage",
-                description="Politique ajustée avec succès.",
-                action_label="Appliquée",
-                suggested_policy="SAMPLING_20_PCT",
-                status="APPLIED",
-                applied_at=datetime.now(UTC),
-                applied_by=applied_by,
+            raise ResourceNotFoundError(
+                detail_override=f"Gate policy recommendation '{recommendation_id}' not found."
             )
 
         now = datetime.now(UTC)
@@ -309,9 +338,9 @@ class CognitiveImpactService:
             self._fallback_applied[recommendation_id] = updated
 
         logger.info(
-            "Gate policy recommendation '%s' applied by '%s' on workflow '%s'",
-            recommendation_id,
-            applied_by,
-            target_rec.workflow_id,
+            "finops_gate_recommendation_applied",
+            recommendation_id=recommendation_id,
+            applied_by=applied_by,
+            workflow_id=target_rec.workflow_id,
         )
         return updated

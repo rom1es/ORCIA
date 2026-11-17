@@ -1,5 +1,6 @@
 import {
   ActivityLogExplorerView,
+  ActivityProvenanceModal,
   OrciaAlertBanner,
   type UiActivityLogEventItem,
   type UiActivityScopeFilterOption,
@@ -25,7 +26,6 @@ import {
   EVENT_TYPE_FR_LABELS,
   formatActivityTimestamp,
 } from "./activityFormatters";
-import { ActivityProvenanceModal } from "./ActivityProvenanceModal";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 

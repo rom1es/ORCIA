@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { OrciaDialog } from "../RadixDesignSystemPrimitives";
 
 export interface FinopsBudgetPolicyModalProps {
@@ -6,6 +6,7 @@ export interface FinopsBudgetPolicyModalProps {
   readonly onOpenChange: (open: boolean) => void;
   readonly currentScopeType?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
   readonly currentScopeId?: string | null;
+  readonly scopeIdsByLevel?: Partial<Record<"BU" | "TEAM" | "WORKSPACE", string | null>>;
   readonly defaultMonthlyBudgetUsd?: number;
   readonly defaultWarningPct?: number;
   readonly defaultHardStopPct?: number;
@@ -37,6 +38,7 @@ export function FinopsBudgetPolicyModal({
   onOpenChange,
   currentScopeType = "GLOBAL",
   currentScopeId = null,
+  scopeIdsByLevel,
   defaultMonthlyBudgetUsd = 100,
   defaultWarningPct = 80,
   defaultHardStopPct = 100,
@@ -48,9 +50,23 @@ export function FinopsBudgetPolicyModal({
   const [hardStopPct, setHardStopPct] = useState<number>(defaultHardStopPct);
   const [scopeType, setScopeType] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">(currentScopeType);
 
+  useEffect(() => {
+    if (!open) return;
+    setScopeType(currentScopeType);
+    setMonthlyBudget(defaultMonthlyBudgetUsd);
+    setWarningPct(defaultWarningPct);
+    setHardStopPct(defaultHardStopPct);
+  }, [open, currentScopeType, currentScopeId, defaultMonthlyBudgetUsd, defaultWarningPct, defaultHardStopPct]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveBudget?.(scopeType, currentScopeId, monthlyBudget, warningPct, hardStopPct);
+    const resolvedScopeId =
+      scopeType === "GLOBAL"
+        ? null
+        : scopeType === currentScopeType
+          ? currentScopeId
+          : (scopeIdsByLevel?.[scopeType] ?? currentScopeId ?? null);
+    onSaveBudget?.(scopeType, resolvedScopeId, monthlyBudget, warningPct, hardStopPct);
     onOpenChange(false);
   };
 
@@ -136,7 +152,7 @@ export function FinopsBudgetPolicyModal({
               id="finops-budget-hardstop-pct"
               data-testid="finops-budget-hardstop-pct"
               type="number"
-              min="warningPct"
+              min={warningPct}
               max="200"
               value={hardStopPct}
               onChange={(e) => setHardStopPct(Number(e.target.value))}

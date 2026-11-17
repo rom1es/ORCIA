@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 from uuid import UUID
 
@@ -10,6 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._internal._sql_scope_filter import is_missing_table_error
 from orcia_core.audit_finops._internal.sql_connector_quotas_helpers import (
     insert_connector_ledger_row,
     insert_connector_outbox_event,
@@ -19,10 +19,11 @@ from orcia_core.audit_finops._internal.sql_connector_quotas_helpers import (
 from orcia_core.audit_finops.finops_models import ConnectorQuotaRecord, ScopeType
 from orcia_core.kernel.events import DomainEvent
 from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.observability.logging import get_logger
 from orcia_core.ports.finops_telemetry import CircuitBreakerState, ValuationMode
 from orcia_kernel.errors import ValidationDomainError
 
-logger = logging.getLogger(__name__)
+logger = get_logger("orcia.core.audit_finops.circuit")
 
 
 async def upsert_connector_quota_config_sql(
@@ -191,8 +192,17 @@ async def reset_connector_circuit_sql(
             )
             return rec
     except ProgrammingError as exc:
-        logger.warning("FinOps reset_connector_circuit_sql schema unavailable: %s", exc)
-        return None
+        logger.error(
+            "finops_reset_connector_circuit_sql_error",
+            connector_key=connector_key,
+            error_type=type(exc).__name__,
+            detail=str(exc),
+        )
+        if is_missing_table_error(exc):
+            raise ValidationDomainError(
+                detail_override="FinOps connector quotas schema is not migrated yet."
+            ) from exc
+        raise
 
 
 __all__ = [

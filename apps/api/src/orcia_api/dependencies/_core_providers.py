@@ -1,0 +1,143 @@
+"""Core FastAPI `Depends` providers extracted from `core_and_lifespan.py` (`MINOR-01`)."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from fastapi import Request
+
+from orcia_core.bootstrap import SystemBootstrapWorkflowService
+from orcia_core.catalog import FederatedCatalogService
+from orcia_core.ontology import (
+    OntologyGovernanceService,
+    build_empty_ontology_service,
+    build_seeded_ontology_service,
+)
+from orcia_core.permissions import (
+    AuthAndOrganizationService,
+    PermissionBrokerService,
+)
+from orcia_core.rag import (
+    HybridRagService,
+    TripartiteGraphAndFreshnessService,
+    build_empty_rag_service,
+    build_seeded_rag_service,
+)
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+def get_or_create_shared_db_engine(request: Request) -> AsyncEngine:
+    """Return shared `AsyncEngine` from `request.app.state.db_engine`, creating it if absent."""
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    from orcia_core.config import resolve_database_url
+
+    engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
+    if engine is None:
+        engine = create_async_engine(
+            resolve_database_url(),
+            poolclass=NullPool,
+            connect_args={"timeout": 1.5},
+        )
+        request.app.state.db_engine = engine
+    return engine
+
+
+def get_auth_service(request: Request) -> AuthAndOrganizationService:
+    """FastAPI `Depends` provider returning `AuthAndOrganizationService` from `app.state`."""
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+
+    svc: AuthAndOrganizationService | None = getattr(request.app.state, "auth_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.auth_service
+    assert svc is not None
+    return svc
+
+
+def get_catalog_service(request: Request) -> FederatedCatalogService:
+    """FastAPI `Depends` provider returning `FederatedCatalogService` from `app.state`."""
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+
+    svc: FederatedCatalogService | None = getattr(request.app.state, "catalog_service", None)
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.catalog_service
+    assert svc is not None
+    return svc
+
+
+def get_permission_broker_service(request: Request) -> PermissionBrokerService:
+    """FastAPI `Depends` provider returning `PermissionBrokerService` from `app.state`."""
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+
+    svc: PermissionBrokerService | None = getattr(
+        request.app.state, "permission_broker_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.permission_broker_service
+    assert svc is not None
+    return svc
+
+
+def get_bootstrap_service(request: Request) -> SystemBootstrapWorkflowService:
+    """FastAPI `Depends` provider returning `SystemBootstrapWorkflowService` from `app.state`."""
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+
+    svc: SystemBootstrapWorkflowService | None = getattr(
+        request.app.state, "bootstrap_service", None
+    )
+    if svc is None:
+        initialize_app_services(request.app)
+        svc = request.app.state.bootstrap_service
+    assert svc is not None
+    return svc
+
+
+_OntologyRagBundle = tuple[
+    OntologyGovernanceService, HybridRagService, TripartiteGraphAndFreshnessService
+]
+
+
+def get_ontology_and_rag_services(
+    request: Request, *, fixture: bool = False, embedding_port: Any = None
+) -> _OntologyRagBundle:
+    """Return either the empty runtime Ontology/RAG bundle or the deterministic test fixture."""
+    if fixture:
+        seeded: _OntologyRagBundle | None = getattr(
+            request.app.state, "ontology_rag_seeded_bundle", None
+        )
+        if seeded is None:
+            gov = build_seeded_ontology_service()
+            emb_port = embedding_port
+            if emb_port is None:
+                from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+
+                override = request.app.dependency_overrides.get(get_embedding_port)
+                if override is not None:
+                    emb_port = override()
+            rag, trip = build_seeded_rag_service(embedding_port=emb_port)
+            seeded = (gov, rag, trip)
+            request.app.state.ontology_rag_seeded_bundle = seeded
+        return seeded
+
+    runtime: _OntologyRagBundle | None = getattr(
+        request.app.state, "ontology_rag_runtime_bundle", None
+    )
+    if runtime is None:
+        gov = build_empty_ontology_service()
+        emb_port = embedding_port
+        if emb_port is None:
+            from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+
+            override = request.app.dependency_overrides.get(get_embedding_port)
+            if override is not None:
+                emb_port = override()
+        rag, trip = build_empty_rag_service(embedding_port=emb_port)
+        runtime = (gov, rag, trip)
+        request.app.state.ontology_rag_runtime_bundle = runtime
+    return runtime

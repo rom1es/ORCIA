@@ -6,17 +6,15 @@ and persists immutable records with strict idempotency on `source_event_id`.
 
 from __future__ import annotations
 
-import logging
-
 from orcia_core.kernel.events import DomainEvent
-from orcia_core.observability.logging import scrub_sensitive_dict
+from orcia_core.observability.logging import get_logger, scrub_sensitive_dict
 from orcia_core.ports.finops_telemetry import (
     AuditLedgerSinkPort,
     CostSource,
     FinopsCostLedgerEntry,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger("orcia.core.audit_finops.outbox_subscriber")
 
 AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
     {

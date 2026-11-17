@@ -5,14 +5,17 @@ Pure SQLAlchemy asyncpg queries — zero circular dependencies, zero float drift
 
 from __future__ import annotations
 
-import logging
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
 from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._internal._sql_scope_filter import (
+    build_connector_scope_clause,
+    build_scoped_workspaces_cte,
+    is_missing_table_error,
+)
 from orcia_core.audit_finops._internal.sql_connector_circuit import (
     reset_connector_circuit_sql,
     trip_connector_circuit_sql,
@@ -34,9 +37,10 @@ from orcia_core.kernel._finops_audit_events import (
     RemoteUsageAnomalyCapped,
 )
 from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.observability.logging import get_logger
 from orcia_core.ports.finops_telemetry import SanitizedRemoteUsage
 
-logger = logging.getLogger(__name__)
+logger = get_logger("orcia.core.audit_finops.connectors")
 
 
 async def fetch_connector_quota_sql(
@@ -52,8 +56,15 @@ async def fetch_connector_quota_sql(
             row = res.mappings().first()
             return row_to_connector_quota_record(row) if row is not None else None
     except Exception as exc:
-        logger.warning("FinOps fetch_connector_quota_sql skipped: %s", exc)
-        return None
+        if is_missing_table_error(exc):
+            logger.warning("finops_fetch_connector_quota_skipped", error_type=type(exc).__name__)
+            return None
+        logger.error(
+            "finops_fetch_connector_quota_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
+        )
+        raise
 
 
 async def list_connector_quotas_sql(
@@ -61,21 +72,50 @@ async def list_connector_quotas_sql(
     *,
     scope_type: ScopeType = "GLOBAL",
     scope_id: str | None = None,
+    allowed_workspace_ids: tuple[str, ...] | None = None,
 ) -> list[ConnectorQuotaRecord]:
-    query = "SELECT * FROM finops_connector_quotas WHERE 1=1"
-    params: dict[str, Any] = {}
+    if allowed_workspace_ids is not None and len(allowed_workspace_ids) == 0:
+        return []
     uuid_val = safe_uuid(scope_id)
-    if scope_type != "GLOBAL" and uuid_val is not None:
-        query += " AND (scope_type = 'GLOBAL' OR scope_id = :scope_id)"
-        params["scope_id"] = uuid_val
-    query += " ORDER BY connector_key ASC;"
+    cte_sql, params = build_scoped_workspaces_cte(scope_type, uuid_val)
+    scope_where = build_connector_scope_clause(scope_type, uuid_val)
+    if allowed_workspace_ids is not None:
+        uuids = [u for raw in allowed_workspace_ids if (u := safe_uuid(raw)) is not None]
+        if not uuids:
+            return []
+        params["allowed_ws_ids"] = uuids
+        scope_where = (
+            f"({scope_where}) AND ("
+            "scope_type = 'GLOBAL' "
+            "OR (scope_type = 'WORKSPACE' AND scope_id = ANY(:allowed_ws_ids)) "
+            "OR (scope_type IN ('BU', 'TEAM') AND scope_id IN ("
+            "    SELECT w.owner_org_unit_id FROM workspaces w WHERE w.id = ANY(:allowed_ws_ids)"
+            "))"
+            ")"
+        )
+    stmt = sa.text(
+        f"""
+        {cte_sql}
+        SELECT *
+        FROM finops_connector_quotas
+        WHERE {scope_where}
+        ORDER BY connector_key ASC;
+        """
+    )
     try:
         async with engine.connect() as conn:
-            res = await conn.execute(sa.text(query), params)
+            res = await conn.execute(stmt, params)
             return [row_to_connector_quota_record(r) for r in res.mappings().all()]
     except Exception as exc:
-        logger.warning("FinOps list_connector_quotas_sql skipped: %s", exc)
-        return []
+        if is_missing_table_error(exc):
+            logger.warning("finops_list_connector_quotas_skipped", error_type=type(exc).__name__)
+            return []
+        logger.error(
+            "finops_list_connector_quotas_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
+        )
+        raise
 
 
 async def record_connector_usage_sql(

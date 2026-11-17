@@ -38,7 +38,7 @@ export function ModuleWorkspaceView({
         gap: "20px",
       }}
     >
-      {currentModule === "catalog" ? (
+      {currentModule === "catalog" || currentModule === "finops" ? (
         <div style={{ display: "none" }}>
           <StatusBadge
             testId={`module-uri-badge-${currentModule}`}

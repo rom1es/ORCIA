@@ -164,6 +164,7 @@ class SqlConnectorQuotaGuardService(ConnectorQuotaGuardPort):
         *,
         scope_type: ScopeType = "GLOBAL",
         scope_id: str | None = None,
+        allowed_workspace_ids: tuple[str, ...] | None = None,
     ) -> list[ConnectorQuotaRecord]:
         if self._engine is None:
             return []
@@ -171,7 +172,13 @@ class SqlConnectorQuotaGuardService(ConnectorQuotaGuardPort):
             self._engine,
             scope_type=scope_type,
             scope_id=scope_id,
+            allowed_workspace_ids=allowed_workspace_ids,
         )
+
+    async def get_connector_quota(self, connector_key: str) -> ConnectorQuotaRecord | None:
+        if self._engine is None:
+            return None
+        return await fetch_connector_quota_sql(self._engine, connector_key.strip().lower())
 
     async def update_connector_quota(
         self,

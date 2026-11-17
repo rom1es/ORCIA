@@ -21,10 +21,17 @@ import {
   mapTiersRows,
 } from "./finopsMappers";
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value: string | null | undefined): value is string {
+  return Boolean(value && UUID_REGEX.test(value));
+}
+
 export function FinopsFeaturePanel() {
   const { dictionary } = useI18n();
   const { activeScopeId, openHelpSection } = useShellNavigation();
-  const { scopes } = usePlatformSetup();
+  const { scopes, workspaces, orgUnits } = usePlatformSetup();
 
   const [selectedScope, setSelectedScope] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">("GLOBAL");
   const [dashboardData, setDashboardData] = useState<FinopsBreakdownResponse | null>(null);
@@ -39,6 +46,41 @@ export function FinopsFeaturePanel() {
     [scopes, activeScopeId],
   );
 
+  const resolveValidScopeIdForLevel = useCallback(
+    (level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE"): string | null => {
+      if (level === "GLOBAL") {
+        return null;
+      }
+      if (activeScopeNode?.level === level && isValidUuid(activeScopeNode.id)) {
+        return activeScopeNode.id;
+      }
+      if (level === "WORKSPACE") {
+        return (
+          scopes.find((s) => s.level === "WORKSPACE" && isValidUuid(s.id))?.id ??
+          workspaces.find((w) => isValidUuid(w.workspaceId))?.workspaceId ??
+          null
+        );
+      }
+      return (
+        scopes.find((s) => s.level === level && isValidUuid(s.id))?.id ??
+        orgUnits.find((o) => o.level === level && isValidUuid(o.id))?.id ??
+        null
+      );
+    },
+    [activeScopeNode, scopes, workspaces, orgUnits],
+  );
+
+  const resolvedScopeIdsByLevel = useMemo(
+    () => ({
+      BU: resolveValidScopeIdForLevel("BU"),
+      TEAM: resolveValidScopeIdForLevel("TEAM"),
+      WORKSPACE: resolveValidScopeIdForLevel("WORKSPACE"),
+    }),
+    [resolveValidScopeIdForLevel],
+  );
+
+  const resolvedActiveScopeId = resolveValidScopeIdForLevel(selectedScope);
+
   const apiClient = useMemo(
     () =>
       createOrciaApiClient({
@@ -50,20 +92,21 @@ export function FinopsFeaturePanel() {
   const loadDashboard = useCallback(async () => {
     try {
       setErrorMessage(null);
-      const targetScopeId =
-        selectedScope === "GLOBAL" ? null : (activeScopeNode?.id ?? null);
+      const targetScopeId = resolveValidScopeIdForLevel(selectedScope);
+      const effectiveScopeType =
+        selectedScope !== "GLOBAL" && !targetScopeId ? "GLOBAL" : selectedScope;
       const [data, cog, remote] = await Promise.all([
         apiClient.getFinopsDashboard({
-          scopeType: selectedScope,
+          scopeType: effectiveScopeType,
           scopeId: targetScopeId,
         }),
         apiClient.getCognitiveImpact({
-          scopeType: selectedScope,
+          scopeType: effectiveScopeType,
           scopeId: targetScopeId,
           timeWindow: "30D",
         }),
         apiClient.getFinopsRemoteServices({
-          scopeType: selectedScope,
+          scopeType: effectiveScopeType,
           scopeId: targetScopeId,
         }),
       ]);
@@ -74,7 +117,7 @@ export function FinopsFeaturePanel() {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMessage(msg);
     }
-  }, [apiClient, selectedScope, activeScopeNode?.id]);
+  }, [apiClient, selectedScope, resolveValidScopeIdForLevel]);
 
   useEffect(() => {
     void loadDashboard();
@@ -117,6 +160,7 @@ export function FinopsFeaturePanel() {
         await apiClient.applyBudgetOverride(runId, {
           override_amount_usd: amountUsd,
           reason,
+          workspace_id: resolvedScopeIdsByLevel.WORKSPACE ?? undefined,
         });
         setSuccessMessage(dictionary.finops.modals.overrideSubmitButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
@@ -125,7 +169,11 @@ export function FinopsFeaturePanel() {
         setErrorMessage(msg);
       }
     },
-    [apiClient, dictionary.finops.modals.overrideSubmitButton],
+    [
+      apiClient,
+      dictionary.finops.modals.overrideSubmitButton,
+      resolvedScopeIdsByLevel.WORKSPACE,
+    ],
   );
 
   const handleApplyRecommendation = useCallback(
@@ -149,10 +197,11 @@ export function FinopsFeaturePanel() {
       try {
         setErrorMessage(null);
         setSuccessMessage(null);
-        const targetScopeId =
-          selectedScope === "GLOBAL" ? null : (activeScopeNode?.id ?? null);
+        const targetScopeId = resolveValidScopeIdForLevel(selectedScope);
+        const effectiveScopeType =
+          selectedScope !== "GLOBAL" && !targetScopeId ? "GLOBAL" : selectedScope;
         await apiClient.updateConnectorQuota(input.connectorKey, {
-          scope_type: selectedScope,
+          scope_type: effectiveScopeType,
           scope_id: targetScopeId,
           valuation_mode: input.valuationMode,
           max_reported_cost_per_call_eur: input.maxReportedCostPerCallEur,
@@ -169,7 +218,12 @@ export function FinopsFeaturePanel() {
         setErrorMessage(msg);
       }
     },
-    [apiClient, selectedScope, activeScopeNode?.id, dictionary.finops.remoteServices.quotaModal.saveButton],
+    [
+      apiClient,
+      selectedScope,
+      resolveValidScopeIdForLevel,
+      dictionary.finops.remoteServices.quotaModal.saveButton,
+    ],
   );
 
   const handleResetConnectorCircuit = useCallback(
@@ -177,8 +231,7 @@ export function FinopsFeaturePanel() {
       try {
         setErrorMessage(null);
         setSuccessMessage(null);
-        const targetScopeId =
-          selectedScope === "GLOBAL" ? null : (activeScopeNode?.id ?? null);
+        const targetScopeId = resolveValidScopeIdForLevel(selectedScope);
         await apiClient.resetConnectorCircuit(connectorKey, {
           target_state: "CLOSED",
           scope_id: targetScopeId,
@@ -190,7 +243,12 @@ export function FinopsFeaturePanel() {
         setErrorMessage(msg);
       }
     },
-    [apiClient, selectedScope, activeScopeNode?.id, dictionary.finops.remoteServices.circuitStates.closed],
+    [
+      apiClient,
+      selectedScope,
+      resolveValidScopeIdForLevel,
+      dictionary.finops.remoteServices.circuitStates.closed,
+    ],
   );
 
   const mappedProcesses = useMemo(() => mapProcessesRows(dashboardData), [dashboardData]);
@@ -221,6 +279,8 @@ export function FinopsFeaturePanel() {
 
       <FinopsGovernanceDashboardView
         scopeType={selectedScope}
+        scopeId={resolvedActiveScopeId}
+        scopeIdsByLevel={resolvedScopeIdsByLevel}
         onScopeChange={setSelectedScope}
         totalRuns={overview?.accounted_runs_count ?? 0}
         totalCostEur={overview?.total_cost_eur ?? 0}

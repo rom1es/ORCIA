@@ -128,6 +128,7 @@ export interface FinopsDashboardLabels {
     pausedBadgeRetries: string;
     activeBadge: string;
     overrideButton: string;
+    emptyProcessesText?: string;
   };
   tiersTable: {
     title: string;
@@ -138,6 +139,9 @@ export interface FinopsDashboardLabels {
     outputTokensCol: string;
     totalTokensCol: string;
     costCol: string;
+    emptyTiersText?: string;
+    tierLabels?: Readonly<Record<string, string>>;
+    effortLabels?: Readonly<Record<string, string>>;
   };
   modals: {
     budgetTitle: string;

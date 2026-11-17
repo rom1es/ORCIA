@@ -19,27 +19,18 @@ from orcia_core.permissions._connector_breaker import (
     ConnectorInvocationOutcome,
     extract_raw_usage_from_output,
 )
+from orcia_core.permissions._connector_invoker_loops import (
+    run_async_retry_loop,
+    run_sync_retry_loop,
+)
 from orcia_core.permissions.errors import ConnectorCircuitOpenError
 from orcia_core.ports.finops_telemetry import (
     ConnectorQuotaGuardPort,
     RemoteUsageSanitizerPort,
     ValuationMode,
 )
-from orcia_kernel.errors import (
-    FunctionalConnectorError,
-    OrciaDomainError,
-    PermanentInfraError,
-    PolicyDeniedError,
-    RateLimitedError,
-    TransientInfraError,
-    UpstreamTimeoutError,
-    ValidationDomainError,
-)
-from orcia_kernel.ports import (
-    ConnectorInvokeResult,
-    ConnectorPort,
-    get_registered_connector,
-)
+from orcia_kernel.errors import ValidationDomainError
+from orcia_kernel.ports import ConnectorPort, get_registered_connector
 
 
 def scrub_connector_secrets(payload: dict[str, Any]) -> dict[str, Any]:
@@ -105,129 +96,6 @@ class ConnectorInvoker:
     def recorded_outbox_keys(self) -> frozenset[str]:
         return frozenset(self._outbox_dedup_keys)
 
-    def _run_connector_loop(
-        self,
-        *,
-        norm_scheme: str,
-        action: str,
-        payload: dict[str, Any],
-        idempotency_key: str,
-        max_agent_retries: int,
-        max_cost_usd: float,
-        accumulated_cost_usd: float,
-        resolved_connector: ConnectorPort,
-    ) -> ConnectorInvocationOutcome:
-        sanitized_in = scrub_connector_secrets(payload)
-        breaker = self.get_breaker(norm_scheme)
-        if not breaker.allow_request(self._clock()):
-            raise PermanentInfraError(
-                detail_override=(
-                    f"Disjoncteur OPEN pour le connecteur '{norm_scheme}' "
-                    f"({breaker.consecutive_failures} échecs consécutifs)."
-                )
-            )
-        max_attempts, attempts, total_wait, spent_usd = max(1, max_agent_retries), 0, 0.0, 0.0
-        while attempts < max_attempts:
-            next_cost = accumulated_cost_usd + spent_usd + self.cost_per_attempt_usd
-            if next_cost > max_cost_usd:
-                raise ValidationDomainError(
-                    detail_override=(
-                        f"Plafond budgétaire dépassé sur '{norm_scheme}.{action}': "
-                        f"{next_cost:.2f} USD > {max_cost_usd:.2f} USD."
-                    )
-                )
-            attempts += 1
-            spent_usd = round(spent_usd + self.cost_per_attempt_usd, 4)
-            try:
-                res: ConnectorInvokeResult = resolved_connector.invoke(
-                    action, payload, idempotency_key
-                )
-                breaker.record_success()
-                self._audit_dedup_keys.add(idempotency_key)
-                self._outbox_dedup_keys.add(idempotency_key)
-                return ConnectorInvocationOutcome(
-                    scheme=norm_scheme,
-                    action=action,
-                    idempotency_key=idempotency_key,
-                    status="SUCCEEDED",
-                    attempts_used=attempts,
-                    total_wait_seconds=round(total_wait, 4),
-                    total_cost_usd=spent_usd,
-                    circuit_state=breaker.current_state(self._clock()),
-                    sanitized_input=sanitized_in,
-                    sanitized_output=scrub_connector_secrets(dict(res.output)),
-                )
-            except Exception as raw_exc:
-                mapped: OrciaDomainError = (
-                    raw_exc
-                    if isinstance(raw_exc, OrciaDomainError)
-                    else resolved_connector.map_error(raw_exc)
-                )
-                if isinstance(
-                    mapped,
-                    (FunctionalConnectorError, PolicyDeniedError, ValidationDomainError),
-                ):
-                    self._audit_dedup_keys.add(idempotency_key)
-                    return ConnectorInvocationOutcome(
-                        scheme=norm_scheme,
-                        action=action,
-                        idempotency_key=idempotency_key,
-                        status="WAITING_FOR_HUMAN_ARBITRATION",
-                        attempts_used=attempts,
-                        total_wait_seconds=round(total_wait, 4),
-                        total_cost_usd=spent_usd,
-                        circuit_state=breaker.current_state(self._clock()),
-                        sanitized_input=sanitized_in,
-                        error_code=mapped.error_code,
-                        error_detail=str(mapped),
-                    )
-                new_state = breaker.record_failure(self._clock())
-                if isinstance(mapped, PermanentInfraError) or new_state == "OPEN":
-                    self._audit_dedup_keys.add(idempotency_key)
-                    return ConnectorInvocationOutcome(
-                        scheme=norm_scheme,
-                        action=action,
-                        idempotency_key=idempotency_key,
-                        status=(
-                            "PAUSED_CIRCUIT_BREAKER"
-                            if new_state == "OPEN"
-                            else "WAITING_FOR_HUMAN_ARBITRATION"
-                        ),
-                        attempts_used=attempts,
-                        total_wait_seconds=round(total_wait, 4),
-                        total_cost_usd=spent_usd,
-                        circuit_state=new_state,
-                        sanitized_input=sanitized_in,
-                        error_code=mapped.error_code,
-                        error_detail=str(mapped),
-                    )
-                if attempts >= max_attempts:
-                    self._audit_dedup_keys.add(idempotency_key)
-                    return ConnectorInvocationOutcome(
-                        scheme=norm_scheme,
-                        action=action,
-                        idempotency_key=idempotency_key,
-                        status="WAITING_FOR_HUMAN_ARBITRATION",
-                        attempts_used=attempts,
-                        total_wait_seconds=round(total_wait, 4),
-                        total_cost_usd=spent_usd,
-                        circuit_state=new_state,
-                        sanitized_input=sanitized_in,
-                        error_code=mapped.error_code,
-                        error_detail=str(mapped),
-                    )
-                wait_s = (
-                    mapped.retry_after_s
-                    if isinstance(
-                        mapped, (TransientInfraError, RateLimitedError, UpstreamTimeoutError)
-                    )
-                    and mapped.retry_after_s > 0.0
-                    else 0.05 * (2 ** (attempts - 1))
-                )
-                self._sleep(wait_s)
-                total_wait += wait_s
-        raise RuntimeError("Unreachable loop exit in ConnectorInvoker.invoke")
-
     def _resolve_connector(self, scheme: str, connector: ConnectorPort | None) -> ConnectorPort:
         norm_scheme = scheme.strip().lower()
         resolved = connector or get_registered_connector(norm_scheme)
@@ -252,7 +120,13 @@ class ConnectorInvoker:
         """Execute `connector.invoke(action, payload, idempotency_key)` synchronously."""
         norm_scheme = scheme.strip().lower()
         resolved = self._resolve_connector(norm_scheme, connector)
-        return self._run_connector_loop(
+        return run_sync_retry_loop(
+            breaker=self.get_breaker(norm_scheme),
+            clock=self._clock,
+            sleep_fn=self._sleep,
+            cost_per_attempt_usd=self.cost_per_attempt_usd,
+            audit_dedup_keys=self._audit_dedup_keys,
+            outbox_dedup_keys=self._outbox_dedup_keys,
             norm_scheme=norm_scheme,
             action=action,
             payload=payload,
@@ -291,7 +165,12 @@ class ConnectorInvoker:
                 raise ConnectorCircuitOpenError(detail_override=decision.reason)
 
         started_ms = self._clock() * 1000.0
-        outcome = self._run_connector_loop(
+        outcome = await run_async_retry_loop(
+            breaker=self.get_breaker(norm_scheme),
+            clock=self._clock,
+            cost_per_attempt_usd=self.cost_per_attempt_usd,
+            audit_dedup_keys=self._audit_dedup_keys,
+            outbox_dedup_keys=self._outbox_dedup_keys,
             norm_scheme=norm_scheme,
             action=action,
             payload=payload,

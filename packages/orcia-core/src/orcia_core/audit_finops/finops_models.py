@@ -79,6 +79,9 @@ class FinopsProcessItem:
     ttm_reduction_pct: Decimal
     active_budget_override: bool = False
     paused_runs_count: int = 0
+    sample_paused_run_id: str | None = None
+    paused_reason: Literal["BUDGET", "RETRIES"] | None = None
+    has_declared_baseline: bool = False
 
 
 @dataclass(frozen=True, slots=True)

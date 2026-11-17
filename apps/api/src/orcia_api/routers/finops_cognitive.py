@@ -1,20 +1,17 @@
-"""FastAPI router for Cognitive Impact, Human Mastery & Reversibility (`Story 6.3`, `FR-27`).
-
-Implements:
-- `GET /api/v1/finops/cognitive-impact`: Consolidated metrics & gate recommendations
-- `POST /api/v1/finops/gates/policy-recommendation/{recommendation_id}/apply`: Apply gate adjustment
-"""
+"""FastAPI router for Cognitive Impact, Human Mastery & Reversibility (`Story 6.3`, `FR-27`)."""
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
-from orcia_api.dependencies import (
-    get_auth_service,
-    get_cognitive_impact_service,
+from orcia_api.dependencies import get_cognitive_impact_service
+from orcia_api.routers._finops_auth_guards import (
+    enforce_scope_level_mutation,
+    resolve_finops_read_scope,
+    validate_uuid,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.finops import (
@@ -25,54 +22,12 @@ from orcia_api.schemas.finops import (
     WorkflowCognitiveMetricsSchema,
 )
 from orcia_core.audit_finops.cognitive_impact_service import CognitiveImpactService
-from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 from orcia_core.permissions.models import UserIdentity
-from orcia_kernel.errors import ValidationDomainError
 
 router = APIRouter(tags=["finops"])
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 CognitiveServiceDep = Annotated[CognitiveImpactService, Depends(get_cognitive_impact_service)]
-
-
-def _validate_uuid(val: str, field_name: str) -> str:
-    try:
-        UUID(val)
-        return val
-    except (ValueError, TypeError, AttributeError) as err:
-        raise ValidationDomainError(
-            detail_override=f"Invalid UUID format for '{field_name}': {val!r}"
-        ) from err
-
-
-def _enforce_cognitive_mutation_guard(
-    request: Request,
-    user: UserIdentity,
-    workspace_id: str | None = None,
-) -> None:
-    """Enforce read-only observer protection on cognitive governance mutations."""
-    path = str(request.url.path)
-    access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
-    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
-    observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
-
-    if (
-        access_mode_hdr == "READ_ONLY_OBSERVER"
-        or active_hat in ("READ_ONLY_OBSERVER", "OBSERVER")
-        or observer_hdr in ("1", "true", "yes")
-        or user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER")
-    ):
-        raise ObserverModeReadOnlyError(instance=path)
-
-    if workspace_id is not None:
-        auth_svc = get_auth_service(request)
-        ws = auth_svc.evaluator.get_workspace(workspace_id)
-        if ws is not None:
-            access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
-            if access is None:
-                raise ScopeAccessDeniedError(instance=path)
-            if access.access_mode == "READ_ONLY_OBSERVER":
-                raise ObserverModeReadOnlyError(instance=path)
 
 
 @router.get(
@@ -81,6 +36,7 @@ def _enforce_cognitive_mutation_guard(
     summary="Get executive cognitive impact and gate recommendations",
 )
 async def get_cognitive_impact(
+    request: Request,
     user: CurrentUserDep,
     svc: CognitiveServiceDep,
     scope_type: Annotated[
@@ -91,14 +47,15 @@ async def get_cognitive_impact(
         str, Query(description="Time window for aggregation: 7D, 30D, 90D, ALL")
     ] = "30D",
 ) -> CognitiveImpactDashboardResponse:
-    _ = user
     if scope_id is not None:
-        _validate_uuid(scope_id, "scope_id")
+        validate_uuid(scope_id, "scope_id")
+    allowed_ws = await resolve_finops_read_scope(request, user, scope_type, scope_id)
 
     dash = await svc.get_dashboard(
         scope_type=scope_type,
         scope_id=scope_id,
         time_window=time_window,
+        allowed_workspace_ids=allowed_ws,
     )
 
     return CognitiveImpactDashboardResponse(
@@ -164,16 +121,24 @@ async def apply_gate_policy_recommendation(
     svc: CognitiveServiceDep,
     recommendation_id: Annotated[str, Path(description="Target recommendation ID to apply")],
 ) -> ApplyRecommendationResponse:
-    _enforce_cognitive_mutation_guard(request, user)
+    ws_id = await svc.resolve_recommendation_workspace_id(recommendation_id)
+    await enforce_scope_level_mutation(
+        request,
+        user,
+        scope_type="WORKSPACE" if ws_id is not None else "GLOBAL",
+        scope_id=ws_id,
+    )
+    allowed_ws = (ws_id,) if ws_id is not None else None
     applied = await svc.apply_policy_recommendation(
         recommendation_id=recommendation_id,
         applied_by=user.id,
+        allowed_workspace_ids=allowed_ws,
     )
-    assert applied.applied_at is not None
+    applied_at = applied.applied_at or datetime.now(UTC)
     return ApplyRecommendationResponse(
         recommendation_id=applied.id,
         status=applied.status,
-        applied_at=applied.applied_at,
+        applied_at=applied_at,
         applied_by=user.id,
         workflow_id=applied.workflow_id,
         suggested_policy=applied.suggested_policy,

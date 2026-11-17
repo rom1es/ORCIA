@@ -1,23 +1,18 @@
-"""FastAPI router for Story 6.4: Remote MCP & A2A Telemetry, Quotas & Circuit Reset.
-
-Implements (`AD-12`, `AD-19`, `AD-21`, `Principe M.3`, `Story 6.4`):
-- `GET /api/v1/finops/remote-services`: List external services telemetry & circuit states
-- `PUT /api/v1/finops/connectors/{connector_key}/quota`: Configure quotas & valuation mode
-- `POST /api/v1/finops/connectors/{connector_key}/reset-circuit`: Reset suspended circuit breaker
-"""
+"""FastAPI router for Story 6.4: Remote MCP & A2A Telemetry, Quotas & Circuit Reset."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Path, Query, Request
 
-from orcia_api.dependencies import (
-    get_auth_service,
-    get_connector_quota_guard_service,
+from orcia_api.dependencies import get_connector_quota_guard_service
+from orcia_api.routers._finops_auth_guards import (
+    enforce_scope_level_mutation,
+    resolve_finops_read_scope,
+    validate_uuid,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.finops_remote import (
@@ -30,7 +25,6 @@ from orcia_api.schemas.finops_remote import (
 )
 from orcia_core.audit_finops.connector_quota_service import SqlConnectorQuotaGuardService
 from orcia_core.audit_finops.finops_models import ConnectorQuotaRecord
-from orcia_core.permissions.errors import ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.errors import ValidationDomainError
 
@@ -38,46 +32,6 @@ router = APIRouter(tags=["finops"])
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 QuotaGuardDep = Annotated[SqlConnectorQuotaGuardService, Depends(get_connector_quota_guard_service)]
-
-
-def _validate_uuid(val: str, field_name: str) -> str:
-    try:
-        UUID(val)
-        return val
-    except (ValueError, TypeError, AttributeError) as err:
-        raise ValidationDomainError(
-            detail_override=f"Invalid UUID format for '{field_name}': {val!r}"
-        ) from err
-
-
-def _enforce_remote_finops_mutation_guard(
-    request: Request,
-    user: UserIdentity,
-    workspace_id: str | None = None,
-) -> None:
-    """Enforce read-only observer protection (`403 ERR_OBSERVER_MODE_READ_ONLY`) & scope guard."""
-    path = str(request.url.path)
-    access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
-    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
-    observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
-
-    if (
-        access_mode_hdr == "READ_ONLY_OBSERVER"
-        or active_hat in ("READ_ONLY_OBSERVER", "OBSERVER")
-        or observer_hdr in ("1", "true", "yes")
-        or user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER")
-    ):
-        raise ObserverModeReadOnlyError(instance=path)
-
-    auth_svc = get_auth_service(request)
-    if workspace_id is not None:
-        ws = auth_svc.evaluator.get_workspace(workspace_id)
-        if ws is not None:
-            auth_svc.evaluator.enforce_scope_mutation_guard(user, ws.id, instance=path)
-    elif user.platform_role == "BU_DIRECTOR":
-        accessible = auth_svc.evaluator.resolve_accessible_workspaces(user)
-        if accessible and all(w.access_mode == "READ_ONLY_OBSERVER" for w in accessible):
-            raise ObserverModeReadOnlyError(instance=path)
 
 
 def _to_item_response(rec: ConnectorQuotaRecord) -> RemoteServiceTelemetryItemResponse:
@@ -116,6 +70,7 @@ def _to_item_response(rec: ConnectorQuotaRecord) -> RemoteServiceTelemetryItemRe
     summary="List remote MCP and A2A services FinOps telemetry and circuit breaker states",
 )
 async def list_remote_services_telemetry(
+    request: Request,
     user: CurrentUserDep,
     svc: QuotaGuardDep,
     scope_type: Annotated[
@@ -123,10 +78,14 @@ async def list_remote_services_telemetry(
     ] = "GLOBAL",
     scope_id: Annotated[str | None, Query(description="Target scope UUID")] = None,
 ) -> RemoteServicesListResponse:
-    _ = user
     if scope_id is not None:
-        _validate_uuid(scope_id, "scope_id")
-    records = await svc.list_remote_services(scope_type=scope_type, scope_id=scope_id)
+        validate_uuid(scope_id, "scope_id")
+    allowed_ws = await resolve_finops_read_scope(request, user, scope_type, scope_id)
+    records = await svc.list_remote_services(
+        scope_type=scope_type,
+        scope_id=scope_id,
+        allowed_workspace_ids=allowed_ws,
+    )
 
     items = [_to_item_response(r) for r in records]
     units_breakdown: dict[str, float] = {}
@@ -159,11 +118,12 @@ async def update_connector_quota(
     connector_key: Annotated[str, Path(min_length=1, max_length=128)],
 ) -> RemoteServiceTelemetryItemResponse:
     if payload.scope_id is not None:
-        _validate_uuid(payload.scope_id, "scope_id")
-    _enforce_remote_finops_mutation_guard(
+        validate_uuid(payload.scope_id, "scope_id")
+    await enforce_scope_level_mutation(
         request,
         user,
-        payload.scope_id if payload.scope_type == "WORKSPACE" else None,
+        scope_type=payload.scope_type,
+        scope_id=payload.scope_id,
     )
     clean_key = connector_key.strip().lower()
     if not clean_key:
@@ -204,12 +164,34 @@ async def reset_connector_circuit(
 ) -> ResetCircuitBreakerResponse:
     req = payload or ResetCircuitBreakerRequest()
     if req.scope_id is not None:
-        _validate_uuid(req.scope_id, "scope_id")
-    _enforce_remote_finops_mutation_guard(request, user, req.scope_id)
+        validate_uuid(req.scope_id, "scope_id")
 
     clean_key = connector_key.strip().lower()
     if not clean_key:
         raise ValidationDomainError(detail_override="connector_key must not be empty.")
+
+    existing = await svc.get_connector_quota(clean_key)
+    if existing is not None:
+        await enforce_scope_level_mutation(
+            request,
+            user,
+            scope_type=existing.scope_type,
+            scope_id=existing.scope_id,
+        )
+    elif req.scope_id is not None:
+        await enforce_scope_level_mutation(
+            request,
+            user,
+            scope_type="WORKSPACE",
+            scope_id=req.scope_id,
+        )
+    else:
+        await enforce_scope_level_mutation(
+            request,
+            user,
+            scope_type="GLOBAL",
+            scope_id=None,
+        )
 
     trace_id = getattr(request.state, "trace_id", "00000000000000000000000000000000")
     rec = await svc.reset_circuit(

@@ -156,6 +156,21 @@ def build_audit_ledger_where(
         where_clauses.append("created_at <= CAST(:date_to AS timestamptz)")
         sql_params["date_to"] = params.date_to
 
+    if params.allowed_workspace_ids is not None:
+        from orcia_core.audit_finops._internal._sql_scope_filter import safe_uuid
+
+        uuids = [u for raw in params.allowed_workspace_ids if (u := safe_uuid(raw)) is not None]
+        if not uuids:
+            where_clauses.append(
+                "workspace_id IS NULL" if params.include_null_workspace else "FALSE"
+            )
+        elif params.include_null_workspace:
+            where_clauses.append("(workspace_id = ANY(:allowed_ws_ids) OR workspace_id IS NULL)")
+            sql_params["allowed_ws_ids"] = uuids
+        else:
+            where_clauses.append("workspace_id = ANY(:allowed_ws_ids)")
+            sql_params["allowed_ws_ids"] = uuids
+
     return " AND ".join(where_clauses), sql_params
 
 

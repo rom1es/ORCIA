@@ -5,7 +5,7 @@ Pure SQLAlchemy asyncpg queries — zero circular dependencies, zero float opera
 
 from __future__ import annotations
 
-import logging
+import json
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -13,26 +13,28 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._internal._sql_finops_baselines import (
+    list_workflow_baselines_sql,
+    upsert_workflow_baseline_sql,
+)
+from orcia_core.audit_finops._internal._sql_scope_filter import (
+    is_missing_table_error,
+    safe_uuid,
+)
+from orcia_core.audit_finops._internal.sql_connector_quotas_helpers import (
+    insert_connector_outbox_event,
+)
 from orcia_core.audit_finops.finops_models import (
     FinopsBudgetOverride,
     FinopsScopeBudget,
-    FinopsWorkflowBaseline,
     ScopeType,
 )
+from orcia_core.kernel.events import DomainEvent
+from orcia_core.observability.logging import get_logger
+from orcia_kernel.errors import ValidationDomainError
 from orcia_kernel.ids import new_uuid7_str
 
-logger = logging.getLogger(__name__)
-
-ZERO_UUID_STR = "00000000-0000-0000-0000-000000000000"
-
-
-def _safe_uuid(val: str | None) -> UUID | None:
-    if not val:
-        return None
-    try:
-        return UUID(val)
-    except (ValueError, TypeError, AttributeError):
-        return None
+logger = get_logger("orcia.core.audit_finops.accounting")
 
 
 async def upsert_scope_budget_sql(
@@ -101,7 +103,7 @@ async def list_scope_budgets_sql(
     if scope_type is not None:
         query += " AND scope_type = :scope_type"
         params["scope_type"] = scope_type
-    uuid_val = _safe_uuid(scope_id)
+    uuid_val = safe_uuid(scope_id)
     if uuid_val is not None:
         query += " AND scope_id = :scope_id"
         params["scope_id"] = uuid_val
@@ -125,107 +127,15 @@ async def list_scope_budgets_sql(
                 for r in rows
             ]
     except Exception as exc:
-        logger.warning("FinOps list_scope_budgets query skipped: %s", exc)
-        return []
-
-
-async def upsert_workflow_baseline_sql(
-    engine: AsyncEngine,
-    *,
-    workflow_definition_id: str,
-    scope_id: str | None,
-    manual_time_minutes: int,
-    manual_cost_usd: Decimal,
-    target_ttm_reduction_pct: int = 25,
-) -> FinopsWorkflowBaseline:
-    new_id = new_uuid7_str()
-    scope_uuid = UUID(scope_id) if scope_id else None
-    wf_uuid = UUID(workflow_definition_id)
-    stmt = sa.text(
-        """
-        INSERT INTO finops_workflow_baselines (
-            id, workflow_definition_id, scope_id, manual_time_minutes,
-            manual_cost_usd, target_ttm_reduction_pct, created_at, updated_at
-        ) VALUES (
-            :id, :wf_id, :scope_id, :manual_time_minutes,
-            :manual_cost_usd, :target_ttm_reduction_pct, NOW(), NOW()
+        if is_missing_table_error(exc):
+            logger.warning("finops_list_scope_budgets_skipped", error_type=type(exc).__name__)
+            return []
+        logger.error(
+            "finops_list_scope_budgets_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
         )
-        ON CONFLICT (
-            workflow_definition_id,
-            (COALESCE(scope_id, '00000000-0000-0000-0000-000000000000'::uuid))
-        )
-        DO UPDATE SET
-            manual_time_minutes = EXCLUDED.manual_time_minutes,
-            manual_cost_usd = EXCLUDED.manual_cost_usd,
-            target_ttm_reduction_pct = EXCLUDED.target_ttm_reduction_pct,
-            updated_at = NOW()
-        RETURNING id, workflow_definition_id, scope_id, manual_time_minutes,
-                  manual_cost_usd, target_ttm_reduction_pct, created_at, updated_at;
-        """
-    )
-    async with engine.begin() as conn:
-        res = await conn.execute(
-            stmt,
-            {
-                "id": UUID(new_id),
-                "wf_id": wf_uuid,
-                "scope_id": scope_uuid,
-                "manual_time_minutes": manual_time_minutes,
-                "manual_cost_usd": manual_cost_usd,
-                "target_ttm_reduction_pct": target_ttm_reduction_pct,
-            },
-        )
-        row = res.mappings().one()
-        return FinopsWorkflowBaseline(
-            id=str(row["id"]),
-            workflow_definition_id=str(row["workflow_definition_id"]),
-            scope_id=str(row["scope_id"]) if row["scope_id"] else None,
-            manual_time_minutes=row["manual_time_minutes"],
-            manual_cost_usd=Decimal(str(row["manual_cost_usd"])),
-            target_ttm_reduction_pct=row["target_ttm_reduction_pct"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-        )
-
-
-async def list_workflow_baselines_sql(
-    engine: AsyncEngine,
-    *,
-    workflow_definition_id: str | None = None,
-    scope_id: str | None = None,
-) -> list[FinopsWorkflowBaseline]:
-    query = "SELECT * FROM finops_workflow_baselines WHERE 1=1"
-    params: dict[str, Any] = {}
-    wf_uuid = _safe_uuid(workflow_definition_id)
-    if wf_uuid is not None:
-        query += " AND workflow_definition_id = :wf_id"
-        params["wf_id"] = wf_uuid
-    scope_uuid = _safe_uuid(scope_id)
-    if scope_uuid is not None:
-        query += " AND scope_id = :scope_id"
-        params["scope_id"] = scope_uuid
-    query += " ORDER BY created_at ASC;"
-
-    try:
-        async with engine.connect() as conn:
-            res = await conn.execute(sa.text(query), params)
-            rows = res.mappings().all()
-            return [
-                FinopsWorkflowBaseline(
-                    id=str(r["id"]),
-                    workflow_definition_id=str(r["workflow_definition_id"]),
-                    scope_id=str(r["scope_id"]) if r["scope_id"] else None,
-                    manual_time_minutes=r["manual_time_minutes"],
-                    manual_cost_usd=Decimal(str(r["manual_cost_usd"])),
-                    target_ttm_reduction_pct=r["target_ttm_reduction_pct"],
-                    created_at=r["created_at"],
-                    updated_at=r["updated_at"],
-                )
-                for r in rows
-            ]
-    except Exception as exc:
-        logger.warning("FinOps list_workflow_baselines query skipped: %s", exc)
-        return []
+        raise
 
 
 async def insert_budget_override_sql(
@@ -236,44 +146,48 @@ async def insert_budget_override_sql(
     approved_by: str,
     override_amount_usd: Decimal,
     reason: str,
+    outbox_event: DomainEvent | None = None,
 ) -> FinopsBudgetOverride:
-    new_id = new_uuid7_str()
-    override_stmt = sa.text(
-        """
-        INSERT INTO finops_budget_overrides (
-            id, run_id, requested_by, approved_by, override_amount_usd, reason, created_at
-        ) VALUES (
-            :id, :run_id, :requested_by, :approved_by, :override_amount_usd, :reason, NOW()
+    req_uuid = safe_uuid(requested_by)
+    appr_uuid = safe_uuid(approved_by)
+    run_uuid = safe_uuid(run_id)
+    if req_uuid is None or appr_uuid is None or run_uuid is None:
+        raise ValidationDomainError(
+            detail_override=(
+                "Valid UUID identifiers are required for run_id, requested_by, and approved_by."
+            )
         )
-        RETURNING id, run_id, requested_by, approved_by, override_amount_usd, reason, created_at;
-        """
-    )
-    update_run_stmt = sa.text(
-        """
-        UPDATE workflow_runs
-        SET budget_max_usd = budget_max_usd + :override_amount_usd,
-            status = 'RUNNING'
-        WHERE id = :run_id;
-        """
-    )
-    unpause_steps_stmt = sa.text(
-        """
-        UPDATE step_executions
-        SET status = 'PENDING'
-        WHERE run_id = :run_id
-          AND status IN ('PAUSED_BUDGET_EXCEEDED', 'PAUSED_MAX_RETRIES');
-        """
-    )
 
-    req_uuid = _safe_uuid(requested_by) or UUID("018d0000-0000-7000-8000-000000000001")
-    appr_uuid = _safe_uuid(approved_by) or req_uuid
-
+    new_id = new_uuid7_str()
     async with engine.begin() as conn:
+        req_exists = (
+            await conn.execute(sa.text("SELECT id FROM users WHERE id = :uid"), {"uid": req_uuid})
+        ).first()
+        appr_exists = (
+            await conn.execute(sa.text("SELECT id FROM users WHERE id = :uid"), {"uid": appr_uuid})
+        ).first()
+        if req_exists is None or appr_exists is None:
+            raise ValidationDomainError(
+                detail_override=(
+                    "Requesting or approving user UUID does not exist in users registry."
+                )
+            )
+
         res = await conn.execute(
-            override_stmt,
+            sa.text(
+                """
+                INSERT INTO finops_budget_overrides (
+                    id, run_id, requested_by, approved_by, override_amount_usd, reason, created_at
+                ) VALUES (
+                    :id, :run_id, :requested_by, :approved_by, :override_amount_usd, :reason, NOW()
+                )
+                RETURNING id, run_id, requested_by, approved_by,
+                          override_amount_usd, reason, created_at;
+                """
+            ),
             {
                 "id": UUID(new_id),
-                "run_id": UUID(run_id),
+                "run_id": run_uuid,
                 "requested_by": req_uuid,
                 "approved_by": appr_uuid,
                 "override_amount_usd": override_amount_usd,
@@ -281,11 +195,65 @@ async def insert_budget_override_sql(
             },
         )
         row = res.mappings().one()
+        ws_row = (
+            await conn.execute(
+                sa.text(
+                    """
+                    UPDATE workflow_runs
+                    SET budget_max_usd = budget_max_usd + :override_amount_usd,
+                        status = 'RUNNING'
+                    WHERE id = :run_id
+                    RETURNING workspace_id;
+                    """
+                ),
+                {"run_id": run_uuid, "override_amount_usd": override_amount_usd},
+            )
+        ).first()
         await conn.execute(
-            update_run_stmt,
-            {"run_id": UUID(run_id), "override_amount_usd": override_amount_usd},
+            sa.text(
+                """
+                UPDATE step_executions
+                SET status = 'PENDING'
+                WHERE run_id = :run_id
+                  AND status IN ('PAUSED_BUDGET_EXCEEDED', 'PAUSED_MAX_RETRIES');
+                """
+            ),
+            {"run_id": run_uuid},
         )
-        await conn.execute(unpause_steps_stmt, {"run_id": UUID(run_id)})
+        if outbox_event is not None:
+            await insert_connector_outbox_event(conn, outbox_event)
+            resolved_ws = str(ws_row[0]) if ws_row and ws_row[0] else outbox_event.workspace_id
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO audit_ledger (
+                        id, source_event_id, workspace_id, scope_path, run_id,
+                        actor_type, actor_id, event_type, summary,
+                        cost_usd, cost_source, trace_id, metadata_jsonb
+                    ) VALUES (
+                        CAST(:id AS uuid), CAST(:source_event_id AS uuid),
+                        CAST(:workspace_id AS uuid), :scope_path, CAST(:run_id AS uuid),
+                        'USER', :actor_id, 'BudgetOverrideApproved', :summary,
+                        0.000000, 'INTERNAL_VERIFIED', :trace_id, CAST(:metadata_jsonb AS jsonb)
+                    )
+                    ON CONFLICT (source_event_id) DO NOTHING;
+                    """
+                ),
+                {
+                    "id": new_uuid7_str(),
+                    "source_event_id": outbox_event.event_id,
+                    "workspace_id": resolved_ws,
+                    "scope_path": f"WORKSPACE:{resolved_ws}" if resolved_ws else "GLOBAL",
+                    "run_id": run_id,
+                    "actor_id": str(appr_uuid),
+                    "summary": (
+                        "Dérogation budgétaire approuvée "
+                        f"(+{float(override_amount_usd):.2f} USD) : {reason}"
+                    ),
+                    "trace_id": outbox_event.trace_id,
+                    "metadata_jsonb": json.dumps(outbox_event.payload, sort_keys=True),
+                },
+            )
 
         return FinopsBudgetOverride(
             id=str(row["id"]),
@@ -304,18 +272,29 @@ async def fetch_run_finops_state_sql(
 ) -> dict[str, Any] | None:
     stmt = sa.text(
         """
+        WITH step_agg AS (
+            SELECT run_id, COALESCE(SUM(cost_usd), 0.000000) AS total_steps_cost
+            FROM step_executions
+            WHERE run_id = :run_id
+            GROUP BY run_id
+        ),
+        ledger_agg AS (
+            SELECT run_id, COALESCE(SUM(cost_usd), 0.000000) AS total_audit_cost
+            FROM audit_ledger
+            WHERE run_id = :run_id
+            GROUP BY run_id
+        )
         SELECT
             r.id,
             r.workspace_id,
             r.status,
             r.budget_max_usd,
-            COALESCE(SUM(s.cost_usd), 0.000000) as total_steps_cost,
-            COALESCE(SUM(l.cost_usd), 0.000000) as total_audit_cost
+            COALESCE(sa_agg.total_steps_cost, 0.000000) AS total_steps_cost,
+            COALESCE(la_agg.total_audit_cost, 0.000000) AS total_audit_cost
         FROM workflow_runs r
-        LEFT JOIN step_executions s ON s.run_id = r.id
-        LEFT JOIN audit_ledger l ON l.run_id = r.id
-        WHERE r.id = :run_id
-        GROUP BY r.id, r.workspace_id, r.status, r.budget_max_usd;
+        LEFT JOIN step_agg sa_agg ON sa_agg.run_id = r.id
+        LEFT JOIN ledger_agg la_agg ON la_agg.run_id = r.id
+        WHERE r.id = :run_id;
         """
     )
     async with engine.connect() as conn:

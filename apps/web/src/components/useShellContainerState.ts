@@ -10,12 +10,26 @@ export function useShellContainerState(runsLength: number, pathname?: string) {
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
   const [selectedMenuKeyOverride, setSelectedMenuKeyOverride] =
     useState<EightFixedMenuKey | null>(null);
+  const [viewportWidth, setViewportWidth] = useState<number>(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1440,
+  );
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
   const [helpColumnOpen, setHelpColumnOpen] = useState<boolean>(() =>
-    computeDefaultHelpColumnOpen(1440, runsLength),
+    computeDefaultHelpColumnOpen(
+      typeof window !== "undefined" ? window.innerWidth : 1440,
+      runsLength,
+    ),
   );
   const [activeHelpSectionId, setActiveHelpSectionId] = useState<string | null>(null);
   const [adminModalDismissed, setAdminModalDismissed] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     setSelectedModuleOverride(null);
@@ -34,6 +48,7 @@ export function useShellContainerState(runsLength: number, pathname?: string) {
   }, []);
 
   return {
+    viewportWidth,
     activeScopeId,
     setActiveScopeId,
     selectedModuleOverride,

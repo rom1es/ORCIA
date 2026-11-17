@@ -205,7 +205,16 @@ def downgrade() -> None:
     op.execute(sa.text("DROP TABLE IF EXISTS finops_workflow_baselines;"))
     op.execute(sa.text("DROP TABLE IF EXISTS finops_scope_budgets;"))
 
-    # 2. Restore step_executions CHECK constraint
+    # 2. Reclassify Epic 6 step statuses & restore step_executions CHECK constraint
+    op.execute(
+        sa.text(
+            """
+            UPDATE step_executions
+            SET status = 'PENDING'
+            WHERE status IN ('PAUSED_BUDGET_EXCEEDED', 'PAUSED_MAX_RETRIES');
+            """
+        )
+    )
     op.execute(
         sa.text(
             """
@@ -247,7 +256,16 @@ def downgrade() -> None:
         )
     )
 
-    # 3. Restore workflow_runs CHECK constraint
+    # 3. Reclassify Epic 6 run status & restore workflow_runs CHECK constraint
+    op.execute(
+        sa.text(
+            """
+            UPDATE workflow_runs
+            SET status = 'PAUSED_CIRCUIT_BREAKER'
+            WHERE status = 'PAUSED_MAX_RETRIES';
+            """
+        )
+    )
     op.execute(
         sa.text(
             """

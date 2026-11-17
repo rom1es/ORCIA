@@ -22,6 +22,8 @@ export type { FinopsDashboardLabels, FinopsTabKey };
 
 export interface FinopsGovernanceDashboardViewProps {
   readonly scopeType: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+  readonly scopeId?: string | null;
+  readonly scopeIdsByLevel?: Partial<Record<"BU" | "TEAM" | "WORKSPACE", string | null>>;
   readonly onScopeChange?: (scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE") => void;
   readonly totalRuns: number;
   readonly totalCostEur: number;
@@ -56,6 +58,8 @@ export interface FinopsGovernanceDashboardViewProps {
 
 export function FinopsGovernanceDashboardView({
   scopeType,
+  scopeId = null,
+  scopeIdsByLevel,
   onScopeChange,
   totalRuns,
   totalCostEur,
@@ -257,6 +261,8 @@ export function FinopsGovernanceDashboardView({
         open={isBudgetModalOpen}
         onOpenChange={setIsBudgetModalOpen}
         currentScopeType={scopeType}
+        currentScopeId={scopeId}
+        scopeIdsByLevel={scopeIdsByLevel}
         labels={labels.modals}
         onSaveBudget={onSaveBudget}
       />

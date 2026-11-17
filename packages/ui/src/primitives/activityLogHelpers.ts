@@ -70,6 +70,7 @@ export interface ActivityLogExplorerLabels {
   readonly emptyStateMessage: string;
   readonly actorPrefix: string;
   readonly scopePrefix: string;
+  readonly runPrefix?: string;
   readonly timestampPrefix: string;
   readonly provenanceLabels?: ActivityLogProvenanceLabels;
 }

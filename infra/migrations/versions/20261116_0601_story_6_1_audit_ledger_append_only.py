@@ -199,7 +199,21 @@ def downgrade() -> None:
     # 2. Drop table
     op.execute(sa.text("DROP TABLE IF EXISTS audit_ledger;"))
 
-    # 3. Restore previous 14-event CHECK constraint on domain_events_outbox
+    # 3. Clean up Epic 6 outbox events and restore previous 14-event CHECK constraint
+    op.execute(
+        sa.text(
+            """
+            DELETE FROM domain_events_outbox
+            WHERE event_type IN (
+                'AdminConnectionTested',
+                'BudgetCircuitTripped',
+                'BudgetOverrideApproved',
+                'RemoteUsageAnomalyCapped',
+                'ConnectorCircuitTripped'
+            );
+            """
+        )
+    )
     op.execute(
         sa.text(
             "ALTER TABLE domain_events_outbox "

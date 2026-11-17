@@ -312,7 +312,10 @@ export function ActivityLogExplorerView({
                     </span>
                     {ev.runId && (
                       <span>
-                        Run: <code style={{ fontFamily: "var(--font-mono)" }}>{ev.runId.slice(0, 8)}...</code>
+                        {labels.runPrefix ?? "Exécution :"}{" "}
+                        <code style={{ fontFamily: "var(--font-mono)" }}>
+                          {ev.runId.slice(0, 8)}...
+                        </code>
                       </span>
                     )}
                   </div>

@@ -1,6 +1,10 @@
 import createClient from "openapi-fetch";
 import { createAgentsAndSkillsDomainClient } from "./domains/agentsAndSkills";
 import { createAiModelsHubDomainClient } from "./domains/aiModelsHub";
+import {
+  createAuditFinopsDomainClient,
+  type ListAuditLedgerParams,
+} from "./domains/auditFinops";
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
@@ -25,6 +29,7 @@ export {
   buildOrgUnitsQuery,
   createAgentsAndSkillsDomainClient,
   createAiModelsHubDomainClient,
+  createAuditFinopsDomainClient,
   createAuthAndShellDomainClient,
   createBootstrapAndOntologyDomainClient,
   createCatalogAndPermissionsDomainClient,
@@ -33,6 +38,7 @@ export {
   createFinopsDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
+  type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
   type OrciaApiClientOptions,
@@ -60,6 +66,7 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const requestJson = createRequestJson(options);
   const aiModelsHubClient = createAiModelsHubDomainClient(requestJson);
+  const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
   return {
     ...createAuthAndShellDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
@@ -68,7 +75,9 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
     ...createFinopsDomainClient(requestJson),
+    ...auditFinopsClient,
     ...aiModelsHubClient,
     aiModelsHub: aiModelsHubClient,
+    auditFinops: auditFinopsClient,
   };
 }

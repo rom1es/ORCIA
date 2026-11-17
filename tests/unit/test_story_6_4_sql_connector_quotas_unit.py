@@ -209,22 +209,39 @@ async def test_sql_repositories_and_service_transitions() -> None:
 
 @pytest.mark.asyncio
 async def test_sql_repositories_handle_db_errors_gracefully() -> None:
+    # Real infra/runtime errors must propagate & log instead of silently masking SQL bugs
     err_ctx = AsyncMock()
     err_ctx.__aenter__ = AsyncMock(side_effect=RuntimeError("db offline"))
     err_ctx.__aexit__ = AsyncMock(return_value=None)
     err_engine = MagicMock()
     err_engine.connect.return_value = err_ctx
-    assert await fetch_connector_quota_sql(err_engine, "mcp-ocr") is None
-    assert await list_connector_quotas_sql(err_engine) == []
+    with pytest.raises(RuntimeError, match="db offline"):
+        await fetch_connector_quota_sql(err_engine, "mcp-ocr")
+    with pytest.raises(RuntimeError, match="db offline"):
+        await list_connector_quotas_sql(err_engine)
 
+    # Missing table (UndefinedTableError / "does not exist") returns empty in isolated setups
+    missing_ctx = AsyncMock()
+    missing_ctx.__aenter__ = AsyncMock(
+        side_effect=ProgrammingError(
+            "stmt", {}, Exception('relation "finops_connector_quotas" does not exist')
+        )
+    )
+    missing_ctx.__aexit__ = AsyncMock(return_value=None)
+    missing_engine = MagicMock()
+    missing_engine.connect.return_value = missing_ctx
+    assert await fetch_connector_quota_sql(missing_engine, "mcp-ocr") is None
+    assert await list_connector_quotas_sql(missing_engine) == []
+
+    # ProgrammingError on mutations / circuit reset must propagate (MINOR-03)
     prog_ctx = AsyncMock()
-    prog_ctx.__aenter__ = AsyncMock(side_effect=ProgrammingError("stmt", {}, Exception("no table")))
+    prog_ctx.__aenter__ = AsyncMock(side_effect=ProgrammingError("stmt", {}, Exception("bad col")))
     prog_ctx.__aexit__ = AsyncMock(return_value=None)
     prog_engine = MagicMock()
     prog_engine.begin.return_value = prog_ctx
     with pytest.raises(ValidationDomainError):
         await upsert_connector_quota_config_sql(prog_engine, connector_key="mcp-ocr")
-    assert (
+    with pytest.raises(ProgrammingError):
         await reset_connector_circuit_sql(
             prog_engine,
             connector_key="mcp-ocr",
@@ -232,5 +249,3 @@ async def test_sql_repositories_handle_db_errors_gracefully() -> None:
             actor_id="u1",
             trace_id="t1",
         )
-        is None
-    )

@@ -40,6 +40,7 @@ class AdminConnectionTested(DomainEvent):
         metadata: dict[str, Any] | None = None,
     ) -> AdminConnectionTested:
         payload: dict[str, Any] = {
+            "actor_id": actor_id,
             "target_type": target_type,
             "target_id": target_id,
             "protocol": protocol,

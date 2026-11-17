@@ -596,6 +596,12 @@ export {
   type HumanMasteryWorkflowRow,
 } from "./primitives/finops/FinopsHumanMasteryTab";
 export {
+  ActivityProvenanceModal,
+  type ActivityProvenanceModalLabels,
+  type ActivityProvenanceModalProps,
+  type ActivityProvenanceSummaryView,
+} from "./primitives/ActivityProvenanceModal";
+export {
   OrciaModelCombobox,
   type DiscoveredModelOption,
   type OrciaModelComboboxLabels,

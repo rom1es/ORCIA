@@ -14,6 +14,7 @@ export interface FinopsProcessRowData {
   readonly pausedRunsCount?: number;
   readonly pausedReason?: "BUDGET" | "RETRIES" | null;
   readonly samplePausedRunId?: string;
+  readonly hasDeclaredBaseline?: boolean;
 }
 
 export interface FinopsTierRowData {
@@ -58,6 +59,8 @@ export interface FinopsProcessAndTiersTabProps {
       totalTokensCol: string;
       costCol: string;
       emptyTiersText?: string;
+      tierLabels?: Readonly<Record<string, string>>;
+      effortLabels?: Readonly<Record<string, string>>;
     };
   };
   readonly onOpenOverrideModal?: (runId: string, workflowTitle: string) => void;
@@ -93,14 +96,18 @@ export function FinopsProcessAndTiersTab({
             {tiers.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ padding: "20px", textAlign: "center", color: "var(--color-text-muted)" }}>
-                  {labels.tiersTable.emptyTiersText ?? "Aucune donnée de modèle ou niveau d'effort enregistrée."}
+                  {labels.tiersTable.emptyTiersText ?? ""}
                 </td>
               </tr>
             ) : (
               tiers.map((t, idx) => (
                 <tr key={`${t.inferenceTier}-${t.effort}-${idx}`} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <td style={{ padding: "10px 12px", fontWeight: 600 }}>{t.inferenceTier}</td>
-                  <td style={{ padding: "10px 12px" }}>{t.effort}</td>
+                  <td style={{ padding: "10px 12px", fontWeight: 600 }}>
+                    {labels.tiersTable.tierLabels?.[t.inferenceTier] ?? t.inferenceTier}
+                  </td>
+                  <td style={{ padding: "10px 12px" }}>
+                    {labels.tiersTable.effortLabels?.[t.effort] ?? t.effort}
+                  </td>
                   <td style={{ padding: "10px 12px" }}>{t.invocationsCount}</td>
                   <td style={{ padding: "10px 12px" }}>{t.inputTokens.toLocaleString()}</td>
                   <td style={{ padding: "10px 12px" }}>{t.outputTokens.toLocaleString()}</td>
@@ -135,14 +142,14 @@ export function FinopsProcessAndTiersTab({
           {processes.length === 0 ? (
             <tr>
               <td colSpan={9} style={{ padding: "20px", textAlign: "center", color: "var(--color-text-muted)" }}>
-                {labels.processesTable.emptyProcessesText ?? "Aucun processus actif sur ce périmètre."}
+                {labels.processesTable.emptyProcessesText ?? ""}
               </td>
             </tr>
           ) : (
             processes.map((p) => {
               const hasPaused = (p.pausedRunsCount ?? 0) > 0;
               const isRetries = p.pausedReason === "RETRIES";
-              const targetRunId = p.samplePausedRunId ?? p.workflowId;
+              const targetRunId = p.samplePausedRunId ?? null;
 
               return (
                 <tr
@@ -157,7 +164,11 @@ export function FinopsProcessAndTiersTab({
                   <td style={{ padding: "10px 12px" }}>{formatEur(p.humanTimeCostEur)}</td>
                   <td style={{ padding: "10px 12px", fontWeight: 700 }}>{formatEur(p.totalCostEur)}</td>
                   <td style={{ padding: "10px 12px", color: "var(--color-status-success)" }}>
-                    {p.ttmReductionPct > 0 ? `-${p.ttmReductionPct}%` : "0%"}
+                    {p.hasDeclaredBaseline === false
+                      ? "—"
+                      : p.ttmReductionPct > 0
+                        ? `-${p.ttmReductionPct}%`
+                        : "0%"}
                   </td>
                   <td style={{ padding: "10px 12px" }}>
                     {hasPaused ? (
@@ -177,7 +188,7 @@ export function FinopsProcessAndTiersTab({
                     )}
                   </td>
                   <td style={{ padding: "10px 12px" }}>
-                    {hasPaused ? (
+                    {hasPaused && targetRunId ? (
                       <button
                         type="button"
                         data-testid={`finops-override-btn-${p.workflowId}`}

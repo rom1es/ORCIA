@@ -10,15 +10,17 @@ Extracted from `cognitive_router.py` to enforce strict modularity (< 300 lines) 
 
 from __future__ import annotations
 
-import contextlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from orcia_core.kernel._finops_audit_events import BudgetCircuitTripped
+from orcia_core.observability.logging import get_logger
 from orcia_core.ports.finops_telemetry import BudgetCircuitGuardPort
 
 if TYPE_CHECKING:
     from orcia_core.orchestration.presence_and_sse import SseBroadcastPort
+
+logger = get_logger("orcia.core.orchestration.budget_guard")
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +55,10 @@ class CognitiveBudgetGuard:
     def collected_outbox_events(self) -> list[Any]:
         return self._outbox_collector
 
+    def set_external_guard_port(self, port: BudgetCircuitGuardPort) -> None:
+        """Bind a persistent `BudgetCircuitGuardPort` implementation at runtime."""
+        self._external_guard_port = port
+
     def check_retries_ceiling(
         self,
         *,
@@ -69,7 +75,7 @@ class CognitiveBudgetGuard:
                 "Halting infinite loop."
             )
             if self._sse_broker is not None and workspace_id:
-                with contextlib.suppress(Exception):
+                try:
                     self._sse_broker.publish(
                         workspace_id=workspace_id,
                         event_name="StepPausedMaxRetries",
@@ -80,6 +86,14 @@ class CognitiveBudgetGuard:
                             "max_agent_retries": max_agent_retries,
                             "reason": reason,
                         },
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "finops_budget_guard_retries_sse_publish_failed",
+                        run_id=run_id,
+                        workspace_id=workspace_id,
+                        error_type=type(exc).__name__,
+                        detail=str(exc),
                     )
             return BudgetCheckResult(
                 allowed=False,
@@ -253,7 +267,7 @@ class CognitiveBudgetGuard:
         self._outbox_collector.append(event)
         if self._sse_broker is not None and workspace_id:
             event_name = "BudgetCircuitTripped" if is_hard_stop else "BudgetWarningTripped"
-            with contextlib.suppress(Exception):
+            try:
                 self._sse_broker.publish(
                     workspace_id=workspace_id,
                     event_name=event_name,
@@ -265,6 +279,15 @@ class CognitiveBudgetGuard:
                         "trip_reason": reason,
                         "is_hard_stop": is_hard_stop,
                     },
+                )
+            except Exception as exc:
+                logger.warning(
+                    "finops_budget_guard_tripped_sse_publish_failed",
+                    run_id=run_id,
+                    workspace_id=workspace_id,
+                    event_name=event_name,
+                    error_type=type(exc).__name__,
+                    detail=str(exc),
                 )
 
 

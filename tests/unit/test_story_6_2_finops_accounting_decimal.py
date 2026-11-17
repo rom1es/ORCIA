@@ -315,3 +315,161 @@ async def test_finops_accounting_service_methods(monkeypatch: pytest.MonkeyPatch
     assert len(sse_events) == 1
     assert sse_events[0]["event_name"] == "BudgetOverrideApproved"
     assert len(svc.collected_outbox_events) == 1
+
+
+@pytest.mark.asyncio
+async def test_finops_dashboard_maps_paused_reason_baseline_flag_and_savings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify BLOCKING-02/MAJOR-04/MINOR-03 fields & run_resumer hook cleanly."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    from orcia_core.audit_finops.finops_accounting_service import FinopsAccountingService
+
+    resumed_runs: list[str] = []
+
+    async def _resumer(rid: str) -> None:
+        resumed_runs.append(rid)
+
+    svc = FinopsAccountingService(
+        engine=MagicMock(),
+        run_resumer=_resumer,
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.finops_accounting_service.fetch_dashboard_overview_sql",
+        AsyncMock(
+            return_value={
+                "total_cost_usd": Decimal("10.000000"),
+                "verified_internal_cost_usd": Decimal("8.000000"),
+                "reported_external_cost_usd": Decimal("2.000000"),
+                "total_input_tokens": 1000,
+                "total_output_tokens": 500,
+                "internal_tokens": 1200,
+                "remote_tokens": 300,
+                "total_external_calls": 2,
+                "accounted_runs_count": 3,
+                "active_circuit_breakers_count": 0,
+                "paused_runs_count": 1,
+                "cache_savings_usd": Decimal("1.500000"),
+                "external_units_breakdown": {},
+            }
+        ),
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.finops_accounting_service.fetch_dashboard_processes_sql",
+        AsyncMock(
+            return_value=[
+                {
+                    "workflow_id": "wf-no-baseline",
+                    "workflow_title": "Processus Sans Baseline",
+                    "runs_count": 2,
+                    "amortized_setup_cost_usd": Decimal("0.000000"),
+                    "run_cost_usd": Decimal("5.000000"),
+                    "overrides_usd": Decimal("0.000000"),
+                    "human_ms": 60_000,
+                    "paused_runs": 1,
+                    "sample_paused_run_id": "run-paused-xyz",
+                    "sample_paused_status": "PAUSED_MAX_RETRIES",
+                    "manual_time_minutes": None,
+                    "manual_cost_usd": None,
+                    "target_ttm_reduction_pct": None,
+                }
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.finops_accounting_service.fetch_dashboard_tiers_sql",
+        AsyncMock(return_value=[]),
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.finops_accounting_service.list_scope_budgets_sql",
+        AsyncMock(return_value=[]),
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.finops_accounting_service.list_workflow_baselines_sql",
+        AsyncMock(return_value=[]),
+    )
+
+    breakdown = await svc.get_breakdown(scope_type="GLOBAL")
+    assert breakdown.overview.cache_savings_usd == Decimal("1.500000")
+    assert len(breakdown.processes) == 1
+    proc = breakdown.processes[0]
+    assert proc.sample_paused_run_id == "run-paused-xyz"
+    assert proc.paused_reason == "RETRIES"
+    assert proc.has_declared_baseline is False
+    assert proc.ttm_reduction_pct == 0
+    assert proc.human_time_cost_usd > Decimal("0")
+
+    expected_override = FinopsBudgetOverride(
+        id="ov-2",
+        run_id="run-paused-xyz",
+        requested_by="u1",
+        approved_by="u2",
+        override_amount_usd=Decimal("25.000000"),
+        reason="Relance manuelle",
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.finops_accounting_service.insert_budget_override_sql",
+        AsyncMock(return_value=expected_override),
+    )
+    await svc.approve_budget_override(
+        run_id="run-paused-xyz",
+        requested_by="u1",
+        approved_by="u2",
+        override_amount_usd=Decimal("25.00"),
+        reason="Relance manuelle",
+    )
+    assert resumed_runs == ["run-paused-xyz"]
+
+
+def test_sql_scope_filter_and_admin_connection_event_contracts() -> None:
+    """Verify _sql_scope_filter helpers (BLOCKING-01) and AdminConnectionTested.actor_id."""
+    from uuid import UUID
+
+    from orcia_core.audit_finops._internal._sql_scope_filter import (
+        build_connector_scope_clause,
+        build_ledger_scope_clause,
+        build_scoped_workspaces_cte,
+        is_missing_table_error,
+        safe_uuid,
+    )
+    from orcia_core.kernel._finops_audit_events import AdminConnectionTested
+
+    assert safe_uuid(None) is None
+    assert safe_uuid("not-a-uuid") is None
+    u = safe_uuid("0192c4e0-0000-7000-8000-000000000601")
+    assert isinstance(u, UUID)
+
+    class _FakeErr(Exception):
+        def __init__(self, pgcode: str) -> None:
+            self.pgcode = pgcode
+
+    class _Wrapper(Exception):
+        def __init__(self, orig: Exception) -> None:
+            super().__init__(str(orig))
+            self.orig = orig
+
+    assert is_missing_table_error(_Wrapper(_FakeErr("42703"))) is False
+    assert is_missing_table_error(_Wrapper(_FakeErr("42P01"))) is True
+    assert is_missing_table_error(RuntimeError('column "title" does not exist')) is False
+    assert is_missing_table_error(RuntimeError('relation "finops_x" does not exist')) is True
+
+    cte, params = build_scoped_workspaces_cte("BU", u)
+    assert "WITH RECURSIVE org_tree" in cte
+    assert params["scope_type"] == "BU"
+    assert build_ledger_scope_clause("GLOBAL", None) == "TRUE"
+    assert "CAST(:scope_id AS uuid)" in build_ledger_scope_clause("WORKSPACE", u)
+    assert "org_tree" in build_ledger_scope_clause("BU", u)
+    assert build_connector_scope_clause("GLOBAL", None) == "TRUE"
+    assert "CAST(:scope_id AS uuid)" in build_connector_scope_clause("WORKSPACE", u)
+    assert "org_tree" in build_connector_scope_clause("TEAM", u)
+
+    evt = AdminConnectionTested.create(
+        actor_id="0192c4e0-0000-7000-8000-000000000601",
+        target_type="LLM_MODEL",
+        target_id="openai_compatible:gpt-4o",
+        test_status="OPERATIONAL",
+        latency_ms=42,
+    )
+    assert evt.payload["actor_id"] == "0192c4e0-0000-7000-8000-000000000601"
+    assert evt.payload["latency_ms"] == 42

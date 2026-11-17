@@ -85,6 +85,15 @@ class FinopsProcessItemResponse(BaseModel):
     paused_runs_count: int = Field(
         default=0, description="Number of currently paused runs for this process"
     )
+    sample_paused_run_id: str | None = Field(
+        default=None, description="UUID of a sample paused run eligible for budget override"
+    )
+    paused_reason: Literal["BUDGET", "RETRIES"] | None = Field(
+        default=None, description="Reason for paused state (BUDGET or RETRIES)"
+    )
+    has_declared_baseline: bool = Field(
+        default=False, description="Whether a manual reference baseline was explicitly declared"
+    )
 
 
 class FinopsTierEffortItemResponse(BaseModel):

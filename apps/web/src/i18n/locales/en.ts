@@ -6,6 +6,7 @@ import { ASSISTANT_EN_LABELS } from "./assistant_labels";
 import { AUTH_SETTINGS_EN_LABELS } from "./auth_settings_labels";
 import { EPIC18_SOURCES_LABELS_EN } from "./epic18_sources_labels";
 import { FINOPS_EN_LABELS } from "./finops_labels";
+import { GATES_AND_INBOX_EN_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_EN_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_EN_LABELS } from "./inbox_and_cockpit_labels";
 import { SHELL_AND_SEARCH_EN_LABELS } from "./shell_and_search_labels";
@@ -18,6 +19,7 @@ export const enDictionary: TranslationDictionary = {
   ...GOVERNANCE_AND_PACKS_EN_LABELS,
   ...ACTIVITY_EN_LABELS,
   ...FINOPS_EN_LABELS,
+  ...GATES_AND_INBOX_EN_LABELS,
   locale: "en",
   aiModelsHub: AI_MODELS_HUB_EN,
   authSettings: AUTH_SETTINGS_EN_LABELS,
@@ -314,74 +316,6 @@ export const enDictionary: TranslationDictionary = {
       description:
         "Configure your organization, initial workspaces, and tool connections step by step.",
       uriBadgeExample: "Setup",
-    },
-  },
-  upstreamChallengeModal: {
-    modalTitle: "Request a Correction on a Previous Step",
-    modalSubtitle:
-      "Point out what needs adjustment in an earlier step, preview which subsequent steps are affected, and restart only what needs updating.",
-    targetStepLabel: "Previous step concerned",
-    sectionKeyLabel: "Section or rule to adjust",
-    reasonLabel: "Reason for the correction request (at least 10 characters)",
-    reasonPlaceholder: "Explain the discrepancy or clarification needed on the previous step...",
-    whatIfTitle: "Preview of items that will be updated",
-    invalidatedStepsLabel: "Subsequent steps to recalculate",
-    invalidatedSectionsLabel: "Impacted deliverable sections",
-    invalidatedAxiomsLabel: "Related business rules",
-    preservedStepsLabel: "Earlier steps preserved without reprocessing",
-    translatedSummaryLabel: "Adapted explanation for the previous step owner",
-    submitChallengeCta: "Send correction request",
-    replayStepCta: "Restart from this step",
-    closeCta: "Close",
-    challengeSubmittedFeedback: "Correction request sent to the step owner ✓",
-    replayTriggeredFeedback: "Restart completed from the selected step ✓",
-  },
-  humanGates: {
-    briefing: {
-      gridTitle: "Pre-Approval Review Summary (4 Key Points)",
-      block1Title: "1. Executive Summary",
-      block2Title: "2. Key Points & Cross-Checks",
-      block3Title: "3. Proposed Decisions",
-      block4Title: "4. Retained Assumptions",
-      inspectHypothesesButtonLabel: "Confirm reading of assumptions",
-      hypothesesInspectedBadgeLabel: "Assumptions reviewed",
-      hypothesesPendingBadgeLabel: "Review required (Point 4)",
-    },
-    chunkValidation: {
-      sectionListTitle: "Section-by-Section Review",
-      keyboardNavHint: "Keyboard shortcut: Alt + ↑ / ↓",
-      approveSectionLabel: "Approve section",
-      coEditSectionLabel: "Edit section",
-      challengeSectionLabel: "Request upstream correction",
-      finalizeGateButtonLabel: "Confirm final approval",
-      pendingSectionsNotice:
-        "Every required section as well as Point 4 (Retained Assumptions) must be checked before final approval.",
-      guardModalTitle: "Careful Review Confirmation",
-      guardModalDescription:
-        "You approved this document very quickly. Please confirm that you have carefully reviewed the retained assumptions.",
-      guardConfirmCheckboxLabel:
-        "I confirm I have reviewed the retained assumptions and key sections",
-      guardConfirmButtonLabel: "Confirm and record my approval",
-      guardCancelButtonLabel: "Resume reading",
-    },
-  },
-  inboxAndClaims: {
-    filterAllLabel: "All requests",
-    filterPersonalLabel: "Assigned to me",
-    filterTeamLabel: "For my team",
-    amberCounterPrefix: "Pending actions:",
-    contributorSectionTitle: "Actions Required from You",
-    observerSectionTitle: "Following — Read-Only",
-    observerBannerText:
-      "👁️ Read-Only Mode — You are following this execution without edit permissions",
-    presencePill: {
-      claimActionLabel: "Take ownership",
-      claimedByMeBadge: "🔒 Handled by you",
-      claimedByPeerPrefix: "🔒 Handled by:",
-      releaseActionLabel: "Release",
-      forceUnclaimActionLabel: "Take over (after 15 min)",
-      readOnlyObserverNotice: "Read-only",
-      sseLatencyPrefix: "Sync:",
     },
   },
 };

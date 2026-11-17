@@ -108,6 +108,7 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onExportProvenance",
         "onSelectRunId",
       ],
+      ActivityProvenanceModal: ["onClose"],
       FinopsGovernanceDashboardView: [
         "onSaveBudget",
         "onSubmitOverride",

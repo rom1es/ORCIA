@@ -26,8 +26,9 @@ export function mapProcessesRows(
     ttmReductionPct: p.ttm_reduction_pct,
     activeBudgetOverride: p.active_budget_override,
     pausedRunsCount: p.paused_runs_count,
-    pausedReason: p.paused_runs_count && p.paused_runs_count > 0 ? "BUDGET" : null,
-    samplePausedRunId: undefined,
+    pausedReason: p.paused_reason ?? null,
+    samplePausedRunId: p.sample_paused_run_id ?? undefined,
+    hasDeclaredBaseline: p.has_declared_baseline ?? true,
   }));
 }
 

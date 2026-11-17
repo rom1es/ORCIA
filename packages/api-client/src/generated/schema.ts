@@ -1455,12 +1455,15 @@ export interface components {
       amortized_setup_cost_usd: number;
       baseline_manual_cost_eur: number;
       baseline_manual_cost_usd: number;
+      has_declared_baseline?: boolean;
       human_time_cost_eur: number;
       human_time_cost_usd: number;
+      paused_reason?: "BUDGET" | "RETRIES" | null;
       paused_runs_count?: number;
       run_cost_eur: number;
       run_cost_usd: number;
       runs_count: number;
+      sample_paused_run_id?: string | null;
       total_cost_eur: number;
       total_cost_usd: number;
       ttm_reduction_pct: number;

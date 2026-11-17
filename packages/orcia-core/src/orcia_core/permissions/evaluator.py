@@ -191,13 +191,13 @@ class MatrixPermissionEvaluator:
                 if _user_leads_node(user, node):
                     supervisor_roots.add(node.id)
 
-            if any(
+            is_global = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
+            if is_global or any(
                 self.is_ancestor_of(root_id, workspace.owner_org_unit_id)
                 for root_id in supervisor_roots
             ):
                 if workspace.visibility_mode == "CONFIDENTIAL_RESTRICTED":
                     return None
-                is_global = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
                 return WorkspaceAccessSummary(
                     workspace,
                     "OBSERVER",

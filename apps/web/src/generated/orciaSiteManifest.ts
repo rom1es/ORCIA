@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-17",
   "stats": {
     "activeRoutesCount": 26,
-    "uiPrimitivesCount": 118,
+    "uiPrimitivesCount": 119,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 44,
+    "alembicMigrationsCount": 45,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 144,
+    "techLeadReportsCount": 145,
     "capabilitiesCount": 62,
     "liveCapabilitiesCount": 60,
     "verifiedCapabilitiesCount": 45
@@ -54,6 +54,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ActivityLogExplorerView",
     "ActivityLogFiltersBar",
     "ActivityLogProvenanceExportBar",
+    "ActivityProvenanceModal",
     "AgentDetailAndSandboxModal",
     "AgentStudioCardItem",
     "AgentsAndSkillsManagerView",
@@ -223,7 +224,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261115_2359_merge_iam_multi_lead_and_epic_19_heads",
     "20261116_0601_story_6_1_audit_ledger_append_only",
     "20261116_0602_story_6_2_finops_budgets_baselines_and_pauses",
-    "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry"
+    "20261116_0604_story_6_4_remote_connector_quotas_and_telemetry",
+    "20261117_0605_epic6_review_adaptive_gate_policy_check"
   ],
   "architectureDecisions": [
     {
@@ -502,6 +504,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Correctifs Revue Architecture & UX Epic 6 (CAP-065, CAP-200)",
+      "reportFile": "2026-11-17-epic-6-correctifs-revue-architecture-tech-lead-report.md",
+      "domain": "Traitement des 5 BLOCKING, 5 MAJOR & 3 MINOR de la revue VALIDATE Epic 6",
+      "summary": "Implémentation terminée et validée : correction SQL wd.title / CTE anti-produit-cartésien / BU/TEAM, dérogation budgétaire sample_paused_run_id, pont @orcia/api-client auditFinops & garde \"scope-global\", câblage Outbox worker & BudgetGuardService, fermeture IDOR & garde mutations enforce_scope_mutation_guard, migration 20261117_0605 adaptive_gate_policy, ConnectorInvoker.invoke_async non-bloquant, AdminConnectionTested.actor_id, ActivityProvenanceModal via OrciaDialog, E2E mobile/desktop & découpage < 350 lignes."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Story 6.4 (CAP-200)",

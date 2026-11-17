@@ -1,15 +1,10 @@
-import type { ActivityLogExplorerLabels, ActivityLogProvenanceLabels } from "@orcia/ui";
+import type {
+  ActivityLogExplorerLabels,
+  ActivityLogProvenanceLabels,
+  ActivityProvenanceModalLabels,
+} from "@orcia/ui";
 
-export interface ActivityProvenanceModalLabels {
-  provenanceTitlePrefix: string;
-  alignmentStatusLabel: string;
-  conformingBadge: string;
-  divergenceBadge: string;
-  eventsCountLabel: string;
-  totalTokensLabel: string;
-  consolidatedCostLabel: string;
-  closeModalAriaLabel: string;
-}
+export type { ActivityProvenanceModalLabels };
 
 export interface ActivityDictionarySection {
   activity: {
@@ -59,6 +54,7 @@ export const ACTIVITY_FR_LABELS: ActivityDictionarySection = {
       emptyStateMessage: "Aucun événement enregistré sur ce périmètre.",
       actorPrefix: "Auteur",
       scopePrefix: "Périmètre",
+      runPrefix: "Exécution :",
       timestampPrefix: "Horodatage",
     },
     provenanceExport: {
@@ -120,6 +116,7 @@ export const ACTIVITY_EN_LABELS: ActivityDictionarySection = {
       emptyStateMessage: "No activity event recorded on this scope.",
       actorPrefix: "Author",
       scopePrefix: "Scope",
+      runPrefix: "Run:",
       timestampPrefix: "Timestamp",
     },
     provenanceExport: {

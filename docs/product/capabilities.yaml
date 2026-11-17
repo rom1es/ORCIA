@@ -371,12 +371,13 @@ capabilities:
       - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
       - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
       - apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx
+      - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
     surfaces:
       route: /activity
       api: audit_ledger.py
       migration: "20261116_0601"
-      ui: ActivityLogExplorerView
-    notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée par déclencheur ERR_AUDIT_LEDGER_IMMUTABLE, traçabilité des tests à chaud ADMIN_CONNECTION_TEST, export JSON/Markdown certifiés conforme run_lock.json et refs CAS SeaweedFS."
+      ui: "ActivityLogExplorerView + ActivityProvenanceModal"
+    notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée contre toute modification ou suppression, traçabilité des tests de connexion à chaud, contrôle anti-IDOR par périmètre et export JSON/Markdown certifié conforme au manifeste d'exécution et aux pièces SeaweedFS."
   - id: CAP-066
     title: Site de présentation /showcase et site statique autonome (sync auto)
     fr: []
@@ -635,7 +636,7 @@ capabilities:
     verification: runtime
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
-      api: "ai_models_hub.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
       ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
@@ -651,12 +652,13 @@ capabilities:
     surfaces:
       route: /finops
       api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py"
-      ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + FinopsRemoteMcpServicesTab + FinopsConnectorQuotaModal + ActivityLogExplorerView + FinopsHumanMasteryTab + CognitiveMetricCard"
-      migration: "20261116_0601, 20261116_0602, 20261116_0604"
+      ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + FinopsBudgetOverrideModal + FinopsRemoteMcpServicesTab + FinopsConnectorQuotaModal + ActivityLogExplorerView + ActivityProvenanceModal + FinopsHumanMasteryTab + CognitiveMetricCard"
+      migration: "20261116_0601, 20261116_0602, 20261116_0604, 20261117_0605"
     tests:
       - tests/unit/test_story_6_1_audit_ledger_core.py
       - tests/unit/test_story_6_1_sql_audit_ledger.py
       - tests/unit/test_story_6_1_outbox_subscriber.py
+      - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
       - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
       - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
       - tests/unit/test_story_6_2_finops_accounting_decimal.py
@@ -674,7 +676,7 @@ capabilities:
       - tests/integration/api/test_story_6_4_connector_quotas_postgres18.py
       - apps/web/src/__tests__/story-6-4-finops-connector-quotas-and-circuit.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
-    notes: "Story 6.1 (audit_ledger append-only), Story 6.2 (Comptabilité FinOps complète), Story 6.3 (Tableau de bord d'impact cognitif, contre-métriques FR-27, alertes de validations expéditives et indice de réversibilité humaine) et Story 6.4 (Télémétrie multi-métriques MCP/A2A, RemoteUsageSanitizer, coupe-circuit isolé par connecteur CIRCUIT_OPEN et onglet Services et agents externes)."
+    notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives) et Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs idempotents, auto-remédiation (UJ-12)
     fr: [FR-29, FR-30]

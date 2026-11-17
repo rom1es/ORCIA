@@ -13,59 +13,21 @@ Strict Hexagonal Boundary (`AD-19 Contract 2`):
 
 from __future__ import annotations
 
-import logging
 from typing import Any
-from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._internal._sql_scope_filter import (
+    build_cognitive_scope_clause,
+    build_time_interval_clause,
+    is_missing_table_error,
+    safe_uuid,
+)
 from orcia_core.audit_finops.finops_models import ScopeType
+from orcia_core.observability.logging import get_logger
 
-logger = logging.getLogger(__name__)
-
-
-def _safe_uuid(val: str | None) -> UUID | None:
-    if not val:
-        return None
-    try:
-        return UUID(val)
-    except (ValueError, TypeError, AttributeError):
-        return None
-
-
-def _build_time_interval_clause(time_window: str, col_name: str) -> str:
-    if time_window == "7D":
-        return f"AND {col_name} >= NOW() - INTERVAL '7 days'"
-    if time_window == "30D":
-        return f"AND {col_name} >= NOW() - INTERVAL '30 days'"
-    if time_window == "90D":
-        return f"AND {col_name} >= NOW() - INTERVAL '90 days'"
-    return ""
-
-
-def _build_scope_clause(
-    scope_type: ScopeType,
-    uuid_val: UUID | None,
-    ws_col: str,
-) -> tuple[str, dict[str, Any]]:
-    if uuid_val is None or scope_type == "GLOBAL":
-        return "", {}
-
-    if scope_type == "WORKSPACE":
-        return f"AND {ws_col} = :scope_id", {"scope_id": uuid_val}
-
-    # TEAM or BU: filter through workspaces owned by the org_unit or its children
-    return (
-        f"""AND {ws_col} IN (
-            SELECT w.id FROM workspaces w
-            WHERE w.owner_org_unit_id = :scope_id
-               OR w.owner_org_unit_id IN (
-                   SELECT ou.id FROM org_units ou WHERE ou.parent_id = :scope_id
-               )
-        )""",
-        {"scope_id": uuid_val},
-    )
+logger = get_logger("orcia.core.audit_finops.cognitive")
 
 
 async def fetch_cognitive_mastery_overview_sql(
@@ -74,6 +36,7 @@ async def fetch_cognitive_mastery_overview_sql(
     scope_type: ScopeType = "GLOBAL",
     scope_id: str | None = None,
     time_window: str = "30D",
+    allowed_workspace_ids: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Aggregate top-level cognitive mastery and human reversibility metrics."""
     default_overview: dict[str, Any] = {
@@ -87,15 +50,23 @@ async def fetch_cognitive_mastery_overview_sql(
     }
     if engine is None:
         return default_overview
+    if allowed_workspace_ids is not None and len(allowed_workspace_ids) == 0:
+        return default_overview
 
-    uuid_val = _safe_uuid(scope_id)
-    scope_clause_ge, params_ge = _build_scope_clause(scope_type, uuid_val, "ge.workspace_id")
-    scope_clause_has, params_has = _build_scope_clause(scope_type, uuid_val, "has.workspace_id")
-    scope_clause_har, params_har = _build_scope_clause(scope_type, uuid_val, "har.workspace_id")
+    uuid_val = safe_uuid(scope_id)
+    scope_clause_ge, params_ge = build_cognitive_scope_clause(
+        scope_type, uuid_val, "ge.workspace_id", allowed_workspace_ids
+    )
+    scope_clause_has, params_has = build_cognitive_scope_clause(
+        scope_type, uuid_val, "has.workspace_id", allowed_workspace_ids
+    )
+    scope_clause_har, params_har = build_cognitive_scope_clause(
+        scope_type, uuid_val, "har.workspace_id", allowed_workspace_ids
+    )
 
-    tw_ge = _build_time_interval_clause(time_window, "ge.evaluated_at")
-    tw_has = _build_time_interval_clause(time_window, "has.signed_at")
-    tw_har = _build_time_interval_clause(time_window, "har.created_at")
+    tw_ge = build_time_interval_clause(time_window, "ge.evaluated_at")
+    tw_has = build_time_interval_clause(time_window, "has.signed_at")
+    tw_har = build_time_interval_clause(time_window, "har.created_at")
 
     # 1. Active framing from human anchor signatures (~200ms per char, min 30s)
     anchors_sql = sa.text(
@@ -172,9 +143,7 @@ async def fetch_cognitive_mastery_overview_sql(
         """
     )
 
-    merged_params: dict[str, Any] = {}
-    if uuid_val is not None:
-        merged_params["scope_id"] = uuid_val
+    merged_params: dict[str, Any] = {**params_ge, **params_has, **params_har}
 
     try:
         async with engine.connect() as conn:
@@ -202,10 +171,19 @@ async def fetch_cognitive_mastery_overview_sql(
                 "uncovered_deviations_count": int(gates_res["uncovered_deviations_count"]),
             }
     except Exception as exc:  # pragma: no cover
-        logger.warning(
-            "fetch_cognitive_mastery_overview_sql failed: %s; returning empty baseline", exc
+        if is_missing_table_error(exc):
+            logger.warning(
+                "fetch_cognitive_mastery_overview_sql_skipped",
+                error_type=type(exc).__name__,
+                detail=str(exc),
+            )
+            return default_overview
+        logger.error(
+            "fetch_cognitive_mastery_overview_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
         )
-        return default_overview
+        raise
 
 
 async def fetch_workflow_cognitive_breakdown_sql(
@@ -214,14 +192,19 @@ async def fetch_workflow_cognitive_breakdown_sql(
     scope_type: ScopeType = "GLOBAL",
     scope_id: str | None = None,
     time_window: str = "30D",
+    allowed_workspace_ids: tuple[str, ...] | None = None,
 ) -> list[dict[str, Any]]:
     """Aggregate per-workflow cognitive metrics and gate behavior for recommendation engine."""
     if engine is None:
         return []
+    if allowed_workspace_ids is not None and len(allowed_workspace_ids) == 0:
+        return []
 
-    uuid_val = _safe_uuid(scope_id)
-    scope_clause, params = _build_scope_clause(scope_type, uuid_val, "wr.workspace_id")
-    tw_clause = _build_time_interval_clause(time_window, "ge.evaluated_at")
+    uuid_val = safe_uuid(scope_id)
+    scope_clause, params = build_cognitive_scope_clause(
+        scope_type, uuid_val, "wr.workspace_id", allowed_workspace_ids
+    )
+    tw_clause = build_time_interval_clause(time_window, "ge.evaluated_at")
 
     stmt = sa.text(
         f"""
@@ -312,5 +295,16 @@ async def fetch_workflow_cognitive_breakdown_sql(
                 )
             return results
     except Exception as exc:  # pragma: no cover
-        logger.warning("fetch_workflow_cognitive_breakdown_sql failed: %s; returning empty", exc)
-        return []
+        if is_missing_table_error(exc):
+            logger.warning(
+                "fetch_workflow_cognitive_breakdown_sql_skipped",
+                error_type=type(exc).__name__,
+                detail=str(exc),
+            )
+            return []
+        logger.error(
+            "fetch_workflow_cognitive_breakdown_sql_error",
+            error_type=type(exc).__name__,
+            detail=str(exc),
+        )
+        raise

@@ -292,3 +292,57 @@ async def test_budget_guard_service_hierarchical_evaluation(
     dec5 = await svc.evaluate_budget_allowance("run-nominal", 0.05)
     assert dec5.is_allowed is True
     assert dec5.circuit_state == "CLOSED"
+
+    # Branch 6: preventive warning threshold (80%) allowed with warning reason,
+    # and TEAM / BU monthly scope budget breach
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.budget_guard_service.fetch_monthly_scope_spend_sql",
+        pytest.importorskip("unittest.mock").AsyncMock(
+            return_value={
+                "workspace_monthly_usd": Decimal("12.00"),
+                "global_monthly_usd": Decimal("42.00"),
+                "org_unit_monthly_usd": {"team-1": Decimal("19.60")},
+                "ancestor_org_unit_ids": ("bu-1", "team-1"),
+            }
+        ),
+    )
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.budget_guard_service.list_scope_budgets_sql",
+        pytest.importorskip("unittest.mock").AsyncMock(
+            return_value=[
+                FinopsScopeBudget(
+                    id="b-warn",
+                    scope_type="GLOBAL",
+                    scope_id=None,
+                    monthly_budget_usd=Decimal("50.00"),
+                    warning_threshold_pct=80,
+                    hard_stop_pct=100,
+                )
+            ]
+        ),
+    )
+    dec6 = await svc.evaluate_budget_allowance("run-warn", 1.00)
+    assert dec6.is_allowed is True
+    assert dec6.circuit_state == "HALF_OPEN"
+    assert "warning" in dec6.reason.lower()
+
+    # Branch 7: TEAM hard_stop_pct < 100 triggers block on monthly org aggregation
+    monkeypatch.setattr(
+        "orcia_core.audit_finops.budget_guard_service.list_scope_budgets_sql",
+        pytest.importorskip("unittest.mock").AsyncMock(
+            return_value=[
+                FinopsScopeBudget(
+                    id="b-team-90",
+                    scope_type="TEAM",
+                    scope_id="team-1",
+                    monthly_budget_usd=Decimal("22.00"),
+                    warning_threshold_pct=70,
+                    hard_stop_pct=90,
+                )
+            ]
+        ),
+    )
+    dec7 = await svc.evaluate_budget_allowance("run-hardstop-90", 0.50)
+    assert dec7.is_allowed is False
+    assert dec7.circuit_state == "CIRCUIT_OPEN"
+    assert "90%" in dec7.reason

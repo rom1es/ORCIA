@@ -6,7 +6,6 @@ Pure asynchronous SQL repository — zero application ORM imports, zero N+1 quer
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any
 from uuid import UUID
 
@@ -26,12 +25,13 @@ from orcia_core.audit_finops.models import (
     AuditLedgerFilterParams,
 )
 from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.observability.logging import get_logger
 from orcia_core.ports.finops_telemetry import (
     AuditLedgerSinkPort,
     FinopsCostLedgerEntry,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger("orcia.core.audit_finops.ledger")
 
 # Re-export for backward compatibility with unit tests
 _parse_row_to_entry = parse_row_to_entry

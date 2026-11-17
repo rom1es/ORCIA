@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { OrciaDialog } from "../RadixDesignSystemPrimitives";
 
 export interface FinopsBudgetOverrideModalProps {
@@ -29,6 +29,12 @@ export function FinopsBudgetOverrideModal({
 }: FinopsBudgetOverrideModalProps): React.ReactElement {
   const [amountUsd, setAmountUsd] = useState<number>(defaultAmountUsd);
   const [reason, setReason] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) return;
+    setAmountUsd(defaultAmountUsd);
+    setReason("");
+  }, [open, runId, defaultAmountUsd]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

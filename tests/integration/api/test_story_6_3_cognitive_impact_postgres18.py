@@ -28,8 +28,10 @@ try:
 except ImportError:
     from testcontainers.postgres import PostgresContainer
 
+from orcia_api.dependencies import initialize_app_services
 from orcia_api.main import create_app
 from orcia_core.audit_finops.cognitive_impact_service import CognitiveImpactService
+from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -89,12 +91,16 @@ async def app_client(
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
     app = create_app()
+    initialize_app_services(app)
+    auth_svc = app.state.auth_service
+    admin_user = auth_svc.get_user_by_id("0192c4e0-0000-7000-8000-000000000601")
+    admin_token = auth_svc._issue_for_user(admin_user, "LOCAL", None).access_token
     transport = ASGITransport(app=app)
     async with AsyncClient(
         transport=transport,
         base_url="http://testserver",
         headers={
-            "X-Orcia-Active-Hat": "PLATFORM_ADMIN",
+            "Authorization": f"Bearer {admin_token}",
             "Accept-Language": "fr",
         },
     ) as client:
@@ -303,7 +309,7 @@ async def test_cognitive_impact_vertical_postgres18(
     assert obs_resp.status_code == 403
     assert "ERR_OBSERVER_MODE_READ_ONLY" in obs_resp.text
 
-    # 8. Vertical Verification: Assert persistence in audit_ledger table via SQL SELECT
+    # 8. Vertical Verification: Assert audit_ledger & workflow_definitions persistence via SELECT
     async with engine.connect() as conn:
         ledger_row = (
             await conn.execute(
@@ -323,6 +329,23 @@ async def test_cognitive_impact_vertical_postgres18(
         assert meta["workflow_id"] == wf_id
         assert meta["suggested_policy"] == "SAMPLING_20_PCT"
 
+        wf_policy = (
+            await conn.execute(
+                sa.text(
+                    "SELECT adaptive_gate_policy FROM workflow_definitions "
+                    "WHERE id = CAST(:wf_id AS uuid)"
+                ),
+                {"wf_id": wf_id},
+            )
+        ).scalar_one()
+        assert wf_policy == "SAMPLING_20_PCT"
+
+    # Unknown recommendation returns strict 404 (MAJOR-01)
+    not_found_resp = await app_client.post(
+        "/api/v1/finops/gates/policy-recommendation/rec-does-not-exist/apply"
+    )
+    assert not_found_resp.status_code == 404
+
     # 9. Reboot Simulation (F5 / Zero-RAM): Instantiate brand-new CognitiveImpactService
     fresh_service = CognitiveImpactService(engine=engine)
     fresh_dash = await fresh_service.get_dashboard(scope_id=ws_id, scope_type="WORKSPACE")
@@ -331,3 +354,137 @@ async def test_cognitive_impact_vertical_postgres18(
     assert reboot_rec.status == "APPLIED"
     assert reboot_rec.applied_by is not None
     assert reboot_rec.applied_at is not None
+
+
+@pytest.mark.asyncio
+async def test_cognitive_recommendations_workspace_isolation_postgres18(
+    database_url: str,
+    app_client: AsyncClient,
+) -> None:
+    """Verify applied gate recommendations are isolated by workspace (`BLOCKING-RES-01`)."""
+    engine = create_async_engine(database_url)
+    org_a = new_uuid7_str()
+    org_b = new_uuid7_str()
+    ws_a = new_uuid7_str()
+    ws_b = new_uuid7_str()
+    user_b_id = new_uuid7_str()
+    wf_a = new_uuid7_str()
+    run_a = new_uuid7_str()
+    step_a = new_uuid7_str()
+
+    async with engine.begin() as conn:
+        await conn.execute(
+            sa.text(
+                "INSERT INTO org_units (id, slug, name, unit_type, member_user_ids_jsonb) VALUES "
+                "(CAST(:oa AS uuid), 'team-cog-a', 'Team Cog A', 'TEAM', '[]'::jsonb), "
+                "(CAST(:ob AS uuid), 'team-cog-b', 'Team Cog B', 'TEAM', CAST(:mb AS jsonb))"
+            ),
+            {"oa": org_a, "ob": org_b, "mb": json.dumps([user_b_id])},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO users ("
+                "  id, email, display_name, auth_mode, human_profile_archetype, "
+                "  platform_role, primary_org_unit_id, is_active"
+                ") VALUES ("
+                "  CAST(:uid AS uuid), 'bob.cog@orcia.fr', 'Bob B', 'LOCAL', 'TECH_LEAD', "
+                "  'CONTRIBUTOR', CAST(:ob AS uuid), TRUE"
+                ")"
+            ),
+            {"uid": user_b_id, "ob": org_b},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO workspaces (id, slug, name, owner_org_unit_id) VALUES "
+                "(CAST(:wa AS uuid), 'ws-cog-a', 'Workspace A', CAST(:oa AS uuid)), "
+                "(CAST(:wb AS uuid), 'ws-cog-b', 'Workspace B', CAST(:ob AS uuid))"
+            ),
+            {"wa": ws_a, "oa": org_a, "wb": ws_b, "ob": org_b},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO workflow_definitions (id, uri, version, sha256, workspace_id) "
+                "VALUES (CAST(:wf AS uuid), 'orcia://wf/cog-a', '1.0.0', "
+                "        'sha-a', CAST(:wa AS uuid))"
+            ),
+            {"wf": wf_a, "wa": ws_a},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO workflow_runs "
+                "(id, run_key, workspace_id, workflow_def_id, root_run_id, criticality, status) "
+                "VALUES (CAST(:rid AS uuid), 'run-cog-a', CAST(:wa AS uuid), "
+                "        CAST(:wf AS uuid), CAST(:rid AS uuid), 'STANDARD', 'COMPLETED')"
+            ),
+            {"rid": run_a, "wa": ws_a, "wf": wf_a},
+        )
+        await conn.execute(
+            sa.text(
+                "INSERT INTO step_executions ("
+                "  id, step_execution_key, run_id, step_key, step_index, "
+                "  step_type, status, attempt_count"
+                ") VALUES (CAST(:sid AS uuid), 'step-cog-a', CAST(:rid AS uuid), "
+                "          'step-1', 1, 'AGENT', 'COMMITTED', 1)"
+            ),
+            {"sid": step_a, "rid": run_a},
+        )
+        for _ in range(5):
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO gate_evaluations ("
+                    "  id, workspace_id, run_id, step_execution_id, step_key, gate_type, "
+                    "  status, score, pattern_drift_passed, review_duration_ms, "
+                    "  fast_approval_warning"
+                    ") VALUES ("
+                    "  CAST(:gid AS uuid), CAST(:wa AS uuid), CAST(:rid AS uuid), "
+                    "  CAST(:sid AS uuid), 'step-1', 'HUMAN', 'PASS', 1.0, TRUE, 3000, TRUE"
+                    ")"
+                ),
+                {"gid": new_uuid7_str(), "wa": ws_a, "rid": run_a, "sid": step_a},
+            )
+
+    rec_id = f"rec-{wf_a}"
+    apply_resp = await app_client.post(f"/api/v1/finops/gates/policy-recommendation/{rec_id}/apply")
+    assert apply_resp.status_code == 200, apply_resp.text
+
+    # Audit ledger entry MUST be attributed to ws_a (never workspace_id IS NULL / GLOBAL)
+    async with engine.connect() as conn:
+        row = (
+            await conn.execute(
+                sa.text(
+                    "SELECT workspace_id::text, scope_path FROM audit_ledger "
+                    "WHERE metadata_jsonb->>'recommendation_id' = :rid"
+                ),
+                {"rid": rec_id},
+            )
+        ).fetchone()
+        assert row is not None
+        assert row[0] == ws_a
+        assert row[1] == f"WORKSPACE/{ws_a}"
+
+    app = app_client._transport.app  # type: ignore[attr-defined]
+    auth_svc = app.state.auth_service
+    user_b = UserIdentity(
+        id=user_b_id,
+        email="bob.cog@orcia.fr",
+        display_name="Bob B",
+        auth_mode="LOCAL",
+        platform_role="CONTRIBUTOR",
+        roles=("CONTRIBUTOR",),
+        primary_org_unit_id=org_b,
+        human_profile_archetype="TECH_LEAD",
+    )
+    auth_svc.register_user(user_b)
+    token_b = auth_svc._issue_for_user(user_b, "LOCAL", None).access_token
+
+    # User B querying Workspace B or GLOBAL must NEVER see recommendation from Workspace A
+    for url in (
+        f"/api/v1/finops/cognitive-impact?scope_type=WORKSPACE&scope_id={ws_b}",
+        "/api/v1/finops/cognitive-impact?scope_type=GLOBAL",
+    ):
+        resp_b = await app_client.get(url, headers={"Authorization": f"Bearer {token_b}"})
+        assert resp_b.status_code == 200, resp_b.text
+        rec_ids = [r["id"] for r in resp_b.json()["recommendations"]]
+        assert rec_id not in rec_ids, f"Cross-workspace leak detected at {url}: {rec_ids}"
+
+    await engine.dispose()

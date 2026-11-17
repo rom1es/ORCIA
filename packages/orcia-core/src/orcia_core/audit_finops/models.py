@@ -100,3 +100,5 @@ class AuditLedgerFilterParams:
     date_to: str | None = None
     limit: int = 100
     offset: int = 0
+    allowed_workspace_ids: tuple[str, ...] | None = None
+    include_null_workspace: bool = False

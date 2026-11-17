@@ -1,23 +1,19 @@
-"""FastAPI router for Story 6.2: Complete FinOps Accounting, Baselines & Budget Overrides.
-
-Implements (`AD-10`, `AD-12`, `AD-19`, `AD-21`, `FR-26`, `SM-1`, `Story 6.2`):
-- `GET /api/v1/finops/dashboard`: Consolidated FinOps dashboard with 3-component equation
-- `PUT /api/v1/finops/budgets`: Configure hierarchical scope budget limits (protected)
-- `PUT /api/v1/finops/baselines`: Register pre-automation manual reference baselines (protected)
-- `POST /api/v1/runs/{run_id}/budget-override`: Approve budget extension and awaken paused runs
-"""
+"""FastAPI router for Story 6.2: Complete FinOps Accounting, Baselines & Budget Overrides."""
 
 from __future__ import annotations
 
 from decimal import Decimal
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
-from orcia_api.dependencies import (
-    get_auth_service,
-    get_finops_accounting_service,
+from orcia_api.dependencies import get_finops_accounting_service
+from orcia_api.routers._finops_auth_guards import (
+    enforce_scope_level_mutation,
+    resolve_finops_read_scope,
+    resolve_run_workspace_server_side,
+    resolve_workflow_def_workspace_server_side,
+    validate_uuid,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.routers.finops_cognitive import router as cognitive_router
@@ -36,9 +32,8 @@ from orcia_api.schemas.finops import (
     WorkflowBaselineResponse,
 )
 from orcia_core.audit_finops.finops_accounting_service import FinopsAccountingService
-from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
+from orcia_core.permissions.errors import ResourceNotFoundError, ScopeAccessDeniedError
 from orcia_core.permissions.models import UserIdentity
-from orcia_kernel.errors import ValidationDomainError
 
 router = APIRouter(tags=["finops"])
 router.include_router(cognitive_router)
@@ -48,52 +43,13 @@ CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 FinopsServiceDep = Annotated[FinopsAccountingService, Depends(get_finops_accounting_service)]
 
 
-def _validate_uuid(val: str, field_name: str) -> str:
-    try:
-        UUID(val)
-        return val
-    except (ValueError, TypeError, AttributeError) as err:
-        raise ValidationDomainError(
-            detail_override=f"Invalid UUID format for '{field_name}': {val!r}"
-        ) from err
-
-
-def _enforce_finops_mutation_guard(
-    request: Request,
-    user: UserIdentity,
-    workspace_id: str | None = None,
-) -> None:
-    """Enforce read-only observer protection and workspace scope access on FinOps mutations."""
-    path = str(request.url.path)
-    access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
-    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
-    observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
-
-    if (
-        access_mode_hdr == "READ_ONLY_OBSERVER"
-        or active_hat in ("READ_ONLY_OBSERVER", "OBSERVER")
-        or observer_hdr in ("1", "true", "yes")
-        or user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER")
-    ):
-        raise ObserverModeReadOnlyError(instance=path)
-
-    if workspace_id is not None:
-        auth_svc = get_auth_service(request)
-        ws = auth_svc.evaluator.get_workspace(workspace_id)
-        if ws is not None:
-            access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
-            if access is None:
-                raise ScopeAccessDeniedError(instance=path)
-            if access.access_mode == "READ_ONLY_OBSERVER":
-                raise ObserverModeReadOnlyError(instance=path)
-
-
 @router.get(
     "/api/v1/finops/dashboard",
     response_model=FinopsBreakdownResponse,
     summary="Get consolidated FinOps dashboard metrics, processes, tiers, and baselines",
 )
 async def get_finops_dashboard(
+    request: Request,
     user: CurrentUserDep,
     svc: FinopsServiceDep,
     scope_type: Annotated[
@@ -101,10 +57,14 @@ async def get_finops_dashboard(
     ] = "GLOBAL",
     scope_id: Annotated[str | None, Query(description="Target scope UUID")] = None,
 ) -> FinopsBreakdownResponse:
-    _ = user
     if scope_id is not None:
-        _validate_uuid(scope_id, "scope_id")
-    data = await svc.get_breakdown(scope_type=scope_type, scope_id=scope_id)
+        validate_uuid(scope_id, "scope_id")
+    allowed_ws = await resolve_finops_read_scope(request, user, scope_type, scope_id)
+    data = await svc.get_breakdown(
+        scope_type=scope_type,
+        scope_id=scope_id,
+        allowed_workspace_ids=allowed_ws,
+    )
     ov = data.overview
     return FinopsBreakdownResponse(
         overview=FinopsOverviewResponse(
@@ -143,6 +103,9 @@ async def get_finops_dashboard(
                 ttm_reduction_pct=float(p.ttm_reduction_pct),
                 active_budget_override=p.active_budget_override,
                 paused_runs_count=p.paused_runs_count,
+                sample_paused_run_id=p.sample_paused_run_id,
+                paused_reason=p.paused_reason,
+                has_declared_baseline=p.has_declared_baseline,
             )
             for p in data.processes
         ],
@@ -200,9 +163,9 @@ async def update_scope_budget(
     svc: FinopsServiceDep,
 ) -> ScopeBudgetResponse:
     if payload.scope_id is not None:
-        _validate_uuid(payload.scope_id, "scope_id")
-    _enforce_finops_mutation_guard(
-        request, user, payload.scope_id if payload.scope_type == "WORKSPACE" else None
+        validate_uuid(payload.scope_id, "scope_id")
+    await enforce_scope_level_mutation(
+        request, user, scope_type=payload.scope_type, scope_id=payload.scope_id
     )
     res = await svc.set_scope_budget(
         scope_type=payload.scope_type,
@@ -234,10 +197,19 @@ async def set_workflow_baseline(
     user: CurrentUserDep,
     svc: FinopsServiceDep,
 ) -> WorkflowBaselineResponse:
-    _validate_uuid(payload.workflow_definition_id, "workflow_definition_id")
+    validate_uuid(payload.workflow_definition_id, "workflow_definition_id")
     if payload.scope_id is not None:
-        _validate_uuid(payload.scope_id, "scope_id")
-    _enforce_finops_mutation_guard(request, user, payload.scope_id)
+        validate_uuid(payload.scope_id, "scope_id")
+    server_ws_id = await resolve_workflow_def_workspace_server_side(
+        request, payload.workflow_definition_id
+    )
+    effective_ws_id = payload.scope_id or server_ws_id
+    await enforce_scope_level_mutation(
+        request,
+        user,
+        scope_type="WORKSPACE" if effective_ws_id is not None else "GLOBAL",
+        scope_id=effective_ws_id,
+    )
     res = await svc.set_workflow_baseline(
         workflow_definition_id=payload.workflow_definition_id,
         scope_id=payload.scope_id,
@@ -274,15 +246,27 @@ async def approve_run_budget_override(
     svc: FinopsServiceDep,
     run_id: Annotated[str, Path(description="Target paused workflow run UUID")],
 ) -> BudgetOverrideResponse:
-    _validate_uuid(run_id, "run_id")
-    _enforce_finops_mutation_guard(request, user, payload.workspace_id)
+    validate_uuid(run_id, "run_id")
+    if payload.workspace_id is not None:
+        validate_uuid(payload.workspace_id, "workspace_id")
+    resolved_ws_id = await resolve_run_workspace_server_side(request, run_id)
+    if resolved_ws_id is None:
+        raise ResourceNotFoundError(instance=str(request.url.path))
+    if payload.workspace_id is not None and payload.workspace_id != resolved_ws_id:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    await enforce_scope_level_mutation(
+        request,
+        user,
+        scope_type="WORKSPACE",
+        scope_id=resolved_ws_id,
+    )
     override = await svc.approve_budget_override(
         run_id=run_id,
         requested_by=user.id,
         approved_by=user.id,
         override_amount_usd=Decimal(str(payload.override_amount_usd)),
         reason=payload.reason,
-        workspace_id=payload.workspace_id,
+        workspace_id=resolved_ws_id,
         trace_id=getattr(request.state, "trace_id", "00000000000000000000000000000000"),
     )
     return BudgetOverrideResponse(

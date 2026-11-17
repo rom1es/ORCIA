@@ -48,6 +48,12 @@ export const HUMAN_MASTERY_FR_LABELS: HumanMasteryLabels = {
     statusCol: "Statut",
     statusNormal: "Normal",
     statusAlert: "Attention",
+    criticalityLabels: {
+      HIGH_CRITICAL: "Critique élevée",
+      CRITICAL: "Critique",
+      STANDARD: "Standard",
+      LOW: "Faible",
+    },
   },
   appliedBadge: "Ajustement appliqué ✓",
 };
@@ -92,6 +98,12 @@ export const HUMAN_MASTERY_EN_LABELS: HumanMasteryLabels = {
     statusCol: "Status",
     statusNormal: "Normal",
     statusAlert: "Warning",
+    criticalityLabels: {
+      HIGH_CRITICAL: "High criticality",
+      CRITICAL: "Critical",
+      STANDARD: "Standard",
+      LOW: "Low",
+    },
   },
   appliedBadge: "Adjustment applied ✓",
 };
