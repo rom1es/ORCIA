@@ -24,6 +24,47 @@ SYNC_SCRIPT = Path(__file__).resolve().parent / "sync_site_catalog.py"
 REQUIRED_FIELDS = ("id", "title", "origin", "origin_ref", "status")
 ORIGINS = {"epic", "adhoc"}
 STATUSES = {"live", "partial", "planned"}
+KINDS = {"feature", "foundation"}
+UJ_PATTERN = re.compile(r"UJ-[1-9]\d?")
+
+
+def _validate_kind_fields(cap_id: str, cap: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    kind = cap.get("kind")
+    if kind not in KINDS:
+        errors.append(f"{cap_id}: kind `{kind}` manquant ou invalide ({sorted(KINDS)})")
+        return errors
+    if kind == "foundation":
+        reason = cap.get("e2e_exempt_reason")
+        if not isinstance(reason, str) or not reason.strip():
+            errors.append(
+                f"{cap_id}: kind `foundation` exige un champ non vide `e2e_exempt_reason`"
+            )
+        return errors
+
+    ujs = cap.get("uj")
+    if not isinstance(ujs, list) or not ujs:
+        errors.append(f"{cap_id}: kind `feature` exige une liste non vide `uj` (UJ-1..UJ-99)")
+    else:
+        for uj in ujs:
+            if not isinstance(uj, str) or not UJ_PATTERN.fullmatch(uj):
+                errors.append(f"{cap_id}: UJ `{uj}` invalide (attendu UJ-1..UJ-99)")
+
+    db_tables = cap.get("db_tables")
+    has_db_tables = (
+        isinstance(db_tables, list)
+        and len(db_tables) > 0
+        and all(isinstance(t, str) and bool(t.strip()) for t in db_tables)
+    )
+    read_only = cap.get("read_only_surface") is True
+    if not has_db_tables and not read_only:
+        errors.append(
+            f"{cap_id}: kind `feature` exige `db_tables` (liste non vide) "
+            "ou `read_only_surface: true`"
+        )
+    elif db_tables is not None and not has_db_tables:
+        errors.append(f"{cap_id}: `db_tables` doit être une liste non vide de noms de tables")
+    return errors
 
 
 def load_registry(path: Path = REGISTRY_PATH) -> dict[str, Any]:
@@ -57,6 +98,7 @@ def validate_registry(
             errors.append(f"{cap_id}: origin `{cap['origin']}` invalide ({sorted(ORIGINS)})")
         if cap.get("status") and cap["status"] not in STATUSES:
             errors.append(f"{cap_id}: status `{cap['status']}` invalide ({sorted(STATUSES)})")
+        errors.extend(_validate_kind_fields(cap_id, cap))
         for test_path in cap.get("tests", []) or []:
             if not (repo_root / str(test_path)).exists():
                 errors.append(f"{cap_id}: test référencé introuvable `{test_path}`")

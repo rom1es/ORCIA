@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 163,
+    "techLeadReportsCount": 164,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 50
@@ -529,6 +529,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.1",
+      "reportFile": "21-1-classification-capacites-kind-uj-et-tables-pg18-tech-lead-report.md",
+      "domain": "Classification des 65 Capacités (kind: feature \\",
+      "summary": "foundation, uj, db_tables, read_only_surface) & Validation capabilities_registry.py"
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Epic 20 VALIDATE (CAP-010, CAP-030, CAP-034, CAP-036, CAP-202)",
