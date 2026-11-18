@@ -14,10 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 170,
+    "techLeadReportsCount": 171,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 29,
+    "verifiedCapabilitiesCount": 14,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
     "e2eCoveredCapabilitiesCount": 62
@@ -532,6 +532,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.8",
+      "reportFile": "21-8-campagne-e2e-captures-bilan-et-analyse-croisee-sally-winston-tech-lead-report.md",
+      "domain": "Campagne E2E Intégrale (110 cas / 24 specs), Captures PNG (110/110), Audit Croisé Sally × Winston (REM-01..REM-34) & Vérité capabilities.yaml",
+      "summary": "Exécution sans retry (--retries=0 --max-failures=0) de la campagne Playwright bi-serveur PostgreSQL 18 (47 passed, 36 failed, 11 timedOut, 16 skipped), archivage de playwright-results.json, manifest.jsonl et 110/110 captures PNG, consolidation synthese-remediation-sally-winston-epic-21.md (34 chantiers REM-01..REM-34 sur 4 vagues couvrant 100 % des 47 échecs E2E, 49 captures Sally et constats Winston), mise à jour honnête de capabilities.yaml (11 feature + 3 foundation en runtime, 51 feature en failed_e2e avec e2e_remediation_ref: \"epic-22\"), pnpm site:sync && pnpm site:check 0 erreur."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.7 (Lot C)",
