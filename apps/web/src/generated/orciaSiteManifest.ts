@@ -14,13 +14,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 168,
+    "techLeadReportsCount": 169,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 29,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
-    "e2eCoveredCapabilitiesCount": 39
+    "e2eCoveredCapabilitiesCount": 50
   },
   "activeRoutes": [
     "/",
@@ -532,6 +532,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.6 (Lot B)",
+      "reportFile": "21-6-e2e-lot-b-sources-codegraph-dna-ontologie-catalogue-packs-wizards-mcp-tech-lead-report.md",
+      "domain": "Specs E2E Lot B (17 & 18), Helper workspaceAndCatalogHelpers.ts, Audit data-testid/PG18 & capabilities.yaml",
+      "summary": "Préparation 21.6-impl (Sections 1 & 2, workspaceAndCatalogHelpers.ts, audit data-testid / SQL vs mémoire / schémas PG18, mise à jour capabilities.yaml) — Section 3 à compléter par 21.6-test."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.5 (Lot A)",
