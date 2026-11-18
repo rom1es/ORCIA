@@ -7,7 +7,7 @@
 - **Story / Clé Sprint** : `22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats` (`Epic 22` — Vague 0)
 - **Capacité(s)** : `CAP-001`, `CAP-002`, `CAP-010`, `CAP-041`, `CAP-051`, `CAP-052`, `CAP-053`, `CAP-054`, `CAP-058`, `CAP-063`, `CAP-064`, `CAP-066`, `CAP-069`, `CAP-081`, `CAP-082`, `CAP-084`, `CAP-092`, `CAP-140`, `CAP-190`, `CAP-200`, `CAP-203` (ancrages `failed_e2e` sur `22-2`) — classification : `feature`
 - **Auteur / Contexte** : `bmad-architect-worker` (initialisation pré-implémentation Story 21.9) — Résolution des chantiers **`REM-03`**, **`REM-04`**, **`REM-05`**, **`REM-06`**, **`REM-16`**, **`REM-24`** et **`REM-25`** (`synthese-remediation-sally-winston-epic-21.md`). Couvre `FR-1`, `FR-3`, `FR-8`, `FR-20`, `FR-21`, `FR-29`, `FR-31`, `FR-32`, `FR-34`, `FR-35`, `AD-22`, `UX-DR1`, `UX-DR16`, `UJ-5`, `UJ-9`, `UJ-10`, `UJ-11`, `UJ-12`, `UJ-13`, `UJ-14`, `UJ-15`, `UJ-16`, `UJ-18`, `UJ-19`, `UJ-20`.
-- **Commits associés** : `En attente d'implémentation (initialisé sur 575cf4a)`
+- **Commits associés** : `fix(epic-22): story 22.2 - portal modals, compile tailwind v4, purge display none and align routes` (branche `feat/epic-22-remediation-pg18-direction-c`)
 
 ---
 
@@ -39,15 +39,16 @@
   - `21-assistant` #2 (`2` fails) : [Help Desktop](../e2e-campaign-epic-21/screenshots/21-assistant-citations-v5-audit-help-showcase/desktop-cockpit--centre-d-aide-contextuelle-lien-organisationnel-colonne-laterale-et-vitrine-produit-surv--failed.png) · [Help Mobile](../e2e-campaign-epic-21/screenshots/21-assistant-citations-v5-audit-help-showcase/mobile-companion--centre-d-aide-contextuelle-lien-organisationnel-colonne-laterale-et-vitrine-produit-surv--failed.png)
 
 ### 1.2 Exploration, Analyse d'Impact GitNexus, Factorisation & Dette Technique
-- **Analyse d'Impact GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`)** :
-  - `OrciaDialog` (`packages/ui/src/primitives/RadixDesignSystemPrimitives.tsx:86-126`) : **`impactedCount: 281`**, risque **`CRITICAL`** (`direct: 118`, `d=2: 122`, `d=3: 41`, `processes_affected: 33`, `modules_affected: 18`).
-  - `UserSettingsModalDialog` (`packages/ui/src/primitives/UserSettingsModalDialog.tsx:71-278`) : **`impactedCount: 366`**, risque **`CRITICAL`** (`direct: 188`, `d=2: 137`, `d=3: 41`, `processes_affected: 51`, `modules_affected: 20`).
-  - `FourZoneDirectionCShell` (`packages/ui/src/primitives/FourZoneDirectionCShell.tsx:137-339`) : **`impactedCount: 281`**, risque **`CRITICAL`** (`direct: 118`, `d=2: 122`, `d=3: 41`).
-- **Tables PostgreSQL 18 associées** : `workspace_exception_waivers`, `kb_documents`, `tripartite_trace_edges`, `catalog_items`, `catalog_acl_entries`, `workflow_definitions`, `workflow_triggers`, `iam_accounts`, `org_units`, `users`, `user_preferences`, `user_mcp_tokens`, `llm_model_endpoints`, `workspace_llm_tier_mappings`, `enterprise_connectors`.
+- **Analyse d'Impact GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`, `direction: "upstream"`)** :
+  - `OrciaDialog` (`packages/ui/src/primitives/RadixDesignSystemPrimitives.tsx:86-126`) : **`impactedCount: 32`** (`direct: 16`, `d=2: 10`, `d=3: 6`, `processes_affected: 2` — `WorkflowFiveBlocksCanvas`, `WorkspaceSourceAttachModal`, `modules_affected: 4`), risque **`HIGH`**.
+  - `UserSettingsModalDialog` (`packages/ui/src/primitives/UserSettingsModalDialog.tsx:71-278`) : **`impactedCount: 3`** (`direct: 1`, `d=2: 1`, `d=3: 1`, `processes_affected: 1` — `InnerShellContainer`, `modules_affected: 1`), risque **`LOW`**.
+  - `FourZoneDirectionCShell` (`packages/ui/src/primitives/FourZoneDirectionCShell.tsx:137-339`) : **`impactedCount: 3`** (`direct: 1`, `d=2: 1`, `d=3: 1`, `processes_affected: 1` — `InnerShellContainer`, `modules_affected: 1`), risque **`LOW`**.
+  - `resolve_evaluator_target_node` (`apps/api/src/orcia_api/routers/_org_units_delegation_helpers.py:84-96`) : **`impactedCount: 5`** (`direct: 3`, `d=2: 2`, `processes_affected: 3` — `invite_org_unit_user`, `delete_org_unit`, `patch_org_unit`, `modules_affected: 1`), risque **`HIGH`**.
+- **Tables PostgreSQL 18 associées** : `workspace_exception_waivers` (`0026_story_11_1`), `kb_documents`, `tripartite_trace_edges`, `catalog_items`, `catalog_acl_entries`, `workflow_definitions`, `workflow_triggers`, `iam_accounts`, `org_units`, `users`, `user_preferences`, `user_mcp_tokens`, `llm_model_endpoints`, `workspace_llm_tier_mappings`, `enterprise_connectors`.
 - **Opportunités de Factorisation & Volumétrie** :
-  - Unifier 100 % des dialogues sur `OrciaDialog` (`header / scrollable body / sticky footer`) avec tokens `--z-overlay: 1000` et `--z-dialog: 1010` ; supprimer les styles inline de modale faits à la main.
-  - Découper `features/workspaces/index.tsx` et `features/catalog/index.tsx` sous `< 350` lignes en séparant `/catalog` (`/agents` vs `/catalog`).
-  - Réaligner `zero-dead-buttons-and-silent-catches-audit.test.tsx` pour tester les vraies routes TanStack plutôt que d'obliger les devs à cacher des doublons `display: none`.
+  - Unifier 100 % des dialogues sur `OrciaDialog` / `DialogPrimitive.Portal` (`header / scrollable body / sticky footer`) avec tokens `--z-overlay: 1000` et `--z-dialog: 1010` ; supprimer les styles inline de modale faits à la main.
+  - Découper les fichiers approchant ou dépassant `380–400` L : `UpstreamChallengeRewindModal.tsx` (`440` L), `AiModelConfigModal.tsx` (`399` L), `features/workspaces/index.tsx` (`427` L), et `workspace_governance_and_rebaser.py` (`543` L) en extrayant l'adaptateur SQL `sql_workspace_waivers.py` (`< 250` L) et des sous-composants/hooks dédiés.
+  - Réaligner `zero-dead-buttons-and-silent-catches-audit.test.tsx` (et les quelques tests unitaires ciblés à signaler à `22.2-test`) pour tester les vraies routes TanStack plutôt que d'obliger les devs à cacher des doublons `display: none`.
 
 ---
 
@@ -57,28 +58,30 @@
 - Aucune nouvelle table requise (`workspace_exception_waivers` `0026`, `workflow_triggers` `20261117_0702`, `catalog_*` `0003` existent déjà). Vérifier la compatibilité des routes PG18 pour les waivers (`dna_and_glossary.py` / `workspace_governance.py`).
 
 ### 2.2 Noyau Métier Hexagonal, Orchestration & Workers (`packages/orcia-core/`, `apps/worker/`)
-- Aucune logique UI dans `orcia_core` ; pour `REM-04` (`workspace_exception_waivers`), vérifier que le service d'acquittement de dérogations d'espace est bien relié au repository SQL `0026` dans le Composition Root.
+- Créer `packages/orcia-core/src/orcia_core/orchestration/_internal/sql_workspace_waivers.py` (`< 250` L) pour lire (`SELECT`) et insérer/mettre à jour (`INSERT ... ON CONFLICT`) dans `workspace_exception_waivers` (`0026_story_11_1`) via `AsyncSession`, en respectant strictement `AD-19` (`lint-imports`).
+- Câbler ce dépôt SQL dans `WorkspaceGovernanceAndArtifactRoutingService` (`packages/orcia-core/src/orcia_core/orchestration/workspace_governance_and_rebaser.py`, maintenu `< 400` L en extrayant le pilote workflow dans un helper si nécessaire) via `session_factory` injectée depuis `dependencies/workspace_and_packs.py` (`request.app.state.session_maker`).
+- Dans `packages/orcia-core/src/orcia_core/permissions/org_delegation_invitations.py` & `org_delegation_scope.py` : autoriser `PLATFORM_ADMIN` à inviter sur l'unité racine `ENTERPRISE` lorsque c'est explicitement l'unité cible (en autorisant uniquement les rôles compatibles racine sans escalade et en conservant strictement le refus pour `BU_LEAD`/`TEAM_LEAD` hors périmètre).
 
 ### 2.3 Couche Backend API, Sécurité & Contrats (`apps/api/`, `packages/api-client/`)
-- `apps/api/src/orcia_api/schemas/settings_and_studio.py` (`SecretInputPayload`) : conserver `plaintext_value` (`extra="forbid"`) comme contrat canonique ; aligner `20-process-studio.spec.ts` et vérifier que les appels frontend passent par les types `@orcia/api-client`.
-- `POST /api/v1/org-units/invite-user` : autoriser l'invitation sur l'unité racine (`ENTREPRISE`) si l'admin n'a pas encore créé d'équipe fille (`REM-16`), en conservant strictement la garde anti-escalade et le scope `BU_LEAD`/`TEAM_LEAD`.
-- Câbler `POST /api/v1/workspaces/{ws_id}/waivers` (ou route gouvernance `workspace_governance.py`) sur PG18 pour remplacer le `useState` local `activeWaivers` (`REM-04`).
+- `apps/api/src/orcia_api/schemas/settings_and_studio.py` (`SecretInputPayload`) : conserver `plaintext_value` (`extra="forbid"`) comme contrat canonique ; vérifier la conformité OpenAPI et régénérer le SDK via `.venv/bin/python scripts/export_openapi.py`.
+- `apps/api/src/orcia_api/routers/org_unit_invitations.py` & `_org_units_delegation_helpers.py` : autoriser `resolve_evaluator_target_node(..., allow_enterprise_for_admin=...)` pour `POST /api/v1/org-units/invite-user` lorsque l'appelant est `PLATFORM_ADMIN` (tout en conservant strictement le blocage pour `delete_org_unit` / `patch_org_unit` et pour `BU_LEAD`/`TEAM_LEAD`).
+- `apps/api/src/orcia_api/routers/workspace_governance.py` : exposer `GET /api/v1/workspaces/{workspace_id}/exception-waivers` et persister via `POST /api/v1/workspaces/{workspace_id}/exception-waivers` (ainsi que le chargement dans `GET /api/v1/workspaces/{workspace_id}/five-tabs`) en PostgreSQL 18 avec validation UUID et garde d'accès (`REM-04`).
+- Ajouter les méthodes client typées dans `packages/api-client/src/domains/workspaceGovernance.ts` (exposées sur `createOrciaApiClient`) pour `listWorkspaceExceptionWaivers`, `registerWorkspaceExceptionWaiver` et `getWorkspaceFiveTabs`.
 
 ### 2.4 Interface Utilisateur & Expérience (`packages/ui/`, `apps/web/`)
 - **Tailwind CSS v4 + Portals `OrciaDialog` (`REM-03`)** :
-  - Activer `@tailwindcss/vite` dans `apps/web/vite.config.ts` avec `@source "../../packages/ui/src"` dans l'entrée CSS ; définir `--z-overlay: 1000`, `--z-dialog: 1010`, `--z-popover: 1020`, `--z-tooltip: 1030` dans `packages/ui/src/styles/tokens.css`.
-  - Structurer `.orcia-ds-dialog-content` en colonne flex (`max-height: min(90vh, 760px); overflow: hidden;`) avec `.orcia-ds-dialog-body` scrollable (`flex: 1 1 auto; min-height: 0; overflow-y: auto;`) et `.orcia-ds-dialog-footer` sticky (`flex-shrink: 0;`).
-  - Migrer `UserSettingsModalDialog`, `FirstBootAdminSetupModal`, `AiModelConfigModal` et `UpstreamChallengeRewindModal` sur `<OrciaDialog>` (`DialogPrimitive.Portal` vers `document.body`).
-  - Supprimer la validation rouge prématurée sur `AiModelConfigModal` avant interaction (`touched` ou clic Enregistrer).
+  - Créer `apps/web/viteTailwindV4Plugin.ts` utilisant `tailwindcss/dist/lib.mjs` (`compile('@import "tailwindcss/theme";\n@import "tailwindcss/utilities";', ...)` **sans** `preflight`) scannant `apps/web/src/**/*.{ts,tsx}` et `packages/ui/src/**/*.{ts,tsx}`, activé dans `apps/web/vite.config.ts` et importé dans `apps/web/src/main.tsx`.
+  - Définir `--z-overlay: 1000`, `--z-dialog: 1010`, `--z-popover: 1020`, `--z-tooltip: 1030` dans `packages/ui/src/styles/tokens.css`, et structurer `.orcia-ds-dialog-content` (`z-index: var(--z-dialog); display: flex; flex-direction: column; max-height: min(90vh, 760px); overflow: hidden;`) avec `.orcia-ds-dialog-body` (`flex: 1 1 auto; min-height: 0; overflow-y: auto;`) et `.orcia-ds-dialog-footer` (`flex-shrink: 0;`).
+  - Migrer `UserSettingsModalDialog`, `FirstBootAdminSetupModal`, `CommandPaletteModal`, `UpstreamChallengeRewindModal` (découpé sous `< 380` L) sur `OrciaDialog` / `DialogPrimitive.Portal` vers `document.body`, et structurer `AiModelConfigModal` (découpé sous `< 380` L) avec `.orcia-ds-dialog-body` + `.orcia-ds-dialog-footer` sticky sans afficher d'erreur de clé API/découverte avant saisie/interaction (`touched` ou clic Enregistrer).
 - **Purge `display: none` (`REM-04`)** :
-  - Supprimer les 4 blocs `style={{ display: "none" }}` dans `features/catalog/index.tsx`, `features/workspaces/index.tsx`, `InboxAuxiliaryPanels.tsx` et `FourZoneSidebarRail.tsx`.
-  - Monter `WorkspaceFiveTabsAndExternalRebaseView` (5 sous-onglets canoniques visibles) et `DnaStarlarkCompilerAndGlossaryLifecycleView` visible dans l'onglet Glossaire & Règles Métiers de `/spaces` et `/workspaces/$wsId`, en câblant `onRegisterWaiver` sur PG18.
+  - Supprimer les 4 blocs `style={{ display: "none" }}` dans `features/catalog/index.tsx`, `features/workspaces/index.tsx` (découpé sous `< 350` L), `InboxAuxiliaryPanels.tsx` et `FourZoneSidebarRail.tsx`.
+  - Rendre `WorkspaceFiveTabsAndExternalRebaseView` et `DnaStarlarkCompilerAndGlossaryLifecycleView` visibles sur `/spaces` et `/workspaces/$wsId`, en câblant `onRegisterWaiver` et le chargement initial `activeWaivers` sur PostgreSQL 18 via `@orcia/api-client`.
 - **Découplage `/catalog` vs `/agents` & `/help` (`REM-05`, `REM-06`)** :
-  - Séparer `router.tsx` : `/catalog` rend une vue dédiée affichant `CatalogExplorerPanel` visible (`catalog-explorer-panel`), tandis que `/agents` rend `AgentsAndSkillsManagerView` avec **1 seule** instance de `RemoteServiceTestBenchAndMcpExposureView` (suppression de `remote-service-test-bench-wrapper`).
-  - Dans `ShellContainer.tsx`, ne pas monter `<ShellContextualHelpColumn>` lorsque `pathname.startsWith("/help")` (`REM-06`) ; corriger l'accordéon `help-accordion-steps-btn` / `help-accordion-steps-content` sur `< 768 px` et ajouter `pl-5` aux listes à puces de `Repères & notions utiles`.
+  - Séparer `/catalog` (affichant `CatalogExplorerPanel` visible avec `data-testid="catalog-explorer-panel"`) de `/agents` (affichant `AgentsAndSkillsManagerView` + **1 seule** instance de `RemoteServiceTestBenchAndMcpExposureView`).
+  - Dans `ShellContainer.tsx`, ne pas monter `<ShellContextualHelpColumn>` ni Zone 4 lorsque `pathname.startsWith("/help")` (`REM-06`) ; corriger l'accordéon `help-accordion-steps-btn` / `help-accordion-steps-content` (`openSteps` initialement fermé sur mobile ou bascule cohérente) et ajouter `pl-5` sur les listes à puces de `Repères & notions utiles`.
 - **Bouton invitation & `data-testid` (`REM-16`, `REM-24`, `REM-25`)** :
-  - Toujours afficher `open-invite-org-user-modal-btn` dans `SettingsOrganizationUnitsBlock.tsx` (invitation racine autorisée ou état `disabled` avec texte explicatif + bouton `+ Nouvelle unité` à côté).
-  - Aligner `settingsAiModelsPresets.ts` (`llm-provider-preset-ollama`), `WorkflowStudioHeaderBar.tsx` (`studio-view-mode-whatif` + libellés distincts `Simuler l'impact` vs `Tester l'exécution`) et `20-process-studio-v2-finops-and-log-sink.spec.ts` (`plaintext_value`).
+  - Toujours afficher `open-invite-org-user-modal-btn` dans `SettingsOrganizationUnitsBlock.tsx` (avec pré-sélection de l'unité racine `ENTERPRISE` lorsque aucune sous-unité n'existe encore).
+  - Aligner `settingsAiModelsPresets.ts` (`id: "ollama"` $\rightarrow$ `llm-provider-preset-ollama`), `WorkflowStudioHeaderBar.tsx` (`studio-view-mode-whatif` + libellés distincts `Simuler l'impact` vs `Tester l'exécution`).
 
 ### 2.5 Analyse d'Impact sur la Pyramide des Tests (`AD-17` — Couches 1 à 5 + Sécurité, Obligatoire)
 - **Couche 1a / 1b** : audit `zero-dead-buttons-and-silent-catches-audit.test.tsx` réaligné sur les vraies routes ; tests `@orcia/ui` vérifiant le rendu en `Portal` dans `document.body`, la visibilité du footer de `AiModelConfigModal`, l'accordéon `/help` mobile et l'unicité des `data-testid`.
@@ -91,18 +94,34 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[En attente d'implémentation de la Story 22.2]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `apps/web/vite.config.ts` & `packages/ui/src/styles/tokens.css` | Modification | *[À compléter après implémentation]* |
-| `packages/ui/src/primitives/UserSettingsModalDialog.tsx` & `RadixDesignSystemPrimitives.tsx` | Modification | *[À compléter après implémentation]* |
-| `apps/web/src/features/catalog/*`, `workspaces/*`, `routes/help.tsx` | Modification | *[À compléter après implémentation]* |
+| `packages/orcia-core/src/orcia_core/orchestration/_internal/sql_workspace_waivers.py` | Création (`249` L) | Dépôt SQL PostgreSQL 18 pour `workspace_exception_waivers` (`SELECT`, `INSERT ... ON CONFLICT`, mise à jour statut). |
+| `packages/orcia-core/src/orcia_core/orchestration/_workspace_governance_models.py`, `_workspace_rebase_helpers.py` & `workspace_governance_and_rebaser.py` | Création / Refactoring (`138` L / `230` L / `444` L) | Extraction des modèles et helpers de rebase ; câblage asynchrone PG18 `register_exception_waiver_async` / `list_exception_waivers_async` / `evaluate_conflict_waiver_async`. |
+| `packages/orcia-core/src/orcia_core/permissions/org_delegation_invitations.py` | Modification | Autorisation explicite pour `PLATFORM_ADMIN` d'inviter sur la racine `ENTERPRISE` tout en maintenant le refus sur `BU_LEAD`/`TEAM_LEAD` et la garde anti-escalade. |
+| `apps/api/src/orcia_api/dependencies/workspace_and_packs.py`, `routers/workspace_governance.py`, `routers/org_unit_invitations.py`, `routers/_org_units_delegation_helpers.py` | Modification | Injection `session_factory`, endpoints `GET`/`POST /api/v1/workspaces/{id}/exception-waivers`, `resolve_evaluator_target_node(..., allow_enterprise=True)` pour `invite-user`. |
+| `packages/api-client/src/domains/workspaceGovernance.ts`, `openapi.json`, `generated/schema.ts`, `index.ts` | Création / Régénération | Contrat OpenAPI `0-diff` et méthodes typées `listWorkspaceExceptionWaivers`, `registerWorkspaceExceptionWaiver`, `getWorkspaceFiveTabsState`. |
+| `apps/web/viteTailwindV4Plugin.ts`, `vite.config.ts`, `src/main.tsx`, `src/vite-env.d.ts`, `packages/ui/src/styles/tokens.css` | Création / Modification | Compilation Tailwind CSS v4 sans preflight (`@import "tailwindcss/theme"` + `utilities`) + tokens `--z-overlay: 1000` / `--z-dialog: 1010` + `.orcia-ds-dialog-body`/`.orcia-ds-dialog-footer` sticky. |
+| `packages/ui/src/primitives/{RadixDesignSystemPrimitives,UserSettingsModalDialog,CommandPaletteModal,UpstreamChallengeRewindModal,UpstreamChallengeWhatIfPreviewCard}.tsx` & `apps/web/src/components/FirstBootAdminSetupModal.tsx` | Modification / Refactoring | Portals `DialogPrimitive.Portal` vers `document.body` pour toutes les modales critiques et découpage `< 400` L. |
+| `apps/web/src/features/admin/ai-models/{AiModelConfigModal.tsx,useAiModelConfigModalState.ts}` & `routes/settingsAiModelsPresets.ts` | Modification / Refactoring | Extraction hook état, suppression erreur prématurée avant interaction (`touched`/submit), footer sticky et `id: "ollama"` (`llm-provider-preset-ollama`). |
+| `apps/web/src/features/{catalog/index,workspaces/index,workspaces/WorkspaceDnaAndWaiversSection,inbox/InboxAuxiliaryPanels}.tsx` & `packages/ui/src/primitives/FourZoneSidebarRail.tsx` | Modification / Refactoring | Purge des `4` `display: none` toxiques, câblage waivers `@orcia/api-client` avec survie `F5`, découplage `/catalog` vs `/agents` (1 seule instance `remote-service-test-bench`). |
+| `apps/web/src/components/ShellContainer.tsx`, `packages/ui/src/primitives/ContextualHelpColumnAndCenter.tsx`, `routes/SettingsOrganizationUnitsBlock.tsx`, `features/processes/studio/WorkflowStudioHeaderBar.tsx` | Modification | Masquage colonne Zone 4 sur `/help`, correction accordéon `help-accordion-steps-btn` + `pl-5`, affichage permanent `open-invite-org-user-modal-btn`, alignement `studio-view-mode-whatif`. |
+| `tests/unit/test_story_22_2_waivers_and_root_invitations.py`, `tests/integration/test_story_22_2_waivers_and_org_invite_pg18.py`, `tests/security/test_story_22_2_security_guards.py`, `apps/web/src/__tests__/story-22-2-portals-tailwind-and-routes.test.tsx` + alignements tests & `e2e/20-*.spec.ts` | Création / Modification | Suite complète `AD-17` (Couches 1a, 1b, 2 PG18, Sécurité, E2E `plaintext_value` et réalignement des assertions). |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[$\ge 90\%$ requis à mesurer après implémentation]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `pnpm typecheck`, `lint-imports`, `lint_spine.py`, `gitnexus_detect_changes()` *[À compléter]*
+- **Couverture de tests ciblée Story 22.2** : **`91.06 %`** (`27 passed`, seuil `>= 90 %` respecté : `sql_workspace_waivers.py` `98 %`, `_workspace_governance_models.py` `100 %`, `_workspace_rebase_helpers.py` `91 %`, `workspace_governance_and_rebaser.py` `99 %`, `org_delegation_invitations.py` `100 %`).
+- **Qualité statique & Architecture** :
+  - `.venv/bin/ruff check .` & `.venv/bin/ruff format --check .` : **0 erreur** (`1156` fichiers conformes).
+  - `.venv/bin/mypy --strict packages/orcia-core apps/api apps/worker` : **0 erreur** (`483` fichiers source).
+  - `.venv/bin/lint-imports` : **5 contrats gardés, 0 cassé** (`AD-19` & `AD-20`).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`0-diff`** validé.
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24` : **`ok: true`, `0 findings`**.
+  - `gitnexus_detect_changes({scope: "all", repo: "/home/romain/Documents/Projects/ORCIA"})` : `changed_count: 83`, `affected_count: 16`, `changed_files: 44`, `risk_level: "critical"`.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- *[À compléter après exécution des 5 couches `AD-17` et Playwright Desktop/Mobile]*
+- **Couche 1a (Unitaires Python)** : `.venv/bin/pytest tests/unit -q` -> **100 % vert** (`0` échec, incluant `test_story_22_2_waivers_and_root_invitations.py` `4 passed`).
+- **Couche 1b (Frontend `@orcia/ui`, `@orcia/api-client`, `@orcia/web`)** : `pnpm turbo run lint typecheck test` -> **`9/9` tâches réussies** (`@orcia/web`: `40/40` fichiers, `162/162` tests passés incluant `story-22-2-portals-tailwind-and-routes.test.tsx` `6/6` avec survie `F5` des dérogations et compilation CSS Tailwind v4).
+- **Couche 2 (Intégration PostgreSQL 18 Testcontainers)** : `.venv/bin/pytest tests/integration/test_story_22_2_waivers_and_org_invite_pg18.py tests/integration/api/test_story_20_1_org_delegation_and_audit_postgres18.py tests/integration/test_story_11_1_waivers_and_external_rebase_postgres18.py tests/integration/test_story_22_1_workspaces_permissions_pg18.py -v` -> **`4/4` passés** (`SELECT` direct sur `workspace_exception_waivers`, `iam_accounts` et `users`).
+- **Couche Sécurité & Évals** : `.venv/bin/pytest tests/security tests/evals -q` -> **100 % vert** (`test_story_22_2_security_guards.py` vérifie `403 ERR_ORG_UNIT_SCOPE_FORBIDDEN`, `403 ERR_PRIVILEGE_ESCALATION_FORBIDDEN`, `403 ERR_OBSERVER_MODE_READ_ONLY` et `422` sur `SecretInputPayload.value`).
+- **Couche 5 (Playwright E2E)** : `apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts` aligné sur `SecretInputPayload.plaintext_value` (la campagne E2E globale est pilotée en `Story 22.8` / `22.9`).

@@ -53,9 +53,23 @@ export function SettingsOrganizationUnitsBlock({
   );
   const canCreateUnit =
     canMutate && (s.isPlatformAdmin || creatableParentUnits.length > 0 || !hasServerCaps);
-  const invitableUnits = orgUnits.filter((u) =>
+  const scopedInvitableUnits = orgUnits.filter((u) =>
     hasServerCaps ? Boolean(s.capabilitiesById[u.id]?.canInviteUsers) : s.isPlatformAdmin,
   );
+  const rootEnterpriseFallbackUnit: ConfiguredOrgUnit = {
+    id: "0192c4e0-0000-7000-8000-000000000001",
+    name: isFr ? "Plateforme Globale ORCIA (Racine)" : "ORCIA Global Platform (Root)",
+    slug: "orcia-root",
+    level: "TEAM",
+    parentId: "",
+    billingEnabled: true,
+  };
+  const invitableUnits =
+    scopedInvitableUnits.length > 0
+      ? scopedInvitableUnits
+      : s.isPlatformAdmin
+        ? [rootEnterpriseFallbackUnit]
+        : [];
   const hasReadOnlyAncestor = orgUnits.some((u) => s.capabilitiesById[u.id]?.canEdit === false);
 
   return (
@@ -83,20 +97,18 @@ export function SettingsOrganizationUnitsBlock({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          {invitableUnits.length > 0 ? (
-            <OrciaButton
-              variant="secondary"
-              testId="open-invite-org-user-modal-btn"
-              disabled={!canMutate}
-              onClick={() => {
-                s.setModalError(null);
-                s.setOrgDeleteFeedback(null);
-                s.setInviteModalOpen(true);
-              }}
-            >
-              {labels.openInviteModalCta}
-            </OrciaButton>
-          ) : null}
+          <OrciaButton
+            variant="secondary"
+            testId="open-invite-org-user-modal-btn"
+            disabled={!canMutate || invitableUnits.length === 0}
+            onClick={() => {
+              s.setModalError(null);
+              s.setOrgDeleteFeedback(null);
+              s.setInviteModalOpen(true);
+            }}
+          >
+            {labels.openInviteModalCta}
+          </OrciaButton>
 
           <OrciaButton
             variant="primary"

@@ -84,11 +84,36 @@ async def ensure_evaluator_org_units_synced(
 def resolve_evaluator_target_node(
     evaluator: MatrixPermissionEvaluator,
     org_unit_id_or_slug: str,
+    *,
+    allow_enterprise: bool = False,
 ) -> OrgUnitNode:
-    """Resolve target non-enterprise `OrgUnitNode` by ID or slug or raise 404."""
+    """Resolve target `OrgUnitNode` by ID or slug or raise 404."""
     cleaned = org_unit_id_or_slug.strip()
     target = evaluator.get_org_unit(cleaned)
-    if target is None or target.unit_type == "ENTERPRISE":
+    if (
+        target is None
+        and allow_enterprise
+        and cleaned.lower()
+        in {
+            "0192c4e0-0000-7000-8000-000000000001",
+            "orcia-root",
+            "orcia-root-org",
+            "orcia-enterprise",
+            "global",
+            "scope-global",
+        }
+    ):
+        target = next((u for u in evaluator.org_units if u.unit_type == "ENTERPRISE"), None)
+        if target is None:
+            return OrgUnitNode(
+                id="0192c4e0-0000-7000-8000-000000000001",
+                slug="orcia-root",
+                name="Plateforme Globale ORCIA",
+                unit_type="ENTERPRISE",
+                parent_id=None,
+                billing_enabled=True,
+            )
+    if target is None or (target.unit_type == "ENTERPRISE" and not allow_enterprise):
         raise ResourceNotFoundError(
             detail_override=f"Unité organisationnelle introuvable : '{cleaned}'."
         )

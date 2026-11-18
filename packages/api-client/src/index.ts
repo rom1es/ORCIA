@@ -35,6 +35,12 @@ import {
   type SaveWorkflowV2Options,
 } from "./domains/workflowsV2";
 import { createWorkflowTriggersDomainClient } from "./domains/workflowTriggers";
+import {
+  createWorkspaceGovernanceDomainClient,
+  type ExceptionWaiverResponseItem,
+  type RegisterExceptionWaiverInput,
+  type WorkspaceFiveTabsStatePayload,
+} from "./domains/workspaceGovernance";
 import type { paths } from "./generated/schema";
 import {
   buildKnownOrgUsersQuery,
@@ -67,10 +73,12 @@ export {
   createReflexiveExecutionDomainClient,
   createWorkflowsV2DomainClient,
   createWorkflowTriggersDomainClient,
+  createWorkspaceGovernanceDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
   type ApiImpactAssessmentResult,
   type ApiWorkflowDefinitionV2,
+  type ExceptionWaiverResponseItem,
   type InspectSourceLinesParams,
   type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
@@ -82,7 +90,9 @@ export {
   type OntologyPromotionDecideResponse,
   type OntologyPromotionProposalDetailItem,
   type OntologyPromotionsListResponse,
+  type RegisterExceptionWaiverInput,
   type SaveWorkflowV2Options,
+  type WorkspaceFiveTabsStatePayload,
   type WritableScopeOptionItem,
   type OrciaApiClientOptions,
 };
@@ -124,6 +134,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
     ...createWorkflowsV2DomainClient(requestJson),
     ...createWorkflowTriggersDomainClient(requestJson),
+    ...createWorkspaceGovernanceDomainClient(requestJson),
     ...auditFinopsClient,
     ...aiModelsHubClient,
     aiModelsHub: aiModelsHubClient,

@@ -150,7 +150,7 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
           log_sink_service: "orcia-worker",
           log_sink_query_text: "level:ERROR",
           cooldown_window_seconds: 0,
-          webhook_secret: { action: "set", value: alertSecret },
+          webhook_secret: { action: "set", plaintext_value: alertSecret },
         },
       },
     );

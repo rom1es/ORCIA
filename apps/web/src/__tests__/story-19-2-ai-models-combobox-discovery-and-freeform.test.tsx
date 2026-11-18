@@ -177,6 +177,8 @@ describe("Story 19.2 — AI Models Combobox Discovery, Filtering & Freeform Inpu
       />,
     );
 
+    fireEvent.click(screen.getByTestId("ai-model-primary-model-input-refresh-btn"));
+
     await waitFor(
       () => {
         expect(

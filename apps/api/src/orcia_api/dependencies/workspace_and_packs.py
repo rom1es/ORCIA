@@ -31,13 +31,16 @@ from orcia_core.ports.surgical_explorer_port import SurgicalExplorerPort
 def get_workspace_governance_and_rebaser_service(
     request: Request,
 ) -> WorkspaceGovernanceAndArtifactRoutingService:
-    """Return `WorkspaceGovernanceAndArtifactRoutingService`."""
+    """Return `WorkspaceGovernanceAndArtifactRoutingService` wired to PG18 `session_maker`."""
+    session_maker = getattr(request.app.state, "session_maker", None)
     svc: WorkspaceGovernanceAndArtifactRoutingService | None = getattr(
         request.app.state, "workspace_governance_and_rebaser_service", None
     )
     if svc is None:
-        svc = WorkspaceGovernanceAndArtifactRoutingService()
+        svc = WorkspaceGovernanceAndArtifactRoutingService(session_factory=session_maker)
         request.app.state.workspace_governance_and_rebaser_service = svc
+    elif svc.session_factory is None and session_maker is not None:
+        svc.session_factory = session_maker
     return svc
 
 

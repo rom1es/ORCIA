@@ -265,18 +265,13 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
         "Quels sont les points critiques de l'architecture ?",
       );
-      // Once turn is completed and displayed in ActiveConversationMessagesView, the duplicate stream box & citations card are visually hidden (display: none + sr-only) so the reply appears only once on screen
+      // Once turn is completed and displayed in ActiveConversationMessagesView, the duplicate stream box is sr-only and citations card wrapper is unmounted
       expect(output.className).toContain("sr-only");
       expect(output.style.display).toBe("none");
+      expect(screen.queryByTestId("assistant-citations-card-wrapper")).toBeNull();
       expect(
-        screen.getByTestId("assistant-citations-card-wrapper").className,
+        screen.getByTestId("assistant-folders-panel-wrapper").className,
       ).toContain("sr-only");
-      expect(
-        screen.getByTestId("assistant-citations-card-wrapper").style.display,
-      ).toBe("none");
-      expect(
-        screen.getByTestId("assistant-folders-panel-wrapper").style.display,
-      ).toBe("none");
       const userBubble = screen.getByTestId("assistant-user-question-bubble");
       expect(userBubble.style.backgroundColor).toBe("var(--color-action-primary)");
       expect(userBubble.style.marginLeft).toBe("auto");
@@ -431,6 +426,8 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         </ShellContainer>
       </I18nProvider>,
     );
+
+    fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
 
     const testBenchBtn = screen.getByTestId("run-test-bench-btn");
     fireEvent.click(testBenchBtn);

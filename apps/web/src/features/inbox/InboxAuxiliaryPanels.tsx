@@ -44,6 +44,10 @@ export interface InboxAuxiliaryPanelsProps {
   readonly onSendCollaborativeMessage: (message: string) => void;
   readonly onNavigateToProcesses: () => void;
   readonly onSaveDraftAction: (content: string) => void;
+  readonly citationCardPreview?: {
+    readonly sanitizedResponseText: string;
+    readonly footerSummaryLine: string;
+  } | null;
 }
 
 export function InboxAuxiliaryPanels({
@@ -68,6 +72,7 @@ export function InboxAuxiliaryPanels({
   onSendCollaborativeMessage,
   onNavigateToProcesses,
   onSaveDraftAction,
+  citationCardPreview = null,
 }: InboxAuxiliaryPanelsProps): React.JSX.Element {
   return (
     <>
@@ -140,7 +145,6 @@ export function InboxAuxiliaryPanels({
 
       <div
         data-testid="assistant-folders-panel-wrapper"
-        style={foldersPanelOpen ? undefined : { display: "none" }}
         className={foldersPanelOpen ? "" : "sr-only"}
       >
         <AssistantFoldersAndCollaborativeThreadView
@@ -196,22 +200,20 @@ export function InboxAuxiliaryPanels({
         />
       </div>
 
-      <div
-        data-testid="assistant-citations-card-wrapper"
-        style={{ display: "none" }}
-        className="sr-only"
-      >
-        <AssistantCitationPillsAndArtifactCard
-          sanitizedResponseText=""
-          sources={[]}
-          glossaryItems={[]}
-          toolOutputs={[]}
-          footerSummaryLine=""
-          labels={dictionary.assistantCitations}
-          onSaveDraft={(title) => onSaveDraftAction(title)}
-          onContinueInProcess={onNavigateToProcesses}
-        />
-      </div>
+      {citationCardPreview ? (
+        <div data-testid="assistant-citations-card-wrapper">
+          <AssistantCitationPillsAndArtifactCard
+            sanitizedResponseText={citationCardPreview.sanitizedResponseText}
+            sources={[]}
+            glossaryItems={[]}
+            toolOutputs={[]}
+            footerSummaryLine={citationCardPreview.footerSummaryLine}
+            labels={dictionary.assistantCitations}
+            onSaveDraft={(title) => onSaveDraftAction(title)}
+            onContinueInProcess={onNavigateToProcesses}
+          />
+        </div>
+      ) : null}
     </>
   );
 }

@@ -201,8 +201,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // Initially empty topology and FinOps is disabled before workspace creation
-    expect(screen.getByTestId("workspace-topology-empty-state")).toBeDefined();
+    // Initially empty workspace cards and FinOps is disabled before workspace creation
+    expect(screen.getByTestId("workspaces-cards-empty-state")).toBeDefined();
     expect(
       (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -344,7 +344,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("inbox-feature-panel")).toBeDefined();
     expect(screen.getByTestId("assistant-folders-and-collaborative-thread-view")).toBeDefined();
     expect(screen.getByTestId("assistant-speed-selector-and-stream")).toBeDefined();
-    expect(screen.getByTestId("assistant-citation-pills-and-artifact-card")).toBeDefined();
+    expect(screen.queryByTestId("assistant-citations-card-wrapper")).toBeNull();
 
     // Open the 4-level governance modal/studio
     fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
@@ -367,10 +367,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("workspace-five-tabs-view")).toBeDefined();
     expect(screen.getByTestId("dna-starlark-glossary-view")).toBeDefined();
 
-    // Navigate to /agents -> RemoteServiceTestBenchAndMcpExposureView
+    // Navigate to /agents -> RemoteServiceTestBenchAndMcpExposureView inside connections tab
     await act(async () => {
       await router.navigate({ to: "/agents" });
     });
+    fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
     expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
 
     // Navigate to /processes -> clean ProcessesHubPage (zero stacked legacy forms or pack builders)
@@ -959,12 +960,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("agents-subview-tab-skills"));
     expect(screen.getByTestId(`skill-card-${skillId}`)).toBeDefined();
 
-    // Verify 3rd tab (🔌 Serveurs d'outils & MCP) is visible and interactive
+    // Verify 3rd tab (🔌 Serveurs d'outils & MCP) is visible and interactive, without hidden display:none wrappers
     expect(screen.getByTestId("agents-subview-tab-connections").style.display).not.toBe("none");
-    expect(screen.getByTestId("catalog-explorer-panel-wrapper").style.display).toBe("none");
-    expect(screen.getByTestId("remote-service-test-bench-wrapper").style.display).toBe("none");
+    expect(screen.queryByTestId("catalog-explorer-panel-wrapper")).toBeNull();
+    expect(screen.queryByTestId("remote-service-test-bench-wrapper")).toBeNull();
     fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
     expect(screen.getByTestId("connections-subview-panel")).toBeDefined();
+    expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
 
     // 4. Load Business Pack Agents & Skills and verify 📦 Pack Métier badges + protection against deletion
     fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
@@ -1917,9 +1919,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // 1. Option A: Verify 📖 Vocabulaire is visually hidden in the left sidebar (display: none)
-    const vocabMenuItem = screen.getByTestId("eight-menu-item-vocabulary");
-    expect(vocabMenuItem.style.display).toBe("none");
+    // 1. Option A: Verify 📖 Vocabulaire is absent from the left sidebar (display: none purged)
+    expect(screen.queryByTestId("eight-menu-item-vocabulary")).toBeNull();
 
     // 2. Initialize Day-0 Admin and a Billing Team ("Équipe Produit IA")
     fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
@@ -1950,10 +1951,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       await Promise.resolve();
     });
 
-    // Legacy redundant panels are visually hidden (display: none)
-    expect(screen.getByTestId("workspaces-legacy-technical-panels").style.display).toBe(
-      "none",
-    );
+    // Legacy redundant panels with display: none have been purged
+    expect(screen.queryByTestId("workspaces-legacy-technical-panels")).toBeNull();
 
     // Create a Private Workspace ("Mon Labo Perso", PRIVATE_USER) and a Team Workspace ("Espace Produit", STANDARD)
     const visibilitySelect = screen.getByTestId(
@@ -1968,10 +1967,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
     });
 
-    // Expand creation form via "+ Créer un Espace de Travail" button and create a 2nd workspace
+    // Toggle creation form (collapse then re-expand) and create a 2nd workspace
     const toggleCreateBtn = screen.getByTestId("toggle-create-workspace-form-btn");
-    fireEvent.click(toggleCreateBtn);
-    fireEvent.change(visibilitySelect, { target: { value: "STANDARD" } });
+    if (toggleCreateBtn.getAttribute("aria-expanded") === "true") {
+      fireEvent.click(toggleCreateBtn);
+      expect(screen.queryByTestId("workspace-name-input")).toBeNull();
+    }
+    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
+    fireEvent.change(screen.getByTestId("workspace-visibility-select"), {
+      target: { value: "STANDARD" },
+    });
     fireEvent.change(screen.getByTestId("workspace-name-input"), {
       target: { value: "Espace Produit" },
     });

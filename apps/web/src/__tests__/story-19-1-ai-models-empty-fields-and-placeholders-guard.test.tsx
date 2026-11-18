@@ -69,7 +69,7 @@ describe("Story 19.1 Guard Test — Empty Model Fields, Dynamic Placeholders & N
       // Verify dynamic placeholder expectations per D1
       if (preset.id === "mistral") {
         expect(primaryInput.placeholder).toBe("ex. : mistral-large-latest");
-      } else if (preset.id === "local-ollama") {
+      } else if (preset.id === "ollama") {
         expect(primaryInput.placeholder).toBe("ex. : llama3.2");
       } else {
         expect(primaryInput.placeholder).toBe("Identifiant exact publié par le fournisseur");
@@ -113,7 +113,7 @@ describe("Story 19.1 Guard Test — Empty Model Fields, Dynamic Placeholders & N
     expect(fallbackInput.placeholder).toBe("Optional fallback model");
 
     // Test Ollama preset in English
-    fireEvent.click(screen.getByTestId("llm-provider-preset-local-ollama"));
+    fireEvent.click(screen.getByTestId("llm-provider-preset-ollama"));
     expect(primaryInput.value).toBe("");
     expect(primaryInput.placeholder).toBe("e.g. llama3.2");
 

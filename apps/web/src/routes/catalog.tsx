@@ -12,6 +12,6 @@ export const Route = createRoute({
   loader: ({ context, deps }) =>
     preloadModuleQueryData(context.queryClient, "catalog", deps.fixture),
   component: function CatalogRouteComponent() {
-    return <ModuleWorkspaceView moduleKey="catalog" />;
+    return <ModuleWorkspaceView moduleKey="catalog" catalogMode="catalog" />;
   },
 });

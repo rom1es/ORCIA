@@ -93,7 +93,10 @@ def assert_can_invite_org_user(
         instance=instance,
     )
     scope = compute_managed_org_scope(user, org_units)
-    if not scope.is_platform_admin and (
+    if target_unit.unit_type == "ENTERPRISE":
+        if not scope.is_platform_admin:
+            raise OrgUnitScopeForbiddenError(instance=instance)
+    elif not scope.is_platform_admin and (
         not scope.governed_bu_ids or target_unit.id not in scope.governed_bu_ids
     ):
         raise OrgUnitScopeForbiddenError(instance=instance)

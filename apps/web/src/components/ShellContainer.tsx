@@ -151,8 +151,9 @@ function InnerShellContainer({
     defaultSummary: dictionary.modulePages[safeModuleKey].description,
   });
 
+  const isHelpCenterRoute = Boolean(pathname?.startsWith("/help"));
   const hideSidebarShowcaseBtn =
-    Boolean(pathname?.startsWith("/help")) || Boolean(pathname?.startsWith("/ontology"));
+    isHelpCenterRoute || Boolean(pathname?.startsWith("/ontology"));
 
   if (!isShowcaseStandalone && (isHydrating || (isInitialLoading && !isAuthenticated))) {
     return <ShellHydratingLoaderView isFr={isFr} />;
@@ -202,8 +203,12 @@ function InnerShellContainer({
         viewportWidth={state.viewportWidth}
         disabledMenuKeys={disabledMenuKeys}
         hiddenMenuKeys={showConfigurationMenu ? [] : ["configuration"]}
-        helpColumnOpen={state.helpColumnOpen}
-        onHelpColumnOpenChange={state.setHelpColumnOpen}
+        helpColumnOpen={isHelpCenterRoute ? false : state.helpColumnOpen}
+        onHelpColumnOpenChange={(nextOpen) => {
+          if (!isHelpCenterRoute) {
+            state.setHelpColumnOpen(nextOpen);
+          }
+        }}
         onSelectMenu={(menuKey) => {
           const mapped = mapEightMenuKeyToModule(menuKey);
           state.setSelectedMenuKeyOverride(menuKey);
@@ -247,21 +252,23 @@ function InnerShellContainer({
           />
         )}
         helpColumnContent={
-          <ShellContextualHelpColumn
-            pathname={pathname}
-            locale={locale}
-            contextualHelpArticle={contextualHelpArticle}
-            activeHelpSectionId={state.activeHelpSectionId}
-            labels={dictionary.contextualHelpHybrid}
-            autonomousBadgeLabels={dictionary.autonomousSupervision.badge}
-            onAskAssistant={() => {
-              if (!disabledMenuKeys.assistant) {
-                state.setSelectedMenuKeyOverride("assistant");
-                state.setSelectedModuleOverride("inbox");
-                dispatchNavigation("/assistant");
-              }
-            }}
-          />
+          isHelpCenterRoute ? undefined : (
+            <ShellContextualHelpColumn
+              pathname={pathname}
+              locale={locale}
+              contextualHelpArticle={contextualHelpArticle}
+              activeHelpSectionId={state.activeHelpSectionId}
+              labels={dictionary.contextualHelpHybrid}
+              autonomousBadgeLabels={dictionary.autonomousSupervision.badge}
+              onAskAssistant={() => {
+                if (!disabledMenuKeys.assistant) {
+                  state.setSelectedMenuKeyOverride("assistant");
+                  state.setSelectedModuleOverride("inbox");
+                  dispatchNavigation("/assistant");
+                }
+              }}
+            />
+          )
         }
       >
         <div className="flex h-full flex-col">

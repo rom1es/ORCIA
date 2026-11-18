@@ -249,7 +249,7 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
       expect(screen.getByTestId("org-unit-readonly-badge-bu-ops")).toBeTruthy();
       expect(screen.getByText("Équipe Support N2")).toBeTruthy();
     });
-    expect(screen.queryByTestId("open-invite-org-user-modal-btn")).toBeNull();
+    expect((screen.getByTestId("open-invite-org-user-modal-btn") as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByTestId("open-create-org-unit-modal-btn") as HTMLButtonElement).disabled).toBe(true);
 
     const editTeamBtn = screen.getByTestId("edit-org-unit-btn-team-ops-1") as HTMLButtonElement;

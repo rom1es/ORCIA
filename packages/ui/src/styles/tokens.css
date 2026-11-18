@@ -117,9 +117,13 @@
   --orcia-status-warning: var(--color-status-warning);
   --orcia-font-mono: var(--font-mono);
 
-  /* Elevations */
+  /* Elevations & Z-Index Stacking Scale (`REM-03`) */
   --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.04);
   --shadow-dropdown: 0 14px 36px rgba(15, 23, 42, 0.14);
+  --z-overlay: 1000;
+  --z-dialog: 1010;
+  --z-popover: 1020;
+  --z-tooltip: 1030;
 
   /* Typography (Strict max 2 font families: Primary Sans + Secondary Mono) */
   --font-sans: "Inter", "Geist Sans", system-ui, -apple-system, sans-serif;
@@ -812,7 +816,6 @@ button {
   background-color: var(--color-action-primary-subtle);
   color: var(--color-foreground);
 }
-}
 
 .orcia-ds-tab-panel {
   margin-top: 8px;
@@ -821,9 +824,8 @@ button {
 .orcia-ds-dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
-  background-color: var(--color-surface-secondary);
-  opacity: 0.72;
+  z-index: var(--z-overlay);
+  background-color: var(--color-modal-backdrop);
 }
 
 .orcia-ds-dialog-content {
@@ -831,11 +833,11 @@ button {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 51;
+  z-index: var(--z-dialog);
   width: 680px;
   max-width: 95vw;
-  max-height: 88vh;
-  overflow-y: auto;
+  max-height: min(90vh, 760px);
+  overflow: hidden;
   background-color: var(--color-surface-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -844,6 +846,30 @@ button {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.orcia-ds-dialog-content-wide {
+  width: min(820px, 95vw);
+}
+
+.orcia-ds-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.orcia-ds-dialog-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
 }
 
 .orcia-ds-dialog-title {
@@ -866,7 +892,7 @@ button {
 }
 
 .orcia-ds-dropdown-content {
-  z-index: 60;
+  z-index: var(--z-popover);
   min-width: 180px;
   padding: 6px;
   border-radius: var(--radius-md);
@@ -894,7 +920,7 @@ button {
 }
 
 .orcia-ds-tooltip-content {
-  z-index: 70;
+  z-index: var(--z-tooltip);
   padding: 5px 9px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);

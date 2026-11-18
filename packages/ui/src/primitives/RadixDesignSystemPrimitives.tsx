@@ -80,6 +80,9 @@ export interface OrciaDialogProps {
   readonly description?: string;
   readonly testId?: string;
   readonly closeLabel?: string;
+  readonly contentClassName?: string;
+  readonly onEscapeKeyDown?: (event: KeyboardEvent) => void;
+  readonly onInteractOutside?: (event: Event) => void;
   readonly children: React.ReactNode;
 }
 
@@ -90,6 +93,9 @@ export function OrciaDialog({
   description,
   testId = "orcia-radix-dialog",
   closeLabel = "Fermer",
+  contentClassName,
+  onEscapeKeyDown,
+  onInteractOutside,
   children,
 }: OrciaDialogProps): React.ReactElement {
   return (
@@ -99,9 +105,15 @@ export function OrciaDialog({
         <DialogPrimitive.Content
           data-testid={testId}
           aria-describedby={description ? undefined : undefined}
-          className="orcia-ds-dialog-content"
+          onEscapeKeyDown={onEscapeKeyDown}
+          onInteractOutside={onInteractOutside}
+          className={
+            contentClassName
+              ? `orcia-ds-dialog-content ${contentClassName}`
+              : "orcia-ds-dialog-content"
+          }
         >
-          <div className="orcia-ds-header">
+          <div className="orcia-ds-header" style={{ flexShrink: 0 }}>
             <DialogPrimitive.Title className="orcia-ds-dialog-title">
               {title}
             </DialogPrimitive.Title>
@@ -114,7 +126,10 @@ export function OrciaDialog({
             </DialogPrimitive.Close>
           </div>
           {description ? (
-            <DialogPrimitive.Description className="orcia-ds-dialog-description">
+            <DialogPrimitive.Description
+              className="orcia-ds-dialog-description"
+              style={{ flexShrink: 0 }}
+            >
               {description}
             </DialogPrimitive.Description>
           ) : null}

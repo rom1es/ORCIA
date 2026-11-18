@@ -125,7 +125,9 @@ async def invite_org_unit_user(
     if is_observer_request(request, caller):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
-    target_node = resolve_evaluator_target_node(auth_svc.evaluator, payload.target_org_unit_id)
+    target_node = resolve_evaluator_target_node(
+        auth_svc.evaluator, payload.target_org_unit_id, allow_enterprise=True
+    )
     canonical_kind, effective_roles = assert_can_invite_org_user(
         caller,
         target_unit=target_node,
@@ -152,10 +154,17 @@ async def invite_org_unit_user(
         "OIDC_FEDERATED" if policy_state.auth_mode == "SSO" else "LOCAL_PASSWORD"
     )
 
-    team_ids = [target_node.id] if canonical_kind == "TEAM_MEMBER" else []
-    led_team_ids = [target_node.id] if canonical_kind == "TEAM_LEAD" else []
-    led_bu_ids = [target_node.id] if canonical_kind == "BU_LEAD" else []
-    ontology_led_bu_ids = [target_node.id] if canonical_kind == "ONTOLOGY_LEAD" else []
+    is_enterprise_root = target_node.unit_type == "ENTERPRISE"
+    team_ids = (
+        [target_node.id] if canonical_kind == "TEAM_MEMBER" and not is_enterprise_root else []
+    )
+    led_team_ids = (
+        [target_node.id] if canonical_kind == "TEAM_LEAD" and not is_enterprise_root else []
+    )
+    led_bu_ids = [target_node.id] if canonical_kind == "BU_LEAD" and not is_enterprise_root else []
+    ontology_led_bu_ids = (
+        [target_node.id] if canonical_kind == "ONTOLOGY_LEAD" and not is_enterprise_root else []
+    )
 
     created: IamAccountRecord | None = None
     updated_summary: OrgUnitSummary | None = None
@@ -208,18 +217,19 @@ async def invite_org_unit_user(
             ontology_led_bu_ids=ontology_led_bu_ids,
             instance=str(request.url.path),
         )
-        if canonical_kind == "TEAM_MEMBER":
-            sync_in_memory_team_memberships(
-                auth_svc.evaluator, created.principal_id, (target_node.id,)
-            )
-        else:
-            _apply_in_memory_org_attachment(
-                list(auth_svc.evaluator.org_units),
-                evaluator_upsert=auth_svc.evaluator.upsert_org_unit,
-                target_node=target_node,
-                canonical_kind=canonical_kind,
-                principal_id=created.principal_id,
-            )
+        if not is_enterprise_root:
+            if canonical_kind == "TEAM_MEMBER":
+                sync_in_memory_team_memberships(
+                    auth_svc.evaluator, created.principal_id, (target_node.id,)
+                )
+            else:
+                _apply_in_memory_org_attachment(
+                    list(auth_svc.evaluator.org_units),
+                    evaluator_upsert=auth_svc.evaluator.upsert_org_unit,
+                    target_node=target_node,
+                    canonical_kind=canonical_kind,
+                    principal_id=created.principal_id,
+                )
 
     temp_pw: str | None = None
     if effective_auth_source == "LOCAL_PASSWORD":
@@ -231,7 +241,7 @@ async def invite_org_unit_user(
             roles=created.roles,
             auth_svc=auth_svc,
             engine=shared_engine,
-            primary_org_unit_id=target_node.id,
+            primary_org_unit_id=None if is_enterprise_root else target_node.id,
         )
 
     await sync_auth_service_user_by_email_from_pg(request, auth_svc, cleaned_email)

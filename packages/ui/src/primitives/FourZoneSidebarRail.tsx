@@ -186,17 +186,6 @@ export function FourZoneSidebarRail({
           );
         })}
 
-        <button
-          type="button"
-          data-testid="eight-menu-item-vocabulary"
-          aria-hidden="true"
-          tabIndex={-1}
-          style={{ display: "none" }}
-          onClick={() => onSelectMenu("spaces", "/workspaces")}
-        >
-          <OrciaIcon name="vocabulary" /> Vocabulaire
-        </button>
-
         {!railCollapsed && sidebarSecondarySlot}
       </nav>
 

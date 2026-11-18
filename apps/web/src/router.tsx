@@ -87,7 +87,7 @@ const agentsRoute = createRoute({
   path: "/agents",
   validateSearch: validateOrciaRouteSearch,
   component: function AgentsRouteComponent() {
-    return <ModuleWorkspaceView moduleKey="catalog" />;
+    return <ModuleWorkspaceView moduleKey="catalog" catalogMode="agents" />;
   },
 });
 

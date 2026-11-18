@@ -57,6 +57,8 @@ interface MockBackendState {
   orgUnitSeq: number;
   workspaces: Array<Record<string, unknown>>;
   workspaceSeq: number;
+  workspaceWaivers: Array<Record<string, unknown>>;
+  waiverSeq: number;
   agents: Array<Record<string, unknown>>;
   skills: Array<Record<string, unknown>>;
   assistantFolders: Array<Record<string, unknown>>;
@@ -101,6 +103,8 @@ const backendState: MockBackendState = {
   orgUnitSeq: 0,
   workspaces: [],
   workspaceSeq: 0,
+  workspaceWaivers: [],
+  waiverSeq: 0,
   agents: [],
   skills: [],
   assistantFolders: [],
@@ -272,6 +276,8 @@ export function resetVitestApiBackend(): void {
   backendState.orgUnitSeq = 0;
   backendState.workspaces = [];
   backendState.workspaceSeq = 0;
+  backendState.workspaceWaivers = [];
+  backendState.waiverSeq = 0;
   backendState.agents = [];
   backendState.skills = [];
   backendState.assistantFolders = [];
@@ -995,7 +1001,24 @@ async function vitestFetchTransport(
       );
     }
     const targetUnitId = String(body.target_org_unit_id ?? "").trim();
-    const targetUnit = backendState.orgUnits.find((u) => u.id === targetUnitId);
+    const ROOT_ENTERPRISE_ID = "0192c4e0-0000-7000-8000-000000000001";
+    const foundUnit = backendState.orgUnits.find((u) => u.id === targetUnitId);
+    const targetUnit: MockOrganizationalUnit | undefined =
+      foundUnit ??
+      (targetUnitId === ROOT_ENTERPRISE_ID && activeHat === "PLATFORM_ADMIN"
+        ? {
+            id: ROOT_ENTERPRISE_ID,
+            slug: "orcia-root",
+            name: "Plateforme Globale ORCIA",
+            kind: "TEAM",
+            parent_id: null,
+            billing_enabled: true,
+            lead_user_id: null,
+            lead_user_ids: [],
+            ontology_lead_user_ids: [],
+            member_user_ids: [],
+          }
+        : undefined);
     if (!targetUnit) {
       return problemResponse(
         404,
@@ -1026,7 +1049,7 @@ async function vitestFetchTransport(
       targetUnitId: targetUnit.id,
       targetUnitKind: targetUnit.kind,
     });
-    if (requestedRole === "TEAM_MEMBER") {
+    if (requestedRole === "TEAM_MEMBER" || requestedRole === "CONTRIBUTOR") {
       if (!targetUnit.member_user_ids.includes(email)) {
         targetUnit.member_user_ids = [...targetUnit.member_user_ids, email];
       }
@@ -1531,6 +1554,64 @@ async function vitestFetchTransport(
     };
     backendState.workspaces = [...backendState.workspaces, created];
     return jsonResponse(created, 201);
+  }
+
+  const waiverMatch = path.match(/^\/api\/v1\/workspaces\/([^/]+)\/exception-waivers$/);
+  if (waiverMatch) {
+    const wsId = decodeURIComponent(waiverMatch[1] ?? "");
+    if (method === "GET") {
+      const activeOnly = parsedUrl.searchParams.get("active_only") === "true";
+      const rows = backendState.workspaceWaivers.filter(
+        (w) =>
+          String(w.workspace_id) === wsId &&
+          (!activeOnly || String(w.status) === "ACTIVE"),
+      );
+      return jsonResponse(rows);
+    }
+    if (method === "POST") {
+      const accessMode = (reqHeaders.get("x-orcia-access-mode") ?? "").toUpperCase();
+      const activeHat = (reqHeaders.get("x-orcia-active-hat") ?? "PLATFORM_ADMIN").toUpperCase();
+      if (accessMode === "READ_ONLY_OBSERVER" || activeHat === "OBSERVER") {
+        return problemResponse(
+          403,
+          "ERR_OBSERVER_MODE_READ_ONLY",
+          "Mode observateur en lecture seule",
+          "Les mutations sont refusées en mode observateur lecture seule.",
+          path,
+        );
+      }
+      backendState.waiverSeq += 1;
+      const waiverId = `0195f000-0000-7000-8100-${String(backendState.waiverSeq).padStart(12, "0")}`;
+      const nowIso = "2026-11-18T12:00:00Z";
+      const expiresIso = "2026-12-18T12:00:00Z";
+      const created = {
+        waiver_id: waiverId,
+        workspace_id: wsId,
+        source_uri: String(body.source_uri ?? ""),
+        source_sha256: String(body.source_sha256 ?? "sha256:workspace-source-baseline-0001"),
+        conflict_rule_id: String(body.conflict_rule_id ?? ""),
+        norm_level: String(body.norm_level ?? "3_WORKSPACE"),
+        dna_chain: Array.isArray(body.dna_chain) ? body.dna_chain : [],
+        approved_by_user_id: "0195f000-0000-7000-8000-000000000001",
+        approved_by_role: activeHat,
+        reason: String(body.reason ?? ""),
+        status: "ACTIVE",
+        expires_at: expiresIso,
+        created_at: nowIso,
+      };
+      backendState.workspaceWaivers = [
+        created,
+        ...backendState.workspaceWaivers.filter(
+          (w) =>
+            !(
+              String(w.workspace_id) === wsId &&
+              String(w.source_uri) === created.source_uri &&
+              String(w.conflict_rule_id) === created.conflict_rule_id
+            ),
+        ),
+      ];
+      return jsonResponse(created);
+    }
   }
 
   const authPolicyResp = handleVitestAuthPolicyRoute({

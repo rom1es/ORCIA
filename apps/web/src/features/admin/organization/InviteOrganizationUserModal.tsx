@@ -8,6 +8,7 @@ import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorage
 import type { OrganizationInviteModalLabels } from "../../../i18n/locales/organization_modals_labels";
 
 export type OrgInviteAssignmentRole =
+  | "CONTRIBUTOR"
   | "TEAM_MEMBER"
   | "OBSERVER"
   | "TEAM_LEAD"
@@ -45,7 +46,7 @@ export function InviteOrganizationUserModal({
   const [targetOrgUnitId, setTargetOrgUnitId] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
-  const [assignmentRole, setAssignmentRole] = useState<OrgInviteAssignmentRole>("TEAM_MEMBER");
+  const [assignmentRole, setAssignmentRole] = useState<OrgInviteAssignmentRole>("CONTRIBUTOR");
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +57,7 @@ export function InviteOrganizationUserModal({
     setTargetOrgUnitId(nextUnitId);
     setEmail("");
     setDisplayName("");
-    setAssignmentRole(defaultUnit?.level === "BU" ? "BU_LEAD" : "TEAM_MEMBER");
+    setAssignmentRole(defaultUnit?.level === "BU" ? "BU_LEAD" : "CONTRIBUTOR");
   }, [open, initialTargetUnitId, invitableUnits]);
 
   const selectedUnit = invitableUnits.find((u) => u.id === targetOrgUnitId) ?? invitableUnits[0];
@@ -68,7 +69,7 @@ export function InviteOrganizationUserModal({
         { value: "ONTOLOGY_LEAD", label: labels.roleOptions.ONTOLOGY_LEAD },
       ]
     : [
-        { value: "TEAM_MEMBER", label: labels.roleOptions.TEAM_MEMBER },
+        { value: "CONTRIBUTOR", label: labels.roleOptions.TEAM_MEMBER },
         { value: "TEAM_LEAD", label: labels.roleOptions.TEAM_LEAD },
         { value: "OBSERVER", label: labels.roleOptions.OBSERVER },
       ];
@@ -81,7 +82,7 @@ export function InviteOrganizationUserModal({
         setAssignmentRole("BU_LEAD");
       }
     } else if (assignmentRole === "BU_LEAD" || assignmentRole === "ONTOLOGY_LEAD") {
-      setAssignmentRole("TEAM_MEMBER");
+      setAssignmentRole("CONTRIBUTOR");
     }
   };
 

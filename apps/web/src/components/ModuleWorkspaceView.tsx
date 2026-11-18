@@ -15,12 +15,14 @@ export interface ModuleWorkspaceViewProps {
   readonly moduleKey: UiModuleKey;
   readonly initialWorkspaceId?: string;
   readonly initialTab?: string;
+  readonly catalogMode?: "catalog" | "agents";
 }
 
 export function ModuleWorkspaceView({
   moduleKey,
   initialWorkspaceId,
   initialTab,
+  catalogMode,
 }: ModuleWorkspaceViewProps) {
   const { dictionary, locale } = useI18n();
   const { activeModuleKey, openHelpSection } = useShellNavigation();
@@ -38,16 +40,7 @@ export function ModuleWorkspaceView({
         gap: "20px",
       }}
     >
-      {currentModule === "catalog" || currentModule === "finops" ? (
-        <div style={{ display: "none" }}>
-          <StatusBadge
-            testId={`module-uri-badge-${currentModule}`}
-            label={pageCopy.uriBadgeExample}
-            tone="cobalt"
-            monospace
-          />
-        </div>
-      ) : (
+      {currentModule === "catalog" || currentModule === "finops" ? null : (
         <div
           className="orcia-bento-card"
           style={{
@@ -90,7 +83,7 @@ export function ModuleWorkspaceView({
 
       {currentModule === "cockpit" && <CockpitFeaturePanel />}
       {currentModule === "inbox" && <InboxFeaturePanel />}
-      {currentModule === "catalog" && <CatalogFeaturePanel />}
+      {currentModule === "catalog" && <CatalogFeaturePanel catalogMode={catalogMode} />}
       {currentModule === "ontology" && <OntologyFeaturePanel />}
       {currentModule === "gates" && <GatesFeaturePanel />}
       {currentModule === "finops" && <FinopsFeaturePanel />}

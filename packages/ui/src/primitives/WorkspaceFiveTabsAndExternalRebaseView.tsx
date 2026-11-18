@@ -207,6 +207,25 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
             >
               {labels.inviolableEnterpriseLockNotice}
             </p>
+            {onRegisterWaiver &&
+              !sources.some((s) => s.freshnessStatus === "STALE_WARNING") && (
+                <div className="mb-2">
+                  <button
+                    type="button"
+                    data-testid="register-waiver-btn-workspace-default"
+                    onClick={() =>
+                      onRegisterWaiver(
+                        defaultArtifactDestinationUri ||
+                          `orcia://workspaces/${workspaceSlug}/sources/default`,
+                        "RULE_FRESHNESS_DRIFT",
+                      )
+                    }
+                    className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-medium text-[var(--orcia-text-on-action)]"
+                  >
+                    {labels.registerWaiverCta}
+                  </button>
+                </div>
+              )}
             <ul className="space-y-1.5">
               {activeWaivers.map((w) => (
                 <li

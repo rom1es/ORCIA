@@ -6732,6 +6732,11 @@ export interface paths {
     };
   };
   "/api/v1/workspaces/{workspace_id}/exception-waivers": {
+    get: {
+      responses: {
+        200: (components["schemas"]["ExceptionWaiverResponse"])[];
+      };
+    };
     post: {
       responses: {
         200: components["schemas"]["ExceptionWaiverResponse"];

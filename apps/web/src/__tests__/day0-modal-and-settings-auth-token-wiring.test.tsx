@@ -46,7 +46,7 @@ function ConnectorsWrapper({ canMutate = true }: { canMutate?: boolean }) {
 }
 
 describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer Token F5 Wiring", () => {
-  it("Point 1 — FirstBootAdminSetupModal is strictly bounded with max-w-lg and 520px maxWidth Direction C style", () => {
+  it("Point 1 — FirstBootAdminSetupModal is rendered via OrciaDialog Portal directly under document.body", () => {
     const onCreateAdmin = vi.fn();
     render(
       <FirstBootAdminSetupModal
@@ -59,14 +59,10 @@ describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer
 
     const modal = screen.getByTestId("first-boot-admin-setup-modal");
     expect(modal).toBeDefined();
-
-    // The inner modal card
-    const modalCard = modal.firstElementChild as HTMLElement;
-    expect(modalCard).toBeDefined();
-    expect(modalCard.className).toContain("max-w-lg");
-    expect(modalCard.style.maxWidth).toBe("min(520px, calc(100vw - 2rem))");
-    expect(modalCard.style.backgroundColor).toBe("var(--color-surface)");
-    expect(modalCard.style.borderColor).toBe("var(--color-border-strong)");
+    expect(modal.parentElement).toBe(document.body);
+    expect(modal.getAttribute("role")).toBe("dialog");
+    expect(modal.className).toContain("orcia-ds-dialog-content");
+    expect(modal.querySelector(".orcia-ds-dialog-body")).not.toBeNull();
   });
 
   it("Point 2 — LoginScreenView on Day-0 (platformAdmin === null) renders discrete neutral state without duplicate login form", async () => {

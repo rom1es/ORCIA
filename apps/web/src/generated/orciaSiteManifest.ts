@@ -593,7 +593,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 22.2",
       "reportFile": "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats-tech-lead-report.md",
       "domain": "Vague 0 (REM-03..06, REM-16, REM-24, REM-25) — Portals OrciaDialog & Tailwind v4, Purge display: none, Découplage /catalog//agents//help, Invitation /organization & data-testid/Contrats",
-      "summary": "Pré-implémentation : activation @tailwindcss/vite, Portals DialogPrimitive.Portal + footer sticky modales, purge des 4 wrappers display: none, séparation /catalog vs /agents (1 seul banc MCP) et masquage Zone 4 sur /help, bouton invitation visible sur /organization, alignement llm-provider-preset-ollama, studio-view-mode-whatif et plaintext_value (21 CAP-* ancrées)."
+      "summary": "Implémentation & validation AD-17 (91.06 % couverture ciblée, 162/162 Vitest, 4/4 intégration PG18) : activation @tailwindcss/vite, Portals DialogPrimitive.Portal + footer sticky modales, purge des 4 wrappers display: none, séparation /catalog vs /agents (1 seul banc MCP) et masquage Zone 4 sur /help, bouton invitation visible sur /organization, persistance PG18 des dérogations (workspace_exception_waivers) et alignement llm-provider-preset-ollama, studio-view-mode-whatif et plaintext_value."
     },
     {
       "date": "2026-11-18",

@@ -149,9 +149,21 @@ export function WorkflowStudioHeaderBar({
           >
             {(
               [
-                { key: "design", label: isFr ? "Étapes & Règles" : "Steps & Rules" },
-                { key: "what_if", label: isFr ? "Tester à blanc" : "Dry-Run Test" },
-                { key: "yaml", label: isFr ? "Définition" : "Specification" },
+                {
+                  key: "design",
+                  testId: "studio-view-mode-design",
+                  label: isFr ? "Étapes & Règles" : "Steps & Rules",
+                },
+                {
+                  key: "what_if",
+                  testId: "studio-view-mode-whatif",
+                  label: isFr ? "Simuler l'impact" : "Simulate impact",
+                },
+                {
+                  key: "yaml",
+                  testId: "studio-view-mode-yaml",
+                  label: isFr ? "Définition" : "Specification",
+                },
               ] as const
             ).map((tab) => (
               <button
@@ -159,7 +171,7 @@ export function WorkflowStudioHeaderBar({
                 type="button"
                 role="tab"
                 aria-selected={viewMode === tab.key}
-                data-testid={`studio-view-mode-${tab.key}`}
+                data-testid={tab.testId}
                 onClick={() => onSelectViewMode(tab.key)}
                 className="orcia-ds-tab"
               >

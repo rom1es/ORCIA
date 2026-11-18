@@ -1,3 +1,4 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useState } from "react";
 import { OrciaIcon, type OrciaIconName } from "../components/icons";
 import {
@@ -130,149 +131,176 @@ export function UserSettingsModalDialog({
   ];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={labels.modalTitle}
-      data-testid="user-settings-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "var(--color-modal-backdrop)" }}
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          requestClose();
+        } else {
+          onOpenChange(true);
+        }
+      }}
     >
-      <div
-        className="flex h-[580px] w-full max-w-[820px] flex-col overflow-hidden rounded-xl border shadow-2xl"
-        style={{
-          backgroundColor: "var(--color-bg-surface)",
-          borderColor: "var(--color-border-subtle)",
-          color: "var(--color-text-primary)",
-        }}
-      >
-        <div
-          className="flex items-center justify-between border-b px-4 py-3"
-          style={{ borderColor: "var(--color-border-subtle)" }}
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="orcia-ds-dialog-overlay" />
+        <DialogPrimitive.Content
+          aria-label={labels.modalTitle}
+          data-testid="user-settings-modal"
+          onEscapeKeyDown={(event) => {
+            event.preventDefault();
+            requestClose();
+          }}
+          className="orcia-ds-dialog-content orcia-ds-dialog-content-wide p-0"
+          style={{
+            height: "min(580px, 90vh)",
+            padding: 0,
+            gap: 0,
+            backgroundColor: "var(--color-bg-surface)",
+            borderColor: "var(--color-border-subtle)",
+            color: "var(--color-text-primary)",
+          }}
         >
-          <h2 className="text-sm font-semibold">{labels.modalTitle}</h2>
-          <button
-            type="button"
-            data-testid="user-settings-modal-close-btn"
-            onClick={requestClose}
-            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+          <div
+            className="flex shrink-0 items-center justify-between border-b px-4 py-3"
+            style={{ borderColor: "var(--color-border-subtle)" }}
           >
-            <OrciaIcon name="close" size={14} />
-            <span>{labels.closeButtonLabel}</span>
-          </button>
-        </div>
+            <DialogPrimitive.Title className="m-0 text-sm font-semibold">
+              {labels.modalTitle}
+            </DialogPrimitive.Title>
+            <button
+              type="button"
+              data-testid="user-settings-modal-close-btn"
+              onClick={requestClose}
+              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+            >
+              <OrciaIcon name="close" size={14} />
+              <span>{labels.closeButtonLabel}</span>
+            </button>
+          </div>
 
-        <div className="px-4 pt-2">
-          <RgaaUnsavedChangesAlert
-            testIdPrefix="user-settings-modal"
-            isOpen={showUnsavedAlert}
-            labels={guardLabels}
-            locale={locale}
-            onStay={cancelDiscard}
-            onConfirmDiscard={confirmDiscard}
-          />
-          {preferencesError && (
-            <OrciaAlertBanner tone="crimson" testId="user-settings-modal-error-banner">
-              {preferencesError}
-            </OrciaAlertBanner>
-          )}
-        </div>
-
-        <div className="flex min-h-0 flex-1">
-          <nav
-            role="tablist"
-            aria-orientation="vertical"
-            data-testid="user-settings-tabs"
-            className="flex w-52 shrink-0 flex-col gap-1 border-r p-3"
-            style={{
-              borderColor: "var(--color-border-subtle)",
-              backgroundColor: "var(--color-bg-elevated)",
-            }}
-          >
-            {tabs.map((tab) => {
-              const selected = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  data-testid={`user-settings-tab-${tab.key}`}
-                  data-active={selected ? "true" : "false"}
-                  onClick={() => onSelectTab(tab.key)}
-                  className="orcia-sidebar-nav-btn gap-2 px-2.5 py-2 text-left text-xs"
-                >
-                  <OrciaIcon name={tab.icon} size={15} />
-                  <span className="truncate">{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="flex-1 overflow-y-auto p-4 text-xs">
-            {activeTab === "GENERAL" && (
-              <UserSettingsGeneralTab
-                theme={theme}
-                locale={locale}
-                autoOpenHelp={autoOpenHelp}
-                notificationsEnabled={notificationsEnabled}
-                labels={labels}
-                onUpdatePreferences={onUpdatePreferences}
-              />
-            )}
-
-            {activeTab === "PERSONALIZATION" && (
-              <UserSettingsPersonalizationTab
-                defaultAssistantHat={defaultAssistantHat}
-                assistantTone={assistantTone}
-                personalInstructions={personalInstructions}
-                labels={labels}
-                isSaving={isSavingPreferences}
-                savedMessage={preferencesSavedMessage}
-                onUpdatePreferences={onUpdatePreferences}
-                onDirtyChange={setIsDirty}
-                onNavigateAssistantBehavior={onNavigateAssistantBehavior}
-              />
-            )}
-
-            {activeTab === "ACCOUNT_SECURITY" && (
-              <UserSettingsProfileTab
-                userEmail={userEmail}
-                userRole={userRole}
-                locale={locale}
-                accountProfile={accountProfile}
-                mustChangePassword={mustChangePassword}
-                twoFactorMode={twoFactorMode}
-                onChangePassword={onChangePassword}
-                labels={labels}
-                passwordSecurity={labels.passwordSecurity}
-              />
-            )}
-
-            {activeTab === "PASSTHROUGH_SOURCES" && (
-              <UserSettingsPassthroughTab
-                labels={labels}
-                passthroughConnectors={passthroughConnectors}
-                onSavePassthroughToken={onSavePassthroughToken}
-                onRevokePassthroughToken={onRevokePassthroughToken}
-              />
-            )}
-
-            {activeTab === "IDE_MCP_KEYS" && (
-              <UserSettingsMcpTokensTab
-                mcpTokens={mcpTokens}
-                lastIssuedPlaintext={lastIssuedPlaintext}
-                isSubmitting={isSubmittingMcp}
-                errorMessage={mcpError}
-                labels={labels}
-                onCreateMcpToken={onCreateMcpToken}
-                onRevokeMcpToken={onRevokeMcpToken}
-                onDirtyChange={setIsDirty}
-              />
+          <div className="shrink-0 px-4 pt-2 empty:hidden">
+            <RgaaUnsavedChangesAlert
+              testIdPrefix="user-settings-modal"
+              isOpen={showUnsavedAlert}
+              labels={guardLabels}
+              locale={locale}
+              onStay={cancelDiscard}
+              onConfirmDiscard={confirmDiscard}
+            />
+            {preferencesError && (
+              <OrciaAlertBanner tone="crimson" testId="user-settings-modal-error-banner">
+                {preferencesError}
+              </OrciaAlertBanner>
             )}
           </div>
-        </div>
-      </div>
-    </div>
+
+          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+            <nav
+              role="tablist"
+              aria-orientation="vertical"
+              data-testid="user-settings-tabs"
+              className="flex shrink-0 flex-row gap-1 overflow-x-auto border-b p-2 md:w-52 md:flex-col md:border-r md:border-b-0 md:p-3"
+              style={{
+                borderColor: "var(--color-border-subtle)",
+                backgroundColor: "var(--color-bg-elevated)",
+              }}
+            >
+              {tabs.map((tab) => {
+                const selected = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    data-testid={`user-settings-tab-${tab.key}`}
+                    data-active={selected ? "true" : "false"}
+                    onClick={() => onSelectTab(tab.key)}
+                    className="orcia-sidebar-nav-btn shrink-0 gap-2 px-2.5 py-2 text-left text-xs md:shrink"
+                  >
+                    <OrciaIcon name={tab.icon} size={15} />
+                    <span className="truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div className="orcia-ds-dialog-body p-4 text-xs">
+              {activeTab === "GENERAL" && (
+                <UserSettingsGeneralTab
+                  theme={theme}
+                  locale={locale}
+                  autoOpenHelp={autoOpenHelp}
+                  notificationsEnabled={notificationsEnabled}
+                  labels={labels}
+                  onUpdatePreferences={onUpdatePreferences}
+                />
+              )}
+
+              {activeTab === "PERSONALIZATION" && (
+                <UserSettingsPersonalizationTab
+                  defaultAssistantHat={defaultAssistantHat}
+                  assistantTone={assistantTone}
+                  personalInstructions={personalInstructions}
+                  labels={labels}
+                  isSaving={isSavingPreferences}
+                  savedMessage={preferencesSavedMessage}
+                  onUpdatePreferences={onUpdatePreferences}
+                  onDirtyChange={setIsDirty}
+                  onNavigateAssistantBehavior={onNavigateAssistantBehavior}
+                />
+              )}
+
+              {activeTab === "ACCOUNT_SECURITY" && (
+                <UserSettingsProfileTab
+                  userEmail={userEmail}
+                  userRole={userRole}
+                  locale={locale}
+                  accountProfile={accountProfile}
+                  mustChangePassword={mustChangePassword}
+                  twoFactorMode={twoFactorMode}
+                  onChangePassword={onChangePassword}
+                  labels={labels}
+                  passwordSecurity={labels.passwordSecurity}
+                />
+              )}
+
+              {activeTab === "PASSTHROUGH_SOURCES" && (
+                <UserSettingsPassthroughTab
+                  labels={labels}
+                  passthroughConnectors={passthroughConnectors}
+                  onSavePassthroughToken={onSavePassthroughToken}
+                  onRevokePassthroughToken={onRevokePassthroughToken}
+                />
+              )}
+
+              {activeTab === "IDE_MCP_KEYS" && (
+                <UserSettingsMcpTokensTab
+                  mcpTokens={mcpTokens}
+                  lastIssuedPlaintext={lastIssuedPlaintext}
+                  isSubmitting={isSubmittingMcp}
+                  errorMessage={mcpError}
+                  labels={labels}
+                  onCreateMcpToken={onCreateMcpToken}
+                  onRevokeMcpToken={onRevokeMcpToken}
+                  onDirtyChange={setIsDirty}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="orcia-ds-dialog-footer px-4 py-2.5">
+            <button
+              type="button"
+              data-testid="user-settings-modal-footer-close-btn"
+              onClick={requestClose}
+              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+            >
+              {labels.closeButtonLabel}
+            </button>
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

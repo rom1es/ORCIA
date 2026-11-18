@@ -576,7 +576,7 @@ export function upsertVitestIamOrgInvitedUser(params: {
   const nowIso = "2026-11-18T10:00:00Z";
   if (existing) {
     const rolesSet = new Set(existing.roles);
-    if (roleNormalized === "TEAM_MEMBER") {
+    if (roleNormalized === "TEAM_MEMBER" || roleNormalized === "CONTRIBUTOR") {
       rolesSet.add("CONTRIBUTOR");
     } else if (VALID_ROLES.has(roleNormalized)) {
       rolesSet.add(roleNormalized);
@@ -590,7 +590,7 @@ export function upsertVitestIamOrgInvitedUser(params: {
   }
   iamAccountSeq += 1;
   const initialRoles =
-    roleNormalized === "TEAM_MEMBER"
+    roleNormalized === "TEAM_MEMBER" || roleNormalized === "CONTRIBUTOR"
       ? ["CONTRIBUTOR"]
       : VALID_ROLES.has(roleNormalized)
         ? [roleNormalized]

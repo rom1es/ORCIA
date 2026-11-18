@@ -47,7 +47,7 @@ export const AI_PROVIDER_PRESETS: readonly ProviderPresetSpec[] = [
     defaultAuthMode: "api_key",
   },
   {
-    id: "local-ollama",
+    id: "ollama",
     label: "Ollama / vLLM (Serveur local)",
     familyValue: "Ollama Local",
     defaultEndpointUrl: "http://localhost:11434/v1",

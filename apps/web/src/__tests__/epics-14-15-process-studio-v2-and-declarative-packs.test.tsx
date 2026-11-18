@@ -195,7 +195,7 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
 
     // Run isolated What-If simulation -> 2 enabled sub-steps evaluated, 0 external writes
-    fireEvent.click(screen.getByTestId("studio-view-mode-what_if"));
+    fireEvent.click(screen.getByTestId("studio-view-mode-whatif"));
     expect(screen.getByTestId("studio-what-if-sandbox-panel")).toBeDefined();
     expect(screen.getByTestId("what-if-substeps-count").textContent).toBe("2");
     expect(screen.getByTestId("what-if-external-writes-count").textContent).toContain("0");

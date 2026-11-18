@@ -88,8 +88,8 @@ export function ContextualHelpColumnAndCenter({
   onRollbackVersion,
   onInvalidateAndRestoreAutonomousHelp,
 }: ContextualHelpColumnAndCenterProps): React.ReactElement {
-  const [openSteps, setOpenSteps] = useState<boolean>(true);
-  const [openTerms, setOpenTerms] = useState<boolean>(true);
+  const [openSteps, setOpenSteps] = useState<boolean>(() => mode !== "HELP_MENU_CENTER");
+  const [openTerms, setOpenTerms] = useState<boolean>(() => mode !== "HELP_MENU_CENTER");
   const [openFaq, setOpenFaq] = useState<boolean>(false);
   const [rolledBackToVersion, setRolledBackToVersion] = useState<string | null>(
     null,
@@ -289,7 +289,7 @@ export function ContextualHelpColumnAndCenter({
         {openSteps && (
           <ol
             data-testid="help-accordion-steps-content"
-            className="p-3 space-y-1.5 list-decimal list-inside text-text-secondary bg-surface-primary"
+            className="list-decimal space-y-1.5 bg-surface-primary p-3 pl-5 text-text-secondary"
           >
             {article.stepByStepItems.map((item, idx) => (
               <li key={idx}>{item}</li>
@@ -313,7 +313,7 @@ export function ContextualHelpColumnAndCenter({
         {openTerms && (
           <ul
             data-testid="help-accordion-terms-content"
-            className="p-3 space-y-1.5 list-disc list-inside text-text-secondary bg-surface-primary"
+            className="list-disc space-y-1.5 bg-surface-primary p-3 pl-5 text-text-secondary"
           >
             {article.keyTermsItems.map((item, idx) => (
               <li key={idx}>{item}</li>
@@ -337,7 +337,7 @@ export function ContextualHelpColumnAndCenter({
         {openFaq && (
           <ul
             data-testid="help-accordion-faq-content"
-            className="p-3 space-y-1.5 list-disc list-inside text-text-secondary bg-surface-primary"
+            className="list-disc space-y-1.5 bg-surface-primary p-3 pl-5 text-text-secondary"
           >
             {article.faqItems.map((item, idx) => (
               <li key={idx}>{item}</li>

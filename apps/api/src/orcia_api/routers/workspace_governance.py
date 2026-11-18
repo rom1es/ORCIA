@@ -5,10 +5,17 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
-from orcia_api.dependencies import get_workspace_governance_and_rebaser_service
-from orcia_api.routers.auth import resolve_request_user
+from orcia_api.dependencies import (
+    get_auth_service,
+    get_workspace_governance_and_rebaser_service,
+)
+from orcia_api.routers._finops_scope_guards import (
+    sync_evaluator_topology_from_pg,
+    validate_uuid,
+)
+from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.workspace_governance import (
     ConfigureWorkspaceTabsRequest,
     DnaChainNodeSchema,
@@ -30,11 +37,16 @@ from orcia_core.orchestration.workspace_governance_and_rebaser import (
     WorkspaceGovernanceAndArtifactRoutingService,
     WorkspaceSourceSummary,
 )
+from orcia_core.permissions.errors import (
+    ObserverModeReadOnlyError,
+    ScopeAccessDeniedError,
+)
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(
     prefix="/api/v1/workspaces",
     tags=["workspaces"],
+    responses=PROBLEM_RESPONSES,
 )
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
@@ -42,6 +54,40 @@ GovernanceServiceDep = Annotated[
     WorkspaceGovernanceAndArtifactRoutingService,
     Depends(get_workspace_governance_and_rebaser_service),
 ]
+
+
+def _enforce_not_observer(request: Request, user: UserIdentity) -> None:
+    if (
+        request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER"
+        or request.headers.get("x-orcia-observer-mode", "").strip().lower() in {"1", "true", "yes"}
+        or request.headers.get("x-orcia-active-hat", "").strip().upper() == "OBSERVER"
+        or user.platform_role == "OBSERVER"
+    ):
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+
+
+async def _validate_workspace_access(
+    request: Request,
+    user: UserIdentity,
+    workspace_id_raw: str,
+    *,
+    require_write: bool = False,
+) -> UUID:
+    ws_id_str = validate_uuid(workspace_id_raw, "workspace_id")
+    ws_uuid = UUID(ws_id_str)
+    if require_write:
+        _enforce_not_observer(request, user)
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    if user.platform_role != "PLATFORM_ADMIN":
+        ws = auth_svc.evaluator.get_workspace(ws_id_str)
+        if ws is not None:
+            access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
+            if access is None:
+                raise ScopeAccessDeniedError(instance=str(request.url.path))
+            if require_write and access.access_mode == "READ_ONLY_OBSERVER":
+                raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    return ws_uuid
 
 
 def _to_waiver_response(waiver: ExceptionWaiverRecord) -> ExceptionWaiverResponse:
@@ -75,16 +121,18 @@ def _to_waiver_response(waiver: ExceptionWaiverRecord) -> ExceptionWaiverRespons
     response_model=WorkspaceFiveTabsStateResponse,
     summary="Get the 5 sub-tabs state for Mes Espaces (Story 11.1)",
 )
-def get_workspace_five_tabs(
-    workspace_id: UUID,
-    _user: CurrentUserDep,
+async def get_workspace_five_tabs(
+    workspace_id: str,
+    request: Request,
+    user: CurrentUserDep,
     svc: GovernanceServiceDep,
     workspace_slug: str = Query(default="default-ws"),
     pending_glossary_candidates_count: int = Query(default=0, ge=0, le=100),
 ) -> WorkspaceFiveTabsStateResponse:
     """Return the consolidated state for the 5 sub-tabs of `Mes Espaces`."""
-    state = svc.get_workspace_five_tabs_state(
-        workspace_id=workspace_id,
+    ws_uuid = await _validate_workspace_access(request, user, workspace_id, require_write=False)
+    state = await svc.get_workspace_five_tabs_state_async(
+        workspace_id=ws_uuid,
         workspace_slug=workspace_slug,
         pending_glossary_candidates_count=pending_glossary_candidates_count,
     )
@@ -115,15 +163,17 @@ def get_workspace_five_tabs(
     response_model=WorkspaceFiveTabsStateResponse,
     summary="Configure workspace 5 sub-tabs, sources, and default destination (Story 11.1)",
 )
-def configure_workspace_five_tabs(
-    workspace_id: UUID,
+async def configure_workspace_five_tabs(
+    workspace_id: str,
     body: ConfigureWorkspaceTabsRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
 ) -> WorkspaceFiveTabsStateResponse:
     """Configure workspace sources (`REFERENCE` vs `ACTIVE`), access modes, and default target."""
-    state = svc.configure_workspace_tabs(
-        workspace_id=workspace_id,
+    ws_uuid = await _validate_workspace_access(request, user, workspace_id, require_write=True)
+    svc.configure_workspace_tabs(
+        workspace_id=ws_uuid,
         workspace_slug=body.workspace_slug,
         actor_role=user.platform_role,
         default_artifact_destination_uri=body.default_artifact_destination_uri,
@@ -139,6 +189,11 @@ def configure_workspace_five_tabs(
             )
             for s in body.sources
         ],
+        pending_glossary_candidates_count=body.pending_glossary_candidates_count,
+    )
+    state = await svc.get_workspace_five_tabs_state_async(
+        workspace_id=ws_uuid,
+        workspace_slug=body.workspace_slug,
         pending_glossary_candidates_count=body.pending_glossary_candidates_count,
     )
     return WorkspaceFiveTabsStateResponse(
@@ -163,20 +218,43 @@ def configure_workspace_five_tabs(
     )
 
 
+@router.get(
+    "/{workspace_id}/exception-waivers",
+    response_model=list[ExceptionWaiverResponse],
+    summary="List persisted exception waivers for a workspace (PG18 `workspace_exception_waivers`)",
+)
+async def list_workspace_exception_waivers(
+    workspace_id: str,
+    request: Request,
+    user: CurrentUserDep,
+    svc: GovernanceServiceDep,
+    active_only: bool = Query(default=False),
+) -> list[ExceptionWaiverResponse]:
+    """Return persisted exception waivers for the workspace from PostgreSQL 18."""
+    ws_uuid = await _validate_workspace_access(request, user, workspace_id, require_write=False)
+    waivers = await svc.list_exception_waivers_async(
+        workspace_id=ws_uuid,
+        active_only=active_only,
+    )
+    return [_to_waiver_response(w) for w in waivers]
+
+
 @router.post(
     "/{workspace_id}/exception-waivers",
     response_model=ExceptionWaiverResponse,
     summary="Register an exception waiver governed by the causal DNA chain (Verrou V1)",
 )
-def register_workspace_exception_waiver(
-    workspace_id: UUID,
+async def register_workspace_exception_waiver(
+    workspace_id: str,
     body: RegisterExceptionWaiverRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
 ) -> ExceptionWaiverResponse:
     """Persist an exception waiver or reject `1_ENTERPRISE` inviolable directives with HTTP 403."""
-    waiver = svc.register_exception_waiver(
-        workspace_id=workspace_id,
+    ws_uuid = await _validate_workspace_access(request, user, workspace_id, require_write=True)
+    waiver = await svc.register_exception_waiver_async(
+        workspace_id=ws_uuid,
         source_uri=body.source_uri,
         source_sha256=body.source_sha256,
         conflict_rule_id=body.conflict_rule_id,
@@ -194,6 +272,7 @@ def register_workspace_exception_waiver(
         approved_by_role=user.platform_role,
         reason=body.reason,
         ttl_days=body.ttl_days,
+        approved_by_email=user.email,
     )
     return _to_waiver_response(waiver)
 

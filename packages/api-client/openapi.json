@@ -66626,6 +66626,144 @@
       }
     },
     "/api/v1/workspaces/{workspace_id}/exception-waivers": {
+      "get": {
+        "description": "Return persisted exception waivers for the workspace from PostgreSQL 18.",
+        "operationId": "list_workspace_exception_waivers_api_v1_workspaces__workspace_id__exception_waivers_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Active Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExceptionWaiverResponse"
+                  },
+                  "title": "Response List Workspace Exception Waivers Api V1 Workspaces  Workspace Id  Exception Waivers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List persisted exception waivers for a workspace (PG18 `workspace_exception_waivers`)",
+        "tags": [
+          "workspaces"
+        ]
+      },
       "post": {
         "description": "Persist an exception waiver or reject `1_ENTERPRISE` inviolable directives with HTTP 403.",
         "operationId": "register_workspace_exception_waiver_api_v1_workspaces__workspace_id__exception_waivers_post",
@@ -66635,7 +66773,6 @@
             "name": "workspace_id",
             "required": true,
             "schema": {
-              "format": "uuid",
               "title": "Workspace Id",
               "type": "string"
             }
@@ -66772,7 +66909,6 @@
             "name": "workspace_id",
             "required": true,
             "schema": {
-              "format": "uuid",
               "title": "Workspace Id",
               "type": "string"
             }
@@ -66919,7 +67055,6 @@
             "name": "workspace_id",
             "required": true,
             "schema": {
-              "format": "uuid",
               "title": "Workspace Id",
               "type": "string"
             }
